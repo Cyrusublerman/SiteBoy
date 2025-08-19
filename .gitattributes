@@ -1,0 +1,14 @@
+# Set default behavior for all files to let Git decide if it's text
+# and handle line endings automatically (typically converting to LF in the repo).
+* text=auto
+
+# Explicitly declare files that are text and ensure they use LF line endings in the repository.
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+
+# Ensure .gitattributes itself uses LF
+.gitattributes text eol=lf 

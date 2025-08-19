@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "title": "Framework Design Principles",
+    "slug": "framework-design",
+    "section": "blog", 
+    "template": "article"
+  },
+  "subheader": {
+    "show": true,
+    "navMode": "dropdown+prevnext"
+  },
+  "layout": {
+    "columns": 1,
+    "theme": "default"
+  },
+  "blocks": [
+    {
+      "type": "markdown",
+      "content": "# Framework Design Principles\n\nThe SiteBoy framework follows strict architectural principles to ensure mathematical precision and aesthetic consistency."
+    },
+    {
+      "type": "markdown",
+      "content": "## Core Principles\n\n1. **Mathematical Foundation**: All measurements derive from F=12px base unit\n2. **Component Hierarchy**: BaseComponent → Specialized Components → Page Structure\n3. **Separation of Concerns**: Logic in JS, styling in CSS, content in JSON\n4. **VGA Constraints**: 16-color palette, no gradients, no rounded corners"
+    },
+    {
+      "type": "graph",
+      "graphType": "pie",
+      "data": [40, 30, 20, 10],
+      "labels": ["Core", "Components", "Styling", "Content"],
+      "title": "Framework Architecture Distribution"
+    },
+    {
+      "type": "markdown",
+      "content": "## Implementation Details\n\nThe framework uses dependency injection, CSS variables for dynamic geometry, and centralized resize management for optimal performance."
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEINODER - SiteBoy Framework</title>
+    
+    <!-- Space Mono Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    
+    <!-- SiteBoy Framework Styles -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+    
+    <!-- Theme Initialization -->
+    <script>
+        // Initialize theme from localStorage before page renders
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'inverted') {
+            document.documentElement.classList.add('inverted');
+        }
+    </script>
+</head>
+<body>
+    <!-- App root - All content rendered by SiteBoy App -->
+    <div id="app-root"></div>
+    
+    <!-- SiteBoy Framework Scripts - Canonical Loading Order (ESM) -->
+    
+    <!-- 1. Core foundation (ES Modules) -->
+    <script type="module">
+        // Import complete component library (includes BaseComponent)
+        import { ComponentLibrary, BaseComponent } from './assets/js/shared/component-library.js';
+        
+        // Make available globally for legacy compatibility
+        window.BaseComponent = BaseComponent;
+        window.ComponentLibrary = ComponentLibrary;
+        
+        // Note: MathematicalFoundation, ResizeManager, BlockRenderer, and JSONLoader are now in SiteBoyApp
+        
+        console.log('🚀 SiteBoy Framework v2.0.0 - JSON-Driven Content System Loaded');
+        console.log('📊 F=12px Mathematical Precision System Active');
+        console.log('🎨 VGA-Constrained Color Palette Ready');
+        console.log('🔤 Space Mono Typography System Ready');
+        console.log('🏗️ Component Libraries with DI & CSS Variables Ready');
+        console.log('📄 JSON-Driven Content System Ready');
+        console.log('🧩 Block Renderer Ready');
+        console.log('🧭 Page Navigation System Ready');
+        
+        // Initialize app after modules are loaded
+        initializeSiteBoyApp();
+    </script>
+    
+    <!-- 3. Router (legacy module) -->
+    <script src="assets/js/core/router.js"></script>
+    
+    <!-- 4. Tools -->
+    <script src="assets/js/tools/ui-test-tool.js"></script>
+    
+    <!-- 5. Sections -->
+    <script src="assets/js/sections/home_section.js"></script>
+    <script src="assets/js/sections/blog_section.js"></script>
+    <script src="assets/js/sections/art_section.js"></script>
+    <script src="assets/js/sections/tools_section.js"></script>
+    <script src="assets/js/sections/projects_section.js"></script>
+    
+    <!-- 6. App initialization -->
+    <script>
+        // App initialization function
+        function initializeSiteBoyApp() {
+            console.log('🚀 Initializing SiteBoy App with refactored architecture...');
+            
+            // Create page structure using SpecializedComponents
+            const appRoot = document.getElementById('app-root');
+            if (!appRoot) {
+                console.error('❌ App root not found');
+                return;
+            }
+            
+            // Clear any existing content
+            appRoot.innerHTML = '';
+            
+            // Create navigation items for header
+            const navigationItems = [
+                { title: 'HOME', onClick: () => Router.navigateToSection('home') },
+                { title: 'BLOG', onClick: () => Router.navigateToSection('blog') },
+                { title: 'ART', onClick: () => Router.navigateToSection('art') },
+                { title: 'TOOLS', onClick: () => Router.navigateToSection('tools') },
+                { title: 'PROJECTS', onClick: () => Router.navigateToSection('projects') }
+            ];
+            
+            // Create page container using ComponentLibrary
+            const { container: pageElement, component: pageComponent } = ComponentLibrary.pageContainer({
+                navigationItems: navigationItems,
+                onNavigate: (item) => {
+                    if (item.onClick) {
+                        item.onClick();
+                    }
+                }
+            });
+            
+            // Render and inject page structure
+            appRoot.appendChild(pageElement);
+            
+            // Get content container reference for router
+            const contentContainer = pageComponent.getContentContainer();
+            
+            // Store pageContainer reference globally for sections to access
+            window.SiteBoyApp = {
+                version: '2.0.0',
+                pageContainer: pageComponent,
+                contentContainer: contentContainer
+            };
+            
+            // Initialize router with content container
+            Router.init(contentContainer);
+            
+            console.log('✅ SiteBoy App v2.0.0 initialized successfully');
+            console.log('🔧 JSON-driven content system active');
+            console.log('📋 Page Build Guide compliance implemented');
+        }
+        
+        // Initialize when all scripts are loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                // initializeSiteBoyApp will be called from the module script above
+            });
+        }
+    </script>
+    
+    <!-- Framework Ready -->
+    <script>
+        console.log('🎯 SiteBoy Framework v2.0.0 - JSON-Driven Content System Complete');
+        console.log('✅ Features: JSON Content, Block Rendering, Page Navigation, Component Library');
+        console.log('📋 Page Build Guide File Call Order: app→router→destroy→section→subheader→JSON→blocks→render→URL');
+    </script>
+</body>
+</html>

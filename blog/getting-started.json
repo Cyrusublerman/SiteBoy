@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "title": "Getting Started with SiteBoy",
+    "slug": "getting-started", 
+    "section": "blog",
+    "template": "article"
+  },
+  "subheader": {
+    "show": true,
+    "navMode": "dropdown+prevnext"
+  },
+  "layout": {
+    "columns": 1,
+    "theme": "default"
+  },
+  "blocks": [
+    {
+      "type": "markdown",
+      "content": "# Getting Started with SiteBoy\n\nSiteBoy is a mathematical precision web framework built on F=12px foundations with VGA color constraints."
+    },
+    {
+      "type": "markdown",
+      "content": "## Key Features\n\n- **F=12px Mathematical Foundation**: All layout calculations derive from 12px base unit\n- **VGA Color Palette**: Authentic 16-color VGA constraint system\n- **Component Architecture**: BaseComponent foundation with render/destroy lifecycle\n- **JSON-Driven Content**: All page content stored in structured JSON files"
+    },
+    {
+      "type": "custom",
+      "component": "ButtonGroup", 
+      "vars": {
+        "buttons": [
+          {"text": "Documentation", "onClick": null},
+          {"text": "Examples", "onClick": null},
+          {"text": "Source Code", "onClick": null}
+        ]
+      }
+    }
+  ]
+}

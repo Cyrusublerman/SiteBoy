@@ -1,0 +1,87 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# SiteBoy — Cursor Rules (Backend)
+
+## Scope
+- Target: backend/CI + server-side reasoning for JS/CSS/JSON in this repo.
+- Assume Node 20+, no browser globals unless noted.
+
+## File Ownership (SSoT)
+Only these files may own the concern. Others must not implement it.
+- Layout math → assets/js/core/mathematical-foundation.js
+- Base OO system → assets/js/core/base-component.js
+- Routing/nav → assets/js/core/router.js
+- App bootstrap/init → assets/js/core/app.js
+- UI components → assets/js/shared/component-library.js
+- Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
+- Sections/page composition → assets/js/sections/*.js
+- All styling → assets/css/styles.css
+
+## Mandatory Patterns
+- All UI classes extend `BaseComponent`.
+- Instances: `const x = new X(...); this.componentInstances.push(x)`.
+- All dimensional math via `MathematicalFoundation.calculateDimensions(kind|props)`.
+- No manual DOM outside BaseComponent internals.
+
+## Architecture Rules
+- NO `document.*`, `window.*`, `.innerHTML`, `.createElement`, `.appendChild` etc. outside BaseComponent module.
+- NO layout math in components/sections; use MathematicalFoundation only.
+- Sections are JSON-driven and render via `ComponentLibrary` / `SpecializedComponents` only.
+- Every component implements `.destroy()`; sections track/cleanup via `componentInstances`.
+
+## Style Constraints (VGA/Mono)
+- Colors: only CSS vars `var(--vga-*)`. No raw hex/rgb/hsl.
+- Typeface: Space Mono only.
+- Disallow: gradients, shadows, rounded corners.
+- Use math/tokens for dimensions (no ad-hoc px for layout logic).
+
+## Build Chronology (observable path)
+app → router → destroy → section → subheader → JSON → blocks → render → URL
+
+## Do / Don’t (enforceable examples)
+DO:
+class Dropdown extends BaseComponent { ... }
+const dd = new Dropdown(o); this.componentInstances.push(dd);
+MathematicalFoundation.calculateDimensions('dropdown');
+
+DON’T:
+const el = document.createElement('div'); // forbidden outside BaseComponent
+el.innerHTML = ...
+const w = px*0.62; // layout math outside Foundation
+
+## JSON Page Contract (must hold)
+Required keys: header (str), subheader (str), url ("/kebab"), blocks (array of {type, props}).
+type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
+
+## Quick Reference
+- Build page: JSON → ComponentLibrary only.
+- Never break the file-ownership map.
+- Enforce mathematical precision for all dimensions.
+
+## Rewrite/Generation Guidance (Cursor)
+- If user asks for components/sections: generate only subclass(es) of BaseComponent and wire via ComponentLibrary.
+- If you need DOM ops: place them inside BaseComponent methods; expose safe hooks used by subclasses.
+- If you need layout numbers: add/extend helpers inside mathematical-foundation.js; call them from consumers.
+- If a change would cross ownership, create/modify the owner file instead of duplicating logic elsewhere.
+- Prefer small, pure functions and explicit imports; no side effects during import except in app.js.
+
+## Minimal Checks (heuristics you must respect when editing)
+- Reject/avoid code that introduces:
+  - document.* / window.* outside BaseComponent.
+  - class BaseComponent outside its owner.
+  - calculateDimensions( outside MathematicalFoundation definition.
+  - routing (pushState, popstate, location.hash) outside router.js.
+  - bootstrap/initialize outside app.js.
+  - raw colours or border-radius/box-shadow/text-shadow anywhere.
+- Sections must:
+  - import ComponentLibrary,
+  - load JSON,
+  - render from JSON blocks only.
+
+## Output Contract
+- Keep diffs minimal; do not add new files that duplicate owned concerns.
+- When unsure where logic goes: default to the owner listed above; never inline.
+

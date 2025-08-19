@@ -1,0 +1,45 @@
+{
+  "name": "siteboy",
+  "version": "1.0.0",
+  "description": "A retro 4-bit VGA aesthetic website with modular architecture and comprehensive design tools",
+  "main": "src/index.html",
+  "scripts": {
+    "dev": "node scripts/dev-server.js",
+    "build": "node scripts/build.js",
+    "deploy": "node scripts/deploy.js",
+    "lint": "eslint src/ --ext .js,.html",
+    "format": "prettier --write \"src/**/*.{js,html,css,md}\"",
+    "test": "echo \"Testing not yet implemented\" && exit 0",
+    "extract-components": "node scripts/extract-components.js"
+  },
+  "keywords": [
+    "vga",
+    "retro",
+    "90s",
+    "modular-css",
+    "typography",
+    "design-system",
+    "web-components"
+  ],
+  "author": "SiteBoy Team",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0",
+    "live-server": "^1.2.2",
+    "chokidar": "^3.5.3",
+    "fs-extra": "^11.1.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/siteboy.git"
+  },
+  "homepage": "https://yourusername.github.io/siteboy",
+  "browserslist": [
+    "defaults",
+    "not IE 11"
+  ]
+} 

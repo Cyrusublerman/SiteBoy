@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "title": "Example Blog Post",
+    "slug": "example",
+    "section": "blog",
+    "template": "article"
+  },
+  "subheader": {
+    "show": true,
+    "navMode": "dropdown+prevnext"
+  },
+  "layout": {
+    "columns": 1,
+    "theme": "default"
+  },
+  "blocks": [
+    {
+      "type": "markdown",
+      "content": "# Welcome to the Blog\n\nThis is an example blog post that demonstrates the canonical JSON page contract. All page content should be stored in this format according to the Page Build & File Call Guide."
+    },
+    {
+      "type": "markdown", 
+      "content": "## Sample Content\n\nThis block demonstrates how content is structured according to the canonical rules. Each block has a type from the allowed set: `markdown`, `media`, `graph`, `custom`."
+    },
+    {
+      "type": "custom",
+      "component": "Grid",
+      "vars": {
+        "items": ["Sample Item 1", "Sample Item 2", "Sample Item 3", "Sample Item 4"],
+        "cols": 2,
+        "onItemClick": null
+      }
+    },
+    {
+      "type": "media",
+      "mediaType": "image", 
+      "src": "https://via.placeholder.com/400x200/808080/FFFFFF?text=Sample+Image",
+      "caption": "This is a sample image demonstrating the media block type",
+      "size": "M"
+    },
+    {
+      "type": "graph",
+      "graphType": "bar",
+      "data": [10, 25, 15, 30, 20],
+      "labels": ["Q1", "Q2", "Q3", "Q4", "Q5"],
+      "title": "Sample Bar Chart"
+    }
+  ]
+}
