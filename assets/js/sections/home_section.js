@@ -114,11 +114,14 @@ const HomeSection = {
             }
         }
         
-        // Create hierarchical TOC component using ComponentLibrary
+        // Create hierarchical TOC component using ComponentLibrary with dependencies
         const tocComponent = new ComponentLibrary.HierarchicalTOC({
             sections: this.mainSections,
             onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
             onSubsectionClick: (path) => this.handleSubsectionClick(path)
+        }, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
         });
         
         this.componentInstances.push(tocComponent);
@@ -187,11 +190,14 @@ const HomeSection = {
         // Destroy old TOC component
         ComponentLibrary.destroyTracked(this.componentInstances);
         
-        // Create new TOC component with updated sections
+        // Create new TOC component with updated sections and dependencies
         const tocComponent = new ComponentLibrary.HierarchicalTOC({
             sections: this.mainSections,
             onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
             onSubsectionClick: (path) => this.handleSubsectionClick(path)
+        }, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
         });
         
         this.componentInstances.push(tocComponent);

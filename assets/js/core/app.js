@@ -1,132 +1,26 @@
 /**
- * SiteBoy App - Complete Page Building System
+ * SiteBoy App - Clean Page Building System
  * 
- * COMPLETE PAGE BUILDING SYSTEM:
- * - Mathematical Foundation (F=12px layout calculations)
- * - Resize Manager (centralized resize handling)
- * - Block Renderer (JSON blocks → components)
- * - JSON loading and content management
- * - Page structure creation and coordination
- * - Router integration
+ * FOCUSED RESPONSIBILITIES:
+ * - Page structure creation and management
+ * - JSON content loading and validation  
+ * - Component integration and lifecycle
+ * - Router integration for content rendering
  * 
- * @version 3.0.0 - Complete Page Building System
- * @dependencies ['ComponentLibrary', 'Router'] - External dependencies only
+ * @version 3.0.0 - Simplified Architecture
+ * @dependencies ['ComponentLibrary', 'Router', './config.js'] 
  */
 
-// =================================================================
-// MATHEMATICAL FOUNDATION - F=12px Layout System
-// =================================================================
-
-const MathematicalFoundation = {
-    version: '2.0.0',
-    F: 12,
-    tokens: {
-        headerH: 'calc(var(--F) * 2)',
-        subheaderH: 'calc(var(--F) * 2)',
-        footerH: 'calc(var(--F) * 2)',
-        bodyMinH_withSub: 'calc(100vh - var(--F) * 8)',
-        bodyMinH_noSub: 'calc(100vh - var(--F) * 6)',
-        gutter: 'var(--F)',
-        pad: 'var(--F)',
-        indent: 'calc(var(--F) * 2)',
-        scrollbarWidth: 'calc(var(--F) + 1px)',
-        scrollbarOffset: 'calc(var(--F) * 1.5)',
-        scrollbarThumbMinH: 'calc(var(--F) * 2)',
-        dropdownMaxH: 'calc(var(--F) * 25)',
-    },
-    minCols: 1, maxCols: 6, aspectMultiplier: 3.982, aspectOffset: 1.088,
-    targetMargin: 48, mobileMargin: 12,
-    
-    initializeCSSVars() {
-        const root = document.documentElement;
-        root.style.setProperty('--F', `${this.F}px`);
-        root.style.setProperty('--header-height', `${this.F * 2}px`);
-        root.style.setProperty('--target-margin', `${this.targetMargin}px`);
-        root.style.setProperty('--mobile-margin', `${this.mobileMargin}px`);
-        console.log('✅ MathematicalFoundation: CSS variables initialized');
-    },
-    computeColumns(width, height) {
-        const aspect = width / height;
-        return Math.max(this.minCols, Math.min(this.maxCols, 
-            Math.round(this.aspectMultiplier * aspect - this.aspectOffset)));
-    },
-    calculateGridGeometry(viewportWidth, cols, gap, margin) {
-        const usableWidth = viewportWidth - 2 * margin;
-        const maxBoxSize = Math.floor((usableWidth - (cols - 1) * gap) / cols);
-        const gridWidth = maxBoxSize * cols + (cols - 1) * gap;
-        const leftover = viewportWidth - gridWidth;
-        return { boxSize: maxBoxSize, gridWidth, marginLeft: Math.floor(leftover / 2), marginRight: leftover - Math.floor(leftover / 2) };
-    },
-    calculateComponentDimensions(type) {
-        const base = { width: '100%', height: this.tokens.headerH, minHeight: this.tokens.headerH };
-        switch (type) {
-            case 'button': return { ...base, width: 'calc(var(--F) * 8)', height: this.tokens.headerH };
-            case 'dropdown': return { ...base, maxHeight: this.tokens.dropdownMaxH };
-            case 'grid': return { width: '100%', minHeight: 'calc(var(--F) * 4)' };
-            case 'canvas': return { width: '100%', height: 'calc(var(--F) * 20)', maxWidth: 'calc(var(--F) * 50)' };
-            case 'markdown': return { width: '100%', minHeight: this.tokens.bodyMinH_noSub };
-            case 'subheader': return { width: '100%', height: this.tokens.subheaderH };
-            case 'header': case 'footer': return { width: '100%', height: this.tokens.headerH };
-            default: return base;
-        }
-    },
-    applyContainerVars(element, options = {}) {
-        if (!element) return;
-        const { withSubheader = false } = options;
-        const layout = this.computeLayout();
-        element.style.setProperty('--comp-w', `${layout.gridWidth}px`);
-        element.style.setProperty('--comp-h', `${layout.headerHeight}px`);
-        element.style.setProperty('--comp-min-h', withSubheader ? this.tokens.bodyMinH_withSub : this.tokens.bodyMinH_noSub);
-        element.style.setProperty('--top-offset', withSubheader ? 
-            `calc(var(--target-margin) + var(--header-height) + var(--header-height))` : 
-            `calc(var(--target-margin) + var(--header-height))`);
-        element.style.setProperty('--left-offset', `${layout.marginLeft}px`);
-        element.style.setProperty('--grid-width', `${layout.gridWidth}px`);
-    },
-    computeLayout(width = window.innerWidth, height = window.innerHeight) {
-        // H-based Layout Guide: Simple viewport-based detection
-        const H = this.F * 2; // Header height = 24px
-        const isDesktop = width > 768; // Simple breakpoint for desktop
-        
-        if (isDesktop) {
-            // Desktop: margin = H per edge, content width = window - 2H
-            const contentWidth = width - (2 * H);
-            const marginLeft = H;
-            
-            return {
-                isDesktop: true,
-                marginLeft: marginLeft,
-                gridWidth: contentWidth,
-                headerHeight: H,
-                contentMinHeight: height - (3 * H), // Basic fallback
-                // Legacy grid properties for compatibility
-                cols: this.computeColumns(width, height),
-                boxSize: Math.floor(contentWidth / 4), // Simple approximation
-                marginRight: marginLeft
-            };
-        } else {
-            // Mobile: full width
-            return {
-                isDesktop: false,
-                marginLeft: 0,
-                gridWidth: width,
-                headerHeight: H,
-                contentMinHeight: height - (2 * H), // Basic fallback
-                // Legacy grid properties for compatibility  
-                cols: 1,
-                boxSize: width,
-                marginRight: 0
-            };
-        }
-    }
-};
+import { Config, LayoutCalculator, ComponentCalculator } from './config.js';
 
 // =================================================================
-// RESIZE MANAGER - Centralized Resize Handling
+// UTILITY MANAGERS - Simple, focused responsibilities
 // =================================================================
 
 const ResizeManager = {
-    version: '1.0.0', handlers: new Map(), isInitialized: false, tokenCounter: 0,
+    handlers: new Map(),
+    tokenCounter: 0,
+    
     init() {
         if (this.isInitialized) return;
         window.addEventListener('resize', () => {
@@ -136,31 +30,35 @@ const ResizeManager = {
         this.isInitialized = true;
         console.log('🔄 ResizeManager initialized');
     },
+    
     subscribe(handler) {
         this.init();
         const token = `resize_${++this.tokenCounter}`;
         this.handlers.set(token, handler);
         return token;
     },
-    unsubscribe(token) { if (this.handlers.has(token)) this.handlers.delete(token); },
+    
+    unsubscribe(token) {
+        if (this.handlers.has(token)) this.handlers.delete(token);
+    },
+    
     executeAllHandlers() {
         const evt = { width: window.innerWidth, height: window.innerHeight };
         this.handlers.forEach((handler, token) => {
-            try { handler(evt); } catch (error) { console.error(`ResizeManager error for ${token}:`, error); }
+            try { handler(evt); } 
+            catch (error) { console.error(`ResizeManager error for ${token}:`, error); }
         });
     }
 };
 
-// =================================================================
-// BLOCK RENDERER - JSON Blocks to Components
-// =================================================================
-
 const BlockRenderer = {
-    version: '1.0.0', allowedBlockTypes: ['markdown', 'media', 'graph', 'custom'],
+    allowedBlockTypes: ['markdown', 'media', 'graph', 'custom'],
+    
     renderBlock(block, tracker = []) {
         if (!block?.type || !this.allowedBlockTypes.includes(block.type)) {
             return this.renderErrorBlock(`Invalid block type: ${block?.type}`, tracker);
         }
+        
         try {
             switch (block.type) {
                 case 'markdown': return this.renderMarkdownBlock(block, tracker);
@@ -173,50 +71,92 @@ const BlockRenderer = {
             return this.renderErrorBlock(`Error rendering ${block.type}: ${error.message}`, tracker);
         }
     },
+    
     renderMarkdownBlock(block, tracker) {
-        const component = new ComponentLibrary.MarkdownBody({ markdownText: block.content || '*No content*' });
-        tracker.push(component); return component.render();
+        const component = new ComponentLibrary.MarkdownBody({ 
+            markdownText: block.content || '*No content*' 
+        }, { MF: LayoutCalculator, Resize: ResizeManager });
+        tracker.push(component);
+        return component.render();
     },
+    
     renderMediaBlock(block, tracker) {
         const { mediaType, src, caption, size = 'M' } = block;
         if (!mediaType || !src) return this.renderErrorBlock('Media block missing fields', tracker);
+        
         let component;
+        const deps = { MF: LayoutCalculator, Resize: ResizeManager };
+        
         switch (mediaType.toLowerCase()) {
-            case 'image': component = new ComponentLibrary.Image({ src, caption, size: size.toLowerCase() }); break;
-            case 'video': component = new ComponentLibrary.Video({ src, caption, size: size.toLowerCase(), controls: true }); break;
-            case 'audio': component = new ComponentLibrary.Audio({ src, caption, controls: true }); break;
-            default: return this.renderErrorBlock(`Unknown media type: ${mediaType}`, tracker);
+            case 'image': 
+                component = new ComponentLibrary.Image({ src, caption, size: size.toLowerCase() }, deps); 
+                break;
+            case 'video': 
+                component = new ComponentLibrary.Video({ src, caption, size: size.toLowerCase(), controls: true }, deps); 
+                break;
+            case 'audio': 
+                component = new ComponentLibrary.Audio({ src, caption, controls: true }, deps); 
+                break;
+            default: 
+                return this.renderErrorBlock(`Unknown media type: ${mediaType}`, tracker);
         }
-        tracker.push(component); return component.render();
+        
+        tracker.push(component);
+        return component.render();
     },
+    
     renderGraphBlock(block, tracker) {
         const { graphType, data, labels = [], title, size = 'm' } = block;
         if (!graphType || !Array.isArray(data)) return this.renderErrorBlock('Graph block missing fields', tracker);
+        
         let component;
+        const deps = { MF: LayoutCalculator, Resize: ResizeManager };
+        
         switch (graphType.toLowerCase()) {
-            case 'bar': component = new ComponentLibrary.BarGraph({ data, labels, size, title }); break;
-            case 'line': component = new ComponentLibrary.LineGraph({ data, labels, size, title }); break;
-            case 'pie': component = new ComponentLibrary.PieGraph({ data, labels, size, title }); break;
-            default: return this.renderErrorBlock(`Unknown graph type: ${graphType}`, tracker);
+            case 'bar': 
+                component = new ComponentLibrary.BarGraph({ data, labels, size, title }, deps); 
+                break;
+            case 'line': 
+                component = new ComponentLibrary.LineGraph({ data, labels, size, title }, deps); 
+                break;
+            case 'pie': 
+                component = new ComponentLibrary.PieGraph({ data, labels, size, title }, deps); 
+                break;
+            default: 
+                return this.renderErrorBlock(`Unknown graph type: ${graphType}`, tracker);
         }
-        tracker.push(component); return component.render();
+        
+        tracker.push(component);
+        return component.render();
     },
+    
     renderCustomBlock(block, tracker) {
         const { component: compName, vars = {} } = block;
         if (!compName || !ComponentLibrary[compName]) {
             return this.renderErrorBlock(`Component ${compName} not found`, tracker);
         }
+        
         try {
-            const component = new ComponentLibrary[compName](vars);
-            tracker.push(component); return component.render();
+            const component = new ComponentLibrary[compName](vars, { 
+                MF: LayoutCalculator, 
+                Resize: ResizeManager 
+            });
+            tracker.push(component);
+            return component.render();
         } catch (error) {
             return this.renderErrorBlock(`Error creating ${compName}: ${error.message}`, tracker);
         }
     },
+    
     renderErrorBlock(errorMessage, tracker) {
-        const component = new ComponentLibrary.Paragraph({ content: `⚠️ ${errorMessage}` });
-        component.addClass('block-error'); tracker.push(component); return component.render();
+        const component = new ComponentLibrary.Paragraph({ content: `⚠️ ${errorMessage}` }, {
+            MF: LayoutCalculator, Resize: ResizeManager
+        });
+        component.addClass('block-error');
+        tracker.push(component);
+        return component.render();
     },
+    
     renderBlocks(blocks, container, tracker = []) {
         if (!Array.isArray(blocks)) return;
         blocks.forEach(block => {
@@ -226,8 +166,12 @@ const BlockRenderer = {
     }
 };
 
+// =================================================================
+// SITEBOY APP - Clean Page Building System
+// =================================================================
+
 const SiteBoyApp = {
-    version: '2.0.0',
+    version: '3.0.0',
     
     // Application state
     state: {
@@ -241,9 +185,8 @@ const SiteBoyApp = {
     pageContainer: null,
     contentContainer: null,
     
-    // JSON content cache and management
+    // JSON content cache
     jsonCache: new Map(),
-    sectionPages: new Map(),
     
     /**
      * Initialize SiteBoy application - SINGLE ENTRY POINT
@@ -255,19 +198,22 @@ const SiteBoyApp = {
         }
         
         console.log(`🚀 Initializing SiteBoy App v${this.version}...`);
-        console.log('📋 Unified Page Creation & JSON System');
+        console.log('📋 Clean Page Building System');
         
         try {
+            // Initialize CSS variables and core utilities first
+            this.initializeCoreUtilities();
+            
             // Validate dependencies
             if (!this.checkDependencies()) {
                 throw new Error('Missing required dependencies');
             }
             
-            // Create page structure with proper layout calculations
-            this.createUnifiedPageStructure();
+            // Create page structure
+            this.createPageStructure();
             
-            // Initialize router with content container
-            Router.init(this.contentContainer);
+            // Initialize integrated routing
+            this.initializeRouting();
             
             // Initialize global features
             this.initializeGlobalFeatures();
@@ -275,7 +221,7 @@ const SiteBoyApp = {
             this.state.isInitialized = true;
             
             console.log('✅ SiteBoy App initialized successfully');
-            console.log(`📊 F=12px Mathematical Precision Layout Active`);
+            console.log(`📊 F=${Config.F}px Mathematical Layout Active`);
             console.log(`📄 JSON-Driven Content System Ready`);
             
             return true;
@@ -288,10 +234,30 @@ const SiteBoyApp = {
     },
     
     /**
+     * Initialize core utilities (CSS vars, resize handling)
+     */
+    initializeCoreUtilities() {
+        LayoutCalculator.initializeCSSVars();
+        ResizeManager.init();
+        
+        // Subscribe to resize events for page rebuilding
+        this.resizeToken = ResizeManager.subscribe((evt) => {
+            this.handlePageResize(evt);
+        });
+        
+        // Make utilities globally available for legacy compatibility
+        window.MathematicalFoundation = LayoutCalculator;
+        window.ResizeManager = ResizeManager;
+        window.BlockRenderer = BlockRenderer;
+        
+        console.log('✅ Core utilities initialized');
+    },
+    
+    /**
      * Check required dependencies  
      */
     checkDependencies() {
-        const required = ['ComponentLibrary', 'Router'];
+        const required = ['ComponentLibrary'];
         
         for (const dep of required) {
             if (!window[dep]) {
@@ -300,24 +266,15 @@ const SiteBoyApp = {
             }
         }
         
-        // Initialize internal utilities
-        MathematicalFoundation.initializeCSSVars();
-        ResizeManager.init();
-        
-        // Make utilities globally available for legacy compatibility
-        window.MathematicalFoundation = MathematicalFoundation;
-        window.ResizeManager = ResizeManager;
-        window.BlockRenderer = BlockRenderer;
-        
-        console.log('✅ All dependencies available and internal utilities initialized');
+        console.log('✅ All dependencies available');
         return true;
     },
     
     /**
-     * Create unified page structure - simplified (layout handled by PageContainer)
+     * Create unified page structure
      */
-    createUnifiedPageStructure() {
-        console.log('🏗️ Creating unified page structure...');
+    createPageStructure() {
+        console.log('🏗️ Creating page structure...');
         
         // Get app root
         const appRoot = document.getElementById('app-root');
@@ -330,16 +287,16 @@ const SiteBoyApp = {
         
         // Create navigation items for header
         const navigationItems = [
-            { title: 'HOME', onClick: () => Router.navigateToSection('home') },
-            { title: 'BLOG', onClick: () => Router.navigateToSection('blog') },
-            { title: 'ART', onClick: () => Router.navigateToSection('art') },
-            { title: 'TOOLS', onClick: () => Router.navigateToSection('tools') },
-            { title: 'PROJECTS', onClick: () => Router.navigateToSection('projects') }
+            { title: 'HOME', onClick: () => this.navigateToSection('home') },
+            { title: 'BLOG', onClick: () => this.navigateToSection('blog') },
+            { title: 'ART', onClick: () => this.navigateToSection('art') },
+            { title: 'TOOLS', onClick: () => this.navigateToSection('tools') },
+            { title: 'PROJECTS', onClick: () => this.navigateToSection('projects') }
         ];
         
-        // Create page container with internal dependencies
+        // Create page container with dependencies
         const deps = {
-            MF: MathematicalFoundation,
+            MF: LayoutCalculator,
             Resize: ResizeManager
         };
         
@@ -357,19 +314,17 @@ const SiteBoyApp = {
         // Render and inject page structure
         appRoot.appendChild(pageElement);
         
-        // Get content container reference for router
+        // Get content container reference
         this.contentContainer = this.pageContainer.getContentContainer();
         
-        // Store references globally for sections to access
-        window.SiteBoyApp = this;
+        // Store references globally for sections to access  
         window.Subheader = this.pageContainer.subheaderComponent;
         
-        console.log('✅ Unified page structure created (layout handled by PageContainer)');
+        console.log('✅ Page structure created');
     },
     
     /**
-     * Set subheader state (delegated to PageContainer)
-     * @param {boolean} hasSubheader - Whether subheader should be shown
+     * Set subheader state
      */
     setSubheaderState(hasSubheader) {
         this.state.hasSubheader = hasSubheader;
@@ -378,18 +333,263 @@ const SiteBoyApp = {
             this.pageContainer.setSubheaderState(hasSubheader);
         }
         
-        console.log(`📐 App: Subheader state delegated to PageContainer: ${hasSubheader ? 'with' : 'no'} subheader`);
+        console.log(`📐 Subheader state: ${hasSubheader ? 'with' : 'no'} subheader`);
     },
     
     // =================================================================
-    // JSON LOADING & CONTENT MANAGEMENT (Integrated from json-loader.js)
+    // INTEGRATED ROUTING - App tells what to build based on URL
+    // =================================================================
+    
+    /**
+     * Initialize integrated routing system
+     */
+    initializeRouting() {
+        console.log('🧭 Initializing integrated routing...');
+        
+        // Available sections
+        this.sections = {
+            'home': 'HomeSection',
+            'blog': 'BlogSection',
+            'art': 'ArtSection', 
+            'tools': 'ToolsSection',
+            'projects': 'ProjectsSection'
+        };
+        
+        // Listen for hash changes
+        window.addEventListener('hashchange', () => this.handleRouteChange());
+        
+        // Handle initial route
+        this.handleRouteChange();
+        
+        // Make navigation available globally for backward compatibility
+        window.Router = {
+            navigateToSection: (section, subsection = null) => this.navigateToSection(section, subsection),
+            getCurrentRoute: () => this.getCurrentRoute()
+        };
+        
+        console.log('✅ Integrated routing initialized');
+    },
+    
+    /**
+     * Parse current URL hash into section and subsection
+     */
+    parseRoute() {
+        const hash = window.location.hash.slice(1); // Remove #
+        
+        if (!hash || hash === 'home') {
+            return { section: 'home', subsection: null };
+        }
+        
+        const parts = hash.split('/');
+        const section = parts[0] || 'home';
+        const subsection = parts.length > 1 ? parts.slice(1).join('/') : null;
+        
+        return { section, subsection };
+    },
+    
+    /**
+     * Handle route changes - app decides what to build
+     */
+    handleRouteChange() {
+        const route = this.parseRoute();
+        const { section, subsection } = route;
+        
+        console.log(`🧭 Route change: ${section}${subsection ? '/' + subsection : ''}`);
+        
+        // Update app state
+        this.state.currentSection = section;
+        
+        // App tells what to build based on the route
+        this.buildPageForRoute(section, subsection);
+    },
+    
+    /**
+     * Build page content for the given route
+     */
+    buildPageForRoute(sectionName, subsectionName) {
+        if (!this.contentContainer) {
+            console.error('❌ No content container available');
+            return;
+        }
+        
+        // Clear content container
+        this.contentContainer.innerHTML = '';
+        
+        try {
+            // Get section class
+            const sectionClass = this.sections[sectionName];
+            
+            if (!sectionClass) {
+                console.error(`❌ Unknown section: ${sectionName}`);
+                this.buildErrorPage(`Section not found: ${sectionName}`);
+                return;
+            }
+            
+            // Check if section module exists
+            const SectionModule = window[sectionClass];
+            if (!SectionModule) {
+                console.error(`❌ Section module not loaded: ${sectionClass}`);
+                this.buildErrorPage(`Section module not available: ${sectionClass}`);
+                return;
+            }
+            
+            // App coordinates the section building
+            if (typeof SectionModule.handleRoute === 'function') {
+                SectionModule.handleRoute(subsectionName, this.contentContainer, {
+                    navigateToSection: (section, subsection = null) => this.navigateToSection(section, subsection),
+                    getCurrentRoute: () => this.getCurrentRoute()
+                });
+            } else if (typeof SectionModule.init === 'function') {
+                SectionModule.init();
+                if (typeof SectionModule.render === 'function') {
+                    const sectionContent = SectionModule.render(subsectionName);
+                    this.contentContainer.appendChild(sectionContent);
+                }
+            } else {
+                console.error(`❌ Section ${sectionClass} missing handleRoute or init method`);
+                this.buildErrorPage(`Section ${sectionName} not properly implemented`);
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error building page for ${sectionName}:`, error);
+            this.buildErrorPage(`Failed to load ${sectionName}: ${error.message}`);
+        }
+    },
+    
+    /**
+     * Navigate to section (programmatic navigation)
+     */
+    navigateToSection(section, subsection = null) {
+        const hash = `#${section}${subsection ? '/' + subsection : ''}`;
+        
+        if (window.location.hash !== hash) {
+            window.location.hash = hash;
+            // hashchange event will trigger handleRouteChange
+        }
+    },
+    
+    /**
+     * Get current route info
+     */
+    getCurrentRoute() {
+        const route = this.parseRoute();
+        return {
+            section: route.section,
+            subsection: route.subsection
+        };
+    },
+    
+    /**
+     * Handle page resize - rebuild current section while preserving scroll position
+     */
+    handlePageResize(evt) {
+        if (!this.state.isInitialized || !this.state.currentSection) {
+            return;
+        }
+        
+        console.log(`🔄 Page resize detected (${evt.width}x${evt.height}) - rebuilding current section`);
+        
+        // Store current scroll position
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Get current route
+        const route = this.parseRoute();
+        
+        // Rebuild the current page for the new dimensions
+        this.buildPageForRoute(route.section, route.subsection);
+        
+        // Restore scroll position after a brief delay to allow rendering
+        requestAnimationFrame(() => {
+            window.scrollTo(0, scrollTop);
+            console.log(`✅ Section rebuilt and scroll position restored (${scrollTop}px)`);
+        });
+    },
+    
+    /**
+     * Build error page using ComponentLibrary
+     */
+    buildErrorPage(message) {
+        console.error(`❌ Building error page: ${message}`);
+        
+        // Use ComponentLibrary if available
+        if (window.ComponentLibrary) {
+            try {
+                const errorHeading = new ComponentLibrary.Heading({
+                    level: 1,
+                    content: 'SYSTEM ERROR'
+                });
+                
+                const errorMessage = new ComponentLibrary.Paragraph({
+                    content: message
+                });
+                
+                const reloadButton = new ComponentLibrary.Button({
+                    text: 'RELOAD APPLICATION',
+                    onClick: () => window.location.reload()
+                });
+                
+                this.contentContainer.appendChild(errorHeading.render());
+                this.contentContainer.appendChild(errorMessage.render());
+                this.contentContainer.appendChild(reloadButton.render());
+                
+                return;
+            } catch (componentError) {
+                console.error('Failed to use ComponentLibrary for error page:', componentError);
+            }
+        }
+        
+        // Fallback to basic DOM creation
+        const errorContainer = document.createElement('div');
+        errorContainer.style.cssText = `
+            padding: 48px;
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+        `;
+        
+        const errorTitle = document.createElement('h1');
+        errorTitle.textContent = 'SYSTEM ERROR';
+        errorTitle.style.cssText = `
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: var(--vga-red);
+            text-transform: uppercase;
+        `;
+        
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = message;
+        errorMsg.style.cssText = `
+            color: var(--c-border);
+            margin-bottom: 24px;
+        `;
+        
+        const reloadButton = document.createElement('button');
+        reloadButton.textContent = 'RELOAD APPLICATION';
+        reloadButton.style.cssText = `
+            background: var(--c-border);
+            color: var(--c-bg);
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        `;
+        reloadButton.onclick = () => window.location.reload();
+        
+        errorContainer.appendChild(errorTitle);
+        errorContainer.appendChild(errorMsg);
+        errorContainer.appendChild(reloadButton);
+        
+        this.contentContainer.appendChild(errorContainer);
+    },
+    
+    // =================================================================
+    // JSON LOADING & CONTENT MANAGEMENT
     // =================================================================
     
     /**
      * Load page JSON from section directory
-     * @param {string} sectionName - Section name (blog, art, tools, projects)
-     * @param {string} pageName - Page slug/filename without .json
-     * @returns {Promise<Object>} - Parsed JSON page data
      */
     async loadPageJSON(sectionName, pageName) {
         const cacheKey = `${sectionName}/${pageName}`;
@@ -422,17 +622,12 @@ const SiteBoyApp = {
             
         } catch (error) {
             console.error(`❌ Failed to load JSON ${cacheKey}:`, error);
-            
-            // Return fallback JSON structure
             return this.createFallbackJSON(sectionName, pageName, error.message);
         }
     },
     
     /**
-     * Validate JSON schema compliance per Page Build Guide
-     * @param {Object} jsonData - Parsed JSON data
-     * @param {string} sectionName - Section name for context
-     * @param {string} pageName - Page name for context
+     * Validate JSON schema compliance
      */
     validatePageJSON(jsonData, sectionName, pageName) {
         const context = `${sectionName}/${pageName}`;
@@ -445,16 +640,6 @@ const SiteBoyApp = {
             }
         }
         
-        // Validate meta structure
-        if (jsonData.meta) {
-            const requiredMeta = ['title', 'slug', 'section', 'template'];
-            for (const key of requiredMeta) {
-                if (!jsonData.meta.hasOwnProperty(key)) {
-                    console.warn(`⚠️ Missing meta.${key} in ${context}`);
-                }
-            }
-        }
-        
         // Validate blocks array and types
         if (jsonData.blocks && Array.isArray(jsonData.blocks)) {
             const allowedBlockTypes = ['markdown', 'media', 'graph', 'custom'];
@@ -463,7 +648,7 @@ const SiteBoyApp = {
                 if (!block.type) {
                     console.warn(`⚠️ Block ${index} missing type in ${context}`);
                 } else if (!allowedBlockTypes.includes(block.type)) {
-                    console.warn(`⚠️ Invalid block type '${block.type}' in ${context}. Allowed: ${allowedBlockTypes.join(', ')}`);
+                    console.warn(`⚠️ Invalid block type '${block.type}' in ${context}`);
                 }
             });
         }
@@ -473,10 +658,6 @@ const SiteBoyApp = {
     
     /**
      * Create fallback JSON when loading fails
-     * @param {string} sectionName - Section name
-     * @param {string} pageName - Page name  
-     * @param {string} errorMessage - Error that occurred
-     * @returns {Object} - Fallback JSON structure
      */
     createFallbackJSON(sectionName, pageName, errorMessage) {
         return {
@@ -504,99 +685,51 @@ const SiteBoyApp = {
     },
     
     // =================================================================
-    // APPLICATION FEATURES & LIFECYCLE
+    // SECTION MANAGEMENT & DISCOVERY
     // =================================================================
     
     /**
-     * Initialize global application features
+     * Get all pages in a section (simplified)
+     */
+    async getSectionPages(sectionName) {
+        try {
+            // For now, return known pages - could be enhanced to auto-discover
+            const knownPages = {
+                blog: ['example', 'getting-started', 'framework-design'],
+                art: ['gallery', 'portfolio'],
+                tools: ['ui-test-tool', 'performance'],
+                projects: ['siteboy', 'portfolio']
+            };
+            
+            const pages = knownPages[sectionName] || [];
+            return pages.map(slug => ({
+                title: slug.replace(/-/g, ' ').toUpperCase(),
+                slug: slug
+            }));
+            
+        } catch (error) {
+            console.error(`❌ Failed to get section pages for ${sectionName}:`, error);
+            return [];
+        }
+    },
+    
+    // =================================================================
+    // GLOBAL FEATURES
+    // =================================================================
+    
+    /**
+     * Initialize minimal global features
      */
     initializeGlobalFeatures() {
-        console.log('⚙️ Initializing global features...');
-        
-        // Initialize theme system
-        this.initializeTheme();
-        
-        // Add global keyboard shortcuts
-        this.initializeKeyboardShortcuts();
-        
-        // Add performance monitoring
-        this.initializePerformanceMonitoring();
-        
-        // Add resize handling
-        this.initializeResizeHandling();
-        
-        console.log('✅ Global features initialized');
-    },
-    
-    /**
-     * Initialize theme system
-     */
-    initializeTheme() {
-        // Theme is handled by PageHeader component and CSS
-        this.state.currentTheme = document.documentElement.classList.contains('inverted') ? 'inverted' : 'normal';
-        console.log(`🎨 Theme initialized: ${this.state.currentTheme}`);
-    },
-    
-    /**
-     * Initialize keyboard shortcuts
-     */
-    initializeKeyboardShortcuts() {
+        // Theme toggle shortcut
         document.addEventListener('keydown', (event) => {
-            // Ctrl+/ or Cmd+/ - Toggle theme
             if ((event.ctrlKey || event.metaKey) && event.key === '/') {
                 event.preventDefault();
                 this.toggleTheme();
             }
-            
-            // ESC - Close any open dropdowns/menus
-            if (event.key === 'Escape') {
-                // Close dropdowns logic would go here
-                console.log('🔧 ESC pressed - closing dropdowns');
-            }
         });
         
-        console.log('⌨️ Keyboard shortcuts initialized');
-    },
-    
-    /**
-     * Initialize performance monitoring
-     */
-    initializePerformanceMonitoring() {
-        // Monitor component render times
-        this.performance = {
-            startTime: performance.now(),
-            componentRenders: 0,
-            jsonLoads: 0
-        };
-        
-        console.log('📊 Performance monitoring initialized');
-    },
-    
-    /**
-     * Initialize resize handling with layout recalculation
-     */
-    initializeResizeHandling() {
-        let resizeTimeout;
-        
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                console.log('📐 Window resized - recalculating layout');
-                this.recalculateLayout();
-            }, 150); // Debounced resize
-        });
-        
-        console.log('📐 Resize handling initialized');
-    },
-    
-    /**
-     * Recalculate layout on window resize (delegated to PageContainer)
-     */
-    recalculateLayout() {
-        if (!this.state.isInitialized || !this.pageContainer) return;
-        
-        // PageContainer handles its own resize and layout recalculation
-        console.log('✅ App: Layout recalculation delegated to PageContainer');
+        console.log('✅ Global features initialized');
     },
     
     /**
@@ -637,25 +770,16 @@ const SiteBoyApp = {
     },
     
     /**
-     * Get application info
-     */
-    getInfo() {
-        return {
-            version: this.version,
-            initialized: this.state.isInitialized,
-            theme: this.state.currentTheme,
-            currentSection: this.state.currentSection,
-            hasSubheader: this.state.hasSubheader,
-            performance: this.performance,
-            cacheSize: this.jsonCache.size
-        };
-    },
-    
-    /**
      * Cleanup application
      */
     destroy() {
         console.log('🧹 Destroying SiteBoy App...');
+        
+        // Unsubscribe from resize events
+        if (this.resizeToken) {
+            ResizeManager.unsubscribe(this.resizeToken);
+            this.resizeToken = null;
+        }
         
         if (this.pageContainer) {
             this.pageContainer.destroy();
@@ -664,7 +788,6 @@ const SiteBoyApp = {
         
         this.contentContainer = null;
         this.jsonCache.clear();
-        this.sectionPages.clear();
         this.state.isInitialized = false;
         
         console.log('✅ SiteBoy App destroyed');
@@ -672,8 +795,11 @@ const SiteBoyApp = {
 };
 
 // =================================================================
-// AUTO-INITIALIZATION (Single Entry Point)
+// GLOBAL REGISTRATION & AUTO-INITIALIZATION
 // =================================================================
+
+// Make SiteBoyApp globally available
+window.SiteBoyApp = SiteBoyApp;
 
 // Initialize app when DOM is ready
 if (document.readyState === 'loading') {
@@ -685,7 +811,4 @@ if (document.readyState === 'loading') {
     SiteBoyApp.init();
 }
 
-// Global registration
-window.SiteBoyApp = SiteBoyApp;
-
-console.log(`📱 SiteBoy App v${SiteBoyApp.version} - Unified Page Creation & JSON System Ready`);
+export default SiteBoyApp;

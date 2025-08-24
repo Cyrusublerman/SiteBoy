@@ -45,53 +45,111 @@ const ToolsSection = {
     },
     
     /**
-     * Render tools index using ComponentLibrary
+     * Render tools index using ComponentLibrary HierarchicalTOC
      */
     renderToolsIndex() {
-        console.log('🔧 Rendering tools index with canonical components');
+        console.log('🔧 Rendering tools index with HierarchicalTOC component');
         
-        // Create title
-        const title = new ComponentLibrary.Heading({
-            level: 1,
-            content: 'DEVELOPMENT TOOLS'
-        });
-        this.componentInstances.push(title);
-        this.currentContainer.appendChild(title.render());
+        // Clear container and add TOC container class for proper CSS styling
+        this.currentContainer.innerHTML = '';
+        this.currentContainer.classList.add('toc-container');
         
-        // Create description
-        const description = new ComponentLibrary.Paragraph({
-            content: 'Interactive development and testing tools. Click on any tool to launch it.'
-        });
-        this.componentInstances.push(description);
-        this.currentContainer.appendChild(description.render());
+        // Apply proper body sizing for tools index (no subheader)
+        if (window.MathematicalFoundation) {
+            const contentContainer = this.currentContainer.closest('.content-container');
+            if (contentContainer) {
+                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
+                    withSubheader: false 
+                });
+                console.log('✅ Applied no-subheader body sizing for tools index');
+            }
+        }
         
-        // Create tools grid using canonical Grid component
-        const toolItems = [
-            { text: 'UI TEST TOOL', id: 'ui-test' },
-            { text: 'COLOR GRID', id: 'color-grid' },
-            { text: 'CANVAS TEST', id: 'canvas-test' },
-            { text: 'TYPOGRAPHY', id: 'typography' },
-            { text: 'PIXEL TILER', id: 'pixel-tiler' },
-            { text: 'FONT ANALYSIS', id: 'font-analysis' },
-            { text: 'COLOR QUANTIZER', id: 'color-quantizer' },
-            { text: 'COMPONENT TEST', id: 'component-test' }
+        // Define tools sections structure matching home section pattern
+        const toolsSections = [
+            {
+                id: 'development',
+                title: 'DEVELOPMENT TOOLS',
+                description: 'Interactive development and testing utilities',
+                isExpandable: true,
+                isExpanded: true, // Start expanded for better UX
+                subsections: [
+                    { id: 'ui-test', title: 'UI Test Tool', path: '#tools/ui-test' },
+                    { id: 'component-test', title: 'Component Test', path: '#tools/component-test' },
+                    { id: 'canvas-test', title: 'Canvas Test', path: '#tools/canvas-test' }
+                ]
+            },
+            {
+                id: 'creative',
+                title: 'CREATIVE TOOLS',
+                description: 'Color, typography, and visual design utilities',
+                isExpandable: true,
+                isExpanded: true, // Start expanded for better UX
+                subsections: [
+                    { id: 'color-grid', title: 'VGA Color Grid', path: '#tools/color-grid' },
+                    { id: 'typography', title: 'Typography Tool', path: '#tools/typography' },
+                    { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' }
+                ]
+            },
+            {
+                id: 'analysis',
+                title: 'ANALYSIS TOOLS',
+                description: 'Font analysis and color quantization utilities',
+                isExpandable: true,
+                isExpanded: false, // Start collapsed
+                subsections: [
+                    { id: 'font-analysis', title: 'Font Analysis', path: '#tools/font-analysis' },
+                    { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' }
+                ]
+            }
         ];
         
-        const toolsGrid = new ComponentLibrary.Grid({
-            items: toolItems,
-            cols: 4,
-            onItemClick: (item, index) => {
-                // Use injected navigation callback instead of direct Router call
-                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-                    this.navigationCallbacks.navigateToSection('tools', item.id);
-                } else {
-                    console.warn('Navigation callback not available');
-                }
-            }
+        // Create hierarchical TOC component using ComponentLibrary with dependencies
+        const tocComponent = new ComponentLibrary.HierarchicalTOC({
+            sections: toolsSections,
+            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
+            onSubsectionClick: (path) => this.handleSubsectionClick(path)
+        }, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
         });
         
-        this.componentInstances.push(toolsGrid);
-        this.currentContainer.appendChild(toolsGrid.render());
+        this.componentInstances.push(tocComponent);
+        this.currentContainer.appendChild(tocComponent.render());
+        
+        console.log('✅ Tools index rendered with HierarchicalTOC component');
+    },
+    
+    /**
+     * Handle section click (expansion toggle)
+     * @param {string} sectionId - Section ID
+     */
+    handleSectionClick(sectionId) {
+        console.log(`🔧 Section clicked: ${sectionId}`);
+        // Find the TOC component and toggle the section
+        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.HierarchicalTOC);
+        if (tocComponent) {
+            tocComponent.toggleSection(sectionId);
+        }
+    },
+    
+    /**
+     * Handle subsection click (navigation)
+     * @param {string} path - Navigation path
+     */
+    handleSubsectionClick(path) {
+        console.log(`🔧 Subsection clicked: ${path}`);
+        
+        // Extract section and subsection from path (e.g., '#tools/ui-test')
+        const hashPath = path.replace('#', '');
+        const [section, subsection] = hashPath.split('/');
+        
+        // Use injected navigation callback
+        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+            this.navigationCallbacks.navigateToSection(section, subsection);
+        } else {
+            console.warn('Navigation callback not available');
+        }
     },
     
     /**

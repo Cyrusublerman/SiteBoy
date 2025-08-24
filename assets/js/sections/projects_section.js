@@ -12,14 +12,19 @@ const ProjectsSection = {
     version: '1.0.0',
     currentContainer: null,
     componentInstances: [],
+    navigationCallbacks: null,
     
     /**
      * Handle route changes for projects section
+     * @param {string|null} subsection - Subsection path
+     * @param {HTMLElement} container - Content container
+     * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
-    handleRoute(subsection, container) {
+    handleRoute(subsection, container, callbacks = {}) {
         console.log(`🚀 Projects Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
+        this.navigationCallbacks = callbacks;
         this.cleanup();
         
         // Hide subheader for index, show for specific projects
@@ -40,46 +45,111 @@ const ProjectsSection = {
     },
     
     /**
-     * Render projects index/portfolio
+     * Render projects index using ComponentLibrary HierarchicalTOC
      */
     renderProjectsIndex() {
-        console.log('🚀 Rendering projects index');
+        console.log('🚀 Rendering projects index with HierarchicalTOC component');
         
-        // Create projects grid
-        const projectItems = [
-            { text: 'SiteBoy Framework', id: 'siteboy' },
-            { text: 'Pixel Tiler', id: 'pixel-tiler' },
-            { text: 'Music Tools', id: 'music-tools' },
-            { text: 'Color Quantizer', id: 'color-quantizer' },
-            { text: 'Typography System', id: 'typography' },
-            { text: 'Component Library', id: 'component-lib' }
+        // Clear container and add TOC container class for proper CSS styling
+        this.currentContainer.innerHTML = '';
+        this.currentContainer.classList.add('toc-container');
+        
+        // Apply proper body sizing for projects index (no subheader)
+        if (window.MathematicalFoundation) {
+            const contentContainer = this.currentContainer.closest('.content-container');
+            if (contentContainer) {
+                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
+                    withSubheader: false 
+                });
+                console.log('✅ Applied no-subheader body sizing for projects index');
+            }
+        }
+        
+        // Define projects sections structure matching home section pattern
+        const projectsSections = [
+            {
+                id: 'frameworks',
+                title: 'FRAMEWORKS & LIBRARIES',
+                description: 'Core development frameworks and component systems',
+                isExpandable: true,
+                isExpanded: true, // Start expanded for better UX
+                subsections: [
+                    { id: 'siteboy', title: 'SiteBoy Framework', path: '#projects/siteboy' },
+                    { id: 'component-lib', title: 'Component Library', path: '#projects/component-lib' },
+                    { id: 'math-foundation', title: 'Mathematical Foundation', path: '#projects/math-foundation' }
+                ]
+            },
+            {
+                id: 'creative',
+                title: 'CREATIVE TOOLS',
+                description: 'Visual design and creative development tools',
+                isExpandable: true,
+                isExpanded: true, // Start expanded for better UX
+                subsections: [
+                    { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#projects/pixel-tiler' },
+                    { id: 'typography', title: 'Typography System', path: '#projects/typography' },
+                    { id: 'color-quantizer', title: 'Color Quantizer', path: '#projects/color-quantizer' }
+                ]
+            },
+            {
+                id: 'audio',
+                title: 'AUDIO & MUSIC',
+                description: 'Music theory tools and audio processing utilities',
+                isExpandable: true,
+                isExpanded: false, // Start collapsed
+                subsections: [
+                    { id: 'music-tools', title: 'Music Theory Tools', path: '#projects/music-tools' },
+                    { id: 'audio-processor', title: 'Audio Processor', path: '#projects/audio-processor' }
+                ]
+            }
         ];
         
-        const { container: gridContainer, component: gridComponent } = ComponentLibrary.grid(
-            projectItems,
-            {
-                cols: 3,
-                onItemClick: (item, index) => {
-                    Router.navigateToSection('projects', item.id);
-                }
-            }
-        );
+        // Create hierarchical TOC component using ComponentLibrary with dependencies
+        const tocComponent = new ComponentLibrary.HierarchicalTOC({
+            sections: projectsSections,
+            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
+            onSubsectionClick: (path) => this.handleSubsectionClick(path)
+        }, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
+        });
         
-        this.componentInstances.push(gridComponent);
+        this.componentInstances.push(tocComponent);
+        this.currentContainer.appendChild(tocComponent.render());
         
-        // Add title
-        const title = this.createElement('h1');
-        title.textContent = 'PROJECT PORTFOLIO';
-        title.style.marginBottom = '24px';
+        console.log('✅ Projects index rendered with HierarchicalTOC component');
+    },
+    
+    /**
+     * Handle section click (expansion toggle)
+     * @param {string} sectionId - Section ID
+     */
+    handleSectionClick(sectionId) {
+        console.log(`🚀 Section clicked: ${sectionId}`);
+        // Find the TOC component and toggle the section
+        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.HierarchicalTOC);
+        if (tocComponent) {
+            tocComponent.toggleSection(sectionId);
+        }
+    },
+    
+    /**
+     * Handle subsection click (navigation)
+     * @param {string} path - Navigation path
+     */
+    handleSubsectionClick(path) {
+        console.log(`🚀 Subsection clicked: ${path}`);
         
-        this.currentContainer.appendChild(title);
-        this.currentContainer.appendChild(gridContainer);
+        // Extract section and subsection from path (e.g., '#projects/siteboy')
+        const hashPath = path.replace('#', '');
+        const [section, subsection] = hashPath.split('/');
         
-        // Add description
-        const description = this.createElement('p');
-        description.innerHTML = 'Click on any project to view details, documentation, and demos. Project data will be loaded from JSON files as per the canonical structure.';
-        description.style.marginTop = '24px';
-        this.currentContainer.appendChild(description);
+        // Use injected navigation callback
+        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+            this.navigationCallbacks.navigateToSection(section, subsection);
+        } else {
+            console.warn('Navigation callback not available');
+        }
     },
     
     /**
@@ -175,13 +245,14 @@ const ProjectsSection = {
     cleanup() {
         if (this.currentContainer) {
             this.currentContainer.innerHTML = '';
+            // Remove layout classes
+            this.currentContainer.className = this.currentContainer.className
+                .replace(/toc-container|layout-\w+-\w+/g, '')
+                .trim();
         }
         
-        // Destroy tracked components
-        this.componentInstances.forEach(component => {
-            if (component.destroy) component.destroy();
-        });
-        this.componentInstances = [];
+        // Destroy tracked components using ComponentLibrary method
+        ComponentLibrary.destroyTracked(this.componentInstances);
     },
     
     /**

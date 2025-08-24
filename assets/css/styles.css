@@ -531,25 +531,57 @@ blockquote {
     position: absolute;
     left: var(--layout-margin);
     width: var(--layout-width);
-    /* Top and min-height controlled by body classes below */
+    top: var(--content-y-no-sub); /* Default to no subheader */
+    min-height: var(--content-min-h-no-sub);
     background: var(--c-bg);
     border: 1px solid var(--c-border);
     border-top: none;
     border-bottom: none;
     box-sizing: border-box;
     overflow-y: auto;
+    /* MOVED: All content padding handled here */
+    padding: calc(var(--f) * 4); /* 4F padding all around */
 }
 
-.content-body {
-    position: relative;
-    width: 100%;
-    background: var(--c-bg);
-    padding: var(--f);
+/* Content positioning with subheader */
+body.with-subheader .content-container {
+    top: var(--content-y-with-sub);
+    min-height: var(--content-min-h-with-sub);
 }
+
+/* Responsive padding for content container */
+@media (max-width: 768px) {
+    .content-container {
+        padding: var(--f); /* 1F padding on mobile */
+    }
+}
+
+/* Page curtains - top and bottom margins */
+.page-curtain-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--header-height);
+    background: var(--c-bg);
+    z-index: 200;
+}
+
+.page-curtain-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--header-height);
+    background: var(--c-bg);
+    z-index: 200;
+}
+
+/* content-body class no longer needed - content-container handles padding */
 
 .page-footer {
     position: fixed;
-    top: var(--footer-y);
+    bottom: 24px; /* 2*F margin from bottom */
     left: var(--layout-margin);
     width: var(--layout-width);
     height: var(--header-height);
@@ -578,62 +610,18 @@ blockquote {
     border-right: none;
 }
 
+/* Subheader positioning and layout handled in JavaScript for precise control */
 .subheader {
-    position: fixed;
-    top: var(--subheader-y);
-    left: var(--layout-margin);
-    width: var(--layout-width);
-    height: var(--header-height);
-    background: var(--c-bg);
-    border: 1px solid var(--c-border);
-    box-sizing: border-box;
-    z-index: 180;
-    display: none;
-}
-
-.subheader-title {
-    width: 50%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    padding: 0 var(--f);
-    text-transform: uppercase;
+    /* Base styles only - positioning handled in JS */
+    font-family: 'Space Mono', monospace;
     font-size: var(--f);
-    border-right: 1px solid var(--c-border);
-    box-sizing: border-box;
-}
-
-.subheader-nav {
-    width: 50%;
-    height: 100%;
-    display: flex;
-}
-
-.nav-button {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    font-size: var(--f);
-    border-right: 1px solid var(--c-border);
-    box-sizing: border-box;
-}
-
-.nav-button:last-child {
-    border-right: none;
 }
 
 /* =================================================================
    TOC COMPONENT STYLES
    ================================================================= */
 
-/* TOC Container */
-.toc-container {
-    padding: 0;
-    margin: 0;
-}
+/* TOC Component - simplified structure */
 
 .hierarchical-toc {
     width: 100%;
@@ -719,15 +707,191 @@ blockquote {
     background: var(--c-bg);
 }
 
-.content-body {
-    padding: var(--f);
-    background: var(--c-bg);
-    color: var(--c-text);
+/* content-body styling moved to content-container */
+
+/* TOC positioning handled by JavaScript */
+
+/* =================================================================
+   DROPDOWN COMPONENTS
+   ================================================================= */
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
 }
 
-.toc-container {
+.dropdown-trigger {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);
     padding: var(--f);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-height: calc(var(--f) * 2);
     box-sizing: border-box;
+}
+
+.dropdown-trigger:hover,
+.dropdown-trigger:focus {
+    background: var(--c-border);
+    outline: none;
+}
+
+.dropdown-trigger[aria-expanded="true"] {
+    background: var(--c-border);
+}
+
+.dropdown-list {
+    position: absolute;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    box-sizing: border-box;
+    z-index: 1000;
+    min-width: 100%;
+    max-height: calc(var(--f) * 25); /* 300px at F=12px */
+    overflow-y: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);
+}
+
+.dropdown-item {
+    padding: var(--f);
+    cursor: pointer;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--c-border);
+    outline: none;
+}
+
+/* =================================================================
+   TOC COMPONENTS
+   ================================================================= */
+
+.hierarchical-toc {
+    width: 100%;
+    font-family: 'Space Mono', monospace;
+}
+
+/* TOC container positioning handled by JavaScript */
+
+.toc-section-header {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    cursor: pointer;
+}
+
+.toc-section-header[data-expandable="false"] {
+    cursor: default;
+}
+
+.toc-section-header:hover {
+    background: rgba(128, 128, 128, 0.05);
+}
+
+.toc-number {
+    background: var(--c-text);
+    color: var(--c-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 400;
+    flex-shrink: 0;
+}
+
+.toc-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-shrink: 0;
+    border-left: 1px solid var(--c-border);
+    padding: var(--f) calc(var(--f) * 2);
+}
+
+.toc-title {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.toc-description {
+    opacity: 0.7;
+    text-transform: none;
+    line-height: 1;
+    font-size: 11px;
+}
+
+.toc-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.toc-subsection {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--c-border);
+    border-top: none;
+    background: rgba(128, 128, 128, 0.05);
+    color: var(--c-text);
+    cursor: pointer;
+}
+
+.toc-subsection:hover {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+.toc-bullet {
+    background: var(--c-border);
+    color: var(--c-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.toc-subcontent {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    border-left: 1px solid var(--c-border);
+    padding: 8px calc(var(--f) * 2);
+}
+
+.toc-subtitle {
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.toc-subarrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--c-border);
+    flex-shrink: 0;
 }
 
 /* =================================================================
