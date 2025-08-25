@@ -383,7 +383,7 @@ export class BaseNavigationDropdown extends BaseComponent {
             background: 'var(--c-bg)',
             outline: '1px solid var(--c-border)',
             outlineOffset: '-1px',
-            maxHeight: `${F * 20}px`,
+            maxHeight: `min(${F * 50}px, 80vh)`, // Adaptive height: either 600px or 80% of viewport
             overflowY: 'auto',
             zIndex: position.zIndex || 185
         };
@@ -410,22 +410,40 @@ export class BaseNavigationDropdown extends BaseComponent {
         items.forEach((item, index) => {
             console.log(`🔄 Processing dropdown item ${index}:`, item);
             
-            // Skip header items - they might need special handling
+            // Handle header items with special styling
             if (item.type === 'header') {
-                console.log(`📋 Skipping header item: ${item.title}`);
+                console.log(`📋 Creating header item: ${item.title}`);
+                const headerItem = this.createElement('div', 'dropdown-header');
+                headerItem.style.cssText = `
+                    height: ${2 * F}px; line-height: ${2 * F}px;
+                    padding: 0 ${F}px; box-sizing: border-box;
+                    background: var(--c-border); color: var(--c-text);
+                    font-size: ${F}px; text-transform: uppercase;
+                    font-weight: bold; cursor: default;
+                    border-bottom: 1px solid var(--c-border);
+                `;
+                headerItem.textContent = item.title;
+                this.dropdownElement.appendChild(headerItem);
                 return;
             }
             
             const menuItem = this.createElement('div', 'dropdown-item');
+            
+            // Determine indentation based on item type
+            let leftPadding = F; // Default padding
+            if (item.subitem) {
+                leftPadding = F * 2; // Indent subitems (articles under categories)
+            }
+            
             menuItem.style.cssText = `
                 height: ${2 * F}px; line-height: ${2 * F}px; cursor: pointer;
-                padding: 0 ${F}px; box-sizing: border-box;
+                padding: 0 ${F}px 0 ${leftPadding}px; box-sizing: border-box;
                 border-bottom: 1px solid var(--c-border);
                 background: var(--c-bg); color: var(--c-text);
                 font-size: ${F}px; text-transform: uppercase;
             `;
             menuItem.textContent = item.title || item.label || item.text || item;
-            console.log(`✅ Created menu item with text: "${menuItem.textContent}"`);
+            console.log(`✅ Created menu item with text: "${menuItem.textContent}" and indentation: ${leftPadding}px`);
             
             menuItem.addEventListener('click', () => {
                 if (this.onItemClick) {
@@ -436,6 +454,7 @@ export class BaseNavigationDropdown extends BaseComponent {
                 this.close();
             });
             
+            // Add hover effects only for clickable items
             menuItem.addEventListener('mouseenter', () => {
                 menuItem.style.background = 'var(--c-border)';
             });
@@ -518,12 +537,12 @@ export class BaseNavigationDropdown extends BaseComponent {
                 const triggerRect = trigger.getBoundingClientRect();
                 this.dropdownElement.style.position = 'fixed';
                 this.dropdownElement.style.top = `${triggerRect.bottom}px`;
-                this.dropdownElement.style.left = `${triggerRect.left}px`;
-                this.dropdownElement.style.width = `${triggerRect.width}px`;
+                this.dropdownElement.style.left = `${triggerRect.left - 1}px`; // Shift left by 1px
+                this.dropdownElement.style.width = `${triggerRect.width + 1}px`; // Make 1px wider
                 console.log('🔄 Positioned dropdown to body at:', {
                     top: triggerRect.bottom,
-                    left: triggerRect.left,
-                    width: triggerRect.width
+                    left: triggerRect.left - 1,
+                    width: triggerRect.width + 1
                 });
             }
         }
@@ -2507,7 +2526,7 @@ export class Subheader extends BaseComponent {
             });
             
             // Position dropdown to match trigger width exactly (don't override all styles)
-            dropdownMenu.style.width = 'calc(50% + 1px)'; /* Match trigger width exactly */
+            dropdownMenu.style.width = 'calc(50% + 2px)'; /* 1px wider than trigger */
             dropdownMenu.style.border = '1px solid var(--c-border)';
             dropdownMenu.style.borderTop = 'none';
             dropdownMenu.style.zIndex = '1500';

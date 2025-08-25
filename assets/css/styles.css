@@ -911,6 +911,78 @@ body.with-subheader .content-container {
 }
 
 /* =================================================================
+   CUSTOM SCROLLBAR STYLING
+   ================================================================= */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 12px; /* F = 12px */
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--vga-black);
+    border: 1px solid var(--vga-white);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--vga-white);
+    border: 1px solid var(--vga-white);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--vga-silver);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--vga-black);
+    border: 1px solid var(--vga-white);
+}
+
+/* Scrollbar arrows (button styling) */
+::-webkit-scrollbar-button {
+    background: var(--vga-white);
+    border: 1px solid var(--vga-white);
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-button:hover {
+    background: var(--vga-silver);
+}
+
+/* Arrow directions */
+::-webkit-scrollbar-button:vertical:start:decrement {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M4 0L0 4h8z' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+::-webkit-scrollbar-button:vertical:end:increment {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M4 8L0 4h8z' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+::-webkit-scrollbar-button:horizontal:start:decrement {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M0 4L4 0v8z' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+::-webkit-scrollbar-button:horizontal:end:increment {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M8 4L4 0v8z' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Firefox scrollbar styling */
+html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--vga-white) var(--vga-black);
+}
+
+/* =================================================================
    MATHEMATICAL PRECISION VALIDATION
    ================================================================= */
 
