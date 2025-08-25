@@ -588,32 +588,198 @@ export class Spacing extends BaseComponent {
 }
 
 /**
- * Grid - Layout grid component
+ * Grid - Perfect square tiling grid component (based on old build's superior implementation)
  */
 export class Grid extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'grid' }, deps);
         this.items = options.items || [];
-        this.cols = options.cols || 4;
+        this.cols = options.cols || null; // Auto-calculate if not specified
         this.onItemClick = options.onItemClick || null;
+        this.showCaptions = options.showCaptions !== false; // Default true
+        this.squareTiling = options.squareTiling !== false; // Default true for perfect squares
+        this.fillEmptyCells = options.fillEmptyCells !== false; // Default true
     }
     
     render() {
         if (!this.element) {
-            this.element = this.createElement('div', 'grid component');
-            this.element.style.setProperty('--grid-cols', this.cols);
+            const F = this.deps.MF ? this.deps.MF.F : 12;
+            const layout = this.deps.MF ? this.deps.MF.computeLayout() : { cols: 4, boxSize: 200, gridWidth: 800, headerHeight: 30 };
             
+            // Use OLD BUILD'S mathematical foundation layout
+            const cols = this.cols || layout.cols;
+            const boxSize = layout.boxSize;
+            const gridWidth = layout.gridWidth;
+            const headerHeight = layout.headerHeight || 30; // OLD BUILD'S 30px system
+            const gap = 1;
+            
+            this.element = this.createElement('div', 'grid component');
+            
+            if (this.squareTiling) {
+                // Perfect square tiling like old build
+                this.element.style.cssText = `
+                    display: grid;
+                    grid-template-columns: repeat(${cols}, ${boxSize}px);
+                    gap: ${gap}px;
+                    width: ${gridWidth}px;
+                    margin: 0 auto;
+                `;
+            } else {
+                // Fallback to current flexible grid
+                this.element.style.cssText = `
+                    display: grid;
+                    grid-template-columns: repeat(${cols}, 1fr);
+                    gap: ${gap}px;
+                    width: 100%;
+                `;
+            }
+            
+            // Render grid items
             this.items.forEach((item, index) => {
                 const gridItem = this.createElement('div', 'grid-item');
-                gridItem.textContent = typeof item === 'string' ? item : (item.text || item.title || `${index + 1}`);
                 
+                if (this.squareTiling) {
+                    // Perfect square item like old build
+                    gridItem.style.cssText = `
+                        width: ${boxSize}px;
+                        height: ${boxSize}px;
+                        outline: 1px solid var(--c-border);
+                        background: var(--c-bg);
+                        display: flex;
+                        flex-direction: column;
+                        position: relative;
+                        cursor: pointer;
+                        transition: background-color 0.2s ease, color 0.2s ease;
+                    `;
+                    
+                    // Content area (image/main content)
+                    const contentArea = this.createElement('div', 'grid-content');
+                    contentArea.style.cssText = `
+                        flex: 1;
+                        position: relative;
+                        overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: ${F}px;
+                    `;
+                    
+                    // Content (could be image, text, or placeholder)
+                    const content = this.createElement('div', 'grid-item-content');
+                    if (typeof item === 'object' && item.image) {
+                        // Image item
+                        const img = this.createElement('img');
+                        img.src = item.image;
+                        img.alt = item.title || item.text || '';
+                        img.style.cssText = `
+                            max-width: 100%;
+                            max-height: 100%;
+                            object-fit: contain;
+                        `;
+                        content.appendChild(img);
+                    } else {
+                        // Text content or placeholder
+                        content.style.cssText = `
+                            width: 100%;
+                            height: 100%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            font-size: ${Math.max(10, F - 1)}px;
+                            line-height: 1.3;
+                            color: var(--c-border);
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                        `;
+                        const text = typeof item === 'string' ? item : (item.text || item.title || `Item ${index + 1}`);
+                        content.textContent = text;
+                    }
+                    contentArea.appendChild(content);
+                    gridItem.appendChild(contentArea);
+                    
+                    // Caption bar (if enabled)
+                    if (this.showCaptions) {
+                        const caption = this.createElement('div', 'grid-caption');
+                        caption.style.cssText = `
+                            display: flex;
+                            align-items: center;
+                            position: relative;
+                            height: ${headerHeight}px;
+                            transition: background-color 0.15s ease, color 0.15s ease;
+                            border-top: 1px solid var(--c-border);
+                        `;
+                        
+                        const captionText = this.createElement('span', 'caption-text');
+                        captionText.style.cssText = `
+                            flex: 1;
+                            padding: 0 ${F}px;
+                            font-size: ${Math.max(10, F - 1)}px;
+                            text-transform: uppercase;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        `;
+                        
+                        const captionContent = typeof item === 'object' ? 
+                            (item.caption || item.title || item.text) : 
+                            item;
+                        captionText.textContent = captionContent || `Item ${index + 1}`;
+                        caption.appendChild(captionText);
+                        gridItem.appendChild(caption);
+                    }
+                } else {
+                    // Simple grid item (current style)
+                    gridItem.style.cssText = `
+                        border: 1px solid var(--c-border);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        text-transform: uppercase;
+                        text-align: center;
+                        min-height: calc(${F}px * 3);
+                        padding: ${F}px;
+                    `;
+                    const text = typeof item === 'string' ? item : (item.text || item.title || `${index + 1}`);
+                    gridItem.textContent = text;
+                }
+                
+                // Click handler
                 if (this.onItemClick) {
                     gridItem.addEventListener('click', () => this.onItemClick(item, index));
                     gridItem.classList.add('clickable');
+                    
+                    // Hover effect for square tiles
+                    if (this.squareTiling) {
+                        gridItem.addEventListener('mouseenter', () => {
+                            gridItem.style.background = 'var(--c-border)';
+                            gridItem.style.color = 'var(--c-bg)';
+                        });
+                        gridItem.addEventListener('mouseleave', () => {
+                            gridItem.style.background = 'var(--c-bg)';
+                            gridItem.style.color = 'var(--c-text)';
+                        });
+                    }
                 }
                 
                 this.element.appendChild(gridItem);
             });
+            
+            // Fill empty cells to complete the grid (like old build)
+            if (this.fillEmptyCells && this.squareTiling) {
+                const rows = Math.ceil(this.items.length / cols);
+                const totalCells = rows * cols;
+                const emptyCells = totalCells - this.items.length;
+                
+                for (let i = 0; i < emptyCells; i++) {
+                    const emptyCell = this.createElement('div', 'grid-empty-cell');
+                    emptyCell.style.cssText = `
+                        width: ${boxSize}px;
+                        height: ${boxSize}px;
+                    `;
+                    this.element.appendChild(emptyCell);
+                }
+            }
         }
         return this.element;
     }
@@ -2668,18 +2834,14 @@ export class HierarchicalTOC extends BaseComponent {
     }
     
     calculateTOCDimensions(layout) {
-        // Use Mathematical Foundation F value if available
-        const F = this.deps.MF ? this.deps.MF.F : 12;
-        const headerHeight = F * 4; // 48px (F=12px * 4) - FIXED: rows should be 4F tall
+        // Use OLD BUILD'S PERFECT MATHEMATICAL RELATIONSHIPS
+        const headerHeight = layout.headerHeight || 30; // OLD BUILD'S 30px system
         
-        // SIMPLIFIED: content-container has 4F padding, TOC takes full available width
-        const isDesktop = layout.isDesktop !== false; // Default to desktop if not specified
-        const containerPadding = isDesktop ? (4 * F) : F; // 4F on desktop, 1F on mobile
-        const rowWidth = layout.gridWidth - (2 * containerPadding); // Account for container padding only
-        
-        const numberBoxSize = 4 * F; // 48px (4F wide as specified) - FIXED
-        const arrowWidth = 4 * F; // Arrow width = 4F (48px) - FIXED: square box 4F wide
-        const textWidth = rowWidth - numberBoxSize - arrowWidth; // Remaining space for text
+        // OLD BUILD'S EXACT TOC CALCULATIONS
+        const numberBoxSize = headerHeight * 2;                              // 60px (30px * 2)
+        const rowWidth = layout.gridWidth - (headerHeight * 4);              // gridWidth - 120px
+        const textWidth = layout.gridWidth - (headerHeight * 8);             // gridWidth - 240px  
+        const arrowWidth = numberBoxSize;                                     // 60px (same as number)
         
         return {
             headerHeight,
@@ -2687,7 +2849,6 @@ export class HierarchicalTOC extends BaseComponent {
             rowWidth,
             textWidth,
             arrowWidth
-            // No padding needed - container handles it
         };
     }
     

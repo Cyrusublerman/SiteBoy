@@ -16,14 +16,18 @@
 // =================================================================
 
 export const Config = {
-    // Base mathematical unit
+    // CRITICAL: Use old build's mathematical system for perfect alignment
+    // Base mathematical unit - F=12px for typography, H=30px for layout
     F: 12,
     
-    // Component sizing (in multiples of F)
+    // OLD BUILD'S PERFECT HEADER HEIGHT (NOT F-based)
+    headerHeight: 30,  // FIXED 30px like old build (not F*2=24px)
+    
+    // Component sizing (using old build's mathematical relationships)
     sizing: {
-        header: 2,          // headerH = F * 2 = 24px
-        subheader: 2,       // subheaderH = F * 2 = 24px  
-        footer: 2,          // footerH = F * 2 = 24px
+        header: 30,         // headerH = 30px (old build's perfect system)
+        subheader: 30,      // subheaderH = 30px  
+        footer: 30,         // footerH = 30px
         bodyMinH_withSub: 8,    // body min height offset with subheader = F * 8
         bodyMinH_noSub: 6,      // body min height offset without subheader = F * 6
         gutter: 1,          // gutter = F = 12px
@@ -32,18 +36,19 @@ export const Config = {
         dropdownMaxH: 25,   // dropdown max height = F * 25 = 300px
     },
     
-    // Grid system constants
+    // OLD BUILD'S EXACT GRID SYSTEM CONSTANTS
     grid: {
         minCols: 1,
         maxCols: 6,
-        aspectMultiplier: 3.982,
-        aspectOffset: 1.088
+        aspectMultiplier: 3.982,  // Old build's exact values
+        aspectOffset: 1.088,      // Old build's exact values
+        gap: 1                    // Old build's 1px gap
     },
     
-    // Responsive margins
+    // OLD BUILD'S EXACT MARGINS
     margins: {
-        desktop: 48,  // targetMargin = H * 2 
-        mobile: 12
+        desktop: 64,  // targetMargin = 64px (old build's exact value)
+        mobile: 5     // mobileMargin = 5px (old build's exact value)
     },
     
     // Breakpoints
@@ -69,15 +74,17 @@ export const LayoutCalculator = {
     },
     
     /**
-     * Initialize CSS variables on document root
+     * Initialize CSS variables using OLD BUILD'S PERFECT SYSTEM
      */
     initializeCSSVars() {
         const root = document.documentElement;
-        root.style.setProperty('--F', `${Config.F}px`);
-        root.style.setProperty('--header-height', `${Config.F * 2}px`);
-        root.style.setProperty('--target-margin', `${Config.margins.desktop}px`);
-        root.style.setProperty('--mobile-margin', `${Config.margins.mobile}px`);
-        console.log('✅ Config: CSS variables initialized');
+        root.style.setProperty('--f', `${Config.F}px`); // F=12px for typography
+        root.style.setProperty('--F', `${Config.F}px`); // Legacy compatibility
+        root.style.setProperty('--header-height', `${Config.headerHeight}px`); // 30px fixed
+        root.style.setProperty('--target-margin', `${Config.margins.desktop}px`); // 64px
+        root.style.setProperty('--mobile-margin', `${Config.margins.mobile}px`); // 5px
+        root.style.setProperty('--outline-width', '1px'); // Old build's border width
+        console.log('✅ Config: CSS variables initialized with old build\'s mathematical system');
     },
     
     /**
@@ -90,88 +97,77 @@ export const LayoutCalculator = {
     },
     
     /**
-     * Calculate grid geometry for given parameters
+     * Calculate grid geometry using OLD BUILD'S PERFECT SYSTEM
+     * This ensures mathematical precision with no rounding errors
      */
     calculateGridGeometry(viewportWidth, cols, gap, margin) {
         const usableWidth = viewportWidth - 2 * margin;
         const maxBoxSize = Math.floor((usableWidth - (cols - 1) * gap) / cols);
         const gridWidth = maxBoxSize * cols + (cols - 1) * gap;
         const leftover = viewportWidth - gridWidth;
+        const marginLeft = Math.floor(leftover / 2);
+        const marginRight = leftover - marginLeft; // No rounding errors
         
-        return {
-            boxSize: maxBoxSize,
-            gridWidth,
-            marginLeft: Math.floor(leftover / 2),
-            marginRight: leftover - Math.floor(leftover / 2)
-        };
+        return { boxSize: maxBoxSize, gridWidth, marginLeft, marginRight };
     },
     
     /**
-     * H-based layout computation - the core layout system
+     * Apply layout to element (OLD BUILD'S BORDER-AWARE SYSTEM)
+     */
+    applyLayout(element, layout) {
+        if (!element) return;
+        element.style.width = `${layout.gridWidth}px`;
+        element.style.marginLeft = `${layout.marginLeft}px`;
+        element.style.marginRight = `${layout.marginRight}px`;
+    },
+    
+    /**
+     * Apply layout with border compensation (OLD BUILD'S PRECISION)
+     */
+    applyLayoutWithBorder(element, layout) {
+        if (!element) return;
+        element.style.width = `${layout.gridWidth + 2}px`;      // +2px for borders
+        element.style.marginLeft = `${layout.marginLeft - 1}px`; // -1px compensation
+        element.style.marginRight = `${layout.marginRight - 1}px`; // -1px compensation
+    },
+    
+    /**
+     * OLD BUILD'S PERFECT LAYOUT COMPUTATION
+     * Uses 30px header height and precise grid geometry
      */
     computeLayout(width = window.innerWidth, height = window.innerHeight) {
-        const H = Config.F * 2; // Header height = 24px
-        // FIXED: Better desktop detection - consider both width AND screen size
-        // Portrait on desktop/tablet should still use desktop layout
-        const isDesktop = width > Config.breakpoints.desktop || 
-                         (width > 600 && height > 600); // Tablet/desktop in portrait
+        const cols = this.computeColumns(width, height);
+        const currentMargin = cols === 1 ? Config.margins.mobile : Config.margins.desktop;
+        const geo = this.calculateGridGeometry(width, cols, Config.grid.gap, currentMargin);
+        const headerHeight = Config.headerHeight; // 30px fixed
         
-        if (isDesktop) {
-            // Desktop: HW = window width - 2*H (as you specified)
-            const HW = width - (2 * H);
-            const centerOffset = (width - HW) / 2; // For centering = H
-            const cols = this.computeColumns(width, height);
-            const geo = this.calculateGridGeometry(HW, cols, Config.grid.gap, 0);
-            
-            // Calculate header split accounting for border offset (from reference)
-            let headerSplit;
-            if (cols % 2 === 0) {
-                // For even columns, split at the gap between middle columns
-                const colsBeforeSplit = cols / 2;
-                // Add 1px to account for the border shifting content
-                headerSplit = (geo.boxSize * colsBeforeSplit) + 
-                              (Config.grid.gap * (colsBeforeSplit - 1)) + 
-                              Math.floor(Config.grid.gap / 2) + 1;
-            } else {
-                // For odd columns, split at center
-                headerSplit = Math.floor(HW / 2) + 1;
-            }
-            
-            // Calculate precise header component widths
-            const mainHeaderLeftWidth = headerSplit;
-            const mainHeaderToggleWidth = H; // 24px square toggle
-            const mainHeaderNavWidth = HW - mainHeaderLeftWidth - mainHeaderToggleWidth;
-            
-            return {
-                isDesktop: true,
-                marginLeft: centerOffset,  // H for centering
-                gridWidth: HW,             // Header/body/footer width
-                headerHeight: H,           // 24px
-                contentMinHeight: height - (4 * H), // Your specification: window height - 4*H
-                // Header split calculations
-                headerSplit,
-                mainHeaderLeftWidth,
-                mainHeaderNavWidth,
-                mainHeaderToggleWidth,
-                // Legacy properties for compatibility
-                cols,
-                boxSize: geo.boxSize,
-                marginRight: centerOffset
-            };
-        } else {
-            // Mobile: full width with minimal margins
-            return {
-                isDesktop: false,
-                marginLeft: Config.F,      // 12px mobile margin
-                gridWidth: width - (2 * Config.F), // Window - 24px
-                headerHeight: H,
-                contentMinHeight: height - (3 * H), // Mobile: less vertical margin
-                // Legacy properties for compatibility  
-                cols: 1,
-                boxSize: width - (2 * Config.F),
-                marginRight: Config.F
-            };
-        }
+        // OLD BUILD'S PRECISE HEADER CALCULATIONS
+        const mainHeaderLeftWidth = Math.floor(geo.gridWidth / 2);
+        const mainHeaderToggleWidth = headerHeight; // 30px square
+        const mainHeaderNavWidth = geo.gridWidth - mainHeaderLeftWidth - mainHeaderToggleWidth;
+
+        // OLD BUILD'S PRECISE SUBHEADER CALCULATIONS  
+        const subheaderTitleWidth = mainHeaderLeftWidth - 1; // Border compensation
+        const subheaderNavContainerWidth = geo.gridWidth - subheaderTitleWidth;
+        const subheaderPrevButtonWidth = Math.floor(subheaderNavContainerWidth / 2);
+        const subheaderNextButtonWidth = subheaderNavContainerWidth - subheaderPrevButtonWidth;
+
+        return { 
+            cols, 
+            ...geo, 
+            headerHeight, 
+            mainHeaderLeftWidth,
+            mainHeaderNavWidth,
+            mainHeaderToggleWidth,
+            subheaderTitleWidth,
+            subheaderNavContainerWidth,
+            subheaderPrevButtonWidth,
+            subheaderNextButtonWidth,
+            // Additional properties for compatibility
+            isDesktop: cols > 1,
+            contentMinHeight: height - (headerHeight * 4), // OLD BUILD LOGIC
+            boxSize: geo.boxSize
+        };
     },
     
     /**

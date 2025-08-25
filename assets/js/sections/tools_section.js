@@ -780,12 +780,23 @@ Click any section below to expand and view live examples with usage code.
     
     renderGridExample(container, id, title) {
         this.createSimpleComponentExample(container, id, title,
-            'ComponentLibrary.Grid({ items, cols, onItemClick })',
+            'ComponentLibrary.Grid({ items, squareTiling: true, showCaptions: true })',
             () => {
+                // Demo grid with perfect square tiling (like old build's superior gallery)
+                const galleryItems = [
+                    { title: 'Artwork 001', caption: 'Digital Composition', text: 'Abstract geometric patterns using mathematical algorithms' },
+                    { title: 'Artwork 002', caption: 'Generative Art', text: 'Procedural generation with VGA color constraints' },
+                    { title: 'Artwork 003', caption: 'Code Visualization', text: 'Visual representation of algorithmic processes' },
+                    { title: 'Artwork 004', caption: 'Pixel Perfect', text: 'Retro-computing aesthetic with precise grid alignment' },
+                    { title: 'Artwork 005', caption: 'Mathematical Art', text: 'F=12px foundation applied to visual composition' }
+                ];
+                
                 const grid = new ComponentLibrary.Grid({
-                    items: ['Grid Item 1', 'Grid Item 2', 'Grid Item 3', 'Grid Item 4'],
-                    cols: 2,
-                    onItemClick: (item, index) => console.log('Clicked:', item)
+                    items: galleryItems,
+                    squareTiling: true,      // Perfect squares like old build
+                    showCaptions: true,      // Caption bars like old build
+                    fillEmptyCells: true,    // Complete the grid
+                    onItemClick: (item, index) => console.log('Gallery item clicked:', item.title)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(grid);
                 return grid.render();
