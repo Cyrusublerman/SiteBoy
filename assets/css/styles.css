@@ -39,9 +39,10 @@
     
     /* F=12px constants */
     --f: 12px;
-    --header-height: 24px;
-    --target-margin: 48px;
+    --header-height: 24px;          /* 2*F = 24px (KEEP F SYSTEM) */
+    --target-margin: 48px;          /* 4*F = 48px (KEEP F SYSTEM) */
     --mobile-margin: 12px;
+    --outline-width: 1px;
 }
 
 /* Light theme (inverted) */
@@ -192,7 +193,183 @@ blockquote {
     z-index: 2;
 }
 
-/* Grid Components */
+/* Gallery Grid - Efficient shared border system */
+.gallery-item {
+    outline: var(--outline-width) solid var(--c-border);
+    background: var(--c-bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-family: 'Space Mono', monospace;
+}
+
+.gallery-item .content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--f);
+    overflow: hidden;
+}
+
+.gallery-item .placeholder {
+    width: 100%;
+    text-align: justify;
+    text-align-last: justify;
+    font-size: calc(var(--f) * 0.92);
+    line-height: 1.3;
+    color: var(--c-border);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    hyphens: auto;
+    word-spacing: 0.2em;
+    padding: 8px;
+}
+
+.gallery-item .caption {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: var(--header-height);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.gallery-item .separator {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: var(--outline-width);
+    background: var(--c-border);
+    transition: background-color 0.2s ease;
+}
+
+.gallery-item .text {
+    flex: 1;
+    padding: 0 var(--f);
+    font-size: calc(var(--f) * 0.92);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gallery-item .icon {
+    width: var(--header-height);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--f);
+}
+
+/* Hover state */
+.gallery-item.hover {
+    background: var(--c-border);
+    color: var(--c-bg);
+    outline-color: var(--c-text);
+    z-index: 2;
+}
+
+.gallery-item.hover .placeholder {
+    color: var(--c-bg);
+}
+
+.gallery-item.hover .caption {
+    background: var(--c-border);
+    color: var(--c-bg);
+}
+
+.gallery-item.hover .separator {
+    background: var(--c-bg);
+}
+
+/* Container-Aware Grid System - F=12px Translation of Reference Perfect Grid */
+
+/* Gallery Grid Container - Setup handled by JavaScript */
+
+/* Grid Items - Outline-based separation (1px perfect like reference) */
+.gallery-item {
+    /* Inline styles from JavaScript for precise mathematical sizing */
+    cursor: pointer;
+}
+
+.gallery-item:hover {
+    outline-color: var(--c-text) !important;  /* Reference hover: outline color change */
+    z-index: 2 !important;                    /* Bring to front like reference */
+}
+
+/* Grid Content Area */
+.grid-content {
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);                      /* F=12px consistent with system */
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 400;
+}
+
+/* Grid Caption System - F=24px Translation */
+.grid-caption {
+    display: flex;
+    align-items: center;
+    position: relative;                       /* Reference uses relative, not absolute */
+    background: var(--c-bg);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Caption separator line (reference ::before technique) */
+.grid-caption::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;                             /* 1px separator like reference */
+    background: var(--c-border);
+    transition: background-color 0.2s ease;
+}
+
+/* Hover effect on separator line */
+.gallery-item:hover .grid-caption::before {
+    background: var(--c-text);               /* Reference: separator changes on hover */
+}
+
+/* Caption Text */
+.caption-text {
+    flex: 1;
+    padding: 0 calc(var(--f));               /* F=12px padding like reference 12px */
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);                     /* F=12px for header consistency */
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 400;
+}
+
+/* Caption Arrow Icon */
+.caption-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);                     /* F=12px consistent */
+    transition: background-color 0.2s ease, color 0.2s ease;
+    /* Width and height set via JavaScript for mathematical precision */
+}
+
+/* Caption Arrow Hover (reference-style override) */
+.caption-icon:hover {
+    background: var(--c-border);             /* Reference arrow hover */
+    color: var(--c-bg);
+}
+
+/* Empty Grid Cells - Styling handled inline for mathematical precision */
+
+/* Legacy Grid Components (Deprecated - use Gallery Grid) */
 .grid {
     display: grid;
     grid-template-columns: repeat(var(--grid-cols, 4), 1fr);
@@ -214,6 +391,8 @@ blockquote {
 }
 
 .grid-item.clickable:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
     border-color: var(--c-text);
     z-index: 2;
 }
@@ -225,39 +404,13 @@ blockquote {
     border: 1px solid var(--c-border);
 }
 
-/* Grid Caption Styling */
-.grid-caption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: var(--header-height);
-    display: flex;
-    align-items: center;
-    background: var(--c-bg);
-    border-top: 1px solid var(--c-border);
-    font-size: var(--f);
-    text-transform: uppercase;
-}
+/* Legacy caption styles cleaned up above */
 
-.caption-text {
-    flex: 1;
-    padding: 0 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.caption-icon {
-    width: var(--header-height);
-    height: var(--header-height);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-left: 1px solid var(--c-border);
-    background: var(--c-bg);
-    font-size: var(--f);
-    flex-shrink: 0;
+/* Header Navigation Hover Effects */
+#header-nav:hover,
+#header-toggle:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
 }
 
 /* Button Styles */
@@ -417,7 +570,9 @@ blockquote {
 }
 
 .breadcrumb-link:hover {
-    text-decoration: underline;
+    background: var(--c-text);
+    color: var(--c-bg);
+    text-decoration: none;
 }
 
 /* Markdown Body */
@@ -483,7 +638,7 @@ blockquote {
 }
 
 .header-left {
-    width: 50%;
+    /* Width controlled by JavaScript calculations - no CSS override */
     height: 100%;
     background: var(--c-bg);
     border-right: 1px solid var(--c-border);
@@ -491,7 +646,7 @@ blockquote {
 }
 
 .header-right {
-    width: 50%;
+    /* Width controlled by JavaScript calculations - no CSS override */
     height: 100%;
     background: var(--c-bg);
     box-sizing: border-box;
@@ -562,9 +717,9 @@ body.with-subheader .content-container {
     top: 0;
     left: 0;
     width: 100vw;
-    height: var(--header-height);
+    height: var(--header-y); /* Extends from top of viewport to top of header */
     background: var(--c-bg);
-    z-index: 200;
+    z-index: 999; /* Higher than everything else to hide scrolling content */
 }
 
 .page-curtain-bottom {
@@ -615,6 +770,31 @@ body.with-subheader .content-container {
     /* Base styles only - positioning handled in JS */
     font-family: 'Space Mono', monospace;
     font-size: var(--f);
+}
+
+/* Navigation button alignment - left justify like other header elements */
+.nav-button {
+    justify-content: flex-start !important;
+    padding-left: var(--f) !important;
+}
+
+/* Navigation button hover states */
+.nav-button:hover:not([style*="opacity: 0.5"]) {
+    background: var(--c-text) !important;
+    color: var(--c-bg) !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Disabled navigation buttons */
+.nav-button[style*="opacity: 0.5"] {
+    cursor: default !important;
+}
+
+/* Clickable elements general hover */
+.clickable:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* =================================================================
@@ -735,8 +915,11 @@ body.with-subheader .content-container {
 }
 
 .dropdown-trigger:hover,
-.dropdown-trigger:focus {
-    background: var(--c-border);
+.dropdown-trigger:focus,
+.subheader-dropdown-trigger:hover,
+.subheader-dropdown-trigger:focus {
+    background: var(--c-text);
+    color: var(--c-bg);
     outline: none;
 }
 
@@ -758,14 +941,19 @@ body.with-subheader .content-container {
 }
 
 .dropdown-item {
-    padding: var(--f);
+    height: calc(var(--f) * 2 - 1px);
+    line-height: calc(var(--f) * 2 - 1px);
+    width: 100%;
+    padding: 0 var(--f);
     cursor: pointer;
     border-bottom: 1px solid var(--c-border);
     background: var(--c-bg);
     color: var(--c-text);
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    line-height: 1.2;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
 }
 
 .dropdown-item:last-child {
@@ -774,7 +962,8 @@ body.with-subheader .content-container {
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-    background: var(--c-border);
+    background: var(--c-text);
+    color: var(--c-bg);
     outline: none;
 }
 
@@ -802,9 +991,7 @@ body.with-subheader .content-container {
     cursor: default;
 }
 
-.toc-section-header:hover {
-    background: rgba(128, 128, 128, 0.05);
-}
+/* Duplicate rule removed - already defined above with proper colors */
 
 .toc-number {
     background: var(--c-text);
@@ -858,9 +1045,7 @@ body.with-subheader .content-container {
     cursor: pointer;
 }
 
-.toc-subsection:hover {
-    background: rgba(128, 128, 128, 0.1);
-}
+/* Duplicate rule removed - already defined above with proper colors */
 
 .toc-bullet {
     background: var(--c-border);
@@ -931,7 +1116,7 @@ body.with-subheader .content-container {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--vga-silver);
+    background: var(--c-text);
 }
 
 ::-webkit-scrollbar-corner {
@@ -948,7 +1133,7 @@ body.with-subheader .content-container {
 }
 
 ::-webkit-scrollbar-button:hover {
-    background: var(--vga-silver);
+    background: var(--c-text);
 }
 
 /* Arrow directions */

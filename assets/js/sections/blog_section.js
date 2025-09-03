@@ -215,12 +215,12 @@ const BlogSection = {
         tocItem.appendChild(content);
         tocItem.appendChild(arrow);
         
-        // Add hover effects
+        // Add hover effects (consistent with framework standard)
         tocItem.addEventListener('mouseenter', () => {
-            tocItem.style.background = 'var(--c-border)';
+            tocItem.style.background = 'var(--c-text)';
             tocItem.style.color = 'var(--c-bg)';
             numberBox.style.background = 'var(--c-bg)';
-            numberBox.style.color = 'var(--c-border)';
+            numberBox.style.color = 'var(--c-text)';
         });
         
         tocItem.addEventListener('mouseleave', () => {
@@ -310,10 +310,18 @@ const BlogSection = {
         const prevIndex = currentIndex === 0 ? allPages.length - 1 : currentIndex - 1;
         const nextIndex = currentIndex === allPages.length - 1 ? 0 : currentIndex + 1;
         
-        window.Subheader.updateNavigation(
-            () => this.navigateToPage(allPages[prevIndex].path), // Previous
-            () => this.navigateToPage(allPages[nextIndex].path)  // Next
-        );
+        // Use new navigation API
+        const navigationContext = {
+            section: 'blog',
+            subsection: `${category}/${articleId}`,
+            items: allPages,
+            navigate: (section, subsection) => {
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    this.navigationCallbacks.navigateToSection(section, subsection);
+                }
+            }
+        };
+        window.Subheader.updateNavigation(navigationContext);
         
         // Show subheader
         window.Subheader.show();

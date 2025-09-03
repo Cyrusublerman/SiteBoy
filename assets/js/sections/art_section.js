@@ -31,6 +31,22 @@ const ArtSection = {
         if (window.Subheader) {
             if (subsection) {
                 window.Subheader.updateTitle(`art/${subsection}`);
+                
+                // Setup dropdown with all available galleries
+                const dropdownItems = this.getDropdownItems(subsection);
+                window.Subheader.setDropdownContent(dropdownItems, (item) => {
+                    if (item.path && callbacks && callbacks.navigateToSection) {
+                        const pathParts = item.path.replace('#', '').split('/');
+                        if (pathParts.length >= 2) {
+                            callbacks.navigateToSection(pathParts[0], pathParts[1]);
+                        }
+                    }
+                });
+                
+                // Provide navigation context
+                const navigationContext = this.getNavigationContext(subsection, callbacks);
+                window.Subheader.updateNavigation(navigationContext);
+                
                 window.Subheader.show();
             } else {
                 window.Subheader.hide();
@@ -257,6 +273,56 @@ const ArtSection = {
         element.style.padding = '12px';
         
         return element;
+    },
+    
+    /**
+     * Get dropdown items for subheader
+     * @param {string} currentSubsection - Current subsection ID
+     * @returns {Array} Dropdown items with current selection marked
+     */
+    getDropdownItems(currentSubsection) {
+        const artGalleries = [
+            { label: 'ART INDEX', path: '#art', isTOC: true },
+            { label: 'DIGITAL GALLERY', path: '#art/digital' },
+            { label: 'GENERATIVE ART', path: '#art/generative' },
+            { label: 'SKETCHES & STUDIES', path: '#art/sketches' },
+            { label: 'PHOTOGRAPHY', path: '#art/photography' }
+        ];
+        
+        const currentPath = `#art/${currentSubsection}`;
+        
+        return artGalleries.map(gallery => ({
+            ...gallery,
+            value: gallery.path,
+            isCurrent: gallery.path === currentPath
+        }));
+    },
+    
+    /**
+     * Get navigation context for subheader
+     * @param {string} currentSubsection - Current subsection ID
+     * @param {Object} callbacks - Navigation callbacks
+     * @returns {Object} Navigation context
+     */
+    getNavigationContext(currentSubsection, callbacks) {
+        // Define available art galleries for navigation
+        const artGalleries = [
+            { id: 'digital', title: 'Digital Gallery', path: '#art/digital' },
+            { id: 'generative', title: 'Generative Art', path: '#art/generative' },
+            { id: 'sketches', title: 'Sketches & Studies', path: '#art/sketches' },
+            { id: 'photography', title: 'Photography', path: '#art/photography' }
+        ];
+        
+        return {
+            section: 'art',
+            subsection: currentSubsection,
+            items: artGalleries,
+            navigate: (section, subsection) => {
+                if (callbacks && callbacks.navigateToSection) {
+                    callbacks.navigateToSection(section, subsection);
+                }
+            }
+        };
     },
     
     /**

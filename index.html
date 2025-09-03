@@ -28,21 +28,19 @@
     
     <!-- SiteBoy Framework Scripts - Canonical Loading Order (ESM) -->
     
-    <!-- 1. Core foundation (ES Modules) -->
-    <script type="module">
-        // Import complete component library (includes BaseComponent)
-        import { ComponentLibrary, BaseComponent } from './assets/js/shared/component-library.js';
+    <!-- 1. Core foundation (Modular ES6) -->
+    <script type="module" src="assets/js/shared/component-library.js"></script>
+    <script>
+        // Component library is now available globally via window.ComponentLibrary
+        // No imports needed - UMD bundle handles everything
         
-        // Make available globally for legacy compatibility
-        window.BaseComponent = BaseComponent;
-        window.ComponentLibrary = ComponentLibrary;
-        
-        console.log('🚀 SiteBoy Framework v3.0.0 - Clean Architecture Loaded');
+        console.log('🚀 SiteBoy Framework v4.0.0 - Modular Architecture Loaded');
         console.log('📊 F=12px Mathematical Precision System Active');
         console.log('🎨 VGA-Constrained Color Palette Ready');
         console.log('🔤 Space Mono Typography System Ready');
-        console.log('🏗️ Component Libraries Ready');
+        console.log('🏗️ Component Libraries Ready (Bundled)');
         console.log('📄 JSON-Driven Content System Ready');
+        console.log('📦 Modular Build System Active');
     </script>
     
     <!-- 2. Core App (with integrated routing) -->

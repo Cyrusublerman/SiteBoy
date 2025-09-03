@@ -31,6 +31,22 @@ const ToolsSection = {
         if (window.Subheader) {
             if (subsection) {
                 window.Subheader.updateTitle(`tools/${subsection}`);
+                
+                // Setup dropdown with all available tools
+                const dropdownItems = this.getDropdownItems(subsection);
+                window.Subheader.setDropdownContent(dropdownItems, (item) => {
+                    if (item.path && callbacks && callbacks.navigateToSection) {
+                        const pathParts = item.path.replace('#', '').split('/');
+                        if (pathParts.length >= 2) {
+                            callbacks.navigateToSection(pathParts[0], pathParts[1]);
+                        }
+                    }
+                });
+                
+                // Provide navigation context
+                const navigationContext = this.getNavigationContext(subsection, callbacks);
+                window.Subheader.updateNavigation(navigationContext);
+                
                 window.Subheader.show();
             } else {
                 window.Subheader.hide();
@@ -118,6 +134,64 @@ const ToolsSection = {
         this.currentContainer.appendChild(tocComponent.render());
         
         console.log('✅ Tools index rendered with HierarchicalTOC component');
+    },
+    
+    /**
+     * Get dropdown items for subheader
+     * @param {string} currentSubsection - Current subsection ID
+     * @returns {Array} Dropdown items with current selection marked
+     */
+    getDropdownItems(currentSubsection) {
+        const allTools = [
+            { label: 'TOOLS INDEX', path: '#tools', isTOC: true },
+            { label: 'UI TEST TOOL', path: '#tools/ui-test' },
+            { label: 'COMPONENT TEST', path: '#tools/component-test' },
+            { label: 'CANVAS TEST', path: '#tools/canvas-test' },
+            { label: 'VGA COLOR GRID', path: '#tools/color-grid' },
+            { label: 'TYPOGRAPHY TOOL', path: '#tools/typography' },
+            { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
+            { label: 'FONT ANALYSIS', path: '#tools/font-analysis' },
+            { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' }
+        ];
+        
+        const currentPath = `#tools/${currentSubsection}`;
+        
+        return allTools.map(tool => ({
+            ...tool,
+            value: tool.path,
+            isCurrent: tool.path === currentPath
+        }));
+    },
+    
+    /**
+     * Get navigation context for subheader
+     * @param {string} currentSubsection - Current subsection ID
+     * @param {Object} callbacks - Navigation callbacks
+     * @returns {Object} Navigation context
+     */
+    getNavigationContext(currentSubsection, callbacks) {
+        // Define all available tools in order for navigation
+        const allTools = [
+            { id: 'ui-test', title: 'UI Test Tool', path: '#tools/ui-test' },
+            { id: 'component-test', title: 'Component Test', path: '#tools/component-test' },
+            { id: 'canvas-test', title: 'Canvas Test', path: '#tools/canvas-test' },
+            { id: 'color-grid', title: 'VGA Color Grid', path: '#tools/color-grid' },
+            { id: 'typography', title: 'Typography Tool', path: '#tools/typography' },
+            { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
+            { id: 'font-analysis', title: 'Font Analysis', path: '#tools/font-analysis' },
+            { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' }
+        ];
+        
+        return {
+            section: 'tools',
+            subsection: currentSubsection,
+            items: allTools,
+            navigate: (section, subsection) => {
+                if (callbacks && callbacks.navigateToSection) {
+                    callbacks.navigateToSection(section, subsection);
+                }
+            }
+        };
     },
     
     /**
@@ -793,10 +867,9 @@ Click any section below to expand and view live examples with usage code.
                 
                 const grid = new ComponentLibrary.Grid({
                     items: galleryItems,
-                    squareTiling: true,      // Perfect squares like old build
-                    showCaptions: true,      // Caption bars like old build
-                    fillEmptyCells: true,    // Complete the grid
-                    onItemClick: (item, index) => console.log('Gallery item clicked:', item.title)
+                    fillEmptyCells: true,    // Complete the grid rows
+                    onItemClick: (item, index) => console.log('Gallery item clicked:', item.title),
+                    onCaptionArrowClick: (item, index) => console.log('Caption arrow clicked:', item.title)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(grid);
                 return grid.render();
@@ -1413,24 +1486,34 @@ Click any section below to expand and view live examples with usage code.
      * Create a simplified component example with less markup
      */
     createSimpleComponentExample(container, id, title, usage, createExample) {
-        // Simplified component container
+        // RESPONSIVE component container - adapts to page width with F-based padding
         const exampleContainer = document.createElement('div');
         exampleContainer.id = id;
         exampleContainer.style.cssText = `
-            margin: 12px 0; padding: 8px;
-            border-left: 3px solid var(--c-border);
+            margin: var(--f) 0;
+            padding: 0;
+            border: 1px solid var(--c-border);
+            width: 100%;
+            max-width: none;
+            box-sizing: border-box;
+            background: var(--c-bg);
         `;
+        // RESPONSIVE: Uses full available width minus F-based margin/padding
+        // Grid will measure this container and adapt columns accordingly
         
-        // Component title and usage on same line
+        // Component title - F-based spacing
         const titleElement = document.createElement('div');
         titleElement.style.cssText = `
-            font-weight: bold; margin-bottom: 8px;
-            font-family: var(--f-mono);
+            font-weight: bold; 
+            margin-bottom: var(--f);
+            font-family: 'Space Mono', monospace;
+            font-size: var(--f);
         `;
         titleElement.innerHTML = `<strong>${title}:</strong> <code>${usage}</code>`;
         exampleContainer.appendChild(titleElement);
         
-        // Live example
+        // Place component directly in container (48F with 12px padding = 552px available)
+        // No wrapper needed - the container already provides 46F = 552px inner width
         const exampleElement = createExample();
         if (exampleElement) {
             exampleContainer.appendChild(exampleElement);

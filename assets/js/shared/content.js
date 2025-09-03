@@ -1,0 +1,269 @@
+/**
+ * Content Components - SiteBoy Framework
+ * 
+ * COMPONENTS OWNED BY THIS FILE:
+ * - Heading (semantic heading component H1-H6)
+ * - Paragraph (semantic paragraph component)
+ * - Quote (semantic blockquote component)
+ * - Image (semantic image with figure/caption)
+ * - Video (semantic video with figure/caption)
+ * - Audio (semantic audio with figure/caption)
+ * - MarkdownBody (advanced markdown rendering with fallback parser)
+ * 
+ * DO NOT ADD DUPLICATES OF THESE COMPONENTS IN OTHER FILES!
+ * This is the SINGLE SOURCE OF TRUTH for all content/media components.
+ * 
+ * USAGE PATTERN:
+ * import { Heading, Image, MarkdownBody } from './content.js';
+ * const heading = new Heading({ level: 2, content: 'Title' }, deps);
+ * 
+ * DEPENDENCIES:
+ * - foundation.js (BaseComponent)
+ * 
+ * 📖 PLACEMENT GUIDE: See COMPONENT_PLACEMENT_GUIDE.md for component placement rules
+ * 🚨 BEFORE ADDING: Check if component already exists and verify correct category
+ */
+
+import { BaseComponent } from './foundation.js';
+
+/**
+ * Heading - Semantic heading component
+ */
+export class Heading extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'heading' }, deps);
+        this.level = Math.max(1, Math.min(6, options.level || 1));
+        this.content = options.content || '';
+    }
+    
+    render() {
+        if (!this.element) {
+            const tag = `h${this.level}`;
+            this.element = this.createElement(tag, `heading heading-${this.level}`);
+            this.setContent(this.content);
+        }
+        return this.element;
+    }
+}
+
+/**
+ * Paragraph - Semantic paragraph component
+ */
+export class Paragraph extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'paragraph' }, deps);
+        this.content = options.content || '';
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('p', 'paragraph');
+            this.setContent(this.content);
+        }
+        return this.element;
+    }
+}
+
+/**
+ * Quote - Semantic blockquote component
+ */
+export class Quote extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'quote' }, deps);
+        this.content = options.content || '';
+        this.cite = options.cite || null;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('blockquote', 'quote');
+            this.setContent(this.content);
+            
+            if (this.cite) {
+                const citation = this.createElement('cite', 'quote-cite');
+                citation.textContent = this.cite;
+                this.element.appendChild(citation);
+            }
+        }
+        return this.element;
+    }
+}
+
+/**
+ * Image - Semantic image component
+ */
+export class Image extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'image' }, deps);
+        this.src = options.src || '';
+        this.size = options.size || 'm'; // s, m, l, full
+        this.caption = options.caption || null;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('figure', `image image-${this.size}`);
+            
+            const img = this.createElement('img', 'image-element');
+            img.src = this.src;
+            img.alt = this.caption || '';
+            this.element.appendChild(img);
+            
+            if (this.caption) {
+                const figcaption = this.createElement('figcaption', 'image-caption');
+                figcaption.textContent = this.caption;
+                this.element.appendChild(figcaption);
+            }
+        }
+        return this.element;
+    }
+}
+
+/**
+ * Video - Semantic video component
+ */
+export class Video extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'video' }, deps);
+        this.src = options.src || '';
+        this.size = options.size || 'm';
+        this.caption = options.caption || null;
+        this.controls = options.controls !== false;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('figure', `video video-${this.size}`);
+            
+            const video = this.createElement('video', 'video-element');
+            video.src = this.src;
+            if (this.controls) video.controls = true;
+            this.element.appendChild(video);
+            
+            if (this.caption) {
+                const figcaption = this.createElement('figcaption', 'video-caption');
+                figcaption.textContent = this.caption;
+                this.element.appendChild(figcaption);
+            }
+        }
+        return this.element;
+    }
+}
+
+/**
+ * Audio - Semantic audio component
+ */
+export class Audio extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'audio' }, deps);
+        this.src = options.src || '';
+        this.caption = options.caption || null;
+        this.controls = options.controls !== false;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('figure', 'audio');
+            
+            const audio = this.createElement('audio', 'audio-element');
+            audio.src = this.src;
+            if (this.controls) audio.controls = true;
+            this.element.appendChild(audio);
+            
+            if (this.caption) {
+                const figcaption = this.createElement('figcaption', 'audio-caption');
+                figcaption.textContent = this.caption;
+                this.element.appendChild(figcaption);
+            }
+        }
+        return this.element;
+    }
+}
+
+/**
+ * MarkdownBody - Advanced markdown content rendering component
+ */
+export class MarkdownBody extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'markdown' }, deps);
+        this.markdownText = options.markdownText || '';
+        this.className = options.className || 'markdown-body';
+        this.enableTOC = options.enableTOC || false;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', this.className);
+            
+            // Parse markdown to HTML
+            const htmlContent = this.parseMarkdown(this.markdownText);
+            this.element.innerHTML = htmlContent;
+        }
+        return this.element;
+    }
+    
+    parseMarkdown(markdown) {
+        if (!markdown || markdown.trim() === '') {
+            return '<p><em>No content available.</em></p>';
+        }
+        
+        try {
+            // Use marked.js if available
+            if (typeof marked !== 'undefined') {
+                return marked.parse(markdown, {
+                    breaks: true,
+                    gfm: true
+                });
+            } else {
+                // Fallback: basic markdown parsing
+                return this.basicMarkdownParse(markdown);
+            }
+        } catch (error) {
+            console.error('❌ Markdown parsing failed:', error);
+            return `<p>Error parsing markdown: ${error.message}</p><pre>${markdown}</pre>`;
+        }
+    }
+    
+    basicMarkdownParse(markdown) {
+        let html = markdown;
+        
+        // Headers (H1-H6)
+        html = html.replace(/^#{6} (.*$)/gim, '<h6>$1</h6>');
+        html = html.replace(/^#{5} (.*$)/gim, '<h5>$1</h5>');
+        html = html.replace(/^#{4} (.*$)/gim, '<h4>$1</h4>');
+        html = html.replace(/^#{3} (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^#{2} (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^#{1} (.*$)/gim, '<h1>$1</h1>');
+        
+        // Code blocks
+        html = html.replace(/```([^`]+)```/gims, '<pre><code>$1</code></pre>');
+        html = html.replace(/`([^`]+)`/gim, '<code>$1</code>');
+        
+        // Bold and italic
+        html = html.replace(/\*\*\*(.*?)\*\*\*/gim, '<strong><em>$1</em></strong>');
+        html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+        
+        // Links and images
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>');
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1">');
+        
+        // Lists
+        html = html.replace(/^[-*+] (.+)$/gim, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>');
+        
+        // Paragraphs
+        html = html.replace(/\n\n/gim, '</p><p>');
+        html = '<p>' + html + '</p>';
+        
+        return html;
+    }
+    
+    updateContent(markdownText) {
+        this.markdownText = markdownText;
+        if (this.element) {
+            const htmlContent = this.parseMarkdown(markdownText);
+            this.element.innerHTML = htmlContent;
+        }
+    }
+}

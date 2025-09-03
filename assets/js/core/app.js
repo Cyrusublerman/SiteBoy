@@ -361,6 +361,11 @@ const SiteBoyApp = {
         // Handle initial route
         this.handleRouteChange();
         
+        // Restore UI state after initial load
+        setTimeout(() => {
+            this.restoreUIState();
+        }, 200);
+        
         // Make navigation available globally for backward compatibility
         window.Router = {
             navigateToSection: (section, subsection = null) => this.navigateToSection(section, subsection),
@@ -489,8 +494,9 @@ const SiteBoyApp = {
         
         console.log(`🔄 Page resize detected (${evt.width}x${evt.height}) - rebuilding current section`);
         
-        // Store current scroll position
+        // Store current state before rebuild
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const uiState = this.saveUIState();
         
         // Get current route
         const route = this.parseRoute();
@@ -498,10 +504,90 @@ const SiteBoyApp = {
         // Rebuild the current page for the new dimensions
         this.buildPageForRoute(route.section, route.subsection);
         
-        // Restore scroll position after a brief delay to allow rendering
+        // Restore state after a brief delay to allow rendering
         requestAnimationFrame(() => {
-            window.scrollTo(0, scrollTop);
-            console.log(`✅ Section rebuilt and scroll position restored (${scrollTop}px)`);
+            setTimeout(() => {
+                this.restoreUIState(uiState);
+                window.scrollTo(0, scrollTop);
+                console.log(`✅ Section rebuilt and scroll position restored (${scrollTop}px)`);
+            }, 100); // Allow time for DOM to stabilize
+        });
+    },
+    
+    /**
+     * Save current UI state (collapsible sections, dropdowns, etc.)
+     */
+    saveUIState() {
+        const state = {
+            collapsibleStates: {},
+            dropdownStates: [],
+            timestamp: Date.now()
+        };
+        
+        // Save collapsible section states
+        document.querySelectorAll('[data-collapsible-id]').forEach(element => {
+            const id = element.getAttribute('data-collapsible-id');
+            const isExpanded = !element.classList.contains('collapsed') && 
+                              element.style.display !== 'none';
+            state.collapsibleStates[id] = isExpanded;
+        });
+        
+        // Save dropdown states
+        document.querySelectorAll('.dropdown, [id*="dropdown"]').forEach(dropdown => {
+            if (!dropdown.classList.contains('hidden') && dropdown.style.display !== 'none') {
+                state.dropdownStates.push(dropdown.id || dropdown.className);
+            }
+        });
+        
+        // Also save to localStorage for refresh persistence
+        localStorage.setItem('siteboy-ui-state', JSON.stringify(state));
+        
+        return state;
+    },
+    
+    /**
+     * Restore UI state after rebuild
+     */
+    restoreUIState(state) {
+        // If no state provided, try to load from localStorage
+        if (!state) {
+            try {
+                const savedState = localStorage.getItem('siteboy-ui-state');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                }
+            } catch (e) {
+                console.warn('Could not restore UI state from localStorage:', e);
+                return;
+            }
+        }
+        
+        if (!state || Date.now() - state.timestamp > 30000) {
+            return; // Don't restore very old state (30 seconds max)
+        }
+        
+        // Restore collapsible states
+        Object.entries(state.collapsibleStates).forEach(([id, isExpanded]) => {
+            const element = document.querySelector(`[data-collapsible-id="${id}"]`);
+            if (element) {
+                if (isExpanded) {
+                    element.classList.remove('collapsed');
+                    element.style.display = 'block';
+                } else {
+                    element.classList.add('collapsed');
+                    element.style.display = 'none';
+                }
+            }
+        });
+        
+        // Restore dropdown states (if any were open)
+        state.dropdownStates.forEach(dropdownId => {
+            const dropdown = document.getElementById(dropdownId) || 
+                            document.querySelector(`.${dropdownId}`);
+            if (dropdown) {
+                dropdown.classList.remove('hidden');
+                dropdown.style.display = 'block';
+            }
         });
     },
     
