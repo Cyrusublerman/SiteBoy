@@ -696,7 +696,7 @@ export class PageHeader extends BaseComponent {
                 position: absolute; left: 0; top: 0; width: 100%; height: 100%;
                 padding: 0 ${F}px; display: flex; align-items: center; text-transform: uppercase;
                 font-size: ${F}px; box-sizing: border-box; cursor: pointer;
-                font-family: 'Space Mono', monospace; font-weight: 400;
+                font-family: 'Atkinson Hyperlegible Mono', monospace; font-weight: 400;
             `;
             
             if (this.onNavigate) {
@@ -781,7 +781,7 @@ export class PageHeader extends BaseComponent {
                 display: flex; align-items: center; justify-content: center;
                 border-left: 1px solid var(--c-border); box-sizing: border-box;
                 font-size: ${F}px; line-height: 1; cursor: pointer;
-                font-family: 'Space Mono', monospace;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
             `;
             
             headerToggle.addEventListener('click', () => this.toggleTheme());
@@ -997,7 +997,7 @@ export class Subheader extends BaseComponent {
                 box-sizing: border-box;
                 z-index: 180;
                 display: none;
-                font-family: 'Space Mono', monospace;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: var(--f);
             `;
             
@@ -1048,7 +1048,7 @@ export class Subheader extends BaseComponent {
                 border-right: 1px solid var(--c-border);
                 box-sizing: border-box;
                 cursor: pointer;
-                font-family: 'Space Mono', monospace;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: ${F}px;
             `;
             
@@ -1064,7 +1064,7 @@ export class Subheader extends BaseComponent {
                 text-transform: uppercase;
                 box-sizing: border-box;
                 cursor: pointer;
-                font-family: 'Space Mono', monospace;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: var(--f);
             `;
             

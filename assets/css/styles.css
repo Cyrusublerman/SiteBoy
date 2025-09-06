@@ -69,7 +69,7 @@ html, body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     line-height: 1.5;
     background: var(--c-bg);
@@ -82,7 +82,7 @@ html, body {
    ================================================================= */
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-weight: 700;
     text-transform: uppercase;
     margin: 0;
@@ -97,14 +97,14 @@ h5 { font-size: var(--f); }             /* 12px */
 h6 { font-size: var(--f); }             /* 12px */
 
 p {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     line-height: 1.5;
     margin: 0 0 var(--f) 0;
 }
 
 ul, ol {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     margin: 0 0 var(--f) calc(var(--f) * 2);
 }
@@ -116,7 +116,7 @@ li {
 a {
     color: var(--c-text);
     text-decoration: underline;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -127,7 +127,7 @@ a:hover {
 }
 
 code, pre {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     background: var(--c-border);
     color: var(--c-bg);
@@ -174,7 +174,7 @@ blockquote {
 
 /* Base Component Styling */
 .component {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     box-sizing: border-box;
     background: var(--c-bg);
@@ -202,7 +202,7 @@ blockquote {
     position: relative;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
 }
 
 .gallery-item .content {
@@ -301,7 +301,7 @@ blockquote {
 
 /* Grid Content Area */
 .grid-content {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);                      /* F=12px consistent with system */
     text-transform: uppercase;
     text-align: center;
@@ -338,7 +338,7 @@ blockquote {
 .caption-text {
     flex: 1;
     padding: 0 calc(var(--f));               /* F=12px padding like reference 12px */
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);                     /* F=12px for header consistency */
     text-transform: uppercase;
     white-space: nowrap;
@@ -355,7 +355,7 @@ blockquote {
     cursor: pointer;
     position: relative;
     flex-shrink: 0;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);                     /* F=12px consistent */
     transition: background-color 0.2s ease, color 0.2s ease;
     /* Width and height set via JavaScript for mathematical precision */
@@ -415,7 +415,7 @@ blockquote {
 
 /* Button Styles */
 .btn, button {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     background: var(--c-bg);
     color: var(--c-text);
@@ -456,7 +456,7 @@ blockquote {
 
 /* Form Elements */
 .input, .select, input, select, textarea {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     background: var(--c-bg);
     color: var(--c-text);
@@ -768,7 +768,7 @@ body.with-subheader .content-container {
 /* Subheader positioning and layout handled in JavaScript for precise control */
 .subheader {
     /* Base styles only - positioning handled in JS */
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -904,7 +904,7 @@ body.with-subheader .content-container {
     background: var(--c-bg);
     border: 1px solid var(--c-border);
     color: var(--c-text);
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     padding: var(--f);
     cursor: pointer;
@@ -936,7 +936,7 @@ body.with-subheader .content-container {
     min-width: 100%;
     max-height: calc(var(--f) * 25); /* 300px at F=12px */
     overflow-y: auto;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -971,9 +971,75 @@ body.with-subheader .content-container {
    TOC COMPONENTS
    ================================================================= */
 
+/* TOC Gallery Component */
+.toc-gallery.component {
+    /* Mathematical foundation spacing already applied in component */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.toc-gallery.component::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Webkit */
+}
+
+.toc-gallery.component:hover {
+    scrollbar-width: thin; /* Show scrollbar on hover in Firefox */
+    -ms-overflow-style: auto; /* Show scrollbar on hover in IE/Edge */
+}
+
+.toc-gallery.component:hover::-webkit-scrollbar {
+    display: block; /* Show scrollbar on hover in Chrome/Safari/Webkit */
+    height: 8px;
+}
+
+.toc-gallery.component:hover::-webkit-scrollbar-track {
+    background: var(--c-border);
+}
+
+.toc-gallery.component:hover::-webkit-scrollbar-thumb {
+    background: var(--c-text);
+    border-radius: 0;
+}
+
+.toc-gallery.component:hover::-webkit-scrollbar-thumb:hover {
+    background: var(--c-text);
+}
+
+.toc-gallery-grid {
+    /* Flex layout handled by component JS for mathematical precision */
+}
+
+.toc-gallery-thumbnail {
+    /* Individual thumbnail styling */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.toc-gallery-thumbnail:hover {
+    /* Site-wide hover pattern: background/color inversion */
+    background: var(--c-text) !important;
+    color: var(--c-bg) !important;
+}
+
+.toc-gallery-show-more {
+    /* Show more link styling handled by component */
+}
+
+/* Art TOC specific styles */
+.art-toc-item {
+    /* Art-specific TOC item styling */
+}
+
+.toc-item-top {
+    /* Top half of art TOC item */
+}
+
+.toc-item-bottom {
+    /* Bottom half with gallery preview */
+}
+
 .hierarchical-toc {
     width: 100%;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
 }
 
 /* TOC container positioning handled by JavaScript */

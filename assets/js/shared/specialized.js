@@ -214,7 +214,7 @@ export class HierarchicalTOC extends BaseComponent {
                 border: 1px solid var(--c-border);
                 overflow-y: auto;
                 z-index: 100;
-                font-family: 'Space Mono', monospace;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: ${F}px;
             `;
             

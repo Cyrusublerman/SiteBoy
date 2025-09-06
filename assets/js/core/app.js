@@ -629,7 +629,7 @@ const SiteBoyApp = {
         errorContainer.style.cssText = `
             padding: 48px;
             text-align: center;
-            font-family: 'Space Mono', monospace;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: 12px;
         `;
         
@@ -656,7 +656,7 @@ const SiteBoyApp = {
             color: var(--c-bg);
             border: none;
             padding: 12px 24px;
-            font-family: 'Space Mono', monospace;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: 12px;
             cursor: pointer;
             text-transform: uppercase;
@@ -843,7 +843,7 @@ const SiteBoyApp = {
                     color: var(--vga-white);
                     padding: 24px;
                     border: 2px solid var(--vga-white);
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     text-align: center;
                     max-width: 400px;
                 ">

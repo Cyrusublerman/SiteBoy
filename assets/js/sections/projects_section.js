@@ -231,7 +231,7 @@ const ProjectsSection = {
         if (className) element.className = className;
         
         // Apply F=12px styling
-        element.style.fontFamily = '"Space Mono", monospace';
+        element.style.fontFamily = '"Atkinson Hyperlegible Mono", monospace';
         element.style.fontSize = '12px';
         element.style.lineHeight = '1.5';
         element.style.padding = '12px';

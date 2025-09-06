@@ -1,18 +1,70 @@
 /**
  * Art Section - SiteBoy Framework
  * 
- * ART SECTION HANDLER - HierarchicalTOC with gallery pages
- * Handles art galleries and visual content with proper TOC structure
+ * ART SECTION HANDLER - Gallery TOC with preview thumbnails
+ * Handles art galleries and visual content with gallery preview TOC structure
  * 
- * @version 2.0.0 - TOC Structure
+ * @version 3.0.0 - Gallery TOC Structure
  * @dependencies ['ComponentLibrary'] - Consolidated component system
  */
 
 const ArtSection = {
-    version: '2.0.0',
+    version: '3.0.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
+    
+    // Art gallery structure with metadata
+    galleryStructure: {
+        'digital': {
+            title: 'DIGITAL COMPOSITIONS',
+            description: 'Digital artworks and computer-generated compositions',
+            artworks: [
+                { id: 'abstract-01', title: 'Abstract 01', image: null },
+                { id: 'digital-landscape', title: 'Digital Landscape', image: null },
+                { id: 'geometric-01', title: 'Geometric', image: null },
+                { id: 'color-composition', title: 'Color Comp', image: null },
+                { id: 'vector-art', title: 'Vector Art', image: null },
+                { id: 'digital-portrait', title: 'Portrait', image: null }
+            ]
+        },
+        'generative': {
+            title: 'GENERATIVE ART',
+            description: 'Algorithmic and procedurally generated artworks',
+            artworks: [
+                { id: 'algorithm-01', title: 'Algorithm', image: null },
+                { id: 'fractal-study', title: 'Fractal', image: null },
+                { id: 'noise-pattern', title: 'Noise', image: null },
+                { id: 'recursive-design', title: 'Recursive', image: null },
+                { id: 'parameter-space', title: 'Parameter', image: null },
+                { id: 'code-art', title: 'Code Art', image: null }
+            ]
+        },
+        'sketches': {
+            title: 'SKETCHES & STUDIES',
+            description: 'Traditional and digital sketches, studies, and experiments',
+            artworks: [
+                { id: 'sketch-01', title: 'Sketch 01', image: null },
+                { id: 'character-study', title: 'Character', image: null },
+                { id: 'figure-drawing', title: 'Figure', image: null },
+                { id: 'environment-study', title: 'Environment', image: null },
+                { id: 'gesture-drawing', title: 'Gesture', image: null },
+                { id: 'concept-art', title: 'Concept', image: null }
+            ]
+        },
+        'photography': {
+            title: 'PHOTOGRAPHY',
+            description: 'Photographic works and visual documentation',
+            artworks: [
+                { id: 'portrait-01', title: 'Portrait 01', image: null },
+                { id: 'landscape', title: 'Landscape', image: null },
+                { id: 'street-photo', title: 'Street', image: null },
+                { id: 'architecture', title: 'Architecture', image: null },
+                { id: 'nature-study', title: 'Nature', image: null },
+                { id: 'urban-scene', title: 'Urban', image: null }
+            ]
+        }
+    },
     
     /**
      * Handle route changes for art section
@@ -27,29 +79,12 @@ const ArtSection = {
         this.navigationCallbacks = callbacks;
         this.cleanup();
         
-        // Hide subheader for index, show for specific art galleries
+        // Setup subheader for both index and specific art galleries
         if (window.Subheader) {
             if (subsection) {
-                window.Subheader.updateTitle(`art/${subsection}`);
-                
-                // Setup dropdown with all available galleries
-                const dropdownItems = this.getDropdownItems(subsection);
-                window.Subheader.setDropdownContent(dropdownItems, (item) => {
-                    if (item.path && callbacks && callbacks.navigateToSection) {
-                        const pathParts = item.path.replace('#', '').split('/');
-                        if (pathParts.length >= 2) {
-                            callbacks.navigateToSection(pathParts[0], pathParts[1]);
-                        }
-                    }
-                });
-                
-                // Provide navigation context
-                const navigationContext = this.getNavigationContext(subsection, callbacks);
-                window.Subheader.updateNavigation(navigationContext);
-                
-                window.Subheader.show();
+                this.setupSubheaderForGallery(subsection, callbacks);
             } else {
-                window.Subheader.hide();
+                this.setupSubheaderForIndex();
             }
         }
         
@@ -61,115 +96,280 @@ const ArtSection = {
     },
     
     /**
-     * Render art index using ComponentLibrary HierarchicalTOC
+     * Render art TOC index like blog TOC with gallery previews
      */
     renderArtIndex() {
-        console.log('🎨 Rendering art index with HierarchicalTOC component');
+        console.log('🎨 Rendering art TOC index with gallery previews');
         
         // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
         this.currentContainer.classList.add('toc-container');
         
-        // Apply proper body sizing for art index (no subheader)
-        if (window.MathematicalFoundation) {
-            const contentContainer = this.currentContainer.closest('.content-container');
-            if (contentContainer) {
-                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
-                    withSubheader: false 
-                });
-                console.log('✅ Applied no-subheader body sizing for art index');
-            }
+        // Content container positioning is now handled by body.with-subheader CSS class
+        
+        // Create art TOC with gallery previews
+        this.createArtTOCWithGalleries();
+        
+        // Add 4F padding after last TOC section
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        const bottomPadding = this.createElement('div', 'toc-bottom-padding');
+        bottomPadding.style.cssText = `
+            height: ${F * 4}px;
+            width: 100%;
+        `;
+        this.currentContainer.appendChild(bottomPadding);
+        
+        console.log('✅ Art TOC index rendered with gallery previews');
+    },
+    
+    /**
+     * Setup subheader for art index page
+     */
+    setupSubheaderForIndex() {
+        if (!window.Subheader) {
+            console.warn('⚠️ Subheader component not available');
+            return;
         }
         
-        // Define art sections structure matching home section pattern
-        const artSections = [
-            {
-                id: 'digital',
-                title: 'DIGITAL COMPOSITIONS',
-                description: 'Digital artworks and computer-generated compositions',
-                isExpandable: true,
-                isExpanded: true, // Start expanded for better UX
-                subsections: [
-                    { id: 'gallery', title: 'Digital Gallery', path: '#art/digital' }
-                ]
-            },
-            {
-                id: 'generative',
-                title: 'GENERATIVE ART',
-                description: 'Algorithmic and procedurally generated artworks',
-                isExpandable: true,
-                isExpanded: true, // Start expanded for better UX
-                subsections: [
-                    { id: 'gallery', title: 'Generative Gallery', path: '#art/generative' }
-                ]
-            },
-            {
-                id: 'sketches',
-                title: 'SKETCHES & STUDIES',
-                description: 'Traditional and digital sketches, studies, and experiments',
-                isExpandable: true,
-                isExpanded: false, // Start collapsed
-                subsections: [
-                    { id: 'gallery', title: 'Sketches Gallery', path: '#art/sketches' }
-                ]
-            },
-            {
-                id: 'photography',
-                title: 'PHOTOGRAPHY',
-                description: 'Photographic works and visual documentation',
-                isExpandable: true,
-                isExpanded: false, // Start collapsed
-                subsections: [
-                    { id: 'gallery', title: 'Photo Gallery', path: '#art/photography' }
-                ]
-            }
-        ];
+        // Update subheader title
+        window.Subheader.updateTitle('ART GALLERIES');
         
-        // Create hierarchical TOC component using ComponentLibrary with dependencies
-        const tocComponent = new ComponentLibrary.HierarchicalTOC({
-            sections: artSections,
-            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
-            onSubsectionClick: (path) => this.handleSubsectionClick(path)
-        }, {
-            MF: window.MathematicalFoundation,
-            Resize: window.ResizeManager
+        // Build all art pages list for dropdown
+        const allPages = this.getAllArtPages();
+        const currentPath = '#art';
+        const dropdownItems = this.buildDropdownItems(allPages, currentPath);
+        
+        // Setup dropdown
+        window.Subheader.setDropdownContent(dropdownItems, (item) => {
+            if (item.path) {
+                this.navigateToPage(item.path);
+            }
         });
         
-        this.componentInstances.push(tocComponent);
-        this.currentContainer.appendChild(tocComponent.render());
+        // Setup navigation context
+        const navigationContext = {
+            section: 'art',
+            subsection: 'toc', // Use 'toc' as identifier for the main art page
+            items: allPages,
+            navigate: (section, subsection) => {
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    if (subsection === 'toc') {
+                        // Navigate to main art page
+                        this.navigationCallbacks.navigateToSection(section);
+                    } else {
+                        // Navigate to specific gallery
+                        this.navigationCallbacks.navigateToSection(section, subsection);
+                    }
+                }
+            }
+        };
+        window.Subheader.updateNavigation(navigationContext);
         
-        console.log('✅ Art index rendered with HierarchicalTOC component');
-    },
-    
-    /**
-     * Handle section click (expansion toggle)
-     * @param {string} sectionId - Section ID
-     */
-    handleSectionClick(sectionId) {
-        console.log(`🎨 Section clicked: ${sectionId}`);
-        // Find the TOC component and toggle the section
-        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.HierarchicalTOC);
-        if (tocComponent) {
-            tocComponent.toggleSection(sectionId);
+        // Show subheader and set body state
+        window.Subheader.show();
+        
+        // Set app-wide subheader state to ensure proper body class and layout
+        if (window.SiteBoyApp && window.SiteBoyApp.setSubheaderState) {
+            window.SiteBoyApp.setSubheaderState(true);
         }
+        
+        console.log('✅ Subheader setup for art index');
     },
     
     /**
-     * Handle subsection click (navigation)
-     * @param {string} path - Navigation path
+     * Setup subheader for individual gallery
      */
-    handleSubsectionClick(path) {
-        console.log(`🎨 Subsection clicked: ${path}`);
+    setupSubheaderForGallery(galleryId, callbacks) {
+        if (!window.Subheader) {
+            console.warn('⚠️ Subheader component not available');
+            return;
+        }
         
-        // Extract section and subsection from path (e.g., '#art/digital')
-        const hashPath = path.replace('#', '');
-        const [section, subsection] = hashPath.split('/');
+        const gallery = this.galleryStructure[galleryId];
+        if (!gallery) return;
         
-        // Use injected navigation callback
+        // Update subheader title
+        window.Subheader.updateTitle(gallery.title);
+        
+        // Build all galleries list for dropdown
+        const allPages = this.getAllArtPages();
+        const currentPath = `#art/${galleryId}`;
+        const dropdownItems = this.buildDropdownItems(allPages, currentPath);
+        
+        // Setup dropdown
+        window.Subheader.setDropdownContent(dropdownItems, (item) => {
+            if (item.path) {
+                this.navigateToPage(item.path);
+            }
+        });
+        
+        // Setup navigation context
+        const navigationContext = {
+            section: 'art',
+            subsection: galleryId,
+            items: allPages,
+            navigate: (section, subsection) => {
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    this.navigationCallbacks.navigateToSection(section, subsection);
+                }
+            }
+        };
+        window.Subheader.updateNavigation(navigationContext);
+        
+        // Show subheader and set body state
+        window.Subheader.show();
+        
+        // Set app-wide subheader state to ensure proper body class and layout
+        if (window.SiteBoyApp && window.SiteBoyApp.setSubheaderState) {
+            window.SiteBoyApp.setSubheaderState(true);
+        }
+        
+        console.log('✅ Subheader setup for gallery:', gallery.title);
+    },
+    
+    /**
+     * Create art TOC with gallery previews (like blog TOC but with galleries)
+     */
+    createArtTOCWithGalleries() {
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        const headerHeight = F * 2; // 24px
+        
+        let itemIndex = 0;
+        Object.entries(this.galleryStructure).forEach(([galleryKey, gallery]) => {
+            itemIndex++;
+            this.createArtTOCItem(gallery, galleryKey, itemIndex);
+        });
+    },
+    
+    /**
+     * Create individual art TOC item with gallery preview
+     */
+    createArtTOCItem(gallery, galleryKey, itemIndex) {
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        const headerHeight = F * 4; // 48px (4F for heading)
+        const galleryHeight = F * 24; // 288px (24F for gallery)
+        const tocItemHeight = headerHeight + galleryHeight; // 28F total (336px)
+        
+        const tocItem = this.createElement('div', 'toc-item art-toc-item');
+        tocItem.style.cssText = `
+            height: ${tocItemHeight}px; cursor: pointer; display: flex; flex-direction: column;
+            border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); 
+            border-top: ${itemIndex === 1 ? '1px solid var(--c-border)' : 'none'};
+            border-bottom: 1px solid var(--c-border);
+            font-family: 'Atkinson Hyperlegible Mono', monospace; background: var(--c-bg);
+        `;
+        
+        // Top half: Like blog TOC (number + title + description) - 4F height
+        const topHalf = this.createElement('div', 'toc-item-top');
+        topHalf.style.cssText = `
+            height: ${headerHeight}px; display: flex; align-items: stretch;
+        `;
+        
+        // Number box - 4F × 4F square
+        const numberBox = this.createElement('div', 'toc-number');
+        numberBox.textContent = String(itemIndex).padStart(2, '0');
+        numberBox.style.cssText = `
+            width: ${headerHeight}px; height: ${headerHeight}px; background: var(--c-text);
+            color: var(--c-bg); display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        `;
+        
+        // Content
+        const content = this.createElement('div', 'toc-content');
+        content.style.cssText = `
+            flex: 1; padding: ${F}px ${F * 2}px; display: flex; flex-direction: column;
+            justify-content: center; border-left: 1px solid var(--c-border);
+        `;
+        
+        const titleDiv = this.createElement('div');
+        titleDiv.textContent = gallery.title;
+        titleDiv.style.cssText = `
+            margin: 0 0 4px 0; text-transform: uppercase; font-size: 14px; line-height: 1.2;
+        `;
+        
+        const descriptionDiv = this.createElement('div');
+        descriptionDiv.textContent = gallery.description;
+        descriptionDiv.style.cssText = `
+            margin: 0; font-size: 11px; opacity: 0.7; line-height: 1.2;
+        `;
+        
+        content.appendChild(titleDiv);
+        content.appendChild(descriptionDiv);
+        
+        // Arrow - 4F × 4F square
+        const arrow = this.createElement('div', 'toc-arrow');
+        arrow.textContent = '→';
+        arrow.style.cssText = `
+            width: ${headerHeight}px; height: ${headerHeight}px; display: flex;
+            align-items: center; justify-content: center; font-size: 16px;
+            border-left: 1px solid var(--c-border); flex-shrink: 0;
+        `;
+        
+        topHalf.appendChild(numberBox);
+        topHalf.appendChild(content);
+        topHalf.appendChild(arrow);
+        
+        // Bottom half: Gallery preview - exactly 24F height
+        const bottomHalf = this.createElement('div', 'toc-item-bottom');
+        bottomHalf.style.cssText = `
+            height: ${galleryHeight}px; display: flex; align-items: stretch;
+            padding: 0; margin: 0;
+            border-top: 1px solid var(--c-border);
+        `;
+        
+        // Create TOCGallery component for preview
+        const galleryPreview = new ComponentLibrary.TOCGallery({
+            items: gallery.artworks.slice(0, 4), // First 4 artworks
+            cols: 4,
+            showMore: true,
+            showMoreText: 'Show More →',
+            onItemClick: (artwork, index) => {
+                console.log(`🖼️ Artwork clicked: ${artwork.title}`);
+                // Future: Navigate to specific artwork
+                this.navigateToGallery(galleryKey);
+            },
+            onShowMoreClick: () => {
+                this.navigateToGallery(galleryKey);
+            }
+        }, {
+            MF: window.MathematicalFoundation
+        });
+        
+        this.componentInstances.push(galleryPreview);
+        bottomHalf.appendChild(galleryPreview.render());
+        
+        tocItem.appendChild(topHalf);
+        tocItem.appendChild(bottomHalf);
+        
+        // Add hover effects to top half only
+        topHalf.addEventListener('mouseenter', () => {
+            tocItem.style.background = 'var(--c-text)';
+            tocItem.style.color = 'var(--c-bg)';
+            numberBox.style.background = 'var(--c-bg)';
+            numberBox.style.color = 'var(--c-text)';
+        });
+        
+        topHalf.addEventListener('mouseleave', () => {
+            tocItem.style.background = '';
+            tocItem.style.color = '';
+            numberBox.style.background = 'var(--c-text)';
+            numberBox.style.color = 'var(--c-bg)';
+        });
+        
+        // Add click handler to top half
+        topHalf.addEventListener('click', () => {
+            this.navigateToGallery(galleryKey);
+        });
+        
+        this.currentContainer.appendChild(tocItem);
+    },
+    
+    /**
+     * Navigate to gallery
+     */
+    navigateToGallery(galleryKey) {
         if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-            this.navigationCallbacks.navigateToSection(section, subsection);
-        } else {
-            console.warn('Navigation callback not available');
+            this.navigationCallbacks.navigateToSection('art', galleryKey);
         }
     },
     
@@ -179,34 +379,14 @@ const ArtSection = {
     renderArtGallery(galleryId) {
         console.log(`🎨 Rendering art gallery: ${galleryId}`);
         
-        // Gallery information based on TOC structure
-        const galleries = {
-            'digital': {
-                title: 'Digital Compositions',
-                description: 'Digital artworks and computer-generated compositions',
-                artworks: ['Abstract 01', 'Abstract 02', 'Digital Landscape', 'Geometric Study', 'Color Composition', 'Vector Art']
-            },
-            'generative': {
-                title: 'Generative Art',
-                description: 'Algorithmic and procedurally generated artworks',
-                artworks: ['Algorithm 01', 'Fractal Study', 'Noise Pattern', 'Recursive Design', 'Parameter Space', 'Code Art']
-            },
-            'sketches': {
-                title: 'Sketches & Studies',
-                description: 'Traditional and digital sketches, studies, and experiments',
-                artworks: ['Sketch 01', 'Character Study', 'Figure Drawing', 'Environment Study', 'Gesture Drawing', 'Concept Art']
-            },
-            'photography': {
-                title: 'Photography',
-                description: 'Photographic works and visual documentation',
-                artworks: ['Portrait 01', 'Landscape', 'Street Photo', 'Architecture', 'Nature Study', 'Urban Scene']
-            }
-        };
-        
-        const gallery = galleries[galleryId] || {
+        const gallery = this.galleryStructure[galleryId] || {
             title: galleryId.toUpperCase(),
             description: 'Gallery description to be added',
-            artworks: ['Placeholder 1', 'Placeholder 2', 'Placeholder 3']
+            artworks: [
+                { id: 'placeholder-1', title: 'Placeholder 1', image: null },
+                { id: 'placeholder-2', title: 'Placeholder 2', image: null },
+                { id: 'placeholder-3', title: 'Placeholder 3', image: null }
+            ]
         };
         
         // Create gallery using ComponentLibrary components
@@ -226,7 +406,7 @@ const ArtSection = {
         // Create artwork grid using VGAGrid for visual placeholder squares
         const artworkItems = gallery.artworks.map((artwork, index) => ({
             value: `var(--vga-${['navy', 'teal', 'maroon', 'olive', 'purple', 'silver'][index % 6]})`,
-            title: artwork
+            title: artwork.title
         }));
         
         const artworkGrid = new ComponentLibrary.VGAGrid({
@@ -243,12 +423,12 @@ const ArtSection = {
         this.currentContainer.appendChild(artworkGrid.render());
         
         // Add back link
-        const backParagraph = new ComponentLibrary.Paragraph({
-            content: '← Back to Art Gallery'
-        });
-        this.componentInstances.push(backParagraph);
-        
-        const backElement = backParagraph.render();
+        const backElement = this.createElement('div', 'back-link');
+        backElement.textContent = '← Back to Art Gallery';
+        backElement.style.cssText = `
+            cursor: pointer; padding: ${window.MathematicalFoundation?.F || 12}px 0;
+            text-decoration: underline; margin-top: ${(window.MathematicalFoundation?.F || 12) * 2}px;
+        `;
         backElement.classList.add('clickable');
         backElement.addEventListener('click', () => {
             if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
@@ -267,7 +447,7 @@ const ArtSection = {
         if (className) element.className = className;
         
         // Apply F=12px styling
-        element.style.fontFamily = '"Space Mono", monospace';
+        element.style.fontFamily = '"Atkinson Hyperlegible Mono", monospace';
         element.style.fontSize = '12px';
         element.style.lineHeight = '1.5';
         element.style.padding = '12px';
@@ -276,53 +456,61 @@ const ArtSection = {
     },
     
     /**
-     * Get dropdown items for subheader
-     * @param {string} currentSubsection - Current subsection ID
-     * @returns {Array} Dropdown items with current selection marked
+     * Get all art pages in order (TOC first, then all galleries)
      */
-    getDropdownItems(currentSubsection) {
-        const artGalleries = [
-            { label: 'ART INDEX', path: '#art', isTOC: true },
-            { label: 'DIGITAL GALLERY', path: '#art/digital' },
-            { label: 'GENERATIVE ART', path: '#art/generative' },
-            { label: 'SKETCHES & STUDIES', path: '#art/sketches' },
-            { label: 'PHOTOGRAPHY', path: '#art/photography' }
+    getAllArtPages() {
+        const pages = [
+            { 
+                label: 'ART TOC', 
+                path: '#art', 
+                id: 'toc',
+                title: 'ART TOC',
+                isTOC: true 
+            }
         ];
         
-        const currentPath = `#art/${currentSubsection}`;
+        // Add all galleries from galleryStructure
+        Object.keys(this.galleryStructure).forEach(galleryKey => {
+            const gallery = this.galleryStructure[galleryKey];
+            pages.push({
+                label: gallery.title,
+                path: `#art/${galleryKey}`,
+                id: galleryKey,
+                title: gallery.title,
+                isTOC: false
+            });
+        });
         
-        return artGalleries.map(gallery => ({
-            ...gallery,
-            value: gallery.path,
-            isCurrent: gallery.path === currentPath
+        return pages;
+    },
+    
+    /**
+     * Build dropdown items with current selection marked
+     */
+    buildDropdownItems(allPages, currentPath) {
+        return allPages.map(page => ({
+            label: page.label,
+            value: page.path,
+            path: page.path,
+            isCurrent: page.path === currentPath,
+            isTOC: page.isTOC || false
         }));
     },
     
     /**
-     * Get navigation context for subheader
-     * @param {string} currentSubsection - Current subsection ID
-     * @param {Object} callbacks - Navigation callbacks
-     * @returns {Object} Navigation context
+     * Navigate to a page path
      */
-    getNavigationContext(currentSubsection, callbacks) {
-        // Define available art galleries for navigation
-        const artGalleries = [
-            { id: 'digital', title: 'Digital Gallery', path: '#art/digital' },
-            { id: 'generative', title: 'Generative Art', path: '#art/generative' },
-            { id: 'sketches', title: 'Sketches & Studies', path: '#art/sketches' },
-            { id: 'photography', title: 'Photography', path: '#art/photography' }
-        ];
-        
-        return {
-            section: 'art',
-            subsection: currentSubsection,
-            items: artGalleries,
-            navigate: (section, subsection) => {
-                if (callbacks && callbacks.navigateToSection) {
-                    callbacks.navigateToSection(section, subsection);
-                }
+    navigateToPage(path) {
+        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+            const pathParts = path.replace('#', '').split('/');
+            if (pathParts.length === 1) {
+                // Main section (e.g., 'art') - this is the TOC
+                this.navigationCallbacks.navigateToSection(pathParts[0]);
+            } else if (pathParts.length >= 2) {
+                // Subsection (e.g., 'art/digital')
+                this.navigationCallbacks.navigateToSection(pathParts[0], pathParts[1]);
             }
-        };
+        }
     },
     
     /**

@@ -144,7 +144,7 @@ const BlogSection = {
             categoryHeader.style.cssText = `
                 padding: 0 ${F * 2}px; height: ${headerHeight}px; display: flex; align-items: center;
                 background: var(--c-bg); color: var(--c-text); outline: 1px solid var(--c-border);
-                font-family: 'Space Mono', monospace; font-size: ${F}px; text-transform: uppercase;
+                font-family: 'Atkinson Hyperlegible Mono', monospace; font-size: ${F}px; text-transform: uppercase;
                 ${itemIndex > 0 ? 'outline-top: none;' : ''}
             `;
             this.currentContainer.appendChild(categoryHeader);
@@ -168,7 +168,7 @@ const BlogSection = {
         tocItem.style.cssText = `
             height: ${numberBoxSize}px; cursor: pointer; display: flex; align-items: stretch;
             outline: 1px solid var(--c-border); outline-top: none;
-            font-family: 'Space Mono', monospace; transition: background-color 0.2s ease;
+            font-family: 'Atkinson Hyperlegible Mono', monospace; transition: background-color 0.2s ease;
         `;
         
         // Number box
@@ -510,7 +510,7 @@ const BlogSection = {
         if (className) element.className = className;
         
         // Apply F=12px styling
-        element.style.fontFamily = '"Space Mono", monospace';
+        element.style.fontFamily = '"Atkinson Hyperlegible Mono", monospace';
         element.style.fontSize = '12px';
         element.style.lineHeight = '1.5';
         

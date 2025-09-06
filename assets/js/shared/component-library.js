@@ -49,7 +49,8 @@ import {
     Image, 
     Video, 
     Audio, 
-    MarkdownBody 
+    MarkdownBody,
+    TOCGallery 
 } from './content.js';
 
 // Import all interactive components
@@ -106,6 +107,7 @@ export const ComponentLibrary = {
     Video,
     Audio,
     MarkdownBody,
+    TOCGallery,
     
     // Interactive components
     CollapsibleBase,
@@ -149,6 +151,7 @@ export const ComponentLibrary = {
             'video': Video,
             'audio': Audio,
             'markdown': MarkdownBody,
+            'toc-gallery': TOCGallery,
             
             // Interactive
             'dropdown': Dropdown,

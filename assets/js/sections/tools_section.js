@@ -612,7 +612,7 @@ Click any section below to expand and view live examples with usage code.
             margin: 0;
             cursor: pointer;
             user-select: none;
-            font-family: 'Space Mono', monospace;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-weight: bold;
             text-transform: uppercase;
             display: flex;
@@ -645,7 +645,7 @@ Click any section below to expand and view live examples with usage code.
         // Expand/collapse indicator
         const indicator = document.createElement('div');
         indicator.style.cssText = `
-            font-family: 'Space Mono', monospace;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: ${F}px;
             font-weight: bold;
             min-width: 20px;
@@ -748,7 +748,7 @@ Click any section below to expand and view live examples with usage code.
                     color: var(--c-text);
                     border: 1px solid var(--c-border);
                     cursor: pointer;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                 `;
                 
                 demoContainer.appendChild(trigger);
@@ -837,7 +837,7 @@ Click any section below to expand and view live examples with usage code.
                     const label = document.createElement('div');
                     label.textContent = `Size: ${size}`;
                     label.style.cssText = `
-                        font-family: 'Space Mono', monospace;
+                        font-family: 'Atkinson Hyperlegible Mono', monospace;
                         font-size: 10px;
                         color: var(--c-text);
                         margin-bottom: 4px;
@@ -885,7 +885,7 @@ Click any section below to expand and view live examples with usage code.
                 demoContainer.style.cssText = `
                     border: 2px solid var(--c-border);
                     padding: 12px;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 10px;
                     text-align: center;
                     color: var(--c-text);
@@ -917,7 +917,7 @@ Click any section below to expand and view live examples with usage code.
                     border: 1px solid var(--c-border);
                     height: 24px;
                     display: flex;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 12px;
                     background: var(--c-bg);
                 `;
@@ -987,7 +987,7 @@ Click any section below to expand and view live examples with usage code.
                     border: 1px solid var(--c-border);
                     height: 24px;
                     display: flex;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 10px;
                     background: var(--c-bg);
                 `;
@@ -1033,7 +1033,7 @@ Click any section below to expand and view live examples with usage code.
                     border: 1px solid var(--c-border);
                     height: 24px;
                     display: flex;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 12px;
                     background: var(--c-bg);
                 `;
@@ -1371,7 +1371,7 @@ Click any section below to expand and view live examples with usage code.
                     border: 1px solid var(--c-border);
                     padding: 12px;
                     text-align: center;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 10px;
                     width: 200px;
                     height: 100px;
@@ -1396,7 +1396,7 @@ Click any section below to expand and view live examples with usage code.
                     border: 1px solid var(--c-border);
                     padding: 12px;
                     text-align: center;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 10px;
                     width: 200px;
                     height: 40px;
@@ -1473,7 +1473,7 @@ Click any section below to expand and view live examples with usage code.
                 placeholder.style.cssText = `
                     padding: 12px; border: 1px dashed var(--c-border);
                     color: var(--c-text); text-align: center;
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
                     font-size: 10px;
                 `;
                 placeholder.textContent = `${title} example - to be implemented`;
@@ -1506,7 +1506,7 @@ Click any section below to expand and view live examples with usage code.
         titleElement.style.cssText = `
             font-weight: bold; 
             margin-bottom: var(--f);
-            font-family: 'Space Mono', monospace;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: var(--f);
         `;
         titleElement.innerHTML = `<strong>${title}:</strong> <code>${usage}</code>`;
