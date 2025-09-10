@@ -5,7 +5,6 @@
  * - VGAGrid (VGA-styled color grid component)
  * - MathematicalCanvas (mathematical visualization canvas)
  * - ProgressBar (progress indicator component)
- * - HierarchicalTOC (table of contents with hierarchy)
  * 
  * DO NOT ADD DUPLICATES OF THESE COMPONENTS IN OTHER FILES!
  * This is the SINGLE SOURCE OF TRUTH for all specialized/advanced UI components.
@@ -16,7 +15,6 @@
  * 
  * DEPENDENCIES:
  * - foundation.js (BaseComponent)
- * - interactive.js (CollapsibleBase for HierarchicalTOC)
  * 
  * 📖 PLACEMENT GUIDE: See COMPONENT_PLACEMENT_GUIDE.md for component placement rules
  * 🚨 BEFORE ADDING: Check if component already exists and verify correct category
@@ -183,119 +181,3 @@ export class ProgressBar extends BaseComponent {
     }
 }
 
-/**
- * HierarchicalTOC - Table of Contents component with hierarchy
- */
-export class HierarchicalTOC extends BaseComponent {
-    constructor(options = {}, deps = {}) {
-        super({ ...options, componentType: 'toc' }, deps);
-        this.sections = options.sections || [];
-        this.onSectionClick = options.onSectionClick || null;
-        this.onSubsectionClick = options.onSubsectionClick || null;
-    }
-    
-    render() {
-        if (!this.element) {
-            const F = this.deps.MF ? this.deps.MF.F : 12;
-            
-            this.element = this.createElement('div', 'hierarchical-toc');
-            
-            // Calculate dimensions based on mathematical foundation
-            const layout = this.deps.MF ? this.deps.MF.computeLayout() : { gridWidth: 800, headerHeight: 24 };
-            const dimensions = this.calculateTOCDimensions(layout);
-            
-            this.element.style.cssText = `
-                position: fixed;
-                top: var(--content-y-with-sub);
-                left: var(--layout-margin);
-                width: ${dimensions.tocWidth}px;
-                height: ${dimensions.tocHeight}px;
-                background: var(--c-bg);
-                border: 1px solid var(--c-border);
-                overflow-y: auto;
-                z-index: 100;
-                font-family: 'Atkinson Hyperlegible Mono', monospace;
-                font-size: ${F}px;
-            `;
-            
-            // Generate TOC content
-            this.generateTOCContent();
-            
-            // Subscribe to resize
-            this.subscribeToResize();
-        }
-        return this.element;
-    }
-    
-    calculateTOCDimensions(layout) {
-        // Calculate TOC dimensions based on layout
-        const tocWidth = Math.floor(layout.gridWidth * 0.25); // 25% of content width
-        const tocHeight = Math.floor(layout.gridWidth * 0.5); // Proportional height
-        
-        return { tocWidth, tocHeight };
-    }
-    
-    generateTOCContent() {
-        if (!this.sections || this.sections.length === 0) {
-            this.element.innerHTML = '<div style="padding: 12px; color: var(--c-text-dim);">No sections available</div>';
-            return;
-        }
-        
-        const F = this.deps.MF ? this.deps.MF.F : 12;
-        
-        this.sections.forEach((section, index) => {
-            // Main section
-            const sectionEl = this.createElement('div', 'toc-section');
-            sectionEl.style.cssText = `
-                padding: ${F/2}px ${F}px;
-                border-bottom: 1px solid var(--c-border);
-                cursor: pointer;
-                font-weight: bold;
-                text-transform: uppercase;
-            `;
-            sectionEl.textContent = section.title || `Section ${index + 1}`;
-            
-            if (this.onSectionClick) {
-                sectionEl.addEventListener('click', () => this.onSectionClick(section, index));
-            }
-            
-            this.element.appendChild(sectionEl);
-            
-            // Subsections
-            if (section.subsections && section.subsections.length > 0) {
-                section.subsections.forEach((subsection, subIndex) => {
-                    const subEl = this.createElement('div', 'toc-subsection');
-                    subEl.style.cssText = `
-                        padding: ${F/3}px ${F*1.5}px;
-                        border-bottom: 1px solid var(--c-border-light);
-                        cursor: pointer;
-                        font-size: ${F*0.9}px;
-                        color: var(--c-text-dim);
-                    `;
-                    subEl.textContent = subsection.title || `Subsection ${subIndex + 1}`;
-                    
-                    if (this.onSubsectionClick) {
-                        subEl.addEventListener('click', () => this.onSubsectionClick(subsection, index, subIndex));
-                    }
-                    
-                    this.element.appendChild(subEl);
-                });
-            }
-        });
-    }
-    
-    /**
-     * Handle resize event - recalculate dimensions
-     */
-    onResize() {
-        if (this.element && this.deps.MF) {
-            const layout = this.deps.MF.computeLayout();
-            const dimensions = this.calculateTOCDimensions(layout);
-            
-            this.element.style.width = `${dimensions.tocWidth}px`;
-            this.element.style.height = `${dimensions.tocHeight}px`;
-            
-            console.log('📚 HierarchicalTOC: Dimensions recalculated on resize');
-        }
-    }
-}

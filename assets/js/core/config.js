@@ -133,9 +133,13 @@ export const LayoutCalculator = {
      * Key: Floor first half, calculate remainder for second half (NO ROUNDING ERRORS)
      */
     computeLayout(width = window.innerWidth, height = window.innerHeight) {
-        const cols = this.computeColumns(width, height);
+        // Account for scrollbar in mobile by using clientWidth when available
+        const actualWidth = document.documentElement ? 
+            Math.min(width, document.documentElement.clientWidth) : width;
+        
+        const cols = this.computeColumns(actualWidth, height);
         const currentMargin = cols === 1 ? Config.margins.mobile : Config.margins.desktop;
-        const geo = this.calculateGridGeometry(width, cols, Config.grid.gap, currentMargin);
+        const geo = this.calculateGridGeometry(actualWidth, cols, Config.grid.gap, currentMargin);
         const headerHeight = Config.sizing.header; // 24px (2*F) - KEEP F SYSTEM
         
         // REFERENCE MATHEMATICAL PRECISION: Header split calculation with border offset

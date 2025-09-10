@@ -467,7 +467,8 @@ export class PageContainer extends BaseComponent {
             this.element = this.createElement('div');
             this.element.id = 'wrapper';
             this.element.style.cssText = `
-                position: relative; width: 100vw; min-height: 100vh; background: var(--c-bg);
+                position: relative; width: 100%; min-height: 100vh; background: var(--c-bg);
+                box-sizing: border-box;
             `;
             
             // Create curtains for proper margins (like original)
@@ -586,9 +587,9 @@ export class PageContainer extends BaseComponent {
                 '--subheader-y': `${mobileMargin + headerHeight}px`,
                 '--content-y-with-sub': `${mobileMargin + (2 * headerHeight)}px`,
                 '--content-y-no-sub': `${mobileMargin + headerHeight}px`,
-                '--footer-y': `${windowHeight - headerHeight}px`,
-                '--content-min-h-with-sub': `${windowHeight - (mobileMargin + 3 * headerHeight)}px`,
-                '--content-min-h-no-sub': `${windowHeight - (mobileMargin + 2 * headerHeight)}px`,
+                '--footer-y': `${windowHeight - headerHeight - mobileMargin}px`,  // Footer with same margin as header
+                '--content-min-h-with-sub': `${windowHeight - (mobileMargin * 2 + 3 * headerHeight)}px`,  // Account for both top and bottom margins
+                '--content-min-h-no-sub': `${windowHeight - (mobileMargin * 2 + 2 * headerHeight)}px`,    // Account for both top and bottom margins
                 '--layout-type': 'mobile'
             });
         }
@@ -905,12 +906,13 @@ export class PageFooter extends BaseComponent {
                 box-sizing: border-box; cursor: pointer;
             `;
             backToTop.addEventListener('click', () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
             });
             backToTop.classList.add('clickable');
             this.element.appendChild(backToTop);
             
-            // Instagram link (25%) - with left border separator
+            // Instagram link (25%) - with right border separator
             const instagramLink = this.createElement('a', 'footer-item');
             instagramLink.href = 'https://instagram.com';
             instagramLink.target = '_blank';
@@ -919,12 +921,12 @@ export class PageFooter extends BaseComponent {
                 position: absolute; top: 0; left: 25%; height: 100%; width: 25%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
-                border-left: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
+                border-right: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
             `;
             instagramLink.classList.add('clickable');
             this.element.appendChild(instagramLink);
             
-            // Contact link (25%) - with left border separator  
+            // Contact link (25%) - with right border separator  
             const contactLink = this.createElement('a', 'footer-item');
             contactLink.href = 'mailto:contact@example.com';
             contactLink.textContent = 'CONTACT';
@@ -932,12 +934,12 @@ export class PageFooter extends BaseComponent {
                 position: absolute; top: 0; left: 50%; height: 100%; width: 25%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
-                border-left: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
+                border-right: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
             `;
             contactLink.classList.add('clickable');
             this.element.appendChild(contactLink);
             
-            // Footer toggle (25%) - with left border separator
+            // Footer toggle (25%) - no border (last item)
             const footerToggle = this.createElement('div', 'footer-item');
             footerToggle.id = 'footer-toggle';
             footerToggle.textContent = '◐';
@@ -945,7 +947,7 @@ export class PageFooter extends BaseComponent {
                 position: absolute; top: 0; left: 75%; height: 100%; width: 25%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px;
-                border-left: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
+                box-sizing: border-box; cursor: pointer;
             `;
             footerToggle.addEventListener('click', () => {
                 console.log('Footer toggle clicked - can be extended for additional features');
@@ -982,8 +984,6 @@ export class Subheader extends BaseComponent {
         if (!this.element) {
             this.element = this.createElement('div', 'subheader');
             this.element.id = 'subheader';
-            this.hide(); // Start hidden
-            
             // Apply precise subheader styling to fix border and width issues
             this.element.style.cssText = `
                 position: fixed;
@@ -1084,6 +1084,9 @@ export class Subheader extends BaseComponent {
             this.element.appendChild(subheaderTitle);
             this.element.appendChild(subheaderNav);
             
+            // Append to document body (essential for visibility)
+            document.body.appendChild(this.element);
+            
             // Subscribe to resize
             this.subscribeToResize();
         }
@@ -1091,9 +1094,20 @@ export class Subheader extends BaseComponent {
     }
     
     updateTitle(title) {
+        console.log(`🏷️ Subheader updateTitle called: "${title}"`);
+        
+        // Ensure subheader is rendered
+        if (!this.element) {
+            console.log('🔄 Subheader not rendered, rendering now...');
+            this.render();
+        }
+        
         const titleElement = this.element?.querySelector('.subheader-title');
         if (titleElement) {
             titleElement.textContent = title.toUpperCase();
+            console.log(`✅ Subheader title updated to: "${titleElement.textContent}"`);
+        } else {
+            console.warn('⚠️ Subheader title element not found');
         }
         this.sectionTitle = title;
     }
@@ -1122,9 +1136,19 @@ export class Subheader extends BaseComponent {
      * Calculate previous and next items based on current position with looping
      */
     calculateNavigationItems(items, currentSubsection) {
-        const currentIndex = items.findIndex(item => 
-            item.id === currentSubsection || item.path === `#${this.currentSection}/${currentSubsection}`
-        );
+        let currentIndex = -1;
+        
+        if (currentSubsection === null || currentSubsection === undefined) {
+            // For section index pages (like blog TOC), look for isTOC or section path
+            currentIndex = items.findIndex(item => 
+                item.isTOC === true || item.path === `#${this.currentSection}`
+            );
+        } else {
+            // For subsection pages, look for ID or full path match
+            currentIndex = items.findIndex(item => 
+                item.id === currentSubsection || item.path === `#${this.currentSection}/${currentSubsection}`
+            );
+        }
         
         if (currentIndex === -1 || items.length <= 1) {
             this.prevItem = null;
@@ -1138,6 +1162,28 @@ export class Subheader extends BaseComponent {
         
         // Next: if at end (last index), go to first item
         this.nextItem = currentIndex < items.length - 1 ? items[currentIndex + 1] : items[0];
+    }
+    
+    /**
+     * Clear all subheader content and state
+     */
+    clearContent() {
+        // Reset navigation state
+        this.currentSection = null;
+        this.currentSubsection = null;
+        this.navigationContext = null;
+        this.prevItem = null;
+        this.nextItem = null;
+        
+        // Force re-render of subheader to ensure clean state
+        if (this.element) {
+            console.log('🔄 Force re-rendering subheader for clean state');
+            this.element.remove();
+            this.element = null;
+            this.dropdownComponent = null;
+        }
+        
+        console.log('🧹 Subheader cleared and will re-render on next use');
     }
     
     /**
@@ -1176,9 +1222,21 @@ export class Subheader extends BaseComponent {
      * Show subheader with proper display
      */
     show() {
+        // Ensure subheader is rendered
+        if (!this.element) {
+            console.log('🔄 Subheader not rendered for show(), rendering now...');
+            this.render();
+        }
+        
         if (this.element) {
             this.element.style.display = 'flex';
-            console.log('🧭 Subheader shown');
+            // Force the display property to override any CSS
+            this.element.style.setProperty('display', 'flex', 'important');
+            
+            // Update body class to show subheader
+            document.body.className = 'with-subheader';
+            
+            console.log(`🧭 Subheader shown with title: "${this.sectionTitle || 'unknown'}" - display: ${this.element.style.display}, body class: ${document.body.className}`);
         }
     }
     
@@ -1188,7 +1246,11 @@ export class Subheader extends BaseComponent {
     hide() {
         if (this.element) {
             this.element.style.display = 'none';
-            console.log('🧭 Subheader hidden');
+            
+            // Update body class to hide subheader
+            document.body.className = 'no-subheader';
+            
+            console.log(`🧭 Subheader hidden - body class: ${document.body.className}`);
         }
     }
     
@@ -1388,7 +1450,11 @@ export class Subheader extends BaseComponent {
      * @param {Function} onSelect - Selection handler
      */
     setDropdownContent(items, onSelect = null) {
-        if (!this.element) return;
+        // Ensure subheader is rendered
+        if (!this.element) {
+            console.log('🔄 Subheader not rendered for setDropdownContent(), rendering now...');
+            this.render();
+        }
         
         console.log('🔄 Subheader.setDropdownContent called with items:', items);
         console.log('🔄 Subheader element exists:', !!this.element);

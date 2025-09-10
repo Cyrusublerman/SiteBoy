@@ -61,79 +61,102 @@ const ToolsSection = {
     },
     
     /**
-     * Render tools index using ComponentLibrary HierarchicalTOC
+     * Render tools index using ComponentLibrary SimpleTOC
      */
     renderToolsIndex() {
-        console.log('🔧 Rendering tools index with HierarchicalTOC component');
+        console.log('🔧 Rendering tools index with SimpleTOC component');
         
         // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
         this.currentContainer.classList.add('toc-container');
         
         // Apply proper body sizing for tools index (no subheader)
-        if (window.MathematicalFoundation) {
+        if (window.LayoutCalculator) {
             const contentContainer = this.currentContainer.closest('.content-container');
             if (contentContainer) {
-                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
-                    withSubheader: false 
-                });
+                const F = window.LayoutCalculator.F;
+                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
+                contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
                 console.log('✅ Applied no-subheader body sizing for tools index');
             }
         }
         
-        // Define tools sections structure matching home section pattern
+        // Define simple tools sections (direct navigation, no nesting)
         const toolsSections = [
             {
-                id: 'development',
-                title: 'DEVELOPMENT TOOLS',
-                description: 'Interactive development and testing utilities',
-                isExpandable: true,
-                isExpanded: true, // Start expanded for better UX
-                subsections: [
-                    { id: 'ui-test', title: 'UI Test Tool', path: '#tools/ui-test' },
-                    { id: 'component-test', title: 'Component Test', path: '#tools/component-test' },
-                    { id: 'canvas-test', title: 'Canvas Test', path: '#tools/canvas-test' }
-                ]
+                id: 'ui-test',
+                title: 'UI TEST TOOL',
+                description: 'Interactive component testing and development utility'
             },
             {
-                id: 'creative',
-                title: 'CREATIVE TOOLS',
-                description: 'Color, typography, and visual design utilities',
-                isExpandable: true,
-                isExpanded: true, // Start expanded for better UX
-                subsections: [
-                    { id: 'color-grid', title: 'VGA Color Grid', path: '#tools/color-grid' },
-                    { id: 'typography', title: 'Typography Tool', path: '#tools/typography' },
-                    { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' }
-                ]
+                id: 'component-test',
+                title: 'COMPONENT TEST',
+                description: 'Individual component testing and validation'
             },
             {
-                id: 'analysis',
-                title: 'ANALYSIS TOOLS',
-                description: 'Font analysis and color quantization utilities',
-                isExpandable: true,
-                isExpanded: false, // Start collapsed
-                subsections: [
-                    { id: 'font-analysis', title: 'Font Analysis', path: '#tools/font-analysis' },
-                    { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' }
-                ]
+                id: 'canvas-test',
+                title: 'CANVAS TEST',
+                description: 'Canvas drawing and mathematical visualization'
+            },
+            {
+                id: 'color-grid',
+                title: 'VGA COLOR GRID',
+                description: 'VGA color palette exploration and testing'
+            },
+            {
+                id: 'typography',
+                title: 'TYPOGRAPHY TOOL',
+                description: 'Font testing and typography validation'
+            },
+            {
+                id: 'pixel-tiler',
+                title: 'PIXEL TILER',
+                description: 'Pixel art and tiling pattern creator'
+            },
+            {
+                id: 'font-analysis',
+                title: 'FONT ANALYSIS',
+                description: 'Font metrics and character analysis tool'
+            },
+            {
+                id: 'color-quantizer',
+                title: 'COLOR QUANTIZER',
+                description: 'Image color reduction and palette extraction'
             }
         ];
         
-        // Create hierarchical TOC component using ComponentLibrary with dependencies
-        const tocComponent = new ComponentLibrary.HierarchicalTOC({
+        // Create simple TOC component using ComponentLibrary with dependencies
+        const tocComponent = new ComponentLibrary.SimpleTOC({
             sections: toolsSections,
-            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
-            onSubsectionClick: (path) => this.handleSubsectionClick(path)
+            onItemClick: (item) => this.handleToolClick(item)
         }, {
-            MF: window.MathematicalFoundation,
+            MF: window.LayoutCalculator,
             Resize: window.ResizeManager
         });
         
         this.componentInstances.push(tocComponent);
         this.currentContainer.appendChild(tocComponent.render());
         
-        console.log('✅ Tools index rendered with HierarchicalTOC component');
+        console.log('✅ Tools index rendered with SimpleTOC component');
+    },
+    
+    /**
+     * Handle tool click from SimpleTOC
+     */
+    handleToolClick(item) {
+        this.navigateToTool(item.id);
+        console.log(`🔧 Tool clicked: ${item.title} -> ${item.id}`);
+    },
+    
+    /**
+     * Navigate to specific tool
+     */
+    navigateToTool(toolId) {
+        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+            this.navigationCallbacks.navigateToSection('tools', toolId);
+        } else {
+            console.warn('⚠️ Navigation callbacks not available');
+        }
     },
     
     /**
@@ -201,7 +224,7 @@ const ToolsSection = {
     handleSectionClick(sectionId) {
         console.log(`🔧 Section clicked: ${sectionId}`);
         // Find the TOC component and toggle the section
-        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.HierarchicalTOC);
+        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.SimpleTOC);
         if (tocComponent) {
             tocComponent.toggleSection(sectionId);
         }
@@ -287,7 +310,7 @@ const component = new ComponentLibrary.ComponentName(options, {
 
 **Navigation:** BaseNavigationDropdown, Dropdown, Menu, Breadcrumb  
 **Layout:** Grid, Spacing, PageContainer, PageHeader, PageFooter, Subheader  
-**Typography:** Heading, Paragraph, Quote, MarkdownBody, HierarchicalTOC  
+**Typography:** Heading, Paragraph, Quote, MarkdownBody, SimpleTOC, NumberedTOC  
 **Forms:** Button, ButtonGroup, Input, Select  
 **Data Viz:** BarGraph, LineGraph, PieGraph, ProgressBar  
 **Media:** Image, Video, Audio  
@@ -487,7 +510,7 @@ Click any section below to expand and view live examples with usage code.
     handleComponentSectionClick(sectionId) {
         console.log(`🧪 Component section clicked: ${sectionId}`);
         // Find the TOC component and toggle the section
-        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.HierarchicalTOC);
+        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.SimpleTOC);
         if (tocComponent) {
             tocComponent.toggleSection(sectionId);
         }
@@ -543,7 +566,7 @@ Click any section below to expand and view live examples with usage code.
                     { id: 'paragraph', title: 'Paragraph', method: 'renderParagraphExample' },
                     { id: 'quote', title: 'Quote', method: 'renderQuoteExample' },
                     { id: 'markdown', title: 'MarkdownBody', method: 'renderMarkdownExample' },
-                    { id: 'hierarchical-toc', title: 'HierarchicalTOC', method: 'renderHierarchicalTOCExample' }
+                    { id: 'simple-toc', title: 'SimpleTOC', method: 'renderSimpleTOCExample' }
                 ]
             },
             {

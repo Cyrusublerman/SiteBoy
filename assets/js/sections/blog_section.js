@@ -17,8 +17,28 @@ const BlogSection = {
     currentArticle: null,
     currentCategory: null,
     
-    // Blog structure based on old assets/blog/ folders
+    // Blog structure based on actual blog/ folder structure
     blogStructure: {
+        'docs': {
+            title: 'DOCUMENTATION',
+            description: 'Technical documentation and analysis',
+            articles: [
+                { id: 'SITEBOY_ARCHITECTURE_FLOW', title: 'SiteBoy Architecture Flow', path: '#blog/docs/SITEBOY_ARCHITECTURE_FLOW' },
+                { id: 'ANALYSIS_OLD_BUILD_vs_CURRENT', title: 'Old Build Analysis', path: '#blog/docs/ANALYSIS_OLD_BUILD_vs_CURRENT' },
+                { id: 'BODY-SIZING-FIX', title: 'Body Sizing Fix', path: '#blog/docs/BODY-SIZING-FIX' },
+                { id: 'COMPONENT_AESTHETICS_ANALYSIS', title: 'Component Aesthetics', path: '#blog/docs/COMPONENT_AESTHETICS_ANALYSIS' },
+                { id: 'DROPDOWN-IMPLEMENTATION-PLAN', title: 'Dropdown Implementation', path: '#blog/docs/DROPDOWN-IMPLEMENTATION-PLAN' },
+                { id: 'DROPDOWN-TOC-METHODOLOGY', title: 'Dropdown TOC Methodology', path: '#blog/docs/DROPDOWN-TOC-METHODOLOGY' },
+                { id: 'HOME-PAGE-TOC-IMPLEMENTATION', title: 'Home Page TOC', path: '#blog/docs/HOME-PAGE-TOC-IMPLEMENTATION' },
+                { id: 'MATHEMATICAL_ALIGNMENT_ANALYSIS', title: 'Mathematical Alignment', path: '#blog/docs/MATHEMATICAL_ALIGNMENT_ANALYSIS' },
+                { id: 'OLD_BUILD_SUPERIOR_AREAS', title: 'Old Build Analysis', path: '#blog/docs/OLD_BUILD_SUPERIOR_AREAS' },
+                { id: 'PAGE-BUILD-COMPLIANCE-FINAL', title: 'Page Build Compliance', path: '#blog/docs/PAGE-BUILD-COMPLIANCE-FINAL' },
+                { id: 'PAGE-BUILD-COMPLIANCE-REPORT', title: 'Build Compliance Report', path: '#blog/docs/PAGE-BUILD-COMPLIANCE-REPORT' },
+                { id: 'REFACTOR-COMPLETE', title: 'Refactor Complete', path: '#blog/docs/REFACTOR-COMPLETE' },
+                { id: 'SETUP-SPEC', title: 'Setup Specification', path: '#blog/docs/SETUP-SPEC' },
+                { id: 'UI_COMPONENT_DIFFERENCES_ANALYSIS', title: 'UI Component Differences', path: '#blog/docs/UI_COMPONENT_DIFFERENCES_ANALYSIS' }
+            ]
+        },
         'music': {
             title: 'MUSIC THEORY',
             description: 'Articles about musical composition, theory, and analysis',
@@ -56,7 +76,7 @@ const BlogSection = {
      * @param {HTMLElement} container - Content container
      * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
-    handleRoute(subsection, container, callbacks = {}) {
+    async handleRoute(subsection, container, callbacks = {}) {
         console.log(`📝 Blog Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
@@ -87,7 +107,7 @@ const BlogSection = {
                 if (article) {
                     this.currentCategory = category;
                     this.currentArticle = articleId;
-                    this.renderArticle(category, article);
+                    await this.renderArticle(category, article);
                     this.setupSubheaderForArticle(category, articleId);
                 } else {
                     this.renderError(`Article not found: ${articleId}`);
@@ -122,128 +142,54 @@ const BlogSection = {
         this.componentInstances.push(description);
         this.currentContainer.appendChild(description.render());
         
-        // Create hierarchical TOC
-        this.createHierarchicalBlogTOC();
+        // Create blog TOC using proper ComponentLibrary component with collapsible sections
+        const blogTOCData = this.prepareBlogTOCData();
+        const numberedTOC = new ComponentLibrary.NumberedTOC({
+            sections: blogTOCData,
+            onItemClick: (item) => this.handleBlogTOCItemClick(item),
+            collapsible: true
+        }, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
+        });
         
-        console.log('✅ Blog TOC index rendered');
+        this.componentInstances.push(numberedTOC);
+        this.currentContainer.appendChild(numberedTOC.render());
+        
+        console.log('✅ Blog TOC index rendered using ComponentLibrary');
     },
-    
+
     /**
-     * Create hierarchical blog TOC using numbered rows (like old design)
+     * Prepare blog TOC data for NumberedTOC component
      */
-    createHierarchicalBlogTOC() {
-        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
-        const headerHeight = F * 2; // 24px
-        
-        let itemIndex = 0;
-        
-        Object.entries(this.blogStructure).forEach(([categoryKey, category]) => {
-            // Category header
-            const categoryHeader = this.createElement('div', 'toc-category-header');
-            categoryHeader.textContent = category.title + ' /';
-            categoryHeader.style.cssText = `
-                padding: 0 ${F * 2}px; height: ${headerHeight}px; display: flex; align-items: center;
-                background: var(--c-bg); color: var(--c-text); outline: 1px solid var(--c-border);
-                font-family: 'Atkinson Hyperlegible Mono', monospace; font-size: ${F}px; text-transform: uppercase;
-                ${itemIndex > 0 ? 'outline-top: none;' : ''}
-            `;
-            this.currentContainer.appendChild(categoryHeader);
-            
-            // Category articles
-            category.articles.forEach((article) => {
-                itemIndex++;
-                this.createBlogTOCItem(article, categoryKey, itemIndex);
-            });
-        });
+    prepareBlogTOCData() {
+        return Object.entries(this.blogStructure).map(([categoryKey, category]) => ({
+            title: category.title,
+            description: category.description,
+            articles: category.articles.map(article => ({
+                title: article.title,
+                description: `${article.id}.md`,
+                id: article.id,
+                categoryKey: categoryKey
+            }))
+        }));
     },
-    
+
     /**
-     * Create individual blog TOC item
+     * Handle blog TOC item click from NumberedTOC component
      */
-    createBlogTOCItem(article, categoryKey, itemIndex) {
-        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
-        const numberBoxSize = F * 4; // 48px
-        
-        const tocItem = this.createElement('div', 'toc-item');
-        tocItem.style.cssText = `
-            height: ${numberBoxSize}px; cursor: pointer; display: flex; align-items: stretch;
-            outline: 1px solid var(--c-border); outline-top: none;
-            font-family: 'Atkinson Hyperlegible Mono', monospace; transition: background-color 0.2s ease;
-        `;
-        
-        // Number box
-        const numberBox = this.createElement('div', 'toc-number');
-        numberBox.textContent = String(itemIndex).padStart(2, '0');
-        numberBox.style.cssText = `
-            width: ${numberBoxSize}px; height: ${numberBoxSize}px; background: var(--c-text);
-            color: var(--c-bg); display: flex; align-items: center; justify-content: center;
-            font-size: 18px; flex-shrink: 0;
-        `;
-        
-        // Content
-        const content = this.createElement('div', 'toc-content');
-        content.style.cssText = `
-            flex: 1; padding: ${F}px ${F * 2}px; display: flex; flex-direction: column;
-            justify-content: center; outline-left: 1px solid var(--c-border);
-        `;
-        
-        const titleDiv = this.createElement('div');
-        titleDiv.textContent = article.title;
-        titleDiv.style.cssText = `
-            margin: 0 0 4px 0; text-transform: uppercase; font-size: 14px; line-height: 1.2;
-        `;
-        
-        const filenameDiv = this.createElement('div');
-        filenameDiv.textContent = `${article.id}.md`;
-        filenameDiv.style.cssText = `
-            margin: 0; font-size: 11px; opacity: 0.7; text-transform: uppercase; line-height: 1;
-        `;
-        
-        content.appendChild(titleDiv);
-        content.appendChild(filenameDiv);
-        
-        // Arrow
-        const arrow = this.createElement('div', 'toc-arrow');
-        arrow.textContent = '→';
-        arrow.style.cssText = `
-            width: ${numberBoxSize}px; height: ${numberBoxSize}px; display: flex;
-            align-items: center; justify-content: center; font-size: 16px;
-            outline-left: 1px solid var(--c-border); flex-shrink: 0;
-        `;
-        
-        tocItem.appendChild(numberBox);
-        tocItem.appendChild(content);
-        tocItem.appendChild(arrow);
-        
-        // Add hover effects (consistent with framework standard)
-        tocItem.addEventListener('mouseenter', () => {
-            tocItem.style.background = 'var(--c-text)';
-            tocItem.style.color = 'var(--c-bg)';
-            numberBox.style.background = 'var(--c-bg)';
-            numberBox.style.color = 'var(--c-text)';
-        });
-        
-        tocItem.addEventListener('mouseleave', () => {
-            tocItem.style.background = '';
-            tocItem.style.color = '';
-            numberBox.style.background = 'var(--c-text)';
-            numberBox.style.color = 'var(--c-bg)';
-        });
-        
-        // Add click handler
-        tocItem.addEventListener('click', () => {
-            if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-                this.navigationCallbacks.navigateToSection('blog', `${categoryKey}/${article.id}`);
-            }
-        });
-        
-        this.currentContainer.appendChild(tocItem);
+    handleBlogTOCItemClick(item) {
+        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+            this.navigationCallbacks.navigateToSection('blog', `${item.categoryKey}/${item.id}`);
+        }
+        console.log(`📝 Blog TOC item clicked: ${item.title}`);
     },
     
     /**
      * Setup subheader for blog index (TOC)
      */
     setupSubheaderForIndex() {
+        console.log('📝 setupSubheaderForIndex() called - setting up subheader for blog TOC');
         if (!window.Subheader) {
             console.warn('⚠️ Subheader component not available');
             return;
@@ -263,14 +209,23 @@ const BlogSection = {
             }
         });
         
-        // Setup navigation (first/last article)
-        const firstArticle = allPages[0];
-        const lastArticle = allPages[allPages.length - 1];
+        // Setup prev/next navigation with looping (TOC is at index 0)
+        const currentIndex = 0; // TOC is always at index 0
+        const prevIndex = allPages.length - 1; // Previous = last article
+        const nextIndex = 1; // Next = first actual article
         
-        window.Subheader.updateNavigation(
-            () => this.navigateToPage(lastArticle.path), // Previous = last (loop)
-            () => this.navigateToPage(firstArticle.path)  // Next = first
-        );
+        // Use consistent navigation API
+        const navigationContext = {
+            section: 'blog',
+            subsection: null, // TOC has no subsection
+            items: allPages,
+            navigate: (section, subsection) => {
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    this.navigationCallbacks.navigateToSection(section, subsection);
+                }
+            }
+        };
+        window.Subheader.updateNavigation(navigationContext);
         
         // Show subheader
         window.Subheader.show();
@@ -334,14 +289,14 @@ const BlogSection = {
      */
     getAllBlogPages() {
         const pages = [
-            { label: 'BLOG TOC', path: '#blog', isTOC: true }
+            { title: 'BLOG TOC', path: '#blog', isTOC: true }
         ];
         
         // Add all articles from all categories
         Object.entries(this.blogStructure).forEach(([categoryKey, category]) => {
             category.articles.forEach(article => {
                 pages.push({
-                    label: article.title,
+                    title: article.title,
                     path: `#blog/${categoryKey}/${article.id}`,
                     category: categoryKey,
                     isTOC: false
@@ -409,7 +364,7 @@ const BlogSection = {
     /**
      * Render individual article
      */
-    renderArticle(category, article) {
+    async renderArticle(category, article) {
         console.log(`📝 Rendering article: ${category}/${article.id}`);
         
         // Clear container 
@@ -431,41 +386,63 @@ const BlogSection = {
         this.componentInstances.push(categoryInfo);
         this.currentContainer.appendChild(categoryInfo.render());
         
-        // Create placeholder content (until we implement markdown loading)
-        const content = new ComponentLibrary.Paragraph({
-            content: `This is a placeholder for the article "${article.title}". 
-            In the full implementation, this would load the markdown content from 
-            reference/old-assets/assets/blog/${category}/${article.id}.md and render it using 
-            the MarkdownBody component.`
-        });
-        this.componentInstances.push(content);
-        this.currentContainer.appendChild(content.render());
-        
-        // Add sample content blocks to demonstrate layout
-        const sampleGrid = new ComponentLibrary.Grid({
-            items: ['Sample Item 1', 'Sample Item 2', 'Sample Item 3', 'Sample Item 4'],
-            cols: 2
-        });
-        this.componentInstances.push(sampleGrid);
-        this.currentContainer.appendChild(sampleGrid.render());
-        
-        // Add back link
-        const backParagraph = new ComponentLibrary.Paragraph({
-            content: '← Back to Blog TOC'
-        });
-        this.componentInstances.push(backParagraph);
-        
-        const backElement = backParagraph.render();
-        backElement.classList.add('clickable');
-        backElement.addEventListener('click', () => {
-            if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-                this.navigationCallbacks.navigateToSection('blog');
-            }
-        });
-        
-        this.currentContainer.appendChild(backElement);
+        // Load and render markdown content
+        await this.loadAndRenderMarkdown(category, article);
         
         console.log('✅ Article rendered');
+    },
+
+    /**
+     * Load and render markdown content for an article
+     */
+    async loadAndRenderMarkdown(category, article) {
+        try {
+            const markdownPath = `blog/${category}/${article.id}.md`;
+            console.log(`📝 Loading markdown from: ${markdownPath}`);
+            
+            // Show loading message
+            const loadingMsg = new ComponentLibrary.Paragraph({
+                content: 'Loading content...'
+            });
+            this.componentInstances.push(loadingMsg);
+            const loadingElement = loadingMsg.render();
+            this.currentContainer.appendChild(loadingElement);
+            
+            // Fetch markdown content
+            const response = await fetch(markdownPath);
+            if (!response.ok) {
+                throw new Error(`Failed to load markdown: ${response.status} ${response.statusText}`);
+            }
+            
+            const markdownText = await response.text();
+            
+            // Remove loading message
+            this.currentContainer.removeChild(loadingElement);
+            this.componentInstances = this.componentInstances.filter(comp => comp !== loadingMsg);
+            
+            // Create markdown component
+            const markdownBody = new ComponentLibrary.MarkdownBody({
+                markdownText: markdownText
+            });
+            this.componentInstances.push(markdownBody);
+            this.currentContainer.appendChild(markdownBody.render());
+            
+            console.log('✅ Markdown content loaded and rendered');
+            
+        } catch (error) {
+            console.error(`❌ Error loading markdown content:`, error);
+            
+            // Remove any loading messages
+            const loadingElements = this.currentContainer.querySelectorAll('.loading-message');
+            loadingElements.forEach(el => el.remove());
+            
+            // Show error message
+            const errorMsg = new ComponentLibrary.Paragraph({
+                content: `Error loading content: ${error.message}. Please check that the file exists at blog/${category}/${article.id}.md`
+            });
+            this.componentInstances.push(errorMsg);
+            this.currentContainer.appendChild(errorMsg.render());
+        }
     },
     
     /**
@@ -502,20 +479,6 @@ const BlogSection = {
         this.currentContainer.appendChild(backButton.render());
     },
     
-    /**
-     * Create DOM element helper
-     */
-    createElement(tag, className = '') {
-        const element = document.createElement(tag);
-        if (className) element.className = className;
-        
-        // Apply F=12px styling
-        element.style.fontFamily = '"Atkinson Hyperlegible Mono", monospace';
-        element.style.fontSize = '12px';
-        element.style.lineHeight = '1.5';
-        
-        return element;
-    },
     
     /**
      * Cleanup section - destroy all component instances

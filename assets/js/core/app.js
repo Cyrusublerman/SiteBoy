@@ -305,6 +305,9 @@ const SiteBoyApp = {
             onNavigate: (item) => {
                 if (item.onClick) {
                     item.onClick();
+                } else if (item.title === 'HOME') {
+                    // Handle direct home navigation from header
+                    this.navigateToSection('home');
                 }
             }
         }, deps);
@@ -420,6 +423,14 @@ const SiteBoyApp = {
         // Clear content container
         this.contentContainer.innerHTML = '';
         
+        // Clear subheader state before switching sections to prevent stale content
+        if (window.Subheader) {
+            console.log(`🧹 Clearing subheader before switching to: ${sectionName}/${subsectionName || 'index'}`);
+            window.Subheader.hide();
+            window.Subheader.clearContent();
+            console.log(`✅ Subheader cleared, now calling section: ${sectionName}`);
+        }
+        
         try {
             // Get section class
             const sectionClass = this.sections[sectionName];
@@ -438,12 +449,20 @@ const SiteBoyApp = {
                 return;
             }
             
-            // App coordinates the section building
+            // App coordinates the section building (async support)
             if (typeof SectionModule.handleRoute === 'function') {
-                SectionModule.handleRoute(subsectionName, this.contentContainer, {
+                const routeResult = SectionModule.handleRoute(subsectionName, this.contentContainer, {
                     navigateToSection: (section, subsection = null) => this.navigateToSection(section, subsection),
                     getCurrentRoute: () => this.getCurrentRoute()
                 });
+                
+                // Handle async sections
+                if (routeResult && typeof routeResult.then === 'function') {
+                    routeResult.catch(error => {
+                        console.error(`❌ Error in async section ${sectionName}:`, error);
+                        this.buildErrorPage(`Error loading ${sectionName}: ${error.message}`);
+                    });
+                }
             } else if (typeof SectionModule.init === 'function') {
                 SectionModule.init();
                 if (typeof SectionModule.render === 'function') {
@@ -887,14 +906,7 @@ const SiteBoyApp = {
 // Make SiteBoyApp globally available
 window.SiteBoyApp = SiteBoyApp;
 
-// Initialize app when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        SiteBoyApp.init();
-    });
-} else {
-    // DOM already loaded
-    SiteBoyApp.init();
-}
+// App initialization is now handled manually from index.html
+// to ensure all dependencies (including ES6 modules) are loaded first
 
 export default SiteBoyApp;

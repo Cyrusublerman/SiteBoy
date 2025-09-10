@@ -1,0 +1,16 @@
+# Gallery Bundle Processor Dependencies
+# Core application framework
+streamlit>=1.28.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Standard library packages (included with Python)
+# pathlib - for file path handling
+# json - for manifest creation
+# os - for operating system interface
+# shutil - for file operations
+# typing - for type hints
+
+# Optional: For better error handling and logging
+# loguru>=0.7.0  # Uncomment if you want enhanced logging

@@ -6,10 +6,10 @@
  * COMPONENT ORGANIZATION:
  * - foundation.js    → BaseComponent, BaseNavigationDropdown
  * - layout.js        → PageContainer, PageHeader, Subheader, PageFooter, Grid, Spacing  
- * - content.js       → Heading, Paragraph, Quote, Image, Video, Audio, MarkdownBody
+ * - content.js       → Heading, Paragraph, Quote, Image, Video, Audio, MarkdownBody, SimpleTOC, NumberedTOC, TOCGallery
  * - interactive.js   → CollapsibleBase, Menu, Breadcrumb, Button, Input, Select, ButtonGroup
  * - graphs.js        → BarGraph, LineGraph, PieGraph
- * - specialized.js   → VGAGrid, MathematicalCanvas, ProgressBar, HierarchicalTOC
+ * - specialized.js   → VGAGrid, MathematicalCanvas, ProgressBar
  * 
  * DO NOT ADD NEW COMPONENTS TO THIS FILE!
  * Add them to the appropriate category file and import here.
@@ -50,6 +50,8 @@ import {
     Video, 
     Audio, 
     MarkdownBody,
+    SimpleTOC,
+    NumberedTOC,
     TOCGallery 
 } from './content.js';
 
@@ -76,8 +78,7 @@ import {
 import { 
     VGAGrid, 
     MathematicalCanvas, 
-    ProgressBar, 
-    HierarchicalTOC 
+    ProgressBar
 } from './specialized.js';
 
 /**
@@ -107,6 +108,8 @@ export const ComponentLibrary = {
     Video,
     Audio,
     MarkdownBody,
+    SimpleTOC,
+    NumberedTOC,
     TOCGallery,
     
     // Interactive components
@@ -128,7 +131,6 @@ export const ComponentLibrary = {
     VGAGrid,
     MathematicalCanvas,
     ProgressBar,
-    HierarchicalTOC,
     
     /**
      * Component factory - maintains exact same API as before
@@ -151,6 +153,8 @@ export const ComponentLibrary = {
             'video': Video,
             'audio': Audio,
             'markdown': MarkdownBody,
+            'simple-toc': SimpleTOC,
+            'numbered-toc': NumberedTOC,
             'toc-gallery': TOCGallery,
             
             // Interactive
@@ -170,8 +174,7 @@ export const ComponentLibrary = {
             // Specialized
             'vga-grid': VGAGrid,
             'mathematical-canvas': MathematicalCanvas,
-            'progress-bar': ProgressBar,
-            'hierarchical-toc': HierarchicalTOC
+            'progress-bar': ProgressBar
         };
         
         const ComponentClass = components[type];
@@ -243,6 +246,9 @@ export {
     Video,
     Audio,
     MarkdownBody,
+    SimpleTOC,
+    NumberedTOC,
+    TOCGallery,
     
     // Interactive
     CollapsibleBase,
@@ -262,6 +268,5 @@ export {
     // Specialized
     VGAGrid,
     MathematicalCanvas,
-    ProgressBar,
-    HierarchicalTOC
+    ProgressBar
 };

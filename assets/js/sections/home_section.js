@@ -1,16 +1,16 @@
 /**
  * Home Section - SiteBoy Framework
  * 
- * HOME SECTION - TOC ONLY (matching reference design)
- * Shows hierarchical Table of Contents component ONLY
- * Uses canonical ComponentLibrary with HierarchicalTOC
+ * HOME SECTION - Simple Numbered TOC (same style as blog)
+ * Shows numbered table of contents with sections and subsections
+ * Uses same styling as blog section TOC for consistency
  * 
- * @version 3.0.0 - TOC-Only Home Page
- * @dependencies ['ComponentLibrary'] - TOC component system
+ * @version 3.1.0 - Simple Numbered TOC Home Page
+ * @dependencies ['ComponentLibrary'] - Component system
  */
 
 const HomeSection = {
-    version: '3.0.0',
+    version: '3.1.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
@@ -24,9 +24,10 @@ const HomeSection = {
             isExpandable: true,
             isExpanded: false,
             subsections: [
-                { id: 'music', title: 'Music Theory & Analysis', path: '#blog/music' },
+                { id: 'docs', title: 'Documentation', path: '#blog/docs' },
+                { id: 'music', title: 'Music Theory', path: '#blog/music' },
                 { id: 'site', title: 'Site Development', path: '#blog/site' },
-                { id: 'tools', title: 'Tool Development', path: '#blog/tools' }
+                { id: 'tools', title: 'Development Tools', path: '#blog/tools' }
             ]
         },
         {
@@ -91,10 +92,10 @@ const HomeSection = {
     },
     
     /**
-     * Render TOC-only home page (matching reference design)
+     * Render TOC-only home page (using same style as blog TOC)
      */
     renderTOCHomePage() {
-        console.log('🏠 Rendering TOC-only home page...');
+        console.log('🏠 Rendering simple numbered TOC home page...');
         
         // Clear container
         this.currentContainer.innerHTML = '';
@@ -102,54 +103,61 @@ const HomeSection = {
         // Add TOC container class for proper CSS styling
         this.currentContainer.classList.add('toc-container');
         
-        // Apply proper body sizing for home page (no subheader)
-        if (window.MathematicalFoundation) {
-            // Find the content container (parent of content-body)
+        // Ensure proper body sizing for home page (no subheader)
+        if (window.LayoutCalculator) {
+            // Apply layout calculations for content container  
             const contentContainer = this.currentContainer.closest('.content-container');
             if (contentContainer) {
-                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
-                    withSubheader: false 
-                });
+                // Force content container to use no-subheader layout
+                const F = window.LayoutCalculator.F;
+                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`); // Header only (2*F) + some padding
+                contentContainer.style.setProperty('--top-offset', `${F * 2}px`); // Just header height
                 console.log('✅ Applied no-subheader body sizing for home page');
             }
         }
         
-        // Create hierarchical TOC component using ComponentLibrary with dependencies
-        const tocComponent = new ComponentLibrary.HierarchicalTOC({
-            sections: this.mainSections,
-            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
-            onSubsectionClick: (path) => this.handleSubsectionClick(path)
+        // Create simple TOC using proper ComponentLibrary component
+        const tocData = this.prepareSimpleTOCData();
+        const simpleTOC = new ComponentLibrary.SimpleTOC({
+            sections: tocData,
+            onItemClick: (item) => this.handleTOCItemClick(item)
         }, {
             MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         
-        this.componentInstances.push(tocComponent);
-        this.currentContainer.appendChild(tocComponent.render());
+        this.componentInstances.push(simpleTOC);
+        this.currentContainer.appendChild(simpleTOC.render());
         
-        console.log('✅ TOC-only home page rendered with HierarchicalTOC component');
+        console.log('✅ Simple TOC home page rendered using ComponentLibrary');
+    },
+
+    /**
+     * Prepare TOC data for SimpleTOC component (sections only, no numbers)
+     */
+    prepareSimpleTOCData() {
+        return this.mainSections.map(section => ({
+            title: section.title,
+            description: section.description,
+            id: section.id
+        }));
+    },
+
+    /**
+     * Handle TOC item click from SimpleTOC component
+     */
+    handleTOCItemClick(item) {
+        this.navigateToSection(item.id);
+        console.log(`🏠 TOC item clicked: ${item.title} -> ${item.id}`);
     },
     
     /**
-     * Handle section click (expansion toggle or navigation)
+     * Handle section click (navigation only - no expansion)
      * @param {string} sectionId - Section ID
      */
     handleSectionClick(sectionId) {
-        const section = this.mainSections.find(s => s.id === sectionId);
-        if (!section) return;
-        
-        if (section.isExpandable) {
-            // Toggle expansion
-            section.isExpanded = !section.isExpanded;
-            
-            // Re-render the TOC
-            this.rerenderTOC();
-            
-            console.log(`🏠 Toggled section ${sectionId}: ${section.isExpanded ? 'expanded' : 'collapsed'}`);
-        } else {
-            // Navigate to section
-            this.navigateToSection(sectionId);
-        }
+        this.navigateToSection(sectionId);
+        console.log(`🏠 Navigating to section: ${sectionId}`);
     },
     
     /**
@@ -180,31 +188,6 @@ const HomeSection = {
         }
     },
     
-    /**
-     * Re-render the TOC component (for expansion changes)
-     */
-    rerenderTOC() {
-        // Clear current content
-        this.currentContainer.innerHTML = '';
-        
-        // Destroy old TOC component
-        ComponentLibrary.destroyTracked(this.componentInstances);
-        
-        // Create new TOC component with updated sections and dependencies
-        const tocComponent = new ComponentLibrary.HierarchicalTOC({
-            sections: this.mainSections,
-            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
-            onSubsectionClick: (path) => this.handleSubsectionClick(path)
-        }, {
-            MF: window.MathematicalFoundation,
-            Resize: window.ResizeManager
-        });
-        
-        this.componentInstances.push(tocComponent);
-        this.currentContainer.appendChild(tocComponent.render());
-        
-        console.log('🔄 TOC re-rendered');
-    },
     
     /**
      * Cleanup section - destroy all component instances
@@ -222,6 +205,7 @@ const HomeSection = {
         console.log('✅ Home section cleanup complete');
     },
     
+
     /**
      * Get section info
      */
@@ -231,7 +215,7 @@ const HomeSection = {
             title: 'HOME',
             type: 'toc',
             sectionCount: this.mainSections.length,
-            expandedSections: this.mainSections.filter(s => s.isExpanded).length
+            componentCount: this.componentInstances.length
         };
     },
     

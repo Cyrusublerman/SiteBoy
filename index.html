@@ -28,6 +28,9 @@
     
     <!-- SiteBoy Framework Scripts - Canonical Loading Order (ESM) -->
     
+    <!-- 0. External dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <!-- 1. Core foundation (Modular ES6) -->
     <script type="module" src="assets/js/shared/component-library.js"></script>
     <script>
@@ -62,6 +65,20 @@
         console.log('🎯 SiteBoy Framework v3.0.0 - Clean Architecture Complete');
         console.log('✅ Features: Integrated Routing, JSON Content, Component Library');
         console.log('📋 Clean 5-File Architecture: config → app → component-library → sections → styling');
+        
+        // Wait for ComponentLibrary to be ready before initializing app
+        function waitForDependencies() {
+            if (window.ComponentLibrary && window.SiteBoyApp) {
+                console.log('🎯 All dependencies ready, initializing app...');
+                window.SiteBoyApp.init();
+            } else {
+                console.log('⏳ Waiting for dependencies...');
+                setTimeout(waitForDependencies, 10);
+            }
+        }
+        
+        // Start waiting for dependencies
+        waitForDependencies();
     </script>
 </body>
 </html>

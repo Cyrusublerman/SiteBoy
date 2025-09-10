@@ -45,79 +45,102 @@ const ProjectsSection = {
     },
     
     /**
-     * Render projects index using ComponentLibrary HierarchicalTOC
+     * Render projects index using ComponentLibrary SimpleTOC
      */
     renderProjectsIndex() {
-        console.log('🚀 Rendering projects index with HierarchicalTOC component');
+        console.log('🚀 Rendering projects index with SimpleTOC component');
         
         // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
         this.currentContainer.classList.add('toc-container');
         
         // Apply proper body sizing for projects index (no subheader)
-        if (window.MathematicalFoundation) {
+        if (window.LayoutCalculator) {
             const contentContainer = this.currentContainer.closest('.content-container');
             if (contentContainer) {
-                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
-                    withSubheader: false 
-                });
+                const F = window.LayoutCalculator.F;
+                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
+                contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
                 console.log('✅ Applied no-subheader body sizing for projects index');
             }
         }
         
-        // Define projects sections structure matching home section pattern
+        // Define simple projects sections (direct navigation, no nesting)
         const projectsSections = [
             {
-                id: 'frameworks',
-                title: 'FRAMEWORKS & LIBRARIES',
-                description: 'Core development frameworks and component systems',
-                isExpandable: true,
-                isExpanded: true, // Start expanded for better UX
-                subsections: [
-                    { id: 'siteboy', title: 'SiteBoy Framework', path: '#projects/siteboy' },
-                    { id: 'component-lib', title: 'Component Library', path: '#projects/component-lib' },
-                    { id: 'math-foundation', title: 'Mathematical Foundation', path: '#projects/math-foundation' }
-                ]
+                id: 'siteboy',
+                title: 'SITEBOY FRAMEWORK',
+                description: 'Modular framework for precise VGA-styled web applications'
             },
             {
-                id: 'creative',
-                title: 'CREATIVE TOOLS',
-                description: 'Visual design and creative development tools',
-                isExpandable: true,
-                isExpanded: true, // Start expanded for better UX
-                subsections: [
-                    { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#projects/pixel-tiler' },
-                    { id: 'typography', title: 'Typography System', path: '#projects/typography' },
-                    { id: 'color-quantizer', title: 'Color Quantizer', path: '#projects/color-quantizer' }
-                ]
+                id: 'component-lib',
+                title: 'COMPONENT LIBRARY',
+                description: 'Comprehensive UI component system with mathematical precision'
             },
             {
-                id: 'audio',
-                title: 'AUDIO & MUSIC',
-                description: 'Music theory tools and audio processing utilities',
-                isExpandable: true,
-                isExpanded: false, // Start collapsed
-                subsections: [
-                    { id: 'music-tools', title: 'Music Theory Tools', path: '#projects/music-tools' },
-                    { id: 'audio-processor', title: 'Audio Processor', path: '#projects/audio-processor' }
-                ]
+                id: 'math-foundation',
+                title: 'MATHEMATICAL FOUNDATION',
+                description: 'F-based mathematical layout system for consistent sizing'
+            },
+            {
+                id: 'pixel-tiler',
+                title: 'PIXEL TILER',
+                description: 'Pixel art creation and tiling pattern generator'
+            },
+            {
+                id: 'typography',
+                title: 'TYPOGRAPHY SYSTEM',
+                description: 'Monospace typography testing and validation tools'
+            },
+            {
+                id: 'color-quantizer',
+                title: 'COLOR QUANTIZER',
+                description: 'Image color reduction and VGA palette extraction'
+            },
+            {
+                id: 'music-tools',
+                title: 'MUSIC THEORY TOOLS',
+                description: 'Chord progression analysis and musical composition utilities'
+            },
+            {
+                id: 'audio-processor',
+                title: 'AUDIO PROCESSOR',
+                description: 'Audio analysis and digital signal processing tools'
             }
         ];
         
-        // Create hierarchical TOC component using ComponentLibrary with dependencies
-        const tocComponent = new ComponentLibrary.HierarchicalTOC({
+        // Create simple TOC component using ComponentLibrary with dependencies
+        const tocComponent = new ComponentLibrary.SimpleTOC({
             sections: projectsSections,
-            onSectionClick: (sectionId) => this.handleSectionClick(sectionId),
-            onSubsectionClick: (path) => this.handleSubsectionClick(path)
+            onItemClick: (item) => this.handleProjectClick(item)
         }, {
-            MF: window.MathematicalFoundation,
+            MF: window.LayoutCalculator,
             Resize: window.ResizeManager
         });
         
         this.componentInstances.push(tocComponent);
         this.currentContainer.appendChild(tocComponent.render());
         
-        console.log('✅ Projects index rendered with HierarchicalTOC component');
+        console.log('✅ Projects index rendered with SimpleTOC component');
+    },
+    
+    /**
+     * Handle project click from SimpleTOC
+     */
+    handleProjectClick(item) {
+        this.navigateToProject(item.id);
+        console.log(`🚀 Project clicked: ${item.title} -> ${item.id}`);
+    },
+    
+    /**
+     * Navigate to specific project
+     */
+    navigateToProject(projectId) {
+        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+            this.navigationCallbacks.navigateToSection('projects', projectId);
+        } else {
+            console.warn('⚠️ Navigation callbacks not available');
+        }
     },
     
     /**
@@ -127,7 +150,7 @@ const ProjectsSection = {
     handleSectionClick(sectionId) {
         console.log(`🚀 Section clicked: ${sectionId}`);
         // Find the TOC component and toggle the section
-        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.HierarchicalTOC);
+        const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.SimpleTOC);
         if (tocComponent) {
             tocComponent.toggleSection(sectionId);
         }

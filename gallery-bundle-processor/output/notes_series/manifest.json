@@ -1,0 +1,109 @@
+{
+  "bundle_id": "notes_series",
+  "title": "4 Notes",
+  "summary": "I drew some things once and here they are. ",
+  "year": "2024",
+  "tags": [
+    "notes",
+    "pictures",
+    "drawing",
+    "small"
+  ],
+  "license": "All Rights Reserved",
+  "external_url": "",
+  "status": "Available",
+  "slides": [
+    {
+      "title": "monster",
+      "caption": "orange monster fella. you knowhow it be. ",
+      "alt": "orange dude",
+      "filename": "note_16",
+      "type": "image",
+      "original_name": "note_16.png",
+      "original_size": [
+        2480,
+        3507
+      ],
+      "web_size": [
+        1697,
+        2400
+      ],
+      "thumb_size": [
+        566,
+        800
+      ]
+    },
+    {
+      "title": "Concept fella",
+      "caption": "could be cool I guess",
+      "alt": "",
+      "filename": "note_24",
+      "type": "image",
+      "original_name": "note_24.png",
+      "original_size": [
+        2480,
+        3507
+      ],
+      "web_size": [
+        1697,
+        2400
+      ],
+      "thumb_size": [
+        566,
+        800
+      ]
+    },
+    {
+      "title": "girl from cafe",
+      "caption": "had a great posterior",
+      "alt": "",
+      "filename": "note_29",
+      "type": "image",
+      "original_name": "note_29.png",
+      "original_size": [
+        2480,
+        3507
+      ],
+      "web_size": [
+        1697,
+        2400
+      ],
+      "thumb_size": [
+        566,
+        800
+      ]
+    },
+    {
+      "title": "blob fella. ",
+      "caption": "blobidy blob blob",
+      "alt": "",
+      "filename": "note_119",
+      "type": "image",
+      "original_name": "note_119.png",
+      "original_size": [
+        2480,
+        3507
+      ],
+      "web_size": [
+        1697,
+        2400
+      ],
+      "thumb_size": [
+        566,
+        800
+      ]
+    },
+    {
+      "title": "test text",
+      "caption": "this is some more test text",
+      "alt": "",
+      "filename": "these_be_notes",
+      "type": "text",
+      "original_name": "these_be_notes.md",
+      "content_type": "md",
+      "character_count": 59,
+      "word_count": 11,
+      "line_count": 1
+    }
+  ]
+}

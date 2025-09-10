@@ -269,6 +269,396 @@ export class MarkdownBody extends BaseComponent {
 }
 
 /**
+ * NumberedTOC - Simple numbered table of contents component with collapsible sections
+ */
+export class SimpleTOC extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'simple-toc' }, deps);
+        this.sections = options.sections || [];
+        this.onItemClick = options.onItemClick || null;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.rebuildTOC();
+        }
+        return this.element;
+    }
+    
+    rebuildTOC() {
+        const F = this.deps.MF ? this.deps.MF.F : 12;
+        
+        // Clear existing content
+        if (this.element) {
+            this.element.innerHTML = '';
+        } else {
+            this.element = this.createElement('div', 'simple-toc component');
+        }
+        
+        if (!this.sections || this.sections.length === 0) {
+            this.element.innerHTML = '<p>No items available</p>';
+            return;
+        }
+        
+        this.sections.forEach((section, index) => {
+            this.createSectionItem(section, F, index);
+        });
+    }
+    
+    createSectionItem(section, F, index) {
+        const itemHeight = F * 4; // 48px - Mathematical precision
+        
+        // Determine layout based on available width
+        const containerWidth = this.element.parentElement?.getBoundingClientRect().width || window.innerWidth;
+        const hasWideLayout = containerWidth > 600; // Threshold for showing descriptions inline
+        
+        const sectionItem = this.createElement('div', 'toc-section-item');
+        sectionItem.style.cssText = `
+            height: ${itemHeight}px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: stretch;
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+            ${index === 0 ? 'border-top: 1px solid var(--c-border);' : ''}
+            font-family: 'Atkinson Hyperlegible Mono', monospace; 
+            box-sizing: border-box;
+            position: relative;
+        `;
+        
+        if (hasWideLayout) {
+            // Wide layout: title on left, description on right
+            this.createWideLayoutContent(sectionItem, section, F, itemHeight);
+        } else {
+            // Compact layout: title only, description on hover
+            this.createCompactLayoutContent(sectionItem, section, F, itemHeight);
+        }
+        
+        // Add hover effects
+        sectionItem.addEventListener('mouseenter', () => {
+            sectionItem.style.background = 'var(--c-text)';
+            sectionItem.style.color = 'var(--c-bg)';
+        });
+        
+        sectionItem.addEventListener('mouseleave', () => {
+            sectionItem.style.background = '';
+            sectionItem.style.color = '';
+        });
+        
+        // Add click handler
+        if (this.onItemClick) {
+            sectionItem.addEventListener('click', () => this.onItemClick(section));
+        }
+        
+        // Add to DOM
+        this.element.appendChild(sectionItem);
+    }
+    
+    createWideLayoutContent(sectionItem, section, F, itemHeight) {
+        // Create content area (original design - title and description stacked vertically)
+        const content = this.createElement('div', 'toc-content');
+        content.style.cssText = `
+            flex: 1; 
+            padding: ${F}px ${F * 2}px; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+        `;
+        
+        // Create title - use F-based sizing (original design)
+        const titleDiv = this.createElement('div');
+        titleDiv.textContent = section.title;
+        titleDiv.style.cssText = `
+            margin: 0 0 ${Math.floor(F / 3)}px 0; 
+            text-transform: uppercase; 
+            font-size: ${Math.floor(F * 1.17)}px; 
+            line-height: 1.2;
+            font-weight: bold;
+        `;
+        
+        // Create description - use F-based sizing (original design)
+        const descDiv = this.createElement('div');
+        descDiv.textContent = section.description || section.id || 'section';
+        descDiv.style.cssText = `
+            margin: 0; 
+            font-size: ${Math.floor(F * 0.92)}px; 
+            opacity: 0.7; 
+            text-transform: uppercase; 
+            line-height: 1;
+        `;
+        
+        content.appendChild(titleDiv);
+        content.appendChild(descDiv);
+        
+        // Create arrow - use F-based sizing (original design)
+        const arrow = this.createElement('div', 'toc-arrow');
+        arrow.textContent = '→';
+        arrow.style.cssText = `
+            width: ${itemHeight}px; 
+            height: ${itemHeight}px; 
+            display: flex;
+            align-items: center; 
+            justify-content: center; 
+            font-size: ${Math.floor(F * 1.33)}px;
+            border-left: 1px solid var(--c-border); 
+            flex-shrink: 0;
+            box-sizing: border-box;
+        `;
+        
+        // Assemble item (original design)
+        sectionItem.appendChild(content);
+        sectionItem.appendChild(arrow);
+    }
+    
+    createCompactLayoutContent(sectionItem, section, F, itemHeight) {
+        // Create content area (same as wide layout structure)
+        const content = this.createElement('div', 'toc-content');
+        content.style.cssText = `
+            flex: 1; 
+            padding: ${F}px ${F * 2}px; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+        `;
+        
+        // Create switchable text div
+        const textDiv = this.createElement('div');
+        textDiv.textContent = section.title;
+        textDiv.style.cssText = `
+            margin: 0; 
+            text-transform: uppercase; 
+            font-size: ${Math.floor(F * 1.17)}px; 
+            line-height: 1.2;
+            font-weight: bold;
+        `;
+        
+        content.appendChild(textDiv);
+        
+        // Create arrow
+        const arrow = this.createElement('div', 'toc-arrow');
+        arrow.textContent = '→';
+        arrow.style.cssText = `
+            width: ${itemHeight}px; 
+            height: ${itemHeight}px; 
+            display: flex;
+            align-items: center; 
+            justify-content: center; 
+            font-size: ${Math.floor(F * 1.33)}px;
+            border-left: 1px solid var(--c-border); 
+            flex-shrink: 0;
+            box-sizing: border-box;
+        `;
+        
+        // Switch text on hover
+        sectionItem.addEventListener('mouseenter', () => {
+            textDiv.textContent = section.description || section.id || 'section';
+            textDiv.style.fontSize = `${Math.floor(F * 0.92)}px`;
+            textDiv.style.opacity = '0.7';
+            textDiv.style.fontWeight = 'normal';
+        });
+        
+        sectionItem.addEventListener('mouseleave', () => {
+            textDiv.textContent = section.title;
+            textDiv.style.fontSize = `${Math.floor(F * 1.17)}px`;
+            textDiv.style.opacity = '1';
+            textDiv.style.fontWeight = 'bold';
+        });
+        
+        sectionItem.appendChild(content);
+        sectionItem.appendChild(arrow);
+    }
+}
+
+export class NumberedTOC extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'numbered-toc' }, deps);
+        this.sections = options.sections || [];
+        this.onItemClick = options.onItemClick || null;
+        this.showCategories = options.showCategories !== false;
+        this.collapsible = options.collapsible || false;
+        this.expandedSections = new Set(); // Track which sections are expanded
+        
+        // Initialize all sections as collapsed by default
+        if (this.collapsible) {
+            this.sections.forEach((section, index) => {
+                if (section.expanded) {
+                    this.expandedSections.add(index);
+                }
+            });
+        }
+    }
+    
+    render() {
+        if (!this.element) {
+            this.rebuildTOC();
+        }
+        return this.element;
+    }
+    
+    rebuildTOC() {
+        const F = this.deps.MF ? this.deps.MF.F : 12;
+        
+        // Clear existing content
+        if (this.element) {
+            this.element.innerHTML = '';
+        } else {
+            this.element = this.createElement('div', 'numbered-toc component');
+        }
+        
+        if (!this.sections || this.sections.length === 0) {
+            this.element.innerHTML = '<p>No items available</p>';
+            return;
+        }
+        
+        let itemIndex = 0;
+        
+        this.sections.forEach((section, sectionIndex) => {
+            // Section header (if showing categories)
+            if (this.showCategories && section.title) {
+                const headerHeight = F * 2; // 24px
+                const sectionHeader = this.createElement('div', 'toc-category-header');
+                
+                // Add expand/collapse indicator if collapsible
+                const isExpanded = this.expandedSections.has(sectionIndex);
+                const indicator = this.collapsible ? (isExpanded ? '▼' : '▶') : '';
+                sectionHeader.textContent = `${indicator} ${section.title} /`.trim();
+                
+                sectionHeader.style.cssText = `
+                    padding: 0 ${F * 2}px; height: ${headerHeight}px; display: flex; align-items: center;
+                    background: var(--c-bg); color: var(--c-text); 
+                    border: 1px solid var(--c-border);
+                    ${itemIndex > 0 ? 'border-top: none;' : ''}
+                    font-family: 'Atkinson Hyperlegible Mono', monospace; font-size: ${F}px; text-transform: uppercase;
+                    ${this.collapsible ? 'cursor: pointer; user-select: none;' : ''}
+                    box-sizing: border-box;
+                `;
+                
+                // Add click handler for collapsible headers
+                if (this.collapsible) {
+                    sectionHeader.addEventListener('click', () => {
+                        this.toggleSection(sectionIndex);
+                    });
+                    
+                    // Add hover effect for collapsible headers
+                    sectionHeader.addEventListener('mouseenter', () => {
+                        sectionHeader.style.background = 'var(--c-text)';
+                        sectionHeader.style.color = 'var(--c-bg)';
+                    });
+                    
+                    sectionHeader.addEventListener('mouseleave', () => {
+                        sectionHeader.style.background = 'var(--c-bg)';
+                        sectionHeader.style.color = 'var(--c-text)';
+                    });
+                }
+                
+                this.element.appendChild(sectionHeader);
+            }
+            
+            // Section items (show only if not collapsible or if expanded)
+            const shouldShowItems = !this.collapsible || this.expandedSections.has(sectionIndex);
+            if (shouldShowItems) {
+                const items = section.articles || section.items || section.subsections || [section];
+                items.forEach((item) => {
+                    itemIndex++;
+                    this.createTOCItem(item, itemIndex, F, sectionIndex);
+                });
+            }
+        });
+    }
+    
+    toggleSection(sectionIndex) {
+        if (this.expandedSections.has(sectionIndex)) {
+            this.expandedSections.delete(sectionIndex);
+        } else {
+            this.expandedSections.add(sectionIndex);
+        }
+        this.rebuildTOC();
+        console.log(`📚 Toggled section ${sectionIndex}: ${this.expandedSections.has(sectionIndex) ? 'expanded' : 'collapsed'}`);
+    }
+    
+    createTOCItem(item, itemIndex, F, sectionIndex) {
+        const numberBoxSize = F * 4; // 48px
+        
+        const tocItem = this.createElement('div', 'toc-item');
+        tocItem.style.cssText = `
+            height: ${numberBoxSize}px; cursor: pointer; display: flex; align-items: stretch;
+            border: 1px solid var(--c-border);
+            border-top: none;
+            font-family: 'Atkinson Hyperlegible Mono', monospace; transition: background-color 0.2s ease;
+            box-sizing: border-box;
+        `;
+        
+        // Number box
+        const numberBox = this.createElement('div', 'toc-number');
+        numberBox.textContent = String(itemIndex).padStart(2, '0');
+        numberBox.style.cssText = `
+            width: ${numberBoxSize}px; height: ${numberBoxSize}px; background: var(--c-text);
+            color: var(--c-bg); display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        `;
+        
+        // Content
+        const content = this.createElement('div', 'toc-content');
+        content.style.cssText = `
+            flex: 1; padding: ${F}px ${F * 2}px; display: flex; flex-direction: column;
+            justify-content: center; outline-left: 1px solid var(--c-border);
+        `;
+        
+        const titleDiv = this.createElement('div');
+        titleDiv.textContent = item.title;
+        titleDiv.style.cssText = `
+            margin: 0 0 4px 0; text-transform: uppercase; font-size: 14px; line-height: 1.2;
+        `;
+        
+        const descDiv = this.createElement('div');
+        descDiv.textContent = item.description || item.id || 'item';
+        descDiv.style.cssText = `
+            margin: 0; font-size: 11px; opacity: 0.7; text-transform: uppercase; line-height: 1;
+        `;
+        
+        content.appendChild(titleDiv);
+        content.appendChild(descDiv);
+        
+        // Arrow
+        const arrow = this.createElement('div', 'toc-arrow');
+        arrow.textContent = '→';
+        arrow.style.cssText = `
+            width: ${numberBoxSize}px; height: ${numberBoxSize}px; display: flex;
+            align-items: center; justify-content: center; font-size: 16px;
+            outline-left: 1px solid var(--c-border); flex-shrink: 0;
+        `;
+        
+        tocItem.appendChild(numberBox);
+        tocItem.appendChild(content);
+        tocItem.appendChild(arrow);
+        
+        // Add hover effects
+        tocItem.addEventListener('mouseenter', () => {
+            tocItem.style.background = 'var(--c-text)';
+            tocItem.style.color = 'var(--c-bg)';
+            numberBox.style.background = 'var(--c-bg)';
+            numberBox.style.color = 'var(--c-text)';
+        });
+        
+        tocItem.addEventListener('mouseleave', () => {
+            tocItem.style.background = '';
+            tocItem.style.color = '';
+            numberBox.style.background = 'var(--c-text)';
+            numberBox.style.color = 'var(--c-bg)';
+        });
+        
+        // Add click handler
+        if (this.onItemClick) {
+            tocItem.addEventListener('click', () => this.onItemClick(item));
+        }
+        
+        this.element.appendChild(tocItem);
+    }
+}
+
+/**
  * TOCGallery - Table of Contents gallery preview component
  */
 export class TOCGallery extends BaseComponent {
@@ -514,3 +904,5 @@ export class TOCGallery extends BaseComponent {
     }
     
 }
+
+// Components are exported individually at their class declarations

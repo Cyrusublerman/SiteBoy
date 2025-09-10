@@ -1,0 +1,413 @@
+/**
+ * SiteBoy Theme for Gallery Bundle Processor - V2 CLEAN
+ * Exact mathematical precision matching the main site
+ * 
+ * F=12px VGA/MONO CONSTRAINED STYLING
+ * Space Mono only, VGA colors only, F=12px base, no gradients/shadows/rounded corners
+ */
+
+/* Import Space Mono font */
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* =================================================================
+   VGA COLOR PALETTE - EXACT MATCH TO SITEBOY
+   ================================================================= */
+
+:root {
+    /* VGA 16-color palette - ONLY these colors allowed */
+    --vga-black: #000000;
+    --vga-maroon: #800000;
+    --vga-green: #008000;
+    --vga-olive: #808000;
+    --vga-navy: #000080;
+    --vga-purple: #800080;
+    --vga-teal: #008080;
+    --vga-silver: #c0c0c0;
+    --vga-gray: #808080;
+    --vga-red: #ff0000;
+    --vga-lime: #00ff00;
+    --vga-yellow: #ffff00;
+    --vga-blue: #0000ff;
+    --vga-fuchsia: #ff00ff;
+    --vga-aqua: #00ffff;
+    --vga-white: #ffffff;
+    
+    /* Theme mapping - normal (dark) theme */
+    --c-bg: var(--vga-black);
+    --c-text: var(--vga-silver);
+    --c-border: var(--vga-gray);
+    --c-accent: var(--vga-white);
+    
+    /* F=12px constants - EXACT MATCH */
+    --f: 12px;
+    --header-height: 24px;          /* 2*F = 24px */
+    --target-margin: 48px;          /* 4*F = 48px */
+    --mobile-margin: 12px;          /* 1*F = 12px */
+    --outline-width: 1px;
+}
+
+/* =================================================================
+   GLOBAL RESET & BASE - MATHEMATICAL PRECISION
+   ================================================================= */
+
+/* Universal reset - clean slate */
+* {
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: var(--f) !important;
+    line-height: 1.5 !important;
+    color: var(--c-text) !important;
+    background: transparent !important;
+}
+
+/* Base app container */
+.stApp, [data-testid="stApp"] {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+}
+
+/* Main content area - precise spacing */
+.main .block-container, [data-testid="block-container"] {
+    background: var(--c-bg) !important;
+    padding: var(--f) !important;
+    max-width: none !important;
+}
+
+/* =================================================================
+   TYPOGRAPHY SYSTEM - F=12px MATHEMATICAL FOUNDATION
+   ================================================================= */
+
+/* Headers - exact match to SiteBoy */
+h1, h2, h3, h4, h5, h6,
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+    font-family: 'Space Mono', monospace !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: var(--c-text) !important;
+    background: var(--c-bg) !important;
+    margin: 0 0 var(--f) 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+
+h1, .stMarkdown h1 { 
+    font-size: calc(var(--f) * 2) !important; /* 24px */
+}
+
+h2, .stMarkdown h2 { 
+    font-size: calc(var(--f) * 1.5) !important; /* 18px */
+}
+
+h3, h4, h5, h6, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 { 
+    font-size: var(--f) !important; /* 12px */
+}
+
+/* Body text */
+p, .stMarkdown p, .stText, .stCaption {
+    color: var(--c-text) !important;
+    background: var(--c-bg) !important;
+    margin: 0 0 var(--f) 0 !important;
+    padding: 0 !important;
+}
+
+/* =================================================================
+   LAYOUT SYSTEM - CLEAN MATHEMATICAL SPACING
+   ================================================================= */
+
+/* Container spacing - consistent mathematical progression */
+.stContainer, [data-testid="stContainer"] {
+    background: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+/* Column system - clean gaps */
+.stColumns, [data-testid="stColumns"] {
+    background: var(--c-bg) !important;
+    gap: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+.stColumn, [data-testid="stColumn"] {
+    background: var(--c-bg) !important;
+    padding: 0 !important;
+}
+
+/* Element containers - minimal consistent spacing */
+div[data-testid="element-container"] {
+    background: var(--c-bg) !important;
+    margin: 0 0 calc(var(--f) / 2) 0 !important;
+    padding: 0 !important;
+}
+
+/* =================================================================
+   FORM ELEMENTS - SITEBOY BUTTON/INPUT STYLE
+   ================================================================= */
+
+/* Buttons - exact SiteBoy style */
+.stButton > button, button,
+.stFormSubmitButton > button {
+    font-family: 'Space Mono', monospace !important;
+    font-size: var(--f) !important;
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    border: 1px solid var(--c-border) !important;
+    padding: calc(var(--f) / 2) var(--f) !important;
+    text-transform: uppercase !important;
+    height: var(--header-height) !important;
+    cursor: pointer !important;
+    transition: background-color 0.1s ease, color 0.1s ease !important;
+    margin: 0 !important;
+}
+
+.stButton > button:hover, button:hover,
+.stFormSubmitButton > button:hover {
+    background: var(--c-text) !important;
+    color: var(--c-bg) !important;
+    border-color: var(--c-text) !important;
+}
+
+/* Primary button (form submit) */
+.stFormSubmitButton > button[kind="primary"] {
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+    border: 1px solid var(--c-accent) !important;
+}
+
+/* Form inputs - clean SiteBoy style */
+input, textarea, select,
+.stTextInput input, .stTextArea textarea, .stSelectbox select, .stNumberInput input {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    border: 1px solid var(--c-border) !important;
+    padding: calc(var(--f) / 2) var(--f) !important;
+    height: var(--header-height) !important;
+    margin: 0 !important;
+}
+
+/* Textarea specific */
+textarea, .stTextArea textarea {
+    height: calc(var(--header-height) * 3) !important;
+    resize: vertical !important;
+}
+
+/* Input focus states */
+input:focus, textarea:focus, select:focus {
+    outline: 2px solid var(--c-text) !important;
+    outline-offset: -2px !important;
+    border-color: var(--c-border) !important;
+}
+
+/* Labels - clean uppercase */
+label, .stLabel,
+.stTextInput label, .stTextArea label, .stSelectbox label,
+[data-testid="stWidgetLabel"] {
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: var(--c-text) !important;
+    background: var(--c-bg) !important;
+    margin: 0 0 calc(var(--f) / 2) 0 !important;
+    padding: 0 !important;
+}
+
+/* =================================================================
+   SPECIALIZED COMPONENTS
+   ================================================================= */
+
+/* File uploader - clean border */
+.stFileUploader, [data-testid="stFileUploader"] {
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-bg) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+.stFileUploader *, [data-testid="stFileUploader"] * {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    text-transform: uppercase !important;
+}
+
+/* Expander - clean SiteBoy style */
+.stExpander, [data-testid="stExpander"] {
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-bg) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+.stExpander summary {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    text-transform: uppercase !important;
+    padding: calc(var(--f) / 2) var(--f) !important;
+    border-bottom: 1px solid var(--c-border) !important;
+    margin: 0 !important;
+}
+
+.stExpander [data-testid="stExpanderContent"] {
+    background: var(--c-bg) !important;
+    padding: var(--f) !important;
+    margin: 0 !important;
+}
+
+/* Form container */
+.stForm, [data-testid="stForm"] {
+    background: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+/* Progress bar - SiteBoy style */
+.stProgress > div > div {
+    background: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    height: var(--header-height) !important;
+}
+
+.stProgress > div > div > div {
+    background: var(--c-border) !important;
+}
+
+/* =================================================================
+   STATUS MESSAGES - VGA COLORS
+   ================================================================= */
+
+.stSuccess {
+    background: var(--vga-green) !important;
+    color: var(--vga-black) !important;
+    border: 1px solid var(--vga-green) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+.stError {
+    background: var(--vga-red) !important;
+    color: var(--vga-white) !important;
+    border: 1px solid var(--vga-red) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+.stInfo, .stWarning {
+    background: var(--vga-blue) !important;
+    color: var(--vga-white) !important;
+    border: 1px solid var(--vga-blue) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+/* =================================================================
+   MEDIA ELEMENTS
+   ================================================================= */
+
+/* Images and videos - clean borders */
+img, video,
+.stImage img, .stVideo video {
+    border: 1px solid var(--c-border) !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+/* Code blocks - SiteBoy style */
+code, pre, .stCode {
+    background: var(--c-border) !important;
+    color: var(--c-bg) !important;
+    padding: calc(var(--f) / 4) calc(var(--f) / 2) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+/* =================================================================
+   SIDEBAR - CLEAN SEPARATION
+   ================================================================= */
+
+section[data-testid="stSidebar"] {
+    background: var(--c-bg) !important;
+    border-right: 1px solid var(--c-border) !important;
+    padding: var(--f) !important;
+}
+
+section[data-testid="stSidebar"] * {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+}
+
+/* =================================================================
+   UTILITY OVERRIDES - CLEAN SLATE
+   ================================================================= */
+
+/* Remove Streamlit branding */
+#MainMenu { visibility: hidden !important; }
+footer { visibility: hidden !important; }
+header { visibility: hidden !important; }
+
+/* Checkbox styling */
+.stCheckbox {
+    margin: 0 0 calc(var(--f) / 2) 0 !important;
+}
+
+.stCheckbox label {
+    color: var(--c-text) !important;
+    text-transform: uppercase !important;
+}
+
+/* Selectbox specific */
+.stSelectbox > div {
+    background: var(--c-bg) !important;
+}
+
+/* Metric displays */
+.stMetric {
+    background: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    padding: var(--f) !important;
+    margin: 0 0 var(--f) 0 !important;
+}
+
+.stMetric label {
+    text-transform: uppercase !important;
+    color: var(--c-text) !important;
+}
+
+.stMetric [data-testid="metric-value"] {
+    color: var(--c-accent) !important;
+    font-weight: 700 !important;
+}
+
+/* Help text */
+.stHelp, [data-testid="stTooltipHoverTarget"] {
+    color: var(--c-border) !important;
+    font-size: calc(var(--f) * 0.9) !important;
+}
+
+/* Horizontal rule - clean separator */
+hr {
+    border: none !important;
+    border-top: 1px solid var(--c-border) !important;
+    margin: var(--f) 0 !important;
+}
+
+/* =================================================================
+   FINAL CLEANUP - ENSURE CONSISTENCY
+   ================================================================= */
+
+/* Force consistent spacing on all major elements */
+.stMarkdown, .stText, .stSubheader, .stButton, .stSelectbox, .stTextInput, .stTextArea {
+    margin-bottom: var(--f) !important;
+}
+
+/* Last child margin removal for clean sections */
+*:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Ensure all divs have proper background */
+div {
+    background: var(--c-bg) !important;
+}
