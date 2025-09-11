@@ -78,7 +78,8 @@ import {
 import { 
     VGAGrid, 
     MathematicalCanvas, 
-    ProgressBar
+    ProgressBar,
+    ColorQuantizer
 } from './specialized.js';
 
 /**
@@ -131,6 +132,7 @@ export const ComponentLibrary = {
     VGAGrid,
     MathematicalCanvas,
     ProgressBar,
+    ColorQuantizer,
     
     /**
      * Component factory - maintains exact same API as before
@@ -174,7 +176,8 @@ export const ComponentLibrary = {
             // Specialized
             'vga-grid': VGAGrid,
             'mathematical-canvas': MathematicalCanvas,
-            'progress-bar': ProgressBar
+            'progress-bar': ProgressBar,
+            'color-quantizer': ColorQuantizer
         };
         
         const ComponentClass = components[type];

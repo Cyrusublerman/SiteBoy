@@ -259,6 +259,9 @@ const ToolsSection = {
             case 'ui-test':
                 this.renderUITestTool();
                 break;
+            case 'color-quantizer':
+                this.renderColorQuantizer();
+                break;
             case 'color-grid':
                 this.renderColorGrid();
                 break;
@@ -461,6 +464,17 @@ Click any section below to expand and view live examples with usage code.
         this.componentInstances.push(testButton);
         this.currentContainer.appendChild(testButton.render());
         
+        this.addBackLink();
+    },
+
+    /**
+     * Render Color Quantizer Tool
+     */
+    renderColorQuantizer() {
+        const cq = new ComponentLibrary.ColorQuantizer({}, { MF: window.MathematicalFoundation, Resize: window.ResizeManager });
+        this.componentInstances.push(cq);
+        this.currentContainer.appendChild(cq.render());
+
         this.addBackLink();
     },
     
