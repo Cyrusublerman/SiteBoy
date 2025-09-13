@@ -1,0 +1,6 @@
+// Local copy of ordered dither variant constants from reference
+export const ORDERED_DITHER_VARIANT_NORMAL = 0;
+export const ORDERED_DITHER_VARIANT_RANDOM = 1;
+export const ORDERED_DITHER_VARIANT_SIMPLEX = 2;
+
+

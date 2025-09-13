@@ -36,7 +36,8 @@ import {
     Subheader, 
     PageFooter, 
     Grid, 
-    Spacing 
+    Spacing,
+    Panel 
 } from './layout.js';
 
 console.log('🔥 COMPONENT LIBRARY LOADING GRID:', Grid);
@@ -52,7 +53,8 @@ import {
     MarkdownBody,
     SimpleTOC,
     NumberedTOC,
-    TOCGallery 
+    TOCGallery,
+    Table 
 } from './content.js';
 
 // Import all interactive components
@@ -79,7 +81,11 @@ import {
     VGAGrid, 
     MathematicalCanvas, 
     ProgressBar,
-    ColorQuantizer
+    ColorQuantizer,
+    NumericInput,
+    SVGDisplay,
+    StatusDisplay,
+    AnimationControls
 } from './specialized.js';
 
 /**
@@ -100,6 +106,7 @@ export const ComponentLibrary = {
     PageFooter,
     Grid,
     Spacing,
+    Panel,
     
     // Content components
     Heading,
@@ -112,6 +119,7 @@ export const ComponentLibrary = {
     SimpleTOC,
     NumberedTOC,
     TOCGallery,
+    Table,
     
     // Interactive components
     CollapsibleBase,
@@ -133,6 +141,10 @@ export const ComponentLibrary = {
     MathematicalCanvas,
     ProgressBar,
     ColorQuantizer,
+    NumericInput,
+    SVGDisplay,
+    StatusDisplay,
+    AnimationControls,
     
     /**
      * Component factory - maintains exact same API as before
@@ -146,6 +158,7 @@ export const ComponentLibrary = {
             'page-footer': PageFooter,
             'grid': Grid,
             'spacing': Spacing,
+            'panel': Panel,
         
         // Content
             'heading': Heading,
@@ -158,6 +171,7 @@ export const ComponentLibrary = {
             'simple-toc': SimpleTOC,
             'numbered-toc': NumberedTOC,
             'toc-gallery': TOCGallery,
+            'table': Table,
             
             // Interactive
             'dropdown': Dropdown,
@@ -177,7 +191,11 @@ export const ComponentLibrary = {
             'vga-grid': VGAGrid,
             'mathematical-canvas': MathematicalCanvas,
             'progress-bar': ProgressBar,
-            'color-quantizer': ColorQuantizer
+            'color-quantizer': ColorQuantizer,
+            'numeric-input': NumericInput,
+            'svg-display': SVGDisplay,
+            'status-display': StatusDisplay,
+            'animation-controls': AnimationControls
         };
         
         const ComponentClass = components[type];
@@ -240,6 +258,7 @@ export {
     PageFooter,
     Grid,
     Spacing,
+    Panel,
     
     // Content
     Heading,
@@ -252,6 +271,7 @@ export {
     SimpleTOC,
     NumberedTOC,
     TOCGallery,
+    Table,
     
     // Interactive
     CollapsibleBase,
@@ -271,5 +291,10 @@ export {
     // Specialized
     VGAGrid,
     MathematicalCanvas,
-    ProgressBar
+    ProgressBar,
+    ColorQuantizer,
+    NumericInput,
+    SVGDisplay,
+    StatusDisplay,
+    AnimationControls
 };

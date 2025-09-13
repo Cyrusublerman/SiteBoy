@@ -659,6 +659,92 @@ export class NumberedTOC extends BaseComponent {
 }
 
 /**
+ * Table - Data table component with proper structure
+ */
+export class Table extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'table' }, deps);
+        this.headers = options.headers || [];
+        this.rows = options.rows || [];
+        this.caption = options.caption || '';
+        this.className = options.className || '';
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('table', `table component ${this.className}`);
+            this.element.style.cssText = `
+                width: 100%;
+                border-collapse: collapse;
+                font-family: 'Space Mono', monospace;
+                font-size: calc(var(--f) * 0.8);
+                border: 1px solid var(--c-border);
+            `;
+            
+            // Caption
+            if (this.caption) {
+                const caption = this.createElement('caption', 'table-caption');
+                caption.textContent = this.caption;
+                caption.style.cssText = `
+                    font-weight: bold;
+                    margin-bottom: calc(var(--f) * 0.5);
+                    text-align: left;
+                `;
+                this.element.appendChild(caption);
+            }
+            
+            // Headers
+            if (this.headers.length > 0) {
+                const thead = this.createElement('thead', 'table-head');
+                const headerRow = this.createElement('tr', 'table-header-row');
+                headerRow.style.cssText = `background: var(--c-border); font-weight: bold;`;
+                
+                this.headers.forEach(header => {
+                    const th = this.createElement('th', 'table-header');
+                    th.textContent = header;
+                    th.style.cssText = `
+                        padding: calc(var(--f) * 0.5);
+                        border: 1px solid var(--c-border);
+                        text-align: center;
+                    `;
+                    headerRow.appendChild(th);
+                });
+                
+                thead.appendChild(headerRow);
+                this.element.appendChild(thead);
+            }
+            
+            // Body
+            const tbody = this.createElement('tbody', 'table-body');
+            this.rows.forEach(row => {
+                const tr = this.createElement('tr', 'table-row');
+                row.forEach((cell, index) => {
+                    const td = this.createElement('td', 'table-cell');
+                    
+                    if (typeof cell === 'object' && cell.element) {
+                        // Cell contains a component
+                        td.appendChild(cell.element || cell);
+                    } else {
+                        // Cell contains text
+                        td.textContent = cell;
+                    }
+                    
+                    td.style.cssText = `
+                        padding: calc(var(--f) * 0.25);
+                        border: 1px solid var(--c-border);
+                        ${index === 0 ? 'font-weight: bold; background: var(--c-bg-alt);' : ''}
+                    `;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            this.element.appendChild(tbody);
+        }
+        return this.element;
+    }
+}
+
+/**
  * TOCGallery - Table of Contents gallery preview component
  */
 export class TOCGallery extends BaseComponent {

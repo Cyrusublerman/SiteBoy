@@ -84,44 +84,29 @@ const ToolsSection = {
         // Define simple tools sections (direct navigation, no nesting)
         const toolsSections = [
             {
-                id: 'ui-test',
-                title: 'UI TEST TOOL',
-                description: 'Interactive component testing and development utility'
+                id: 'font-dimension-finder',
+                title: 'FONT DIMENSION FINDER',
+                description: 'Visualize font metrics with mathematical precision and F-based measurements'
             },
             {
-                id: 'component-test',
-                title: 'COMPONENT TEST',
-                description: 'Individual component testing and validation'
-            },
-            {
-                id: 'canvas-test',
-                title: 'CANVAS TEST',
-                description: 'Canvas drawing and mathematical visualization'
-            },
-            {
-                id: 'color-grid',
-                title: 'VGA COLOR GRID',
-                description: 'VGA color palette exploration and testing'
-            },
-            {
-                id: 'typography',
-                title: 'TYPOGRAPHY TOOL',
-                description: 'Font testing and typography validation'
+                id: 'font-size-comparison',
+                title: 'FONT SIZE COMPARISON',
+                description: 'Real-time comparison of fonts with precise scaling controls'
             },
             {
                 id: 'pixel-tiler',
                 title: 'PIXEL TILER',
-                description: 'Pixel art and tiling pattern creator'
+                description: 'Create 2×2 pixel combinations from 4 source images with animation'
             },
             {
-                id: 'font-analysis',
-                title: 'FONT ANALYSIS',
-                description: 'Font metrics and character analysis tool'
+                id: 'polygon-calculator',
+                title: 'POLYGON CALCULATOR',
+                description: 'Interactive polygon geometry with mathematical precision and SVG export'
             },
             {
                 id: 'color-quantizer',
                 title: 'COLOR QUANTIZER',
-                description: 'Image color reduction and palette extraction'
+                description: 'Image color reduction with dithering algorithms'
             }
         ];
         
@@ -167,13 +152,10 @@ const ToolsSection = {
     getDropdownItems(currentSubsection) {
         const allTools = [
             { label: 'TOOLS INDEX', path: '#tools', isTOC: true },
-            { label: 'UI TEST TOOL', path: '#tools/ui-test' },
-            { label: 'COMPONENT TEST', path: '#tools/component-test' },
-            { label: 'CANVAS TEST', path: '#tools/canvas-test' },
-            { label: 'VGA COLOR GRID', path: '#tools/color-grid' },
-            { label: 'TYPOGRAPHY TOOL', path: '#tools/typography' },
+            { label: 'FONT DIMENSION FINDER', path: '#tools/font-dimension-finder' },
+            { label: 'FONT SIZE COMPARISON', path: '#tools/font-size-comparison' },
             { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
-            { label: 'FONT ANALYSIS', path: '#tools/font-analysis' },
+            { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' },
             { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' }
         ];
         
@@ -195,13 +177,10 @@ const ToolsSection = {
     getNavigationContext(currentSubsection, callbacks) {
         // Define all available tools in order for navigation
         const allTools = [
-            { id: 'ui-test', title: 'UI Test Tool', path: '#tools/ui-test' },
-            { id: 'component-test', title: 'Component Test', path: '#tools/component-test' },
-            { id: 'canvas-test', title: 'Canvas Test', path: '#tools/canvas-test' },
-            { id: 'color-grid', title: 'VGA Color Grid', path: '#tools/color-grid' },
-            { id: 'typography', title: 'Typography Tool', path: '#tools/typography' },
+            { id: 'font-dimension-finder', title: 'Font Dimension Finder', path: '#tools/font-dimension-finder' },
+            { id: 'font-size-comparison', title: 'Font Size Comparison', path: '#tools/font-size-comparison' },
             { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
-            { id: 'font-analysis', title: 'Font Analysis', path: '#tools/font-analysis' },
+            { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' },
             { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' }
         ];
         
@@ -256,20 +235,20 @@ const ToolsSection = {
         console.log(`🔧 Rendering tool: ${toolId}`);
         
         switch (toolId) {
-            case 'ui-test':
-                this.renderUITestTool();
+            case 'font-dimension-finder':
+                this.renderFontDimensionFinder();
+                break;
+            case 'font-size-comparison':
+                this.renderFontSizeComparison();
+                break;
+            case 'pixel-tiler':
+                this.renderPixelTiler();
+                break;
+            case 'polygon-calculator':
+                this.renderPolygonCalculator();
                 break;
             case 'color-quantizer':
                 this.renderColorQuantizer();
-                break;
-            case 'color-grid':
-                this.renderColorGrid();
-                break;
-            case 'canvas-test':
-                this.renderCanvasTest();
-                break;
-            case 'component-test':
-                this.renderComponentTest();
                 break;
             default:
                 this.renderGenericTool(toolId);
@@ -475,6 +454,58 @@ Click any section below to expand and view live examples with usage code.
         this.componentInstances.push(cq);
         this.currentContainer.appendChild(cq.render());
 
+        this.addBackLink();
+    },
+    
+    /**
+     * Render Font Dimension Finder Tool
+     */
+    renderFontDimensionFinder() {
+        const tool = new window.FontDimensionFinder(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+        this.addBackLink();
+    },
+    
+    /**
+     * Render Font Size Comparison Tool
+     */
+    renderFontSizeComparison() {
+        const tool = new window.FontSizeComparison(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+        this.addBackLink();
+    },
+    
+    /**
+     * Render Pixel Tiler Tool
+     */
+    renderPixelTiler() {
+        const tool = new window.PixelTiler(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+        this.addBackLink();
+    },
+    
+    /**
+     * Render Polygon Calculator Tool
+     */
+    renderPolygonCalculator() {
+        const tool = new window.PolygonCalculator(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
         this.addBackLink();
     },
     

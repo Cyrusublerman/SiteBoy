@@ -1570,3 +1570,62 @@ export class Subheader extends BaseComponent {
         }
     }
 }
+
+/**
+ * Panel - Reusable container component with consistent styling
+ */
+export class Panel extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'panel' }, deps);
+        this.title = options.title || '';
+        this.content = options.content || '';
+        this.className = options.className || '';
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', `panel component ${this.className}`);
+            this.element.style.cssText = `
+                padding: var(--f);
+                border: 1px solid var(--c-border);
+                background: var(--c-bg);
+                margin-bottom: var(--f);
+            `;
+            
+            if (this.title) {
+                const titleElement = this.createElement('h3', 'panel-title');
+                titleElement.textContent = this.title;
+                titleElement.style.cssText = `
+                    margin: 0 0 var(--f) 0;
+                    font-size: calc(var(--f) * 1.2);
+                    font-family: 'Space Mono', monospace;
+                    color: var(--c-text);
+                `;
+                this.element.appendChild(titleElement);
+            }
+            
+            if (this.content) {
+                const contentElement = this.createElement('div', 'panel-content');
+                if (typeof this.content === 'string') {
+                    contentElement.textContent = this.content;
+                } else {
+                    contentElement.appendChild(this.content);
+                }
+                this.element.appendChild(contentElement);
+            }
+        }
+        return this.element;
+    }
+    
+    setContent(content) {
+        const contentElement = this.element?.querySelector('.panel-content');
+        if (contentElement) {
+            if (typeof content === 'string') {
+                contentElement.textContent = content;
+            } else {
+                contentElement.innerHTML = '';
+                contentElement.appendChild(content);
+            }
+        }
+    }
+}

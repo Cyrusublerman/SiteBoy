@@ -22,6 +22,7 @@
 
 import { BaseComponent } from './foundation.js';
 import { Dropdown } from './interactive.js';
+import DitherFunctions from '../../js/tools/dither/algorithms.js';
 
 /**
  * VGAGrid - Color grid with VGA styling
@@ -187,6 +188,279 @@ export class ProgressBar extends BaseComponent {
  * - Encapsulates all DOM ops within BaseComponent methods
  * - Uses SiteBoy CSS vars and MF for spacing where needed
  */
+
+/**
+ * NumericInput - Enhanced numeric input with validation
+ */
+export class NumericInput extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'numeric-input' }, deps);
+        this.value = options.value || 0;
+        this.min = options.min;
+        this.max = options.max;
+        this.step = options.step || 1;
+        this.label = options.label || '';
+        this.onChange = options.onChange || (() => {});
+        this.precision = options.precision || 3;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'numeric-input component');
+            
+            if (this.label) {
+                const label = this.createElement('label', 'numeric-input-label');
+                label.textContent = this.label;
+                label.style.cssText = `
+                    display: block;
+                    margin-bottom: calc(var(--f) * 0.5);
+                    font-size: calc(var(--f) * 0.8);
+                    font-family: 'Space Mono', monospace;
+                    color: var(--c-text);
+                `;
+                this.element.appendChild(label);
+            }
+            
+            const input = this.createElement('input', 'numeric-input-field');
+            input.type = 'number';
+            input.value = this.value;
+            if (this.min !== undefined) input.min = this.min;
+            if (this.max !== undefined) input.max = this.max;
+            input.step = this.step;
+            
+            input.style.cssText = `
+                width: 100%;
+                padding: calc(var(--f) * 0.5) calc(var(--f) * 0.75);
+                border: 1px solid var(--c-border);
+                background: var(--c-bg);
+                color: var(--c-text);
+                font-family: 'Space Mono', monospace;
+                font-size: calc(var(--f) * 0.8);
+                box-sizing: border-box;
+            `;
+            
+            input.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                    this.value = value;
+                    this.onChange(value, e);
+                }
+            });
+            
+            this.element.appendChild(input);
+            this.inputElement = input;
+        }
+        return this.element;
+    }
+    
+    setValue(value) {
+        this.value = value;
+        if (this.inputElement) {
+            this.inputElement.value = value.toFixed(this.precision);
+        }
+    }
+}
+
+/**
+ * SVGDisplay - Container for mathematical SVG visualizations
+ */
+export class SVGDisplay extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'svg-display' }, deps);
+        this.width = options.width || '100%';
+        this.height = options.height || '400px';
+        this.viewBox = options.viewBox || '-3 -3 6 6';
+        this.svgContent = options.svgContent || '';
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'svg-display component');
+            this.element.style.cssText = `
+                width: 100%;
+                border: 1px solid var(--c-border);
+                background: var(--c-bg);
+                padding: var(--f);
+                box-sizing: border-box;
+            `;
+            
+            this.svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            this.svgElement.setAttribute('width', this.width);
+            this.svgElement.setAttribute('height', this.height);
+            this.svgElement.setAttribute('viewBox', this.viewBox);
+            this.svgElement.style.cssText = `
+                width: 100%;
+                height: ${this.height};
+                display: block;
+            `;
+            
+            this.element.appendChild(this.svgElement);
+        }
+        return this.element;
+    }
+    
+    setSVGContent(content) {
+        if (this.svgElement) {
+            this.svgElement.innerHTML = content;
+        }
+    }
+    
+    getSVGElement() {
+        return this.svgElement;
+    }
+}
+
+/**
+ * StatusDisplay - Status message component
+ */
+export class StatusDisplay extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'status-display' }, deps);
+        this.message = options.message || 'Ready';
+        this.type = options.type || 'info'; // info, success, warning, error
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'status-display component');
+            this.element.style.cssText = `
+                padding: calc(var(--f) * 0.75) var(--f);
+                background: var(--c-bg);
+                border: 1px solid var(--c-border);
+                font-family: 'Space Mono', monospace;
+                font-size: calc(var(--f) * 0.8);
+                color: var(--c-text);
+                margin: calc(var(--f) * 0.5) 0;
+            `;
+            
+            this.textElement = this.createElement('span', 'status-text');
+            this.textElement.textContent = this.message;
+            this.element.appendChild(this.textElement);
+        }
+        return this.element;
+    }
+    
+    setMessage(message, type = 'info') {
+        this.message = message;
+        this.type = type;
+        if (this.textElement) {
+            this.textElement.textContent = message;
+        }
+    }
+}
+
+/**
+ * AnimationControls - Play/pause/navigation controls
+ */
+export class AnimationControls extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'animation-controls' }, deps);
+        this.isPlaying = false;
+        this.currentFrame = options.currentFrame || 0;
+        this.totalFrames = options.totalFrames || 1;
+        this.onPlay = options.onPlay || (() => {});
+        this.onPause = options.onPause || (() => {});
+        this.onNext = options.onNext || (() => {});
+        this.onPrevious = options.onPrevious || (() => {});
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'animation-controls component');
+            this.element.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: calc(var(--f) * 0.5);
+                padding: var(--f);
+                border: 1px solid var(--c-border);
+                background: var(--c-bg);
+            `;
+            
+            // Frame info
+            this.frameInfo = this.createElement('div', 'frame-info');
+            this.frameInfo.style.cssText = `
+                font-family: 'Space Mono', monospace;
+                font-size: calc(var(--f) * 0.8);
+                color: var(--c-text);
+                text-align: center;
+            `;
+            this.updateFrameInfo();
+            
+            // Control buttons
+            const buttonRow = this.createElement('div', 'button-row');
+            buttonRow.style.cssText = `
+                display: flex;
+                gap: calc(var(--f) * 0.5);
+                justify-content: center;
+            `;
+            
+            this.playButton = this.createElement('button', 'play-button');
+            this.playButton.textContent = 'Play';
+            this.playButton.style.cssText = this.getButtonStyle();
+            this.playButton.addEventListener('click', () => this.togglePlay());
+            
+            this.prevButton = this.createElement('button', 'prev-button');
+            this.prevButton.textContent = '← Prev';
+            this.prevButton.style.cssText = this.getButtonStyle();
+            this.prevButton.addEventListener('click', () => {
+                this.onPrevious();
+                this.updateFrameInfo();
+            });
+            
+            this.nextButton = this.createElement('button', 'next-button');
+            this.nextButton.textContent = 'Next →';
+            this.nextButton.style.cssText = this.getButtonStyle();
+            this.nextButton.addEventListener('click', () => {
+                this.onNext();
+                this.updateFrameInfo();
+            });
+            
+            buttonRow.appendChild(this.prevButton);
+            buttonRow.appendChild(this.playButton);
+            buttonRow.appendChild(this.nextButton);
+            
+            this.element.appendChild(this.frameInfo);
+            this.element.appendChild(buttonRow);
+        }
+        return this.element;
+    }
+    
+    getButtonStyle() {
+        return `
+            padding: calc(var(--f) * 0.5) calc(var(--f) * 0.75);
+            background: var(--c-bg);
+            border: 1px solid var(--c-border);
+            color: var(--c-text);
+            font-family: 'Space Mono', monospace;
+            font-size: calc(var(--f) * 0.8);
+            cursor: pointer;
+            min-width: calc(var(--f) * 4);
+        `;
+    }
+    
+    togglePlay() {
+        this.isPlaying = !this.isPlaying;
+        this.playButton.textContent = this.isPlaying ? 'Pause' : 'Play';
+        if (this.isPlaying) {
+            this.onPlay();
+        } else {
+            this.onPause();
+        }
+    }
+    
+    updateFrameInfo() {
+        if (this.frameInfo) {
+            this.frameInfo.textContent = `Frame ${this.currentFrame + 1}/${this.totalFrames}`;
+        }
+    }
+    
+    setFrameInfo(current, total) {
+        this.currentFrame = current;
+        this.totalFrames = total;
+        this.updateFrameInfo();
+    }
+}
+
 export class ColorQuantizer extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'color-quantizer' }, deps);
@@ -205,8 +479,10 @@ export class ColorQuantizer extends BaseComponent {
         this.currentPaletteKey = 'custom';
         this.currentDitherKey = 'none';
         // Offscreen buffer and view transform state for pan/zoom
-        this.offscreen = { canvas: null, ctx: null, width: 0, height: 0 };
+        this.offscreen = { canvas: null, ctx: null, width: 0, height: 0 }; // after
+        this.before = { canvas: null, ctx: null, width: 0, height: 0 }; // before
         this.view = { scale: 1, panX: 0, panY: 0, minScale: 0.1, maxScale: 16, dragging: false, lastX: 0, lastY: 0 };
+        this.compare = { enabled: false, position: 0.5 };
         this.converter = new (class ColorSpaceConverter {
             constructor() {
                 this.cache = new Map();
@@ -421,6 +697,19 @@ export class ColorQuantizer extends BaseComponent {
         zoomRow.appendChild(btnMinus);
         zoomRow.appendChild(btnPlus);
         viewBox.appendChild(zoomRow);
+        // Compare controls
+        const cmpRow = this.createElement('div');
+        cmpRow.style.cssText = `display:flex; gap:${Math.floor(F/2)}px; align-items:center; width:100%; margin-top:${Math.floor(F/2)}px;`;
+        this.ui.compareToggle = this.createElement('input'); this.ui.compareToggle.type = 'checkbox'; this.ui.compareToggle.checked = false;
+        const cmpLbl = this.createElement('label', '', 'COMPARE BEFORE/AFTER');
+        cmpLbl.style.cssText = `height:${F*2}px; line-height:${F*2-2}px;`;
+        this.ui.compareSlider = this.createElement('input'); this.ui.compareSlider.type = 'range'; this.ui.compareSlider.min = '0'; this.ui.compareSlider.max = '100'; this.ui.compareSlider.step = '1'; this.ui.compareSlider.value = '50'; this.ui.compareSlider.style.cssText = `flex:1 1 auto;`;
+        this._on(this.ui.compareToggle, 'change', () => { this.compare.enabled = !!this.ui.compareToggle.checked; this.renderDisplay(); });
+        this._on(this.ui.compareSlider, 'input', () => { this.compare.position = (parseInt(this.ui.compareSlider.value,10)||50)/100; this.renderDisplay(); });
+        cmpRow.appendChild(this.ui.compareToggle);
+        cmpRow.appendChild(cmpLbl);
+        cmpRow.appendChild(this.ui.compareSlider);
+        viewBox.appendChild(cmpRow);
         controls.appendChild(viewBox);
         // Status
         const statusBox = makeBox('STATUS');
@@ -525,9 +814,20 @@ export class ColorQuantizer extends BaseComponent {
     updatePaletteTrigger(open=false){ if (!this.paletteDropdown || !this.paletteDropdown.triggerElement) return; const label = this.formatLabel(this.currentPaletteKey); if (this.ui.paletteLabel) this.ui.paletteLabel.textContent = label; if (this.ui.paletteSymbol) this.ui.paletteSymbol.textContent = open ? '−' : '+'; }
     updateLayout(F){ if (!this.element) return; const container = this.element.querySelector('.cq-container'); if (!container) return; const viewport = window.innerWidth || document.documentElement.clientWidth || 1024; if (viewport < 700) { container.style.gridTemplateColumns = `1fr`; } else { container.style.gridTemplateColumns = `${F*36}px 1fr`; } }
     ensureDisplayCanvasSize(){ if (!this.ui.canvas) return; const parent = this.ui.canvas.parentElement; if (!parent) return; const rect = parent.getBoundingClientRect(); const w = Math.max(1, Math.floor(rect.width)); const h = Math.max(1, Math.floor(rect.height)); if (this.ui.canvas.width !== w || this.ui.canvas.height !== h){ this.ui.canvas.width = w; this.ui.canvas.height = h; } }
-    ensureOffscreen(){ if (!this.offscreen.canvas){ const c = document.createElement('canvas'); this.offscreen.canvas = c; this.offscreen.ctx = c.getContext('2d'); } }
+    ensureOffscreen(){ if (!this.offscreen.canvas){ const c = document.createElement('canvas'); this.offscreen.canvas = c; this.offscreen.ctx = c.getContext('2d'); } if (!this.before.canvas){ const c2 = document.createElement('canvas'); this.before.canvas = c2; this.before.ctx = c2.getContext('2d'); } }
     updateOffscreenFromImageData(imgData){ this.ensureOffscreen(); const c = this.offscreen.canvas, ctx = this.offscreen.ctx; if (!imgData) return; if (c.width !== imgData.width || c.height !== imgData.height){ c.width = imgData.width; c.height = imgData.height; } ctx.putImageData(imgData, 0, 0); this.offscreen.width = c.width; this.offscreen.height = c.height; this.renderDisplay(); }
-    renderDisplay(){ if (!this.ui.canvas || !this.offscreen.canvas) return; this.ensureDisplayCanvasSize(); const ctx = this.ui.canvas.getContext('2d'); const { width, height } = this.ui.canvas; ctx.clearRect(0,0,width,height); ctx.save(); ctx.imageSmoothingEnabled = false; const s = this.view.scale; const dx = this.view.panX; const dy = this.view.panY; const dw = this.offscreen.width * s; const dh = this.offscreen.height * s; ctx.drawImage(this.offscreen.canvas, dx, dy, dw, dh); ctx.restore(); }
+    updateBeforeFromImageData(imgData){ this.ensureOffscreen(); const c = this.before.canvas, ctx = this.before.ctx; if (!imgData) return; if (c.width !== imgData.width || c.height !== imgData.height){ c.width = imgData.width; c.height = imgData.height; } ctx.putImageData(imgData, 0, 0); this.before.width = c.width; this.before.height = c.height; }
+    renderDisplay(){ if (!this.ui.canvas || !this.offscreen.canvas) return; this.ensureDisplayCanvasSize(); const ctx = this.ui.canvas.getContext('2d'); const { width, height } = this.ui.canvas; ctx.clearRect(0,0,width,height); ctx.save(); ctx.imageSmoothingEnabled = false; const s = this.view.scale; const dx = this.view.panX; const dy = this.view.panY; const dw = this.offscreen.width * s; const dh = this.offscreen.height * s; if (this.compare.enabled && this.before.canvas){ const splitX = dx + dw * this.compare.position; // screen-space split
+            // Draw before on left side
+            ctx.save(); ctx.beginPath(); ctx.rect(0, 0, splitX, height); ctx.clip(); ctx.drawImage(this.before.canvas, dx, dy, dw, dh); ctx.restore();
+            // Draw after on right side
+            ctx.save(); ctx.beginPath(); ctx.rect(splitX, 0, width - splitX, height); ctx.clip(); ctx.drawImage(this.offscreen.canvas, dx, dy, dw, dh); ctx.restore();
+            // Divider line
+            ctx.strokeStyle = 'var(--c-border)'; ctx.beginPath(); ctx.moveTo(splitX+0.5, 0); ctx.lineTo(splitX+0.5, height); ctx.stroke();
+        } else {
+            ctx.drawImage(this.offscreen.canvas, dx, dy, dw, dh);
+        }
+        ctx.restore(); }
     // Zoom with wheel around pointer
     onWheelZoom(e){ if (!this.offscreen.canvas) return; e.preventDefault(); const rect = this.ui.canvas.getBoundingClientRect(); const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top; const preImageX = (mouseX - this.view.panX) / this.view.scale; const preImageY = (mouseY - this.view.panY) / this.view.scale; const delta = -Math.sign(e.deltaY) * 0.1; const newScale = Math.max(this.view.minScale, Math.min(this.view.maxScale, this.view.scale * (1 + delta))); this.view.scale = newScale; this.view.panX = mouseX - preImageX * newScale; this.view.panY = mouseY - preImageY * newScale; this.updateZoomUI(); this.renderDisplay(); }
     onDragStart(e){ if (this.state.isEyedropperActive) return; this.view.dragging = true; this.view.lastX = e.clientX; this.view.lastY = e.clientY; this.ui.canvas.style.cursor = 'grabbing'; }
@@ -582,7 +882,7 @@ export class ColorQuantizer extends BaseComponent {
     // Image loading
     async handleFileSelected(e){ const file = e.target.files && e.target.files[0]; if (!file) return; this.state.originalFileName = file.name.replace(/\.[^/.]+$/, ''); const url = URL.createObjectURL(file); await this.loadImage(url); this.ui.fileInput.value = null; }
     async loadImage(url){ try { this.showStatus('Loading image...'); const img = new Image(); img.src = url; await new Promise((res, rej)=>{ img.onload = ()=>res(); img.onerror = (er)=>rej(er); }); // Draw to offscreen then capture ImageData
-            this.ensureOffscreen(); const octx = this.offscreen.ctx; this.offscreen.canvas.width = img.naturalWidth; this.offscreen.canvas.height = img.naturalHeight; octx.drawImage(img,0,0); const id = octx.getImageData(0,0,this.offscreen.canvas.width,this.offscreen.canvas.height); this.state.originalImageData = id; this.state.previewImageData = id; this.state.currentImageData = id; this.view.scale = 1; this.view.panX = 0; this.view.panY = 0; this.ensureDisplayCanvasSize(); this.updateOffscreenFromImageData(id); this.resetAdjustments(); this.ui.undoBtn.disabled = false; this.ui.downloadBtn.disabled = false; this.ui.processBtn.disabled = !this.state.blueNoiseTextureData; this.showStatus('Image loaded'); } catch(err){ this.showStatus('Error loading image'); } finally { if (url && url.startsWith('blob:')) URL.revokeObjectURL(url); } }
+            this.ensureOffscreen(); const octx = this.offscreen.ctx; this.offscreen.canvas.width = img.naturalWidth; this.offscreen.canvas.height = img.naturalHeight; octx.drawImage(img,0,0); const id = octx.getImageData(0,0,this.offscreen.canvas.width,this.offscreen.canvas.height); this.state.originalImageData = id; this.state.previewImageData = id; this.state.currentImageData = id; this.view.scale = 1; this.view.panX = 0; this.view.panY = 0; this.ensureDisplayCanvasSize(); this.updateBeforeFromImageData(id); this.updateOffscreenFromImageData(id); this.resetAdjustments(); this.ui.undoBtn.disabled = false; this.ui.downloadBtn.disabled = false; this.ui.processBtn.disabled = !this.state.blueNoiseTextureData; this.showStatus('Image loaded'); } catch(err){ this.showStatus('Error loading image'); } finally { if (url && url.startsWith('blob:')) URL.revokeObjectURL(url); } }
     loadBlueNoise(){
         try {
             const size = 128;
@@ -626,7 +926,8 @@ export class ColorQuantizer extends BaseComponent {
         const rect = this.ui.canvas.getBoundingClientRect(); const cx = rect.width/2; const cy = rect.height/2; const preImageX = (cx - this.view.panX) / this.view.scale; const preImageY = (cy - this.view.panY) / this.view.scale; this.view.scale = newScale; this.view.panX = cx - preImageX * newScale; this.view.panY = cy - preImageY * newScale; this.updateZoomUI(); this.renderDisplay(); }
     onZoomStep(delta){ const newScale = Math.max(this.view.minScale, Math.min(this.view.maxScale, this.view.scale * (1 + delta))); const rect = this.ui.canvas.getBoundingClientRect(); const cx = rect.width/2; const cy = rect.height/2; const preImageX = (cx - this.view.panX) / this.view.scale; const preImageY = (cy - this.view.panY) / this.view.scale; this.view.scale = newScale; this.view.panX = cx - preImageX * newScale; this.view.panY = cy - preImageY * newScale; this.updateZoomUI(); this.renderDisplay(); }
     // Processing
-    processImage(){ const src = this.state.previewImageData || this.state.originalImageData; if (!src) { this.showStatus('Load an image first'); return; } const useDither = (this.currentDitherKey === 'blue-noise') && !!this.state.blueNoiseTextureData; if (this.currentDitherKey === 'blue-noise' && !this.state.blueNoiseTextureData){ this.showStatus('Blue noise unavailable'); return; } if (this.state.isProcessing){ this.showStatus('Already processing'); return; } this.state.isProcessing = true; this.ui.processBtn.disabled = true; this.ui.undoBtn.disabled = true; this.ui.downloadBtn.disabled = true; this.showStatus('Processing...'); setTimeout(()=>{ try { const palette = this.getActivePalette(); const paletteLabs = palette.map(h => { const rgb = this.converter.hexToRgb(h); return this.converter.rgbToLab(rgb.r, rgb.g, rgb.b); }); const out = useDither ? this.ditherNearestOppositeChecked(src, palette, paletteLabs, this.state.blueNoiseTextureData) : this.doNoDitherLargePalette(src, palette, paletteLabs); this.state.currentImageData = out; this.updateOffscreenFromImageData(out); this.showStatus('Done'); } catch(err){ this.showStatus('Error during processing'); } finally { this.state.isProcessing = false; this.ui.processBtn.disabled = !this.state.blueNoiseTextureData || !this.state.originalImageData; this.ui.undoBtn.disabled = !this.state.originalImageData; this.ui.downloadBtn.disabled = !this.state.currentImageData; } }, 30); }
+    processImage(){ const src = this.state.previewImageData || this.state.originalImageData; if (!src) { this.showStatus('Load an image first'); return; } if (this.state.isProcessing){ this.showStatus('Already processing'); return; } this.state.isProcessing = true; this.ui.processBtn.disabled = true; this.ui.undoBtn.disabled = true; this.ui.downloadBtn.disabled = true; this.showStatus('Processing...'); setTimeout(()=>{ try { const palette = this.getActivePalette(); const paletteLabs = palette.map(h => { const rgb = this.converter.hexToRgb(h); return this.converter.rgbToLab(rgb.r, rgb.g, rgb.b); }); let out; if (this.currentDitherKey === 'none'){ out = DitherFunctions.none(src, palette, paletteLabs, this.converter); } else if (this.currentDitherKey === 'blue-noise'){ if (!this.state.blueNoiseTextureData){ this.showStatus('Blue noise unavailable'); throw new Error('Blue noise missing'); } out = DitherFunctions['blue-noise'](src, palette, paletteLabs, this.converter, this.state.blueNoiseTextureData); } else if (this.currentDitherKey === 'floyd-steinberg'){ out = DitherFunctions['floyd-steinberg'](src, palette, paletteLabs, this.converter); } else { out = DitherFunctions.none(src, palette, paletteLabs, this.converter); }
+            this.state.currentImageData = out; this.updateBeforeFromImageData(this.state.originalImageData); this.updateOffscreenFromImageData(out); this.showStatus('Done'); } catch(err){ if (err && err.message) console.error(err.message); } finally { this.state.isProcessing = false; this.ui.processBtn.disabled = !this.state.blueNoiseTextureData || !this.state.originalImageData; this.ui.undoBtn.disabled = !this.state.originalImageData; this.ui.downloadBtn.disabled = !this.state.currentImageData; } }, 30); }
     undoProcess(){ const restore = this.state.previewImageData || this.state.originalImageData; if (!restore) { this.showStatus('Nothing to undo'); return; } this.state.currentImageData = restore; this.updateOffscreenFromImageData(restore); this.showStatus('Reverted to preview'); }
     downloadImage(){ if (!this.state.currentImageData) { this.showStatus('Nothing to download'); return; } const t = this.createElement('canvas'); t.width = this.state.currentImageData.width; t.height = this.state.currentImageData.height; const tCtx = t.getContext('2d'); tCtx.putImageData(this.state.currentImageData,0,0); const link = this.createElement('a'); const ditherFlag = (this.currentDitherKey === 'none') ? 'dither_off' : 'dither_on'; link.download = `${this.state.originalFileName}_quant_${this.currentPaletteKey}_${ditherFlag}.png`; link.href = t.toDataURL('image/png'); link.click(); this.showStatus('Download started'); }
     onCanvasClick(event){ if (!this.state.isEyedropperActive) return; const canvas = this.ui.canvas; const rect = canvas.getBoundingClientRect(); const sX = canvas.width / rect.width; const sY = canvas.height / rect.height; const cX = Math.floor((event.clientX - rect.left) * sX); const cY = Math.floor((event.clientY - rect.top) * sY); const img = this.state.previewImageData || this.state.originalImageData; if (!img) return; const idx = (cY * canvas.width + cX) * 4; const r = img.data[idx], g = img.data[idx+1], b = img.data[idx+2]; const hex = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`.toUpperCase(); if (this.ui.customHex) { this.ui.customHex.value = hex; this.ui.customHex.style.borderColor = ''; } if (this.ui.customColor) { this.ui.customColor.value = hex; } this.state.isEyedropperActive = false; canvas.style.outline=''; this.showStatus(`Picked ${hex}`); }
