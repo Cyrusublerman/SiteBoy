@@ -78,29 +78,35 @@ class PolygonCalculator {
             align-items: stretch;
             gap: 0;
             margin-bottom: 0;
-            
-            @media (max-width: 1023px) {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
-            }
         `;
         
-        // Add responsive styles for mobile
-        const mobileStyle = document.createElement('style');
-        mobileStyle.textContent = `
+        // Add comprehensive responsive styles
+        const polygonResponsiveStyle = document.createElement('style');
+        polygonResponsiveStyle.id = 'polygon-responsive-styles';
+        polygonResponsiveStyle.textContent = `
             @media (max-width: 1023px) {
+                .polygon-container {
+                    grid-template-columns: 1fr !important;
+                    grid-template-rows: auto auto !important;
+                }
                 .polygon-controls {
                     border-right: 1px solid var(--c-border) !important;
                     border-bottom: none !important;
-                    order: 1;
+                    order: 1 !important;
                 }
                 .polygon-output {
                     border-top: none !important;
-                    order: 2;
+                    order: 2 !important;
                 }
             }
         `;
-        document.head.appendChild(mobileStyle);
+        
+        // Remove existing responsive styles first
+        const existingResponsive = document.querySelector('#polygon-responsive-styles');
+        if (existingResponsive) {
+            existingResponsive.remove();
+        }
+        document.head.appendChild(polygonResponsiveStyle);
         
         // Left column - Controls (inputs)
         const controls = document.createElement('div');

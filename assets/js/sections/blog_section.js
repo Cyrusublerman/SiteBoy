@@ -17,58 +17,16 @@ const BlogSection = {
     currentArticle: null,
     currentCategory: null,
     
-    // Blog structure based on actual blog/ folder structure
-    blogStructure: {
-        'docs': {
-            title: 'DOCUMENTATION',
-            description: 'Technical documentation and analysis',
-            articles: [
-                { id: 'SITEBOY_ARCHITECTURE_FLOW', title: 'SiteBoy Architecture Flow', path: '#blog/docs/SITEBOY_ARCHITECTURE_FLOW' },
-                { id: 'ANALYSIS_OLD_BUILD_vs_CURRENT', title: 'Old Build Analysis', path: '#blog/docs/ANALYSIS_OLD_BUILD_vs_CURRENT' },
-                { id: 'BODY-SIZING-FIX', title: 'Body Sizing Fix', path: '#blog/docs/BODY-SIZING-FIX' },
-                { id: 'COMPONENT_AESTHETICS_ANALYSIS', title: 'Component Aesthetics', path: '#blog/docs/COMPONENT_AESTHETICS_ANALYSIS' },
-                { id: 'DROPDOWN-IMPLEMENTATION-PLAN', title: 'Dropdown Implementation', path: '#blog/docs/DROPDOWN-IMPLEMENTATION-PLAN' },
-                { id: 'DROPDOWN-TOC-METHODOLOGY', title: 'Dropdown TOC Methodology', path: '#blog/docs/DROPDOWN-TOC-METHODOLOGY' },
-                { id: 'HOME-PAGE-TOC-IMPLEMENTATION', title: 'Home Page TOC', path: '#blog/docs/HOME-PAGE-TOC-IMPLEMENTATION' },
-                { id: 'MATHEMATICAL_ALIGNMENT_ANALYSIS', title: 'Mathematical Alignment', path: '#blog/docs/MATHEMATICAL_ALIGNMENT_ANALYSIS' },
-                { id: 'OLD_BUILD_SUPERIOR_AREAS', title: 'Old Build Analysis', path: '#blog/docs/OLD_BUILD_SUPERIOR_AREAS' },
-                { id: 'PAGE-BUILD-COMPLIANCE-FINAL', title: 'Page Build Compliance', path: '#blog/docs/PAGE-BUILD-COMPLIANCE-FINAL' },
-                { id: 'PAGE-BUILD-COMPLIANCE-REPORT', title: 'Build Compliance Report', path: '#blog/docs/PAGE-BUILD-COMPLIANCE-REPORT' },
-                { id: 'REFACTOR-COMPLETE', title: 'Refactor Complete', path: '#blog/docs/REFACTOR-COMPLETE' },
-                { id: 'SETUP-SPEC', title: 'Setup Specification', path: '#blog/docs/SETUP-SPEC' },
-                { id: 'UI_COMPONENT_DIFFERENCES_ANALYSIS', title: 'UI Component Differences', path: '#blog/docs/UI_COMPONENT_DIFFERENCES_ANALYSIS' }
-            ]
-        },
-        'music': {
-            title: 'MUSIC THEORY',
-            description: 'Articles about musical composition, theory, and analysis',
-            articles: [
-                { id: 'chord', title: 'Chord Progressions', path: '#blog/music/chord' },
-                { id: 'drum', title: 'Drum Patterns', path: '#blog/music/drum' },
-                { id: 'keysnmodes', title: 'Keys & Modes', path: '#blog/music/keysnmodes' },
-                { id: 'notes2hertz', title: 'Notes to Hertz', path: '#blog/music/notes2hertz' }
-            ]
-        },
-        'site': {
-            title: 'SITE DEVELOPMENT',
-            description: 'Technical articles about website architecture and development',
-            articles: [
-                { id: 'plan', title: 'Site Plan', path: '#blog/site/plan' },
-                { id: 'refined_logic', title: 'Refined Logic', path: '#blog/site/refined_logic' },
-                { id: 'type', title: 'Typography', path: '#blog/site/type' }
-            ]
-        },
-        'tools': {
-            title: 'DEVELOPMENT TOOLS',
-            description: 'Guides for development and creative tools',
-            articles: [
-                { id: 'color-quantizer', title: 'Color Quantizer', path: '#blog/tools/color-quantizer' },
-                { id: 'font-analysis', title: 'Font Analysis', path: '#blog/tools/font-analysis' },
-                { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#blog/tools/pixel-tiler' },
-                { id: 'typography', title: 'Typography Tool', path: '#blog/tools/typography' }
-            ]
-        }
-    },
+    // Simple page list for navigation
+    pages: [
+        '#blog',
+        '#blog/docs/SITEBOY_ARCHITECTURE_FLOW',
+        '#blog/docs/ANALYSIS_OLD_BUILD_vs_CURRENT',
+        '#blog/music/chord',
+        '#blog/music/drum',
+        '#blog/site/plan',
+        '#blog/tools/color-quantizer'
+    ],
     
     /**
      * Handle route changes for blog section
@@ -76,7 +34,8 @@ const BlogSection = {
      * @param {HTMLElement} container - Content container
      * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
-    async handleRoute(subsection, container, callbacks = {}) {
+    async handleRoute(subsection, container, callbacks) {
+        callbacks = callbacks || {};
         console.log(`📝 Blog Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
@@ -94,11 +53,13 @@ const BlogSection = {
             }
         }
         
+        // Setup unified navigation (same code for all sections)
+        window.NavigationController.setupNavigation('blog', subsection, this.pages, this.navigationCallbacks);
+        
         // Parse route to determine what to show
         if (!subsection) {
             // Show blog TOC index
             this.renderBlogIndex();
-            this.setupSubheaderForIndex();
         } else {
             // Parse category/article from subsection (e.g., 'music/chord')
             const [category, articleId] = subsection.split('/');
@@ -108,13 +69,40 @@ const BlogSection = {
                     this.currentCategory = category;
                     this.currentArticle = articleId;
                     await this.renderArticle(category, article);
-                    this.setupSubheaderForArticle(category, articleId);
                 } else {
                     this.renderError(`Article not found: ${articleId}`);
                 }
             } else {
                 this.renderError(`Invalid blog route: ${subsection}`);
             }
+        }
+    },
+    
+    // Blog structure for backward compatibility
+    blogStructure: {
+        'docs': {
+            title: 'DOCUMENTATION',
+            description: 'Technical documentation and analysis',
+            articles: [
+                { id: 'SITEBOY_ARCHITECTURE_FLOW', title: 'SiteBoy Architecture Flow' },
+                { id: 'ANALYSIS_OLD_BUILD_vs_CURRENT', title: 'Old Build Analysis' }
+            ]
+        },
+        'music': {
+            title: 'MUSIC THEORY',
+            description: 'Articles about musical composition, theory, and analysis',
+            articles: [
+                { id: 'chord', title: 'Chord Progressions' },
+                { id: 'drum', title: 'Drum Patterns' }
+            ]
+        },
+        'site': {
+            title: 'SITE DEVELOPMENT', 
+            articles: [{ id: 'plan', title: 'Site Plan' }]
+        },
+        'tools': {
+            title: 'DEVELOPMENT TOOLS',
+            articles: [{ id: 'color-quantizer', title: 'Color Quantizer' }]
         }
     },
     
@@ -185,181 +173,9 @@ const BlogSection = {
         console.log(`📝 Blog TOC item clicked: ${item.title}`);
     },
     
-    /**
-     * Setup subheader for blog index (TOC)
-     */
-    setupSubheaderForIndex() {
-        console.log('📝 setupSubheaderForIndex() called - setting up subheader for blog TOC');
-        if (!window.Subheader) {
-            console.warn('⚠️ Subheader component not available');
-            return;
-        }
-        
-        // Update subheader title
-        window.Subheader.updateTitle('BLOG TOC');
-        
-        // Build all articles list for dropdown
-        const allPages = this.getAllBlogPages();
-        const dropdownItems = this.buildDropdownItems(allPages, null);
-        
-        // Setup dropdown
-        window.Subheader.setDropdownContent(dropdownItems, (item) => {
-            if (item.path) {
-                this.navigateToPage(item.path);
-            }
-        });
-        
-        // Setup prev/next navigation with looping (TOC is at index 0)
-        const currentIndex = 0; // TOC is always at index 0
-        const prevIndex = allPages.length - 1; // Previous = last article
-        const nextIndex = 1; // Next = first actual article
-        
-        // Use consistent navigation API
-        const navigationContext = {
-            section: 'blog',
-            subsection: null, // TOC has no subsection
-            items: allPages,
-            navigate: (section, subsection) => {
-                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-                    this.navigationCallbacks.navigateToSection(section, subsection);
-                }
-            }
-        };
-        window.Subheader.updateNavigation(navigationContext);
-        
-        // Show subheader
-        window.Subheader.show();
-        
-        console.log('✅ Subheader setup for blog index');
-    },
     
-    /**
-     * Setup subheader for individual article
-     */
-    setupSubheaderForArticle(category, articleId) {
-        if (!window.Subheader) {
-            console.warn('⚠️ Subheader component not available');
-            return;
-        }
-        
-        const article = this.blogStructure[category].articles.find(a => a.id === articleId);
-        if (!article) return;
-        
-        // Update subheader title
-        window.Subheader.updateTitle(article.title);
-        
-        // Build all articles list for dropdown
-        const allPages = this.getAllBlogPages();
-        const currentPath = `#blog/${category}/${articleId}`;
-        const dropdownItems = this.buildDropdownItems(allPages, currentPath);
-        
-        // Setup dropdown
-        window.Subheader.setDropdownContent(dropdownItems, (item) => {
-            if (item.path) {
-                this.navigateToPage(item.path);
-            }
-        });
-        
-        // Setup prev/next navigation with looping
-        const currentIndex = allPages.findIndex(p => p.path === currentPath);
-        const prevIndex = currentIndex === 0 ? allPages.length - 1 : currentIndex - 1;
-        const nextIndex = currentIndex === allPages.length - 1 ? 0 : currentIndex + 1;
-        
-        // Use new navigation API
-        const navigationContext = {
-            section: 'blog',
-            subsection: `${category}/${articleId}`,
-            items: allPages,
-            navigate: (section, subsection) => {
-                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-                    this.navigationCallbacks.navigateToSection(section, subsection);
-                }
-            }
-        };
-        window.Subheader.updateNavigation(navigationContext);
-        
-        // Show subheader
-        window.Subheader.show();
-        
-        console.log('✅ Subheader setup for article:', article.title);
-    },
     
-    /**
-     * Get all blog pages in order (TOC first, then all articles)
-     */
-    getAllBlogPages() {
-        const pages = [
-            { title: 'BLOG TOC', path: '#blog', isTOC: true }
-        ];
-        
-        // Add all articles from all categories
-        Object.entries(this.blogStructure).forEach(([categoryKey, category]) => {
-            category.articles.forEach(article => {
-                pages.push({
-                    title: article.title,
-                    path: `#blog/${categoryKey}/${article.id}`,
-                    category: categoryKey,
-                    isTOC: false
-                });
-            });
-        });
-        
-        return pages;
-    },
     
-    /**
-     * Build dropdown items with proper structure
-     */
-    buildDropdownItems(allPages, currentPath) {
-        const items = [];
-        
-        // Add TOC first
-        items.push({
-            label: 'BLOG TOC',
-            value: 'toc',
-            path: '#blog',
-            current: currentPath === '#blog' || currentPath === null
-        });
-        
-        // Add categories and articles
-        Object.entries(this.blogStructure).forEach(([categoryKey, category]) => {
-            // Category header
-            items.push({
-                type: 'header',
-                title: category.title
-            });
-            
-            // Category articles
-            category.articles.forEach(article => {
-                const articlePath = `#blog/${categoryKey}/${article.id}`;
-                items.push({
-                    label: article.title,
-                    value: article.id,
-                    path: articlePath,
-                    current: currentPath === articlePath,
-                    subitem: true
-                });
-            });
-        });
-        
-        return items;
-    },
-    
-    /**
-     * Navigate to a page using injected navigation callbacks
-     * @param {string} url - Page URL (e.g., '#blog/music/chord')
-     */
-    navigateToPage(url) {
-        if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-            const hashPath = url.replace('#', '');
-            const pathParts = hashPath.split('/');
-            const section = pathParts[0];
-            const subsection = pathParts.slice(1).join('/');
-            this.navigationCallbacks.navigateToSection(section, subsection || null);
-        } else {
-            console.warn('⚠️ Navigation callbacks not available');
-        }
-    },
     
     /**
      * Render individual article

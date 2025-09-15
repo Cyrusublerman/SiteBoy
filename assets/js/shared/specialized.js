@@ -537,6 +537,32 @@ export class ColorQuantizer extends BaseComponent {
         container.style.cssText = `
             display: grid; grid-template-columns: ${F*36}px 1fr; gap: ${F}px;
         `;
+        
+        // Add responsive styles for ColorQuantizer
+        const cqResponsiveStyle = document.createElement('style');
+        cqResponsiveStyle.id = 'cq-responsive-styles';
+        cqResponsiveStyle.textContent = `
+            @media (max-width: 1023px) {
+                .cq-container {
+                    grid-template-columns: 1fr !important;
+                    grid-template-rows: auto auto !important;
+                    gap: ${F}px !important;
+                }
+                .cq-controls {
+                    order: 1 !important;
+                }
+                .cq-canvas-box {
+                    order: 2 !important;
+                }
+            }
+        `;
+        
+        // Remove existing responsive styles first
+        const existingCqResponsive = document.querySelector('#cq-responsive-styles');
+        if (existingCqResponsive) {
+            existingCqResponsive.remove();
+        }
+        document.head.appendChild(cqResponsiveStyle);
         // Controls column
         const controls = this.createElement('div', 'cq-controls');
         // Boxes helper

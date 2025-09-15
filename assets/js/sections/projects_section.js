@@ -14,73 +14,15 @@ const ProjectsSection = {
     componentInstances: [],
     navigationCallbacks: null,
     
-    /**
-     * Handle route changes for projects section
-     * @param {string|null} subsection - Subsection path
-     * @param {HTMLElement} container - Content container
-     * @param {Object} callbacks - Navigation callbacks (injected from router)
-     */
-    handleRoute(subsection, container, callbacks = {}) {
-        console.log(`🚀 Projects Section v${this.version} handling route: ${subsection || 'index'}`);
-        
-        this.currentContainer = container;
-        this.navigationCallbacks = callbacks;
-        this.cleanup();
-        
-        // Hide subheader for index, show for specific projects
-        if (window.Subheader) {
-            if (subsection) {
-                window.Subheader.updateTitle(`projects/${subsection}`);
-                window.Subheader.show();
-            } else {
-                window.Subheader.hide();
-            }
-        }
-        
-        if (!subsection) {
-            this.renderProjectsIndex();
-        } else {
-            this.renderProject(subsection);
-        }
-    },
-    
-    /**
-     * Render projects index using ComponentLibrary SimpleTOC
-     */
-    renderProjectsIndex() {
-        console.log('🚀 Rendering projects index with SimpleTOC component');
-        
-        // Clear container and add TOC container class for proper CSS styling
-        this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('toc-container');
-        
-        // Apply proper body sizing for projects index (no subheader)
-        if (window.LayoutCalculator) {
-            const contentContainer = this.currentContainer.closest('.content-container');
-            if (contentContainer) {
-                const F = window.LayoutCalculator.F;
-                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
-                contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
-                console.log('✅ Applied no-subheader body sizing for projects index');
-            }
-        }
-        
-        // Define simple projects sections (direct navigation, no nesting)
-        const projectsSections = [
+    // Unified navigation config - clean and beautiful
+    navigationConfig: {
+        type: 'flat',
+        indexTitle: 'PROJECTS',
+        structure: [
             {
                 id: 'siteboy',
                 title: 'SITEBOY FRAMEWORK',
-                description: 'Modular framework for precise VGA-styled web applications'
-            },
-            {
-                id: 'component-lib',
-                title: 'COMPONENT LIBRARY',
-                description: 'Comprehensive UI component system with mathematical precision'
-            },
-            {
-                id: 'math-foundation',
-                title: 'MATHEMATICAL FOUNDATION',
-                description: 'F-based mathematical layout system for consistent sizing'
+                description: 'Modular web framework with mathematical precision and VGA aesthetics'
             },
             {
                 id: 'pixel-tiler',
@@ -107,11 +49,59 @@ const ProjectsSection = {
                 title: 'AUDIO PROCESSOR',
                 description: 'Audio analysis and digital signal processing tools'
             }
-        ];
+        ]
+    },
+    
+    /**
+     * Handle route changes for projects section
+     * @param {string|null} subsection - Subsection path
+     * @param {HTMLElement} container - Content container
+     * @param {Object} callbacks - Navigation callbacks (injected from router)
+     */
+    handleRoute(subsection, container, callbacks) {
+        callbacks = callbacks || {};
+        console.log(`🚀 Projects Section v${this.version} handling route: ${subsection || 'index'}`);
+        
+        this.currentContainer = container;
+        this.navigationCallbacks = callbacks;
+        this.cleanup();
+        
+        // Setup unified navigation (same code for all sections)
+        window.NavigationController.setupNavigation('projects', subsection, this.pages, this.navigationCallbacks);
+        
+        if (!subsection) {
+            this.renderProjectsIndex();
+        } else {
+            this.renderProject(subsection);
+        }
+    },
+    
+    
+    /**
+     * Render projects index using ComponentLibrary SimpleTOC
+     */
+    renderProjectsIndex() {
+        console.log('🚀 Rendering projects index with SimpleTOC component');
+        
+        // Clear container and add TOC container class for proper CSS styling
+        this.currentContainer.innerHTML = '';
+        this.currentContainer.classList.add('toc-container');
+        
+        // Apply proper body sizing for projects index (no subheader)
+        if (window.LayoutCalculator) {
+            const contentContainer = this.currentContainer.closest('.content-container');
+            if (contentContainer) {
+                const F = window.LayoutCalculator.F;
+                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
+                contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
+                console.log('✅ Applied no-subheader body sizing for projects index');
+            }
+        }
+        
         
         // Create simple TOC component using ComponentLibrary with dependencies
         const tocComponent = new ComponentLibrary.SimpleTOC({
-            sections: projectsSections,
+            sections: this.navigationConfig.structure,
             onItemClick: (item) => this.handleProjectClick(item)
         }, {
             MF: window.LayoutCalculator,

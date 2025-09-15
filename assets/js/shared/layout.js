@@ -1433,13 +1433,16 @@ export class Subheader extends BaseComponent {
         
         // Handle different item formats
         if (item.path) {
-            // Extract section/subsection from path (e.g., "#tools/ui-test")
+            // Extract section/subsection from path (e.g., "#tools/ui-test" or "#blog")
             const pathParts = item.path.replace('#', '').split('/');
-            if (pathParts.length >= 2) {
-                navigateCallback(pathParts[0], pathParts[1]);
-            }
+            const section = pathParts[0];
+            const subsection = pathParts.length > 1 ? pathParts.slice(1).join('/') : null;
+            
+            console.log(`🧭 Subheader navigateToItem: ${item.path} → section=${section}, subsection=${subsection}`);
+            navigateCallback(section, subsection);
         } else if (item.id && this.currentSection) {
             // Use current section with item id
+            console.log(`🧭 Subheader navigateToItem: ${this.currentSection}/${item.id}`);
             navigateCallback(this.currentSection, item.id);
         }
     }

@@ -14,44 +14,32 @@ const ToolsSection = {
     componentInstances: [],
     navigationCallbacks: null,
     
+    // Simple page list for navigation
+    pages: [
+        '#tools',
+        '#tools/ui-test',
+        '#tools/font-dimension-finder',
+        '#tools/font-size-comparison',
+        '#tools/pixel-tiler',
+        '#tools/polygon-calculator'
+    ],
+    
     /**
      * Handle route changes for tools section
      * @param {string|null} subsection - Subsection path
      * @param {HTMLElement} container - Content container
      * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
-    handleRoute(subsection, container, callbacks = {}) {
+    handleRoute(subsection, container, callbacks) {
+        callbacks = callbacks || {};
         console.log(`🔧 Tools Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
         this.cleanup();
         
-        // Show/hide subheader based on subsection
-        if (window.Subheader) {
-            if (subsection) {
-                window.Subheader.updateTitle(`tools/${subsection}`);
-                
-                // Setup dropdown with all available tools
-                const dropdownItems = this.getDropdownItems(subsection);
-                window.Subheader.setDropdownContent(dropdownItems, (item) => {
-                    if (item.path && callbacks && callbacks.navigateToSection) {
-                        const pathParts = item.path.replace('#', '').split('/');
-                        if (pathParts.length >= 2) {
-                            callbacks.navigateToSection(pathParts[0], pathParts[1]);
-                        }
-                    }
-                });
-                
-                // Provide navigation context
-                const navigationContext = this.getNavigationContext(subsection, callbacks);
-                window.Subheader.updateNavigation(navigationContext);
-                
-                window.Subheader.show();
-            } else {
-                window.Subheader.hide();
-            }
-        }
+        // Setup unified navigation (same code for all sections)
+        window.NavigationController.setupNavigation('tools', subsection, this.pages, this.navigationCallbacks);
         
         if (!subsection) {
             this.renderToolsIndex();

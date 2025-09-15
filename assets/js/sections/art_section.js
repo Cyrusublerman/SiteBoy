@@ -14,54 +14,55 @@ const ArtSection = {
     componentInstances: [],
     navigationCallbacks: null,
     
-    // Art gallery structure with metadata
+    // Simple page list for navigation
+    pages: [
+        '#art',
+        '#art/digital',
+        '#art/generative', 
+        '#art/sketches',
+        '#art/photography'
+    ],
+    
+    // Gallery structure for backward compatibility
     galleryStructure: {
-        'digital': {
-            title: 'DIGITAL COMPOSITIONS',
+        'digital': { 
+            title: 'DIGITAL COMPOSITIONS', 
             description: 'Digital artworks and computer-generated compositions',
             artworks: [
-                { id: 'abstract-01', title: 'Abstract 01', image: null },
-                { id: 'digital-landscape', title: 'Digital Landscape', image: null },
-                { id: 'geometric-01', title: 'Geometric', image: null },
-                { id: 'color-composition', title: 'Color Comp', image: null },
-                { id: 'vector-art', title: 'Vector Art', image: null },
-                { id: 'digital-portrait', title: 'Portrait', image: null }
+                { id: 'abstract-01', title: 'Abstract 01' },
+                { id: 'digital-landscape', title: 'Digital Landscape' },
+                { id: 'geometric-01', title: 'Geometric' },
+                { id: 'color-composition', title: 'Color Comp' }
             ]
         },
-        'generative': {
-            title: 'GENERATIVE ART',
+        'generative': { 
+            title: 'GENERATIVE ART', 
             description: 'Algorithmic and procedurally generated artworks',
             artworks: [
-                { id: 'algorithm-01', title: 'Algorithm', image: null },
-                { id: 'fractal-study', title: 'Fractal', image: null },
-                { id: 'noise-pattern', title: 'Noise', image: null },
-                { id: 'recursive-design', title: 'Recursive', image: null },
-                { id: 'parameter-space', title: 'Parameter', image: null },
-                { id: 'code-art', title: 'Code Art', image: null }
+                { id: 'algorithm-01', title: 'Algorithm' },
+                { id: 'fractal-study', title: 'Fractal' },
+                { id: 'noise-pattern', title: 'Noise' },
+                { id: 'recursive-design', title: 'Recursive' }
             ]
         },
-        'sketches': {
-            title: 'SKETCHES & STUDIES',
+        'sketches': { 
+            title: 'SKETCHES & STUDIES', 
             description: 'Traditional and digital sketches, studies, and experiments',
             artworks: [
-                { id: 'sketch-01', title: 'Sketch 01', image: null },
-                { id: 'character-study', title: 'Character', image: null },
-                { id: 'figure-drawing', title: 'Figure', image: null },
-                { id: 'environment-study', title: 'Environment', image: null },
-                { id: 'gesture-drawing', title: 'Gesture', image: null },
-                { id: 'concept-art', title: 'Concept', image: null }
+                { id: 'sketch-01', title: 'Sketch 01' },
+                { id: 'character-study', title: 'Character' },
+                { id: 'environment-sketch', title: 'Environment' },
+                { id: 'concept-art', title: 'Concept' }
             ]
         },
-        'photography': {
-            title: 'PHOTOGRAPHY',
+        'photography': { 
+            title: 'PHOTOGRAPHY', 
             description: 'Photographic works and visual documentation',
             artworks: [
-                { id: 'portrait-01', title: 'Portrait 01', image: null },
-                { id: 'landscape', title: 'Landscape', image: null },
-                { id: 'street-photo', title: 'Street', image: null },
-                { id: 'architecture', title: 'Architecture', image: null },
-                { id: 'nature-study', title: 'Nature', image: null },
-                { id: 'urban-scene', title: 'Urban', image: null }
+                { id: 'portrait-01', title: 'Portrait 01' },
+                { id: 'landscape', title: 'Landscape' },
+                { id: 'street-photo', title: 'Street' },
+                { id: 'architecture', title: 'Architecture' }
             ]
         }
     },
@@ -72,26 +73,21 @@ const ArtSection = {
      * @param {HTMLElement} container - Content container
      * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
-    handleRoute(subsection, container, callbacks = {}) {
+    handleRoute(subsection, container, callbacks) {
+        callbacks = callbacks || {};
         console.log(`🎨 Art Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
         this.cleanup();
         
-        // Setup subheader for both index and specific art galleries
-        if (window.Subheader) {
-            if (subsection) {
-                this.setupSubheaderForGallery(subsection, callbacks);
-            } else {
-                this.setupSubheaderForIndex();
-            }
-        }
+        // Setup unified navigation (same code for all sections)
+        window.NavigationController.setupNavigation('art', subsection, this.pages, this.navigationCallbacks);
         
         if (!subsection) {
             this.renderArtIndex();
         } else {
-            this.renderArtGallery(subsection);
+            this.renderGallery(subsection);
         }
     },
     

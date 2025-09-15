@@ -778,7 +778,7 @@ export class TOCGallery extends BaseComponent {
                 padding: 0;
                 box-sizing: border-box;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
-                overflow-x: auto;
+                overflow-x: hidden;
                 overflow-y: hidden;
             `;
             

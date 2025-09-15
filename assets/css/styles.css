@@ -974,35 +974,36 @@ body.with-subheader .content-container {
 /* TOC Gallery Component */
 .toc-gallery.component {
     /* Mathematical foundation spacing already applied in component */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Hide by default */
+    -ms-overflow-style: none;
 }
 
 .toc-gallery.component::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Webkit */
+    display: none; /* Hide by default */
 }
 
 .toc-gallery.component:hover {
-    scrollbar-width: thin; /* Show scrollbar on hover in Firefox */
-    -ms-overflow-style: auto; /* Show scrollbar on hover in IE/Edge */
+    scrollbar-width: thin; /* Show on hover */
+    -ms-overflow-style: auto;
 }
 
 .toc-gallery.component:hover::-webkit-scrollbar {
-    display: block; /* Show scrollbar on hover in Chrome/Safari/Webkit */
+    display: block;
+    width: 8px;
     height: 8px;
 }
 
 .toc-gallery.component:hover::-webkit-scrollbar-track {
-    background: var(--c-border);
+    background: var(--vga-black);
 }
 
 .toc-gallery.component:hover::-webkit-scrollbar-thumb {
-    background: var(--c-text);
+    background: var(--vga-white);
     border-radius: 0;
 }
 
-.toc-gallery.component:hover::-webkit-scrollbar-thumb:hover {
-    background: var(--c-text);
+.toc-gallery.component:hover::-webkit-scrollbar-button {
+    display: none;
 }
 
 .toc-gallery-grid {
@@ -1162,75 +1163,63 @@ body.with-subheader .content-container {
 }
 
 /* =================================================================
-   CUSTOM SCROLLBAR STYLING
+   SCROLLBAR STYLING - Clean & Simple
    ================================================================= */
 
-/* Webkit browsers (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-    width: 12px; /* F = 12px */
-    height: 12px;
+/* RULE: No arrows ever. Only thumb. Always pinned right. Width matches margin system. */
+
+/* Remove ALL scrollbar buttons/arrows globally */
+::-webkit-scrollbar-button {
+    display: none;
 }
 
+/* Base scrollbar styling */
 ::-webkit-scrollbar-track {
     background: var(--vga-black);
-    border: 1px solid var(--vga-white);
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--vga-white);
-    border: 1px solid var(--vga-white);
+    border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--c-text);
+    background: var(--vga-silver);
 }
 
 ::-webkit-scrollbar-corner {
     background: var(--vga-black);
-    border: 1px solid var(--vga-white);
 }
 
-/* Scrollbar arrows (button styling) */
-::-webkit-scrollbar-button {
-    background: var(--vga-white);
-    border: 1px solid var(--vga-white);
-    width: 12px;
-    height: 12px;
+/* Desktop: 12px scrollbar */
+@media (min-width: 1024px) {
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    
+    html {
+        scrollbar-width: auto;
+        scrollbar-color: var(--vga-white) var(--vga-black);
+    }
 }
 
-::-webkit-scrollbar-button:hover {
-    background: var(--c-text);
-}
-
-/* Arrow directions */
-::-webkit-scrollbar-button:vertical:start:decrement {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M4 0L0 4h8z' fill='%23000'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-::-webkit-scrollbar-button:vertical:end:increment {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M4 8L0 4h8z' fill='%23000'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-::-webkit-scrollbar-button:horizontal:start:decrement {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M0 4L4 0v8z' fill='%23000'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-::-webkit-scrollbar-button:horizontal:end:increment {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M8 4L4 0v8z' fill='%23000'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-/* Firefox scrollbar styling */
-html {
-    scrollbar-width: thin;
-    scrollbar-color: var(--vga-white) var(--vga-black);
+/* Mobile: Hide scrollbar completely */
+@media (max-width: 1023px) {
+    ::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+    
+    html {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    :root {
+        --mobile-margin: 12px; /* Restore full margin since no scrollbar */
+    }
 }
 
 /* =================================================================
