@@ -3,13 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AEINODER - SiteBoy Framework</title>
+    <title>SiteBoy</title>
     
-    <!-- Atkinson Hyperlegible Mono Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
-    
+    <!-- Third-party Libraries -->
+    <!-- MathJax for LaTeX rendering - reliable and well-supported -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <!-- Polyfill.io alternative - using cdnjs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.6.12/core.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <!-- SiteBoy Framework Styles -->
     <link rel="stylesheet" href="assets/css/styles.css">
     
@@ -33,6 +46,8 @@
     
     <!-- 1. Core foundation (Modular ES6) -->
     <script type="module" src="assets/js/shared/component-library.js"></script>
+    <script type="module" src="assets/js/shared/dynamic-f-utils.js"></script>
+    <script type="module" src="assets/js/shared/latex-diagnostic.js"></script>
     <script>
         // Component library is now available globally via window.ComponentLibrary
         // No imports needed - UMD bundle handles everything
@@ -40,7 +55,7 @@
         console.log('🚀 SiteBoy Framework v4.0.0 - Modular Architecture Loaded');
         console.log('📊 F=12px Mathematical Precision System Active');
         console.log('🎨 VGA-Constrained Color Palette Ready');
-        console.log('🔤 Space Mono Typography System Ready');
+        console.log('🔤 Atkinson Hyperlegible Typography System Ready');
         console.log('🏗️ Component Libraries Ready (Bundled)');
         console.log('📄 JSON-Driven Content System Ready');
         console.log('📦 Modular Build System Active');
@@ -51,9 +66,9 @@
     <script type="module" src="assets/js/core/app.js"></script>
     
     <!-- 4. Tools -->
-    <script src="assets/js/tools/ui-test-tool.js"></script>
-    <script src="assets/js/tools/font-dimension-finder.js"></script>
-    <script src="assets/js/tools/font-size-comparison.js"></script>
+    <script src="assets/js/tools/google-fonts-loader.js"></script>
+    <script src="assets/js/tools/font-analysis-tool.js"></script>
+    <script src="assets/js/tools/color-quantizer.js"></script>
     <script src="assets/js/tools/pixel-tiler.js"></script>
     <script src="assets/js/tools/polygon-calculator.js"></script>
     
@@ -64,6 +79,11 @@
     <script src="assets/js/sections/tools_section.js"></script>
     <script src="assets/js/sections/projects_section.js"></script>
     
+    <!-- 6. Project-specific scripts (lives under /projects) -->
+    <script src="projects/Synthetic Biophilia/synthetic-biophilia.js"></script>
+    
+    <!-- Optional: Preload p5.js for better performance (commented out to avoid conflicts) -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script> -->
 
     <!-- Framework Ready -->
     <script>

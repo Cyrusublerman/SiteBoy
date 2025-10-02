@@ -1,0 +1,214 @@
+{
+  "main": {
+    "id": "da6ab464d2ca77f0",
+    "type": "split",
+    "children": [
+      {
+        "id": "af46a245c1da3a2a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7ea97e0879feee02",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "12143955bc6044f1",
+    "type": "split",
+    "children": [
+      {
+        "id": "c241bfff4f4af53c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6668b9b3e7a6ff63",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "c67b01ac9d28e8b9",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "ca8903e45d9564b8",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "060e992dfbcbde5f",
+    "type": "split",
+    "children": [
+      {
+        "id": "b826424ab19a31fa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8f88d34d4fd87b64",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "26e9fcbc12008c01",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "ba85aad37d33dcfc",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "149a96a4fffdce2c",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "6668b9b3e7a6ff63",
+  "lastOpenFiles": [
+    "test-nth-connections.js",
+    "projects/Synthetic Biophilia/assets/p5/phyllo-sweep-siteboy.js",
+    "projects/Synthetic Biophilia/assets/p5/phyllo-manual-siteboy.js",
+    "assets/js/shared/p5-siteboy-component.js",
+    "assets/js/shared/latex-diagnostic.js",
+    "CHANGE_F_HERE.md",
+    "assets/js/core/f-config.js",
+    "assets/js/shared/dynamic-f-utils.js",
+    "projects/Synthetic Biophilia/md/needed-diagrams-and-images.txt",
+    "assets/js/shared/p5-integration.js",
+    "projects/Synthetic Biophilia/assets/p5/phyllo-manual.html",
+    "projects/Synthetic Biophilia/assets/p5/phyllo-sweep.html",
+    "projects/Synthetic Biophilia/md/appendices.md",
+    "projects/Synthetic Biophilia/md/blender-code.md",
+    "projects/Synthetic Biophilia/md/gallery.md",
+    "projects/Synthetic Biophilia/md/leaves.md",
+    "projects/Synthetic Biophilia/md/lattice.md",
+    "projects/Synthetic Biophilia/md/dome-formation.md",
+    "projects/Synthetic Biophilia/md/phyllotaxis.md",
+    "projects/Synthetic Biophilia/md/abstract.md",
+    "projects/Synthetic Biophilia/md/theory.md",
+    "projects/Synthetic Biophilia/md/pro/06-Reproducibility.md",
+    "projects/Synthetic Biophilia/md/pro/03-Methods.md",
+    "projects/Synthetic Biophilia/md/pro/02-Background.md",
+    "projects/Synthetic Biophilia/md/pro/05-Evaluation-Metrics.md",
+    "projects/Synthetic Biophilia/md/99-References.md",
+    "projects/Synthetic Biophilia/md/06-Reproducibility.md",
+    "projects/Synthetic Biophilia/md/05-Evaluation-Metrics.md",
+    "projects/Synthetic Biophilia/md/04-Design-System.md",
+    "projects/Synthetic Biophilia/md/03-Methods.md",
+    "projects/Synthetic Biophilia/md/02-Background.md",
+    "projects/Synthetic Biophilia/md/01-Executive-Summary.md",
+    "projects/Synthetic Biophilia/md/00-Title.md",
+    "projects/Synthetic Biophilia/md/00-Index.md",
+    "projects/Synthetic Biophilia/md/00-Abstract.md",
+    "projects/Synthetic Biophilia/reference/md/uni/99-References.md",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_73.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_72.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_71.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_70.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_69.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_68.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_67.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_66.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_65.webp",
+    "projects/Synthetic Biophilia/reference/uni MD/assets/synthetic-biophilia-interim-presentation-optimised/web/synthetic-biophilia-interim-presentation-optimised_fig_64.webp"
+  ]
+}

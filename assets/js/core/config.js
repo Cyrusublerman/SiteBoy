@@ -1,35 +1,57 @@
 /**
- * SiteBoy Configuration - Stable Constants & Core Calculations
+ * SiteBoy Configuration - Mathematical Foundation System
  * 
- * STABLE CORE INFO:
- * - F=12px mathematical foundation
+ * MATHEMATICAL DESIGN APPROACH:
+ * - F base unit (SINGLE SOURCE OF TRUTH) - imported from f-config.js
+ * - All sizing defined as mathematical expressions (getters)
+ * - Dynamic F support: change F once, everything recalculates automatically
  * - Layout calculation functions
  * - CSS variable management  
  * - Component dimension rules
  * - Responsive breakpoints
  * 
- * @version 1.0.0 - Extracted from kitchen-sink app.js
+ * USAGE FOR DYNAMIC F:
+ * - Edit F value in assets/js/core/f-config.js
+ * - OR use DynamicFManager.setF(newValue) for runtime changes
+ * - All Config.sizing.* and Config.margins.* automatically recalculate
+ * - No manual updates needed - pure mathematical relationships
+ * 
+ * @version 3.0.0 - Centralized F Configuration System
  */
+
+// Import the centralized F configuration
+import { F as DEFAULT_F } from './f-config.js';
 
 // =================================================================
 // CORE CONSTANTS - STABLE THROUGHOUT SESSION
 // =================================================================
 
+// Runtime F value storage
+let runtimeF = DEFAULT_F;
+
 export const Config = {
-    // F=12px base unit (paragraph font size) - KEEP F SYSTEM INTACT
-    F: 12,
+    // F base unit - Dynamic getter/setter for runtime changes
+    get F() {
+        return runtimeF;
+    },
     
-    // Component sizing (F-BASED INTEGER MULTIPLES - YOUR ORIGINAL SYSTEM)
-    sizing: {
-        header: 24,             // 2 * F = 24px (KEEP YOUR F SYSTEM)
-        subheader: 24,          // 2 * F = 24px  
-        footer: 24,             // 2 * F = 24px
-        bodyMinH_withSub: 96,   // F * 8 = 96px
-        bodyMinH_noSub: 72,     // F * 6 = 72px
-        gutter: 1,              // 1px gap
-        pad: 1,                 // F padding multiplier
-        indent: 2,              // F * 2 = 24px
-        dropdownMaxH: 300,      // F * 25 = 300px
+    set F(value) {
+        runtimeF = value;
+    },
+    
+    // Component sizing (MATHEMATICAL EXPRESSIONS - Auto-calculating)
+    get sizing() {
+        return {
+            header: this.F * 2,           // Always 2F
+            subheader: this.F * 2,        // Always 2F
+            footer: this.F * 2,           // Always 2F
+            bodyMinH_withSub: this.F * 8, // Always 8F
+            bodyMinH_noSub: this.F * 6,   // Always 6F
+            gutter: 1,                    // Always 1px (minimum viable)
+            pad: 1,                       // F padding multiplier
+            indent: this.F * 2,           // Always 2F
+            dropdownMaxH: this.F * 25,    // Always 25F
+        };
     },
     
     // Grid system (USE REFERENCE PRECISION TECHNIQUES WITH YOUR VALUES)
@@ -38,13 +60,15 @@ export const Config = {
         maxCols: 6,
         aspectMultiplier: 3.982,  // Reference build's empirical values
         aspectOffset: 1.088,      // Reference build's empirical values
-        gap: 1                    // 1px gap
+        gap: 1                    // Always 1px gap
     },
     
-    // Margins (F-BASED SYSTEM - YOUR ORIGINAL)
-    margins: {
-        desktop: 48,    // 4 * F = 48px (KEEP YOUR F SYSTEM)
-        mobile: 6       // F/2 = 6px
+    // Margins (MATHEMATICAL EXPRESSIONS - Auto-calculating)
+    get margins() {
+        return {
+            desktop: this.F * 4,          // Always 4F
+            mobile: Math.max(this.F / 2, 6) // Always F/2, min 6px
+        };
     },
     
     // Breakpoints
@@ -217,7 +241,7 @@ export const LayoutCalculator = {
             case 'button':
                 return { ...base, width: `${F * 8}px`, height: `${headerHeight}px` };
             case 'dropdown':
-                return { ...base, maxHeight: `${F * 25}px` };
+                return { ...base, maxHeight: `${Config.sizing.dropdownMaxH}px` };
             case 'grid':
                 return { width: '100%', minHeight: `${F * 4}px` };
             case 'canvas':

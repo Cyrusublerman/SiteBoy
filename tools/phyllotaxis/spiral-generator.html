@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spiral Generator (p5.js)</title>
+  <style>
+    body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: #fff; color: #000; }
+    .wrap { display: flex; gap: 16px; padding: 12px; align-items: flex-start; }
+    .controls { min-width: 280px; max-width: 360px; }
+    .controls fieldset { border: 1px solid #000; padding: 8px 10px; margin: 0 0 12px 0; }
+    .controls legend { padding: 0 6px; }
+    .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .row label { width: 120px; font-size: 12px; }
+    .row input { width: 120px; }
+    select, input, button { border: 1px solid #000; background: #fff; color: #000; padding: 4px 6px; }
+    button { cursor: pointer; }
+    canvas { border: 1px solid #000; display: block; }
+    .note { font-size: 12px; line-height: 1.3; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="controls">
+      <fieldset>
+        <legend>Spiral Type</legend>
+        <div class="row">
+          <label for="type">Type</label>
+          <select id="type">
+            <option>Archimedean</option>
+            <option>Logarithmic</option>
+            <option>Fermat</option>
+            <option>Hyperbolic</option>
+            <option>Lituus</option>
+            <option>Manual</option>
+          </select>
+        </div>
+        <div class="row"><label for="points">Points (N)</label><input id="points" type="number" value="800" min="16" max="20000" step="1"></div>
+        <div class="row"><label for="delta">Δθ (deg)</label><input id="delta" type="number" value="137.507764" step="0.000001"></div>
+        <div class="row"><label for="scale">Scale (R)</label><input id="scale" type="number" value="340" step="1"></div>
+        <div class="row"><label for="asCurve">Draw mode</label>
+          <select id="asCurve">
+            <option value="points">Points</option>
+            <option value="curve">Curve</option>
+          </select>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Parameters</legend>
+        <div class="row"><label for="a">a</label><input id="a" type="number" value="1" step="0.01"></div>
+        <div class="row"><label for="b">b</label><input id="b" type="number" value="0.1" step="0.01"></div>
+        <div class="row"><label for="k">k</label><input id="k" type="number" value="0.5" step="0.01"></div>
+        <div class="row"><label for="c">c</label><input id="c" type="number" value="0" step="0.01"></div>
+        <div class="row"><label for="m">m</label><input id="m" type="number" value="1" step="0.01"></div>
+      </fieldset>
+      <div class="row">
+        <button id="redraw">Redraw</button>
+        <button id="reset">Reset View</button>
+      </div>
+      <p class="note">Golden angle ≈ 137.507764°. Points mode uses discs sized by local density. Curve mode connects vertices in order.</p>
+    </div>
+    <div id="sketch"></div>
+  </div>
+
+  <script>
+    let canvasWidth = 900;
+    let canvasHeight = 900;
+    let panX = 0;
+    let panY = 0;
+    let zoom = 1;
+    let isPanning = false;
+    let lastMouse;
+
+    function getEl(id) { return document.getElementById(id); }
+
+    function setup() {
+      const c = createCanvas(canvasWidth, canvasHeight);
+      c.parent("sketch");
+      pixelDensity(1);
+      noLoop();
+
+      getEl('redraw').addEventListener('click', redraw);
+      getEl('reset').addEventListener('click', () => { panX = 0; panY = 0; zoom = 1; redraw(); });
+      ['type','points','delta','scale','asCurve','a','b','k','c','m'].forEach(id => {
+        getEl(id).addEventListener('input', () => requestRedraw());
+      });
+
+      redraw();
+    }
+
+    function windowResized() {
+      // keep static size to simplify embedding
+    }
+
+    function mousePressed() {
+      if (mouseButton === LEFT) { isPanning = true; lastMouse = createVector(mouseX, mouseY); }
+    }
+    function mouseReleased() { isPanning = false; }
+    function mouseDragged() {
+      if (isPanning) {
+        const now = createVector(mouseX, mouseY);
+        const d = p5.Vector.sub(now, lastMouse);
+        panX += d.x; panY += d.y; lastMouse = now; requestRedraw();
+      }
+    }
+    function mouseWheel(e) {
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      const mx = (mouseX - width/2 - panX) / zoom;
+      const my = (mouseY - height/2 - panY) / zoom;
+      zoom *= factor;
+      panX = mouseX - width/2 - mx * zoom;
+      panY = mouseY - height/2 - my * zoom;
+      requestRedraw();
+      return false;
+    }
+
+    let redrawPending = false;
+    function requestRedraw() { if (!redrawPending) { redrawPending = true; setTimeout(() => { redrawPending = false; redraw(); }, 16); } }
+
+    function draw() {
+      background(255);
+      push();
+      translate(width/2 + panX, height/2 + panY);
+      scale(zoom);
+
+      stroke(0); noFill();
+      drawAxes();
+
+      const type = getEl('type').value;
+      const N = clampInt(getEl('points').value, 1, 200000);
+      const deltaDeg = parseFloat(getEl('delta').value) || 137.507764;
+      const delta = radians(deltaDeg);
+      const R = Math.max(1, parseFloat(getEl('scale').value) || 340);
+      const mode = getEl('asCurve').value;
+
+      const a = parseFloat(getEl('a').value) || 0;
+      const b = parseFloat(getEl('b').value) || 0;
+      const k = parseFloat(getEl('k').value) || 0;
+      const c = parseFloat(getEl('c').value) || 0;
+      const m = parseFloat(getEl('m').value) || 1;
+
+      const pts = generatePoints({ type, N, delta, a, b, k, c, m, R });
+
+      if (mode === 'curve') {
+        noFill(); stroke(0); beginShape();
+        for (const p of pts) vertex(p.x, p.y);
+        endShape();
+      } else {
+        noStroke(); fill(0);
+        const disc = Math.max(1, 2.5 / Math.sqrt(zoom));
+        for (const p of pts) circle(p.x, p.y, disc);
+      }
+
+      pop();
+    }
+
+    function drawAxes() {
+      stroke(0); strokeWeight(1/zoom);
+      line(-width, 0, width, 0); line(0, -height, 0, height);
+    }
+
+    function clampInt(v, lo, hi) { const n = Math.round(parseFloat(v) || lo); return Math.min(Math.max(n, lo), hi); }
+
+    function generatePoints({ type, N, delta, a, b, k, c, m, R }) {
+      // First pass to find max r for scaling (for curve-like types). For phyllotaxis points we just scale by R relative.
+      let maxR = 0;
+      for (let i = 0; i < N; i++) {
+        const theta = i * delta;
+        const r = radiusByType(type, theta, { a, b, k, c, m });
+        if (isFinite(r)) maxR = Math.max(maxR, Math.abs(r));
+      }
+      const scale = maxR > 0 ? (R / maxR) : 1;
+
+      const pts = [];
+      for (let i = 0; i < N; i++) {
+        const theta = i * delta;
+        const r = radiusByType(type, theta, { a, b, k, c, m }) * scale;
+        const x = r * Math.cos(theta);
+        const y = r * Math.sin(theta);
+        pts.push({ x, y });
+      }
+      return pts;
+    }
+
+    function radiusByType(type, theta, p) {
+      const { a, b, k, c, m } = p;
+      switch (type) {
+        case 'Archimedean':
+          return a + b * theta + c;
+        case 'Logarithmic':
+          return a * Math.exp(b * theta) + c;
+        case 'Fermat':
+          return a * Math.pow(Math.max(theta, 0), 0.5) + c; // k fixed to 0.5
+        case 'Hyperbolic':
+          return (theta !== 0 ? a / theta : 0) + c;
+        case 'Lituus':
+          return (theta !== 0 ? a / Math.sqrt(theta) : 0) + c;
+        case 'Manual':
+          return a * Math.pow(theta, k) * Math.exp(b * Math.pow(theta, m)) + c;
+        default:
+          return a + b * theta + c;
+      }
+    }
+  </script>
+</body>
+</html>
+
+

@@ -189,30 +189,47 @@ export class MarkdownBody extends BaseComponent {
         this.markdownText = options.markdownText || '';
         this.className = options.className || 'markdown-body';
         this.enableTOC = options.enableTOC || false;
+        this.componentInstances = []; // Track embedded components for cleanup
     }
     
     render() {
         if (!this.element) {
             this.element = this.createElement('div', this.className);
             
-            // Parse markdown to HTML
             const htmlContent = this.parseMarkdown(this.markdownText);
             this.element.innerHTML = htmlContent;
+
+            this.executeScripts(this.element);
+
+            // Process p5.js components
+            this.processP5Components(this.element);
+
+            // Render LaTeX with MathJax (with better error handling and timing)
+            this.renderMath();
         }
         return this.element;
     }
     
     parseMarkdown(markdown) {
+        markdown = this.stripFrontmatter(markdown);
         if (!markdown || markdown.trim() === '') {
             return '<p><em>No content available.</em></p>';
+        }
+        
+        // Check for LaTeX content for debugging
+        const hasLaTeX = markdown.includes('$') || markdown.includes('\\(') || markdown.includes('\\[');
+        if (hasLaTeX) {
+            console.log('🔍 LaTeX detected in markdown - will render after parsing');
         }
         
         try {
             // Use marked.js if available
             if (typeof marked !== 'undefined') {
+                // Simple, clean markdown parsing - let MathJax handle LaTeX naturally
                 return marked.parse(markdown, {
                     breaks: true,
-                    gfm: true
+                    gfm: true,
+                    sanitize: false // Allow HTML and LaTeX
                 });
             } else {
                 // Fallback: basic markdown parsing
@@ -222,6 +239,21 @@ export class MarkdownBody extends BaseComponent {
             console.error('❌ Markdown parsing failed:', error);
             return `<p>Error parsing markdown: ${error.message}</p><pre>${markdown}</pre>`;
         }
+    }
+    
+    stripFrontmatter(markdown) {
+        if (!markdown) return markdown;
+        // Only strip if document begins with '---' on first line
+        if (!/^---\s*$/m.test(markdown.split(/\r?\n/, 1)[0] || '')) return markdown;
+        const lines = markdown.split(/\r?\n/);
+        if (lines.length < 3) return markdown;
+        if (lines[0].trim() !== '---') return markdown;
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim() === '---') {
+                return lines.slice(i + 1).join('\n');
+            }
+        }
+        return markdown;
     }
     
     basicMarkdownParse(markdown) {
@@ -264,7 +296,314 @@ export class MarkdownBody extends BaseComponent {
         if (this.element) {
             const htmlContent = this.parseMarkdown(markdownText);
             this.element.innerHTML = htmlContent;
+            this.executeScripts(this.element);
+            
+            // Process p5.js components
+            this.processP5Components(this.element);
+            
+            // Render math
+            this.renderMath();
         }
+    }
+
+    executeScripts(element) {
+        const scripts = Array.from(element.querySelectorAll('script'));
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+            if (oldScript.innerHTML) newScript.innerHTML = oldScript.innerHTML;
+            
+            // Append to the element's parent, or to the head if no parent
+            const parent = oldScript.parentNode || element;
+            parent.replaceChild(newScript, oldScript);
+        });
+    }
+    
+    processP5Components(element) {
+        const p5Divs = element.querySelectorAll('[data-p5-component]');
+        console.log(`🎨 Found ${p5Divs.length} p5.js components to process`);
+        
+        p5Divs.forEach(div => {
+            const componentType = div.getAttribute('data-p5-component');
+            const scriptPath = div.getAttribute('data-script-path');
+            const targetId = div.getAttribute('data-target-id');
+            const useSiteBoyGUI = div.getAttribute('data-siteboy-gui') === 'true';
+            
+            if (scriptPath && targetId) {
+                console.log(`🎨 Processing p5.js component: ${targetId} from ${scriptPath} (SiteBoy GUI: ${useSiteBoyGUI})`);
+                
+                let p5Component;
+                
+                if (useSiteBoyGUI && window.ComponentLibrary.P5ControlledSketch) {
+                    // Use library P5ControlledSketch component - ColorQuantizer style
+                    const controls = this.getP5Controls(componentType);
+                    p5Component = new window.ComponentLibrary.P5ControlledSketch({
+                        scriptPath: scriptPath,
+                        targetElementId: targetId,
+                        controls: controls,
+                        canvasWidth: 800,
+                        canvasHeight: 600
+                    });
+                } else {
+                    // Use original embedded sketch
+                    p5Component = new window.ComponentLibrary.P5EmbeddedSketch({
+                        scriptPath: scriptPath,
+                        targetElementId: targetId
+                    });
+                }
+                
+                // Replace the div with the component
+                if (useSiteBoyGUI && window.ComponentLibrary.P5ControlledSketch) {
+                    // P5ControlledSketch renders synchronously like ColorQuantizer
+                    const componentElement = p5Component.render();
+                    if (div.parentNode && componentElement) {
+                        div.parentNode.replaceChild(componentElement, div);
+                    }
+                } else {
+                    // Handle sync render for regular component
+                    const componentElement = p5Component.render();
+                    div.parentNode.replaceChild(componentElement, div);
+                }
+                
+                // Track component for cleanup
+                this.componentInstances.push(p5Component);
+            }
+        });
+    }
+    
+    getP5Controls(componentType) {
+        // Define controls for different p5.js components
+        const controlConfigs = {
+               'phyllo-sweep': [
+                {
+                    key: 'animationSpeed',
+                    label: 'Speed',
+                    type: 'range',
+                    min: 0,
+                    max: 100,
+                    step: 1,
+                    defaultValue: 54,
+                    units: 'degrees per second',
+                    logScale: true,
+                    logMin: 0.001,
+                    logMax: 5.0
+                },
+                {
+                    key: 'pointCount',
+                    label: 'Point Count',
+                    type: 'range',
+                    min: 50,
+                    max: 1000,
+                    step: 1,
+                    defaultValue: 169
+                }
+            ],
+            'phyllo-manual': [
+                {
+                    key: 'pointCount',
+                    label: 'Number of Points',
+                    type: 'number',
+                    min: 1,
+                    max: 1000,
+                    step: 1,
+                    defaultValue: 169
+                },
+                {
+                    key: 'deltaTheta',
+                    label: 'Δθ (degrees)',
+                    type: 'range',
+                    min: 0,
+                    max: 360,
+                    step: 0.5,
+                    defaultValue: 137.508
+                },
+                {
+                    key: 'goldenAngleLock',
+                    label: 'Lock to Golden Angle',
+                    type: 'checkbox',
+                    defaultValue: true
+                },
+                {
+                    key: 'dotSize',
+                    label: 'Dot Size',
+                    type: 'range',
+                    min: 1,
+                    max: 10,
+                    step: 1,
+                    defaultValue: 2
+                },
+                {
+                    key: 'connectNth1',
+                    label: 'Connect N₁ (Red)',
+                    type: 'checkbox',
+                    defaultValue: true
+                },
+                {
+                    key: 'nth1',
+                    label: 'N₁ Interval',
+                    type: 'number',
+                    min: 1,
+                    max: 100,
+                    step: 1,
+                    defaultValue: 8,
+                    fibonacci: true,
+                    fibonacciId: 'fib1'
+                },
+                {
+                    key: 'connectNth2',
+                    label: 'Connect N₂ (Blue)',
+                    type: 'checkbox',
+                    defaultValue: true
+                },
+                {
+                    key: 'nth2',
+                    label: 'N₂ Interval',
+                    type: 'number',
+                    min: 1,
+                    max: 100,
+                    step: 1,
+                    defaultValue: 13,
+                    fibonacci: true,
+                    fibonacciId: 'fib2'
+                },
+                {
+                    key: 'fibonacciLock',
+                    label: 'Lock to Fibonacci',
+                    type: 'checkbox',
+                    defaultValue: true
+                },
+                {
+                    key: 'paramA',
+                    label: 'Parameter A',
+                    type: 'range',
+                    min: 0,
+                    max: 5,
+                    step: 0.1,
+                    defaultValue: 1
+                },
+                {
+                    key: 'paramB',
+                    label: 'Parameter B',
+                    type: 'range',
+                    min: -1,
+                    max: 1,
+                    step: 0.01,
+                    defaultValue: 0
+                },
+                {
+                    key: 'paramC',
+                    label: 'Parameter C',
+                    type: 'range',
+                    min: -10,
+                    max: 10,
+                    step: 0.1,
+                    defaultValue: 0
+                },
+                {
+                    key: 'paramK',
+                    label: 'Exponent K',
+                    type: 'range',
+                    min: 0,
+                    max: 3,
+                    step: 0.1,
+                    defaultValue: 1
+                },
+                {
+                    key: 'paramM',
+                    label: 'Exponent M',
+                    type: 'range',
+                    min: 0,
+                    max: 3,
+                    step: 0.1,
+                    defaultValue: 0
+                }
+            ]
+        };
+        
+        return controlConfigs[componentType] || [];
+    }
+    
+    /**
+     * Render LaTeX math with MathJax - Simple and reliable
+     */
+    async renderMath() {
+        try {
+            // Wait for MathJax to be available
+            await this.waitForMathJax();
+            
+            // Check if there's LaTeX content in the rendered HTML
+            const renderedHTML = this.element.innerHTML || '';
+            const hasLaTeX = renderedHTML.includes('$') || renderedHTML.includes('\\(') || renderedHTML.includes('\\[');
+            
+            if (!hasLaTeX) {
+                console.log('📝 No LaTeX content detected in rendered HTML');
+                return;
+            }
+
+            console.log('🧮 Rendering LaTeX with MathJax...');
+            
+            // MathJax typeset
+            await window.MathJax.typesetPromise([this.element]);
+            
+            console.log('✅ LaTeX rendering complete with MathJax');
+            
+            // Apply SiteBoy styling
+            this.styleMathElements();
+            
+        } catch (error) {
+            console.error('❌ MathJax rendering failed:', error);
+        }
+    }
+    
+    /**
+     * Wait for MathJax to be fully loaded
+     */
+    async waitForMathJax(maxWait = 5000) {
+        const startTime = Date.now();
+        
+        while ((!window.MathJax || !window.MathJax.typesetPromise) && (Date.now() - startTime) < maxWait) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        if (!window.MathJax || !window.MathJax.typesetPromise) {
+            throw new Error('MathJax not available after waiting');
+        }
+    }
+    
+    /**
+     * Apply SiteBoy styling to MathJax elements
+     */
+    styleMathElements() {
+        const mathElements = this.element.querySelectorAll('mjx-container');
+        const currentF = window.Config?.F || 12;
+        
+        if (mathElements.length > 0) {
+            console.log(`🎨 MathJax elements found: ${mathElements.length} (F=${currentF}px) - applying CSS styling`);
+            
+            // Force styling on each element
+            mathElements.forEach(mathEl => {
+                mathEl.style.fontFamily = '"Atkinson Hyperlegible", "Atkinson Hyperlegible Mono", monospace';
+                
+                const isDisplayMath = mathEl.getAttribute('display') === 'true';
+                if (isDisplayMath) {
+                    mathEl.style.fontSize = `${Math.round(currentF * 0.9)}px`;
+                    mathEl.style.margin = `${currentF}px 0`;
+                    mathEl.style.textAlign = 'center';
+                } else {
+                    mathEl.style.fontSize = `${currentF}px`;
+                    mathEl.style.margin = '0 2px';
+                }
+            });
+        }
+    }
+    
+    destroy() {
+        // Clean up all embedded components
+        this.componentInstances.forEach(component => component.destroy());
+        this.componentInstances = [];
+        
+        // Call parent destroy
+        super.destroy();
     }
 }
 
@@ -741,6 +1080,45 @@ export class Table extends BaseComponent {
             this.element.appendChild(tbody);
         }
         return this.element;
+    }
+}
+
+/**
+ * StatusDisplay - Status message component
+ */
+export class StatusDisplay extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'status-display' }, deps);
+        this.message = options.message || 'Ready';
+        this.type = options.type || 'info'; // info, success, warning, error
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'status-display component');
+            this.element.style.cssText = `
+                padding: calc(var(--f) * 0.75) var(--f);
+                background: var(--c-bg);
+                border: 1px solid var(--c-border);
+                font-family: 'Space Mono', monospace;
+                font-size: calc(var(--f) * 0.8);
+                color: var(--c-text);
+                margin: calc(var(--f) * 0.5) 0;
+            `;
+            
+            this.textElement = this.createElement('span', 'status-text');
+            this.textElement.textContent = this.message;
+            this.element.appendChild(this.textElement);
+        }
+        return this.element;
+    }
+    
+    setMessage(message, type = 'info') {
+        this.message = message;
+        this.type = type;
+        if (this.textElement) {
+            this.textElement.textContent = message;
+        }
     }
 }
 

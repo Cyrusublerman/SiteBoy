@@ -14,6 +14,18 @@ const ProjectsSection = {
     componentInstances: [],
     navigationCallbacks: null,
     
+    // Simple page list for navigation
+    pages: [
+        '#projects',
+        '#projects/siteboy',
+        '#projects/synthetic-biophilia',
+        '#projects/pixel-tiler',
+        '#projects/typography',
+        '#projects/color-quantizer',
+        '#projects/music-tools',
+        '#projects/audio-processor'
+    ],
+    
     // Unified navigation config - clean and beautiful
     navigationConfig: {
         type: 'flat',
@@ -23,6 +35,11 @@ const ProjectsSection = {
                 id: 'siteboy',
                 title: 'SITEBOY FRAMEWORK',
                 description: 'Modular web framework with mathematical precision and VGA aesthetics'
+            },
+            {
+                id: 'synthetic-biophilia',
+                title: 'SYNTHETIC BIOPHILIA',
+                description: 'Phyllotaxis-driven architectural system (methods, galleries, reproducibility)'
             },
             {
                 id: 'pixel-tiler',
@@ -166,11 +183,75 @@ const ProjectsSection = {
     },
     
     /**
+     * Get dropdown items for subheader
+     * @param {string} currentSubsection - Current subsection ID
+     * @returns {Array} Dropdown items with current selection marked
+     */
+    getDropdownItems(currentSubsection) {
+        const allProjects = [
+            { label: 'PROJECTS INDEX', path: '#projects', isTOC: true },
+            { label: 'SITEBOY FRAMEWORK', path: '#projects/siteboy' },
+            { label: 'SYNTHETIC BIOPHILIA', path: '#projects/synthetic-biophilia' },
+            { label: 'PIXEL TILER', path: '#projects/pixel-tiler' },
+            { label: 'TYPOGRAPHY SYSTEM', path: '#projects/typography' },
+            { label: 'COLOR QUANTIZER', path: '#projects/color-quantizer' },
+            { label: 'MUSIC TOOLS', path: '#projects/music-tools' },
+            { label: 'AUDIO PROCESSOR', path: '#projects/audio-processor' }
+        ];
+        
+        const currentPath = `#projects/${currentSubsection}`;
+        
+        return allProjects.map(project => ({
+            ...project,
+            value: project.path,
+            isCurrent: project.path === currentPath
+        }));
+    },
+    
+    /**
+     * Get navigation context for subheader
+     * @param {string} currentSubsection - Current subsection ID
+     * @param {Object} callbacks - Navigation callbacks
+     * @returns {Object} Navigation context
+     */
+    getNavigationContext(currentSubsection, callbacks) {
+        // Define all available projects in order for navigation
+        const allProjects = [
+            { id: 'siteboy', title: 'SiteBoy Framework', path: '#projects/siteboy' },
+            { id: 'synthetic-biophilia', title: 'Synthetic Biophilia', path: '#projects/synthetic-biophilia' },
+            { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#projects/pixel-tiler' },
+            { id: 'typography', title: 'Typography System', path: '#projects/typography' },
+            { id: 'color-quantizer', title: 'Color Quantizer', path: '#projects/color-quantizer' },
+            { id: 'music-tools', title: 'Music Tools', path: '#projects/music-tools' },
+            { id: 'audio-processor', title: 'Audio Processor', path: '#projects/audio-processor' }
+        ];
+        
+        return {
+            section: 'projects',
+            subsection: currentSubsection,
+            items: allProjects,
+            navigate: (section, subsection) => {
+                if (callbacks && callbacks.navigateToSection) {
+                    callbacks.navigateToSection(section, subsection);
+                }
+            }
+        };
+    },
+    
+    /**
      * Render individual project
      */
     renderProject(projectId) {
         console.log(`🚀 Rendering project: ${projectId}`);
         
+        // Route Synthetic Biophilia to dedicated module to avoid bloating this file
+        if (projectId === 'synthetic-biophilia' && window.SyntheticBiophiliaProject) {
+            this.currentContainer.innerHTML = '';
+            window.SyntheticBiophiliaProject.render(this.currentContainer);
+            // Back link is handled within the SyntheticBiophiliaProject module
+            return;
+        }
+
         // Mock project data - in real implementation, this would be loaded from JSON
         const projects = {
             'siteboy': {
@@ -235,6 +316,7 @@ const ProjectsSection = {
         
         this.currentContainer.appendChild(projectContent);
     },
+
     
     /**
      * Create DOM element with F=12px styling

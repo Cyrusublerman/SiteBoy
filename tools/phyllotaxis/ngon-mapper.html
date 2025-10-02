@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ngon Mapper (p5.js)</title>
+  <style>
+    body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: #fff; color: #000; }
+    .wrap { display: flex; gap: 16px; padding: 12px; align-items: flex-start; }
+    .controls { min-width: 280px; max-width: 360px; }
+    .controls fieldset { border: 1px solid #000; padding: 8px 10px; margin: 0 0 12px 0; }
+    .controls legend { padding: 0 6px; }
+    .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .row label { width: 120px; font-size: 12px; }
+    .row input { width: 120px; }
+    select, input, button { border: 1px solid #000; background: #fff; color: #000; padding: 4px 6px; }
+    button { cursor: pointer; }
+    canvas { border: 1px solid #000; display: block; }
+    .note { font-size: 12px; line-height: 1.3; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="controls">
+      <fieldset>
+        <legend>Profile</legend>
+        <div class="row"><label for="sides">Sides (n)</label><input id="sides" type="number" value="6" min="3" max="64"></div>
+        <div class="row"><label for="radius">Radius</label><input id="radius" type="number" value="320" min="10" max="1000"></div>
+        <div class="row"><label for="rotation">Rotation (deg)</label><input id="rotation" type="number" value="0" step="1"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Spiral</legend>
+        <div class="row"><label for="points">Points (N)</label><input id="points" type="number" value="600" min="16" max="20000"></div>
+        <div class="row"><label for="delta">Δθ (deg)</label><input id="delta" type="number" value="137.507764" step="0.000001"></div>
+        <div class="row"><label for="a">a</label><input id="a" type="number" value="1" step="0.01"></div>
+        <div class="row"><label for="b">b</label><input id="b" type="number" value="0.08" step="0.01"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Display</legend>
+        <div class="row"><label for="mode">Mode</label>
+          <select id="mode">
+            <option value="points">Mapped points</option>
+            <option value="edges">Profile edges</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+      </fieldset>
+      <div class="row">
+        <button id="redraw">Redraw</button>
+        <button id="reset">Reset View</button>
+      </div>
+      <p class="note">Spiral points are radially projected to the nearest intersection with the n-gon boundary. Use rotation to align facets.</p>
+    </div>
+    <div id="sketch"></div>
+  </div>
+
+  <script>
+    let canvasWidth = 900;
+    let canvasHeight = 900;
+    let panX = 0, panY = 0, zoom = 1, isPanning = false, lastMouse;
+
+    function getEl(id) { return document.getElementById(id); }
+
+    function setup() {
+      const c = createCanvas(canvasWidth, canvasHeight);
+      c.parent('sketch');
+      pixelDensity(1);
+      noLoop();
+
+      getEl('redraw').addEventListener('click', redraw);
+      getEl('reset').addEventListener('click', () => { panX = 0; panY = 0; zoom = 1; redraw(); });
+      ['sides','radius','rotation','points','delta','a','b','mode'].forEach(id => {
+        getEl(id).addEventListener('input', () => requestRedraw());
+      });
+
+      redraw();
+    }
+
+    function mousePressed() { if (mouseButton === LEFT) { isPanning = true; lastMouse = createVector(mouseX, mouseY); } }
+    function mouseReleased() { isPanning = false; }
+    function mouseDragged() {
+      if (isPanning) {
+        const now = createVector(mouseX, mouseY);
+        const d = p5.Vector.sub(now, lastMouse);
+        panX += d.x; panY += d.y; lastMouse = now; requestRedraw();
+      }
+    }
+    function mouseWheel(e) {
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      const mx = (mouseX - width/2 - panX) / zoom;
+      const my = (mouseY - height/2 - panY) / zoom;
+      zoom *= factor;
+      panX = mouseX - width/2 - mx * zoom;
+      panY = mouseY - height/2 - my * zoom;
+      requestRedraw();
+      return false;
+    }
+
+    let redrawPending = false;
+    function requestRedraw() { if (!redrawPending) { redrawPending = true; setTimeout(() => { redrawPending = false; redraw(); }, 16); } }
+
+    function draw() {
+      background(255);
+      push();
+      translate(width/2 + panX, height/2 + panY);
+      scale(zoom);
+
+      const n = clampInt(getEl('sides').value, 3, 256);
+      const R = Math.max(10, parseFloat(getEl('radius').value) || 320);
+      const rot = radians(parseFloat(getEl('rotation').value) || 0);
+
+      const N = clampInt(getEl('points').value, 1, 200000);
+      const delta = radians(parseFloat(getEl('delta').value) || 137.507764);
+      const a = parseFloat(getEl('a').value) || 1;
+      const b = parseFloat(getEl('b').value) || 0.08;
+
+      stroke(0); strokeWeight(1/zoom); noFill();
+      drawAxes();
+
+      const profile = buildNgon(n, R, rot);
+      const spiralPts = buildSpiral(N, delta, a, b);
+      const mappedPts = mapToPolygonBoundary(spiralPts, profile);
+
+      const mode = getEl('mode').value;
+      if (mode === 'edges' || mode === 'both') {
+        drawProfile(profile);
+      }
+      if (mode === 'points' || mode === 'both') {
+        noStroke(); fill(0);
+        const disc = Math.max(1, 2.5 / Math.sqrt(zoom));
+        for (const p of mappedPts) circle(p.x, p.y, disc);
+      }
+
+      pop();
+    }
+
+    function drawAxes() { line(-width, 0, width, 0); line(0, -height, 0, height); }
+    function clampInt(v, lo, hi) { const n = Math.round(parseFloat(v) || lo); return Math.min(Math.max(n, lo), hi); }
+
+    function buildNgon(n, R, rot) {
+      const verts = [];
+      for (let i = 0; i < n; i++) {
+        const a = rot + i * TWO_PI / n;
+        verts.push({ x: R * Math.cos(a), y: R * Math.sin(a) });
+      }
+      return verts;
+    }
+
+    function drawProfile(verts) {
+      noFill(); stroke(0); beginShape();
+      for (const v of verts) vertex(v.x, v.y);
+      endShape(CLOSE);
+    }
+
+    function buildSpiral(N, delta, a, b) {
+      const pts = [];
+      let maxR = 0;
+      for (let i = 0; i < N; i++) { maxR = Math.max(maxR, Math.abs(a + b * i * delta)); }
+      const s = maxR > 0 ? (300 / maxR) : 1;
+      for (let i = 0; i < N; i++) {
+        const theta = i * delta;
+        const r = (a + b * theta) * s;
+        pts.push({ theta, r, x: r * Math.cos(theta), y: r * Math.sin(theta) });
+      }
+      return pts;
+    }
+
+    function mapToPolygonBoundary(points, verts) {
+      // Radial projection from origin: intersect each ray with polygon edges
+      const mapped = [];
+      for (const p of points) {
+        const ray = { x: Math.cos(p.theta), y: Math.sin(p.theta) };
+        let best = null;
+        for (let i = 0; i < verts.length; i++) {
+          const a = verts[i];
+          const b = verts[(i + 1) % verts.length];
+          const hit = raySegmentIntersection({ x: 0, y: 0 }, ray, a, b);
+          if (hit && hit.t > 0 && hit.u >= 0 && hit.u <= 1) {
+            const hitPoint = { x: ray.x * hit.t, y: ray.y * hit.t };
+            if (!best || hit.t < best.t) best = { t: hit.t, p: hitPoint };
+          }
+        }
+        if (best) mapped.push(best.p); else mapped.push({ x: p.x, y: p.y });
+      }
+      return mapped;
+    }
+
+    function raySegmentIntersection(o, d, a, b) {
+      // Solve o + t d = a + u (b - a) with 2x2
+      const vx = b.x - a.x, vy = b.y - a.y;
+      const det = (-d.x) * vy - (-d.y) * vx; // = -(d x v)
+      if (Math.abs(det) < 1e-9) return null;
+      const rx = a.x - o.x, ry = a.y - o.y;
+      const t = (rx * (-vy) - ry * (-vx)) / det;
+      const u = (rx * (-d.y) - ry * (-d.x)) / det;
+      return { t, u };
+    }
+  </script>
+</body>
+</html>
+
+

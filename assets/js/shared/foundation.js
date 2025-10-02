@@ -180,6 +180,19 @@ export class BaseComponent {
         }
         return this.element;
     }
+    
+    /**
+     * Apply CSS styles to an element
+     * @param {HTMLElement} element - Element to style
+     * @param {Object} styles - CSS styles object
+     */
+    applyStyles(element, styles) {
+        if (!element || !styles) return;
+        
+        Object.keys(styles).forEach(property => {
+            element.style[property] = styles[property];
+        });
+    }
 }
 
 /**
@@ -429,6 +442,22 @@ export class BaseNavigationDropdown extends BaseComponent {
                 this.close();
             }
         });
+    }
+    
+    /**
+     * Update font sizes for responsive design
+     * @param {number} F - Current F value
+     */
+    updateFontSizes(F) {
+        if (this.dropdownElement) {
+            // Update dropdown font sizes based on F
+            const menuItems = this.dropdownElement.querySelectorAll('.dropdown-item');
+            menuItems.forEach(item => {
+                item.style.fontSize = `${F}px`;
+                item.style.lineHeight = `${F * 2}px`;
+                item.style.padding = `0 ${F}px`;
+            });
+        }
     }
     
     destroy() {

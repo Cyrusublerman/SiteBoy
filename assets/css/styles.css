@@ -5,8 +5,13 @@
  * All visual styling must go through this file only
  * 
  * @version 1.0.0 - Canonical VGA/Mono
- * @constraints Space Mono only, VGA colors only, F=12px base, no gradients/shadows/rounded corners
+ * @constraints Atkinson Hyperlegible only, VGA colors only, F=12px base, no gradients/shadows/rounded corners
  */
+
+/* Import Atkinson Hyperlegible font (base variant from Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* Note: Atkinson Hyperlegible Mono needs to be self-hosted as it's not available on Google Fonts */
 
 /* =================================================================
    VGA COLOR PALETTE - ONLY ALLOWED COLORS
@@ -69,7 +74,7 @@ html, body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     line-height: 1.5;
     background: var(--c-bg);
@@ -82,7 +87,7 @@ html, body {
    ================================================================= */
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-weight: 700;
     text-transform: uppercase;
     margin: 0;
@@ -97,14 +102,14 @@ h5 { font-size: var(--f); }             /* 12px */
 h6 { font-size: var(--f); }             /* 12px */
 
 p {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     line-height: 1.5;
     margin: 0 0 var(--f) 0;
 }
 
 ul, ol {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     margin: 0 0 var(--f) calc(var(--f) * 2);
 }
@@ -116,7 +121,7 @@ li {
 a {
     color: var(--c-text);
     text-decoration: underline;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -127,7 +132,7 @@ a:hover {
 }
 
 code, pre {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     background: var(--c-border);
     color: var(--c-bg);
@@ -174,7 +179,7 @@ blockquote {
 
 /* Base Component Styling */
 .component {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     box-sizing: border-box;
     background: var(--c-bg);
@@ -202,7 +207,7 @@ blockquote {
     position: relative;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
 }
 
 .gallery-item .content {
@@ -301,7 +306,7 @@ blockquote {
 
 /* Grid Content Area */
 .grid-content {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);                      /* F=12px consistent with system */
     text-transform: uppercase;
     text-align: center;
@@ -338,7 +343,7 @@ blockquote {
 .caption-text {
     flex: 1;
     padding: 0 calc(var(--f));               /* F=12px padding like reference 12px */
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);                     /* F=12px for header consistency */
     text-transform: uppercase;
     white-space: nowrap;
@@ -355,7 +360,7 @@ blockquote {
     cursor: pointer;
     position: relative;
     flex-shrink: 0;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);                     /* F=12px consistent */
     transition: background-color 0.2s ease, color 0.2s ease;
     /* Width and height set via JavaScript for mathematical precision */
@@ -415,7 +420,7 @@ blockquote {
 
 /* Button Styles */
 .btn, button {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     background: var(--c-bg);
     color: var(--c-text);
@@ -456,7 +461,7 @@ blockquote {
 
 /* Form Elements */
 .input, .select, input, select, textarea {
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     background: var(--c-bg);
     color: var(--c-text);
@@ -616,6 +621,172 @@ blockquote {
     font-style: italic;
 }
 
+/* MathJax styling - F system integration with better control */
+mjx-container {
+    font-size: var(--f) !important;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+}
+
+/* Display math */
+mjx-container[display="true"] {
+    font-size: calc(var(--f) * 0.9) !important;
+    margin: var(--f) 0 !important;
+    text-align: center !important;
+}
+
+/* Inline math */
+mjx-container[display="false"] {
+    font-size: var(--f) !important;
+    margin: 0 2px !important;
+}
+
+/* Force font on all MathJax elements */
+mjx-container *,
+mjx-container mjx-math *,
+mjx-container mjx-assistive-mml * {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+}
+
+/* Override MathJax's default font sizing */
+.MathJax {
+    font-size: var(--f) !important;
+}
+
+/* Dynamic F-based sizing for math */
+:root {
+    --math-display-size: calc(var(--f) * 0.9);
+    --math-inline-size: var(--f);
+    --math-margin: var(--f);
+}
+
+/* P5.js Integration Styling - Perfect SiteBoy alignment */
+.p5-canvas-container {
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-bg) !important;
+    padding: var(--f) !important;
+    margin: calc(var(--f) * 2) 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* P5.js DOM elements (buttons, sliders, inputs) */
+.p5-canvas-container button {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    border: 1px solid var(--c-border) !important;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+    font-size: var(--f) !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    padding: calc(var(--f) * 0.5) var(--f) !important;
+    cursor: pointer !important;
+    transition: none !important;
+    margin: calc(var(--f) * 0.25) !important;
+}
+
+.p5-canvas-container button:hover {
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+}
+
+.p5-canvas-container input,
+.p5-canvas-container select {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    border: 1px solid var(--c-border) !important;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+    font-size: var(--f) !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    padding: calc(var(--f) * 0.25) calc(var(--f) * 0.5) !important;
+    outline: none !important;
+    margin: calc(var(--f) * 0.25) !important;
+}
+
+.p5-canvas-container input:focus,
+.p5-canvas-container select:focus {
+    border-color: var(--c-accent) !important;
+}
+
+/* P5.js slider styling */
+.p5-canvas-container input[type="range"] {
+    -webkit-appearance: none !important;
+    background: var(--c-border) !important;
+    height: 4px !important;
+    opacity: 0.8 !important;
+    transition: opacity 0.2s !important;
+}
+
+.p5-canvas-container input[type="range"]:hover {
+    opacity: 1 !important;
+}
+
+.p5-canvas-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    height: var(--f) !important;
+    width: var(--f) !important;
+    background: var(--c-accent) !important;
+    border: 1px solid var(--c-border) !important;
+    cursor: pointer !important;
+}
+
+/* P5.js canvas styling */
+.p5-canvas-container canvas {
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-bg) !important;
+    display: block !important;
+    margin: 0 auto !important;
+}
+
+/* P5.js text elements */
+.p5-canvas-container p,
+.p5-canvas-container span,
+.p5-canvas-container div {
+    font-family: "Space Mono", monospace !important;
+    font-size: var(--f) !important;
+    color: var(--c-text) !important;
+    line-height: calc(var(--f) * 1.5) !important;
+}
+
+/* F Controller 3-Button Styling */
+.f-controller-container {
+    position: relative;
+}
+
+.f-control-btn,
+.f-display {
+    transition: all 0.1s ease;
+    outline: none;
+}
+
+.f-control-btn:hover,
+.f-display:hover {
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+}
+
+.f-control-btn:active {
+    background: var(--c-text) !important;
+    color: var(--c-bg) !important;
+}
+
+/* F input field styling */
+.f-input {
+    border: none !important;
+    outline: 2px solid var(--c-accent) !important;
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    font-family: 'Space Mono', monospace !important;
+}
+
+.f-input:focus {
+    outline: 2px solid var(--c-accent) !important;
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+}
+
 /* Page Structure Components */
 .page-container {
     position: relative;
@@ -736,7 +907,7 @@ body.with-subheader .content-container {
 
 .page-footer {
     position: fixed;
-    bottom: 24px; /* 2*F margin from bottom */
+    bottom: calc(var(--f) * 2); /* 2*F margin from bottom */
     left: var(--layout-margin);
     width: var(--layout-width);
     height: var(--header-height);
@@ -768,7 +939,7 @@ body.with-subheader .content-container {
 /* Subheader positioning and layout handled in JavaScript for precise control */
 .subheader {
     /* Base styles only - positioning handled in JS */
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -904,7 +1075,7 @@ body.with-subheader .content-container {
     background: var(--c-bg);
     border: 1px solid var(--c-border);
     color: var(--c-text);
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     padding: var(--f);
     cursor: pointer;
@@ -936,7 +1107,7 @@ body.with-subheader .content-container {
     min-width: 100%;
     max-height: calc(var(--f) * 25); /* 300px at F=12px */
     overflow-y: auto;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -1040,7 +1211,7 @@ body.with-subheader .content-container {
 
 .hierarchical-toc {
     width: 100%;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
 }
 
 /* TOC container positioning handled by JavaScript */
@@ -1233,3 +1404,91 @@ body.with-subheader .content-container {
    NO gradients, shadows, border-radius allowed
    NO raw hex/rgb/hsl colors outside VGA palette
 */
+
+/* ================================================================= */
+/*                        FONT ANALYSIS TOOL                          */
+/* ================================================================= */
+
+/* Font Analysis Tool - Optimized using existing classes */
+.font-analysis {
+    height: calc(var(--f) * 50);
+}
+
+.font-analysis .grid {
+    --grid-cols: 3;
+    height: 100%;
+}
+
+.font-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.font-header {
+    height: calc(var(--f) * 4);
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    gap: var(--f);
+}
+
+.font-sample {
+    height: calc(var(--f) * 10);
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.font-canvas {
+    height: calc(var(--f) * 20);
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.font-charset {
+    flex: 1;
+    padding: var(--f);
+    overflow-y: auto;
+}
+
+.canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metrics-canvas {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    width: calc(var(--f) * 16);
+    height: calc(var(--f) * 16);
+}
+
+.section-title {
+    font-size: var(--f);
+    color: var(--c-text);
+    margin-bottom: calc(var(--f) / 2);
+    text-transform: uppercase;
+}
+
+.charset-display {
+    font-size: 20px;
+    color: var(--c-text);
+    line-height: 1.4;
+}
+
+/* Font Analysis Responsive Styles */
+@media (max-width: 1023px) {
+    .font-analysis .grid {
+        --grid-cols: 1;
+        height: auto;
+    }
+}

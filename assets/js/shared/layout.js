@@ -680,6 +680,10 @@ export class PageHeader extends BaseComponent {
             this.element.style.display = 'flex';
             console.log('📄 PageHeader created with class:', this.element.className);
             
+            // Listen for resize events to update F-based styling
+            this.resizeHandler = () => this.onResize();
+            window.addEventListener('resize', this.resizeHandler);
+            
             // LEFT BLOCK - Site title (PRECISE WIDTH from layout calculations)
             const leftContainer = this.createElement('div', 'header-left');
             leftContainer.style.cssText = `
@@ -846,12 +850,29 @@ export class PageHeader extends BaseComponent {
             const navContainer = this.element.querySelector('#header-nav');
             if (navContainer) {
                 navContainer.style.width = `${layout.mainHeaderNavWidth}px`;
+                // Update font-size and padding for F scaling
+                navContainer.style.fontSize = `${F}px`;
+                navContainer.style.padding = `0 ${F}px`;
             }
             
-            // Update toggle width
+            // Update home link font-size and padding for F scaling
+            const homeLink = this.element.querySelector('#home-link');
+            if (homeLink) {
+                homeLink.style.fontSize = `${F}px`;
+                homeLink.style.padding = `0 ${F}px`;
+            }
+            
+            // Update menu symbol font-size for F scaling
+            const menuSymbol = this.element.querySelector('#menu-symbol');
+            if (menuSymbol) {
+                menuSymbol.style.fontSize = `${F}px`;
+            }
+            
+            // Update toggle width and font-size
             const headerToggle = this.element.querySelector('#header-toggle');
             if (headerToggle) {
                 headerToggle.style.width = `${layout.mainHeaderToggleWidth}px`;
+                headerToggle.style.fontSize = `${F}px`;
             }
             
             // Update dropdown width to match navigation area exactly
@@ -860,7 +881,12 @@ export class PageHeader extends BaseComponent {
                 dropdown.style.width = `${layout.mainHeaderNavWidth}px`;
             }
             
-            console.log('📄 PageHeader: Layout recalculated on resize');
+            // Update dropdown items if they exist
+            if (this.navigationDropdown) {
+                this.navigationDropdown.updateFontSizes(F);
+            }
+            
+            console.log('📄 PageHeader: Layout and F-based styling recalculated on resize');
         }
     }
     
@@ -939,26 +965,161 @@ export class PageFooter extends BaseComponent {
             contactLink.classList.add('clickable');
             this.element.appendChild(contactLink);
             
-            // Footer toggle (25%) - no border (last item)
-            const footerToggle = this.createElement('div', 'footer-item');
-            footerToggle.id = 'footer-toggle';
-            footerToggle.textContent = '◐';
-            footerToggle.style.cssText = `
+            // F Controller Container (25%) - 3 separate buttons
+            const fControllerContainer = this.createElement('div', 'footer-item f-controller-container');
+            fControllerContainer.style.cssText = `
                 position: absolute; top: 0; left: 75%; height: 100%; width: 25%;
                 display: flex; align-items: center; justify-content: center;
-                text-transform: uppercase; font-size: ${F}px;
-                box-sizing: border-box; cursor: pointer;
+                font-size: ${F}px; font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                box-sizing: border-box;
             `;
-            footerToggle.addEventListener('click', () => {
-                console.log('Footer toggle clicked - can be extended for additional features');
+            
+            // Plus button (33.33%)
+            const plusButton = this.createElement('button', 'f-control-btn f-plus');
+            plusButton.textContent = '+';
+            plusButton.title = 'Increase F by 1';
+            plusButton.style.cssText = `
+                width: 33.33%; height: 100%; border: none; background: transparent;
+                color: inherit; font-family: inherit; font-size: inherit;
+                cursor: pointer; border-right: 1px solid var(--c-border);
+                display: flex; align-items: center; justify-content: center;
+            `;
+            plusButton.addEventListener('click', () => this.adjustF(1));
+            
+            // F display/input (33.33%)
+            const fDisplay = this.createElement('div', 'f-display');
+            fDisplay.style.cssText = `
+                width: 33.34%; height: 100%; background: transparent;
+                color: inherit; font-family: inherit; font-size: inherit;
+                border: none; border-right: 1px solid var(--c-border);
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; user-select: none;
+            `;
+            fDisplay.textContent = `F=${F}`;
+            fDisplay.title = 'Click to edit F value directly';
+            fDisplay.addEventListener('click', () => this.showFInput(fDisplay));
+            
+            // Minus button (33.33%)
+            const minusButton = this.createElement('button', 'f-control-btn f-minus');
+            minusButton.textContent = '-';
+            minusButton.title = 'Decrease F by 1';
+            minusButton.style.cssText = `
+                width: 33.33%; height: 100%; border: none; background: transparent;
+                color: inherit; font-family: inherit; font-size: inherit;
+                cursor: pointer; display: flex; align-items: center; justify-content: center;
+            `;
+            minusButton.addEventListener('click', () => this.adjustF(-1));
+            
+            // Add hover effects
+            [plusButton, fDisplay, minusButton].forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.background = 'var(--c-accent)';
+                    btn.style.color = 'var(--c-bg)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'inherit';
+                });
             });
-            footerToggle.classList.add('clickable');
-            this.element.appendChild(footerToggle);
+            
+            fControllerContainer.appendChild(plusButton);
+            fControllerContainer.appendChild(fDisplay);
+            fControllerContainer.appendChild(minusButton);
+            this.element.appendChild(fControllerContainer);
+            
+            // Store references for updates
+            this.fDisplay = fDisplay;
+            this.fControllerContainer = fControllerContainer;
             
             // Subscribe to resize
             this.subscribeToResize();
         }
         return this.element;
+    }
+    
+    /**
+     * Adjust F value by a delta amount
+     */
+    adjustF(delta) {
+        const currentF = window.Config?.F || 12;
+        const newF = Math.max(6, Math.min(30, currentF + delta)); // Range: 6-30
+        
+        if (newF !== currentF) {
+            // Use DynamicFManager to update F system-wide
+            if (window.DynamicFManager) {
+                window.DynamicFManager.setF(newF);
+            } else {
+                // Fallback: direct update
+                if (window.Config) {
+                    window.Config.F = newF;
+                }
+                this.updateFControllerDisplay(newF);
+            }
+        }
+    }
+    
+    /**
+     * Show input field for direct F value entry
+     */
+    showFInput(displayElement) {
+        const currentF = window.MathematicalFoundation?.F || window.Config?.F || 12;
+        
+        // Create input element
+        const input = this.createElement('input', 'f-input');
+        input.type = 'number';
+        input.min = '6';
+        input.max = '30';
+        input.step = '1';
+        input.value = currentF.toString();
+        input.style.cssText = `
+            width: 100%; height: 100%; border: none; background: var(--c-bg);
+            color: var(--c-text); font-family: inherit; font-size: inherit;
+            text-align: center; outline: 2px solid var(--c-accent);
+        `;
+        
+        // Replace display with input
+        displayElement.innerHTML = '';
+        displayElement.appendChild(input);
+        input.focus();
+        input.select();
+        
+        // Handle input completion
+        const completeInput = () => {
+            const newValue = parseInt(input.value);
+            if (!isNaN(newValue) && newValue >= 6 && newValue <= 30) {
+                if (window.DynamicFManager) {
+                    window.DynamicFManager.setF(newValue);
+                }
+            }
+            
+            // Restore display
+            const finalF = window.MathematicalFoundation?.F || window.Config?.F || 12;
+            displayElement.innerHTML = `F=${finalF}`;
+        };
+        
+        // Event listeners for input completion
+        input.addEventListener('blur', completeInput);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                completeInput();
+            } else if (e.key === 'Escape') {
+                // Cancel - restore original display
+                const originalF = window.MathematicalFoundation?.F || window.Config?.F || 12;
+                displayElement.innerHTML = `F=${originalF}`;
+            }
+        });
+    }
+    
+    /**
+     * Update F controller display when F changes externally
+     */
+    updateFControllerDisplay(newF) {
+        if (this.fDisplay) {
+            this.fDisplay.textContent = `F=${newF}`;
+        }
+        if (this.fControllerContainer) {
+            this.fControllerContainer.style.fontSize = `${newF}px`;
+        }
     }
 }
 
@@ -1410,7 +1571,7 @@ export class Subheader extends BaseComponent {
         const arrowAndSafetyWidth = 2 * F; // Space for " ←" or "→ " plus safety margin
         const availableWidth = buttonWidth - arrowAndSafetyWidth;
         
-        // Estimate character width (Space Mono is monospace, roughly 0.7 * F per character at 12px)
+        // Estimate character width (Atkinson Hyperlegible is roughly 0.7 * F per character at 12px)
         const charWidth = F * 0.7;
         const maxChars = Math.floor(availableWidth / charWidth);
         
@@ -1583,6 +1744,9 @@ export class Panel extends BaseComponent {
         this.title = options.title || '';
         this.content = options.content || '';
         this.className = options.className || '';
+        this.collapsible = options.collapsible || false;
+        this.isOpen = options.defaultOpen === true;
+        this.onToggle = options.onToggle || null;
     }
     
     render() {
@@ -1596,14 +1760,21 @@ export class Panel extends BaseComponent {
             `;
             
             if (this.title) {
-                const titleElement = this.createElement('h3', 'panel-title');
+                const titleElement = this.createElement(this.collapsible ? 'button' : 'h3', 'panel-title');
                 titleElement.textContent = this.title;
                 titleElement.style.cssText = `
                     margin: 0 0 var(--f) 0;
                     font-size: calc(var(--f) * 1.2);
-                    font-family: 'Space Mono', monospace;
+                    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
                     color: var(--c-text);
+                    ${this.collapsible ? 'display:block;width:100%;text-align:left;outline:1px solid var(--c-border);background: var(--c-bg);height: calc(var(--f) * 4);line-height: calc(var(--f) * 4);padding: 0 var(--f);' : ''}
                 `;
+                
+                if (this.collapsible) {
+                    titleElement.setAttribute('type', 'button');
+                    titleElement.addEventListener('click', () => this.toggle());
+                }
+                
                 this.element.appendChild(titleElement);
             }
             
@@ -1613,6 +1784,9 @@ export class Panel extends BaseComponent {
                     contentElement.textContent = this.content;
                 } else {
                     contentElement.appendChild(this.content);
+                }
+                if (this.collapsible && !this.isOpen) {
+                    contentElement.style.display = 'none';
                 }
                 this.element.appendChild(contentElement);
             }
@@ -1629,6 +1803,17 @@ export class Panel extends BaseComponent {
                 contentElement.innerHTML = '';
                 contentElement.appendChild(content);
             }
+        }
+    }
+
+    toggle() {
+        if (!this.collapsible) return;
+        const contentElement = this.element?.querySelector('.panel-content');
+        if (!contentElement) return;
+        this.isOpen = !this.isOpen;
+        contentElement.style.display = this.isOpen ? '' : 'none';
+        if (typeof this.onToggle === 'function') {
+            try { this.onToggle(this.isOpen); } catch (_) {}
         }
     }
 }

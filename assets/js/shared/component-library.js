@@ -54,7 +54,8 @@ import {
     SimpleTOC,
     NumberedTOC,
     TOCGallery,
-    Table 
+    Table,
+    StatusDisplay 
 } from './content.js';
 
 // Import all interactive components
@@ -66,7 +67,10 @@ import {
     Button, 
     Input, 
     Select, 
-    ButtonGroup 
+    NumericInput,
+    ProgressBar,
+    ButtonGroup,
+    CollapsibleSection
 } from './interactive.js';
 
 // Import all graph components
@@ -80,13 +84,17 @@ import {
 import { 
     VGAGrid, 
     MathematicalCanvas, 
-    ProgressBar,
-    ColorQuantizer,
-    NumericInput,
     SVGDisplay,
-    StatusDisplay,
     AnimationControls
 } from './specialized.js';
+
+// Import p5.js integration components
+import { 
+    P5Canvas, 
+    P5EmbeddedSketch,
+    P5ControlledSketch 
+} from './p5-integration.js';
+
 
 /**
  * ComponentLibrary - Main component library object
@@ -120,6 +128,7 @@ export const ComponentLibrary = {
     NumberedTOC,
     TOCGallery,
     Table,
+    StatusDisplay,
     
     // Interactive components
     CollapsibleBase,
@@ -129,7 +138,10 @@ export const ComponentLibrary = {
     Button,
     Input,
     Select,
+    NumericInput,
+    ProgressBar,
     ButtonGroup,
+    CollapsibleSection,
     
     // Graph components
     BarGraph,
@@ -139,12 +151,13 @@ export const ComponentLibrary = {
     // Specialized components
     VGAGrid,
     MathematicalCanvas,
-    ProgressBar,
-    ColorQuantizer,
-    NumericInput,
     SVGDisplay,
-    StatusDisplay,
     AnimationControls,
+    
+    // P5.js integration
+    P5Canvas,
+    P5EmbeddedSketch,
+    P5ControlledSketch,
     
     /**
      * Component factory - maintains exact same API as before
@@ -172,6 +185,7 @@ export const ComponentLibrary = {
             'numbered-toc': NumberedTOC,
             'toc-gallery': TOCGallery,
             'table': Table,
+            'status-display': StatusDisplay,
             
             // Interactive
             'dropdown': Dropdown,
@@ -180,7 +194,10 @@ export const ComponentLibrary = {
             'button': Button,
             'input': Input,
             'select': Select,
+            'numeric-input': NumericInput,
+            'progress-bar': ProgressBar,
             'button-group': ButtonGroup,
+            'collapsible-section': CollapsibleSection,
             
             // Graphs
             'bar-graph': BarGraph,
@@ -190,12 +207,12 @@ export const ComponentLibrary = {
             // Specialized
             'vga-grid': VGAGrid,
             'mathematical-canvas': MathematicalCanvas,
-            'progress-bar': ProgressBar,
-            'color-quantizer': ColorQuantizer,
-            'numeric-input': NumericInput,
             'svg-display': SVGDisplay,
-            'status-display': StatusDisplay,
-            'animation-controls': AnimationControls
+            'animation-controls': AnimationControls,
+            
+            // P5.js integration
+            'p5-canvas': P5Canvas,
+            'p5-embedded': P5EmbeddedSketch
         };
         
         const ComponentClass = components[type];
@@ -272,6 +289,7 @@ export {
     NumberedTOC,
     TOCGallery,
     Table,
+    StatusDisplay,
     
     // Interactive
     CollapsibleBase,
@@ -281,7 +299,10 @@ export {
     Button,
     Input,
     Select,
+    NumericInput,
+    ProgressBar,
     ButtonGroup,
+    CollapsibleSection,
     
     // Graphs
     BarGraph,
@@ -291,10 +312,10 @@ export {
     // Specialized
     VGAGrid,
     MathematicalCanvas,
-    ProgressBar,
-    ColorQuantizer,
-    NumericInput,
     SVGDisplay,
-    StatusDisplay,
-    AnimationControls
+    AnimationControls,
+    
+    // P5.js integration
+    P5Canvas,
+    P5EmbeddedSketch
 };

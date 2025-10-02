@@ -1,0 +1,33 @@
+# Needed Diagrams, Images, and Embeds
+
+This file lists all visual assets that need to be created, found, or embedded in the project's markdown documentation.
+
+## From: dome-formation.md
+
+### Placeholders for Diagrams
+- [ ] Diagram 1: 2D spiral field before lifting.
+- [ ] Diagram 2: Vertical mapping applied to generate dome.
+- [ ] Diagram 3: Comparison of index-based vs radius-based z-mapping profiles.
+
+## From: phyllotaxis.md
+
+### Algorithmic Demonstrations (p5.js)
+The following interactive sketches are referenced and need to be embedded.
+- [ ] p5.js embed: Divergence Angle Sweep (0° → 360° in 0.5°).
+- [ ] p5.js embed: Manual Exploration (golden angle default + Fibonacci controls).
+
+## From: lattice.md
+
+### Placeholders
+- [ ] L1: Arch generation from every-N connection.
+- [ ] L2: Crossing families (N1,N2) with labelled nodes.
+- [ ] L3: Trapezoid cell geometry with projected plane.
+- [ ] L4: Comparative meshes: small vs large denominators.
+
+## From: leaves.md
+
+### Placeholders for Renders
+- [ ] D1: Monocle leaves (circular discs) across the shell.
+- [ ] D2: Tilt gradient (flat at apex → horizontal at base).
+- [ ] D3: Twisted leaf array showing azimuthal modulation.
+- [ ] D4: Mixed glazing + leaves; pane tint gradient by height.

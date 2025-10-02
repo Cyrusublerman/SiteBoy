@@ -249,6 +249,13 @@ const SiteBoyApp = {
         window.MathematicalFoundation = LayoutCalculator;
         window.ResizeManager = ResizeManager;
         window.BlockRenderer = BlockRenderer;
+        window.Config = Config;
+        window.SiteBoyApp = this;
+        
+        // Import and expose DynamicFManager
+        import('../shared/dynamic-f-utils.js').then(module => {
+            window.DynamicFManager = module.DynamicFManager;
+        });
         
         console.log('✅ Core utilities initialized');
     },

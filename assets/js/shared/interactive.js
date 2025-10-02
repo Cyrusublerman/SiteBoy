@@ -638,6 +638,145 @@ export class Select extends BaseComponent {
 }
 
 /**
+ * NumericInput - Enhanced numeric input with validation
+ */
+export class NumericInput extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'numeric-input' }, deps);
+        this.value = options.value || 0;
+        this.min = options.min;
+        this.max = options.max;
+        this.step = options.step || 1;
+        this.label = options.label || '';
+        this.onChange = options.onChange || (() => {});
+        this.precision = options.precision || 3;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'numeric-input component');
+            
+            if (this.label) {
+                const label = this.createElement('label', 'numeric-input-label');
+                label.textContent = this.label;
+                label.style.cssText = `
+                    display: block;
+                    margin-bottom: calc(var(--f) * 0.5);
+                    font-size: calc(var(--f) * 0.8);
+                    font-family: 'Atkinson Hyperlegible', monospace;
+                    color: var(--c-text);
+                `;
+                this.element.appendChild(label);
+            }
+            
+            const input = this.createElement('input', 'numeric-input-field');
+            input.type = 'number';
+            input.value = this.value;
+            if (this.min !== undefined) input.min = this.min;
+            if (this.max !== undefined) input.max = this.max;
+            input.step = this.step;
+            
+            input.style.cssText = `
+                width: 100%;
+                padding: calc(var(--f) * 0.5) calc(var(--f) * 0.75);
+                border: 1px solid var(--c-border);
+                background: var(--c-bg);
+                color: var(--c-text);
+                font-family: 'Atkinson Hyperlegible', monospace;
+                font-size: calc(var(--f) * 0.8);
+                box-sizing: border-box;
+            `;
+            
+            input.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                    this.value = value;
+                    this.onChange(value, e);
+                }
+            });
+            
+            this.element.appendChild(input);
+            this.inputElement = input;
+        }
+        return this.element;
+    }
+    
+    setValue(value) {
+        this.value = value;
+        if (this.inputElement) {
+            this.inputElement.value = value.toFixed(this.precision);
+        }
+    }
+}
+
+/**
+ * ProgressBar - Progress indicator component
+ */
+export class ProgressBar extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'progress' }, deps);
+        this.value = Math.max(0, Math.min(100, options.value || 0));
+        this.max = options.max || 100;
+        // Support both showText and showPercent for compatibility
+        this.showText = options.showText !== false || options.showPercent === true;
+        this.size = options.size || 'm'; // s, m, l
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', `progress-bar progress-${this.size}`);
+            
+            const track = this.createElement('div', 'progress-track');
+            track.style.cssText = `
+                width: 100%;
+                height: 20px;
+                background: var(--c-bg);
+                border: 1px solid var(--c-border);
+                position: relative;
+                overflow: hidden;
+            `;
+            
+            const fill = this.createElement('div', 'progress-fill');
+            fill.style.cssText = `
+                width: ${this.value}%;
+                height: 100%;
+                background: var(--c-accent);
+                transition: width 0.3s ease;
+            `;
+            
+            track.appendChild(fill);
+            this.element.appendChild(track);
+            
+            let textElement = null;
+            if (this.showText) {
+                textElement = this.createElement('div', 'progress-text');
+                textElement.textContent = `${this.value}%`;
+                textElement.style.cssText = `
+                    text-align: center;
+                    font-size: 12px;
+                    margin-top: 4px;
+                `;
+                this.element.appendChild(textElement);
+            }
+            
+            this.fillElement = fill;
+            this.textElement = textElement;
+        }
+        return this.element;
+    }
+    
+    setValue(value) {
+        this.value = Math.max(0, Math.min(100, value));
+        if (this.fillElement) {
+            this.fillElement.style.width = `${this.value}%`;
+        }
+        if (this.textElement) {
+            this.textElement.textContent = `${this.value}%`;
+        }
+    }
+}
+
+/**
  * ButtonGroup - Grouped button interface component
  */
 export class ButtonGroup extends BaseComponent {
@@ -668,5 +807,168 @@ export class ButtonGroup extends BaseComponent {
             });
         }
         return this.element;
+    }
+}
+
+/**
+ * CollapsibleSection - A self-contained collapsible section with a header and content area.
+ */
+export class CollapsibleSection extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'collapsible-section' }, deps);
+        this.title = this.options.title || 'Section';
+        this.defaultOpen = this.options.defaultOpen || false;
+        this.isFirst = this.options.isFirst || false;
+        this.contentLoader = this.options.contentLoader; // An async function that returns a DOM element
+        this.isOpen = this.defaultOpen;
+        this.contentLoaded = false;
+        this.componentInstances = []; // To track any sub-components if needed
+        this.F = this.deps.MF ? this.deps.MF.F : 12;
+    }
+
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'collapsible-section');
+            this.applyStyles(this.element, {
+                'border-left': '1px solid var(--c-border)',
+                'border-right': '1px solid var(--c-border)',
+                'border-bottom': '1px solid var(--c-border)',
+                'background': 'var(--c-bg)',
+            });
+
+            if (this.isFirst) {
+                this.element.style.borderTop = '1px solid var(--c-border)';
+            }
+
+            this._createHeader();
+            this._createContentArea();
+            this._attachHeaderListener();
+
+            if (this.isOpen) {
+                this.open();
+            }
+        }
+        return this.element;
+    }
+
+    _createHeader() {
+        this.header = this.createElement('div', 'collapsible-header');
+        this.applyStyles(this.header, {
+            'padding': `${this.F}px`,
+            'cursor': 'pointer',
+            'display': 'flex',
+            'justify-content': 'space-between',
+            'align-items': 'center',
+            'border-bottom': this.isOpen ? '1px solid var(--c-border)' : 'none',
+        });
+
+        const title = this.createElement('span', 'header-title');
+        title.textContent = this.title;
+        this.applyStyles(title, {
+            'font-family': '"Atkinson Hyperlegible", monospace',
+            'font-size': `${this.F}px`,
+            'font-weight': 'normal',
+            'text-transform': 'uppercase',
+        });
+
+        this.indicator = this.createElement('span', 'header-indicator');
+        this.indicator.textContent = this.isOpen ? '−' : '+';
+        this.applyStyles(this.indicator, {
+            'font-family': '"Atkinson Hyperlegible", monospace',
+            'font-size': `${this.F}px`,
+            'width': `${this.F * 2}px`,
+            'text-align': 'center',
+        });
+
+        this.header.appendChild(title);
+        this.header.appendChild(this.indicator);
+        this.element.appendChild(this.header);
+    }
+
+    _createContentArea() {
+        this.content = this.createElement('div', 'collapsible-content');
+        this.applyStyles(this.content, {
+            'padding': `${this.F}px`,
+            'display': this.isOpen ? 'block' : 'none',
+        });
+
+        if (this.contentLoader) {
+            const loadingText = this.createElement('div', 'loading-text');
+            loadingText.textContent = 'Loading...';
+            this.applyStyles(loadingText, {
+                'color': 'var(--c-text)',
+                'font-style': 'italic',
+            });
+            this.content.appendChild(loadingText);
+        }
+
+        this.element.appendChild(this.content);
+    }
+
+    async _loadContentAsync() {
+        if (!this.contentLoader || this.contentLoaded) return;
+        this.content.innerHTML = ''; // Clear loading text
+
+        try {
+            const contentElement = await this.contentLoader();
+            if (contentElement instanceof HTMLElement) {
+                this.content.appendChild(contentElement);
+                this._executeScripts(contentElement);
+            } else {
+                throw new Error('contentLoader did not return a valid HTML element.');
+            }
+        } catch (error) {
+            console.error('Error loading content via contentLoader:', error);
+            this.content.innerHTML = `<div style="color: var(--vga-red);"><strong>Error:</strong> ${error.message}</div>`;
+        } finally {
+            this.contentLoaded = true;
+        }
+    }
+
+    async toggle() {
+        this.isOpen = !this.isOpen;
+        this.updateVisibility();
+        if (this.isOpen && !this.contentLoaded) {
+            await this._loadContentAsync();
+        }
+    }
+
+    async open() {
+        this.isOpen = true;
+        this.updateVisibility();
+        if (!this.contentLoaded) {
+            await this._loadContentAsync();
+        }
+    }
+    
+    close() {
+        this.isOpen = false;
+        this.updateVisibility();
+    }
+
+    updateVisibility() {
+        this.content.style.display = this.isOpen ? 'block' : 'none';
+        this.indicator.textContent = this.isOpen ? '−' : '+';
+        this.header.style.borderBottom = this.isOpen ? '1px solid var(--c-border)' : 'none';
+    }
+
+    _attachHeaderListener() {
+        this.header.addEventListener('click', () => this.toggle());
+    }
+
+    _executeScripts(element) {
+        const scripts = Array.from(element.querySelectorAll('script'));
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+            if (oldScript.innerHTML) newScript.innerHTML = oldScript.innerHTML;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    destroy() {
+        this.componentInstances.forEach(instance => instance.destroy && instance.destroy());
+        this.componentInstances = [];
+        super.destroy();
     }
 }

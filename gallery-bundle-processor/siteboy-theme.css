@@ -57,7 +57,7 @@
     padding: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    font-family: 'Space Mono', monospace !important;
+    font-family: 'Atkinson Hyperlegible Mono', monospace !important;
     font-size: var(--f) !important;
     line-height: 1.5 !important;
     color: var(--c-text) !important;
@@ -84,7 +84,7 @@
 /* Headers - exact match to SiteBoy */
 h1, h2, h3, h4, h5, h6,
 .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-    font-family: 'Space Mono', monospace !important;
+    font-family: 'Atkinson Hyperlegible Mono', monospace !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     color: var(--c-text) !important;
@@ -152,7 +152,7 @@ div[data-testid="element-container"] {
 /* Buttons - exact SiteBoy style */
 .stButton > button, button,
 .stFormSubmitButton > button {
-    font-family: 'Space Mono', monospace !important;
+    font-family: 'Atkinson Hyperlegible Mono', monospace !important;
     font-size: var(--f) !important;
     background: var(--c-bg) !important;
     color: var(--c-text) !important;

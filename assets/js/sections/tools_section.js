@@ -17,9 +17,8 @@ const ToolsSection = {
     // Simple page list for navigation
     pages: [
         '#tools',
-        '#tools/ui-test',
-        '#tools/font-dimension-finder',
-        '#tools/font-size-comparison',
+        '#tools/font-analysis',
+        '#tools/color-quantizer',
         '#tools/pixel-tiler',
         '#tools/polygon-calculator'
     ],
@@ -72,14 +71,14 @@ const ToolsSection = {
         // Define simple tools sections (direct navigation, no nesting)
         const toolsSections = [
             {
-                id: 'font-dimension-finder',
-                title: 'FONT DIMENSION FINDER',
-                description: 'Visualize font metrics with mathematical precision and F-based measurements'
+                id: 'font-analysis',
+                title: 'FONT ANALYSIS',
+                description: 'Comprehensive font analysis with dynamic Google Fonts loading. Compare multiple fonts and analyze detailed metrics with mathematical precision.'
             },
             {
-                id: 'font-size-comparison',
-                title: 'FONT SIZE COMPARISON',
-                description: 'Real-time comparison of fonts with precise scaling controls'
+                id: 'color-quantizer',
+                title: 'COLOR QUANTIZER',
+                description: 'Image color reduction with dithering algorithms'
             },
             {
                 id: 'pixel-tiler',
@@ -90,11 +89,6 @@ const ToolsSection = {
                 id: 'polygon-calculator',
                 title: 'POLYGON CALCULATOR',
                 description: 'Interactive polygon geometry with mathematical precision and SVG export'
-            },
-            {
-                id: 'color-quantizer',
-                title: 'COLOR QUANTIZER',
-                description: 'Image color reduction with dithering algorithms'
             }
         ];
         
@@ -140,11 +134,10 @@ const ToolsSection = {
     getDropdownItems(currentSubsection) {
         const allTools = [
             { label: 'TOOLS INDEX', path: '#tools', isTOC: true },
-            { label: 'FONT DIMENSION FINDER', path: '#tools/font-dimension-finder' },
-            { label: 'FONT SIZE COMPARISON', path: '#tools/font-size-comparison' },
+            { label: 'FONT ANALYSIS', path: '#tools/font-analysis' },
+            { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' },
             { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
-            { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' },
-            { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' }
+            { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' }
         ];
         
         const currentPath = `#tools/${currentSubsection}`;
@@ -165,11 +158,10 @@ const ToolsSection = {
     getNavigationContext(currentSubsection, callbacks) {
         // Define all available tools in order for navigation
         const allTools = [
-            { id: 'font-dimension-finder', title: 'Font Dimension Finder', path: '#tools/font-dimension-finder' },
-            { id: 'font-size-comparison', title: 'Font Size Comparison', path: '#tools/font-size-comparison' },
+            { id: 'font-analysis', title: 'Font Analysis', description: 'Compare fonts and analyze detailed metrics with dynamic Google Fonts loading', path: '#tools/font-analysis' },
+            { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' },
             { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
-            { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' },
-            { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' }
+            { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' }
         ];
         
         return {
@@ -204,7 +196,7 @@ const ToolsSection = {
     handleSubsectionClick(path) {
         console.log(`🔧 Subsection clicked: ${path}`);
         
-        // Extract section and subsection from path (e.g., '#tools/ui-test')
+        // Extract section and subsection from path (e.g., '#tools/font-analysis')
         const hashPath = path.replace('#', '');
         const [section, subsection] = hashPath.split('/');
         
@@ -223,11 +215,8 @@ const ToolsSection = {
         console.log(`🔧 Rendering tool: ${toolId}`);
         
         switch (toolId) {
-            case 'font-dimension-finder':
-                this.renderFontDimensionFinder();
-                break;
-            case 'font-size-comparison':
-                this.renderFontSizeComparison();
+            case 'font-analysis':
+                this.renderFontAnalysis();
                 break;
             case 'pixel-tiler':
                 this.renderPixelTiler();
@@ -243,62 +232,6 @@ const ToolsSection = {
         }
     },
     
-    /**
-     * Render UI Test Tool - Component Library API Documentation & Test Suite
-     */
-    renderUITestTool() {
-        // Main title
-        const title = new ComponentLibrary.Heading({
-            level: 1,
-            content: 'COMPONENT LIBRARY API DOCUMENTATION'
-        });
-        this.componentInstances.push(title);
-        this.currentContainer.appendChild(title.render());
-        
-        // Consolidated API documentation
-        const apiDocs = new ComponentLibrary.MarkdownBody({
-            markdownText: `
-## Component Library Test Suite & API Documentation
-
-This page serves as the **Single Source of Truth** for all SiteBoy UI components. Every component used site-wide must have an example here.
-
-### Usage Pattern
-\`\`\`javascript
-// Basic component creation
-const component = new ComponentLibrary.ComponentName(options, deps);
-this.componentInstances.push(component);
-container.appendChild(component.render());
-
-// With Mathematical Foundation dependencies
-const component = new ComponentLibrary.ComponentName(options, {
-    MF: window.MathematicalFoundation,
-    Resize: window.ResizeManager
-});
-\`\`\`
-
-### Available Components
-
-**Navigation:** BaseNavigationDropdown, Dropdown, Menu, Breadcrumb  
-**Layout:** Grid, Spacing, PageContainer, PageHeader, PageFooter, Subheader  
-**Typography:** Heading, Paragraph, Quote, MarkdownBody, SimpleTOC, NumberedTOC  
-**Forms:** Button, ButtonGroup, Input, Select  
-**Data Viz:** BarGraph, LineGraph, PieGraph, ProgressBar  
-**Media:** Image, Video, Audio  
-**Specialized:** VGAGrid, MathematicalCanvas, CollapsibleBase  
-
-### Component Categories
-
-Click any section below to expand and view live examples with usage code.
-            `
-        });
-        this.componentInstances.push(apiDocs);
-        this.currentContainer.appendChild(apiDocs.render());
-        
-        // Render all component examples in collapsible sections
-        this.renderAllComponentExamples(this.currentContainer);
-        
-        this.addBackLink();
-    },
     
     /**
      * Render Color Grid Tool
@@ -438,19 +371,9 @@ Click any section below to expand and view live examples with usage code.
      * Render Color Quantizer Tool
      */
     renderColorQuantizer() {
-        const cq = new ComponentLibrary.ColorQuantizer({}, { MF: window.MathematicalFoundation, Resize: window.ResizeManager });
-        this.componentInstances.push(cq);
-        this.currentContainer.appendChild(cq.render());
-
-        this.addBackLink();
-    },
-    
-    /**
-     * Render Font Dimension Finder Tool
-     */
-    renderFontDimensionFinder() {
-        const tool = new window.FontDimensionFinder(this.currentContainer, {
-            MF: window.LayoutCalculator,
+        // Use window.ColorQuantizer (follows PolygonCalculator pattern)
+        const tool = new window.ColorQuantizer(this.currentContainer, {
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
@@ -459,10 +382,10 @@ Click any section below to expand and view live examples with usage code.
     },
     
     /**
-     * Render Font Size Comparison Tool
+     * Render Font Analysis Tool - Combined font comparison and metrics analysis
      */
-    renderFontSizeComparison() {
-        const tool = new window.FontSizeComparison(this.currentContainer, {
+    renderFontAnalysis() {
+        const tool = new window.FontAnalysisTool(this.currentContainer, {
             MF: window.LayoutCalculator,
             Resize: window.ResizeManager
         });
@@ -863,9 +786,9 @@ Click any section below to expand and view live examples with usage code.
                     items: [
                         { label: 'Home', value: 'home', url: '#' },
                         { label: 'Tools', value: 'tools', url: '#tools' },
-                        { label: 'UI Test', value: 'ui-test', url: '#tools/ui-test' }
+                        { label: 'Font Analysis', value: 'font-analysis', url: '#tools/font-analysis' }
                     ],
-                    current: 'ui-test',
+                    current: 'font-analysis',
                     onSelect: (item) => console.log('Breadcrumb selected:', item)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(breadcrumb);
@@ -1107,7 +1030,7 @@ Click any section below to expand and view live examples with usage code.
                     text-transform: uppercase;
                     font-size: 10px;
                 `;
-                titleSide.textContent = 'TOOLS/UI-TEST';
+                titleSide.textContent = 'TOOLS/FONT-ANALYSIS';
                 
                 // Navigation side (50%)
                 const navSide = document.createElement('div');
