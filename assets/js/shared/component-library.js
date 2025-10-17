@@ -70,7 +70,9 @@ import {
     NumericInput,
     ProgressBar,
     ButtonGroup,
-    CollapsibleSection
+    CollapsibleSection,
+    Lightbox,
+    Carousel
 } from './interactive.js';
 
 // Import all graph components
@@ -94,6 +96,9 @@ import {
     P5EmbeddedSketch,
     P5ControlledSketch 
 } from './p5-integration.js';
+
+// Import gallery components
+import { MasonryGallery } from './masonry-gallery.js';
 
 
 /**
@@ -142,6 +147,8 @@ export const ComponentLibrary = {
     ProgressBar,
     ButtonGroup,
     CollapsibleSection,
+    Lightbox,
+    Carousel,
     
     // Graph components
     BarGraph,
@@ -158,6 +165,9 @@ export const ComponentLibrary = {
     P5Canvas,
     P5EmbeddedSketch,
     P5ControlledSketch,
+    
+    // Gallery
+    MasonryGallery,
     
     /**
      * Component factory - maintains exact same API as before
@@ -198,6 +208,7 @@ export const ComponentLibrary = {
             'progress-bar': ProgressBar,
             'button-group': ButtonGroup,
             'collapsible-section': CollapsibleSection,
+            'carousel': Carousel,
             
             // Graphs
             'bar-graph': BarGraph,
@@ -212,7 +223,10 @@ export const ComponentLibrary = {
             
             // P5.js integration
             'p5-canvas': P5Canvas,
-            'p5-embedded': P5EmbeddedSketch
+            'p5-embedded': P5EmbeddedSketch,
+            
+            // Gallery
+            'masonry-gallery': MasonryGallery
         };
         
         const ComponentClass = components[type];
@@ -303,6 +317,8 @@ export {
     ProgressBar,
     ButtonGroup,
     CollapsibleSection,
+    Lightbox,
+    Carousel,
     
     // Graphs
     BarGraph,
@@ -317,5 +333,9 @@ export {
     
     // P5.js integration
     P5Canvas,
-    P5EmbeddedSketch
+    P5EmbeddedSketch,
+    P5ControlledSketch,
+    
+    // Gallery
+    MasonryGallery
 };

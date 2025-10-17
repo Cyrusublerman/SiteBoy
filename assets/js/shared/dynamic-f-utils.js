@@ -289,39 +289,6 @@ export const DynamicFManager = {
         console.log('Result: Change Config.F and EVERYTHING should update automatically');
     },
     
-    /**
-     * Test the increment/decrement functionality specifically
-     */
-    testIncrementDecrement() {
-        console.log('🧪 Testing Footer Controller Increment/Decrement...');
-        
-        const startF = this.getCurrentF();
-        console.log(`📊 Starting F: ${startF}`);
-        
-        // Test increment
-        const testIncrement = startF + 1;
-        this.setF(testIncrement);
-        const afterIncrement = this.getCurrentF();
-        console.log(`➕ After +1: ${afterIncrement} (expected: ${testIncrement})`);
-        
-        // Test decrement  
-        const testDecrement = afterIncrement - 1;
-        this.setF(testDecrement);
-        const afterDecrement = this.getCurrentF();
-        console.log(`➖ After -1: ${afterDecrement} (expected: ${testDecrement})`);
-        
-        // Test multiple increments
-        this.setF(startF + 3);
-        const after3 = this.getCurrentF();
-        console.log(`🔢 After +3: ${after3} (expected: ${startF + 3})`);
-        
-        // Reset
-        this.setF(startF);
-        const final = this.getCurrentF();
-        console.log(`🔄 Reset to: ${final} (expected: ${startF})`);
-        
-        console.log('✅ Increment/Decrement test complete!');
-    }
 };
 
 // Make available globally for console testing

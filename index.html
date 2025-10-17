@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiteBoy</title>
+    <title>aeinoder</title>
     
     <!-- Third-party Libraries -->
+    <!-- Prism.js for syntax highlighting - VGA aesthetic (no default theme, using custom) -->
+    
     <!-- MathJax for LaTeX rendering - reliable and well-supported -->
     <script>
         window.MathJax = {
@@ -43,6 +45,8 @@
     
     <!-- 0. External dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
     
     <!-- 1. Core foundation (Modular ES6) -->
     <script type="module" src="assets/js/shared/component-library.js"></script>
@@ -62,6 +66,7 @@
     </script>
     
     <!-- 2. Core Navigation & App -->
+    <script src="assets/js/core/cleanup-manager.js"></script>
     <script src="assets/js/core/navigation-controller.js"></script>
     <script type="module" src="assets/js/core/app.js"></script>
     
@@ -71,6 +76,9 @@
     <script src="assets/js/tools/color-quantizer.js"></script>
     <script src="assets/js/tools/pixel-tiler.js"></script>
     <script src="assets/js/tools/polygon-calculator.js"></script>
+    <script src="assets/js/tools/asteroid-belt-tool.js"></script>
+    <script src="assets/js/tools/solar-system-tool.js"></script>
+    <script src="assets/js/tools/about-you-tool.js"></script>
     
     <!-- 5. Sections -->
     <script src="assets/js/sections/home_section.js"></script>
@@ -78,6 +86,7 @@
     <script src="assets/js/sections/art_section.js"></script>
     <script src="assets/js/sections/tools_section.js"></script>
     <script src="assets/js/sections/projects_section.js"></script>
+    <script src="assets/js/sections/contact_section.js"></script>
     
     <!-- 6. Project-specific scripts (lives under /projects) -->
     <script src="projects/Synthetic Biophilia/synthetic-biophilia.js"></script>

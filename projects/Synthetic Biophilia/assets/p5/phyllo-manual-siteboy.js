@@ -1,17 +1,9 @@
 (function(){
-  // Helper to get computed CSS variables (local to this sketch)
-  const getVGAColor = (variable) => {
+  // Import shared utilities for VGA color access
+  // Note: In browser context, we'll load this via script tag, so getVGAColor will be available globally
+  const getVGAColor = window.getVGAColor || ((variable) => {
       return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
-  };
-  
-  class Fibonacci {
-    constructor(){ this.curr = 1; this.prevVal = 0; }
-    next(){ const n = this.curr + this.prevVal; this.prevVal = this.curr; this.curr = n; return this.curr; }
-    previous(){ const n = this.prevVal; this.prevVal = this.curr - this.prevVal; this.curr = n; return this.curr; }
-  }
-
-  const fib1 = new Fibonacci();
-  const fib2 = new Fibonacci();
+  });
 
   new p5(function(p){
     let points = [];
@@ -28,12 +20,12 @@
       p.angleMode(p.DEGREES);
       p.textFont('Atkinson Hyperlegible, Atkinson Hyperlegible Mono, monospace', 12);
 
-      // Get colors once
+      // Cache VGA colors once in setup for efficiency
       bgColor = getVGAColor('--c-bg');
       textColor = getVGAColor('--c-text');
       pointColor = getVGAColor('--c-accent');
       
-      // Store p5 instance globally for SiteBoy component communication
+      // Register p5 instance for SiteBoy component communication
       if (window.siteBoyP5Component) {
         window.siteBoyP5Component.p5Instance = p;
       }
@@ -43,6 +35,16 @@
     p.updateFromSiteBoy = function(key, value, fullState) {
       // This function is called when SiteBoy controls change
       // The sketch will automatically redraw with new values
+    };
+    
+    // Handle window resize for responsive canvas
+    p.windowResized = function() {
+      const container = document.getElementById('phyllo-manual');
+      if (container) {
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight || containerWidth * 0.75; // 4:3 aspect ratio fallback
+        p.resizeCanvas(containerWidth, containerHeight);
+      }
     };
 
     function generateSpiral(params, pointCount, desiredRadius, deltaTheta) {

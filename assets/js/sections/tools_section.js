@@ -20,7 +20,10 @@ const ToolsSection = {
         '#tools/font-analysis',
         '#tools/color-quantizer',
         '#tools/pixel-tiler',
-        '#tools/polygon-calculator'
+        '#tools/polygon-calculator',
+        '#tools/asteroid-belt',
+        '#tools/clock',
+        '#tools/about-you'
     ],
     
     /**
@@ -89,6 +92,21 @@ const ToolsSection = {
                 id: 'polygon-calculator',
                 title: 'POLYGON CALCULATOR',
                 description: 'Interactive polygon geometry with mathematical precision and SVG export'
+            },
+            {
+                id: 'asteroid-belt',
+                title: 'ASTEROID BELT',
+                description: 'Canvas-based asteroid belt visualization with configurable parameters and rotation animation'
+            },
+            {
+                id: 'clock',
+                title: 'CLOCK',
+                description: 'Real-time solar system visualization showing planetary positions using NASA JPL Keplerian elements. Yellow dot shows your position on Earth.'
+            },
+            {
+                id: 'about-you',
+                title: 'ABOUT YOU',
+                description: 'Browser fingerprinting and tracking demonstration — see everything a website can collect about you'
             }
         ];
         
@@ -137,7 +155,10 @@ const ToolsSection = {
             { label: 'FONT ANALYSIS', path: '#tools/font-analysis' },
             { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' },
             { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
-            { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' }
+            { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' },
+            { label: 'ASTEROID BELT', path: '#tools/asteroid-belt' },
+            { label: 'CLOCK', path: '#tools/clock' },
+            { label: 'ABOUT YOU', path: '#tools/about-you' }
         ];
         
         const currentPath = `#tools/${currentSubsection}`;
@@ -161,7 +182,10 @@ const ToolsSection = {
             { id: 'font-analysis', title: 'Font Analysis', description: 'Compare fonts and analyze detailed metrics with dynamic Google Fonts loading', path: '#tools/font-analysis' },
             { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' },
             { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
-            { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' }
+            { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' },
+            { id: 'asteroid-belt', title: 'Asteroid Belt', path: '#tools/asteroid-belt' },
+            { id: 'clock', title: 'Clock', path: '#tools/clock' },
+            { id: 'about-you', title: 'About You', path: '#tools/about-you' }
         ];
         
         return {
@@ -226,6 +250,15 @@ const ToolsSection = {
                 break;
             case 'color-quantizer':
                 this.renderColorQuantizer();
+                break;
+            case 'asteroid-belt':
+                this.renderAsteroidBelt();
+                break;
+            case 'clock':
+                this.renderClock();
+                break;
+            case 'about-you':
+                this.renderAboutYou();
                 break;
             default:
                 this.renderGenericTool(toolId);
@@ -412,6 +445,45 @@ const ToolsSection = {
      */
     renderPolygonCalculator() {
         const tool = new window.PolygonCalculator(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+        this.addBackLink();
+    },
+    
+    /**
+     * Render Asteroid Belt Tool - Canvas visualization
+     */
+    renderAsteroidBelt() {
+        const tool = new window.AsteroidBeltTool(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+        this.addBackLink();
+    },
+    
+    /**
+     * Render Clock Tool - Solar System visualization with planetary positions
+     */
+    renderClock() {
+        const tool = new window.SolarSystemTool(this.currentContainer, {
+            MF: window.LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+        this.addBackLink();
+    },
+    
+    /**
+     * Render About You Tool - Browser fingerprinting demonstration
+     */
+    renderAboutYou() {
+        const tool = new window.AboutYouTool(this.currentContainer, {
             MF: window.LayoutCalculator,
             Resize: window.ResizeManager
         });

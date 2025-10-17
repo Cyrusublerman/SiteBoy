@@ -18,7 +18,8 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 def main():
-    PORT = 8000
+    # Allow port to be specified as command line argument
+    PORT = 3000 if len(sys.argv) <= 1 else int(sys.argv[1])
     
     # Change to the directory containing this script's parent (project root)
     script_dir = os.path.dirname(os.path.abspath(__file__))

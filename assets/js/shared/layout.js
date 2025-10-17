@@ -940,9 +940,9 @@ export class PageFooter extends BaseComponent {
             
             // Instagram link (25%) - with right border separator
             const instagramLink = this.createElement('a', 'footer-item');
-            instagramLink.href = 'https://instagram.com';
+            instagramLink.href = 'https://www.instagram.com/a.einoder/';
             instagramLink.target = '_blank';
-            instagramLink.textContent = 'INSTAGRAM';
+            instagramLink.textContent = '@A.EINODER';
             instagramLink.style.cssText = `
                 position: absolute; top: 0; left: 25%; height: 100%; width: 25%;
                 display: flex; align-items: center; justify-content: center;
@@ -954,7 +954,7 @@ export class PageFooter extends BaseComponent {
             
             // Contact link (25%) - with right border separator  
             const contactLink = this.createElement('a', 'footer-item');
-            contactLink.href = 'mailto:contact@example.com';
+            contactLink.href = '#contact';
             contactLink.textContent = 'CONTACT';
             contactLink.style.cssText = `
                 position: absolute; top: 0; left: 50%; height: 100%; width: 25%;

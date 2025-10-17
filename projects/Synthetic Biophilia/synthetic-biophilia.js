@@ -33,15 +33,39 @@
                 };
             };
 
+            // Gallery images data
+            const galleryImages = [
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/closed 169 top.jpg', caption: 'Closed 169 Top View' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/closed 169 side.jpg', caption: 'Closed 169 Side View' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/dome from underneath 1.jpg', caption: 'Dome from Underneath 1' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/dome from underneath 2.jpg', caption: 'Dome from Underneath 2' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/joints 2.jpg', caption: 'Joint Details' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/lattice joint.jpg', caption: 'Lattice Joint' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/169 top4k1 no fill just lattice.jpg', caption: '169 Top View - Lattice Only' },
+                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/169 sidey4k1 no fill just lattice.jpg', caption: '169 Side View - Lattice Only' }
+            ];
+
+            // Create gallery loader function
+            const createGalleryLoader = () => {
+                return async () => {
+                    const carouselComponent = new ComponentLibrary.Carousel({ 
+                        images: galleryImages,
+                        enableZoom: true 
+                    }, deps);
+                    this.componentInstances.push(carouselComponent);
+                    return await carouselComponent.render();
+                };
+            };
+
             // Define the sections for the project page
             const sectionConfigs = [
                 { title: 'ABSTRACT', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/abstract.md'), defaultOpen: true },
-                { title: 'THEORY', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/theory.md'), defaultOpen: true },
+                { title: 'THEORY', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/theory.md'), defaultOpen: false },
                 { title: 'PHYLLOTAXIS', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/phyllotaxis.md'), defaultOpen: false },
                 { title: 'DOME FORMATION', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/dome-formation.md'), defaultOpen: false },
                 { title: 'LATTICE', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/lattice.md'), defaultOpen: false },
                 { title: 'LEAVES', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/leaves.md'), defaultOpen: false },
-                { title: 'GALLERY', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/gallery.md'), defaultOpen: false },
+                { title: 'GALLERY', contentLoader: createGalleryLoader(), defaultOpen: true },
                 { title: 'BLENDER CODE', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/blender-code.md'), defaultOpen: false },
                 { title: 'APPENDICES', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/appendices.md'), defaultOpen: false }
             ];

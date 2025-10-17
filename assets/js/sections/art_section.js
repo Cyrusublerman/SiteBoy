@@ -20,7 +20,15 @@ const ArtSection = {
         '#art/digital',
         '#art/generative', 
         '#art/sketches',
-        '#art/photography'
+        '#art/photography',
+        '#art/photography/life1',
+        '#art/photography/life2',
+        '#art/photography/morocco',
+        '#art/photography/nature',
+        '#art/photography/rom',
+        '#art/photography/snow',
+        '#art/photography/urban',
+        '#art/photography/all'
     ],
     
     // Gallery structure for backward compatibility
@@ -55,14 +63,20 @@ const ArtSection = {
                 { id: 'concept-art', title: 'Concept' }
             ]
         },
-        'photography': { 
-            title: 'PHOTOGRAPHY', 
-            description: 'Photographic works and visual documentation',
+        'photography': {
+            title: 'PHOTOGRAPHY',
+            description: 'Film photography collections across different themes and locations',
+            subsections: [
+                { id: 'life1', title: 'LIFE 1', count: 11 },
+                { id: 'life2', title: 'LIFE 2', count: 19 },
+                { id: 'morocco', title: 'MOROCCO', count: 52 },
+                { id: 'nature', title: 'NATURE', count: 4 },
+                { id: 'rom', title: 'ROM', count: 15 },
+                { id: 'snow', title: 'SNOW', count: 22 },
+                { id: 'urban', title: 'URBAN', count: 5 }
+            ],
             artworks: [
-                { id: 'portrait-01', title: 'Portrait 01' },
-                { id: 'landscape', title: 'Landscape' },
-                { id: 'street-photo', title: 'Street' },
-                { id: 'architecture', title: 'Architecture' }
+                { id: 'all', title: 'ALL PHOTOS', count: 158 }
             ]
         }
     },
@@ -86,6 +100,11 @@ const ArtSection = {
         
         if (!subsection) {
             this.renderArtIndex();
+        } else if (subsection === 'photography') {
+            this.renderPhotographyIndex();
+        } else if (subsection.startsWith('photography/')) {
+            const photoSection = subsection.replace('photography/', '');
+            this.renderPhotographyGallery(photoSection);
         } else {
             this.renderGallery(subsection);
         }
@@ -313,9 +332,20 @@ const ArtSection = {
             border-top: 1px solid var(--c-border);
         `;
         
+        // Get preview items - handle galleries with subsections (like photography)
+        let previewItems = [];
+        if (gallery.subsections && gallery.subsections.length > 0) {
+            // Gallery has subsections - get sample images from each subsection
+            const subsectionSamples = this.getGalleryPreviewFromSubsections(galleryKey, gallery.subsections);
+            previewItems = subsectionSamples.slice(0, 4);
+        } else if (gallery.artworks && gallery.artworks.length > 0) {
+            // Gallery has direct artworks
+            previewItems = gallery.artworks.slice(0, 4);
+        }
+        
         // Create TOCGallery component for preview
         const galleryPreview = new ComponentLibrary.TOCGallery({
-            items: gallery.artworks.slice(0, 4), // First 4 artworks
+            items: previewItems,
             cols: 4,
             showMore: true,
             showMoreText: 'Show More →',
@@ -367,6 +397,487 @@ const ArtSection = {
         if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
             this.navigationCallbacks.navigateToSection('art', galleryKey);
         }
+    },
+    
+    /**
+     * Get preview images from subsections (e.g., for photography gallery)
+     * Returns array of items formatted for TOCGallery component
+     */
+    getGalleryPreviewFromSubsections(galleryKey, subsections) {
+        const previewItems = [];
+        
+        if (galleryKey === 'photography') {
+            // Get one image from each of the first 4 subsections
+            subsections.slice(0, 4).forEach(subsection => {
+                const images = this.getPhotographyImages(subsection.id);
+                if (images.length > 0) {
+                    const firstImage = images[0];
+                    previewItems.push({
+                        id: subsection.id,
+                        title: subsection.title,
+                        image: firstImage.thumb || firstImage.src
+                    });
+                }
+            });
+        } else {
+            // For other galleries with subsections in the future
+            subsections.slice(0, 4).forEach(subsection => {
+                previewItems.push({
+                    id: subsection.id,
+                    title: subsection.title,
+                    image: null // Placeholder
+                });
+            });
+        }
+        
+        return previewItems;
+    },
+    
+    /**
+     * Render photography index with subsections TOC
+     */
+    renderPhotographyIndex() {
+        console.log('📸 Rendering photography index');
+        
+        this.currentContainer.innerHTML = '';
+        this.currentContainer.classList.add('toc-container');
+        
+        const photography = this.galleryStructure['photography'];
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        
+        // Create TOC items for each subsection (art-toc style)
+        photography.subsections.forEach((subsection, index) => {
+            this.createPhotoArtTOCItem(subsection, index + 1);
+        });
+        
+        // VIEW ALL PHOTOS button after TOC - perfectly connected with no gap
+        const viewAllContainer = this.createElement('div', 'view-all-container');
+        viewAllContainer.style.cssText = `
+            height: ${F * 6}px;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            border-left: 1px solid var(--c-border);
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+            margin: 0;
+            padding: 0;
+        `;
+        
+        const viewAllBtn = new ComponentLibrary.Button({
+            text: 'VIEW ALL PHOTOS (128)',
+            onClick: () => {
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    this.navigationCallbacks.navigateToSection('art', 'photography/all');
+                }
+            }
+        }, { MF: window.MathematicalFoundation });
+        this.componentInstances.push(viewAllBtn);
+        
+        const btnElement = viewAllBtn.render();
+        // Make button fill entire container with no margins
+        btnElement.style.cssText += `
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: none;
+            border-radius: 0;
+        `;
+        
+        viewAllContainer.appendChild(btnElement);
+        this.currentContainer.appendChild(viewAllContainer);
+        
+        // Add bottom padding
+        const bottomPadding = this.createElement('div', 'toc-bottom-padding');
+        bottomPadding.style.cssText = `height: ${F * 4}px; width: 100%;`;
+        this.currentContainer.appendChild(bottomPadding);
+        
+        console.log('✅ Photography index rendered');
+    },
+    
+    /**
+     * Create photography TOC item (art-toc style with gallery preview)
+     */
+    createPhotoArtTOCItem(subsection, itemIndex) {
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        const headerHeight = F * 4; // 48px (4F like art-toc)
+        const galleryHeight = F * 24; // 288px (24F for gallery)
+        const tocItemHeight = headerHeight + galleryHeight; // 28F total (336px)
+        
+        const tocItem = this.createElement('div', 'toc-item art-toc-item');
+        tocItem.style.cssText = `
+            height: ${tocItemHeight}px; cursor: pointer; display: flex; flex-direction: column;
+            border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); 
+            border-top: ${itemIndex === 1 ? '1px solid var(--c-border)' : 'none'};
+            border-bottom: 1px solid var(--c-border);
+            font-family: 'Atkinson Hyperlegible Mono', monospace; background: var(--c-bg);
+        `;
+        
+        // Top half: Like blog TOC (number + title + description) - 4F height
+        const topHalf = this.createElement('div', 'toc-item-top');
+        topHalf.style.cssText = `
+            height: ${headerHeight}px; display: flex; align-items: stretch;
+        `;
+        
+        // Number box - 4F × 4F square
+        const numberBox = this.createElement('div', 'toc-number');
+        numberBox.textContent = String(itemIndex).padStart(2, '0');
+        numberBox.style.cssText = `
+            width: ${headerHeight}px; height: ${headerHeight}px; background: var(--c-text);
+            color: var(--c-bg); display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        `;
+        
+        // Content
+        const content = this.createElement('div', 'toc-content');
+        content.style.cssText = `
+            flex: 1; padding: ${F}px ${F * 2}px; display: flex; flex-direction: column;
+            justify-content: center; border-left: 1px solid var(--c-border);
+        `;
+        
+        const titleDiv = this.createElement('div');
+        titleDiv.textContent = subsection.title;
+        titleDiv.style.cssText = `
+            margin: 0 0 4px 0; text-transform: uppercase; font-size: 14px; line-height: 1.2;
+        `;
+        
+        const countDiv = this.createElement('div');
+        countDiv.textContent = `${subsection.count} photographs`;
+        countDiv.style.cssText = `
+            margin: 0; font-size: 11px; opacity: 0.7; line-height: 1.2;
+        `;
+        
+        content.appendChild(titleDiv);
+        content.appendChild(countDiv);
+        
+        // Arrow - 4F × 4F square
+        const arrow = this.createElement('div', 'toc-arrow');
+        arrow.textContent = '→';
+        arrow.style.cssText = `
+            width: ${headerHeight}px; height: ${headerHeight}px; display: flex;
+            align-items: center; justify-content: center; font-size: 16px;
+            border-left: 1px solid var(--c-border); flex-shrink: 0;
+        `;
+        
+        topHalf.appendChild(numberBox);
+        topHalf.appendChild(content);
+        topHalf.appendChild(arrow);
+        
+        // Bottom half: Gallery preview - exactly 24F height
+        const bottomHalf = this.createElement('div', 'toc-item-bottom');
+        bottomHalf.style.cssText = `
+            height: ${galleryHeight}px; display: flex; align-items: stretch;
+            padding: 0; margin: 0;
+            border-top: 1px solid var(--c-border);
+        `;
+        
+        // Get sample images for this photography subsection
+        const sampleImages = this.getPhotographyImages(subsection.id);
+        
+        // Create TOCGallery component for preview
+        const galleryPreview = new ComponentLibrary.TOCGallery({
+            items: sampleImages.slice(0, 4).map(img => ({
+                id: img.title,
+                title: img.title,
+                image: img.thumb || img.src
+            })),
+            cols: 4,
+            showMore: true,
+            showMoreText: 'Show More →',
+            onItemClick: (image, index) => {
+                console.log(`📸 Photo clicked: ${image.title}`);
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    this.navigationCallbacks.navigateToSection('art', `photography/${subsection.id}`);
+                }
+            },
+            onShowMoreClick: () => {
+                if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                    this.navigationCallbacks.navigateToSection('art', `photography/${subsection.id}`);
+                }
+            }
+        }, {
+            MF: window.MathematicalFoundation
+        });
+        
+        this.componentInstances.push(galleryPreview);
+        bottomHalf.appendChild(galleryPreview.render());
+        
+        tocItem.appendChild(topHalf);
+        tocItem.appendChild(bottomHalf);
+        
+        // Add hover effects to top half only
+        topHalf.addEventListener('mouseenter', () => {
+            tocItem.style.background = 'var(--c-text)';
+            tocItem.style.color = 'var(--c-bg)';
+            numberBox.style.background = 'var(--c-bg)';
+            numberBox.style.color = 'var(--c-text)';
+        });
+        
+        topHalf.addEventListener('mouseleave', () => {
+            tocItem.style.background = '';
+            tocItem.style.color = '';
+            numberBox.style.background = 'var(--c-text)';
+            numberBox.style.color = 'var(--c-bg)';
+        });
+        
+        // Add click handler to top half
+        topHalf.addEventListener('click', () => {
+            if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                this.navigationCallbacks.navigateToSection('art', `photography/${subsection.id}`);
+            }
+        });
+        
+        this.currentContainer.appendChild(tocItem);
+    },
+    
+    /**
+     * Create photography TOC item (old style - kept for reference)
+     */
+    createPhotoTOCItem(subsection, itemIndex) {
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        const headerHeight = F * 3; // 36px
+        
+        const tocItem = this.createElement('div', 'toc-item photo-toc-item');
+        tocItem.style.cssText = `
+            height: ${headerHeight}px; cursor: pointer; display: flex;
+            border-left: 1px solid var(--c-border); border-right: 1px solid var(--c-border); 
+            border-top: ${itemIndex === 1 ? '1px solid var(--c-border)' : 'none'};
+            border-bottom: 1px solid var(--c-border);
+            font-family: 'Atkinson Hyperlegible Mono', monospace; background: var(--c-bg);
+        `;
+        
+        // Number box - 3F × 3F square
+        const numberBox = this.createElement('div', 'toc-number');
+        numberBox.textContent = String(itemIndex).padStart(2, '0');
+        numberBox.style.cssText = `
+            width: ${headerHeight}px; height: ${headerHeight}px; background: var(--c-text);
+            color: var(--c-bg); display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        `;
+        
+        // Content
+        const content = this.createElement('div', 'toc-content');
+        content.style.cssText = `
+            flex: 1; padding: ${F}px ${F * 2}px; display: flex; flex-direction: column;
+            justify-content: center; border-left: 1px solid var(--c-border);
+        `;
+        
+        const titleDiv = this.createElement('div');
+        titleDiv.textContent = `${subsection.title} (${subsection.count} photos)`;
+        titleDiv.style.cssText = `
+            margin: 0; text-transform: uppercase; font-size: 13px; line-height: 1.2;
+        `;
+        
+        content.appendChild(titleDiv);
+        
+        // Arrow - 3F × 3F square
+        const arrow = this.createElement('div', 'toc-arrow');
+        arrow.textContent = '→';
+        arrow.style.cssText = `
+            width: ${headerHeight}px; height: ${headerHeight}px; display: flex;
+            align-items: center; justify-content: center; font-size: 16px;
+            border-left: 1px solid var(--c-border); flex-shrink: 0;
+        `;
+        
+        tocItem.appendChild(numberBox);
+        tocItem.appendChild(content);
+        tocItem.appendChild(arrow);
+        
+        // Add hover effects
+        tocItem.addEventListener('mouseenter', () => {
+            tocItem.style.background = 'var(--c-text)';
+            tocItem.style.color = 'var(--c-bg)';
+            numberBox.style.background = 'var(--c-bg)';
+            numberBox.style.color = 'var(--c-text)';
+        });
+        
+        tocItem.addEventListener('mouseleave', () => {
+            tocItem.style.background = '';
+            tocItem.style.color = '';
+            numberBox.style.background = 'var(--c-text)';
+            numberBox.style.color = 'var(--c-bg)';
+        });
+        
+        // Add click handler
+        tocItem.addEventListener('click', () => {
+            if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
+                this.navigationCallbacks.navigateToSection('art', `photography/${subsection.id}`);
+            }
+        });
+        
+        this.currentContainer.appendChild(tocItem);
+    },
+    
+    /**
+     * Render photography gallery (for individual collections or "all")
+     */
+    renderPhotographyGallery(photoSection) {
+        console.log(`📸 Rendering photography gallery: ${photoSection}`);
+        
+        this.currentContainer.innerHTML = '';
+        
+        // Get images for this section
+        const images = this.getPhotographyImages(photoSection);
+        
+        // Create MasonryGallery component (CSS column-based, much simpler)
+        const gallery = new ComponentLibrary.MasonryGallery({
+            images: images,
+            gap: 0,
+            columnsMobile: 1,
+            columnsTablet: 2,
+            columnsDesktop: 3,
+            columnsWide: 4,
+            loadBuffer: 200 // Start loading 200px before visible
+        }, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
+        });
+        
+        this.componentInstances.push(gallery);
+        this.currentContainer.appendChild(gallery.render());
+        
+        // Setup subheader for photography gallery
+        this.setupSubheaderForPhotography(photoSection);
+        
+        console.log(`✅ Photography gallery rendered: ${photoSection}`);
+    },
+    
+    /**
+     * Get photography images for a specific section
+     * Uses processed thumbs/display/zoom structure
+     */
+    getPhotographyImages(photoSection) {
+        const basePath = '/art/Photos/FILM';
+        const images = [];
+        
+        const sectionMap = {
+            'life1': 'Life1',
+            'life2': 'Life2',
+            'morocco': 'Morocco',
+            'nature': 'Nature',
+            'rom': 'Rom',
+            'snow': 'Snow',
+            'urban': 'Urban'
+        };
+        
+        // Complete image lists from processed folders
+        const imageLists = {
+            'Life1': [
+                '237040610016', '237040610021', '237040610022', '237040610023', '237040610024',
+                '237040610025', '237040610027', '237040610028', '237040610029', '237040610030',
+                '237040610032'
+            ],
+            'Life2': [
+                '262556200009', '262556200012', '262556200013', '262556200015', '262556200018',
+                '262556200031', '262556200032', '262556200033', '262556200035',
+                'R1-01040-0000', 'R1-01040-0001', 'R1-01040-0002', 'R1-01040-0004', 'R1-01040-0005',
+                'R1-01040-0006', 'R1-01040-0007', 'R1-01040-0008', 'R1-01040-0009', 'R1-01040-0010'
+            ],
+            'Morocco': [
+                '237040620001', '237040620002', '237040620003', '237040620004', '237040620009', '237040620011',
+                '237040620012', '237040620013', '237040620015', '237040620016', '237040620018', '237040620019',
+                '237040620020', '237040620021', '237040620024', '237040620027', '237040620030', '237040620032',
+                '237040620036', '237040630002', '237040630003', '237040630004', '237040630005', '237040630006',
+                '237040630007', '237040630010', '237040630011', '237040630012', '237040630013', '237040630014',
+                '237040630015', '237040630016', '237040630017', '237040630018', '237040630019', '237040630020',
+                '237040630021', '237040630022', '237040630023', '237040630024', '237040630025', '237040630027',
+                '237040630029', '237040630031', '237040630034', '237040630035', '262556210002', '262556210003',
+                '262556210004', '262556210005', '262556210006', '262556210007'
+            ],
+            'Nature': ['262556200028', '262556200029', '262556200030', 'R1-01040-0003'],
+            'Rom': [
+                '237040610034', '237040610035', '237040610036', '262556200001', '262556200002', '262556200003',
+                '262556200004', '262556200006', '262556210030', '262556210031', '262556210032', '262556210033',
+                '262556210034', '262556210035', '262556210036'
+            ],
+            'Snow': [
+                '262556210008', '262556210009', '262556210010', '262556210011', '262556210012', '262556210013',
+                '262556210014', '262556210015', '262556210016', '262556210017', '262556210018', '262556210019',
+                '262556210020', '262556210021', '262556210022', '262556210023', '262556210024', '262556210025',
+                '262556210026', '262556210027', '262556210028', '262556210029'
+            ],
+            'Urban': ['237040610010', '237040610011', '237040610012', '237040610014', '237040620001']
+        };
+        
+        if (photoSection === 'all') {
+            // Get all images from all sections
+            Object.keys(sectionMap).forEach(key => {
+                const folderName = sectionMap[key];
+                const fileList = imageLists[folderName] || [];
+                fileList.forEach(filename => {
+                    images.push({
+                        thumb: `${basePath}/${folderName}/thumbs/${filename}.jpg`,
+                        src: `${basePath}/${folderName}/display/${filename}.jpg`,
+                        zoom: `${basePath}/${folderName}/zoom/${filename}.jpg`,
+                        title: `${folderName} - ${filename}`,
+                        caption: `Film photography from ${folderName} collection`
+                    });
+                });
+            });
+        } else {
+            // Get images for specific section
+            const folderName = sectionMap[photoSection];
+            if (folderName && imageLists[folderName]) {
+                imageLists[folderName].forEach(filename => {
+                    images.push({
+                        thumb: `${basePath}/${folderName}/thumbs/${filename}.jpg`,
+                        src: `${basePath}/${folderName}/display/${filename}.jpg`,
+                        zoom: `${basePath}/${folderName}/zoom/${filename}.jpg`,
+                        title: `${folderName} - ${filename}`,
+                        caption: `Film photography from ${folderName} collection`
+                    });
+                });
+            }
+        }
+        
+        return images;
+    },
+    
+    /**
+     * Setup subheader for photography gallery
+     */
+    setupSubheaderForPhotography(photoSection) {
+        if (!window.Subheader) return;
+        
+        const titles = {
+            'life1': 'LIFE 1',
+            'life2': 'LIFE 2',
+            'morocco': 'MOROCCO',
+            'nature': 'NATURE',
+            'rom': 'ROM',
+            'snow': 'SNOW',
+            'urban': 'URBAN',
+            'all': 'ALL PHOTOS'
+        };
+        
+        window.Subheader.updateTitle(titles[photoSection] || 'PHOTOGRAPHY');
+        
+        // Build dropdown items
+        const allPages = [
+            { label: '← BACK TO PHOTOGRAPHY', path: '#art/photography', isCurrent: false },
+            { label: 'ALL PHOTOS (128)', path: '#art/photography/all', isCurrent: photoSection === 'all' },
+            { label: 'LIFE 1 (11)', path: '#art/photography/life1', isCurrent: photoSection === 'life1' },
+            { label: 'LIFE 2 (19)', path: '#art/photography/life2', isCurrent: photoSection === 'life2' },
+            { label: 'MOROCCO (52)', path: '#art/photography/morocco', isCurrent: photoSection === 'morocco' },
+            { label: 'NATURE (4)', path: '#art/photography/nature', isCurrent: photoSection === 'nature' },
+            { label: 'ROM (15)', path: '#art/photography/rom', isCurrent: photoSection === 'rom' },
+            { label: 'SNOW (22)', path: '#art/photography/snow', isCurrent: photoSection === 'snow' },
+            { label: 'URBAN (5)', path: '#art/photography/urban', isCurrent: photoSection === 'urban' }
+        ];
+        
+        window.Subheader.setDropdownContent(allPages, (item) => {
+            if (item.path) {
+                this.navigateToPage(item.path);
+            }
+        });
+        
+        window.Subheader.show();
+        
+        if (window.SiteBoyApp && window.SiteBoyApp.setSubheaderState) {
+            window.SiteBoyApp.setSubheaderState(true);
+        }
+        
+        console.log('✅ Subheader setup for photography:', photoSection);
     },
     
     /**

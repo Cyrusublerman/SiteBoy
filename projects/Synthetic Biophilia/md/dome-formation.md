@@ -1,5 +1,3 @@
-# Dome Formation
-
 ## From Phyllotactic Field to Dome
 
 The phyllotactic spiral, defined in polar coordinates as
@@ -115,3 +113,4 @@ and retuning $C$ so that $r_k\approx r_k'$ at $k=N$; for this project the linear
 * Vogel, H. (1979). A better way to construct the sunflower head. *Mathematical Biosciences*. [ScienceDirect](https://www.sciencedirect.com/science/article/pii/0025556479900804)
 * Adler, I., Barabé, D., & Jean, R.V. (1997). A history of the study of phyllotaxis. *Annals of Botany*. [Oxford Academic](https://academic.oup.com/aob/article/80/3/231/2587655)
 * Reinhardt, D., & Gola, E.M. (2022). Phyllotaxis—From patterns of organogenesis at the meristem to shoot architecture. *Progress in Biophysics & Molecular Biology*. [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S007961072300038X)
+

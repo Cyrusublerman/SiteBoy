@@ -1,3 +1,28 @@
+## Tools
+
+### About You – Browser Fingerprinting & Tracking Demo
+
+**Location:** `#tools/about-you` in the SiteBoy app  
+**File:** `assets/js/tools/about-you-tool.js`
+
+A comprehensive demonstration of browser-based data collection techniques integrated into the SiteBoy framework. Shows everything a website can silently collect about visitors.
+
+**What it tracks:**
+- Network identity (IP, geolocation, ISP, connection speed)
+- System fingerprint (OS, browser, hardware specs)
+- Display configuration (resolution, color depth, refresh rate)
+- Power & sensors (battery status, device motion)
+- Behavioral analysis (mouse tracking, typing speed, reading patterns, scroll behavior)
+- Unique identifiers (canvas, WebGL, browser fingerprints)
+- Cross-reference potential (OSINT tools, identity discovery chains)
+
+**Usage:**
+Navigate to `#tools/about-you` in the SiteBoy app or visit the Tools section and select "About You" from the index.
+
+**Purpose:** Educational tool demonstrating the invasive nature of web tracking and fingerprinting techniques. All tracking happens client-side; no data is sent anywhere. Shows what standard JavaScript APIs can reveal without user permission.
+
+---
+
 ## pdf2md-here – Drop-in PDF → Markdown converter
 
 Create editor-friendly Markdown and extracted assets from PDFs by simply placing this script in a folder and running it.

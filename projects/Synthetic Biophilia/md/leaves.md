@@ -1,5 +1,3 @@
-# Decorative (Leaves, Glazing, Attachments)
-
 ## From Structure to Surface
 
 With the lattice defined, the dome shifts from a purely structural field to a surface capable of carrying attachments and skinning strategies. Joints become anchor points for outer components, and the trapezoidal negative spaces become candidates for glazing. The design requirement remains constant: any added element must respect the dome’s hollow interior and the flow dictated by the phyllotactic distribution.
@@ -161,7 +159,11 @@ This supports both fully glazed and partially screened domes without breaking th
 
 ## Placeholders for Renders
 
-* *D1:* Monocle leaves (circular discs) across the shell.
-* *D2:* Tilt gradient (flat at apex → horizontal at base).
-* *D3:* Twisted leaf array showing azimuthal modulation.
-* *D4:* Mixed glazing + leaves; pane tint gradient by height.
+![Monocle leaves across the shell](../assets/images/synthetic-biophilia/thumbs/closed 169 top.jpg)
+
+![Tilt gradient (flat at apex → horizontal at base)](../assets/images/synthetic-biophilia/thumbs/closed 169 side.jpg)
+
+![Twisted leaf array showing azimuthal modulation](../assets/images/synthetic-biophilia/thumbs/dome from underneath 1.jpg)
+
+![Mixed glazing + leaves; pane tint gradient by height](../assets/images/synthetic-biophilia/thumbs/dome from underneath 2.jpg)
+

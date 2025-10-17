@@ -811,16 +811,98 @@ export class ButtonGroup extends BaseComponent {
 }
 
 /**
+ * Lightbox - Minimal overlay for zooming images on click
+ */
+export class Lightbox extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'lightbox' }, deps);
+        this.src = options.src || '';
+        this.onClose = options.onClose || null;
+        this.overlay = null;
+        this.imgEl = null;
+        this.closeBtn = null;
+    }
+    
+    render() {
+        if (!this.element) {
+            // Container is not attached; overlay attaches to document.body
+            this.element = this.createElement('div', 'lightbox component');
+        }
+        return this.element;
+    }
+    
+    open(src) {
+        this.src = src || this.src;
+        if (!this.overlay) {
+            this.overlay = this.createElement('div', 'lightbox-overlay');
+            const inner = this.createElement('div', 'lightbox-inner');
+            this.imgEl = this.createElement('img', 'lightbox-image');
+            this.imgEl.src = this.src;
+            this.imgEl.alt = '';
+            this.closeBtn = this.createElement('button', 'lightbox-close');
+            this.closeBtn.type = 'button';
+            this.closeBtn.textContent = 'X';
+            
+            // Close interactions
+            this.closeBtn.addEventListener('click', () => this.close());
+            this.overlay.addEventListener('click', (e) => {
+                if (e.target === this.overlay) this.close();
+            });
+            document.addEventListener('keydown', this._escHandler = (e) => {
+                if (e.key === 'Escape') this.close();
+            });
+            
+            inner.appendChild(this.imgEl);
+            inner.appendChild(this.closeBtn);
+            this.overlay.appendChild(inner);
+        }
+        // Attach using BaseComponent helper
+        this.attachToBody(this.overlay);
+        this.overlay.style.display = 'flex';
+    }
+    
+    close() {
+        if (this.overlay && this.overlay.parentNode) {
+            this.overlay.parentNode.removeChild(this.overlay);
+        }
+        if (this._escHandler) {
+            document.removeEventListener('keydown', this._escHandler);
+            this._escHandler = null;
+        }
+        if (this.onClose) this.onClose();
+    }
+    
+    destroy() {
+        this.close();
+        this.overlay = null;
+        this.imgEl = null;
+        this.closeBtn = null;
+        super.destroy();
+    }
+}
+/**
  * CollapsibleSection - A self-contained collapsible section with a header and content area.
  */
 export class CollapsibleSection extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'collapsible-section' }, deps);
         this.title = this.options.title || 'Section';
-        this.defaultOpen = this.options.defaultOpen || false;
+        this.defaultOpen = this.options.defaultOpen || false; // Use option or default to collapsed
         this.isFirst = this.options.isFirst || false;
         this.contentLoader = this.options.contentLoader; // An async function that returns a DOM element
-        this.isOpen = this.defaultOpen;
+        // Show header title by default; allow opt-in hide via hideHeaderTitle: true
+        this.hideHeaderTitle = this.options.hideHeaderTitle === true;
+        // Compute persistent storage key with version (v2 for new defaultOpen behavior)
+        const baseKey = this.options.storageKey || this.options.id || this.title || 'section';
+        const slug = String(baseKey).toLowerCase().replace(/\s+/g, '-');
+        this.storageKey = `sb:collapsible:v2:${window.location.pathname}:${slug}`;
+        // Load persisted state; use defaultOpen if no saved state
+        try {
+            const saved = window.localStorage.getItem(this.storageKey);
+            this.isOpen = saved === null ? this.defaultOpen : saved === '1';
+        } catch (e) {
+            this.isOpen = this.defaultOpen;
+        }
         this.contentLoaded = false;
         this.componentInstances = []; // To track any sub-components if needed
         this.F = this.deps.MF ? this.deps.MF.F : 12;
@@ -862,14 +944,17 @@ export class CollapsibleSection extends BaseComponent {
             'border-bottom': this.isOpen ? '1px solid var(--c-border)' : 'none',
         });
 
-        const title = this.createElement('span', 'header-title');
-        title.textContent = this.title;
-        this.applyStyles(title, {
-            'font-family': '"Atkinson Hyperlegible", monospace',
-            'font-size': `${this.F}px`,
-            'font-weight': 'normal',
-            'text-transform': 'uppercase',
-        });
+        if (!this.hideHeaderTitle) {
+            const title = this.createElement('span', 'header-title');
+            title.textContent = this.title;
+            this.applyStyles(title, {
+                'font-family': '"Atkinson Hyperlegible", monospace',
+                'font-size': `${this.F}px`,
+                'font-weight': 'normal',
+                'text-transform': 'uppercase',
+            });
+            this.header.appendChild(title);
+        }
 
         this.indicator = this.createElement('span', 'header-indicator');
         this.indicator.textContent = this.isOpen ? '−' : '+';
@@ -879,8 +964,6 @@ export class CollapsibleSection extends BaseComponent {
             'width': `${this.F * 2}px`,
             'text-align': 'center',
         });
-
-        this.header.appendChild(title);
         this.header.appendChild(this.indicator);
         this.element.appendChild(this.header);
     }
@@ -950,6 +1033,10 @@ export class CollapsibleSection extends BaseComponent {
         this.content.style.display = this.isOpen ? 'block' : 'none';
         this.indicator.textContent = this.isOpen ? '−' : '+';
         this.header.style.borderBottom = this.isOpen ? '1px solid var(--c-border)' : 'none';
+        // Persist state
+        try {
+            window.localStorage.setItem(this.storageKey, this.isOpen ? '1' : '0');
+        } catch (e) {}
     }
 
     _attachHeaderListener() {
@@ -969,6 +1056,138 @@ export class CollapsibleSection extends BaseComponent {
     destroy() {
         this.componentInstances.forEach(instance => instance.destroy && instance.destroy());
         this.componentInstances = [];
+        super.destroy();
+    }
+}
+
+/**
+ * Carousel - Minimalist image carousel with VGA aesthetic
+ * Full-width image display with prev/next controls below
+ */
+export class Carousel extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'carousel' }, deps);
+        this.images = options.images || []; // Array of { src, caption, alt }
+        this.currentIndex = 0;
+        this.enableZoom = options.enableZoom !== false; // Default true
+        this.F = this.deps.MF ? this.deps.MF.F : 12;
+    }
+
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'carousel');
+            
+            // Image container - full width
+            this.imageContainer = this.createElement('div', 'carousel-image-container');
+            this.element.appendChild(this.imageContainer);
+            
+            // Controls container - split into two equal parts
+            this.controlsContainer = this.createElement('div', 'carousel-controls');
+            
+            // Left arrow button
+            this.prevButton = this.createElement('button', 'carousel-button carousel-button-prev');
+            this.prevButton.textContent = '<';
+            this.prevButton.type = 'button';
+            this.prevButton.addEventListener('click', () => this.prev());
+            
+            // Right arrow button
+            this.nextButton = this.createElement('button', 'carousel-button carousel-button-next');
+            this.nextButton.textContent = '>';
+            this.nextButton.type = 'button';
+            this.nextButton.addEventListener('click', () => this.next());
+            
+            this.controlsContainer.appendChild(this.prevButton);
+            this.controlsContainer.appendChild(this.nextButton);
+            this.element.appendChild(this.controlsContainer);
+            
+            // Render initial image
+            this.renderImage();
+            
+            // Keyboard navigation
+            this._keyHandler = (e) => {
+                if (e.key === 'ArrowLeft') this.prev();
+                if (e.key === 'ArrowRight') this.next();
+            };
+            document.addEventListener('keydown', this._keyHandler);
+        }
+        return this.element;
+    }
+    
+    renderImage() {
+        if (this.images.length === 0) {
+            this.imageContainer.innerHTML = '<p style="padding: var(--f); text-align: center;">No images available</p>';
+            return;
+        }
+        
+        const currentImage = this.images[this.currentIndex];
+        this.imageContainer.innerHTML = '';
+        
+        // Create image element
+        const img = this.createElement('img', 'carousel-image');
+        img.src = currentImage.src;
+        img.alt = currentImage.alt || currentImage.caption || `Image ${this.currentIndex + 1}`;
+        
+        // Add zoom capability
+        if (this.enableZoom && window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', () => {
+                const lb = new window.ComponentLibrary.Lightbox({ src: currentImage.src }, this.deps);
+                lb.open(currentImage.src);
+            });
+        }
+        
+        this.imageContainer.appendChild(img);
+        
+        // Add caption if exists
+        if (currentImage.caption) {
+            const caption = this.createElement('div', 'carousel-caption');
+            caption.textContent = currentImage.caption;
+            this.imageContainer.appendChild(caption);
+        }
+        
+        // Update button states
+        this.updateButtonStates();
+    }
+    
+    updateButtonStates() {
+        // Disable prev button on first image
+        if (this.currentIndex === 0) {
+            this.prevButton.disabled = true;
+            this.prevButton.style.opacity = '0.3';
+        } else {
+            this.prevButton.disabled = false;
+            this.prevButton.style.opacity = '1';
+        }
+        
+        // Disable next button on last image
+        if (this.currentIndex === this.images.length - 1) {
+            this.nextButton.disabled = true;
+            this.nextButton.style.opacity = '0.3';
+        } else {
+            this.nextButton.disabled = false;
+            this.nextButton.style.opacity = '1';
+        }
+    }
+    
+    next() {
+        if (this.currentIndex < this.images.length - 1) {
+            this.currentIndex++;
+            this.renderImage();
+        }
+    }
+    
+    prev() {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.renderImage();
+        }
+    }
+    
+    destroy() {
+        if (this._keyHandler) {
+            document.removeEventListener('keydown', this._keyHandler);
+            this._keyHandler = null;
+        }
         super.destroy();
     }
 }

@@ -6,9 +6,63 @@
  * - JSON content loading and validation  
  * - Component integration and lifecycle
  * - Router integration for content rendering
+ * - ⚠️ AUTOMATIC CLEANUP SYSTEM (see below)
  * 
  * @version 3.0.0 - Simplified Architecture
- * @dependencies ['ComponentLibrary', 'Router', './config.js'] 
+ * @dependencies ['ComponentLibrary', 'Router', './config.js']
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ CRITICAL: CLEANUP LIFECYCLE SYSTEM
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 
+ * This app AUTOMATICALLY cleans up sections when navigating between pages.
+ * 
+ * WHY THIS EXISTS:
+ * Without cleanup, page-specific code persists across navigation causing:
+ * ❌ Mouse tracking still active after leaving page
+ * ❌ Intervals/timeouts running forever
+ * ❌ Canvas elements accumulating in body
+ * ❌ Memory leaks from uncleaned resources
+ * ❌ Multiple event handlers stacking up
+ * 
+ * HOW IT WORKS:
+ * 1. User navigates from Page A → Page B
+ * 2. buildPageForRoute() calls cleanupCurrentSection()
+ * 3. Page A's section.cleanup() is invoked
+ * 4. section.cleanup() calls ComponentLibrary.destroyTracked()
+ * 5. Each tool's destroy() removes listeners, intervals, canvases
+ * 6. DOM cleared, Page B loads fresh
+ * 
+ * REQUIREMENTS FOR ALL DEVELOPERS:
+ * 
+ * ✅ SECTIONS MUST:
+ * - Implement cleanup() method
+ * - Call ComponentLibrary.destroyTracked(this.componentInstances)
+ * - Clear this.currentContainer.innerHTML
+ * 
+ * ✅ TOOLS MUST:
+ * - Implement destroy() method
+ * - Store event handlers: this.boundHandlers = { mouseMove: null, ... }
+ * - Remove ALL event listeners in destroy()
+ * - Clear ALL intervals/timeouts
+ * - Remove ALL elements added to body (canvas, etc.)
+ * - Destroy ALL componentInstances
+ * 
+ * TESTING YOUR CLEANUP:
+ * 1. Navigate to your page
+ * 2. Open DevTools Console
+ * 3. Navigate away
+ * 4. Look for: "🧹 Cleaning up section: YourSection"
+ * 5. Look for: "✅ YourSection cleanup completed"
+ * 
+ * ⚠️ IF YOU SEE: "⚠️ has no cleanup() method" → FIX IMMEDIATELY!
+ * 
+ * EXAMPLES:
+ * @see cleanupCurrentSection() method for automatic system
+ * @see AboutYouTool for complete cleanup implementation
+ * @see ToolsSection.cleanup() for section cleanup pattern
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import { Config, LayoutCalculator, ComponentCalculator } from './config.js';
@@ -178,6 +232,8 @@ const SiteBoyApp = {
         isInitialized: false,
         currentTheme: 'normal',
         currentSection: null,
+        currentSectionModule: null, // Track section module for cleanup
+        currentSectionName: null,   // Track section name for cleanup
         hasSubheader: false
     },
     
@@ -362,7 +418,8 @@ const SiteBoyApp = {
             'blog': 'BlogSection',
             'art': 'ArtSection', 
             'tools': 'ToolsSection',
-            'projects': 'ProjectsSection'
+            'projects': 'ProjectsSection',
+            'contact': 'ContactSection'
         };
         
         // Listen for hash changes
@@ -420,12 +477,61 @@ const SiteBoyApp = {
     
     /**
      * Build page content for the given route
+     * 
+     * ⚠️ CLEANUP LIFECYCLE SYSTEM:
+     * 
+     * This method ensures proper cleanup when navigating between pages.
+     * ALL sections and tools MUST implement cleanup to prevent:
+     * - Event listeners persisting across pages
+     * - Intervals/timeouts continuing after navigation
+     * - Canvas/DOM elements staying in body
+     * - Memory leaks from uncleaned resources
+     * 
+     * LIFECYCLE ORDER:
+     * 1. cleanupCurrentSection() ← Calls section.cleanup()
+     * 2. section.cleanup() ← Calls ComponentLibrary.destroyTracked()
+     * 3. tool.destroy() ← Removes listeners, intervals, canvases
+     * 4. DOM cleared (innerHTML = '')
+     * 5. New section loaded
+     * 
+     * REQUIRED PATTERN FOR SECTIONS:
+     * const MySection = {
+     *     cleanup() {
+     *         if (this.currentContainer) this.currentContainer.innerHTML = '';
+     *         ComponentLibrary.destroyTracked(this.componentInstances);
+     *     }
+     * };
+     * 
+     * REQUIRED PATTERN FOR TOOLS:
+     * class MyTool {
+     *     constructor() {
+     *         this.boundHandlers = {}; // Store for removal
+     *         this.updateInterval = null;
+     *     }
+     *     destroy() {
+     *         // Remove event listeners
+     *         document.removeEventListener('mousemove', this.boundHandlers.mouseMove);
+     *         // Clear intervals
+     *         clearInterval(this.updateInterval);
+     *         // Remove body elements
+     *         if (this.canvas) this.canvas.parentNode.removeChild(this.canvas);
+     *         // Destroy components
+     *         ComponentLibrary.destroyTracked(this.componentInstances);
+     *     }
+     * }
+     * 
+     * TEST: Watch console for "🧹 Cleaning up section: X" and "✅ cleanup completed"
+     * WARNING: If you see "⚠️ has no cleanup() method" → FIX IMMEDIATELY
      */
     buildPageForRoute(sectionName, subsectionName) {
         if (!this.contentContainer) {
             console.error('❌ No content container available');
             return;
         }
+        
+        // ⚠️ CRITICAL: Clean up previous section BEFORE clearing DOM
+        // This prevents resource leaks (listeners, intervals, canvases, etc.)
+        this.cleanupCurrentSection();
         
         // Clear content container
         this.contentContainer.innerHTML = '';
@@ -456,6 +562,10 @@ const SiteBoyApp = {
                 return;
             }
             
+            // Track current section for cleanup
+            this.state.currentSectionModule = SectionModule;
+            this.state.currentSectionName = sectionName;
+            
             // App coordinates the section building (async support)
             if (typeof SectionModule.handleRoute === 'function') {
                 const routeResult = SectionModule.handleRoute(subsectionName, this.contentContainer, {
@@ -485,6 +595,83 @@ const SiteBoyApp = {
             console.error(`❌ Error building page for ${sectionName}:`, error);
             this.buildErrorPage(`Failed to load ${sectionName}: ${error.message}`);
         }
+    },
+    
+    /**
+     * Clean up current section before switching
+     * 
+     * ⚠️ AUTOMATIC CLEANUP SYSTEM:
+     * 
+     * This method is called AUTOMATICALLY before every page navigation.
+     * It ensures all page-specific code is removed to prevent:
+     * 
+     * COMMON LEAKS:
+     * ❌ Event listeners on document/window (e.g., mousemove, click, scroll)
+     * ❌ setInterval/setTimeout still running
+     * ❌ Canvas elements appended to body
+     * ❌ Global state modifications
+     * ❌ WebSocket/fetch requests not aborted
+     * 
+     * WHAT GETS CLEANED:
+     * ✅ section.cleanup() is called (if exists)
+     * ✅ Section clears container: this.currentContainer.innerHTML = ''
+     * ✅ Section calls: ComponentLibrary.destroyTracked(this.componentInstances)
+     * ✅ Each tool's destroy() method removes its resources
+     * 
+     * DEBUGGING:
+     * - Console shows: "🧹 Cleaning up section: X"
+     * - Console shows: "✅ Section X cleanup completed"
+     * - Console warns: "⚠️ Section X has no cleanup() method" ← FIX THIS!
+     * 
+     * HOW TO TEST:
+     * 1. Navigate to your page
+     * 2. Add event listener: document.addEventListener('mousemove', handler)
+     * 3. Navigate away to another page
+     * 4. Move mouse - handler should NOT fire
+     * 5. Check console for cleanup logs
+     * 
+     * REQUIREMENTS FOR ALL SECTIONS:
+     * - MUST implement cleanup() method
+     * - MUST call ComponentLibrary.destroyTracked(this.componentInstances)
+     * - MUST clear this.currentContainer.innerHTML
+     * 
+     * REQUIREMENTS FOR ALL TOOLS:
+     * - MUST implement destroy() method
+     * - MUST store event handlers as this.boundHandlers = {}
+     * - MUST remove all event listeners in destroy()
+     * - MUST clear all intervals/timeouts
+     * - MUST remove all elements added to body
+     * - MUST call destroy() on all componentInstances
+     * 
+     * @see AboutYouTool for complete cleanup example
+     */
+    cleanupCurrentSection() {
+        if (!this.state.currentSectionModule) {
+            return; // No section to clean up (first load)
+        }
+        
+        const sectionName = this.state.currentSectionName || 'Unknown';
+        console.log(`🧹 Cleaning up section: ${sectionName}`);
+        
+        try {
+            // Call section's cleanup method if it exists
+            if (typeof this.state.currentSectionModule.cleanup === 'function') {
+                this.state.currentSectionModule.cleanup();
+                console.log(`✅ Section ${sectionName} cleanup completed`);
+            } else {
+                // ⚠️ CRITICAL WARNING: Missing cleanup method
+                // This section WILL leak resources!
+                console.warn(`⚠️ Section ${sectionName} has no cleanup() method - may leak resources`);
+                console.warn(`⚠️ Add cleanup() method to ${sectionName} to remove event listeners, intervals, etc.`);
+            }
+        } catch (error) {
+            console.error(`❌ Error cleaning up section ${sectionName}:`, error);
+            console.error(`❌ Section may have left resources in inconsistent state`);
+        }
+        
+        // Clear tracking references
+        this.state.currentSectionModule = null;
+        this.state.currentSectionName = null;
     },
     
     /**

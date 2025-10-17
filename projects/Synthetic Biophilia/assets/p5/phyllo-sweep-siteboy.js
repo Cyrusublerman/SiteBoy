@@ -1,26 +1,33 @@
 (function(){
-  // Helper to get computed CSS variables (local to this sketch)
-  const getVGAColor = (variable) => {
+  // Import shared utilities for VGA color access
+  // Note: In browser context, we'll load this via script tag, so getVGAColor will be available globally
+  const getVGAColor = window.getVGAColor || ((variable) => {
       return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
-  };
+  });
   
   new p5(function(p){
     let angle = 0;
     let bgColor, textColor, pointColor;
 
     p.setup = function(){
-      const cnv = p.createCanvas(640, 640);
+      // Responsive canvas sizing - adapt to container
+      const container = document.getElementById('phyllo-sweep');
+      const containerWidth = container ? container.clientWidth : 640;
+      // Use square canvas with container width as reference
+      const size = Math.min(containerWidth, 640);
+      
+      const cnv = p.createCanvas(size, size);
       cnv.parent('phyllo-sweep');
       p.angleMode(p.DEGREES);
       p.textFont('Atkinson Hyperlegible, Atkinson Hyperlegible Mono, monospace', 12);
       p.noStroke();
 
-      // Get colors once
+      // Cache VGA colors once in setup for efficiency
       bgColor = getVGAColor('--c-bg');
       textColor = getVGAColor('--c-text');
       pointColor = getVGAColor('--c-accent'); // Use accent for visibility
       
-      // Store p5 instance globally for SiteBoy component communication
+      // Register p5 instance for SiteBoy component communication
       if (window.siteBoyP5Component) {
         window.siteBoyP5Component.p5Instance = p;
       }
@@ -30,6 +37,16 @@
     p.updateFromSiteBoy = function(key, value, fullState) {
       // This function is called when SiteBoy controls change
       // The sketch will automatically redraw with new values
+    };
+    
+    // Handle window resize for responsive canvas
+    p.windowResized = function() {
+      const container = document.getElementById('phyllo-sweep');
+      if (container) {
+        const containerWidth = container.clientWidth;
+        const size = Math.min(containerWidth, 640);
+        p.resizeCanvas(size, size);
+      }
     };
 
     p.draw = function(){

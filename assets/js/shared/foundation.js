@@ -193,6 +193,15 @@ export class BaseComponent {
             element.style[property] = styles[property];
         });
     }
+
+    /**
+     * Safely attach an element to document.body (for overlays/modals)
+     * Centralizes document access inside BaseComponent internals
+     */
+    attachToBody(element) {
+        if (!element) return;
+        document.body.appendChild(element);
+    }
 }
 
 /**

@@ -1,0 +1,92 @@
+{
+    "meta": {
+        "title": "Synthetic Biophilia - Image Gallery",
+        "slug": "gallery",
+        "section": "projects",
+        "description": "Explore the visual documentation of phyllotactic patterns and lattice structures"
+    },
+    "subheader": {
+        "show": false
+    },
+    "layout": {
+        "fullscreen": true,
+        "theme": "default"
+    },
+    "blocks": [
+        {
+            "type": "custom",
+            "component": "ImageGallery",
+            "vars": {
+                "images": [
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/169 sidey4k1 no fill just lattice.jpg",
+                        "title": "Lattice Study #01 - Side View",
+                        "caption": "Phyllotactic lattice structure exploring 169° golden angle rotation. This side view demonstrates the emergent spiral patterns that arise from simple geometric rules applied iteratively."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/169 top4k1 no fill just lattice.jpg",
+                        "title": "Lattice Study #02 - Top View",
+                        "caption": "Top-down perspective of the same 169° lattice structure, revealing radial symmetry and self-organizing patterns characteristic of phyllotaxis in nature."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/bush like leafs.jpg",
+                        "title": "Bush-Like Leaf Formation",
+                        "caption": "Organic clustering pattern generated through iterative spiral growth algorithms. The overlapping forms mimic the dense foliage arrangement found in natural shrubs."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/closeup-1.jpg",
+                        "title": "Lattice Detail - Close-Up",
+                        "caption": "Macro view showing individual lattice cells and their geometric relationships. The precision of mathematical generation contrasts with organic emergent behavior."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/closeup-2.jpg",
+                        "title": "Void Space Analysis",
+                        "caption": "Study of negative space within the lattice structure. Understanding void distribution is crucial for structural optimization in bio-inspired design."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/fern-spiral.jpg",
+                        "title": "Fern Spiral Configuration",
+                        "caption": "Fibonacci spiral pattern generating fern-like frond structures. Demonstrates the connection between mathematical sequences and organic growth patterns."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/heptagonal-pattern.jpg",
+                        "title": "Heptagonal Tessellation",
+                        "caption": "Seven-sided polygonal arrangement exploring non-standard tessellation patterns. Challenges conventional hexagonal packing while maintaining structural integrity."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/lattice-density-test.jpg",
+                        "title": "Density Variation Study",
+                        "caption": "Experimental variation in lattice density across the structure. Tests the relationship between packing efficiency and visual complexity."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/multi-angle-composite.jpg",
+                        "title": "Multi-Angle Composite",
+                        "caption": "Composite view showing multiple perspectives of the same structure. Reveals how three-dimensional complexity manifests differently from various viewpoints."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/node-connection-map.jpg",
+                        "title": "Node Connection Mapping",
+                        "caption": "Visualization of connectivity between lattice nodes. Graph theory applied to spatial relationships in bio-inspired structures."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/pentagonal-void.jpg",
+                        "title": "Pentagonal Void Formation",
+                        "caption": "Five-sided negative space emerging naturally from the generative algorithm. Demonstrates how simple rules create complex geometric diversity."
+                    },
+                    {
+                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/recursive-branch.jpg",
+                        "title": "Recursive Branching Pattern",
+                        "caption": "Self-similar branching structure generated through recursive subdivision. Mimics the fractal nature of tree branch systems and venation patterns."
+                    }
+                ],
+                "itemWidth": 250,
+                "itemHeight": 250,
+                "columns": 6,
+                "gap": 0,
+                "bufferZone": 2
+            }
+        }
+    ]
+}
+
+

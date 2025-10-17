@@ -1,5 +1,3 @@
-# Lattice
-
 ## From Dome to Lattice
 
 Once the phyllotactic dome was established, the points could not remain as isolated coordinates on a curved surface. A structural logic was required to connect them into a coherent framework—yet this had to be done without any connections piercing through the dome’s hollow interior.
@@ -16,10 +14,10 @@ The base coordinates are given by the phyllotactic field:
 
 $$
 \begin{aligned}
-r_k &= C\sqrt{k}, \
-\theta_k &= k,\alpha, \qquad \alpha = \tfrac{360^\circ}{\tau^2}, \
-(x_k,y_k) &= (r_k\cos\theta_k,; r_k\sin\theta_k), \
-z_k &\in \Bigl{, h_{\max}!\left(1-\tfrac{k}{N}\right),;; h_{\max}!\left(1-\tfrac{r_k}{R}\right) \Bigr}.
+r_k &= C\sqrt{k}, \\
+\theta_k &= k\,\alpha, \qquad \alpha = \tfrac{360^\circ}{\tau^2}, \\
+(x_k,y_k) &= (r_k\cos\theta_k,\, r_k\sin\theta_k), \\
+z_k &\in \Bigl[ h_{\max}\left(1-\tfrac{k}{N}\right),\,\, h_{\max}\left(1-\tfrac{r_k}{R}\right) \Bigr].
 \end{aligned}
 $$
 
@@ -32,13 +30,13 @@ where $k=1,\dots,N$.
 For an integer denominator $N\ge 2$, define residue classes
 
 $$
-\mathcal{F}(N,i)={,k \mid k\equiv i \pmod N ,},\qquad i=1,\dots,N.
+\mathcal{F}(N,i)=\{\,k \mid k\equiv i \pmod N \,\},\qquad i=1,\dots,N.
 $$
 
 Each $\mathcal{F}(N,i)$ traces an **arch**:
 
 $$
-k ;\mapsto; k+N ;\mapsto; k+2N ;\mapsto;\dots
+k \,\mapsto\, k+N \,\mapsto\, k+2N \,\mapsto\,\dots
 $$
 
 Two denominators $N_1$ and $N_2$ generate **crossing families** of arches that together form the lamella lattice.
@@ -48,7 +46,7 @@ Two denominators $N_1$ and $N_2$ generate **crossing families** of arches that t
 The azimuthal increment per step is
 
 $$
-\Delta\theta_N = (N,\alpha)\bmod 2\pi.
+\Delta\theta_N = (N\,\alpha)\bmod 2\pi.
 $$
 
 Small $|\Delta\theta_N|$ produces smoother arches, because the points advance gradually in angle as their radius increases.
@@ -115,7 +113,7 @@ Conditions for valid lattices:
 At node $m$, the neighbour set is
 
 $$
-\mathcal{N}(m)={,m!\pm!N_1,; m!\pm!N_2,}\cap{1,\dots,N}.
+\mathcal{N}(m)=\{\,m\pm N_1,\, m\pm N_2\,\}\cap\{1,\dots,N\}.
 $$
 
 Each neighbour $q$ defines:
@@ -129,8 +127,8 @@ For fabrication, convert vectors to spherical:
 
 $$
 \operatorname{asSph}(\mathbf{v})=
-\Bigl( r=|\mathbf{v}|,;
-\vartheta=\arccos\tfrac{v_z}{|\mathbf{v}|},;
+\Bigl( r=|\mathbf{v}|,\,
+\vartheta=\arccos\tfrac{v_z}{|\mathbf{v}|},\,
 \varphi=\operatorname{atan2}(v_y,v_x)\Bigr).
 $$
 
@@ -142,16 +140,16 @@ Outer nodes may include a vertical leg $\mathbf{v}*{\text{leg}}=(0,0,-L*{\text{l
 
 Each quadrilateral cell is defined by
 
-$$(m,; m+N_1,; m+N_1+N_2,; m+N_2),$$
+$$(m,\, m+N_1,\, m+N_1+N_2,\, m+N_2),$$
 
 when in range. Let the vertices be $\mathbf{a},\mathbf{b},\mathbf{c},\mathbf{d}$.
 
 **Edge lengths**
 
 $$
-a=|\mathbf{b}-\mathbf{a}|,;
-b=|\mathbf{c}-\mathbf{b}|,;
-c=|\mathbf{d}-\mathbf{c}|,;
+a=|\mathbf{b}-\mathbf{a}|,\,
+b=|\mathbf{c}-\mathbf{b}|,\,
+c=|\mathbf{d}-\mathbf{c}|,\,
 d=|\mathbf{a}-\mathbf{d}|.
 $$
 
@@ -160,16 +158,16 @@ $$
 $$
 \cos\angle A =
 \frac{(\mathbf{b}-\mathbf{a})\cdot(\mathbf{d}-\mathbf{a})}
-{|\mathbf{b}-\mathbf{a}|,|\mathbf{d}-\mathbf{a}|},;; \text{etc.}
+{|\mathbf{b}-\mathbf{a}|\,|\mathbf{d}-\mathbf{a}|},\quad \text{etc.}
 $$
 
 **Area**
 
 $$
 \operatorname{Area}(\mathbf{a}\mathbf{b}\mathbf{c}\mathbf{d})
-= \tfrac{1}{2},|(\mathbf{b}-\mathbf{a})\times(\mathbf{c}-\mathbf{a})|
-* \tfrac{1}{2},|(\mathbf{c}-\mathbf{a})\times(\mathbf{d}-\mathbf{a})|.
-  $$
+= \tfrac{1}{2}\,|(\mathbf{b}-\mathbf{a})\times(\mathbf{c}-\mathbf{a})|
++ \tfrac{1}{2}\,|(\mathbf{c}-\mathbf{a})\times(\mathbf{d}-\mathbf{a})|.
+$$
 
 **Planarisation**
 
@@ -209,7 +207,10 @@ Practicalities follow naturally: the joints derive directly from the vectors to 
 
 ## Placeholders
 
-* *L1:* Arch generation from every-$N$ connection.
-* *L2:* Crossing families $(N_1,N_2)$ with labelled nodes.
-* *L3:* Trapezoid cell geometry with projected plane.
-* *L4:* Comparative meshes: small vs large denominators.
+![Arch generation from every-N connection](../assets/images/synthetic-biophilia/thumbs/169 sidey4k1 no fill just lattice.jpg)
+
+![Crossing families (N1,N2) with labelled nodes](../assets/images/synthetic-biophilia/thumbs/169 top4k1 no fill just lattice.jpg)
+
+![Trapezoid cell geometry with projected plane](../assets/images/synthetic-biophilia/thumbs/lattice joint.jpg)
+
+![Comparative meshes: small vs large denominators](../assets/images/synthetic-biophilia/thumbs/joints 2.jpg)

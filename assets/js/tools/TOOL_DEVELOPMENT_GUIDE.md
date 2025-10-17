@@ -7,6 +7,7 @@
 - **VGA colours only**: `var(--vga-*)` and `var(--c-*)`
 - **Component-based**: Use `ComponentLibrary` components
 - **Deterministic layout**: No arbitrary values
+- **⚡ CleanupManager**: Use for automatic cleanup (no manual listener removal!)
 
 ## Tool Pattern (Use This)
 
@@ -16,12 +17,29 @@ class ToolName {
         this.container = container;
         this.deps = deps;
         this.componentInstances = [];
+        
+        // ⚡ Use CleanupManager for automatic cleanup (NO manual cleanup needed!)
+        this.eventHandlers = new CleanupManager.EventHandlerRegistry();
+        this.intervals = new CleanupManager.IntervalRegistry();
+        this.bodyElements = new CleanupManager.BodyElementRegistry();
+        
         this.state = {};
     }
     
     render() {
-        this.destroy();
+        this.destroy(); // Always cleanup first
         const F = this.deps.MF ? this.deps.MF.F : 12;
+        
+        // Add event listeners (auto-tracked)
+        this.eventHandlers.add(document, 'click', () => this.handleClick());
+        
+        // Add intervals (auto-tracked)
+        this.intervals.add(() => this.update(), 100);
+        
+        // Add canvas to body (auto-tracked)
+        const canvas = document.createElement('canvas');
+        this.bodyElements.add(canvas);
+        
         this.createInterface(F);
     }
     
@@ -31,10 +49,8 @@ class ToolName {
     }
     
     destroy() {
-        for (const instance of this.componentInstances) {
-            if (instance?.destroy) instance.destroy();
-        }
-        this.componentInstances = [];
+        // ⚡ ONE LINE cleans everything automatically!
+        CleanupManager.cleanupTool(this);
     }
 }
 
@@ -169,4 +185,136 @@ new ComponentLibrary.ProgressBar({
 **Missing Script Import**: "window.X is not a constructor" usually means script not imported in `index.html`, not class definition issues. Always check script loading first.
 
 ---
-**Guide v1.1** - Condensed for efficiency
+
+## CleanupManager Quick Reference
+
+### Before (Manual Cleanup - 40+ lines)
+```javascript
+class MyTool {
+    constructor(container, deps) {
+        this.boundHandlers = {
+            mouseMove: null,
+            click: null,
+            // ... more handlers
+        };
+        this.updateInterval = null;
+        this.canvas = null;
+    }
+    
+    render() {
+        // Setup listeners
+        this.boundHandlers.mouseMove = (e) => this.handleMouse(e);
+        document.addEventListener('mousemove', this.boundHandlers.mouseMove);
+        
+        // Setup interval
+        this.updateInterval = setInterval(() => this.update(), 100);
+        
+        // Add canvas to body
+        this.canvas = document.createElement('canvas');
+        document.body.appendChild(this.canvas);
+    }
+    
+    destroy() {
+        // Remove ALL listeners manually
+        if (this.boundHandlers.mouseMove) {
+            document.removeEventListener('mousemove', this.boundHandlers.mouseMove);
+            this.boundHandlers.mouseMove = null;
+        }
+        if (this.boundHandlers.click) {
+            document.removeEventListener('click', this.boundHandlers.click);
+            this.boundHandlers.click = null;
+        }
+        // ... repeat for every listener
+        
+        // Clear interval
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = null;
+        }
+        
+        // Remove canvas
+        if (this.canvas && this.canvas.parentNode) {
+            this.canvas.parentNode.removeChild(this.canvas);
+            this.canvas = null;
+        }
+        
+        // ... cleanup more resources
+    }
+}
+```
+
+### After (CleanupManager - 10 lines)
+```javascript
+class MyTool {
+    constructor(container, deps) {
+        this.eventHandlers = new CleanupManager.EventHandlerRegistry();
+        this.intervals = new CleanupManager.IntervalRegistry();
+        this.bodyElements = new CleanupManager.BodyElementRegistry();
+    }
+    
+    render() {
+        // Add listeners (auto-tracked)
+        this.eventHandlers.add(document, 'mousemove', (e) => this.handleMouse(e));
+        
+        // Add interval (auto-tracked)
+        this.intervals.add(() => this.update(), 100);
+        
+        // Add canvas (auto-tracked)
+        const canvas = document.createElement('canvas');
+        this.bodyElements.add(canvas);
+    }
+    
+    destroy() {
+        // ⚡ ONE LINE cleans EVERYTHING
+        CleanupManager.cleanupTool(this);
+    }
+}
+```
+
+### Available Registries
+
+```javascript
+// Event listeners
+this.eventHandlers = new CleanupManager.EventHandlerRegistry();
+this.eventHandlers.add(document, 'click', handler);
+this.eventHandlers.cleanup(); // Removes all
+
+// Intervals
+this.intervals = new CleanupManager.IntervalRegistry();
+this.intervals.add(() => this.update(), 100);
+this.intervals.cleanup(); // Clears all
+
+// Timeouts
+this.timeouts = new CleanupManager.TimeoutRegistry();
+this.timeouts.add(() => this.delayed(), 1000);
+this.timeouts.cleanup(); // Clears all
+
+// Body elements
+this.bodyElements = new CleanupManager.BodyElementRegistry();
+this.bodyElements.add(canvasElement);
+this.bodyElements.cleanup(); // Removes all
+```
+
+### Auto-Cleanup
+```javascript
+// Sections
+cleanup() {
+    CleanupManager.cleanupSection(this);
+}
+
+// Tools
+destroy() {
+    CleanupManager.cleanupTool(this);
+}
+```
+
+**Benefits:**
+- ✅ No manual listener removal
+- ✅ No forgotten cleanup code
+- ✅ No memory leaks
+- ✅ 75% less boilerplate
+- ✅ Consistent cleanup patterns
+- ✅ Automatic resource tracking
+
+---
+**Guide v1.2** - Added CleanupManager

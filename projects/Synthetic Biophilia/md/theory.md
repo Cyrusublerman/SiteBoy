@@ -1,5 +1,3 @@
-# Theory
-
 The environments which facilitate optimum wellbeing and mental ability seem to be those which reproduce and present the mathematical and structural properties and relations of those which encompassed ancestral humanity. As such, the core aspects of the environments which facilitated the development of homo sapiens may still be needed for ideal cognitive and emotional function, even in today’s hyper-synthetic world (Kellert, 2008).
 
 Furthermore, analysis of the mathematical composition of nature has shown insight into what forms an ideal environment. Mimicking the key components and relations of natural forms can bring the natural elements into otherwise purely synthetic environments (Salingaros, 2012). These mathematical compositions and patterns have a direct influence on the neurology of the experiencer, potentially through the modulation of pleasure-regulating opioid receptors (Biederman & Vessel, 2006).
@@ -21,26 +19,47 @@ Together, these connections between natural stimuli and cognitive response illus
 ## Terrapin Bright Green — 14 Patterns of Biophilic Design
 *(via [Terrapin Bright Green](https://www.terrapinbrightgreen.com/report/14-patterns/))*
 
-| **Nature in Space** | **Indirect Experience of Nature** | **Experience of Place** |
-|---------------------|-----------------------------------|--------------------------|
-| Visual connection with nature | Images | Organised complexity |
-| Thermal & airflow variability | Materials | Prospect & refuge |
-| Non-visual connection with nature | Texture | Transitional spaces |
-| Non-rhythmic sensory stimuli | Colour | |
-| Presence of water | Shapes & forms | |
-| Dynamic and/or diffused light | Information richness | |
-| | Natural geometries | |
-| | Simulated natural light & air | |
-| | Biomimicry | |
+### Nature in Space
 
-| **Forms & Shapes** | **Patterns** |
-|--------------------|--------------|
-| Biomorphy | Sensory variability |
-| Geomorphology | Information richness |
-| Biomimicry | Age / change / patina |
-| | Central focal point |
-| | Patterned wholes |
-| | Transitional spaces |
+- Visual connection with nature
+- Thermal & airflow variability
+- Non-visual connection with nature
+- Non-rhythmic sensory stimuli
+- Presence of water
+- Dynamic and/or diffused light
+
+### Indirect Experience of Nature
+
+- Images
+- Materials
+- Texture
+- Colour
+- Shapes & forms
+- Information richness
+- Natural geometries
+- Simulated natural light & air
+- Biomimicry
+
+### Experience of Place
+
+- Organised complexity
+- Prospect & refuge
+- Transitional spaces
+
+### Forms & Shapes
+
+- Biomorphy
+- Geomorphology
+- Biomimicry
+
+### Patterns
+
+- Sensory variability
+- Information richness
+- Age / change / patina
+- Central focal point
+- Patterned wholes
+- Transitional spaces
 
 ---
 

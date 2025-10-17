@@ -98,6 +98,7 @@ export class Image extends BaseComponent {
         this.src = options.src || '';
         this.size = options.size || 'm'; // s, m, l, full
         this.caption = options.caption || null;
+        this.enableZoom = options.enableZoom || false;
     }
     
     render() {
@@ -113,6 +114,14 @@ export class Image extends BaseComponent {
                 const figcaption = this.createElement('figcaption', 'image-caption');
                 figcaption.textContent = this.caption;
                 this.element.appendChild(figcaption);
+            }
+
+            if (this.enableZoom && window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', () => {
+                    const lb = new window.ComponentLibrary.Lightbox({ src: this.src }, this.deps);
+                    lb.open(this.src);
+                });
             }
         }
         return this.element;
@@ -203,9 +212,24 @@ export class MarkdownBody extends BaseComponent {
 
             // Process p5.js components
             this.processP5Components(this.element);
+            
+            // Apply syntax highlighting to code blocks
+            this.applySyntaxHighlighting(this.element);
 
             // Render LaTeX with MathJax (with better error handling and timing)
             this.renderMath();
+
+            // Enable zoom on inline images using Lightbox if available
+            if (window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
+                const imgs = Array.from(this.element.querySelectorAll('img'));
+                imgs.forEach(img => {
+                    img.style.cursor = 'zoom-in';
+                    img.addEventListener('click', () => {
+                        const lb = new window.ComponentLibrary.Lightbox({ src: img.src }, this.deps);
+                        lb.open(img.src);
+                    });
+                });
+            }
         }
         return this.element;
     }
@@ -267,8 +291,19 @@ export class MarkdownBody extends BaseComponent {
         html = html.replace(/^#{2} (.*$)/gim, '<h2>$1</h2>');
         html = html.replace(/^#{1} (.*$)/gim, '<h1>$1</h1>');
         
-        // Code blocks
-        html = html.replace(/```([^`]+)```/gims, '<pre><code>$1</code></pre>');
+        // Code blocks with language support for Prism.js
+        // Match ```language\ncode\n``` pattern
+        html = html.replace(/```(\w+)?\n([\s\S]*?)```/gim, (match, lang, code) => {
+            const language = lang || 'none';
+            const escapedCode = code
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .trim();
+            return `<pre><code class="language-${language}">${escapedCode}</code></pre>`;
+        });
+        
+        // Inline code
         html = html.replace(/`([^`]+)`/gim, '<code>$1</code>');
         
         // Bold and italic
@@ -301,8 +336,23 @@ export class MarkdownBody extends BaseComponent {
             // Process p5.js components
             this.processP5Components(this.element);
             
+            // Apply syntax highlighting to code blocks
+            this.applySyntaxHighlighting(this.element);
+            
             // Render math
             this.renderMath();
+
+            // Re-bind zoom handlers for images
+            if (window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
+                const imgs = Array.from(this.element.querySelectorAll('img'));
+                imgs.forEach(img => {
+                    img.style.cursor = 'zoom-in';
+                    img.addEventListener('click', () => {
+                        const lb = new window.ComponentLibrary.Lightbox({ src: img.src }, this.deps);
+                        lb.open(img.src);
+                    });
+                });
+            }
         }
     }
 
@@ -317,6 +367,17 @@ export class MarkdownBody extends BaseComponent {
             const parent = oldScript.parentNode || element;
             parent.replaceChild(newScript, oldScript);
         });
+    }
+    
+    applySyntaxHighlighting(element) {
+        // Apply Prism.js syntax highlighting to code blocks
+        if (window.Prism) {
+            const codeBlocks = element.querySelectorAll('pre code[class*="language-"]');
+            console.log(`🎨 Applying syntax highlighting to ${codeBlocks.length} code blocks`);
+            codeBlocks.forEach(block => {
+                window.Prism.highlightElement(block);
+            });
+        }
     }
     
     processP5Components(element) {

@@ -116,6 +116,48 @@ const HomeSection = {
             }
         }
         
+        // Add Solar System visualization above TOC
+        console.log('🔍 Checking for SolarSystemTool:', typeof window.SolarSystemTool);
+        
+        if (window.SolarSystemTool) {
+            // Get actual computed padding from content container
+            const contentContainer = this.currentContainer.closest('.content-container');
+            const computedStyle = contentContainer ? window.getComputedStyle(contentContainer) : null;
+            const paddingLeft = computedStyle ? parseInt(computedStyle.paddingLeft) : 0;
+            const paddingRight = computedStyle ? parseInt(computedStyle.paddingRight) : 0;
+            const paddingTop = computedStyle ? parseInt(computedStyle.paddingTop) : 0;
+            
+            const F = window.LayoutCalculator ? window.LayoutCalculator.F : 12;
+            
+            const solarSystemContainer = document.createElement('div');
+            solarSystemContainer.className = 'solar-system-home';
+            solarSystemContainer.style.cssText = `
+                width: calc(100% + ${paddingLeft + paddingRight}px);
+                margin: -${paddingTop}px -${paddingRight}px ${F * 2}px -${paddingLeft}px;
+                padding: 0;
+                background: #000000;
+                box-sizing: border-box;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            `;
+            
+            console.log('🌌 Creating SolarSystemTool with computed padding:', {paddingLeft, paddingRight, paddingTop});
+            
+            const solarSystem = new window.SolarSystemTool(solarSystemContainer, {
+                MF: window.LayoutCalculator,
+                Resize: window.ResizeManager
+            });
+            
+            this.componentInstances.push(solarSystem);
+            solarSystem.render();
+            this.currentContainer.appendChild(solarSystemContainer);
+            
+            console.log('✅ Solar System visualization added to home page');
+        } else {
+            console.warn('⚠️ SolarSystemTool not found on window object');
+        }
+        
         // Create simple TOC using proper ComponentLibrary component
         const tocData = this.prepareSimpleTOCData();
         const simpleTOC = new ComponentLibrary.SimpleTOC({

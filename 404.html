@@ -1,17 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>404 - Not Found</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - aeinoder</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--vga-black);
+        }
+        
+        .error-container {
+            max-width: 600px;
+            padding: 48px;
+            background-color: var(--vga-black);
+            border: 2px solid var(--vga-white);
+            text-align: center;
+        }
+        
+        .error-code {
+            font-size: 96px;
+            line-height: 1;
+            margin: 0 0 24px 0;
+            color: var(--vga-white);
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+        }
+        
+        .error-message {
+            font-size: 18px;
+            line-height: 1.5;
+            margin: 0 0 36px 0;
+            color: var(--vga-white);
+            font-family: 'Space Mono', monospace;
+        }
+        
+        .home-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--vga-black);
+            color: var(--vga-white);
+            border: 2px solid var(--vga-white);
+            text-decoration: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        
+        .home-link:hover {
+            background-color: var(--vga-white);
+            color: var(--vga-black);
+        }
+    </style>
 </head>
 <body>
-    <div id="header-include"></div>
-    <main class="content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: calc(100vh - 200px); text-align: center; padding: 2rem;">
-        <h1 style="font-size: clamp(3rem, 15vw, 8rem); line-height: 1; margin: 0; font-weight: 700;">404</h1>
-        <p style="font-size: clamp(1rem, 5vw, 2rem); margin: 2rem 0; max-width: 600px;">frick me off. You done donged up you dingo</p>
-        <a href="/" class="button" style="font-size: clamp(0.875rem, 3vw, 1.25rem); padding: 1rem 2rem; margin-top: 2rem;">Go Home</a>
-    </main>
-    <div id="footer-include"></div>
-    <script src="assets/js/include-shared.js"></script>
-    <script src="assets/js/site.js"></script>
+    <div class="error-container">
+        <h1 class="error-code">404</h1>
+        <p class="error-message">Page not found</p>
+        <a href="/" class="home-link">Return Home</a>
+    </div>
 </body>
 </html> 

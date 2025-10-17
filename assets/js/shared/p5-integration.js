@@ -357,13 +357,27 @@ export class P5ControlledSketch extends BaseComponent {
         this.state = {};
         this.p5Instance = null;
         this.ui = {};
+        this.resizeHandler = null; // Track resize handler for cleanup
         
         // Fibonacci sequence instances
         this.fibonacciInstances = {};
         
         // Initialize state from controls
         this.controls.forEach(control => {
-            this.state[control.key] = control.defaultValue;
+            // Apply logarithmic conversion to defaultValue if needed
+            let initialValue = control.defaultValue;
+            if (control.logScale && control.logMin && control.logMax) {
+                if (control.defaultValue === 0) {
+                    initialValue = 0;
+                } else {
+                    const logMin = Math.log(control.logMin);
+                    const logMax = Math.log(control.logMax);
+                    const logValue = logMin + (control.defaultValue / 100) * (logMax - logMin);
+                    initialValue = Math.exp(logValue);
+                }
+            }
+            
+            this.state[control.key] = initialValue;
             
             // Initialize Fibonacci instances for controls that use them
             if (control.fibonacci && control.fibonacciId) {
@@ -407,14 +421,35 @@ export class P5ControlledSketch extends BaseComponent {
         
         const F = this.deps.MF ? this.deps.MF.F : 12;
         
-        // EXACT ColorQuantizer pattern - minimal DOM
+        // Responsive grid - side-by-side on desktop, stacked on mobile
         const container = document.createElement('div');
         container.className = 'p5-container';
         container.style.cssText = `
             display: grid; 
-            grid-template-columns: ${F*36}px 1fr; 
+            grid-template-columns: 1fr;
             gap: ${F}px;
         `;
+        
+        // Add responsive behavior via media query
+        // On desktop (>768px), use side-by-side layout
+        if (window.matchMedia('(min-width: 768px)').matches) {
+            container.style.gridTemplateColumns = `${F*36}px 1fr`;
+        }
+        
+        // Listen for window resize to adjust layout
+        this.resizeHandler = () => {
+            if (window.matchMedia('(min-width: 768px)').matches) {
+                container.style.gridTemplateColumns = `${F*36}px 1fr`;
+            } else {
+                container.style.gridTemplateColumns = '1fr';
+            }
+            
+            // Notify p5 instance to resize canvas if needed
+            if (this.p5Instance && this.p5Instance.windowResized) {
+                this.p5Instance.windowResized();
+            }
+        };
+        window.addEventListener('resize', this.resizeHandler);
         
         // Controls column
         if (this.controls.length > 0) {
@@ -917,6 +952,12 @@ export class P5ControlledSketch extends BaseComponent {
     destroy() {
         if (this.p5Instance && this.p5Instance.remove) {
             this.p5Instance.remove();
+        }
+        
+        // Clean up resize handler
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
         }
         
         // Clean up global references

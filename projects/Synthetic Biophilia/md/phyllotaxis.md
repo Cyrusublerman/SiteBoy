@@ -1,5 +1,3 @@
-# Phyllotaxis
-
 ## Definition
 
 In botany, **phyllotaxis** (from Ancient Greek *phúllon* “leaf” and *táxis* “arrangement”) is the arrangement of leaves on a plant stem. **Phyllotactic spirals** form a distinctive class of patterns in nature. The patterned formation of plant organs around a central axis is one of the most consistent structural logics in plant morphology, visible from the spiral packing of sunflower seeds to the overlapping scales and primordia evident at the shoot apical meristem.

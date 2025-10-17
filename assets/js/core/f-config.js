@@ -39,7 +39,7 @@
  * - All component dimensions scale proportionally
  * - All spacing scales proportionally
  */
-export const F = 12;
+export const F = 14;
 
 // =================================================================
 // MATHEMATICAL RELATIONSHIPS - DON'T CHANGE THESE
