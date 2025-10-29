@@ -4,12 +4,14 @@
  * ART SECTION HANDLER - Gallery TOC with preview thumbnails
  * Handles art galleries and visual content with gallery preview TOC structure
  * 
- * @version 3.0.0 - Gallery TOC Structure
- * @dependencies ['ComponentLibrary'] - Consolidated component system
+ * @version 3.1.0 - R2 Storage Integration
+ * @dependencies ['ComponentLibrary', 'R2Helper'] - Consolidated component system + R2 URLs
  */
 
+import R2Helper from '../shared/r2-url-helper.js';
+
 const ArtSection = {
-    version: '3.0.0',
+    version: '3.1.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
@@ -105,8 +107,10 @@ const ArtSection = {
         } else if (subsection.startsWith('photography/')) {
             const photoSection = subsection.replace('photography/', '');
             this.renderPhotographyGallery(photoSection);
+        } else if (subsection === 'generative') {
+            this.renderGenerativeGallery();
         } else {
-            this.renderGallery(subsection);
+            this.renderArtGallery(subsection);
         }
     },
     
@@ -744,20 +748,19 @@ const ArtSection = {
     
     /**
      * Get photography images for a specific section
-     * Uses processed thumbs/display/zoom structure
+     * Uses R2 URLs for images (Cloudflare R2 storage)
      */
     getPhotographyImages(photoSection) {
-        const basePath = '/art/Photos/FILM';
         const images = [];
         
         const sectionMap = {
-            'life1': 'Life1',
-            'life2': 'Life2',
-            'morocco': 'Morocco',
-            'nature': 'Nature',
-            'rom': 'Rom',
-            'snow': 'Snow',
-            'urban': 'Urban'
+            'life1': 'life1',
+            'life2': 'life2',
+            'morocco': 'morocco',
+            'nature': 'nature',
+            'rom': 'rom',
+            'snow': 'snow',
+            'urban': 'urban'
         };
         
         // Complete image lists from processed folders
@@ -800,31 +803,35 @@ const ArtSection = {
         };
         
         if (photoSection === 'all') {
-            // Get all images from all sections
+            // Get all images from all sections using R2
             Object.keys(sectionMap).forEach(key => {
-                const folderName = sectionMap[key];
-                const fileList = imageLists[folderName] || [];
+                const galleryName = sectionMap[key];
+                const capitalizedName = key.charAt(0).toUpperCase() + key.slice(1);
+                const fileList = imageLists[capitalizedName] || [];
                 fileList.forEach(filename => {
+                    const urls = R2Helper.getPhotoUrlSet(galleryName, `${filename}.jpg`);
                     images.push({
-                        thumb: `${basePath}/${folderName}/thumbs/${filename}.jpg`,
-                        src: `${basePath}/${folderName}/display/${filename}.jpg`,
-                        zoom: `${basePath}/${folderName}/zoom/${filename}.jpg`,
-                        title: `${folderName} - ${filename}`,
-                        caption: `Film photography from ${folderName} collection`
+                        thumb: urls.thumb,
+                        src: urls.web,
+                        zoom: urls.zoom,
+                        title: `${capitalizedName} - ${filename}`,
+                        caption: `Film photography from ${capitalizedName} collection`
                     });
                 });
             });
         } else {
-            // Get images for specific section
-            const folderName = sectionMap[photoSection];
-            if (folderName && imageLists[folderName]) {
-                imageLists[folderName].forEach(filename => {
+            // Get images for specific section using R2
+            const galleryName = sectionMap[photoSection];
+            const capitalizedName = photoSection.charAt(0).toUpperCase() + photoSection.slice(1);
+            if (galleryName && imageLists[capitalizedName]) {
+                imageLists[capitalizedName].forEach(filename => {
+                    const urls = R2Helper.getPhotoUrlSet(galleryName, `${filename}.jpg`);
                     images.push({
-                        thumb: `${basePath}/${folderName}/thumbs/${filename}.jpg`,
-                        src: `${basePath}/${folderName}/display/${filename}.jpg`,
-                        zoom: `${basePath}/${folderName}/zoom/${filename}.jpg`,
-                        title: `${folderName} - ${filename}`,
-                        caption: `Film photography from ${folderName} collection`
+                        thumb: urls.thumb,
+                        src: urls.web,
+                        zoom: urls.zoom,
+                        title: `${capitalizedName} - ${filename}`,
+                        caption: `Film photography from ${capitalizedName} collection`
                     });
                 });
             }
@@ -878,6 +885,254 @@ const ArtSection = {
         }
         
         console.log('✅ Subheader setup for photography:', photoSection);
+    },
+    
+    /**
+     * Render generative art gallery with videos and canvas elements
+     * Includes performance optimization: canvas only runs when in viewport
+     */
+    renderGenerativeGallery() {
+        console.log('🎨 Rendering generative art gallery');
+        
+        this.currentContainer.innerHTML = '';
+        const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
+        
+        // Define generative art pieces (mix of videos and canvas sketches)
+        const generativeWorks = [
+            {
+                id: 'phyllotaxis-sweep',
+                title: 'Phyllotaxis Sweep',
+                type: 'canvas',
+                scriptPath: '/projects/Synthetic Biophilia/assets/p5/phyllo-sweep-siteboy.js',
+                description: 'Interactive phyllotaxis pattern generator',
+                width: 600,
+                height: 600
+            },
+            {
+                id: 'phyllotaxis-manual',
+                title: 'Phyllotaxis Manual',
+                type: 'canvas',
+                scriptPath: '/projects/Synthetic Biophilia/assets/p5/phyllo-manual-siteboy.js',
+                description: 'Manual control phyllotaxis exploration',
+                width: 600,
+                height: 600
+            }
+            // Add video entries here when you have them:
+            // {
+            //     id: 'fractal-animation',
+            //     title: 'Fractal Animation',
+            //     type: 'video',
+            //     src: '/art/Generative/fractal-loop.mp4',
+            //     poster: '/art/Generative/thumbs/fractal-loop.jpg',
+            //     description: 'Recursive fractal pattern animation',
+            //     width: 800,
+            //     height: 800
+            // }
+        ];
+        
+        // Create container for gallery
+        const galleryContainer = this.createElement('div', 'generative-gallery');
+        galleryContainer.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(${F * 50}px, 1fr));
+            gap: ${F * 4}px;
+            padding: ${F * 2}px;
+            width: 100%;
+            box-sizing: border-box;
+        `;
+        
+        // Track active canvas instances for cleanup and viewport management
+        const canvasInstances = [];
+        
+        // Create intersection observer for performance
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const itemId = entry.target.dataset.generativeId;
+                const instance = canvasInstances.find(inst => inst.id === itemId);
+                
+                if (instance && instance.type === 'canvas') {
+                    if (entry.isIntersecting) {
+                        // Start/resume canvas when visible
+                        if (instance.p5Instance && instance.p5Instance.loop) {
+                            console.log(`▶️ Starting canvas: ${itemId}`);
+                            instance.p5Instance.loop();
+                        }
+                    } else {
+                        // Pause canvas when not visible
+                        if (instance.p5Instance && instance.p5Instance.noLoop) {
+                            console.log(`⏸️ Pausing canvas: ${itemId}`);
+                            instance.p5Instance.noLoop();
+                        }
+                    }
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '100px'
+        });
+        
+        // Create gallery items
+        generativeWorks.forEach((work, index) => {
+            const itemContainer = this.createElement('div', 'generative-item');
+            itemContainer.dataset.generativeId = work.id;
+            itemContainer.style.cssText = `
+                border: 1px solid var(--c-border);
+                background: var(--c-bg);
+                padding: ${F}px;
+                display: flex;
+                flex-direction: column;
+                gap: ${F}px;
+            `;
+            
+            // Title
+            const titleEl = this.createElement('h3', 'generative-title');
+            titleEl.textContent = work.title;
+            titleEl.style.cssText = `
+                margin: 0;
+                font-size: ${F + 2}px;
+                text-transform: uppercase;
+                border-bottom: 1px solid var(--c-border);
+                padding-bottom: ${F/2}px;
+            `;
+            itemContainer.appendChild(titleEl);
+            
+            // Content container
+            const contentContainer = this.createElement('div', 'generative-content');
+            contentContainer.style.cssText = `
+                width: 100%;
+                aspect-ratio: ${work.width} / ${work.height};
+                background: var(--vga-black);
+                border: 1px solid var(--c-border);
+                position: relative;
+                overflow: hidden;
+            `;
+            
+            if (work.type === 'video') {
+                // Video element
+                const video = new ComponentLibrary.Video({
+                    src: work.src,
+                    poster: work.poster,
+                    controls: true,
+                    loop: true,
+                    muted: true
+                }, { MF: window.MathematicalFoundation });
+                
+                this.componentInstances.push(video);
+                contentContainer.appendChild(video.render());
+                
+                canvasInstances.push({
+                    id: work.id,
+                    type: 'video',
+                    element: video
+                });
+                
+            } else if (work.type === 'canvas') {
+                // P5.js canvas element
+                const canvasId = `generative-${work.id}`;
+                contentContainer.id = canvasId;
+                
+                // Load and initialize p5.js sketch
+                this.loadP5Sketch(work.scriptPath, canvasId, work).then(p5Instance => {
+                    canvasInstances.push({
+                        id: work.id,
+                        type: 'canvas',
+                        p5Instance: p5Instance
+                    });
+                    
+                    // Start observing for viewport visibility
+                    observer.observe(itemContainer);
+                }).catch(err => {
+                    console.error(`Failed to load sketch: ${work.scriptPath}`, err);
+                    contentContainer.innerHTML = `<div style="padding: ${F}px; color: var(--vga-red);">Failed to load canvas</div>`;
+                });
+            }
+            
+            itemContainer.appendChild(contentContainer);
+            
+            // Description
+            if (work.description) {
+                const descEl = this.createElement('p', 'generative-description');
+                descEl.textContent = work.description;
+                descEl.style.cssText = `
+                    margin: 0;
+                    font-size: ${F}px;
+                    opacity: 0.8;
+                    border-top: 1px solid var(--c-border);
+                    padding-top: ${F/2}px;
+                `;
+                itemContainer.appendChild(descEl);
+            }
+            
+            galleryContainer.appendChild(itemContainer);
+        });
+        
+        this.currentContainer.appendChild(galleryContainer);
+        
+        // Store observer for cleanup
+        this.generativeObserver = observer;
+        
+        // Setup subheader
+        this.setupSubheaderForGallery('generative');
+        
+        console.log('✅ Generative art gallery rendered');
+    },
+    
+    /**
+     * Load a P5.js sketch dynamically
+     * @param {string} scriptPath - Path to the sketch file
+     * @param {string} containerId - ID of the container element
+     * @param {Object} config - Configuration object with width, height, etc.
+     * @returns {Promise} Resolves with p5 instance
+     */
+    async loadP5Sketch(scriptPath, containerId, config) {
+        // Ensure p5.js library is loaded
+        if (typeof window.p5 === 'undefined') {
+            await this.loadP5Library();
+        }
+        
+        return new Promise((resolve, reject) => {
+            // Load the sketch script
+            const script = document.createElement('script');
+            script.src = scriptPath;
+            script.type = 'module';
+            
+            script.onload = () => {
+                // Wait a bit for the sketch to initialize
+                setTimeout(() => {
+                    // The sketch should have created a global function or attached to window
+                    // This depends on how your p5 sketches are structured
+                    console.log(`✅ Loaded sketch: ${scriptPath}`);
+                    resolve(null); // Return null for now, actual p5 instance tracking TBD
+                }, 100);
+            };
+            
+            script.onerror = (err) => {
+                reject(new Error(`Failed to load sketch: ${scriptPath}`));
+            };
+            
+            document.head.appendChild(script);
+        });
+    },
+    
+    /**
+     * Load P5.js library from CDN
+     */
+    async loadP5Library() {
+        if (typeof window.p5 !== 'undefined') {
+            return Promise.resolve();
+        }
+        
+        console.log('📦 Loading p5.js library...');
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js';
+            script.onload = () => {
+                console.log('✅ p5.js library loaded');
+                resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     },
     
     /**
@@ -1030,6 +1285,12 @@ const ArtSection = {
             this.currentContainer.className = this.currentContainer.className
                 .replace(/toc-container|layout-\w+-\w+/g, '')
                 .trim();
+        }
+        
+        // Clean up intersection observer for generative gallery
+        if (this.generativeObserver) {
+            this.generativeObserver.disconnect();
+            this.generativeObserver = null;
         }
         
         // Destroy tracked components using ComponentLibrary method

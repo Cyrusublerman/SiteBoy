@@ -21,6 +21,11 @@ yarn.lock
 .env.development.local
 .env.test.local
 .env.production.local
+.env.r2
+scripts/.env.r2
+
+# R2 migration reports (contain bucket URLs)
+migration-report.json
 
 # IDE and editor files
 .vscode/
@@ -95,6 +100,13 @@ jspm_packages/
 .tern-port
 
 # SiteBoy specific
+# Reference directories - keep locally for Cursor/IDE, but don't commit to Git
+reference/
+**/reference/
+
+# Specific large reference directories (explicit listing)
+projects/Synthetic Biophilia/reference/
+
 # Keep reference materials but ignore temporary working files
 reference/working/temp/
 reference/working/experiments/temp/

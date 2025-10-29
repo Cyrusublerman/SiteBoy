@@ -1,0 +1,94 @@
+========================================
+R2 STRUCTURE UPDATED
+========================================
+
+✅ All files updated to use art/ namespace
+
+========================================
+NEW STRUCTURE
+========================================
+
+assetts-einoder/
+└── art/
+    ├── photos/          ← Photo galleries
+    │   ├── life1/
+    │   ├── life2/
+    │   ├── morocco/
+    │   └── ...
+    ├── digital/         ← Digital artwork
+    │   ├── illustration/
+    │   ├── portrait/
+    │   └── ...
+    └── projects/        ← Project assets
+        ├── synthetic-biophilia/
+        └── brain-dump/
+
+========================================
+URL EXAMPLES
+========================================
+
+Photos:
+https://media.einoder.net/art/photos/life1/web/237040610016.jpg
+                              ^^^^
+                              Added!
+
+Manifests:
+https://media.einoder.net/art/photos/life1/manifest.json
+
+Digital Art:
+https://media.einoder.net/art/digital/illustration/8muzcard.jpg
+
+Projects:
+https://media.einoder.net/art/projects/synthetic-biophilia/assets/image.jpg
+
+========================================
+UPDATED FILES
+========================================
+
+Documentation:
+✅ reference/Cloudflare.md
+✅ reference/R2_QUICK_REFERENCE.md
+✅ reference/R2_URL_STRUCTURE.md (NEW)
+
+Scripts:
+✅ scripts/r2-sync-photos.py
+✅ scripts/r2-migrate-all.py
+✅ scripts/process-and-upload-photos.py
+
+JavaScript:
+✅ assets/js/shared/r2-url-helper.js
+
+========================================
+USAGE (NO CHANGES NEEDED!)
+========================================
+
+Scripts work exactly the same:
+$ python scripts/r2-sync-photos.py gallery art/Photos/FILM/Life1 life1
+
+JavaScript works exactly the same:
+const url = R2Helper.getPhotoUrl('life1', 'image.jpg', 'web');
+// Returns: https://media.einoder.net/art/photos/life1/web/image.jpg
+
+========================================
+BENEFITS
+========================================
+
+✓ Better organization under art/ namespace
+✓ Clear separation of content types
+✓ Room for future expansion
+✓ More semantic URLs
+✓ Easier permission management
+
+========================================
+NEXT STEPS
+========================================
+
+1. Run setup: bash scripts/r2-setup.sh
+2. Enable public access in Cloudflare
+3. Test upload: python scripts/r2-sync-photos.py gallery art/Photos/FILM/Life1 life1 --dry-run
+4. Migrate galleries as normal
+
+Everything will automatically use the new art/ structure!
+
+========================================
+

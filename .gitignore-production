@@ -1,0 +1,150 @@
+# SiteBoy Production .gitignore
+# Use this AFTER migrating media to cloud
+# To activate: mv .gitignore .gitignore-dev && mv .gitignore-production .gitignore
+
+# ============================================
+# MEDIA ASSETS (Hosted on Cloud)
+# ============================================
+
+# Art gallery images
+art/**/*.jpg
+art/**/*.jpeg
+art/**/*.png
+art/**/*.webp
+art/**/*.mp4
+art/**/*.gif
+
+# Project media
+projects/**/*.jpg
+projects/**/*.jpeg
+projects/**/*.png
+projects/**/*.webp
+projects/**/*.mp4
+projects/**/*.gif
+
+# Blog images
+blog/**/*.jpg
+blog/**/*.jpeg
+blog/**/*.png
+
+# Keep placeholders/thumbnails for development
+!**/placeholder.png
+!**/placeholder.jpg
+
+# ============================================
+# REFERENCE & DEVELOPMENT FILES
+# ============================================
+
+# Reference directories (not needed in production)
+reference/
+**/reference/
+
+# Migration artifacts
+scripts/migration/uploaded/
+scripts/migration/*.log
+
+# Development tools output
+tools/gallery-bundle-processor/output/
+tools/**/output/
+
+# Processed/temp files
+**/processed/
+**/temp/
+**/tmp/
+
+# ============================================
+# DOCUMENTATION (Move to Wiki)
+# ============================================
+
+# Implementation guides (too verbose for repo)
+*_IMPLEMENTATION.md
+*_GUIDE.md
+REPO_RESTRUCTURE_PLAN.md
+
+# Old documentation
+**/old-docs/
+**/OLD_*.md
+
+# ============================================
+# STANDARD IGNORES
+# ============================================
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Cache
+.cache/
+*.cache
+
+# ============================================
+# KEEP THESE (Production Essentials)
+# ============================================
+
+# Core code
+!assets/**/*.js
+!assets/**/*.css
+
+# HTML
+!*.html
+
+# Configuration
+!package.json
+!vite.config.js
+
+# Content structure (JSON/MD)
+!blog/**/*.md
+!blog/**/*.json
+!projects/**/*.md
+!projects/**/*.json
+
+# Documentation (essential only)
+!README.md
+!art/Generative/README.md
+!art/Generative/QUICK_START.md
+
+# Scripts (essential dev)
+!scripts/start-server.py
+!scripts/migration/*.py
+
