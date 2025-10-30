@@ -33,16 +33,19 @@
                 };
             };
 
-            // Gallery images data
+            // Gallery images data (cloud-hosted)
             const galleryImages = [
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/closed 169 top.jpg', caption: 'Closed 169 Top View' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/closed 169 side.jpg', caption: 'Closed 169 Side View' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/dome from underneath 1.jpg', caption: 'Dome from Underneath 1' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/dome from underneath 2.jpg', caption: 'Dome from Underneath 2' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/joints 2.jpg', caption: 'Joint Details' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/lattice joint.jpg', caption: 'Lattice Joint' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/169 top4k1 no fill just lattice.jpg', caption: '169 Top View - Lattice Only' },
-                { src: 'projects/Synthetic Biophilia/assets/images/synthetic-biophilia/thumbs/169 sidey4k1 no fill just lattice.jpg', caption: '169 Side View - Lattice Only' }
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/closed 169 top.jpg', caption: 'Closed 169 Top View' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/closed 169 side.jpg', caption: 'Closed 169 Side View' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/dome from underneath 1.jpg', caption: 'Dome from Underneath 1' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/dome from underneath 2.jpg', caption: 'Dome from Underneath 2' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/joints 2.jpg', caption: 'Joint Details' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/lattice joint.jpg', caption: 'Lattice Joint' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/169 top4k1 no fill just lattice.jpg', caption: '169 Top View - Lattice Only' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/169 sidey4k1 no fill just lattice.jpg', caption: '169 Side View - Lattice Only' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/bush like leafs.jpg', caption: 'Bush-Like Leaf Formation' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/circle piece leaf side.jpg', caption: 'Circular Leaf Formation' },
+                { src: 'https://media.einoder.net/projects/synthetic-biophilia/web/circle tree leafnlow density tall.jpg', caption: 'Tree-Like Structure - Low Density' }
             ];
 
             // Create gallery loader function

@@ -19,64 +19,59 @@
             "vars": {
                 "images": [
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/169 sidey4k1 no fill just lattice.jpg",
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/169 sidey4k1 no fill just lattice.jpg",
                         "title": "Lattice Study #01 - Side View",
                         "caption": "Phyllotactic lattice structure exploring 169° golden angle rotation. This side view demonstrates the emergent spiral patterns that arise from simple geometric rules applied iteratively."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/169 top4k1 no fill just lattice.jpg",
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/169 top4k1 no fill just lattice.jpg",
                         "title": "Lattice Study #02 - Top View",
                         "caption": "Top-down perspective of the same 169° lattice structure, revealing radial symmetry and self-organizing patterns characteristic of phyllotaxis in nature."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/bush like leafs.jpg",
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/bush like leafs.jpg",
                         "title": "Bush-Like Leaf Formation",
                         "caption": "Organic clustering pattern generated through iterative spiral growth algorithms. The overlapping forms mimic the dense foliage arrangement found in natural shrubs."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/closeup-1.jpg",
-                        "title": "Lattice Detail - Close-Up",
-                        "caption": "Macro view showing individual lattice cells and their geometric relationships. The precision of mathematical generation contrasts with organic emergent behavior."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/closed 169 side.jpg",
+                        "title": "Closed Lattice - Side View",
+                        "caption": "Side perspective of closed lattice structure showing the relationship between individual cells and overall geometric form."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/closeup-2.jpg",
-                        "title": "Void Space Analysis",
-                        "caption": "Study of negative space within the lattice structure. Understanding void distribution is crucial for structural optimization in bio-inspired design."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/closed 169 top.jpg",
+                        "title": "Closed Lattice - Top View",
+                        "caption": "Top-down view of closed lattice formation revealing internal structural patterns and void distributions."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/fern-spiral.jpg",
-                        "title": "Fern Spiral Configuration",
-                        "caption": "Fibonacci spiral pattern generating fern-like frond structures. Demonstrates the connection between mathematical sequences and organic growth patterns."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/circle piece leaf side.jpg",
+                        "title": "Circular Leaf Formation - Side",
+                        "caption": "Side view of circular arrangement demonstrating leaf-like organic forms emerging from mathematical spiral patterns."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/heptagonal-pattern.jpg",
-                        "title": "Heptagonal Tessellation",
-                        "caption": "Seven-sided polygonal arrangement exploring non-standard tessellation patterns. Challenges conventional hexagonal packing while maintaining structural integrity."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/circle tree leafnlow density tall.jpg",
+                        "title": "Tree-Like Structure - Low Density",
+                        "caption": "Tall, low-density configuration exploring vertical growth patterns and spacing relationships in bio-inspired structures."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/lattice-density-test.jpg",
-                        "title": "Density Variation Study",
-                        "caption": "Experimental variation in lattice density across the structure. Tests the relationship between packing efficiency and visual complexity."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/dome from underneath 1.jpg",
+                        "title": "Dome Structure - Underneath View #1",
+                        "caption": "Underside perspective of dome lattice structure showing node connections and structural integrity from interior viewpoint."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/multi-angle-composite.jpg",
-                        "title": "Multi-Angle Composite",
-                        "caption": "Composite view showing multiple perspectives of the same structure. Reveals how three-dimensional complexity manifests differently from various viewpoints."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/dome from underneath 2.jpg",
+                        "title": "Dome Structure - Underneath View #2",
+                        "caption": "Alternative angle of dome interior revealing the complexity and beauty of phyllotactic packing in three-dimensional space."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/node-connection-map.jpg",
-                        "title": "Node Connection Mapping",
-                        "caption": "Visualization of connectivity between lattice nodes. Graph theory applied to spatial relationships in bio-inspired structures."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/joints 2.jpg",
+                        "title": "Joint Connection Detail",
+                        "caption": "Close-up study of lattice joint connections showing how individual elements interconnect to form stable structural networks."
                     },
                     {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/pentagonal-void.jpg",
-                        "title": "Pentagonal Void Formation",
-                        "caption": "Five-sided negative space emerging naturally from the generative algorithm. Demonstrates how simple rules create complex geometric diversity."
-                    },
-                    {
-                        "src": "/gallery-bundle-processor/output/synthetic-biophilia/web/recursive-branch.jpg",
-                        "title": "Recursive Branching Pattern",
-                        "caption": "Self-similar branching structure generated through recursive subdivision. Mimics the fractal nature of tree branch systems and venation patterns."
+                        "src": "https://media.einoder.net/projects/synthetic-biophilia/web/lattice joint.jpg",
+                        "title": "Lattice Joint Assembly",
+                        "caption": "Detailed view of lattice joint assembly demonstrating the precision of node placement and connection geometry."
                     }
                 ],
                 "itemWidth": 250,
