@@ -2083,4 +2083,100 @@ body.with-subheader .content-container {
     .gallery-item__label {
         opacity: 1; /* Always visible on mobile */
     }
+}}
+
+/* =================================================================
+   GENERATIVE ANIMATIONS - Standard Container Pattern
+   ================================================================= */
+
+/* Animation wrapper - vertical stacking of container + export */
+.animation-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--f);
+}
+
+/* Main animation container - vertical stack (controls above canvas) */
+.animation-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--f);
+}
+
+/* Sidebar for animation controls */
+.animation-sidebar {
+    display: flex;
+    flex-direction: row;
+    gap: calc(var(--f) / 2);
+    flex-wrap: wrap;
+}
+
+/* Canvas area */
+.animation-canvas-area {
+    border: 1px solid var(--c-border);
+    padding: var(--f);
+    background: var(--c-bg);
+    min-height: calc(var(--f) * 30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Export controller at bottom - full width */
+.animation-wrapper > .export-controller {
+    width: 100%;
+    margin: 0;
+}
+
+/* Canvas element styling */
+.animation-canvas {
+    display: block;
+    image-rendering: pixelated;
+    background: var(--c-bg);
+}
+
+/* Export controller styling */
+.export-controller {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 2);
+    padding: var(--f);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.export-row {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 4);
+}
+
+.export-row label {
+    font-size: calc(var(--f) * 0.85);
+    opacity: 0.8;
+    text-transform: uppercase;
+}
+
+/* Select component fix - proper height and text alignment */
+.export-row select,
+select.component {
+    height: calc(var(--f) * 2);
+    padding: 0 calc(var(--f) / 2);
+    line-height: calc(var(--f) * 2);
+    font-size: var(--f);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: 'Space Mono', monospace;
+}
+
+/* Responsive - single column on mobile */
+@media (max-width: 1023px) {
+    .animation-wrapper {
+        gap: calc(var(--f) / 2);
+    }
+    
+    .animation-sidebar {
+        flex-direction: column;
+    }
 }

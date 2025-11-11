@@ -9,7 +9,7 @@ const R2Config = {
   bucketName: 'assetts-einoder',
   
   // Fallback to local paths during development
-  useFallback: false,
+  useFallback: false, // R2 is the primary source
   localBasePath: './art',
 };
 

@@ -13,6 +13,7 @@ alwaysApply: true
 Only these files may own the concern. Others must not implement it.
 - Layout math → assets/js/core/mathematical-foundation.js
 - Base OO system → assets/js/core/base-component.js
+- **Animation logic → assets/js/core/animation-foundation.js**
 - Routing/nav → assets/js/core/router.js
 - App bootstrap/init → assets/js/core/app.js
 - UI components → assets/js/shared/component-library.js
@@ -24,13 +25,17 @@ Only these files may own the concern. Others must not implement it.
 - All UI classes extend `BaseComponent`.
 - Instances: `const x = new X(...); this.componentInstances.push(x)`.
 - All dimensional math via `MathematicalFoundation.calculateDimensions(kind|props)`.
+- **All animations via `AnimationFoundation` classes (AnimationLoop, FrameSequencer, etc.)**.
 - No manual DOM outside BaseComponent internals.
+- No manual RAF/setInterval for animations.
 
 ## Architecture Rules
 - NO `document.*`, `window.*`, `.innerHTML`, `.createElement`, `.appendChild` etc. outside BaseComponent module.
 - NO layout math in components/sections; use MathematicalFoundation only.
+- **NO requestAnimationFrame/setInterval/setTimeout for animations; use AnimationFoundation only.**
 - Sections are JSON-driven and render via `ComponentLibrary` / `SpecializedComponents` only.
 - Every component implements `.destroy()`; sections track/cleanup via `componentInstances`.
+- Every animator must call `.destroy()` in the tool/component's destroy method.
 
 ## Style Constraints (VGA/Mono)
 - Colors: only CSS vars `var(--vga-*)`. No raw hex/rgb/hsl.
@@ -41,16 +46,19 @@ Only these files may own the concern. Others must not implement it.
 ## Build Chronology (observable path)
 app → router → destroy → section → subheader → JSON → blocks → render → URL
 
-## Do / Don’t (enforceable examples)
+## Do / Don't (enforceable examples)
 DO:
 class Dropdown extends BaseComponent { ... }
 const dd = new Dropdown(o); this.componentInstances.push(dd);
 MathematicalFoundation.calculateDimensions('dropdown');
+this.animator = new AnimationFoundation.AnimationLoop({ onFrame: () => this.draw() });
 
-DON’T:
+DON'T:
 const el = document.createElement('div'); // forbidden outside BaseComponent
 el.innerHTML = ...
 const w = px*0.62; // layout math outside Foundation
+this.animationFrame = requestAnimationFrame(...); // forbidden - use AnimationFoundation
+this.interval = setInterval(...); // forbidden for animations - use AnimationFoundation
 
 ## JSON Page Contract (must hold)
 Required keys: header (str), subheader (str), url ("/kebab"), blocks (array of {type, props}).
@@ -73,6 +81,7 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
   - document.* / window.* outside BaseComponent.
   - class BaseComponent outside its owner.
   - calculateDimensions( outside MathematicalFoundation definition.
+  - **requestAnimationFrame/cancelAnimationFrame/setInterval/clearInterval for animations (use AnimationFoundation)**.
   - routing (pushState, popstate, location.hash) outside router.js.
   - bootstrap/initialize outside app.js.
   - raw colours or border-radius/box-shadow/text-shadow anywhere.
@@ -80,6 +89,10 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
   - import ComponentLibrary,
   - load JSON,
   - render from JSON blocks only.
+- **Animations must:**
+  - **Use AnimationFoundation classes (AnimationLoop, FrameSequencer, IntervalAnimator, ThrottledLoop).**
+  - **Call animator.destroy() in tool/component cleanup.**
+  - **Never implement custom RAF/setInterval loops.**
 
 ## Output Contract
 - Keep diffs minimal; do not add new files that duplicate owned concerns.

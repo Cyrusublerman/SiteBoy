@@ -705,14 +705,20 @@ const SiteBoyApp = {
             return;
         }
         
+        // Get current route
+        const route = this.parseRoute();
+        
+        // Skip rebuild for active animations to prevent breaking running scripts
+        if (route.section === 'art' && route.subsection && route.subsection.includes('generative/') && route.subsection !== 'generative') {
+            console.log(`⏭️ Skipping resize rebuild for active animation: ${route.subsection}`);
+            return;
+        }
+        
         console.log(`🔄 Page resize detected (${evt.width}x${evt.height}) - rebuilding current section`);
         
         // Store current state before rebuild
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const uiState = this.saveUIState();
-        
-        // Get current route
-        const route = this.parseRoute();
         
         // Rebuild the current page for the new dimensions
         this.buildPageForRoute(route.section, route.subsection);

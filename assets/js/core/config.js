@@ -360,6 +360,18 @@ export const LayoutCalculator = {
             dropdown: {
                 maxHeight: Config.sizing.dropdownMaxH,
                 itemHeight: F * 2 // 24px per item
+            },
+            'animation-canvas': {
+                width: F * 67,    // 804px at F=12, 938px at F=14
+                height: F * 67,   // Square canvas for generative animations
+                sidebarWidth: F * 36  // 432px at F=12, 504px at F=14 (like color-quantizer)
+            },
+            'export-presets': {
+                // Instagram export presets
+                square: { width: 1080, height: 1080, label: 'Square (1080×1080)' },
+                portrait: { width: 1080, height: 1920, label: 'Portrait (1080×1920)' },
+                story: { width: 1080, height: 1920, label: 'Story (1080×1920)' },
+                landscape: { width: 1920, height: 1080, label: 'Landscape (1920×1080)' }
             }
         };
         

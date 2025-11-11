@@ -4,8 +4,8 @@
  * Creates 2x2 pixel combinations from 4 source images with animation support
  * Integrates with SiteBoy component system and aesthetic rules
  * 
- * @version 1.0.0
- * @dependencies ComponentLibrary
+ * @version 2.0.0
+ * @dependencies ComponentLibrary, AnimationFoundation
  */
 
 class PixelTiler {
@@ -18,11 +18,12 @@ class PixelTiler {
             processedImages: {},
             allCombinations: [],
             currentFrame: 0,
-            isPlaying: false,
-            animationInterval: null,
-            animationSpeed: 1000 / 24, // 24 FPS
+            animationSpeed: 24, // 24 FPS
             mode: 'single' // single, permutations, all
         };
+        
+        // Animation system - unified approach
+        this.animator = null;
     }
     
     render() {
@@ -391,6 +392,7 @@ class PixelTiler {
         this.statusDisplay.setMessage('Complete - Click image for fullscreen');
         this.resultCanvas.style.display = 'block';
         this.animationControls.element.style.display = 'none';
+        this.initializeAnimator(); // Initialize even for single frame (for consistency)
     }
     
     processPermutations() {
@@ -401,6 +403,7 @@ class PixelTiler {
         this.resultCanvas.style.display = 'block';
         this.animationControls.element.style.display = 'block';
         this.animationControls.setFrameInfo(0, this.state.allCombinations.length);
+        this.initializeAnimator(); // Initialize animator for sequence
     }
     
     processAll() {
@@ -411,6 +414,7 @@ class PixelTiler {
         this.resultCanvas.style.display = 'block';
         this.animationControls.element.style.display = 'block';
         this.animationControls.setFrameInfo(0, this.state.allCombinations.length);
+        this.initializeAnimator(); // Initialize animator for sequence
     }
     
     generatePermutations(arr) {
@@ -493,35 +497,48 @@ class PixelTiler {
         ctx.putImageData(resultData, 0, 0);
     }
     
+    /**
+     * Initialize unified animation system
+     */
+    initializeAnimator() {
+        // Destroy existing animator if any
+        if (this.animator) {
+            this.animator.destroy();
+        }
+        
+        // Use FrameSequencer for frame-by-frame animation
+        this.animator = new window.AnimationFoundation.FrameSequencer({
+            frameCount: this.state.allCombinations.length,
+            onFrame: (frameIndex) => {
+                this.state.currentFrame = frameIndex;
+                this.createTiledImage(this.state.allCombinations[frameIndex]);
+                this.animationControls.setFrameInfo(frameIndex, this.state.allCombinations.length);
+            },
+            fps: this.state.animationSpeed,
+            loop: true
+        });
+    }
+    
     startAnimation() {
-        if (this.state.allCombinations.length <= 1) return;
-        this.state.isPlaying = true;
-        this.state.animationInterval = setInterval(() => {
-            this.nextFrame();
-        }, this.state.animationSpeed);
+        if (this.state.allCombinations.length <= 1 || !this.animator) return;
+        this.animator.start();
     }
     
     stopAnimation() {
-        this.state.isPlaying = false;
-        if (this.state.animationInterval) {
-            clearInterval(this.state.animationInterval);
-            this.state.animationInterval = null;
+        if (this.animator) {
+            this.animator.stop();
         }
     }
     
     nextFrame() {
-        if (this.state.allCombinations.length > 0) {
-            this.state.currentFrame = (this.state.currentFrame + 1) % this.state.allCombinations.length;
-            this.createTiledImage(this.state.allCombinations[this.state.currentFrame]);
-            this.animationControls.setFrameInfo(this.state.currentFrame, this.state.allCombinations.length);
+        if (this.animator) {
+            this.animator.nextFrame();
         }
     }
     
     previousFrame() {
-        if (this.state.allCombinations.length > 0) {
-            this.state.currentFrame = (this.state.currentFrame - 1 + this.state.allCombinations.length) % this.state.allCombinations.length;
-            this.createTiledImage(this.state.allCombinations[this.state.currentFrame]);
-            this.animationControls.setFrameInfo(this.state.currentFrame, this.state.allCombinations.length);
+        if (this.animator) {
+            this.animator.previousFrame();
         }
     }
     
@@ -577,7 +594,12 @@ class PixelTiler {
     }
     
     destroy() {
-        this.stopAnimation();
+        // Destroy animator first (unified cleanup)
+        if (this.animator) {
+            this.animator.destroy();
+            this.animator = null;
+        }
+        
         ComponentLibrary.destroyTracked(this.componentInstances);
         if (this.container) {
             this.container.innerHTML = '';

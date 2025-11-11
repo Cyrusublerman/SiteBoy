@@ -40,6 +40,12 @@ import {
     Panel 
 } from './layout.js';
 
+// Import animation container
+import { AnimationContainer } from './animation-container.js';
+
+// Import export controller
+import { ExportController } from './export-controller.js';
+
 console.log('🔥 COMPONENT LIBRARY LOADING GRID:', Grid);
 
 // Import all content components
@@ -120,6 +126,8 @@ export const ComponentLibrary = {
     Grid,
     Spacing,
     Panel,
+    AnimationContainer,
+    ExportController,
     
     // Content components
     Heading,

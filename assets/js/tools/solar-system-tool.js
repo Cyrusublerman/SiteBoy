@@ -10,8 +10,8 @@
  * - Planet selection and measurement
  * - Hours since Great Emu War counter
  * 
- * @version 1.0.0
- * @dependencies None (pure astronomical calculations)
+ * @version 2.0.0
+ * @dependencies AnimationFoundation
  */
 
 class SolarSystemTool {
@@ -61,8 +61,9 @@ class SolarSystemTool {
         this.longitude = null;
         this.latitude = null;
         this.customDate = null;
-        this.animationFrame = null;
-        this.lastUpdate = 0;
+        
+        // Animation system - unified approach
+        this.animator = null;
         
         // UI elements
         this.canvas = null;
@@ -104,6 +105,9 @@ class SolarSystemTool {
         
         // Request geolocation
         this.requestLocation();
+        
+        // Initialize animation system
+        this.initializeAnimator();
         
         // Start animation
         this.startAnimation();
@@ -271,16 +275,23 @@ class SolarSystemTool {
         return Math.log(distanceAU * 10 + 1);
     }
     
-    startAnimation() {
-        const animate = () => {
-            const now = Date.now();
-            if ((now - this.lastUpdate) >= this.config.performance.updateInterval) {
-                this.lastUpdate = now;
+    /**
+     * Initialize unified animation system
+     */
+    initializeAnimator() {
+        // Use ThrottledLoop for performance - updates only at specified interval
+        this.animator = new window.AnimationFoundation.ThrottledLoop({
+            onFrame: () => {
                 this.renderFrame();
-            }
-            this.animationFrame = requestAnimationFrame(animate);
-        };
-        animate();
+            },
+            updateInterval: this.config.performance.updateInterval
+        });
+    }
+    
+    startAnimation() {
+        if (this.animator) {
+            this.animator.start();
+        }
     }
     
     renderFrame() {
@@ -454,9 +465,10 @@ class SolarSystemTool {
     }
     
     destroy() {
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-            this.animationFrame = null;
+        // Destroy animator first (unified cleanup)
+        if (this.animator) {
+            this.animator.destroy();
+            this.animator = null;
         }
         
         for (const instance of this.componentInstances) {

@@ -1,0 +1,125 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  font-family: monospace;
+  color: #c0c0c0;
+  padding: 12px;
+}
+
+canvas {
+  border: 1px solid #808080;
+  cursor: crosshair;
+  max-width: 100%;
+  image-rendering: pixelated;
+}
+
+.controls {
+  width: 800px;
+  max-width: 100%;
+  margin-top: 12px;
+  background: #000;
+  border: 1px solid #808080;
+  padding: 12px;
+}
+
+.section {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #808080;
+}
+
+.section:last-child { border-bottom: none; }
+
+.title {
+  font-size: 11px;
+  margin-bottom: 6px;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+button {
+  background: #000;
+  color: #c0c0c0;
+  border: 1px solid #808080;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: monospace;
+  margin: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+button:hover { background: #c0c0c0; color: #000; }
+button:disabled { opacity: 0.3; cursor: not-allowed; }
+button:disabled:hover { background: #000; color: #c0c0c0; }
+button.active { background: #fff; color: #000; }
+
+label { display: inline-block; margin: 6px 12px 6px 0; font-size: 11px; }
+
+input[type=number] { 
+  width: 60px; 
+  background: #000; 
+  color: #c0c0c0; 
+  border: 1px solid #808080; 
+  padding: 4px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+select {
+  background: #000;
+  color: #c0c0c0;
+  border: 1px solid #808080;
+  padding: 4px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1px;
+}
+
+.chord-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+}
+
+.source-list {
+  font-size: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+  border: 1px solid #808080;
+  padding: 6px;
+  background: #000;
+}
+
+.source-item {
+  padding: 4px;
+  margin: 2px 0;
+  border: 1px solid #808080;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.source-item:hover { background: #808080; }
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+}

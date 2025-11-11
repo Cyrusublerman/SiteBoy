@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deterministic Tile Animation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+    :root {
+      --vga-black: #000000; --vga-silver: #c0c0c0; --vga-gray: #808080; --vga-white: #ffffff;
+      --bg: var(--vga-black); --text: var(--vga-silver); --border: var(--vga-gray); --accent: var(--vga-white);
+      --f: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Atkinson Hyperlegible', monospace;
+      font-size: var(--f);
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+      width: 100vw;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .container { padding: calc(var(--f) * 4); max-width: 100%; }
+    .controls-section {
+      margin-bottom: calc(var(--f) * 2);
+      padding: var(--f);
+      border: 1px solid var(--border);
+    }
+    .control-row {
+      display: flex;
+      gap: var(--f);
+      margin-bottom: var(--f);
+      align-items: center;
+    }
+    .control-row label {
+      min-width: calc(var(--f) * 12);
+      text-transform: uppercase;
+      font-size: calc(var(--f) * 0.9);
+    }
+    .control-row input {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: calc(var(--f) * 0.5);
+      font-family: 'Atkinson Hyperlegible', monospace;
+      width: calc(var(--f) * 6);
+    }
+    button {
+      font-family: 'Atkinson Hyperlegible', monospace;
+      font-size: var(--f);
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: calc(var(--f) / 2) var(--f);
+      height: calc(var(--f) * 2);
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background-color 0.1s ease, color 0.1s ease;
+    }
+    button:hover:not(:disabled) { background: var(--text); color: var(--bg); }
+    .button-row { display: flex; gap: 1px; margin-top: var(--f); }
+    .tile-grid { display: grid; margin: calc(var(--f) * 2) 0; }
+    .tile { cursor: pointer; background: var(--bg); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="controls-section">
+      <div class="control-row">
+        <label>Grid:</label>
+        <input type="number" id="grid-cols" value="6" min="2" max="12">
+        <span>×</span>
+        <input type="number" id="grid-rows" value="6" min="2" max="12">
+      </div>
+      <div class="control-row">
+        <label>Tile Size:</label>
+        <input type="number" id="tile-size" value="120" min="60" max="300" step="12">
+      </div>
+      <div class="control-row">
+        <label>Gap:</label>
+        <input type="number" id="gap" value="0" min="0" max="24">
+      </div>
+      <div class="control-row">
+        <label>FPS:</label>
+        <input type="number" id="fps" value="12" min="6" max="60">
+      </div>
+      <div class="control-row">
+        <label>Refresh Frames:</label>
+        <input type="number" id="refresh-frames" value="96" min="24" max="360" step="12">
+      </div>
+      <div class="button-row">
+        <button id="play-btn">Play</button>
+        <button id="stop-btn">Stop</button>
+        <button id="regenerate-btn">Regenerate</button>
+      </div>
+    </div>
+    <div class="tile-grid" id="grid"></div>
+  </div>
+  
+  <script>
+    /*
+    DETERMINISTIC TILE ANIMATION - IMPROVED VERSION
+    
+    NEW FEATURES:
+    - Motion blur with 75% fade per frame (25% alpha per new frame)
+    - Triangle gradient centered at centroid (not bounding box center)
+    - Random seed per tile for initial variation
+    - Hash function for pseudo-random but deterministic distribution
+    - Dark side ALWAYS leads: rotation direction tied to gradient direction
+    
+    ROTATION MATH:
+    - Gradient angle calculated as: atan2(dy, dx) - rotationOffset
+    - SUBTRACTING rotation makes the pattern visually rotate
+    - Direction is TIED to gradient inversion:
+      * gradientInverted=false → dark-to-light clockwise → rotate CCW (dir=-1) → dark leads
+      * gradientInverted=true → light-to-dark clockwise → rotate CW (dir=1) → dark leads
+    - Rotation increments each frame: rotationOffset += degreesPerFrame * direction
+    
+    RANGES:
+    - Seam count: 1-11 (all values, not just primes)
+    - Rotation speed: 0.68° to 12.5° per frame (tied to seam count)
+      * Base: 10° / seamCount
+      * Variation: ×0.75 to ×1.25
+      * At 12fps: slowest ≈ 36 sec/rotation, fastest ≈ 0.3 sec/rotation
+      * More seams = slower rotation (to see detail)
+    - Direction: ALWAYS tied to gradient (dark leads)
+    - Gradient inversion: randomized per tile/cycle (50/50)
+    - Shape: randomized per tile/cycle (33/33/33 square/circle/triangle)
+    - Initial rotation offset: random 0-360° per tile
+    
+    COMPLEXITY:
+    - No more diagonal patterns (hash-based distribution)
+    - Different pattern each cycle (includes cycleState in calculations)
+    - Initial randomness (seed + rotation offset)
+    */
+    
+    const SHAPES = { square: 'square', circle: 'circle', triangle: 'triangle' };
+
+    class TileSystem {
+      constructor() {
+        this.gridEl = document.getElementById('grid');
+        this.tiles = [];
+        this.config = {
+          cols: 6,
+          rows: 6,
+          tileSize: 120,
+          gap: 0,
+          fps: 12,
+          refreshFrames: 96
+        };
+        this.isPlaying = false;
+        this.lastFrameTime = 0;
+        
+        this.setupControls();
+        this.generate();
+      }
+      
+      setupControls() {
+        document.getElementById('grid-cols').addEventListener('change', (e) => {
+          this.config.cols = parseInt(e.target.value);
+          this.generate();
+        });
+        document.getElementById('grid-rows').addEventListener('change', (e) => {
+          this.config.rows = parseInt(e.target.value);
+          this.generate();
+        });
+        document.getElementById('tile-size').addEventListener('change', (e) => {
+          this.config.tileSize = parseInt(e.target.value);
+          this.generate();
+        });
+        document.getElementById('gap').addEventListener('change', (e) => {
+          this.config.gap = parseInt(e.target.value);
+          this.tiles.forEach(t => t.draw());
+        });
+        document.getElementById('fps').addEventListener('change', (e) => {
+          this.config.fps = parseInt(e.target.value);
+        });
+        document.getElementById('refresh-frames').addEventListener('change', (e) => {
+          this.config.refreshFrames = parseInt(e.target.value);
+          this.tiles.forEach(t => t.refreshFrames = this.config.refreshFrames);
+        });
+        document.getElementById('play-btn').addEventListener('click', () => this.play());
+        document.getElementById('stop-btn').addEventListener('click', () => this.stop());
+        document.getElementById('regenerate-btn').addEventListener('click', () => this.generate());
+      }
+      
+      generate() {
+        this.stop();
+        this.gridEl.innerHTML = '';
+        this.tiles = [];
+        this.updateGrid();
+        
+        const count = this.config.cols * this.config.rows;
+        for (let i = 0; i < count; i++) {
+          const canvas = document.createElement('canvas');
+          canvas.width = this.config.tileSize;
+          canvas.height = this.config.tileSize;
+          canvas.className = 'tile';
+          
+          // Fill with black initially
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          this.gridEl.appendChild(canvas);
+          
+          const tile = new Tile(canvas, i, this.config);
+          this.tiles.push(tile);
+        }
+      }
+      
+      updateGrid() {
+        this.gridEl.style.gridTemplateColumns = `repeat(${this.config.cols}, ${this.config.tileSize}px)`;
+        this.gridEl.style.gap = '0px';
+      }
+      
+      play() {
+        if (!this.isPlaying) {
+          this.isPlaying = true;
+          this.lastFrameTime = performance.now();
+          this.animate(this.lastFrameTime);
+        }
+      }
+      
+      stop() {
+        this.isPlaying = false;
+      }
+      
+      animate(currentTime) {
+        if (!this.isPlaying) return;
+        
+        const frameDuration = 1000 / this.config.fps;
+        const elapsed = currentTime - this.lastFrameTime;
+        
+        if (elapsed >= frameDuration) {
+          this.tiles.forEach(t => t.update());
+          this.lastFrameTime = currentTime - (elapsed % frameDuration);
+        }
+        
+        requestAnimationFrame((t) => this.animate(t));
+      }
+    }
+
+    class Tile {
+      constructor(canvas, index, config) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.index = index;
+        this.config = config;
+        
+        this.row = Math.floor(index / config.cols);
+        this.col = index % config.cols;
+        this.totalTiles = config.cols * config.rows;
+        
+        this.frameCount = 0;
+        this.cycleState = 0;
+        this.refreshFrames = config.refreshFrames;
+        
+        // Random seed for this tile (set once, stays same across cycles)
+        this.seed = Math.random() * 1000;
+        
+        // Initial random offset so animation doesn't start uniform
+        this.rotationOffset = Math.random() * 360;
+        
+        this.computeProperties();
+        this.draw();
+      }
+      
+      // Hash function for pseudo-random but deterministic values
+      hash(a, b, c) {
+        let x = Math.sin(a * 12.9898 + b * 78.233 + c * 37.719 + this.seed) * 43758.5453;
+        return x - Math.floor(x);
+      }
+      
+      computeProperties() {
+        // Seam count: ALL values 1-11 (not just primes)
+        this.seamCount = Math.floor(this.hash(this.index, this.cycleState, 1) * 11) + 1;
+        
+        // Gradient inverted: more complex distribution
+        const gradValue = this.hash(this.row + this.cycleState, this.col * 2, this.index);
+        this.gradientInverted = gradValue < 0.5;
+        
+        // Direction TIED to gradient: dark side always leads
+        // If gradient is dark-to-light clockwise (inverted=false), rotate counter-clockwise (dir=-1)
+        // If gradient is light-to-dark clockwise (inverted=true), rotate clockwise (dir=1)
+        this.direction = this.gradientInverted ? 1 : -1;
+        
+        // Rotation speed tied to seam count: more seams = slower rotation
+        // Max 10 degrees/frame, inversely proportional to seams
+        const baseSpeed = 10 / this.seamCount; // More seams = slower
+        const speedVariation = this.hash(this.index, this.cycleState, 2) * 0.5 + 0.75; // 0.75-1.25x
+        this.degreesPerFrame = baseSpeed * speedVariation;
+        
+        // Shape: more varied, not diagonal pattern
+        const shapeKeys = Object.keys(SHAPES);
+        const shapeValue = Math.floor(this.hash(this.index, this.cycleState, 3) * 3);
+        this.shape = SHAPES[shapeKeys[shapeValue]];
+      }
+      
+      update() {
+        this.frameCount++;
+        
+        if (this.frameCount >= this.refreshFrames) {
+          this.frameCount = 0;
+          this.cycleState++;
+          this.computeProperties();
+        }
+        
+        this.rotationOffset += this.degreesPerFrame * this.direction;
+        this.rotationOffset = this.rotationOffset % 360;
+        
+        this.draw();
+      }
+      
+      draw() {
+        const size = this.canvas.width;
+        const inset = this.config.gap;
+        const drawSize = size - (inset * 2);
+        if (drawSize <= 0) return;
+        
+        // Fade to black each frame to clear old shapes (15% fade = ~7 frames to clear)
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        this.ctx.fillRect(0, 0, size, size);
+        
+        // Create imageData for new frame
+        const imageData = this.ctx.createImageData(drawSize, drawSize);
+        
+        if (this.shape === SHAPES.square) {
+          this.drawSquare(imageData, drawSize);
+        } else if (this.shape === SHAPES.circle) {
+          this.drawCircle(imageData, drawSize);
+        } else {
+          this.drawTriangle(imageData, drawSize);
+        }
+        
+        // Create temporary canvas
+        if (!this.tempCanvas) {
+          this.tempCanvas = document.createElement('canvas');
+          this.tempCanvas.width = drawSize;
+          this.tempCanvas.height = drawSize;
+          this.tempCtx = this.tempCanvas.getContext('2d');
+        }
+        
+        // Put imageData on temp canvas
+        this.tempCtx.putImageData(imageData, 0, 0);
+        
+        // Draw temp canvas onto main canvas with 25% opacity for motion blur
+        this.ctx.globalAlpha = 0.25;
+        this.ctx.drawImage(this.tempCanvas, inset, inset);
+        this.ctx.globalAlpha = 1.0;
+      }
+      
+      drawSquare(imageData, size) {
+        const data = imageData.data;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        
+        // Triangle side = 0.85 * size, area = (√3/4) * (0.85*size)²
+        const triangleSide = size * 0.85;
+        const triangleArea = (Math.sqrt(3) / 4) * triangleSide * triangleSide;
+        // Square with same area: side = √area
+        const squareSide = Math.sqrt(triangleArea);
+        const halfSide = squareSide / 2;
+        
+        const rotRad = (this.rotationOffset * Math.PI) / 180;
+        
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const idx = (y * size + x) * 4;
+            
+            const dx = x - centerX;
+            const dy = y - centerY;
+            
+            // Check if inside square
+            if (Math.abs(dx) > halfSide || Math.abs(dy) > halfSide) {
+              data[idx] = 255;
+              data[idx + 1] = 255;
+              data[idx + 2] = 255;
+              data[idx + 3] = 0; // Transparent outside shape
+              continue;
+            }
+            
+            // Gradient rotates - SUBTRACT rotation to make pattern spin visually
+            let angle = Math.atan2(dy, dx) - rotRad;
+            
+            while (angle < 0) angle += 2 * Math.PI;
+            while (angle >= 2 * Math.PI) angle -= 2 * Math.PI;
+            
+            const segmentAngle = (2 * Math.PI) / this.seamCount;
+            const localAngle = (angle % segmentAngle) / segmentAngle;
+            
+            let gradientValue = this.gradientInverted ? (1 - localAngle) : localAngle;
+            
+            const threshold = this.ditherMatrix(x % 4, y % 4) / 16;
+            const color = gradientValue > threshold ? 255 : 0;
+            
+            data[idx] = color;
+            data[idx + 1] = color;
+            data[idx + 2] = color;
+            data[idx + 3] = 255; // Full opacity - globalAlpha handles blur
+          }
+        }
+      }
+      
+      drawCircle(imageData, size) {
+        const data = imageData.data;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        
+        // Triangle side = 0.85 * size, area = (√3/4) * (0.85*size)²
+        const triangleSide = size * 0.85;
+        const triangleArea = (Math.sqrt(3) / 4) * triangleSide * triangleSide;
+        // Circle with same area: πr² = area, so r = √(area/π)
+        const radius = Math.sqrt(triangleArea / Math.PI);
+        
+        const rotRad = (this.rotationOffset * Math.PI) / 180;
+        
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const idx = (y * size + x) * 4;
+            
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > radius) {
+              data[idx] = 255;
+              data[idx + 1] = 255;
+              data[idx + 2] = 255;
+              data[idx + 3] = 0; // Transparent outside shape
+              continue;
+            }
+            
+            // Gradient rotates - SUBTRACT rotation to make pattern spin visually
+            let angle = Math.atan2(dy, dx) - rotRad;
+            
+            while (angle < 0) angle += 2 * Math.PI;
+            while (angle >= 2 * Math.PI) angle -= 2 * Math.PI;
+            
+            const segmentAngle = (2 * Math.PI) / this.seamCount;
+            const localAngle = (angle % segmentAngle) / segmentAngle;
+            
+            let gradientValue = this.gradientInverted ? (1 - localAngle) : localAngle;
+            
+            const threshold = this.ditherMatrix(x % 4, y % 4) / 16;
+            const color = gradientValue > threshold ? 255 : 0;
+            
+            data[idx] = color;
+            data[idx + 1] = color;
+            data[idx + 2] = color;
+            data[idx + 3] = 255; // Full opacity - globalAlpha handles blur
+          }
+        }
+      }
+      
+      drawTriangle(imageData, size) {
+        const data = imageData.data;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        
+        // Triangle side = 0.85 * size
+        const triangleSide = size * 0.85;
+        const height = (Math.sqrt(3) / 2) * triangleSide;
+        
+        const rotRad = (this.rotationOffset * Math.PI) / 180;
+        
+        // Center by BOUNDING BOX not centroid
+        // Apex at centerY - height/2, base at centerY + height/2
+        const v1 = { x: centerX, y: centerY - height / 2 }; // top (apex)
+        const v2 = { x: centerX + triangleSide / 2, y: centerY + height / 2 }; // bottom right
+        const v3 = { x: centerX - triangleSide / 2, y: centerY + height / 2 }; // bottom left
+        
+        // Centroid of triangle (for gradient center)
+        const centroidY = centerY + height / 6; // 2/3 down from apex
+        
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const idx = (y * size + x) * 4;
+            
+            // Check if inside triangle using barycentric coordinates
+            const denom = ((v2.y - v3.y) * (v1.x - v3.x) + (v3.x - v2.x) * (v1.y - v3.y));
+            const a = ((v2.y - v3.y) * (x - v3.x) + (v3.x - v2.x) * (y - v3.y)) / denom;
+            const b = ((v3.y - v1.y) * (x - v3.x) + (v1.x - v3.x) * (y - v3.y)) / denom;
+            const c = 1 - a - b;
+            
+            if (a < 0 || b < 0 || c < 0) {
+              data[idx] = 255;
+              data[idx + 1] = 255;
+              data[idx + 2] = 255;
+              data[idx + 3] = 0; // Transparent outside shape
+              continue;
+            }
+            
+            // Gradient rotates from CENTROID - SUBTRACT rotation to make pattern spin visually
+            const dx = x - centerX;
+            const dy = y - centroidY;
+            let angle = Math.atan2(dy, dx) - rotRad;
+            
+            while (angle < 0) angle += 2 * Math.PI;
+            while (angle >= 2 * Math.PI) angle -= 2 * Math.PI;
+            
+            const segmentAngle = (2 * Math.PI) / this.seamCount;
+            const localAngle = (angle % segmentAngle) / segmentAngle;
+            
+            let gradientValue = this.gradientInverted ? (1 - localAngle) : localAngle;
+            
+            const threshold = this.ditherMatrix(x % 4, y % 4) / 16;
+            const color = gradientValue > threshold ? 255 : 0;
+            
+            data[idx] = color;
+            data[idx + 1] = color;
+            data[idx + 2] = color;
+            data[idx + 3] = 255; // Full opacity - globalAlpha handles blur
+          }
+        }
+      }
+      
+      ditherMatrix(x, y) {
+        const matrix = [
+          [0, 8, 2, 10],
+          [12, 4, 14, 6],
+          [3, 11, 1, 9],
+          [15, 7, 13, 5]
+        ];
+        return matrix[y][x];
+      }
+    }
+
+    new TileSystem();
+  </script>
+</body>
+</html>

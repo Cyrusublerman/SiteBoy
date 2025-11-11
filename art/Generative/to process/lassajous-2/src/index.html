@@ -1,0 +1,55 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonic Manifold Laboratory</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="display-column">
+            <canvas id="canvas"></canvas>
+            <div class="presets-panel">
+                <label for="template-select">Load Landmark:</label>
+                <select id="template-select"></select>
+            </div>
+        </div>
+
+        <div class="ui-panel">
+            <div id="equation-template">
+                <p>x(t) = A₁cosᵖ¹(ω₁t+φ₁) + A₂cosᵖ²(ω₂t+φ₂) + Mₓcosᵖᵐ¹(ωₘ₁t+φₘ₁)sinᵖᵐ²(ωₘ₂t+φₘ₂)</p>
+                <p>y(t) = A₁sinᵖ¹(ω₁t+φ₁) + A₂sinᵖ²(ω₂t+φ₂) + Mᵧsinᵖᵐ¹(ωₘ₁t+φₘ₁)cosᵖᵐ²(ωₘ₂t+φₘ₂)</p>
+            </div>
+            <div id="equation-display">
+                </div>
+
+            <div class="editor-container">
+                <div id="editor-grid">
+                    <div class="editor-header">
+                        <span>Variable</span>
+                        <span>X-Axis</span>
+                        <span>Y-Axis (Delta from X)</span>
+                    </div>
+                    </div>
+                <div id="analysis">
+                    </div>
+            </div>
+
+
+            <div id="global-controls">
+                </div>
+            
+            <div class="action-controls">
+                <button id="reset-y-btn">Reset Y Deltas</button>
+                <button id="undo-btn" title="Undo (Ctrl+Z)">Undo</button>
+                <button id="export-btn">Export PNG</button>
+            </div>
+            
+            <div id="status-bar">
+                Ready.
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

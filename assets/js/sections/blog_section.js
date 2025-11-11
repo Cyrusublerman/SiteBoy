@@ -22,6 +22,8 @@ const BlogSection = {
         '#blog',
         '#blog/docs/SITEBOY_ARCHITECTURE_FLOW',
         '#blog/docs/ANALYSIS_OLD_BUILD_vs_CURRENT',
+        '#blog/docs/CLOUD_MIGRATION_AND_CLEANUP',
+        '#blog/docs/SITEBOY_DOCUMENTATION_PORTAL',
         '#blog/music/chord',
         '#blog/music/drum',
         '#blog/site/plan',
@@ -85,7 +87,9 @@ const BlogSection = {
             description: 'Technical documentation and analysis',
             articles: [
                 { id: 'SITEBOY_ARCHITECTURE_FLOW', title: 'SiteBoy Architecture Flow' },
-                { id: 'ANALYSIS_OLD_BUILD_vs_CURRENT', title: 'Old Build Analysis' }
+                { id: 'ANALYSIS_OLD_BUILD_vs_CURRENT', title: 'Old Build Analysis' },
+                { id: 'CLOUD_MIGRATION_AND_CLEANUP', title: 'Cloud Migration & Cleanup Ops' },
+                { id: 'SITEBOY_DOCUMENTATION_PORTAL', title: 'Construction & Usability Portal' }
             ]
         },
         'music': {

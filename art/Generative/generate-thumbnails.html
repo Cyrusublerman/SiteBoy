@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Generative Art Thumbnails</title>
+    <style>
+        body {
+            font-family: 'Space Mono', monospace;
+            background: #000;
+            color: #0F0;
+            padding: 20px;
+        }
+        h1 { margin-top: 0; }
+        .status { margin: 20px 0; padding: 10px; border: 1px solid #0F0; }
+        .container { display: none; }
+        canvas { border: 1px solid #0F0; margin: 10px 0; }
+        button {
+            background: #000;
+            color: #0F0;
+            border: 1px solid #0F0;
+            padding: 10px 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0F0; color: #000; }
+        .log { font-size: 12px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>GENERATIVE ART THUMBNAIL GENERATOR</h1>
+    
+    <div class="status" id="status">
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Click "GENERATE ALL THUMBNAILS" button below</li>
+            <li>Wait for each animation to load and capture</li>
+            <li>Download button will appear for each thumbnail</li>
+            <li>Save files to <code>/art/Generative/thumbs/{animation-id}.jpg</code></li>
+        </ol>
+    </div>
+    
+    <button onclick="generateAll()">GENERATE ALL THUMBNAILS</button>
+    <button onclick="clearLogs()">CLEAR LOGS</button>
+    
+    <div id="logs"></div>
+    <div id="container" class="container"></div>
+
+    <script>
+        const animations = [
+            {
+                id: 'circles',
+                className: 'CirclesAnimation',
+                scriptPath: '/art/Generative/scripts/circles-animation.js',
+                width: 600,
+                height: 600,
+                captureFrame: 180
+            },
+            {
+                id: 'torus',
+                className: 'TorusAnimation',
+                scriptPath: '/art/Generative/scripts/torus-animation.js',
+                width: 600,
+                height: 600,
+                captureFrame: 180
+            },
+            {
+                id: 'tiles',
+                className: 'TileAnimation',
+                scriptPath: '/art/Generative/scripts/tile-animation.js',
+                width: 600,
+                height: 600,
+                captureFrame: 120
+            },
+            {
+                id: 'harmonics',
+                className: 'HarmonicsAnimation',
+                scriptPath: '/art/Generative/scripts/harmonics-animation.js',
+                width: 600,
+                height: 600,
+                captureFrame: 180
+            },
+            {
+                id: 'cymatics',
+                className: 'CymaticsAnimation',
+                scriptPath: '/art/Generative/scripts/cymatics-animation.js',
+                width: 600,
+                height: 600,
+                captureFrame: 180
+            },
+            {
+                id: 'lissajous',
+                className: 'LissajousAnimation',
+                scriptPath: '/art/Generative/scripts/lissajous-animation.js',
+                width: 600,
+                height: 600,
+                captureFrame: 120
+            }
+        ];
+
+        function log(message, isError = false) {
+            const logs = document.getElementById('logs');
+            const logEl = document.createElement('div');
+            logEl.className = 'log';
+            logEl.style.color = isError ? '#F00' : '#0F0';
+            logEl.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(logEl);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function generateAll() {
+            log('🚀 Starting thumbnail generation...');
+            
+            for (const anim of animations) {
+                try {
+                    log(`📸 Generating: ${anim.id}...`);
+                    await generateThumbnail(anim);
+                    await delay(1000);
+                } catch (err) {
+                    log(`❌ Failed: ${anim.id} - ${err.message}`, true);
+                }
+            }
+            
+            log('✅ All thumbnails generated!');
+        }
+
+        async function generateThumbnail(animData) {
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            container.style.display = 'block';
+
+            // Load script
+            await loadScript(animData.scriptPath);
+            
+            // Wait for class to be available
+            await delay(200);
+            
+            if (!window[animData.className]) {
+                throw new Error(`Class ${animData.className} not found`);
+            }
+
+            // Create instance
+            const anim = new window[animData.className](container, {
+                width: animData.width,
+                height: animData.height
+            });
+
+            // Start animation
+            anim.start();
+            log(`▶️ Animation started, running for ${animData.captureFrame} frames...`);
+
+            // Run to capture frame
+            await delay((animData.captureFrame / 60) * 1000);
+
+            // Find canvas
+            const canvas = container.querySelector('canvas');
+            if (!canvas) {
+                throw new Error('No canvas found');
+            }
+
+            // Create download link
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = `DOWNLOAD ${animData.id}.jpg`;
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.download = `${animData.id}.jpg`;
+                    link.href = url;
+                    link.click();
+                };
+                
+                const logEl = document.createElement('div');
+                logEl.className = 'log';
+                logEl.appendChild(downloadBtn);
+                document.getElementById('logs').appendChild(logEl);
+                
+                log(`✅ Thumbnail ready: ${animData.id}.jpg`);
+            }, 'image/jpeg', 0.9);
+
+            // Stop animation
+            if (anim.stop) anim.stop();
+            if (anim.destroy) anim.destroy();
+            
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                // Check if already loaded
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        log('✨ Thumbnail generator ready');
+    </script>
+</body>
+</html>
+

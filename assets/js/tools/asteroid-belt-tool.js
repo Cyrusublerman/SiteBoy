@@ -9,8 +9,8 @@
  * - Real-time parameter controls
  * - VGA aesthetic with F=12px mathematical foundation
  * 
- * @version 1.0.0
- * @dependencies ComponentLibrary
+ * @version 2.0.0
+ * @dependencies ComponentLibrary, AnimationFoundation
  */
 
 class AsteroidBeltTool {
@@ -48,8 +48,10 @@ class AsteroidBeltTool {
         // Asteroid belt data
         this.particles = [];
         this.cached = null;
-        this.animationFrame = null;
         this.rotationAngle = 0;
+        
+        // Animation system - unified approach
+        this.animator = null;
         
         // UI elements
         this.canvas = null;
@@ -97,6 +99,9 @@ class AsteroidBeltTool {
         
         // Create all control sections
         this.createAllSections(controls, F);
+        
+        // Initialize animation system
+        this.initializeAnimator();
         
         // Generate initial particles and draw
         this.generate();
@@ -525,33 +530,45 @@ class AsteroidBeltTool {
     }
     
     /**
+     * Initialize unified animation system
+     */
+    initializeAnimator() {
+        // Use AnimationLoop for smooth requestAnimationFrame-based rotation
+        this.animator = new window.AnimationFoundation.AnimationLoop({
+            onFrame: (deltaTime) => {
+                // Update rotation based on speed and deltaTime
+                this.rotationAngle += this.config.animation.speed * 0.01 * (deltaTime / 16.67);
+                this.draw();
+            },
+            fps: 60 // Smooth 60fps rotation
+        });
+    }
+    
+    /**
      * Start animation loop
      */
     startAnimation() {
-        if (this.animationFrame) return;
-        
-        const animate = () => {
-            this.rotationAngle += this.config.animation.speed * 0.01;
-            this.draw();
-            this.animationFrame = requestAnimationFrame(animate);
-        };
-        
-        animate();
+        if (this.animator) {
+            this.animator.start();
+        }
     }
     
     /**
      * Stop animation loop
      */
     stopAnimation() {
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-            this.animationFrame = null;
+        if (this.animator) {
+            this.animator.stop();
         }
     }
     
     // Cleanup
     destroy() {
-        this.stopAnimation();
+        // Destroy animator first (unified cleanup)
+        if (this.animator) {
+            this.animator.destroy();
+            this.animator = null;
+        }
         
         for (const instance of this.componentInstances) {
             if (instance && typeof instance.destroy === 'function') {
