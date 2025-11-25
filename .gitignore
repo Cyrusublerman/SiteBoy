@@ -103,13 +103,17 @@ jspm_packages/
 # Reference directories - keep locally for Cursor/IDE, but don't commit to Git
 reference/
 **/reference/
+**/reference/**
 
-# Specific large reference directories (explicit listing)
-projects/Synthetic Biophilia/reference/
+# Large asset folders - keep locally, don't commit
+**/Photos (IGNORE)/
+**/_originals/
+**/RENDER/
 
-# Keep reference materials but ignore temporary working files
-reference/working/temp/
-reference/working/experiments/temp/
+# Large binary files
+*.ai
+*.indd
+*.psd
 
 # Backup files
 *.backup
