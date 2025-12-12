@@ -106,6 +106,66 @@ import {
 // Import gallery components
 import { MasonryGallery } from './masonry-gallery.js';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEW TOOL COMPONENTS (Consolidated Component System)
+// ═══════════════════════════════════════════════════════════════════════════════
+import {
+    // Input components
+    NumericInput as ToolNumericInput,
+    TextInput as ToolTextInput,
+    Select as ToolSelect,
+    Dropdown as ToolDropdown,
+    Button as ToolButton,
+    ToggleGroup,
+    FileInput,
+    ColorInput,
+    EquationEditor,
+    
+    // Output components
+    Text,
+    Canvas,
+    SVG,
+    Media,
+    ProgressBar as ToolProgressBar,
+    AudioOutput,
+    
+    // Container components
+    Grid as ToolGrid,
+    Stack,
+    Section,
+    Tabs,
+    Collection
+} from './components/index.js';
+
+// Tool Components namespace
+const ToolComponents = {
+    // Input
+    NumericInput: ToolNumericInput,
+    TextInput: ToolTextInput,
+    Select: ToolSelect,
+    Dropdown: ToolDropdown,
+    Button: ToolButton,
+    ToggleGroup,
+    FileInput,
+    ColorInput,
+    EquationEditor,
+    
+    // Output
+    Text,
+    Canvas,
+    SVG,
+    Media,
+    ProgressBar: ToolProgressBar,
+    AudioOutput,
+    
+    // Container
+    Grid: ToolGrid,
+    Stack,
+    Section,
+    Tabs,
+    Collection
+};
+
 
 /**
  * ComponentLibrary - Main component library object
@@ -177,6 +237,33 @@ export const ComponentLibrary = {
     // Gallery
     MasonryGallery,
     
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TOOL COMPONENTS (New Consolidated System)
+    // ═══════════════════════════════════════════════════════════════════════════
+    Tool: ToolComponents,
+    
+    // Direct access to tool components
+    ToolNumericInput,
+    ToolTextInput,
+    ToolSelect,
+    ToolDropdown,
+    ToolButton,
+    ToggleGroup,
+    FileInput,
+    ColorInput,
+    EquationEditor,
+    Text,
+    Canvas,
+    SVG,
+    Media,
+    ToolProgressBar,
+    AudioOutput,
+    ToolGrid,
+    Stack,
+    Section,
+    Tabs,
+    Collection,
+    
     /**
      * Component factory - maintains exact same API as before
      */
@@ -234,7 +321,36 @@ export const ComponentLibrary = {
             'p5-embedded': P5EmbeddedSketch,
             
             // Gallery
-            'masonry-gallery': MasonryGallery
+            'masonry-gallery': MasonryGallery,
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // Tool Components (new consolidated system)
+            // ═══════════════════════════════════════════════════════════════════
+            // Input
+            'tool-numeric-input': ToolNumericInput,
+            'tool-text-input': ToolTextInput,
+            'tool-select': ToolSelect,
+            'tool-dropdown': ToolDropdown,
+            'tool-button': ToolButton,
+            'toggle-group': ToggleGroup,
+            'file-input': FileInput,
+            'color-input': ColorInput,
+            'equation-editor': EquationEditor,
+            
+            // Output
+            'text': Text,
+            'canvas': Canvas,
+            'svg': SVG,
+            'media': Media,
+            'tool-progress-bar': ToolProgressBar,
+            'audio-output': AudioOutput,
+            
+            // Container
+            'tool-grid': ToolGrid,
+            'stack': Stack,
+            'section': Section,
+            'tabs': Tabs,
+            'collection': Collection
         };
         
         const ComponentClass = components[type];
@@ -345,5 +461,28 @@ export {
     P5ControlledSketch,
     
     // Gallery
-    MasonryGallery
+    MasonryGallery,
+    
+    // Tool Components (new consolidated system)
+    ToolNumericInput,
+    ToolTextInput,
+    ToolSelect,
+    ToolDropdown,
+    ToolButton,
+    ToggleGroup,
+    FileInput,
+    ColorInput,
+    EquationEditor,
+    Text,
+    Canvas,
+    SVG,
+    Media,
+    ToolProgressBar,
+    AudioOutput,
+    ToolGrid,
+    Stack,
+    Section,
+    Tabs,
+    Collection,
+    ToolComponents
 };

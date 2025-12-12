@@ -9,11 +9,11 @@
 6. **CRITICAL CSS must be loaded directly in HTML head to prevent FOUC**
 7. No favicon integration - keep the browser default
 
-## F=15px Mathematical Design System (MANDATORY)
-1. **F=15px is the single source of truth** - All dimensions derive from base font size
-2. **Header Height = F × 2 = 30px** - Not arbitrary, mathematically derived
-3. **Desktop Margin = F × 4 = 60px** - Clean mathematical relationship
-4. **Mobile Margin = F = 15px** - Covers scrollbar perfectly
+## F=14px Mathematical Design System (MANDATORY)
+1. **F=14px is the single source of truth** - All dimensions derive from base font size
+2. **Header Height = F × 2 = 28px** - Not arbitrary, mathematically derived
+3. **Desktop Margin = F × 4 = 56px** - Clean mathematical relationship
+4. **Mobile Margin = F = 14px** - Covers scrollbar perfectly
 5. **Typography Scale**: H1=F×6, H2=F×3, H3=F×2, H4=F×1.5, H5=F×1.2, H6=F×1, Body=F, Interface=F×0.8
 6. **All spacing derives from F multiples** - No arbitrary constants allowed
 7. **Grid calculations use F-based constants** in MathematicalFoundation
@@ -21,13 +21,13 @@
 ## OOP Architecture Requirements (MANDATORY)
 1. **ALL UI components MUST inherit from BaseComponent classes** (`BaseComponent`, `BaseDropdown`, `BaseGrid`, `BaseButton`)
 2. **NO manual DOM creation allowed** - use inheritance: `new VGAGrid()`, `new SectionDropdown()`, etc.
-3. **MathematicalFoundation with F=15px is required** for all component calculations - single source of truth
+3. **MathematicalFoundation with F=14px is required** for all component calculations - single source of truth
 4. **Component lifecycle management**: All components must have `.destroy()` methods for proper cleanup
 5. **ComponentLibrary v6.0.0+**: Use only F-based OOP inheritance wrappers, not manual DOM creation
 6. **Memory management**: Track component instances and destroy on cleanup
 7. **Type safety**: Use `instanceof` checks to validate component types
 
-## Code Consistency & F=15px Pattern Adherence
+## Code Consistency & F=14px Pattern Adherence
 1. **ALWAYS use OOP inheritance** for UI components - zero exceptions
 2. **ALWAYS use F-based calculations** - no hardcoded dimensions outside F multiples
 3. **Use `outline` instead of `border` for pixel-perfect alignment** (prevents layout shifts)
@@ -39,12 +39,12 @@
 9. **Header styling must match F-based standards**: F×2 height, F-based text, outline borders
 10. **Avoid redundant styling** - if a BaseComponent exists, inherit from it
 11. **Test alignment with browser dev tools** - elements must be F-precision aligned
-12. **F=15px Typography Rule**: All typography calculations MUST derive from F=15px base. Header height = F×2 = 30px. All typography calculations MUST use F × multiplier relationships. Never hardcode typography sizes - always use F-based relationships.
+12. **F=14px Typography Rule**: All typography calculations MUST derive from F=14px base. Header height = F×2 = 28px. All typography calculations MUST use F × multiplier relationships. Never hardcode typography sizes - always use F-based relationships.
 13. **Grid Border Collapse Pattern**: For grids with touching borders, use `outline-left: none` on non-first items. Grid containers get NO borders, only individual items get outlines.
 14. **Button Styling Rule**: NO 3D effects or beveled borders. Use flat `outline: 1px solid var(--c-border)` and simple background color changes on hover.
 15. **Canvas Implementation Standard**: Canvas elements must demonstrate F-based mathematical precision, NOT boring placeholders. Include interactive elements, precise F-based grid alignment, and meaningful visual demonstrations.
 
-## F=15px Component Creation Pattern (ENFORCED)
+## F=14px Component Creation Pattern (ENFORCED)
 ```javascript
 // ✅ CORRECT - F-based OOP inheritance
 const dropdown = new SectionDropdown({
@@ -64,7 +64,7 @@ div.style.height = '30px'; // Hardcoded - should be F×2
 
 ## Component Hierarchy (MANDATORY F-BASED INHERITANCE)
 ```
-BaseComponent (F=15px foundation for ALL UI elements)
+BaseComponent (F=14px foundation for ALL UI elements)
 ├── BaseDropdown
 │   ├── HeaderDropdown (header-specific positioning with F-based height)
 │   └── SectionDropdown (section navigation with F-based dimensions)
@@ -82,7 +82,7 @@ BaseComponent (F=15px foundation for ALL UI elements)
 1. **Primary CSS (main.css) must be loaded directly in each page's `<head>` section**
 2. CSS path must be relative to the page location (e.g., `../../assets/css/main.css` for section pages)
 3. CSS must load synchronously to prevent Flash of Unstyled Content (FOUC)
-4. All pages must reference `assets/css/styles.css` with F=15px variables
+4. All pages must reference `assets/css/styles.css` with F=14px variables
 5. Theme script must be inline in each page head for immediate execution
 
 ## Security
@@ -92,15 +92,15 @@ BaseComponent (F=15px foundation for ALL UI elements)
 4. CSP must allow 'unsafe-inline' for styles to support inline styling
 5. CSP must allow Google Fonts for typography
 
-## F=15px Design System
-1. Follow F=15px single source mathematical relationships for all dimensions
+## F=14px Design System
+1. Follow F=14px single source mathematical relationships for all dimensions
 2. Use consistent Space Mono font family (monospace for authentic VGA feel)
 3. Implement dark/light mode using VGA CSS variables and localStorage theme
-4. Maintain consistent F-based spacing using CSS variables (--base-font: 15px)
+4. Maintain consistent F-based spacing using CSS variables (--base-font: 14px)
 5. Use Swiss-style F-based design principles for typography and layout
-6. **All styles must be in `assets/css/styles.css`** with F=15px variable system
+6. **All styles must be in `assets/css/styles.css`** with F=14px variable system
 7. F-based inline styles are allowed and encouraged for component-specific styling
-8. **Follow F=15px design requirements in mathematical documentation**
+8. **Follow F=14px design requirements in mathematical documentation**
 
 ## File Structure
 1. All shared components must be in the root directory
@@ -126,7 +126,7 @@ BaseComponent (F=15px foundation for ALL UI elements)
 
 ## Error Pages
 1. Custom 404 page must be at `/404.html`
-2. Error pages must maintain the same F=15px design system and shared components
+2. Error pages must maintain the same F=14px design system and shared components
 
 ## Responsive Design
 1. Use F-based `clamp()` for responsive typography scaling
@@ -138,7 +138,7 @@ BaseComponent (F=15px foundation for ALL UI elements)
 1. **Load critical CSS synchronously to prevent FOUC**
 2. Minimize HTTP requests by using shared components
 3. Optimize asset loading and delivery with F-based efficiency
-4. Maintain fast initial page load times under F=15px constraints
+4. Maintain fast initial page load times under F=14px constraints
 
 ## Accessibility
 1. Maintain proper heading hierarchy using F-based scale (F×6 to F×1)
@@ -146,7 +146,7 @@ BaseComponent (F=15px foundation for ALL UI elements)
 3. Provide alt text for all images
 4. Support keyboard navigation with F-based focus indicators
 
-## Quality Control & F=15px Debugging
+## Quality Control & F=14px Debugging
 1. **Verify F-based pixel-perfect alignment** using browser developer tools before considering complete
 2. **Test hover effects** to ensure they match F-based established patterns exactly
 3. **Check for redundant code** - if F-based implementation exceeds expected complexity, research existing OOP patterns
@@ -158,19 +158,19 @@ BaseComponent (F=15px foundation for ALL UI elements)
 9. **Verify component cleanup**: Check that `.destroy()` methods are called during navigation
 10. **Test inheritance chains**: Ensure components properly inherit from BaseComponent classes
 
-## F=15px Architecture Validation
+## F=14px Architecture Validation
 1. **Component Instance Tracking**: Use browser console to verify `component.destroy()` is available
 2. **F-based Inheritance Verification**: Check `component instanceof BaseComponent` returns true
-3. **F-based Mathematical Foundation Integration**: Verify all components use F=15px-based `MathematicalFoundation.calculateComponentDimensions()`
+3. **F-based Mathematical Foundation Integration**: Verify all components use F=14px-based `MathematicalFoundation.calculateComponentDimensions()`
 4. **Zero Manual DOM Creation**: Grep search for `document.createElement` should only find BaseComponent internals
 5. **Memory Leak Prevention**: Ensure component instances are tracked and destroyed properly
 
 ## Version Control & Documentation
 1. **Document all changes in `changes.md` with UTC timestamps**
 2. Update `structure.md` when F-based architecture changes
-3. Update this RULES.md when F=15px standards change
+3. Update this RULES.md when F=14px standards change
 4. Maintain clear commit messages
 5. Follow established change log format
 
 ---
-*Note: This is a living document. Rules will be added or modified as the F=15px project evolves. The F=15px mathematical design system and OOP architecture requirements are MANDATORY and non-negotiable.* 
+*Note: This is a living document. Rules will be added or modified as the F=14px project evolves. The F=14px mathematical design system and OOP architecture requirements are MANDATORY and non-negotiable.* 

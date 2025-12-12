@@ -11,7 +11,7 @@
 ## 1. FUNDAMENTAL VARIABLES (Only 2)
 
 ### 1.1 BASE FONT SIZE (F)
-**F = 15px** - The ideal readable font size
+**F = 14px** - The ideal readable font size
 
 ### 1.2 VIEWPORT ASPECT RATIO (VAR)
 Dynamic input from display (width ÷ height)
@@ -21,10 +21,10 @@ Dynamic input from display (width ÷ height)
 ## 2. DERIVED CONSTANTS
 
 ### 2.1 CORE DIMENSIONS
-- Base Unit (BU) = F = 15px
-- Mobile Margin = F = 15px (covers scrollbar perfectly)
-- Header Height = F × 2 = 30px
-- Desktop Margin = F × 4 = 60px (clean binary: 64px alternative)
+- Base Unit (BU) = F = 14px
+- Mobile Margin = F = 14px (covers scrollbar perfectly)
+- Header Height = F × 2 = 28px
+- Desktop Margin = F × 4 = 56px (clean binary: 56px alternative)
 - Grid Gap = 1px (minimum viable)
 - Outline Width = 1px (minimum viable)
 
@@ -182,11 +182,11 @@ Header Split = Math.floor(Grid Width ÷ 2) + 1px
 ## 10. CSS VARIABLES
 
 ### 10.1 FOUNDATIONAL VARIABLES
-- --base-font: 15px (F)
+- --base-font: 14px (F)
 - --header-height: calc(var(--base-font) × 2)
 - --mobile-margin: var(--base-font)
 - --desktop-margin: calc(var(--base-font) × 4)
-- --current-margin: 15px or 60px (responsive)
+- --current-margin: 14px or 56px (responsive)
 
 ### 10.2 DYNAMIC LAYOUT VARIABLES
 - --cols: 1-6 (aspect ratio derived)
@@ -215,14 +215,14 @@ Header Split = Math.floor(Grid Width ÷ 2) + 1px
 
 ### 11.2 MOBILE ADJUSTMENTS
 **When Columns = 1:**
-- Margin = F (15px) - covers scrollbar perfectly
+- Margin = F (14px) - covers scrollbar perfectly
 - Canvas = Full grid width
-- Typography = No reduction needed (F=15px optimal)
+- Typography = No reduction needed (F=14px optimal)
 - All proportions maintained
 
 ### 11.3 DESKTOP SCALING
 **When Columns ≥ 2:**
-- Margin = F × 4 (60px) - generous desktop spacing
+- Margin = F × 4 (56px) - generous desktop spacing
 - Canvas = Grid Width × 0.8 (80% constraint)
 - Typography = Full hierarchy available
 - Component density increases appropriately
@@ -328,7 +328,7 @@ Header Split = Math.floor(Grid Width ÷ 2) + 1px
 ## 14. IMPLEMENTATION CONSTANTS
 
 ### 14.1 CORE CONSTANTS
-- F (Base Font Size): 15px
+- F (Base Font Size): 14px
 - Aspect Multiplier: 3.982
 - Aspect Offset: 1.088
 - Minimum Columns: 1
@@ -376,7 +376,7 @@ Header Split = Math.floor(Grid Width ÷ 2) + 1px
 
 ### 15.2 TYPOGRAPHY SYSTEM
 - All Text: Space Mono (monospace)
-- Base Size: F (15px)
+- Base Size: F (14px)
 - Header Hierarchy: F × 6 to F × 1 scale
 - Interface Text: F × 0.8
 - All sizes derive from F multiples
@@ -394,7 +394,7 @@ Header Split = Math.floor(Grid Width ÷ 2) + 1px
 
 ### 16.1 JAVASCRIPT FOUNDATION
 ```javascript
-const F = 15; // Base font size
+const F = 14; // Base font size
 const VAR = window.innerWidth / window.innerHeight;
 const columns = Math.round(3.982 * VAR - 1.088);
 const currentMargin = columns === 1 ? F : F * 4;
@@ -410,7 +410,7 @@ const componentPadding = F * 0.8;
 ### 16.2 CSS VARIABLE PATTERN
 ```css
 :root {
-    --base-font: 15px;
+    --base-font: 14px;
     --header-height: calc(var(--base-font) * 2);
     --mobile-margin: var(--base-font);
     --desktop-margin: calc(var(--base-font) * 4);
@@ -422,10 +422,10 @@ const componentPadding = F * 0.8;
 
 ## CONCLUSION
 
-This mathematical design system achieves complete geometric derivation from minimal variables. Every dimension, spacing, and proportion flows from the fundamental font size (F = 15px) and viewport aspect ratio, creating a deterministic, interconnected system.
+This mathematical design system achieves complete geometric derivation from minimal variables. Every dimension, spacing, and proportion flows from the fundamental font size (F = 14px) and viewport aspect ratio, creating a deterministic, interconnected system.
 
 **Key Principles:**
-1. **Single Source**: Everything derives from font size (F = 15px)
+1. **Single Source**: Everything derives from font size (F = 14px)
 2. **Integer Relations**: Clean multiples wherever possible
 3. **Practical Defaults**: Mobile margin covers scrollbar perfectly
 4. **Mathematical Purity**: Geometric relationships, not arbitrary values

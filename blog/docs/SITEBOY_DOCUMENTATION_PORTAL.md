@@ -20,7 +20,7 @@ Central entry point for planning, building, and maintaining the SiteBoy experien
 2. **Architecture & Rules**  
    - [SITEBOY MASTER WEBSITE GUIDE](docs/siteboy-master-guide.md) - architecture, inheritance model, and math system.  
    - [ARCHITECTURE](docs/ARCHITECTURE.md) - system overview, routing, and module structure.  
-   - [RULES](docs/RULES.md) - non-negotiable constraints (F=15px system, BaseComponent usage, asset loading).
+   - [RULES](docs/RULES.md) - non-negotiable constraints (F=14px system, BaseComponent usage, asset loading).
 
 3. **Component & Layout Implementation**  
    - [COMPONENT-REFERENCE-SYSTEM](docs/COMPONENT-REFERENCE-SYSTEM.md) - component taxonomy and responsibilities.  

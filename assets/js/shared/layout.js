@@ -563,16 +563,23 @@ export class PageContainer extends BaseComponent {
             const marginOffset = layout.marginLeft;
             const topMargin = headerHeight * 2; // 48px (2 * 24px) - F SYSTEM
             
+            // Footer occupies 2F height + 2F bottom margin + 2F buffer = 6F from bottom
+            // The extra 2F accounts for the footer's border and visual separation
+            const bottomSpace = 3 * headerHeight; // 6F total bottom clearance
+            
             this.setLayoutVariables({
                 '--layout-width': `${contentWidth}px`,
                 '--layout-margin': `${marginOffset}px`,
-                '--header-y': `${topMargin}px`,                            // F system: 48px top margin
-                '--subheader-y': `${topMargin + headerHeight}px`,          // F system: 48px + 24px
-                '--content-y-with-sub': `${topMargin + (2 * headerHeight)}px`,    // F system: 48px + 48px
-                '--content-y-no-sub': `${topMargin + headerHeight}px`,     // F system: 48px + 24px
+                '--header-y': `${topMargin}px`,                            // F system: 4F top margin
+                '--subheader-y': `${topMargin + headerHeight}px`,          // F system: 4F + 2F
+                '--content-y-with-sub': `${topMargin + (2 * headerHeight)}px`,    // F system: 4F + 4F = 8F
+                '--content-y-no-sub': `${topMargin + headerHeight}px`,     // F system: 4F + 2F = 6F
                 '--footer-y': `${windowHeight - headerHeight}px`,
-                '--content-min-h-with-sub': `${windowHeight - (topMargin + 3 * headerHeight)}px`,
-                '--content-min-h-no-sub': `${windowHeight - (topMargin + 2 * headerHeight)}px`,
+                // Content height = window - top elements - bottom elements
+                // With sub: window - (4F top margin + 2F header + 2F subheader) - (2F footer + 2F bottom margin)
+                '--content-min-h-with-sub': `${windowHeight - (topMargin + 2 * headerHeight + bottomSpace)}px`,
+                // No sub: window - (4F top margin + 2F header) - (2F footer + 2F bottom margin)
+                '--content-min-h-no-sub': `${windowHeight - (topMargin + headerHeight + bottomSpace)}px`,
                 '--layout-type': 'desktop'
             });
             
@@ -580,6 +587,9 @@ export class PageContainer extends BaseComponent {
             // Mobile: use mobile margins from config
             const mobileMargin = (this.deps.MF && this.deps.MF.Config && this.deps.MF.Config.margins) ? 
                 this.deps.MF.Config.margins.mobile : 6;
+            // Footer occupies headerHeight + mobileMargin + headerHeight buffer from bottom
+            const mobileBottomSpace = 2 * headerHeight + mobileMargin;
+            
             this.setLayoutVariables({
                 '--layout-width': `${layout.gridWidth}px`,                // Use calculated mobile width
                 '--layout-margin': `${layout.marginLeft}px`,              // Use calculated mobile margin
@@ -588,8 +598,11 @@ export class PageContainer extends BaseComponent {
                 '--content-y-with-sub': `${mobileMargin + (2 * headerHeight)}px`,
                 '--content-y-no-sub': `${mobileMargin + headerHeight}px`,
                 '--footer-y': `${windowHeight - headerHeight - mobileMargin}px`,  // Footer with same margin as header
-                '--content-min-h-with-sub': `${windowHeight - (mobileMargin * 2 + 3 * headerHeight)}px`,  // Account for both top and bottom margins
-                '--content-min-h-no-sub': `${windowHeight - (mobileMargin * 2 + 2 * headerHeight)}px`,    // Account for both top and bottom margins
+                // Content height = window - top elements - bottom elements
+                // With sub: window - (margin + header + subheader) - (footer + margin)
+                '--content-min-h-with-sub': `${windowHeight - (mobileMargin + 2 * headerHeight + mobileBottomSpace)}px`,
+                // No sub: window - (margin + header) - (footer + margin)
+                '--content-min-h-no-sub': `${windowHeight - (mobileMargin + headerHeight + mobileBottomSpace)}px`,
                 '--layout-type': 'mobile'
             });
         }

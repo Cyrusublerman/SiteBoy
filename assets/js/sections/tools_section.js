@@ -17,6 +17,7 @@ const ToolsSection = {
     // Simple page list for navigation
     pages: [
         '#tools',
+        '#tools/tool-test',
         '#tools/font-analysis',
         '#tools/color-quantizer',
         '#tools/pixel-tiler',
@@ -73,6 +74,11 @@ const ToolsSection = {
         
         // Define simple tools sections (direct navigation, no nesting)
         const toolsSections = [
+            {
+                id: 'tool-test',
+                title: 'TOOL TEST UI',
+                description: 'Component testbed — demonstrates all UI components for tool pages including inputs, outputs, containers, and layout patterns.'
+            },
             {
                 id: 'font-analysis',
                 title: 'FONT ANALYSIS',
@@ -152,6 +158,7 @@ const ToolsSection = {
     getDropdownItems(currentSubsection) {
         const allTools = [
             { label: 'TOOLS INDEX', path: '#tools', isTOC: true },
+            { label: 'TOOL TEST UI', path: '#tools/tool-test' },
             { label: 'FONT ANALYSIS', path: '#tools/font-analysis' },
             { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' },
             { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
@@ -179,6 +186,7 @@ const ToolsSection = {
     getNavigationContext(currentSubsection, callbacks) {
         // Define all available tools in order for navigation
         const allTools = [
+            { id: 'tool-test', title: 'Tool Test UI', description: 'Component testbed for tool pages', path: '#tools/tool-test' },
             { id: 'font-analysis', title: 'Font Analysis', description: 'Compare fonts and analyze detailed metrics with dynamic Google Fonts loading', path: '#tools/font-analysis' },
             { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' },
             { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
@@ -239,6 +247,9 @@ const ToolsSection = {
         console.log(`🔧 Rendering tool: ${toolId}`);
         
         switch (toolId) {
+            case 'tool-test':
+                this.renderToolTest();
+                break;
             case 'font-analysis':
                 this.renderFontAnalysis();
                 break;
@@ -490,6 +501,41 @@ const ToolsSection = {
         this.componentInstances.push(tool);
         tool.render();
         this.addBackLink();
+    },
+    
+    /**
+     * Render Tool Test UI - Component testbed
+     */
+    renderToolTest() {
+        console.log('🧪 Rendering Tool Test UI - start');
+        console.log('🧪 window.ToolTestUI exists:', !!window.ToolTestUI);
+        
+        try {
+            // Full viewport mode for tool test
+            this.currentContainer.style.padding = '0';
+            
+            if (!window.ToolTestUI) {
+                throw new Error('ToolTestUI class not found on window');
+            }
+            
+            const tool = new window.ToolTestUI(this.currentContainer, {
+                MF: window.LayoutCalculator,
+                Resize: window.ResizeManager
+            });
+            this.componentInstances.push(tool);
+            tool.render();
+            console.log('🧪 ToolTestUI rendered successfully');
+        } catch (err) {
+            console.error('🧪 ToolTestUI error:', err);
+            // Fallback UI
+            this.currentContainer.innerHTML = `
+                <div style="padding: 24px; color: var(--c-text);">
+                    <h1>TOOL TEST UI</h1>
+                    <p style="color: var(--vga-red);">Error: ${err.message}</p>
+                    <pre style="font-size: 12px; background: #222; padding: 12px; overflow: auto;">${err.stack}</pre>
+                </div>
+            `;
+        }
     },
     
     /**

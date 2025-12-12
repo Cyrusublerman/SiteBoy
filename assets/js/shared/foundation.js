@@ -79,6 +79,21 @@ export class BaseComponent {
     }
     
     /**
+     * F-SYSTEM: Get the F unit value with proper fallbacks
+     * Returns F and F2 (half-F) for consistent sizing across all components
+     */
+    getF() {
+        // Priority: deps.MF.F → CSS variable → default 14
+        let F = this.deps.MF?.F;
+        if (!F) {
+            const cssF = getComputedStyle(document.documentElement).getPropertyValue('--F');
+            F = cssF ? parseInt(cssF, 10) : 14;
+        }
+        if (!F || isNaN(F)) F = 14;
+        return { F, F2: F / 2 };
+    }
+    
+    /**
      * Create a DOM element with class and optional content
      */
     createElement(tag, className = '', content = '') {

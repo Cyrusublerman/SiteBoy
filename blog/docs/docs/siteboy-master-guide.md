@@ -20,7 +20,7 @@
 
 ### Core Mission
 SiteBoy is an authentic late-90s computing experience built on **true Object-Oriented Programming (OOP) inheritance architecture** that combines:
-- **F=15px single source mathematical system** (all dimensions derive from font size)
+- **F=14px single source mathematical system** (all dimensions derive from font size)
 - **Strict 4-bit VGA color constraints** (16 colors maximum)
 - **Period-appropriate design patterns** (1997-1999 era)
 - **Mathematical typography precision** (F × multiplier system)
@@ -30,7 +30,7 @@ SiteBoy is an authentic late-90s computing experience built on **true Object-Ori
 
 ### Design Philosophy Principles
 1. **OOP Inheritance Over Manual Creation**: All UI components inherit from BaseComponent classes
-2. **Single Source Mathematical Precision**: F=15px drives all dimensions
+2. **Single Source Mathematical Precision**: F=14px drives all dimensions
 3. **Authenticity Over Modernization**: Use only technologies/patterns available in 1999
 4. **Performance Over Polish**: Optimize for 56k modem speeds
 5. **Functionality Over Beauty**: Prioritize tools and utility
@@ -74,12 +74,12 @@ Specialized Components
 └── ProgressBar → progress indication with timing
 ```
 
-### Mathematical Foundation Integration (F=15px SINGLE SOURCE)
+### Mathematical Foundation Integration (F=14px SINGLE SOURCE)
 ```javascript
 // Every component MUST follow this pattern
 class CustomComponent extends BaseComponent {
     render() {
-        // Calculate dimensions using F=15px foundation
+        // Calculate dimensions using F=14px foundation
         this.calculateDimensions('component-type');
         
         // Apply F-based mathematical layout
@@ -96,29 +96,29 @@ class CustomComponent extends BaseComponent {
 
 ---
 
-## 3. F=15px MATHEMATICAL DESIGN SYSTEM
+## 3. F=14px MATHEMATICAL DESIGN SYSTEM
 
 ### Foundational Variables (Only 2)
-- **F = 15px** - Base font size (single source of truth)
+- **F = 14px** - Base font size (single source of truth)
 - **Viewport Aspect Ratio (VAR)** - Dynamic input (width ÷ height)
 
 ### Derived Constants (All F Multiples)
-- **Base Unit (BU)**: F = 15px
-- **Header Height**: F × 2 = 30px
-- **Mobile Margin**: F = 15px (covers scrollbar perfectly)
-- **Desktop Margin**: F × 4 = 60px (clean mathematical relationship)
+- **Base Unit (BU)**: F = 14px
+- **Header Height**: F × 2 = 28px
+- **Mobile Margin**: F = 14px (covers scrollbar perfectly)
+- **Desktop Margin**: F × 4 = 56px (clean mathematical relationship)
 - **Grid Gap**: 1px (minimum viable)
 - **Outline Width**: 1px (minimum viable)
 
 ### Typography Scale (F-Based Hierarchy)
-- **H1**: F × 6 = 90px - Major Headlines
-- **H2**: F × 3 = 45px - Section Titles
-- **H3**: F × 2 = 30px - Page Headers
-- **H4**: F × 1.5 = 22.5px - Subsections
-- **H5**: F × 1.2 = 18px - Minor Headings
-- **H6**: F × 1 = 15px - Base Headers
-- **Body**: F = 15px - Standard Content
-- **Interface**: F × 0.8 = 12px - Navigation/Controls
+- **H1**: F × 6 = 84px - Major Headlines
+- **H2**: F × 3 = 42px - Section Titles
+- **H3**: F × 2 = 28px - Page Headers
+- **H4**: F × 1.5 = 21px - Subsections
+- **H5**: F × 1.2 = 16.8px - Minor Headings
+- **H6**: F × 1 = 14px - Base Headers
+- **Body**: F = 14px - Standard Content
+- **Interface**: F × 0.8 = 11.2px - Navigation/Controls
 
 ### Column System (Aspect Ratio Formula)
 **Columns = Round(3.982 × VAR - 1.088)**
@@ -130,12 +130,12 @@ class CustomComponent extends BaseComponent {
 - Ultrawide (21:9): 6 columns
 
 ### Spacing System (F Multiples)
-- **Minimal**: F ÷ 3 = 5px
-- **Small**: F ÷ 2 = 7.5px
-- **Standard**: F = 15px
-- **Medium**: F × 1.5 = 22.5px
-- **Large**: F × 2 = 30px
-- **XLarge**: F × 3 = 45px
+- **Minimal**: F ÷ 3 = 4.6px
+- **Small**: F ÷ 2 = 7px
+- **Standard**: F = 14px
+- **Medium**: F × 1.5 = 21px
+- **Large**: F × 2 = 28px
+- **XLarge**: F × 3 = 42px
 
 ---
 
@@ -190,15 +190,15 @@ class CustomComponent extends BaseComponent {
 
 ## 5. LAYOUT STRUCTURE & MATHEMATICAL FOUNDATION
 
-### MathematicalFoundation.js - F=15px Single Source
+### MathematicalFoundation.js - F=14px Single Source
 ```javascript
 const MathematicalFoundation = {
     constants: {
-        F: 15,                       // Base Font Size - single source of truth
-        headerHeight: 15 * 2,        // F × 2 = 30px
+        F: 14,                       // Base Font Size - single source of truth
+        headerHeight: 14 * 2,        // F × 2 = 28px
         gap: 1,                      // Minimum viable gap
-        mobileMargin: 15,            // F = 15px (covers scrollbar perfectly)
-        desktopMargin: 15 * 4        // F × 4 = 60px (clean mathematical relationship)
+        mobileMargin: 14,            // F = 14px (covers scrollbar perfectly)
+        desktopMargin: 14 * 4        // F × 4 = 56px (clean mathematical relationship)
     },
     
     /**
@@ -247,13 +247,13 @@ const MathematicalFoundation = {
 ### Fixed-Width Layout System (F-Based)
 ```css
 :root {
-    /* Core F=15px Layout System */
-    --base-font: 15px;                                      /* F = 15px */
-    --header-height: calc(var(--base-font) * 2);            /* F × 2 = 30px */
-    --mobile-margin: var(--base-font);                      /* F = 15px */
-    --desktop-margin: calc(var(--base-font) * 4);           /* F × 4 = 60px */
-    --section-padding: calc(var(--base-font) * 1.6);        /* F × 1.6 = 24px */
-    --markdown-padding: calc(var(--base-font) * 3.2);       /* F × 3.2 = 48px */
+    /* Core F=14px Layout System */
+    --base-font: 14px;                                      /* F = 14px */
+    --header-height: calc(var(--base-font) * 2);            /* F × 2 = 28px */
+    --mobile-margin: var(--base-font);                      /* F = 14px */
+    --desktop-margin: calc(var(--base-font) * 4);           /* F × 4 = 56px */
+    --section-padding: calc(var(--base-font) * 1.6);        /* F × 1.6 = 22.4px */
+    --markdown-padding: calc(var(--base-font) * 3.2);       /* F × 3.2 = 44.8px */
     
     /* All other dimensions derive from --base-font */
     --border: 2px solid var(--c-border);
@@ -281,21 +281,21 @@ const MathematicalFoundation = {
 ```css
 :root {
     /* Typography Scale - All F multiples */
-    --h1-size: calc(var(--base-font) * 6);                  /* F × 6 = 90px */
-    --h2-size: calc(var(--base-font) * 3);                  /* F × 3 = 45px */
-    --h3-size: calc(var(--base-font) * 2);                  /* F × 2 = 30px */
-    --h4-size: calc(var(--base-font) * 1.5);                /* F × 1.5 = 22.5px */
-    --h5-size: calc(var(--base-font) * 1.2);                /* F × 1.2 = 18px */
-    --h6-size: var(--base-font);                            /* F × 1 = 15px */
-    --small-text: calc(var(--base-font) * 0.8);             /* F × 0.8 = 12px */
+    --h1-size: calc(var(--base-font) * 6);                  /* F × 6 = 84px */
+    --h2-size: calc(var(--base-font) * 3);                  /* F × 3 = 42px */
+    --h3-size: calc(var(--base-font) * 2);                  /* F × 2 = 28px */
+    --h4-size: calc(var(--base-font) * 1.5);                /* F × 1.5 = 21px */
+    --h5-size: calc(var(--base-font) * 1.2);                /* F × 1.2 = 16.8px */
+    --h6-size: var(--base-font);                            /* F × 1 = 14px */
+    --small-text: calc(var(--base-font) * 0.8);             /* F × 0.8 = 11.2px */
 }
 ```
 
 ### Typography Usage Guidelines
 1. **ALL TEXT**: Uses Space Mono exclusively for complete consistency
 2. **H1-H6**: F-based hierarchical sizing (F×6 to F×1)
-3. **Body text**: F baseline (15px)
-4. **Interface text**: F×0.8 (12px)
+3. **Body text**: F baseline (14px)
+4. **Interface text**: F×0.8 (11.2px)
 5. **All text aligns to F-based grid** for mathematical precision
 6. **No font effects** - bold, italic, underline only
 7. **No font mixing** - Space Mono provides the authentic monospace aesthetic
@@ -325,8 +325,8 @@ class CustomComponent extends BaseComponent {
         this.applyLayout();
         
         // Apply F-based styling
-        this.element.style.fontSize = '15px'; // F
-        this.element.style.height = '30px';   // F × 2
+        this.element.style.fontSize = '14px'; // F
+        this.element.style.height = '28px';   // F × 2
         
         return this.element;
     }
@@ -461,24 +461,24 @@ class NewComponent extends BaseComponent {
 ```javascript
 render() {
     this.calculateDimensions('component-type');
-    // All calculations now use F=15px as base
+    // All calculations now use F=14px as base
 }
 ```
 
 #### Step 3: Apply F-Based Styling
 ```javascript
 // F-based dimensions are automatically calculated
-this.element.style.fontSize = `${this.constants.F}px`; // 15px
-this.element.style.height = `${this.constants.F * 2}px`; // 30px
-this.element.style.padding = `${this.constants.F * 0.8}px`; // 12px
+this.element.style.fontSize = `${this.constants.F}px`; // 14px
+this.element.style.height = `${this.constants.F * 2}px`; // 28px
+this.element.style.padding = `${this.constants.F * 0.8}px`; // 11.2px
 ```
 
 ---
 
 ## QUALITY ASSURANCE CHECKLIST (F-Based)
 
-### F=15px System Compliance ✓
-- [ ] All dimensions derive from F=15px base font size
+### F=14px System Compliance ✓
+- [ ] All dimensions derive from F=14px base font size
 - [ ] Typography uses F × multiplier relationships
 - [ ] Spacing uses F-based calculations
 - [ ] Components inherit F-based dimensions automatically
@@ -493,20 +493,20 @@ this.element.style.padding = `${this.constants.F * 0.8}px`; // 12px
 ### F-Based Validation Commands
 ```javascript
 // These MUST work in browser console
-MathematicalFoundation.constants.F // Should show 15
-MathematicalFoundation.constants.headerHeight // Should show 30 (F × 2)
-MathematicalFoundation.constants.desktopMargin // Should show 60 (F × 4)
+MathematicalFoundation.constants.F // Should show 14
+MathematicalFoundation.constants.headerHeight // Should show 28 (F × 2)
+MathematicalFoundation.constants.desktopMargin // Should show 56 (F × 4)
 ```
 
 ---
 
 ## CONCLUSION
 
-This master guide provides the complete framework for maintaining SiteBoy's authentic 4-bit retro aesthetic while implementing **F=15px single source mathematical system** with **true Object-Oriented Programming inheritance architecture**. 
+This master guide provides the complete framework for maintaining SiteBoy's authentic 4-bit retro aesthetic while implementing **F=14px single source mathematical system** with **true Object-Oriented Programming inheritance architecture**. 
 
 **Key Success Metrics**:
 - ✅ 100% VGA 16-color palette compliance
-- ✅ Perfect F=15px mathematical relationships - zero arbitrary constants
+- ✅ Perfect F=14px mathematical relationships - zero arbitrary constants
 - ✅ Complete OOP inheritance chains - zero code duplication
 - ✅ Single source of truth calculations (F-based MathematicalFoundation)
 - ✅ Authentic late-90s UI patterns enhanced with F-based OOP
@@ -514,18 +514,19 @@ This master guide provides the complete framework for maintaining SiteBoy's auth
 - ✅ Sub-100KB page performance
 - ✅ Proper component lifecycle management
 
-**F=15px System Benefits**:
-- **Zero Arbitrary Constants**: Everything derives from F=15px
+**F=14px System Benefits**:
+- **Zero Arbitrary Constants**: Everything derives from F=14px
 - **Complete Mathematical Interconnectedness**: F × multiplier relationships
 - **Predictable Scaling**: Same F base across all components
 - **Simplified Mental Model**: One source drives all dimensions
-- **Perfect Mobile Scrollbar Coverage**: F=15px mobile margin
-- **Clean Binary Relationships**: F×4=60px desktop margin
+- **Perfect Mobile Scrollbar Coverage**: F=14px mobile margin
+- **Clean Binary Relationships**: F×4=56px desktop margin
+- **Authenticity**: 14px is closer to standard system fonts of the era
 
-Follow this guide rigorously to maintain the distinctive SiteBoy aesthetic that combines nostalgic computing authenticity with modern F=15px mathematical precision and OOP development architecture.
+Follow this guide rigorously to maintain the distinctive SiteBoy aesthetic that combines nostalgic computing authenticity with modern F=14px mathematical precision and OOP development architecture.
 
 ---
 
-**Document Version**: 3.0.0 - F=15px Single Source Integration  
+**Document Version**: 3.1.0 - F=14px Single Source Integration  
 **Last Updated**: December 2024  
-**Maintained By**: SiteBoy F=15px Development Team 
+**Maintained By**: SiteBoy F=14px Development Team 

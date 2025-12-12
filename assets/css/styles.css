@@ -42,11 +42,11 @@
     --c-border: var(--vga-gray);
     --c-accent: var(--vga-white);
     
-    /* F=12px constants */
-    --f: 12px;
-    --header-height: 24px;          /* 2*F = 24px (KEEP F SYSTEM) */
-    --target-margin: 48px;          /* 4*F = 48px (KEEP F SYSTEM) */
-    --mobile-margin: 12px;
+    /* F=14px constants */
+    --f: 14px;
+    --header-height: 28px;          /* 2*F = 28px (KEEP F SYSTEM) */
+    --target-margin: 56px;          /* 4*F = 56px (KEEP F SYSTEM) */
+    --mobile-margin: 14px;
     --outline-width: 1px;
 }
 

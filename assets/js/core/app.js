@@ -566,6 +566,26 @@ const SiteBoyApp = {
             this.state.currentSectionModule = SectionModule;
             this.state.currentSectionName = sectionName;
             
+            // FIX: Tool pages need special layout - they manage their own sizing/scrolling
+            if (sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc') {
+                // Tools fill the entire content container with no padding
+                this.contentContainer.style.padding = '0';
+                // Get COMPUTED min-height (CSS sets it via variables, not inline)
+                const computedMinHeight = getComputedStyle(this.contentContainer).minHeight;
+                // Use explicit height so children can fill with height: 100%
+                this.contentContainer.style.height = computedMinHeight;
+                this.contentContainer.style.minHeight = 'auto';
+                // Tools manage their own scrolling
+                this.contentContainer.style.overflow = 'hidden';
+                console.log('📐 Tool page detected - applied tool layout mode, height:', computedMinHeight);
+            } else {
+                // Restore default styling for non-tool pages
+                this.contentContainer.style.padding = '';
+                this.contentContainer.style.height = '';
+                this.contentContainer.style.minHeight = '';
+                this.contentContainer.style.overflow = '';
+            }
+            
             // App coordinates the section building (async support)
             if (typeof SectionModule.handleRoute === 'function') {
                 const routeResult = SectionModule.handleRoute(subsectionName, this.contentContainer, {
@@ -708,9 +728,15 @@ const SiteBoyApp = {
         // Get current route
         const route = this.parseRoute();
         
-        // Skip rebuild for active animations to prevent breaking running scripts
+        // Skip rebuild for active animations/tools to prevent breaking running scripts
         if (route.section === 'art' && route.subsection && route.subsection.includes('generative/') && route.subsection !== 'generative') {
             console.log(`⏭️ Skipping resize rebuild for active animation: ${route.subsection}`);
+            return;
+        }
+        
+        // Skip rebuild for tool pages - tools manage their own resize/state
+        if (route.section === 'tools' && route.subsection) {
+            console.log(`⏭️ Skipping resize rebuild for tool: ${route.subsection}`);
             return;
         }
         
