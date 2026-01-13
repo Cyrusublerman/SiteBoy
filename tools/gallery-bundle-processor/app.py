@@ -2,15 +2,176 @@
 """
 Gallery Bundle Processor - A Streamlit GUI for processing media bundles
 Creates normalized image files and metadata for web galleries
+Now with R2 upload support!
 """
 
 import streamlit as st
 import json
 import os
+import hashlib
 from pathlib import Path
 from PIL import Image, ImageOps
 import shutil
 from typing import List, Dict, Any
+from datetime import datetime
+
+# R2/S3 upload support
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+    R2_AVAILABLE = True
+except ImportError:
+    R2_AVAILABLE = False
+
+# ═══════════════════════════════════════════════════════════════════
+# R2 CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+R2_CONFIG = {
+    "account_id": os.getenv("R2_ACCOUNT_ID", "584a79f3f79fa20395a998af9170d670"),
+    "bucket_name": os.getenv("R2_BUCKET_NAME", "assetts-einoder"),
+    "access_key": os.getenv("R2_ACCESS_KEY_ID", "327779b3bbcaa50676f262ca6ec4c473"),
+    "secret_key": os.getenv("R2_SECRET_ACCESS_KEY", "a11a0212f21268f4340a4ebd9ab1b4d2411c538cabcfc7a216fe7f54750d8f70"),
+    "public_url": os.getenv("R2_PUBLIC_URL", "https://media.einoder.net"),
+}
+
+def get_r2_client():
+    """Get configured R2/S3 client."""
+    if not R2_AVAILABLE:
+        return None
+    endpoint = f"https://{R2_CONFIG['account_id']}.r2.cloudflarestorage.com"
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=R2_CONFIG['access_key'],
+        aws_secret_access_key=R2_CONFIG['secret_key'],
+        region_name="auto",
+    )
+
+def get_file_hash(file_path: Path) -> str:
+    """Calculate MD5 hash of file."""
+    md5_hash = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            md5_hash.update(chunk)
+    return md5_hash.hexdigest()
+
+def check_r2_file_exists(client, r2_key: str, local_path: Path) -> bool:
+    """Check if file already exists in R2 with same hash."""
+    try:
+        response = client.head_object(Bucket=R2_CONFIG['bucket_name'], Key=r2_key)
+        remote_etag = response.get("ETag", "").strip('"')
+        local_hash = get_file_hash(local_path)
+        return remote_etag == local_hash
+    except ClientError:
+        return False
+
+def upload_file_to_r2(client, local_path: Path, r2_key: str, content_type: str = "image/jpeg", skip_existing: bool = True) -> dict:
+    """Upload a single file to R2."""
+    try:
+        if skip_existing and check_r2_file_exists(client, r2_key, local_path):
+            return {"status": "skipped", "key": r2_key}
+        
+        client.upload_file(
+            str(local_path),
+            R2_CONFIG['bucket_name'],
+            r2_key,
+            ExtraArgs={
+                "ContentType": content_type,
+                "CacheControl": "public, max-age=31536000",
+            }
+        )
+        return {"status": "uploaded", "key": r2_key}
+    except ClientError as e:
+        return {"status": "failed", "key": r2_key, "error": str(e)}
+
+def upload_gallery_to_r2(output_dir: Path, gallery_name: str, gallery_type: str = "photos", progress_callback=None) -> dict:
+    """Upload processed gallery to R2."""
+    client = get_r2_client()
+    if not client:
+        return {"success": False, "error": "boto3 not available"}
+    
+    stats = {"uploaded": 0, "skipped": 0, "failed": 0, "total": 0}
+    
+    # Map local directories to R2 paths
+    dir_mapping = {
+        "thumbs": "thumbs",
+        "web": "web",
+        "zoom": "zoom",
+        "originals": "originals",
+    }
+    
+    # Collect all files to upload
+    files_to_upload = []
+    for local_dir, r2_dir in dir_mapping.items():
+        local_path = output_dir / local_dir
+        if local_path.exists():
+            for file_path in local_path.glob("*.jpg"):
+                r2_key = f"art/{gallery_type}/{gallery_name}/{r2_dir}/{file_path.name}"
+                files_to_upload.append((file_path, r2_key, "image/jpeg"))
+            for file_path in local_path.glob("*.gif"):
+                r2_key = f"art/{gallery_type}/{gallery_name}/{r2_dir}/{file_path.name}"
+                files_to_upload.append((file_path, r2_key, "image/gif"))
+    
+    stats["total"] = len(files_to_upload)
+    
+    # Upload files
+    for idx, (local_path, r2_key, content_type) in enumerate(files_to_upload):
+        result = upload_file_to_r2(client, local_path, r2_key, content_type)
+        stats[result["status"]] = stats.get(result["status"], 0) + 1
+        
+        if progress_callback:
+            progress_callback((idx + 1) / len(files_to_upload), f"Uploading {local_path.name}...")
+    
+    # Generate and upload manifest
+    manifest = generate_r2_manifest(output_dir, gallery_name, gallery_type, stats)
+    if manifest:
+        manifest_key = f"art/{gallery_type}/{gallery_name}/manifest.json"
+        try:
+            client.put_object(
+                Bucket=R2_CONFIG['bucket_name'],
+                Key=manifest_key,
+                Body=json.dumps(manifest, indent=2),
+                ContentType="application/json",
+                CacheControl="public, max-age=3600",
+            )
+            stats["manifest"] = "uploaded"
+        except ClientError as e:
+            stats["manifest"] = f"failed: {e}"
+    
+    stats["success"] = stats["failed"] == 0
+    return stats
+
+def generate_r2_manifest(output_dir: Path, gallery_name: str, gallery_type: str, sync_stats: dict) -> dict:
+    """Generate R2-compatible manifest."""
+    thumbs_dir = output_dir / "thumbs"
+    if not thumbs_dir.exists():
+        return None
+    
+    images = list(thumbs_dir.glob("*.jpg")) + list(thumbs_dir.glob("*.gif"))
+    base_url = f"{R2_CONFIG['public_url']}/art/{gallery_type}/{gallery_name}"
+    
+    manifest = {
+        "gallery_name": gallery_name,
+        "base_url": base_url,
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "total_images": len(images),
+        "sync_stats": sync_stats,
+        "images": []
+    }
+    
+    for image in sorted(images):
+        manifest["images"].append({
+            "id": image.stem,
+            "filename": image.name,
+            "urls": {
+                "thumb": f"{base_url}/thumbs/{image.name}",
+                "web": f"{base_url}/web/{image.name}",
+                "zoom": f"{base_url}/zoom/{image.name}",
+            }
+        })
+    
+    return manifest
 
 # Page configuration
 st.set_page_config(
@@ -533,11 +694,114 @@ output/{bundle_id}/
 └── thumbs/            # 800px thumbnail images
                 """)
                 
+                # Store output dir in session state for R2 upload
+                st.session_state['last_output_dir'] = str(output_dir)
+                st.session_state['last_bundle_id'] = bundle_id
+                
             else:
                 st.error("❌ Failed to create manifest file")
                 
         except Exception as e:
             st.error(f"❌ Error processing bundle: {e}")
+
+# ═══════════════════════════════════════════════════════════════════
+# R2 UPLOAD SECTION
+# ═══════════════════════════════════════════════════════════════════
+
+st.markdown("---")
+st.subheader("📤 UPLOAD TO R2")
+
+if not R2_AVAILABLE:
+    st.warning("⚠️ boto3 not installed. Run: `pip install boto3` to enable R2 uploads.")
+elif 'last_output_dir' not in st.session_state:
+    st.info("👆 Process a bundle first, then upload to R2.")
+else:
+    output_dir = Path(st.session_state['last_output_dir'])
+    bundle_id = st.session_state.get('last_bundle_id', 'unknown')
+    
+    if output_dir.exists():
+        st.success(f"✅ Ready to upload: **{bundle_id}**")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            gallery_name = st.text_input(
+                "Gallery Name (R2 folder)", 
+                value=bundle_id.lower().replace(" ", "-"),
+                help="This will be the folder name in R2"
+            )
+        with col2:
+            gallery_type = st.selectbox(
+                "Gallery Type",
+                ["photos", "digital", "projects", "objects"],
+                help="Category for the gallery"
+            )
+        
+        # Show R2 destination preview
+        st.markdown("**R2 Destination:**")
+        st.code(f"""
+art/{gallery_type}/{gallery_name}/
+├── thumbs/     ({len(list((output_dir / 'thumbs').glob('*'))) if (output_dir / 'thumbs').exists() else 0} files)
+├── web/        ({len(list((output_dir / 'web').glob('*'))) if (output_dir / 'web').exists() else 0} files)
+├── originals/  ({len(list((output_dir / 'originals').glob('*'))) if (output_dir / 'originals').exists() else 0} files)
+└── manifest.json
+        """)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            dry_run = st.checkbox("Dry Run (preview only)", value=False)
+        with col2:
+            skip_existing = st.checkbox("Skip existing files", value=True)
+        
+        if st.button("🚀 Upload to R2", type="primary"):
+            if not gallery_name:
+                st.error("❌ Please enter a gallery name")
+            else:
+                if dry_run:
+                    st.info("🔍 DRY RUN - No files will be uploaded")
+                    # Count files that would be uploaded
+                    total_files = 0
+                    for subdir in ['thumbs', 'web', 'originals']:
+                        subdir_path = output_dir / subdir
+                        if subdir_path.exists():
+                            total_files += len(list(subdir_path.glob('*')))
+                    st.write(f"Would upload **{total_files}** files to `art/{gallery_type}/{gallery_name}/`")
+                else:
+                    # Actual upload
+                    upload_progress = st.progress(0)
+                    upload_status = st.empty()
+                    
+                    def update_progress(progress, message):
+                        upload_progress.progress(progress)
+                        upload_status.text(message)
+                    
+                    with st.spinner("Uploading to R2..."):
+                        result = upload_gallery_to_r2(
+                            output_dir, 
+                            gallery_name, 
+                            gallery_type,
+                            progress_callback=update_progress
+                        )
+                    
+                    if result.get("success"):
+                        st.success("🎉 Upload complete!")
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Uploaded", result.get("uploaded", 0))
+                        with col2:
+                            st.metric("Skipped", result.get("skipped", 0))
+                        with col3:
+                            st.metric("Failed", result.get("failed", 0))
+                        
+                        # Show manifest URL
+                        manifest_url = f"{R2_CONFIG['public_url']}/art/{gallery_type}/{gallery_name}/manifest.json"
+                        st.markdown(f"**Manifest URL:** [{manifest_url}]({manifest_url})")
+                        
+                        st.balloons()
+                    else:
+                        st.error(f"❌ Upload failed: {result.get('error', 'Unknown error')}")
+    else:
+        st.warning(f"⚠️ Output directory not found: {output_dir}")
+        st.session_state.pop('last_output_dir', None)
 
 # Sidebar with instructions
 with st.sidebar:
@@ -567,6 +831,7 @@ with st.sidebar:
     - **Text analytics**: Word/character counts in metadata
     - **Accessibility**: Alt text for images
     - **Metadata**: Complete JSON manifest
+    - **R2 Upload**: Direct upload to Cloudflare R2
     """)
     
     st.markdown("### 📝 Text Content Types")

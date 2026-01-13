@@ -207,5 +207,5 @@ const ContactSection = {
 // Global registration for router access
 window.ContactSection = ContactSection;
 
-console.log(`📧 ContactSection v${ContactSection.version} loaded`);
+window.debugLog('INIT', `📧 ContactSection v${ContactSection.version} loaded`);
 

@@ -1,63 +1,117 @@
-# Component Reference
+# Component Architecture (Index)
 
-All UI components for tool pages.
+Use this as the entry point for all component docs.
 
-## Categories
+## Map
+- Glossary: `glossary/component-glossary.md`
+- Rules: `rules/component-rules.md`
+- Nomenclature: `rules/component-nomenclature.md`
+- Process: `process/component-process.md`
+- Routing/exports: `routing/component-routing-guide.md`
+- Reference: `COMPONENT-REFERENCE.md`
+- Per-component docs: see `input/`, `output/`, `container/`, `tool/`, `layout/`, `content/`, `interactive/`, `graphs/`, `specialized/`, `p5/`, `gallery/`, `utility/`
 
-| Category | Components |
-|----------|------------|
-| [Input](./input/) | slider, stepper, text, dropdown, toggle, color, file, button, equation |
-| [Output](./output/) | label, value, progress |
-| [Container](./container/) | Grid, Stack, Section |
+## Per-component links
 
-## Quick Syntax Reference
+### Input
+- `input/NumericInput.md`
+- `input/TextInput.md`
+- `input/Select.md`
+- `input/Dropdown.md`
+- `input/ToggleGroup.md`
+- `input/Button.md`
+- `input/FileInput.md`
+- `input/ColorInput.md`
+- `input/EquationEditor.md`
 
-### Input Components
+### Output
+- `output/Text.md`
+- `output/ProgressBar.md`
+- `output/Canvas.md`
+- `output/SVG.md`
+- `output/Media.md`
+- `output/AudioOutput.md`
 
-```javascript
-// Numeric
-['slider', 'Label', min, max, step, { value, withNumber, precision }]
-['stepper', 'Label', min, max, step, { value, withNumber, withStepper }]
+### Container
+- `container/Stack.md`
+- `container/Grid.md`
+- `container/Section.md`
+- `container/Tabs.md`
+- `container/Collection.md`
 
-// Text
-['text', 'Label', defaultValue, { placeholder, multiline }]
+### Tool helpers
+- `tool/NavigationDropdown.md`
+- `tool/CanvasTabs.md`
 
-// Selection
-['dropdown', 'Label', [{value, label}], { value }]
-['toggle', 'Label', ['Item1', 'Item2'], { mode: 'checkbox'|'radio' }]
+### Layout
+- `layout/PageContainer.md`
+- `layout/PageHeader.md`
+- `layout/Subheader.md`
+- `layout/PageFooter.md`
+- `layout/Spacing.md`
+- `layout/Panel.md`
 
-// Other
-['color', 'Label', '#default', { showHex }]
-['file', 'Label', 'accept/*', { buttonText }]
-['button', 'Text', onClick, { size }]
-['equation', 'template', { param: {value, min, max, step} }]
-```
+### Content
+- `content/Heading.md`
+- `content/Paragraph.md`
+- `content/Quote.md`
+- `content/Image.md`
+- `content/Video.md`
+- `content/Audio.md`
+- `content/MarkdownBody.md`
+- `content/SimpleTOC.md`
+- `content/NumberedTOC.md`
+- `content/TOCGallery.md`
+- `content/Table.md`
+- `content/StatusDisplay.md`
 
-### Output Components
+### Interactive
+- `interactive/CollapsibleBase.md`
+- `interactive/Menu.md`
+- `interactive/Breadcrumb.md`
+- `interactive/ButtonGroup.md`
+- `interactive/CollapsibleSection.md`
+- `interactive/Lightbox.md`
+- `interactive/Carousel.md`
+- `interactive/CheckpointList.md`
+- `interactive/Sequencer.md`
 
-```javascript
-['label', 'Content', { variant: 'heading'|'body'|'status' }]
-['value', 'Value', { label, unit }]
-['progress', 'Label', initialValue, { showLabel }]
-```
+### Graphs
+- `graphs/BarGraph.md`
+- `graphs/LineGraph.md`
+- `graphs/PieGraph.md`
 
-## Auto-Generated Keys
+### Specialized
+- `specialized/VGAGrid.md`
+- `specialized/MathematicalCanvas.md`
+- `specialized/SVGDisplay.md`
+- `specialized/AnimationControls.md`
 
-Labels become value keys:
-- `'My Label'` → `values.my_label`
-- `'Frequency (Hz)'` → `values.frequency__hz_`
+### P5 integration
+- `p5/P5Canvas.md`
+- `p5/P5EmbeddedSketch.md`
+- `p5/P5ControlledSketch.md`
 
-Override: `{ key: 'custom' }`
+### Gallery
+- `gallery/MasonryGallery.md`
 
-## Value Types
+### Utility
+- `utility/AnimationContainer.md`
+- `utility/ExportController.md`
 
-| Component | Value Type |
-|-----------|-----------|
-| slider/stepper | `number` |
-| text | `string` |
-| dropdown | `string` (selected value) |
-| toggle | `string[]` (checked items) |
-| color | `string` (hex: '#RRGGBB') |
-| file | `File` object |
-| equation | `object` ({ param: value }) |
+## Where components live (code)
+- `assets/js/shared/components/<category>/<Name>.js`
+- Category indices export to `assets/js/shared/components/index.js`
+- Then imported/re-exported in `assets/js/shared/component-library.js` (factory strings like `stack`, `tool-numeric-input`).
 
+## Design principles (summary)
+- One component, many modes; reuse before add.
+- F-system sizing; UI colors via `var(--c-*)`; no DOM in tools.
+- BaseComponent lifecycle; destroy cleans children/listeners.
+
+## How to add/modify
+- Follow process guide: search/reuse → implement → export chain → doc page → checklist.
+
+## See Also
+- `guides/tools/tool-build-guide.md` — ToolBase usage with components
+- `guides/ai-routing-map.md` — where to start

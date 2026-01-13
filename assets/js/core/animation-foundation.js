@@ -651,7 +651,7 @@ export class AnimationConfig {
     }
 }
 
-// Export to window for global access
+// Keep window global temporarily for backward compatibility
 if (typeof window !== 'undefined') {
     window.AnimationFoundation = {
         BaseAnimator,
@@ -661,7 +661,7 @@ if (typeof window !== 'undefined') {
         ThrottledLoop,
         AnimationConfig
     };
-    
-    console.log('🎬 Animation Foundation v1.0.0 ready - Unified animation system loaded');
+
+    window.debugLog('INIT', '🎬 Animation Foundation v1.0.0 ready - Unified animation system loaded');
 }
 

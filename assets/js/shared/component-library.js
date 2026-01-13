@@ -1,195 +1,36 @@
 /**
  * Component Library - SiteBoy Framework
- * 
+ *
  * MODULAR INDEX - This file imports and re-exports ALL components
- * 
+ *
  * COMPONENT ORGANIZATION:
  * - foundation.js    → BaseComponent, BaseNavigationDropdown
- * - layout.js        → PageContainer, PageHeader, Subheader, PageFooter, Grid, Spacing  
+ * - layout.js        → PageContainer, PageHeader, Subheader, PageFooter, Grid, Spacing
  * - content.js       → Heading, Paragraph, Quote, Image, Video, Audio, MarkdownBody, SimpleTOC, NumberedTOC, TOCGallery
  * - interactive.js   → CollapsibleBase, Menu, Breadcrumb, Button, Input, Select, ButtonGroup
  * - graphs.js        → BarGraph, LineGraph, PieGraph
  * - specialized.js   → VGAGrid, MathematicalCanvas, ProgressBar
- * 
+ *
  * DO NOT ADD NEW COMPONENTS TO THIS FILE!
  * Add them to the appropriate category file and import here.
- * 
+ *
  * USAGE:
  * import { PageHeader, Grid, Button } from './component-library.js';
  * // OR access via global:
  * const header = new window.ComponentLibrary.PageHeader(...);
- * 
- * @version 4.0.0 - Modular Architecture  
+ *
+ * @version 4.0.0 - Modular Architecture
  * @dependencies All category modules listed above
  */
 
-// Import all foundation components
-import { 
-    BaseComponent, 
-    BaseNavigationDropdown 
-} from './foundation.js';
+// Import foundation components
+import { BaseComponent, BaseNavigationDropdown } from './foundation.js';
 
-// Import all layout components
-import { 
-    PageContainer, 
-    PageHeader, 
-    Subheader, 
-    PageFooter, 
-    Grid, 
-    Spacing,
-    Panel 
-} from './layout.js';
+// Import layout components
+import { PageContainer, PageHeader, Subheader, PageFooter, Grid, Spacing, Panel } from './layout.js';
 
-// Import animation container
-import { AnimationContainer } from './animation-container.js';
-
-// Import export controller
-import { ExportController } from './export-controller.js';
-
-console.log('🔥 COMPONENT LIBRARY LOADING GRID:', Grid);
-
-// Import all content components
-import { 
-    Heading, 
-    Paragraph, 
-    Quote, 
-    Image, 
-    Video, 
-    Audio, 
-    MarkdownBody,
-    SimpleTOC,
-    NumberedTOC,
-    TOCGallery,
-    Table,
-    StatusDisplay 
-} from './content.js';
-
-// Import all interactive components
-import { 
-    CollapsibleBase, 
-    Dropdown,
-    Menu, 
-    Breadcrumb, 
-    Button, 
-    Input, 
-    Select, 
-    NumericInput,
-    ProgressBar,
-    ButtonGroup,
-    CollapsibleSection,
-    Lightbox,
-    Carousel
-} from './interactive.js';
-
-// Import all graph components
-import { 
-    BarGraph, 
-    LineGraph, 
-    PieGraph 
-} from './graphs.js';
-
-// Import all specialized components
-import { 
-    VGAGrid, 
-    MathematicalCanvas, 
-    SVGDisplay,
-    AnimationControls
-} from './specialized.js';
-
-// Import p5.js integration components
-import { 
-    P5Canvas, 
-    P5EmbeddedSketch,
-    P5ControlledSketch 
-} from './p5-integration.js';
-
-// Import gallery components
-import { MasonryGallery } from './masonry-gallery.js';
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// NEW TOOL COMPONENTS (Consolidated Component System)
-// ═══════════════════════════════════════════════════════════════════════════════
+// Import content components
 import {
-    // Input components
-    NumericInput as ToolNumericInput,
-    TextInput as ToolTextInput,
-    Select as ToolSelect,
-    Dropdown as ToolDropdown,
-    Button as ToolButton,
-    ToggleGroup,
-    FileInput,
-    ColorInput,
-    EquationEditor,
-    
-    // Output components
-    Text,
-    Canvas,
-    SVG,
-    Media,
-    ProgressBar as ToolProgressBar,
-    AudioOutput,
-    
-    // Container components
-    Grid as ToolGrid,
-    Stack,
-    Section,
-    Tabs,
-    Collection
-} from './components/index.js';
-
-// Tool Components namespace
-const ToolComponents = {
-    // Input
-    NumericInput: ToolNumericInput,
-    TextInput: ToolTextInput,
-    Select: ToolSelect,
-    Dropdown: ToolDropdown,
-    Button: ToolButton,
-    ToggleGroup,
-    FileInput,
-    ColorInput,
-    EquationEditor,
-    
-    // Output
-    Text,
-    Canvas,
-    SVG,
-    Media,
-    ProgressBar: ToolProgressBar,
-    AudioOutput,
-    
-    // Container
-    Grid: ToolGrid,
-    Stack,
-    Section,
-    Tabs,
-    Collection
-};
-
-
-/**
- * ComponentLibrary - Main component library object
- * Maintains 100% backward compatibility with existing code
- */
-export const ComponentLibrary = {
-    version: '4.0.0-modular',
-    
-    // Foundation components
-    BaseComponent,
-    BaseNavigationDropdown,
-    
-    // Layout components  
-    PageContainer,
-    PageHeader,
-    Subheader,
-    PageFooter,
-    Grid,
-    Spacing,
-    Panel,
-    AnimationContainer,
-    ExportController,
-    
-    // Content components
     Heading,
     Paragraph,
     Quote,
@@ -201,11 +42,13 @@ export const ComponentLibrary = {
     NumberedTOC,
     TOCGallery,
     Table,
-    StatusDisplay,
-    
-    // Interactive components
+    StatusDisplay
+} from './content.js';
+
+// Import interactive components
+import {
     CollapsibleBase,
-    Dropdown,
+    Dropdown as InteractiveDropdown,
     Menu,
     Breadcrumb,
     Button,
@@ -217,53 +60,73 @@ export const ComponentLibrary = {
     CollapsibleSection,
     Lightbox,
     Carousel,
-    
-    // Graph components
-    BarGraph,
-    LineGraph,
-    PieGraph,
-    
-    // Specialized components
-    VGAGrid,
-    MathematicalCanvas,
-    SVGDisplay,
-    AnimationControls,
-    
-    // P5.js integration
-    P5Canvas,
-    P5EmbeddedSketch,
-    P5ControlledSketch,
-    
-    // Gallery
-    MasonryGallery,
-    
-    // ═══════════════════════════════════════════════════════════════════════════
-    // TOOL COMPONENTS (New Consolidated System)
-    // ═══════════════════════════════════════════════════════════════════════════
-    Tool: ToolComponents,
-    
-    // Direct access to tool components
-    ToolNumericInput,
-    ToolTextInput,
-    ToolSelect,
-    ToolDropdown,
-    ToolButton,
-    ToggleGroup,
-    FileInput,
-    ColorInput,
-    EquationEditor,
+    CheckpointList,
+    Sequencer
+} from './interactive.js';
+
+// Import correct Dropdown component for ToolBase
+import { Dropdown } from './components/input/Dropdown.js';
+
+// Import input components
+import { ToggleGroup } from './components/input/ToggleGroup.js';
+import { TextInput } from './components/input/TextInput.js';
+import { FileInput } from './components/input/FileInput.js';
+import { ColorInput } from './components/input/ColorInput.js';
+import { DropZone } from './components/input/DropZone.js';
+import { EquationEditor } from './components/input/EquationEditor.js';
+import { FilamentPicker } from './components/input/FilamentPicker.js';
+
+// Import graph components
+import { BarGraph, LineGraph, PieGraph } from './graphs.js';
+
+// Import specialized components
+import { VGAGrid, MathematicalCanvas, SVGDisplay, AnimationControls } from './specialized.js';
+
+// Import P5.js integration components
+import { P5Canvas, P5EmbeddedSketch, P5ControlledSketch } from './p5-integration.js';
+
+// Import gallery components
+import { MasonryGallery } from './masonry-gallery.js';
+
+// Import output components
+import { AnimationExport } from './components/output/AnimationExport.js';
+
+// Import tool components
+import {
+    ToolContainer,
+    ToolSidebar,
+    ToolCanvas,
+    ToolTabs,
+    CanvasTabs,
+    CategoryTabsBar,
+    SeedInput,
+    NavigationDropdown
+} from './components/tool/index.js';
+
+// Import additional components from output
+import {
     Text,
     Canvas,
     SVG,
     Media,
-    ToolProgressBar,
-    AudioOutput,
-    ToolGrid,
+    ProgressBar as OutputProgressBar,
+    AudioOutput
+} from './components/output/index.js';
+
+// Import additional components from container
+import {
+    Grid as ContainerGrid,
     Stack,
     Section,
-    Tabs,
+    Tabs as ContainerTabs,
     Collection,
-    
+    FileTable
+} from './components/container/index.js';
+
+
+// Create ComponentLibrary as a global object for backward compatibility
+const ComponentLibrary = {
+    version: '4.0.1', // Updated to force cache refresh
     /**
      * Component factory - maintains exact same API as before
      */
@@ -277,8 +140,8 @@ export const ComponentLibrary = {
             'grid': Grid,
             'spacing': Spacing,
             'panel': Panel,
-        
-        // Content
+
+            // Content
             'heading': Heading,
             'paragraph': Paragraph,
             'quote': Quote,
@@ -291,7 +154,7 @@ export const ComponentLibrary = {
             'toc-gallery': TOCGallery,
             'table': Table,
             'status-display': StatusDisplay,
-            
+
             // Interactive
             'dropdown': Dropdown,
             'menu': Menu,
@@ -304,108 +167,196 @@ export const ComponentLibrary = {
             'button-group': ButtonGroup,
             'collapsible-section': CollapsibleSection,
             'carousel': Carousel,
-            
+            'checkpoint-list': CheckpointList,
+            'sequencer': Sequencer,
+
             // Graphs
             'bar-graph': BarGraph,
             'line-graph': LineGraph,
             'pie-graph': PieGraph,
-            
+
             // Specialized
             'vga-grid': VGAGrid,
             'mathematical-canvas': MathematicalCanvas,
             'svg-display': SVGDisplay,
             'animation-controls': AnimationControls,
-            
+
             // P5.js integration
             'p5-canvas': P5Canvas,
-            'p5-embedded': P5EmbeddedSketch,
-            
+            'p5-embedded-sketch': P5EmbeddedSketch,
+            'p5-controlled-sketch': P5ControlledSketch,
+
             // Gallery
             'masonry-gallery': MasonryGallery,
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // Tool Components (new consolidated system)
-            // ═══════════════════════════════════════════════════════════════════
-            // Input
-            'tool-numeric-input': ToolNumericInput,
-            'tool-text-input': ToolTextInput,
-            'tool-select': ToolSelect,
-            'tool-dropdown': ToolDropdown,
-            'tool-button': ToolButton,
-            'toggle-group': ToggleGroup,
-            'file-input': FileInput,
-            'color-input': ColorInput,
-            'equation-editor': EquationEditor,
-            
-            // Output
-            'text': Text,
-            'canvas': Canvas,
-            'svg': SVG,
-            'media': Media,
-            'tool-progress-bar': ToolProgressBar,
-            'audio-output': AudioOutput,
-            
-            // Container
-            'tool-grid': ToolGrid,
-            'stack': Stack,
-            'section': Section,
-            'tabs': Tabs,
-            'collection': Collection
+
+            // Tool components
+            'tool-container': ToolContainer,
+            'tool-sidebar': ToolSidebar,
+            'tool-canvas': ToolCanvas,
+            'tool-tabs': ToolTabs,
+            'canvas-tabs': CanvasTabs,
+            'category-tabs-bar': CategoryTabsBar,
+            'seed-input': SeedInput,
+            'navigation-dropdown': NavigationDropdown,
+
+            // Animation export
+            'animation-export': AnimationExport
         };
-        
-        const ComponentClass = components[type];
+
+        const ComponentClass = components[type.toLowerCase()];
         if (!ComponentClass) {
-            throw new Error(`Unknown component type: ${type}`);
+            console.warn(`ComponentLibrary: Unknown component type '${type}'`);
+            return null;
         }
-        
-        return new ComponentClass(options, deps);
+
+        try {
+            return new ComponentClass(options, deps);
+        } catch (error) {
+            console.error(`ComponentLibrary: Failed to create '${type}':`, error);
+            return null;
+        }
     },
-    
-    // Convenience factory methods - maintains exact same API
-    pageContainer: (options = {}, deps) => {
-        const component = new PageContainer(options, deps);
-        return { container: component.render(), component };
-    },
-    pageHeader: (options = {}, deps) => {
-        const component = new PageHeader(options, deps);
-        return { container: component.render(), component };
-    },
-    subheader: (options = {}, deps) => {
-        const component = new Subheader(options, deps);
-        return { container: component.render(), component };
-    },
-    grid: (items, options = {}, deps) => ComponentLibrary.create('grid', { items, ...options }, deps),
-    heading: (content, level = 1, options = {}, deps) => ComponentLibrary.create('heading', { content, level, ...options }, deps),
-    paragraph: (content, options = {}, deps) => ComponentLibrary.create('paragraph', { content, ...options }, deps),
-    button: (text, onClick, options = {}, deps) => ComponentLibrary.create('button', { text, onClick, ...options }, deps),
-    image: (src, caption, options = {}, deps) => ComponentLibrary.create('image', { src, caption, ...options }, deps),
-    
-    /**
-     * Utility methods - maintains exact same API
-     */
-    trackComponents(tracker, ...components) {
-        components.forEach(component => tracker.push(component));
-        return components.length === 1 ? components[0] : components;
-    },
-    
-    destroyTracked(tracker) {
-        tracker.forEach(component => component.destroy());
-        tracker.length = 0;
+
+    // Utility method to destroy tracked components
+    destroyTracked: function(componentInstances) {
+        if (!Array.isArray(componentInstances)) return;
+        componentInstances.forEach(component => {
+            if (component && typeof component.destroy === 'function') {
+                component.destroy();
+            }
+        });
+        componentInstances.length = 0; // Clear the array
     }
 };
 
-// Global registration for legacy compatibility - CRITICAL for backward compatibility
-window.ComponentLibrary = ComponentLibrary;
+// Assign foundation components to ComponentLibrary immediately
+ComponentLibrary.BaseComponent = BaseComponent;
+ComponentLibrary.BaseNavigationDropdown = BaseNavigationDropdown;
 
-console.log(`📚 ComponentLibrary v${ComponentLibrary.version} - Modular Architecture Ready`);
-console.log('📁 Components organized in 6 category files for better maintainability');
+// Assign layout components to ComponentLibrary immediately
+ComponentLibrary.PageContainer = PageContainer;  // Main page layout container
+ComponentLibrary.Grid = Grid;  // Layout grid component
+
+// Factory function for pageContainer (returns {container, component} object)
+ComponentLibrary.pageContainer = function(options = {}, deps = {}) {
+    const component = new PageContainer(options, deps);
+    const container = component.render();
+    return { container, component };
+};
+
+ComponentLibrary.PageHeader = PageHeader;
+ComponentLibrary.Subheader = Subheader;
+ComponentLibrary.PageFooter = PageFooter;
+ComponentLibrary.Grid = Grid;
+ComponentLibrary.Spacing = Spacing;
+ComponentLibrary.Panel = Panel;
+
+// Assign content components to ComponentLibrary immediately
+ComponentLibrary.Heading = Heading;
+ComponentLibrary.Paragraph = Paragraph;
+ComponentLibrary.Quote = Quote;
+ComponentLibrary.Image = Image;
+ComponentLibrary.Video = Video;
+ComponentLibrary.Audio = Audio;
+ComponentLibrary.MarkdownBody = MarkdownBody;
+ComponentLibrary.SimpleTOC = SimpleTOC;
+ComponentLibrary.NumberedTOC = NumberedTOC;
+ComponentLibrary.TOCGallery = TOCGallery;
+ComponentLibrary.Table = Table;
+ComponentLibrary.StatusDisplay = StatusDisplay;
+
+// Assign interactive components to ComponentLibrary immediately
+ComponentLibrary.CollapsibleBase = CollapsibleBase;
+ComponentLibrary.Dropdown = Dropdown;
+ComponentLibrary.Menu = Menu;
+ComponentLibrary.Breadcrumb = Breadcrumb;
+ComponentLibrary.Button = Button;
+ComponentLibrary.Input = Input;
+ComponentLibrary.Select = Select;
+ComponentLibrary.NumericInput = NumericInput;
+ComponentLibrary.ProgressBar = ProgressBar;  // Interactive progress bar
+ComponentLibrary.ButtonGroup = ButtonGroup;
+ComponentLibrary.CollapsibleSection = CollapsibleSection;
+ComponentLibrary.Lightbox = Lightbox;
+ComponentLibrary.Carousel = Carousel;
+ComponentLibrary.CheckpointList = CheckpointList;
+ComponentLibrary.Sequencer = Sequencer;
+
+// Assign input components to ComponentLibrary immediately
+ComponentLibrary.ToggleGroup = ToggleGroup;
+ComponentLibrary.TextInput = TextInput;
+ComponentLibrary.FileInput = FileInput;
+ComponentLibrary.ColorInput = ColorInput;
+ComponentLibrary.DropZone = DropZone;
+ComponentLibrary.EquationEditor = EquationEditor;
+ComponentLibrary.FilamentPicker = FilamentPicker;
+
+// Assign graph components to ComponentLibrary immediately
+ComponentLibrary.BarGraph = BarGraph;
+ComponentLibrary.LineGraph = LineGraph;
+ComponentLibrary.PieGraph = PieGraph;
+
+// Assign specialized components to ComponentLibrary immediately
+ComponentLibrary.VGAGrid = VGAGrid;
+ComponentLibrary.MathematicalCanvas = MathematicalCanvas;
+ComponentLibrary.SVGDisplay = SVGDisplay;
+ComponentLibrary.AnimationControls = AnimationControls;
+
+// Assign P5.js integration components to ComponentLibrary immediately
+ComponentLibrary.P5Canvas = P5Canvas;
+ComponentLibrary.P5EmbeddedSketch = P5EmbeddedSketch;
+ComponentLibrary.P5ControlledSketch = P5ControlledSketch;
+
+// Assign gallery components to ComponentLibrary immediately
+ComponentLibrary.MasonryGallery = MasonryGallery;
+
+// Assign output components to ComponentLibrary immediately
+ComponentLibrary.AnimationExport = AnimationExport;
+ComponentLibrary.Text = Text;
+ComponentLibrary.Canvas = Canvas;
+ComponentLibrary.SVG = SVG;
+ComponentLibrary.Media = Media;
+ComponentLibrary.AudioOutput = AudioOutput;
+
+// Assign container components to ComponentLibrary immediately
+ComponentLibrary.Stack = Stack;
+ComponentLibrary.Section = Section;
+ComponentLibrary.Collection = Collection;
+ComponentLibrary.FileTable = FileTable;
+ComponentLibrary.ContainerGrid = ContainerGrid;  // Container-specific grid
+ComponentLibrary.ContainerTabs = ContainerTabs;  // Container-specific tabs
+
+// Assign tool components to ComponentLibrary immediately
+ComponentLibrary.ToolContainer = ToolContainer;
+ComponentLibrary.ToolSidebar = ToolSidebar;
+ComponentLibrary.ToolCanvas = ToolCanvas;
+ComponentLibrary.ToolTabs = ToolTabs;
+ComponentLibrary.CanvasTabs = CanvasTabs;
+ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
+ComponentLibrary.SeedInput = SeedInput;
+ComponentLibrary.NavigationDropdown = NavigationDropdown;
+
+// Assign additional output components
+ComponentLibrary.OutputProgressBar = OutputProgressBar;  // Output-specific progress bar
+
+// Make it available globally for legacy tools
+if (typeof window !== 'undefined') {
+    window.ComponentLibrary = ComponentLibrary;
+}
+
+window.debugLog('INIT', `📚 ComponentLibrary v${ComponentLibrary.version} - Modular Architecture Ready (all components assigned)`);
+window.debugLog('VERBOSE', ' BaseComponent available:', !!ComponentLibrary.BaseComponent);
+window.debugLog('VERBOSE', ' PageContainer available:', !!ComponentLibrary.PageContainer);
+window.debugLog('VERBOSE', ' ToolContainer available:', !!ComponentLibrary.ToolContainer);
+window.debugLog('VERBOSE', ' destroyTracked available:', typeof ComponentLibrary.destroyTracked, ComponentLibrary.destroyTracked ? '✅' : '❌');
+window.debugLog('VERBOSE', ' Missing components fixed - CheckpointList:', !!ComponentLibrary.CheckpointList, 'ContainerGrid:', !!ComponentLibrary.ContainerGrid);
 
 // Export individual components for modern import usage
 export {
     // Foundation
     BaseComponent,
     BaseNavigationDropdown,
-    
+
     // Layout
     PageContainer,
     PageHeader,
@@ -414,7 +365,7 @@ export {
     Grid,
     Spacing,
     Panel,
-    
+
     // Content
     Heading,
     Paragraph,
@@ -428,7 +379,7 @@ export {
     TOCGallery,
     Table,
     StatusDisplay,
-    
+
     // Interactive
     CollapsibleBase,
     Dropdown,
@@ -443,46 +394,48 @@ export {
     CollapsibleSection,
     Lightbox,
     Carousel,
-    
+
     // Graphs
     BarGraph,
     LineGraph,
     PieGraph,
-    
+
     // Specialized
     VGAGrid,
     MathematicalCanvas,
     SVGDisplay,
     AnimationControls,
-    
+
     // P5.js integration
     P5Canvas,
     P5EmbeddedSketch,
     P5ControlledSketch,
-    
+
     // Gallery
     MasonryGallery,
-    
-    // Tool Components (new consolidated system)
-    ToolNumericInput,
-    ToolTextInput,
-    ToolSelect,
-    ToolDropdown,
-    ToolButton,
-    ToggleGroup,
-    FileInput,
-    ColorInput,
-    EquationEditor,
+
+    // Tool Components
+    ToolContainer,
+    ToolSidebar,
+    ToolCanvas,
+    ToolTabs,
+    CanvasTabs,
+    CategoryTabsBar,
+    SeedInput,
+    NavigationDropdown,
+
+    // Additional Components
     Text,
     Canvas,
     SVG,
     Media,
-    ToolProgressBar,
     AudioOutput,
-    ToolGrid,
     Stack,
     Section,
-    Tabs,
     Collection,
-    ToolComponents
+    FileTable,
+    AnimationExport
 };
+
+// Export ComponentLibrary as default for backward compatibility
+export default ComponentLibrary;

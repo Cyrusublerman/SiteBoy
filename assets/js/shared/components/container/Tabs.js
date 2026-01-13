@@ -21,6 +21,7 @@ export class Tabs extends BaseComponent {
         this.contentEl = null;
         this.tabButtons = [];
         this.tabPanels = [];
+        this._lastParent = null;
         
         // Load saved state
         if (this.storageKey) {
@@ -34,7 +35,7 @@ export class Tabs extends BaseComponent {
     render() {
         if (this.element) return this.element;
         
-        const F = this.deps.MF?.F ?? 12;
+        const F = this.deps.MF?.F ?? 14;
         
         this.element = this.createElement('div', 'tabs-container component');
         this.element.style.cssText = `
@@ -166,12 +167,16 @@ export class Tabs extends BaseComponent {
         this.tabs.push(tab);
         // Re-render would be needed; for now, recreate component
         if (this.element) {
-            const parent = this.element.parentNode;
+            const parent = this.element.parentNode || this._lastParent;
             this.element.remove();
             this.element = null;
             this.tabButtons = [];
             this.tabPanels = [];
-            if (parent) parent.appendChild(this.render());
+            const newEl = this.render();
+            this._lastParent = parent;
+            if (parent) {
+                parent.appendChild(newEl);
+            }
         }
     }
     

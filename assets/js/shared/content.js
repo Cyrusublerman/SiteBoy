@@ -283,6 +283,9 @@ export class MarkdownBody extends BaseComponent {
     basicMarkdownParse(markdown) {
         let html = markdown;
         
+        // GFM Tables - must process before other replacements
+        html = this.parseGFMTables(html);
+        
         // Headers (H1-H6)
         html = html.replace(/^#{6} (.*$)/gim, '<h6>$1</h6>');
         html = html.replace(/^#{5} (.*$)/gim, '<h5>$1</h5>');
@@ -315,15 +318,64 @@ export class MarkdownBody extends BaseComponent {
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>');
         html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1">');
         
-        // Lists
+        // Numbered lists
+        html = html.replace(/^(\d+)\. (.+)$/gim, '<li>$2</li>');
+        
+        // Unordered lists
         html = html.replace(/^[-*+] (.+)$/gim, '<li>$1</li>');
-        html = html.replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>');
+        
+        // Wrap consecutive <li> in <ul> or <ol>
+        html = html.replace(/(<li>.*?<\/li>\n?)+/gims, (match) => `<ul>${match}</ul>`);
         
         // Paragraphs
         html = html.replace(/\n\n/gim, '</p><p>');
         html = '<p>' + html + '</p>';
         
+        // Clean up empty paragraphs and fix nesting
+        html = html.replace(/<p>\s*<\/p>/gim, '');
+        html = html.replace(/<p>(<h[1-6]>)/gim, '$1');
+        html = html.replace(/(<\/h[1-6]>)<\/p>/gim, '$1');
+        html = html.replace(/<p>(<table)/gim, '$1');
+        html = html.replace(/(<\/table>)<\/p>/gim, '$1');
+        html = html.replace(/<p>(<ul)/gim, '$1');
+        html = html.replace(/(<\/ul>)<\/p>/gim, '$1');
+        html = html.replace(/<p>(<pre)/gim, '$1');
+        html = html.replace(/(<\/pre>)<\/p>/gim, '$1');
+        
         return html;
+    }
+    
+    parseGFMTables(markdown) {
+        // Match GFM table pattern: header row, separator row, data rows
+        const tableRegex = /^\|(.+)\|\s*\n\|[-:\s|]+\|\s*\n((?:\|.+\|\s*\n?)+)/gim;
+        
+        return markdown.replace(tableRegex, (match, headerLine, bodyLines) => {
+            // Parse header cells
+            const headers = headerLine.split('|').map(h => h.trim()).filter(h => h);
+            
+            // Parse body rows
+            const rows = bodyLines.trim().split('\n').map(line => {
+                return line.split('|').map(c => c.trim()).filter(c => c !== '');
+            });
+            
+            // Build HTML table
+            let tableHtml = '<table>\n<thead>\n<tr>';
+            headers.forEach(h => {
+                tableHtml += `<th>${h}</th>`;
+            });
+            tableHtml += '</tr>\n</thead>\n<tbody>\n';
+            
+            rows.forEach(row => {
+                tableHtml += '<tr>';
+                row.forEach(cell => {
+                    tableHtml += `<td>${cell}</td>`;
+                });
+                tableHtml += '</tr>\n';
+            });
+            
+            tableHtml += '</tbody>\n</table>\n';
+            return tableHtml;
+        });
     }
     
     updateContent(markdownText) {
@@ -707,25 +759,38 @@ export class SimpleTOC extends BaseComponent {
     
     createSectionItem(section, F, index) {
         const itemHeight = F * 4; // 48px - Mathematical precision
-        
+        const numberBoxSize = F * 4; // Match NumberedTOC sizing
+
         // Determine layout based on available width
         const containerWidth = this.element.parentElement?.getBoundingClientRect().width || window.innerWidth;
         const hasWideLayout = containerWidth > 600; // Threshold for showing descriptions inline
-        
+
         const sectionItem = this.createElement('div', 'toc-section-item');
         sectionItem.style.cssText = `
-            height: ${itemHeight}px; 
-            cursor: pointer; 
-            display: flex; 
+            height: ${itemHeight}px;
+            cursor: pointer;
+            display: flex;
             align-items: stretch;
-            border-right: 1px solid var(--c-border);
-            border-bottom: 1px solid var(--c-border);
-            ${index === 0 ? 'border-top: 1px solid var(--c-border);' : ''}
-            font-family: 'Atkinson Hyperlegible Mono', monospace; 
+            border: 1px solid var(--c-border);
+            border-top: none;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
+            transition: background-color 0.2s ease;
             box-sizing: border-box;
             position: relative;
+            ${index === 0 ? 'border-top: 1px solid var(--c-border);' : ''}
         `;
-        
+
+        // Number box - add numbering like NumberedTOC
+        const numberBox = this.createElement('div', 'toc-number');
+        numberBox.textContent = String(index + 1).padStart(2, '0');
+        numberBox.style.cssText = `
+            width: ${numberBoxSize}px; height: ${itemHeight}px; background: var(--c-text);
+            color: var(--c-bg); display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        `;
+
+        sectionItem.appendChild(numberBox);
+
         if (hasWideLayout) {
             // Wide layout: title on left, description on right
             this.createWideLayoutContent(sectionItem, section, F, itemHeight);
@@ -738,11 +803,15 @@ export class SimpleTOC extends BaseComponent {
         sectionItem.addEventListener('mouseenter', () => {
             sectionItem.style.background = 'var(--c-text)';
             sectionItem.style.color = 'var(--c-bg)';
+            numberBox.style.background = 'var(--c-bg)';
+            numberBox.style.color = 'var(--c-text)';
         });
-        
+
         sectionItem.addEventListener('mouseleave', () => {
             sectionItem.style.background = '';
             sectionItem.style.color = '';
+            numberBox.style.background = 'var(--c-text)';
+            numberBox.style.color = 'var(--c-bg)';
         });
         
         // Add click handler
@@ -879,6 +948,7 @@ export class NumberedTOC extends BaseComponent {
         this.showCategories = options.showCategories !== false;
         this.collapsible = options.collapsible || false;
         this.expandedSections = new Set(); // Track which sections are expanded
+        this.expandedFolders = new Set(); // Track which folders are expanded
         
         // Initialize all sections as collapsed by default
         if (this.collapsible) {
@@ -912,7 +982,7 @@ export class NumberedTOC extends BaseComponent {
             return;
         }
         
-        let itemIndex = 0;
+        const counter = { value: 0 };
         
         this.sections.forEach((section, sectionIndex) => {
             // Section header (if showing categories)
@@ -925,11 +995,12 @@ export class NumberedTOC extends BaseComponent {
                 const indicator = this.collapsible ? (isExpanded ? '▼' : '▶') : '';
                 sectionHeader.textContent = `${indicator} ${section.title} /`.trim();
                 
+                const hasPreviousItems = counter.value > 0;
                 sectionHeader.style.cssText = `
                     padding: 0 ${F * 2}px; height: ${headerHeight}px; display: flex; align-items: center;
                     background: var(--c-bg); color: var(--c-text); 
                     border: 1px solid var(--c-border);
-                    ${itemIndex > 0 ? 'border-top: none;' : ''}
+                    ${hasPreviousItems ? 'border-top: none;' : ''}
                     font-family: 'Atkinson Hyperlegible Mono', monospace; font-size: ${F}px; text-transform: uppercase;
                     ${this.collapsible ? 'cursor: pointer; user-select: none;' : ''}
                     box-sizing: border-box;
@@ -961,8 +1032,7 @@ export class NumberedTOC extends BaseComponent {
             if (shouldShowItems) {
                 const items = section.articles || section.items || section.subsections || [section];
                 items.forEach((item) => {
-                    itemIndex++;
-                    this.createTOCItem(item, itemIndex, F, sectionIndex);
+                    this.createTOCItem(item, counter, F, sectionIndex, 0);
                 });
             }
         });
@@ -978,23 +1048,39 @@ export class NumberedTOC extends BaseComponent {
         console.log(`📚 Toggled section ${sectionIndex}: ${this.expandedSections.has(sectionIndex) ? 'expanded' : 'collapsed'}`);
     }
     
-    createTOCItem(item, itemIndex, F, sectionIndex) {
-        const numberBoxSize = F * 4; // 48px
+    toggleFolder(folderId) {
+        if (this.expandedFolders.has(folderId)) {
+            this.expandedFolders.delete(folderId);
+        } else {
+            this.expandedFolders.add(folderId);
+        }
+        this.rebuildTOC();
+    }
+    
+    createTOCItem(item, counter, F, sectionIndex, level = 0) {
+        const isFolder = Array.isArray(item.children) && item.children.length > 0;
+        const itemId = item.id || item.slug || `${sectionIndex}-${item.title}-${level}-${counter.value}`;
+        counter.value += 1;
+        const itemIndex = counter.value;
+        const numberBoxSize = F * 4; // base unit
+        const itemHeight = isFolder ? F * 3 : numberBoxSize; // folders compact, files single height
+        const indent = Math.max(0, level) * (F * 1.5);
         
         const tocItem = this.createElement('div', 'toc-item');
         tocItem.style.cssText = `
-            height: ${numberBoxSize}px; cursor: pointer; display: flex; align-items: stretch;
+            height: ${itemHeight}px; cursor: pointer; display: flex; align-items: stretch;
             border: 1px solid var(--c-border);
             border-top: none;
             font-family: 'Atkinson Hyperlegible Mono', monospace; transition: background-color 0.2s ease;
             box-sizing: border-box;
+            ${isFolder ? 'background: var(--c-bg);' : ''}
         `;
         
         // Number box
         const numberBox = this.createElement('div', 'toc-number');
-        numberBox.textContent = String(itemIndex).padStart(2, '0');
+        numberBox.textContent = isFolder ? (this.expandedFolders.has(itemId) ? '▼' : '▶') : String(itemIndex).padStart(2, '0');
         numberBox.style.cssText = `
-            width: ${numberBoxSize}px; height: ${numberBoxSize}px; background: var(--c-text);
+            width: ${numberBoxSize}px; height: ${itemHeight}px; background: var(--c-text);
             color: var(--c-bg); display: flex; align-items: center; justify-content: center;
             font-size: 18px; flex-shrink: 0;
         `;
@@ -1002,8 +1088,9 @@ export class NumberedTOC extends BaseComponent {
         // Content
         const content = this.createElement('div', 'toc-content');
         content.style.cssText = `
-            flex: 1; padding: ${F}px ${F * 2}px; display: flex; flex-direction: column;
+            flex: 1; padding: ${isFolder ? F : F}px ${F * 2}px; display: flex; flex-direction: column;
             justify-content: center; outline-left: 1px solid var(--c-border);
+            padding-left: ${F * 2 + indent}px;
         `;
         
         const titleDiv = this.createElement('div');
@@ -1023,9 +1110,9 @@ export class NumberedTOC extends BaseComponent {
         
         // Arrow
         const arrow = this.createElement('div', 'toc-arrow');
-        arrow.textContent = '→';
+        arrow.textContent = isFolder ? '' : '→';
         arrow.style.cssText = `
-            width: ${numberBoxSize}px; height: ${numberBoxSize}px; display: flex;
+            width: ${numberBoxSize}px; height: ${itemHeight}px; display: flex;
             align-items: center; justify-content: center; font-size: 16px;
             outline-left: 1px solid var(--c-border); flex-shrink: 0;
         `;
@@ -1050,11 +1137,20 @@ export class NumberedTOC extends BaseComponent {
         });
         
         // Add click handler
-        if (this.onItemClick) {
+        if (isFolder) {
+            tocItem.addEventListener('click', () => this.toggleFolder(itemId));
+        } else if (this.onItemClick) {
             tocItem.addEventListener('click', () => this.onItemClick(item));
         }
         
         this.element.appendChild(tocItem);
+        
+        // Render children if expanded
+        if (isFolder && this.expandedFolders.has(itemId)) {
+            item.children.forEach(child => {
+                this.createTOCItem(child, counter, F, sectionIndex, level + 1);
+            });
+        }
     }
 }
 

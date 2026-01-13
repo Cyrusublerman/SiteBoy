@@ -1,0 +1,396 @@
+# SiteBoy — Cursor Rules (Backend)
+
+## Scope
+- Target: backend/CI + server-side reasoning for JS/CSS/JSON in this repo.
+- Assume Node 20+, no browser globals unless noted.
+
+## File Ownership (SSoT)
+Only these files may own the concern. Others must not implement it.
+- Layout math → assets/js/core/mathematical-foundation.js
+- Base OO system → assets/js/core/base-component.js
+- **Animation logic → assets/js/core/animation-foundation.js**
+- Routing/nav → assets/js/core/router.js
+- App bootstrap/init → assets/js/core/app.js
+- UI components → assets/js/shared/component-library.js
+- Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
+- Sections/page composition → assets/js/sections/*.js
+- All styling → assets/css/styles.css
+
+## ═══════════════════════════════════════════════════════════════════
+## ABSOLUTE PROHIBITIONS — STOP AND CHECK BEFORE WRITING CODE
+## ═══════════════════════════════════════════════════════════════════
+
+### DOM Manipulation — FORBIDDEN outside BaseComponent/ComponentLibrary
+BEFORE writing any code that creates DOM elements, STOP and ask:
+- Am I in BaseComponent, ComponentLibrary, foundation.js, or layout.js?
+- If NO → VIOLATION. Use ComponentLibrary components instead.
+
+**FORBIDDEN PATTERNS IN TOOL/SECTION FILES:**
+```javascript
+// ❌ NEVER WRITE THESE IN TOOL FILES:
+document.createElement()
+.innerHTML =
+.appendChild()
+.insertBefore()
+.removeChild()
+```
+
+**INSTEAD:**
+```javascript
+// ✅ Use existing ComponentLibrary components
+// ✅ Or extend ComponentLibrary with new components FIRST
+```
+
+### Colors — ONLY VGA Palette Variables
+BEFORE writing any color value, STOP and ask:
+- Is this var(--vga-*) or var(--c-*)?
+- If NO → VIOLATION
+
+**FORBIDDEN:**
+```javascript
+// ❌ NEVER:
+'#ff5500'           // Any non-VGA hex
+'rgb(255,100,0)'    // Any rgb()
+'rgba()'            // Any rgba()
+'hsl()'             // Any hsl()
+'red', 'blue'       // Named colors
+```
+
+**ALLOWED:**
+```javascript
+// ✅ ONLY these exact VGA colors in canvas:
+'#000000', '#800000', '#008000', '#808000',
+'#000080', '#800080', '#008080', '#c0c0c0',
+'#808080', '#ff0000', '#00ff00', '#ffff00',
+'#0000ff', '#ff00ff', '#00ffff', '#ffffff'
+
+// ✅ In CSS/styles: var(--vga-*) or var(--c-*)
+```
+
+### Sizing — ONLY F-Based Calculations
+BEFORE writing any dimension, STOP and ask:
+- Is this using var(--f) or calc(var(--f) * N)?
+- If NO → VIOLATION
+
+**FORBIDDEN IN JS:**
+```javascript
+// ❌ NEVER in inline styles:
+'padding: 8px'      // Use calc(var(--f) * 0.57)
+'font-size: 11px'   // Use calc(var(--f) * 0.79)
+'width: 200px'      // Use CSS classes or F-based calc
+```
+
+### Inline Styles — FORBIDDEN in Tool/Section Files
+**FORBIDDEN:**
+```javascript
+// ❌ NEVER:
+element.style.cssText = '...'
+element.style.property = '...'
+```
+
+**INSTEAD:**
+- Define CSS classes in styles.css
+- Apply classes: `element.className = 'my-class'`
+- Use CSS variables for dynamic values
+
+### Animation APIs — ONLY AnimationFoundation
+**FORBIDDEN:**
+```javascript
+// ❌ NEVER in tool files:
+requestAnimationFrame()
+cancelAnimationFrame()
+setInterval() // for animations
+setTimeout()  // for animations
+```
+
+**REQUIRED:**
+```javascript
+// ✅ ALWAYS:
+new AnimationFoundation.AnimationLoop({ onFrame: fn })
+new AnimationFoundation.IntervalAnimator({ interval: ms, onTick: fn })
+```
+
+## ═══════════════════════════════════════════════════════════════════
+## Mandatory Patterns
+## ═══════════════════════════════════════════════════════════════════
+
+- All UI classes extend `BaseComponent`.
+- Instances: `const x = new X(...); this.componentInstances.push(x)`.
+- All dimensional math via `MathematicalFoundation.calculateDimensions(kind|props)`.
+- All animations via `AnimationFoundation` classes.
+- No manual DOM outside BaseComponent internals.
+- No manual RAF/setInterval for animations.
+
+## Style Constraints (VGA/Mono)
+- Colors: only CSS vars `var(--vga-*)`. No raw hex/rgb/hsl.
+- Typeface: Atkinson Hyperlegible only.
+- Disallow: gradients, shadows, rounded corners.
+- Use math/tokens for dimensions (no ad-hoc px for layout logic).
+
+## Tab Limit
+- Maximum 4 tabs in ToolBase sidebar (hard limit - this is all that fits)
+- If more organization needed, use blocks within tabs
+- NEVER exceed 4 tabs - consolidate into blocks instead
+
+## Build Chronology (observable path)
+app → router → destroy → section → subheader → JSON → blocks → render → URL
+
+## DO / DON'T Examples
+
+### DO:
+```javascript
+// Extend BaseComponent
+class Dropdown extends BaseComponent { ... }
+
+// Track instances
+const dd = new Dropdown(o); 
+this.componentInstances.push(dd);
+
+// Use MathematicalFoundation
+MathematicalFoundation.calculateDimensions('dropdown');
+
+// Use AnimationFoundation
+this.animator = new AnimationFoundation.AnimationLoop({ 
+    onFrame: () => this.draw() 
+});
+
+// Use VGA colors
+ctx.fillStyle = '#000000';
+```
+
+### DON'T:
+```javascript
+// ❌ Raw DOM
+const el = document.createElement('div');
+el.innerHTML = '<span>Bad</span>';
+
+// ❌ Layout math outside Foundation
+const w = px * 0.62;
+
+// ❌ Raw animation APIs
+this.animationFrame = requestAnimationFrame(...);
+this.interval = setInterval(...);
+
+// ❌ Non-VGA colors
+ctx.fillStyle = '#ff5500';
+
+// ❌ Inline styles
+element.style.padding = '8px';
+```
+
+## JSON Page Contract (must hold)
+Required keys: header (str), subheader (str), url ("/kebab"), blocks (array of {type, props}).
+type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
+
+## Quick Reference
+- Build page: JSON → ComponentLibrary only.
+- Never break the file-ownership map.
+- Enforce mathematical precision for all dimensions.
+
+## Rewrite/Generation Guidance
+
+### Before generating tool code, mentally check:
+- [ ] Will this create DOM elements? → Must be in ComponentLibrary
+- [ ] Will this set colors? → Must be VGA variables
+- [ ] Will this set dimensions? → Must use F-system
+- [ ] Will this animate? → Must use AnimationFoundation
+- [ ] Will this style elements? → Must use CSS classes
+
+### If a feature needs custom UI:
+1. First: Check if ComponentLibrary has it
+2. If not: Extend ComponentLibrary with new component
+3. Then: Use the component in the tool
+4. Never: Create DOM directly in tool file
+
+## Minimal Checks (heuristics you must respect when editing)
+Reject/avoid code that introduces:
+- document.* / window.* outside BaseComponent
+- class BaseComponent outside its owner
+- calculateDimensions( outside MathematicalFoundation
+- requestAnimationFrame/cancelAnimationFrame/setInterval for animations
+- routing (pushState, popstate, location.hash) outside router.js
+- bootstrap/initialize outside app.js
+- raw colours or border-radius/box-shadow/text-shadow anywhere
+
+Sections must:
+- import ComponentLibrary
+- load JSON
+- render from JSON blocks only
+
+Animations must:
+- Use AnimationFoundation classes
+- Call animator.destroy() in cleanup
+- Never implement custom RAF/setInterval loops
+
+## Output Contract
+- Keep diffs minimal; do not add new files that duplicate owned concerns.
+- When unsure where logic goes: default to the owner listed above; never inline.
+
+## ═══════════════════════════════════════════════════════════════════
+## LIBRARY PARADIGM DISTINCTION
+## ═══════════════════════════════════════════════════════════════════
+
+### Two Code Ecosystems
+
+| Library | Location | Paradigm | OOP Required? |
+|---------|----------|----------|---------------|
+| **Algorithms Library** | `assets/js/shared/algorithms/` | Functional | NO |
+| **Site Components** | `assets/js/shared/`, `assets/js/core/`, `assets/js/tools/` | OOP | YES |
+| **Reference Docs** | `blog/ideas/reference documentation/` | N/A (research) | N/A |
+
+### Algorithms Library Rules (PURE FUNCTIONAL CODE)
+- Location: `assets/js/shared/algorithms/`
+- Pure functions, no side effects, no DOM
+- MUST cite source reference documentation
+- MUST include `@source`, `@wikipedia`, `@formula` in JSDoc
+- CAN use any color values (algorithms, not rendering)
+- CAN use any dimensions (abstract math, not layout)
+
+### Site Component Rules (PRODUCTION UI CODE)
+- All rules in this document apply (BaseComponent, VGA, F-system, etc.)
+- MUST wrap algorithms library functions in OOP components
+- MUST NOT duplicate algorithm logic (import from algorithms library)
+
+### When Building a Tool:
+1. **Algorithm logic** → Use/extend algorithms library (functional)
+   ```javascript
+   import { Noise, Patterns, SDF } from '../shared/algorithms/index.js';
+   ```
+2. **UI/rendering** → Use site components (OOP, BaseComponent, ToolBase)
+3. **Never mix** → Don't put algorithms in tool files, don't put DOM in algorithms
+
+### Algorithms Library Source Citation Standard
+Every function in `assets/js/shared/algorithms/` MUST include:
+```javascript
+/**
+ * [Description]
+ * 
+ * @source blog/ideas/reference documentation/[CATEGORY]/[Article].md
+ * @wikipedia https://en.wikipedia.org/wiki/[Article]
+ * @section [Section containing formula]
+ * @formula [Exact LaTeX from reference doc]
+ */
+```
+
+## ═══════════════════════════════════════════════════════════════════
+## DEBUG LOGGING SYSTEM
+## ═══════════════════════════════════════════════════════════════════
+
+### NEVER Use console.log Directly
+**FORBIDDEN:**
+```javascript
+// ❌ NEVER:
+console.log('Initializing component...');
+console.log('Route changed to:', path);
+console.log('Layout calculated:', dims);
+```
+
+**REQUIRED:**
+```javascript
+// ✅ ALWAYS use debugLog with category:
+window.debugLog('INIT', 'Initializing component...');
+window.debugLog('NAVIGATION', 'Route changed to:', path);
+window.debugLog('LAYOUT', 'Layout calculated:', dims);
+```
+
+### Debug Categories (5 total)
+
+| Category | Purpose | Default | When to Use |
+|----------|---------|---------|-------------|
+| **INIT** | Initialization/startup | OFF | Component loading, version info, system ready messages |
+| **LAYOUT** | Layout calculations | OFF | F-system, dimensions, PageContainer states, resize events |
+| **NAVIGATION** | Route/nav changes | OFF | Route changes, subheader updates, navigation setup |
+| **TOOLS** | Tool operations | OFF | Tool loading, rendering, tool-specific operations |
+| **VERBOSE** | Repetitive operations | OFF | Dropdown open/close, cleanup, cache hits (rarely needed) |
+
+### Category Assignment Rules
+
+**INIT** - Module loading & initialization:
+- Component library ready messages
+- Section "ready" messages
+- Router/app initialization
+- System version info
+- One-time startup events
+
+**LAYOUT** - Dimension & positioning:
+- F-system calculations
+- PageContainer layout application
+- Margin/frame calculations
+- Subheader state changes (show/hide affecting layout)
+- Resize recalculations
+
+**NAVIGATION** - Routing & navigation:
+- Route changes (hash changes)
+- Subheader title updates
+- Navigation dropdown setup
+- Prev/next navigation
+- Section transitions
+
+**TOOLS** - Tool-specific operations:
+- Tool loading/rendering
+- Tool initialization
+- Tool-specific state changes
+- Tool operations (not covered by other categories)
+
+**VERBOSE** - High-frequency operations:
+- Dropdown open/close (can fire 18+ times per action)
+- Section cleanup (happens on every nav)
+- JSON cache hits
+- Repetitive render confirmations
+- Operations that normally don't need logging
+
+### Exception: Keep console.error/warn
+```javascript
+// ✅ ALWAYS keep these (not debug, actual problems):
+console.error('Failed to load:', error);
+console.warn('Deprecated API used');
+```
+
+### Usage Examples
+
+**Converting existing logs:**
+```javascript
+// OLD:
+console.log('🚀 SiteBoy App initialized');
+console.log(`🧭 Route change: ${section}`);
+console.log('📐 Layout applied');
+console.log('🔄 Dropdown closed');
+
+// NEW:
+window.debugLog('INIT', '🚀 SiteBoy App initialized');
+window.debugLog('NAVIGATION', `🧭 Route change: ${section}`);
+window.debugLog('LAYOUT', '📐 Layout applied');
+window.debugLog('VERBOSE', '🔄 Dropdown closed');
+```
+
+**User controls (available in browser console):**
+```javascript
+// Enable specific categories
+debugToggle('INIT', true);                    // Show initialization
+debugToggle(['NAVIGATION', 'TOOLS'], true);   // Multiple categories
+debugToggle('ALL', true);                      // Everything
+debugToggle('ALL', false);                     // Disable all
+
+// Object syntax
+debugToggle({ INIT: true, LAYOUT: true, VERBOSE: false });
+```
+
+### Implementation Checklist
+
+When adding new features:
+- [ ] Replace ALL console.log with window.debugLog
+- [ ] Assign appropriate category (INIT/LAYOUT/NAVIGATION/TOOLS/VERBOSE)
+- [ ] Keep console.error/console.warn unchanged
+- [ ] Test that logs only appear when category enabled
+
+### File Locations
+- Config & utilities: `assets/js/core/config.js`
+- Documentation: `blog/docs/temp/debug-log-analysis.md`
+
+### Benefits
+- Clean console by default (production-ready)
+- Enable only needed logs during debugging
+- No performance impact when disabled
+- Categorized debugging (no sifting through noise)
+- Easy to find repetitive/spammy logs (VERBOSE)
+

@@ -46,7 +46,7 @@ export class Canvas extends BaseComponent {
     render() {
         if (this.element) return this.element;
         
-        const F = this.deps.MF?.F ?? 12;
+        const F = this.deps.MF?.F ?? 14;
         
         this.element = this.createElement('div', 'canvas-container component');
         this.element.style.cssText = `

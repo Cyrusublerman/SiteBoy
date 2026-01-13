@@ -1,0 +1,8 @@
+# Media Manager API Dependencies
+flask>=3.0.0
+flask-cors>=4.0.0
+pillow>=10.0.0
+boto3>=1.34.0
+python-magic-bin>=0.4.14;sys_platform=='win32'
+python-magic>=0.4.27;sys_platform!='win32'
+

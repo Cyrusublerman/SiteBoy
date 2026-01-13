@@ -565,6 +565,275 @@ blockquote {
     border-right: 1px solid var(--c-border);
 }
 
+/* CheckpointList - Draggable checkpoint/state list */
+.checkpoint-list {
+    max-height: calc(var(--f) * 18);
+    overflow-y: auto;
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.checkpoint-empty {
+    padding: var(--f);
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.85);
+    text-align: center;
+}
+
+.checkpoint-item {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    cursor: move;
+    font-size: calc(var(--f) * 0.85);
+}
+
+.checkpoint-item:last-child {
+    border-bottom: none;
+}
+
+.checkpoint-item.dragging {
+    opacity: 0.5;
+    background: var(--vga-navy);
+}
+
+.checkpoint-handle {
+    color: var(--vga-gray);
+    cursor: grab;
+    padding: 0 calc(var(--f) / 4);
+    user-select: none;
+}
+
+.checkpoint-name {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--c-text);
+    font-size: calc(var(--f) * 0.85);
+    padding: calc(var(--f) / 4);
+    font-family: inherit;
+}
+
+.checkpoint-name:focus {
+    outline: 1px solid var(--c-border);
+    background: var(--vga-black);
+}
+
+.checkpoint-duration {
+    width: calc(var(--f) * 3);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-size: calc(var(--f) * 0.7);
+    padding: calc(var(--f) / 4);
+    text-align: center;
+    font-family: inherit;
+}
+
+.checkpoint-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+}
+
+.checkpoint-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.checkpoint-delete {
+    color: var(--vga-red);
+}
+
+.checkpoint-delete:hover {
+    background: var(--vga-red);
+    color: var(--vga-white);
+}
+
+/* Sequencer - Site-wide animation sequencer */
+.sequencer {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.sequencer-controls {
+    display: flex;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.sequencer-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.sequencer-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.sequencer-save {
+    color: var(--vga-lime);
+}
+
+.sequencer-clear {
+    color: var(--vga-red);
+}
+
+.sequencer-loop-label {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 4);
+    font-size: calc(var(--f) * 0.85);
+    color: var(--c-text);
+}
+
+.sequencer-list {
+    max-height: calc(var(--f) * 20);
+    overflow-y: auto;
+}
+
+.sequencer-empty {
+    padding: var(--f);
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.85);
+    text-align: center;
+}
+
+.sequencer-checkpoint {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    font-size: calc(var(--f) * 0.85);
+    background: var(--c-bg);
+}
+
+.sequencer-checkpoint.dragging {
+    opacity: 0.5;
+    background: var(--vga-navy);
+}
+
+.sequencer-transition {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    font-size: calc(var(--f) * 0.85);
+    background: var(--vga-black);
+}
+
+.sequencer-handle {
+    color: var(--vga-gray);
+    cursor: grab;
+    padding: 0 calc(var(--f) / 4);
+    user-select: none;
+}
+
+.sequencer-arrow {
+    color: var(--vga-gray);
+    padding: 0 calc(var(--f) / 4);
+}
+
+.sequencer-name {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--c-text);
+    padding: calc(var(--f) / 4);
+    font-size: inherit;
+    font-family: inherit;
+}
+
+.sequencer-name:focus {
+    outline: 1px solid var(--c-border);
+    background: var(--vga-black);
+}
+
+.sequencer-label {
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.75);
+}
+
+.sequencer-frames {
+    width: calc(var(--f) * 4);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    padding: calc(var(--f) / 4);
+    font-size: inherit;
+    font-family: inherit;
+    text-align: center;
+}
+
+.sequencer-toggle {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 4);
+    font-size: calc(var(--f) * 0.75);
+    color: var(--vga-gray);
+    cursor: pointer;
+}
+
+.sequencer-toggle input {
+    margin: 0;
+}
+
+.sequencer-toggle span {
+    min-width: calc(var(--f) * 3);
+}
+
+.sequencer-btn-sm {
+    padding: calc(var(--f) / 6) calc(var(--f) / 3);
+    font-size: calc(var(--f) * 0.75);
+    cursor: pointer;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.sequencer-btn-sm:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.sequencer-del {
+    color: var(--vga-red);
+}
+
+.sequencer-del:hover {
+    background: var(--vga-red);
+    color: var(--vga-white);
+}
+
+.sequencer-total {
+    padding: calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    color: var(--vga-aqua);
+    text-align: center;
+    border-top: 1px solid var(--c-border);
+}
+
 .group-button {
     flex: 1;
 }
@@ -1233,6 +1502,7 @@ mjx-container mjx-assistive-mml * {
     width: var(--layout-width);
     top: var(--content-y-no-sub); /* Default to no subheader */
     min-height: var(--content-min-h-no-sub);
+    max-height: var(--content-height-no-sub, none);
     background: var(--c-bg);
     border: 1px solid var(--c-border);
     border-top: none;
@@ -1247,7 +1517,33 @@ mjx-container mjx-assistive-mml * {
 body.with-subheader .content-container {
     top: var(--content-y-with-sub);
     min-height: var(--content-min-h-with-sub);
+    max-height: var(--content-height-with-sub, none);
 }
+
+/* Tool/viewport mode - strict height constraints for ToolBase pages */
+/* Use this class when page content should fill exactly the available space */
+.content-container.tool-viewport {
+    height: var(--content-min-h-no-sub);
+    min-height: unset;
+    max-height: var(--content-min-h-no-sub);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+body.with-subheader .content-container.tool-viewport {
+    height: var(--content-min-h-with-sub);
+    max-height: var(--content-min-h-with-sub);
+}
+
+/* Generic tool viewport class for tool containers that are not content-container */
+.tool-viewport {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* TOC container class - used by index pages for styling hooks */
+/* Padding is preserved for content readability */
 
 /* Responsive padding for content container */
 @media (max-width: 768px) {
@@ -1257,31 +1553,13 @@ body.with-subheader .content-container {
 }
 
 /* Page curtains - top and bottom margins */
-.page-curtain-top {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: var(--header-y); /* Extends from top of viewport to top of header */
-    background: var(--c-bg);
-    z-index: 999; /* Higher than everything else to hide scrolling content */
-}
-
-.page-curtain-bottom {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100vw;
-    height: var(--header-height);
-    background: var(--c-bg);
-    z-index: 200;
-}
+/* Curtains removed per layout update */
 
 /* content-body class no longer needed - content-container handles padding */
 
 .page-footer {
     position: fixed;
-    bottom: calc(var(--f) * 2); /* 2*F margin from bottom */
+    top: var(--footer-y, calc(100vh - var(--header-height) - var(--target-margin)));
     left: var(--layout-margin);
     width: var(--layout-width);
     height: var(--header-height);
@@ -1510,6 +1788,43 @@ body.with-subheader .content-container {
     background: var(--c-text);
     color: var(--c-bg);
     outline: none;
+}
+
+/* Dropdown Subsection - Collapsible folder style */
+.dropdown-subsection {
+    height: calc(var(--f) * 2 - 1px);
+    line-height: calc(var(--f) * 2 - 1px);
+    width: 100%;
+    padding: 0 var(--f);
+    cursor: pointer;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-subsection:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.dropdown-subsection .subsection-toggle {
+    font-family: 'Space Mono', monospace;
+    flex-shrink: 0;
+}
+
+/* Children container for nested items */
+.dropdown-subsection-children {
+    background: var(--c-bg);
+}
+
+.dropdown-subsection-children .dropdown-item {
+    /* Nested items inherit base styling, padding set by JS based on depth */
 }
 
 /* =================================================================
@@ -2170,13 +2485,307 @@ select.component {
     font-family: 'Space Mono', monospace;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   ANIMATION EXPORT COMPONENT
+   ═══════════════════════════════════════════════════════════════════ */
+
+.animation-export {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 2);
+    padding: var(--f);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.animation-export .export-info {
+    font-size: calc(var(--f) * 0.79);
+    color: var(--c-text-dim, var(--vga-gray));
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    background: var(--c-bg-darker, var(--vga-black));
+    border: 1px solid var(--c-border);
+}
+
+.animation-export .export-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+}
+
+.animation-export .export-label {
+    flex: 0 0 calc(var(--f) * 5);
+    font-size: calc(var(--f) * 0.79);
+    color: var(--c-text-dim, var(--vga-gray));
+    text-transform: uppercase;
+}
+
+.animation-export .export-select,
+.animation-export .export-input {
+    flex: 1;
+    height: calc(var(--f) * 1.75);
+    padding: 0 calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.79);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.animation-export .export-input[type="number"] {
+    width: calc(var(--f) * 5);
+    flex: 0 0 auto;
+}
+
+.animation-export .export-input[type="range"] {
+    flex: 1;
+    height: calc(var(--f) * 0.5);
+    padding: 0;
+}
+
+.animation-export .export-suffix,
+.animation-export .export-value {
+    font-size: calc(var(--f) * 0.79);
+    color: var(--c-text-dim, var(--vga-gray));
+    min-width: calc(var(--f) * 3);
+    text-align: right;
+}
+
+.animation-export .export-timing,
+.animation-export .export-quality {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 4);
+}
+
+.animation-export .export-presets {
+    display: flex;
+    gap: calc(var(--f) / 4);
+    margin-top: calc(var(--f) / 4);
+}
+
+.animation-export .export-preset-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.71);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    cursor: pointer;
+}
+
+.animation-export .export-preset-btn:hover {
+    background: var(--c-accent);
+    color: var(--c-bg);
+}
+
+.animation-export .export-custom-res {
+    margin-top: calc(var(--f) / 4);
+}
+
+.animation-export .export-custom-res span {
+    padding: 0 calc(var(--f) / 4);
+    color: var(--c-text-dim, var(--vga-gray));
+}
+
+.animation-export .export-buttons {
+    display: flex;
+    gap: calc(var(--f) / 2);
+    margin-top: calc(var(--f) / 2);
+}
+
+.animation-export .export-btn {
+    flex: 1;
+    height: calc(var(--f) * 2);
+    font-size: calc(var(--f) * 0.85);
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.animation-export .export-btn-primary {
+    background: var(--c-accent);
+    color: var(--c-bg);
+}
+
+.animation-export .export-btn-primary:hover:not(:disabled) {
+    background: var(--vga-white);
+}
+
+.animation-export .export-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.animation-export .export-btn-secondary {
+    background: var(--c-bg);
+    color: var(--vga-red);
+    border-color: var(--vga-red);
+}
+
+.animation-export .export-btn-secondary:hover {
+    background: var(--vga-red);
+    color: var(--c-bg);
+}
+
+.animation-export .export-progress {
+    margin-top: calc(var(--f) / 2);
+}
+
+.animation-export .export-progress-bar {
+    height: calc(var(--f) / 2);
+    background: var(--c-bg-darker, var(--vga-black));
+    border: 1px solid var(--c-border);
+    overflow: hidden;
+}
+
+.animation-export .export-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--c-accent);
+    transition: width 0.1s ease;
+}
+
+.animation-export .export-progress-text {
+    font-size: calc(var(--f) * 0.71);
+    color: var(--c-text-dim, var(--vga-gray));
+    text-align: center;
+    margin-top: calc(var(--f) / 4);
+}
+
+/* Cursor utility classes */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+/* Tool-specific styles for algorithms-test-lab */
+
+/* Error panel styling */
+.error-panel {
+    padding: calc(var(--f));
+    color: var(--vga-red);
+    font-family: var(--font-mono);
+}
+
+/* Documentation placeholder panel */
+.doc-placeholder {
+    padding: calc(var(--f));
+    font-family: var(--font-mono);
+    line-height: 1.6;
+}
+
+.doc-placeholder h2 {
+    font-size: calc(var(--f) * 1.5);
+    margin-bottom: calc(var(--f));
+}
+
+.doc-placeholder p {
+    margin-bottom: calc(var(--f));
+    font-size: calc(var(--f) * 0.75);
+    opacity: 0.7;
+}
+
+/* About panel container */
+.about-panel {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: var(--c-bg);
+    color: var(--c-text);
+    overflow-y: auto;
+}
+
+/* ToolBase scrollbar hiding */
+.tool-tabs-inner::-webkit-scrollbar,
+.tool-subtabs-inner::-webkit-scrollbar {
+    display: none;
+}
+
 /* Responsive - single column on mobile */
 @media (max-width: 1023px) {
     .animation-wrapper {
         gap: calc(var(--f) / 2);
     }
-    
+
     .animation-sidebar {
         flex-direction: column;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FULL-PAGE MODE - Hide header/footer chrome
+   ═══════════════════════════════════════════════════════════════════
+   
+   Activated via :full URL modifier (e.g. #tools/about-you:full)
+   Router parses :full suffix → App applies .full-mode class to body
+   
+   BEHAVIOUR:
+   - Hides header (#header, .page-header)
+   - Hides footer (#footer, .page-footer)
+   - Repositions content container to fill viewport
+   - Preserves layout margins
+   - Subheader remains visible (tools may need it)
+   
+   USE CASES:
+   - Embedding tools in iframes
+   - Presentation mode
+   - Distraction-free content viewing
+   - External tool integrations
+*/
+
+body.full-mode #header,
+body.full-mode .page-header {
+    display: none !important;
+}
+
+body.full-mode #footer,
+body.full-mode .page-footer {
+    display: none !important;
+}
+
+body.full-mode #subheader,
+body.full-mode .subheader {
+    display: none !important;
+}
+
+body.full-mode #container,
+body.full-mode .content-container {
+    /* Position from top margin (no header) */
+    top: var(--layout-margin);
+    
+    /* Fill viewport height minus margins */
+    height: calc(100vh - (var(--layout-margin) * 2));
+    
+    /* Ensure proper box sizing */
+    box-sizing: border-box;
+    
+    /* Add top and bottom borders in full mode */
+    border-top: 1px solid var(--c-border) !important;
+    border-bottom: 1px solid var(--c-border) !important;
+}
+
+/* Full mode with subheader - adjust content positioning (subheader hidden so treat same as no-subheader) */
+body.full-mode.has-subheader #container,
+body.full-mode.has-subheader .content-container {
+    top: var(--layout-margin) !important;
+    bottom: var(--layout-margin) !important;
+    height: auto !important;
+    border-top: 1px solid var(--c-border) !important;
+    border-bottom: 1px solid var(--c-border) !important;
+}
+
+/* Full mode without subheader - content fills from top margin */
+body.full-mode.no-subheader #container,
+body.full-mode.no-subheader .content-container {
+    top: var(--layout-margin) !important;
+    bottom: var(--layout-margin) !important;
+    height: auto !important;
+    border-top: 1px solid var(--c-border) !important;
+    border-bottom: 1px solid var(--c-border) !important;
 }

@@ -1,0 +1,723 @@
+/* Flex centering utility with border */
+.flex-center-border {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+/**
+ * Utilities - Helper Classes & Debugging
+ *
+ * Utility classes, responsive helpers, debugging tools, and specialized components
+ * These are typically small, single-purpose styles
+ */
+
+/* =================================================================
+   DEBUG UTILITIES (Development Only)
+   ================================================================= */
+
+.debug-outline {
+    outline: 1px solid var(--vga-red) !important;
+}
+
+.debug-grid {
+    background-image: 
+        linear-gradient(to right, var(--vga-red) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--vga-red) 1px, transparent 1px);
+    background-size: var(--f) var(--f);
+    opacity: 0.1;
+}
+
+/* =================================================================
+   SCROLLBAR STYLING - Clean & Simple
+   ================================================================= */
+
+/* RULE: No arrows ever. Only thumb. Always pinned right. Width matches margin system. */
+
+/* Remove ALL scrollbar buttons/arrows globally */
+::-webkit-scrollbar-button {
+    display: none;
+}
+
+/* Base scrollbar styling */
+::-webkit-scrollbar-track {
+    background: var(--vga-black);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--vga-white);
+    border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--vga-silver);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--vga-black);
+}
+
+/* Desktop: 12px scrollbar */
+@media (min-width: 1024px) {
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    
+    html {
+        scrollbar-width: auto;
+        scrollbar-color: var(--vga-white) var(--vga-black);
+    }
+}
+
+/* Mobile: Hide scrollbar completely */
+@media (max-width: 1023px) {
+    ::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+    
+    html {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    :root {
+        --mobile-margin: 12px; /* Restore full margin since no scrollbar */
+    }
+}
+
+/* =================================================================
+   MATHEMATICAL PRECISION VALIDATION
+   ================================================================= */
+
+/* 
+   All measurements MUST be multiples of F=12px
+   All colors MUST be from VGA palette
+   Font MUST be Space Mono
+   NO gradients, shadows, border-radius allowed
+   NO raw hex/rgb/hsl colors outside VGA palette
+*/
+
+/* ================================================================= */
+/*                        FONT ANALYSIS TOOL                          */
+/* ================================================================= */
+
+/* Font Analysis Tool - Optimized using existing classes */
+.font-analysis {
+    height: calc(var(--f) * 50);
+}
+
+.font-analysis .grid {
+    --grid-cols: 3;
+    height: 100%;
+}
+
+.font-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.font-header {
+    height: calc(var(--f) * 4);
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    gap: var(--f);
+}
+
+.font-sample {
+    height: calc(var(--f) * 10);
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.font-canvas {
+    height: calc(var(--f) * 20);
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.font-charset {
+    flex: 1;
+    padding: var(--f);
+    overflow-y: auto;
+}
+
+.canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metrics-canvas {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    width: calc(var(--f) * 16);
+    height: calc(var(--f) * 16);
+}
+
+.section-title {
+    font-size: var(--f);
+    color: var(--c-text);
+    margin-bottom: calc(var(--f) / 2);
+    text-transform: uppercase;
+}
+
+.charset-display {
+    font-size: 20px;
+    color: var(--c-text);
+    line-height: 1.4;
+}
+
+/* Font Analysis Responsive Styles */
+@media (max-width: 1023px) {
+    .font-analysis .grid {
+        --grid-cols: 1;
+        height: auto;
+    }
+}
+
+/* =================================================================
+   MASONRY GALLERY - CSS COLUMN-BASED LAYOUT
+   Simple, fast, native browser layout (no JS calculations)
+   ================================================================= */
+
+/* Gallery container */
+.masonry-gallery {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--c-bg);
+    padding: 0;
+    margin: 0;
+}
+
+/* The grid - actually a list using CSS columns */
+.masonry-gallery__grid {
+    column-count: 1; /* Mobile: 1 column */
+    column-gap: 0; /* NO gap between images */
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+/* Responsive columns */
+@media (min-width: 768px) {
+    .masonry-gallery__grid {
+        column-count: 2; /* Tablet: 2 columns */
+    }
+}
+
+@media (min-width: 1200px) {
+    .masonry-gallery__grid {
+        column-count: 3; /* Desktop: 3 columns */
+    }
+}
+
+@media (min-width: 1800px) {
+    .masonry-gallery__grid {
+        column-count: 4; /* Wide: 4 columns */
+    }
+}
+
+/* Masonry item - each image in the grid */
+.masonry-item {
+    break-inside: avoid; /* CRITICAL: Don't split across columns */
+    page-break-inside: avoid; /* Older browsers */
+    margin: 0;
+    padding: 0;
+    position: relative;
+    cursor: pointer;
+    background: var(--c-bg);
+}
+
+/* Image - natural height, full width */
+.masonry-item__img {
+    width: 100%;
+    height: auto; /* NATURAL HEIGHT - key to masonry */
+    display: block;
+    object-fit: cover;
+    opacity: 0; /* Start hidden */
+    transition: opacity 0.3s ease; /* Fade in */
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* Loaded state - fade in */
+.masonry-item__img.loaded {
+    opacity: 1;
+}
+
+/* Hover effect */
+.masonry-item:hover .masonry-item__img {
+    opacity: 0.85;
+}
+
+/* Label overlay - minimal VGA style */
+.masonry-item__label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: calc(var(--f) * 0.5);
+    background: rgba(0, 0, 0, 0.8);
+    border: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-text);
+    text-transform: uppercase;
+}
+
+.masonry-item:hover .masonry-item__label {
+    opacity: 1;
+}
+
+/* Old image-gallery styles removed - now using masonry-gallery */
+
+/* =================================================================
+   GALLERY MODAL - CLICK TO EXPAND
+   ================================================================= */
+
+.gallery-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.gallery-modal.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Overlay background */
+.gallery-modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--c-bg);
+    opacity: 0.95;
+    cursor: pointer;
+}
+
+/* Modal content container */
+.gallery-modal__content {
+    position: relative;
+    z-index: 10001;
+    max-width: 80%;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) * 2);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.gallery-modal.visible .gallery-modal__content {
+    transform: scale(1);
+}
+
+/* Modal image */
+.gallery-modal__img {
+    max-width: 100%;
+    max-height: 60vh;
+    width: auto;
+    height: auto;
+    display: block;
+    border: 1px solid var(--c-border);
+    /* NO shadows or effects */
+}
+
+/* Modal text */
+.gallery-modal__text {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    padding: calc(var(--f) * 2);
+    max-width: 100%;
+}
+
+.gallery-modal__title {
+    font-family: 'Atkinson Hyperlegible', monospace;
+    font-size: calc(var(--f) * 1.5);
+    color: var(--c-accent);
+    margin-bottom: var(--f);
+    text-transform: uppercase;
+}
+
+.gallery-modal__caption {
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    color: var(--c-text);
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.gallery-modal__index {
+    position: absolute;
+    top: calc(var(--f) * -3);
+    right: 0;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-border);
+    text-transform: uppercase;
+}
+
+/* Mobile adjustments */
+@media (max-width: 1023px) {
+    .gallery-modal__content {
+        max-width: 90%;
+        max-height: 90%;
+    }
+    
+    .gallery-modal__img {
+        max-height: 50vh;
+    }
+    
+    .gallery-modal__text {
+        padding: var(--f);
+    }
+    
+    .gallery-item__label {
+        opacity: 1; /* Always visible on mobile */
+    }
+}
+
+/* =================================================================
+   GENERATIVE ANIMATIONS - Standard Container Pattern
+   ================================================================= */
+
+/* Animation wrapper - vertical stacking of container + export */
+.animation-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--f);
+}
+
+/* Main animation container - vertical stack (controls above canvas) */
+.animation-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--f);
+}
+
+/* Sidebar for animation controls */
+.animation-sidebar {
+    display: flex;
+    flex-direction: row;
+    gap: calc(var(--f) / 2);
+    flex-wrap: wrap;
+}
+
+/* Canvas area */
+.animation-canvas-area {
+    border: 1px solid var(--c-border);
+    padding: var(--f);
+    background: var(--c-bg);
+    min-height: calc(var(--f) * 30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Export controller at bottom - full width */
+.animation-wrapper > .export-controller {
+    width: 100%;
+    margin: 0;
+}
+
+/* Canvas element styling */
+.animation-canvas {
+    display: block;
+    image-rendering: pixelated;
+    background: var(--c-bg);
+}
+
+/* Export controller styling */
+.export-controller {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 2);
+    padding: var(--f);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.export-row {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 4);
+}
+
+.export-row label {
+    font-size: calc(var(--f) * 0.85);
+    opacity: 0.8;
+    text-transform: uppercase;
+}
+
+/* Select component fix - proper height and text alignment */
+.export-row select,
+select.component {
+    height: calc(var(--f) * 2);
+    padding: 0 calc(var(--f) / 2);
+    line-height: calc(var(--f) * 2);
+    font-size: var(--f);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: 'Space Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ANIMATION EXPORT COMPONENT
+   ═══════════════════════════════════════════════════════════════════ */
+
+.animation-export {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 2);
+    padding: var(--f);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.animation-export .export-info {
+    font-size: calc(var(--f) * 0.79);
+    color: var(--c-text-dim, var(--vga-gray));
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    background: var(--c-bg-darker, var(--vga-black));
+    border: 1px solid var(--c-border);
+}
+
+.animation-export .export-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+}
+
+.animation-export .export-label {
+    flex: 0 0 calc(var(--f) * 5);
+    font-size: calc(var(--f) * 0.79);
+    color: var(--c-text-dim, var(--vga-gray));
+    text-transform: uppercase;
+}
+
+.animation-export .export-select,
+.animation-export .export-input {
+    flex: 1;
+    height: calc(var(--f) * 1.75);
+    padding: 0 calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.79);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.animation-export .export-input[type="number"] {
+    width: calc(var(--f) * 5);
+    flex: 0 0 auto;
+}
+
+.animation-export .export-input[type="range"] {
+    flex: 1;
+    height: calc(var(--f) * 0.5);
+    padding: 0;
+}
+
+.animation-export .export-suffix,
+.animation-export .export-value {
+    font-size: calc(var(--f) * 0.79);
+    color: var(--c-text-dim, var(--vga-gray));
+    min-width: calc(var(--f) * 3);
+    text-align: right;
+}
+
+.animation-export .export-timing,
+.animation-export .export-quality {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 4);
+}
+
+.animation-export .export-presets {
+    display: flex;
+    gap: calc(var(--f) / 4);
+    margin-top: calc(var(--f) / 4);
+}
+
+.animation-export .export-preset-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.71);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    cursor: pointer;
+}
+
+.animation-export .export-preset-btn:hover {
+    background: var(--c-accent);
+    color: var(--c-bg);
+}
+
+.animation-export .export-custom-res {
+    margin-top: calc(var(--f) / 4);
+}
+
+.animation-export .export-custom-res span {
+    padding: 0 calc(var(--f) / 4);
+    color: var(--c-text-dim, var(--vga-gray));
+}
+
+.animation-export .export-buttons {
+    display: flex;
+    gap: calc(var(--f) / 2);
+    margin-top: calc(var(--f) / 2);
+}
+
+.animation-export .export-btn {
+    flex: 1;
+    height: calc(var(--f) * 2);
+    font-size: calc(var(--f) * 0.85);
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.animation-export .export-btn-primary {
+    background: var(--c-accent);
+    color: var(--c-bg);
+}
+
+.animation-export .export-btn-primary:hover:not(:disabled) {
+    background: var(--vga-white);
+}
+
+.animation-export .export-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.animation-export .export-btn-secondary {
+    background: var(--c-bg);
+    color: var(--vga-red);
+    border-color: var(--vga-red);
+}
+
+.animation-export .export-btn-secondary:hover {
+    background: var(--vga-red);
+    color: var(--c-bg);
+}
+
+.animation-export .export-progress {
+    margin-top: calc(var(--f) / 2);
+}
+
+.animation-export .export-progress-bar {
+    height: calc(var(--f) / 2);
+    background: var(--c-bg-darker, var(--vga-black));
+    border: 1px solid var(--c-border);
+    overflow: hidden;
+}
+
+.animation-export .export-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--c-accent);
+    transition: width 0.1s ease;
+}
+
+.animation-export .export-progress-text {
+    font-size: calc(var(--f) * 0.71);
+    color: var(--c-text-dim, var(--vga-gray));
+    text-align: center;
+    margin-top: calc(var(--f) / 4);
+}
+
+/* Cursor utility classes */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+/* Tool-specific styles for algorithms-test-lab */
+
+/* Error panel styling */
+.error-panel {
+    padding: calc(var(--f));
+    color: var(--vga-red);
+    font-family: var(--font-mono);
+}
+
+/* Documentation placeholder panel */
+.doc-placeholder {
+    padding: calc(var(--f));
+    font-family: var(--font-mono);
+    line-height: 1.6;
+}
+
+.doc-placeholder h2 {
+    font-size: calc(var(--f) * 1.5);
+    margin-bottom: calc(var(--f));
+}
+
+.doc-placeholder p {
+    margin-bottom: calc(var(--f));
+    font-size: calc(var(--f) * 0.75);
+    opacity: 0.7;
+}
+
+/* About panel container */
+.about-panel {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: var(--c-bg);
+    color: var(--c-text);
+    overflow-y: auto;
+}
+
+/* ToolBase scrollbar hiding */
+.tool-tabs-inner::-webkit-scrollbar,
+.tool-subtabs-inner::-webkit-scrollbar {
+    display: none;
+}
+
+/* Responsive - single column on mobile */
+@media (max-width: 1023px) {
+    .animation-wrapper {
+        /* Add responsive styles here if needed */
+    }
+}

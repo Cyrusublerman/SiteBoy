@@ -1,0 +1,15 @@
+{
+    "header": "Multifilament Image Print",
+    "subheader": "Convert images to multi-color 3D printable STL files using calibrated printer profiles",
+    "url": "/tools/multifilament-print",
+    "blocks": [
+        {
+            "type": "CanvasWidget",
+            "props": {
+                "toolPath": "./tools/fabrication/multifilament-print-tool.js",
+                "toolClass": "MultifilamentPrintTool"
+            }
+        }
+    ]
+}
+

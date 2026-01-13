@@ -1,3 +1,4 @@
+
 /**
  * Collection - List/grid of items with selection
  * 
@@ -257,7 +258,7 @@ export class Collection extends BaseComponent {
     }
     
     removeItem(itemId) {
-        const index = this.items.findIndex(i => (i.id ?? this.items.indexOf(i)) === itemId);
+        const index = this.items.findIndex((i, idx) => (i.id ?? idx) === itemId);
         if (index >= 0) {
             const removed = this.items.splice(index, 1)[0];
             

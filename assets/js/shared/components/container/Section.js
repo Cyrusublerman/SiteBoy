@@ -174,10 +174,13 @@ export class Section extends BaseComponent {
     }
     
     destroy() {
-        // Destroy all children
-        this.children.forEach(c => c.destroy && c.destroy());
-        // Reset to empty Set before super.destroy() (base expects Set with .clear())
-        this.children = new Set();
+        // Destroy all children (children is an array in this component)
+        for (const child of this.children) {
+            if (child && typeof child.destroy === 'function') {
+                child.destroy();
+            }
+        }
+        this.children = [];
         super.destroy();
     }
 }

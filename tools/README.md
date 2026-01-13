@@ -23,6 +23,51 @@ Navigate to `#tools/about-you` in the SiteBoy app or visit the Tools section and
 
 ---
 
+## Shreddit – Reddit Post & Comment Scraper
+
+**Location:** `tools/shreddit/`  
+**Usage:** `node tools/shreddit/scrape.js <reddit-url>`
+
+CLI tool for archiving Reddit posts with full comment threads. Outputs to SQLite, JSON, and Markdown for further analysis by agents or other tools.
+
+**What it scrapes:**
+- Post title, content, URL
+- Full comment tree (recursive, preserves hierarchy)
+- Author names, timestamps
+- Comment depth statistics
+
+**Output formats:**
+- SQLite database (`shreddit.db`) – persistent storage, queryable history
+- JSON – structured data for programmatic analysis
+- Markdown – human-readable format with nested comments
+
+**Installation:**
+```bash
+cd tools/shreddit
+npm install
+```
+
+**Example usage:**
+```bash
+# Scrape a post (saves both JSON and Markdown)
+node scrape.js https://reddit.com/r/programming/comments/abc123/
+
+# JSON only
+node scrape.js <url> --json --output ./data
+```
+
+**Agent workflow:**
+```
+"Using Shreddit, scrape https://reddit.com/r/rust/comments/xyz/ 
+and analyze sentiment distribution across comment depth"
+```
+
+**Data structure:** Each scrape produces hierarchical JSON with `url`, `title`, `content`, `comments[]` (recursive replies), `stats` (total/top-level counts, max depth).
+
+**SQLite queries:** Query historical scrapes, count comments by author, analyze thread depth patterns. See `tools/shreddit/README.md` for examples.
+
+---
+
 ## pdf2md-here – Drop-in PDF → Markdown converter
 
 Create editor-friendly Markdown and extracted assets from PDFs by simply placing this script in a folder and running it.

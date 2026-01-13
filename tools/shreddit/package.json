@@ -1,0 +1,16 @@
+{
+  "name": "shreddit-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to scrape Reddit posts and comments",
+  "main": "scrape.js",
+  "type": "commonjs",
+  "scripts": {
+    "scrape": "node scrape.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.27.0",
+    "sqlite3": "^5.1.7",
+    "sqlite": "^5.1.1"
+  }
+}
+

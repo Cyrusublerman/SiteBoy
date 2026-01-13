@@ -1,0 +1,26 @@
+{
+  "art": {
+    "books": {
+      "book1": {},
+      "book2": {}
+    },
+    "digital": {
+      "posters": {},
+      "experiments": {},
+      "generative": {},
+      "rough": {},
+      "renders": {},
+      "AI": {}
+    },
+    "objects": {},
+    "physical": {
+      "collages": {},
+      "large": {},
+      "medium": {},
+      "primaries": {},
+      "small": {}
+    },
+    "photography": {}
+  }
+}
+

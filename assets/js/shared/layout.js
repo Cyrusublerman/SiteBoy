@@ -52,7 +52,7 @@ export class Spacing extends BaseComponent {
 /**
  * Grid - Container-aware perfect square tiling grid component
  * 
- * Adapts reference perfect-grid mathematical logic to SiteBoy F=12px system:
+ * Adapts reference perfect-grid mathematical logic to SiteBoy F-system:
  * - Container-aware sizing (measures actual container, not viewport)
  * - F=24px header system (--header-height) for captions
  * - Outline-based 1px separation (no space-taking borders)
@@ -119,7 +119,7 @@ export class Grid extends BaseComponent {
                 cols: this.cols || layout.cols || 4,
                 boxSize: layout.boxSize || 200,
                 gridWidth: layout.gridWidth || 800,
-                headerHeight: 24 // F=24px system
+                headerHeight: 28 // F=14px system (2*F)
             };
         }
         
@@ -172,14 +172,14 @@ export class Grid extends BaseComponent {
         const availableWidth = Math.floor(parentRect.width - paddingLeft - paddingRight - borderLeft - borderRight);
         const containerWidth = parentRect.width;
         
-        // Get F=12px system constants from CSS
+        // Get F-system constants from CSS
         const rootStyle = getComputedStyle(document.documentElement);
         const headerHeight = parseInt(rootStyle.getPropertyValue('--header-height')) || 24; // 2*F
         
-        // F=12px MATHEMATICAL PRECISION - F divisible sizing (1,2,3,4,6,12,24,36...)
+        // F-SYSTEM MATHEMATICAL PRECISION - F divisible sizing (1,2,3,4,6,12,24,36...)
         
         // Universal F-based grid calculations - adapts to ANY container width
-        // Uses F=12px mathematical breakpoints for optimal column selection
+        // Uses F-system mathematical breakpoints for optimal column selection
         // Use the proper mathematical equation for column calculation
         let cols = this.cols;
         if (!cols) {
@@ -319,7 +319,7 @@ export class Grid extends BaseComponent {
     
     /**
      * Generate individual grid item with reference-style caption structure
-     * Translated to F=12px system: 24px captions, proper typography, outline separation
+     * Translated to F-system: 28px captions, proper typography, outline separation
      */
     itemHTML(item, index, boxSize, headerHeight) {
         const isObject = typeof item === 'object';
@@ -455,13 +455,14 @@ export class PageContainer extends BaseComponent {
         this.contentBody = null;
         this.footerComponent = null;
         this.subheaderComponent = null;
+        this.marginOverride = null; // explicit margin override (px) or null for auto
     }
     
     render() {
         if (!this.element) {
             this.dimensions = this.calculateDimensions('page');
             const layout = this.dimensions?.layout || this.deps.MF?.computeLayout() || {};
-            const F = this.dimensions?.F || this.deps.MF?.F || 12;
+            const F = this.dimensions?.F || this.deps.MF?.F || 14;
             
             // Create wrapper with full viewport
             this.element = this.createElement('div');
@@ -499,25 +500,48 @@ export class PageContainer extends BaseComponent {
             // Make globally accessible
             window.Subheader = this.subheaderComponent;
             
-            // Create content container - this will hold TOC directly with padding
+            // Create content container using same deterministic method as headers/footers
             const container = this.createElement('div', 'content-container');
             container.id = 'container';
-            // All positioning handled by CSS variables in styles.css
-            
+
+            // Apply deterministic positioning like PageHeader/PageFooter
+            // Position fixed to match header/footer positioning system
+            // Note: border-top and border-bottom set to none for normal mode
+            // Full mode will override these via CSS with !important
+            container.style.cssText = `
+                position: fixed;
+                left: var(--layout-margin);
+                width: var(--layout-width);
+                background: var(--c-bg);
+                border-left: 1px solid var(--c-border);
+                border-right: 1px solid var(--c-border);
+                box-sizing: border-box;
+                overflow-y: auto;
+                padding: calc(var(--f) * 4);
+                z-index: 100;
+            `;
+
             // Content container becomes the direct parent for content (no content-body wrapper)
             this.contentBody = container; // Point to container directly
-            this.element.appendChild(container);
-            
+            document.body.appendChild(container); // Append to body like header/footer
+
             // Create footer - positioned via CSS variables
-            this.footerComponent = new PageFooter({}, this.deps);
+            this.footerComponent = new PageFooter({
+                onMarginChange: (value) => this.setMarginMode(value),
+                getMarginOverride: () => this.marginOverride,
+                getMargins: () => this.lastMargins || {}
+            }, this.deps);
             const footerEl = this.footerComponent.render();
             document.body.appendChild(footerEl);
-            
-            // Set initial layout state (no subheader by default)
+
+            // Set initial layout state (no subheader by default) - this will position the content container
             this.setSubheaderState(false);
             
             // Subscribe to resize
             this.subscribeToResize();
+            // Fallback window resize listener to keep layout responsive without ResizeManager
+            this.windowResizeHandler = () => this.onResize();
+            window.addEventListener('resize', this.windowResizeHandler);
         }
         return this.element;
     }
@@ -526,95 +550,65 @@ export class PageContainer extends BaseComponent {
      * Create curtains for proper page margins (restored from original)
      */
     createCurtains() {
-        // Create top curtain - positioned via CSS variables
-        const topCurtain = this.createElement('div', 'page-curtain-top');
-        topCurtain.id = 'curtain';
-        // Positioning handled by CSS
-        document.body.appendChild(topCurtain);
-        
-        // Create bottom curtain
-        const bottomCurtain = this.createElement('div', 'page-curtain-bottom');
-        bottomCurtain.id = 'bottom-curtain';
-        // Positioning handled by CSS
-        document.body.appendChild(bottomCurtain);
+        // Curtains removed per request; margins are handled by layout vars
     }
     
     /**
-     * Apply F-based Layout & Sizing Guide calculations
-     * Implements SiteBoy Layout & Sizing Guide within component
+     * Apply deterministic layout calculations - single F-snapped frame for all components
+     * Uses the new B/S margin system with simple 50% header/subheader splits
      */
     applyLayoutGuideCalculations() {
         if (!this.deps.MF) {
             console.warn('PageContainer: MathematicalFoundation not available for layout calculations');
             return;
         }
-        
+
+        // SINGLE CALL TO DETERMINISTIC SYSTEM - no complex calculations here
         const layout = this.deps.MF.computeLayout();
-        const headerHeight = this.deps.MF.F * 2; // Header height = 24px (2*F) - KEEP F SYSTEM
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const isDesktop = layout.isDesktop; // Use the clear isDesktop flag from computeLayout
-        
-        console.log(`📐 PageContainer: Applying ${isDesktop ? 'Desktop' : 'Mobile'} layout calculations`);
-        
-        if (isDesktop) {
-            // Desktop: use F-based margins but with reference precision techniques
-            const contentWidth = layout.gridWidth;
-            const marginOffset = layout.marginLeft;
-            const topMargin = headerHeight * 2; // 48px (2 * 24px) - F SYSTEM
-            
-            // Footer occupies 2F height + 2F bottom margin + 2F buffer = 6F from bottom
-            // The extra 2F accounts for the footer's border and visual separation
-            const bottomSpace = 3 * headerHeight; // 6F total bottom clearance
-            
-            this.setLayoutVariables({
-                '--layout-width': `${contentWidth}px`,
-                '--layout-margin': `${marginOffset}px`,
-                '--header-y': `${topMargin}px`,                            // F system: 4F top margin
-                '--subheader-y': `${topMargin + headerHeight}px`,          // F system: 4F + 2F
-                '--content-y-with-sub': `${topMargin + (2 * headerHeight)}px`,    // F system: 4F + 4F = 8F
-                '--content-y-no-sub': `${topMargin + headerHeight}px`,     // F system: 4F + 2F = 6F
-                '--footer-y': `${windowHeight - headerHeight}px`,
-                // Content height = window - top elements - bottom elements
-                // With sub: window - (4F top margin + 2F header + 2F subheader) - (2F footer + 2F bottom margin)
-                '--content-min-h-with-sub': `${windowHeight - (topMargin + 2 * headerHeight + bottomSpace)}px`,
-                // No sub: window - (4F top margin + 2F header) - (2F footer + 2F bottom margin)
-                '--content-min-h-no-sub': `${windowHeight - (topMargin + headerHeight + bottomSpace)}px`,
-                '--layout-type': 'desktop'
-            });
-            
-        } else {
-            // Mobile: use mobile margins from config
-            const mobileMargin = (this.deps.MF && this.deps.MF.Config && this.deps.MF.Config.margins) ? 
-                this.deps.MF.Config.margins.mobile : 6;
-            // Footer occupies headerHeight + mobileMargin + headerHeight buffer from bottom
-            const mobileBottomSpace = 2 * headerHeight + mobileMargin;
-            
-            this.setLayoutVariables({
-                '--layout-width': `${layout.gridWidth}px`,                // Use calculated mobile width
-                '--layout-margin': `${layout.marginLeft}px`,              // Use calculated mobile margin
-                '--header-y': `${mobileMargin}px`,                        // Header at mobile margin from top
-                '--subheader-y': `${mobileMargin + headerHeight}px`,
-                '--content-y-with-sub': `${mobileMargin + (2 * headerHeight)}px`,
-                '--content-y-no-sub': `${mobileMargin + headerHeight}px`,
-                '--footer-y': `${windowHeight - headerHeight - mobileMargin}px`,  // Footer with same margin as header
-                // Content height = window - top elements - bottom elements
-                // With sub: window - (margin + header + subheader) - (footer + margin)
-                '--content-min-h-with-sub': `${windowHeight - (mobileMargin + 2 * headerHeight + mobileBottomSpace)}px`,
-                // No sub: window - (margin + header) - (footer + margin)
-                '--content-min-h-no-sub': `${windowHeight - (mobileMargin + headerHeight + mobileBottomSpace)}px`,
-                '--layout-type': 'mobile'
-            });
-        }
-        
-        console.log(`✅ PageContainer: Layout variables applied for ${isDesktop ? 'desktop' : 'mobile'}`);
-        console.log('📐 Layout debug:', {
-            windowWidth,
-            windowHeight,
-            headerHeight,
-            isDesktop,
-            marginOffset: isDesktop ? headerHeight : 0,
-            contentWidth: isDesktop ? windowWidth - (2 * headerHeight) : 'auto'
+        const margin = this.deps.MF.Config?.margin || layout.marginLeft; // Use the single margin value
+
+        window.debugLog('LAYOUT', `📐 PageContainer: Applying deterministic layout (margin=${margin}px, frame=${layout.frameWidth}px)`);
+
+        // Cache current margins for footer controls (B/S system)
+        this.lastMargins = {
+            desktop: this.deps.MF.Config?.margin || 48,  // Default 4F
+            mobile: this.deps.MF.Config?.margin || 24     // Same as desktop in new system
+        };
+
+        // SET ALL LAYOUT VARIABLES FROM THE SINGLE COMPUTE CALL
+        this.setLayoutVariables({
+            '--layout-width': `${layout.frameWidth}px`,
+            '--layout-margin': `${layout.marginLeft}px`,
+            '--header-y': `${margin}px`,
+            '--subheader-y': `${margin + layout.headerHeight}px`,
+            '--content-y-with-sub': `${margin + (2 * layout.headerHeight) - 1}px`,
+            '--content-y-no-sub': `${margin + layout.headerHeight}px`,
+            '--footer-y': `${window.innerHeight - layout.headerHeight - margin}px`,
+            '--footer-offset': `${margin}px`,
+            // Header splits - simple 50%
+            '--header-left-width': `${layout.mainHeaderLeftWidth}px`,
+            '--header-nav-width': `${layout.mainHeaderNavWidth}px`,
+            '--header-toggle-width': `${layout.mainHeaderToggleWidth}px`,
+            // Subheader splits - mirrors header exactly
+            '--subheader-title-width': `${layout.subheaderTitleWidth}px`,
+            '--subheader-nav-width': `${layout.subheaderNavContainerWidth}px`,
+            '--subheader-prev-width': `${layout.subheaderPrevButtonWidth}px`,
+            '--subheader-next-width': `${layout.subheaderNextButtonWidth}px`,
+            // Content heights - frameHeight - 6F (header + subheader + footer) or frameHeight - 4F (no subheader), snapped to F multiples
+            '--content-height-with-sub': `${Math.floor((layout.frameHeight - (6 * this.deps.MF.F)) / this.deps.MF.F) * this.deps.MF.F}px`,
+            '--content-height-no-sub': `${Math.floor((layout.frameHeight - (4 * this.deps.MF.F)) / this.deps.MF.F) * this.deps.MF.F}px`,
+            '--content-min-h-with-sub': `calc(100vh - ${2 * margin + 6 * this.deps.MF.F}px)`,
+            '--content-min-h-no-sub': `calc(100vh - ${2 * margin + 4 * this.deps.MF.F}px)`,
+            '--layout-type': 'deterministic' // Always deterministic in new system
+        });
+
+        window.debugLog('LAYOUT', '✅ PageContainer: Deterministic layout applied');
+        window.debugLog('VERBOSE', '📐 Layout debug:', {
+            frameWidth: layout.frameWidth,
+            margin: margin,
+            headerLeft: layout.mainHeaderLeftWidth,
+            headerNav: layout.mainHeaderNavWidth,
+            headerToggle: layout.mainHeaderToggleWidth
         });
     }
     
@@ -634,15 +628,125 @@ export class PageContainer extends BaseComponent {
      * @param {boolean} hasSubheader - Whether subheader should be shown
      */
     setSubheaderState(hasSubheader) {
-        if (hasSubheader) {
-            document.body.className = 'with-subheader';
-            this.subheaderComponent?.show();
-        } else {
-            document.body.className = 'no-subheader';
-            this.subheaderComponent?.hide();
-        }
+        // Check if we're in full-page mode (no header/footer)
+        const isFullMode = document.body.classList.contains('full-mode');
         
-        console.log(`📐 PageContainer: Layout state set to ${hasSubheader ? 'with' : 'no'} subheader`);
+        if (hasSubheader) {
+            document.body.classList.add('has-subheader');
+            document.body.classList.remove('no-subheader');
+            this.subheaderComponent?.show();
+            // Reposition content container below subheader
+            if (this.contentBody) {
+                if (isFullMode) {
+                    // Full mode: position from top margin only (subheader hidden in full mode)
+                    const layout = this.deps.MF?.computeLayout() || {};
+                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
+                    const contentTop = margin; // Just margin (no header, no subheader)
+                    const bottomOffset = margin; // Just margin at bottom
+                    
+                    this.contentBody.style.top = `${contentTop}px`;
+                    this.contentBody.style.bottom = `${bottomOffset}px`;
+                    this.contentBody.style.height = 'auto';
+                    
+                    // Add borders for full mode
+                    this.contentBody.style.borderTop = '1px solid var(--c-border)';
+                    this.contentBody.style.borderBottom = '1px solid var(--c-border)';
+                } else {
+                    // Normal mode: position below header and subheader
+                    const layout = this.deps.MF?.computeLayout() || {};
+                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
+                    const headerHeight = layout.headerHeight || 28;
+                    const contentTop = margin + (2 * headerHeight) - 1; // Account for border overlap
+                    const bottomOffset = headerHeight + margin;
+
+                    this.contentBody.style.top = `${contentTop}px`;
+                    this.contentBody.style.bottom = `${bottomOffset}px`;
+                    this.contentBody.style.height = 'auto';
+                    
+                    // Remove borders for normal mode
+                    this.contentBody.style.borderTop = 'none';
+                    this.contentBody.style.borderBottom = 'none';
+                }
+            }
+        } else {
+            document.body.classList.add('no-subheader');
+            document.body.classList.remove('has-subheader');
+            this.subheaderComponent?.hide();
+            // Reposition content container below header
+            if (this.contentBody) {
+                if (isFullMode) {
+                    // Full mode: position from top margin only (no header)
+                    const layout = this.deps.MF?.computeLayout() || {};
+                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
+                    const contentTop = margin; // Just margin
+                    const bottomOffset = margin; // Just margin at bottom
+                    
+                    this.contentBody.style.top = `${contentTop}px`;
+                    this.contentBody.style.bottom = `${bottomOffset}px`;
+                    this.contentBody.style.height = 'auto';
+                    
+                    // Add borders for full mode
+                    this.contentBody.style.borderTop = '1px solid var(--c-border)';
+                    this.contentBody.style.borderBottom = '1px solid var(--c-border)';
+                } else {
+                    // Normal mode: position below header
+                    const layout = this.deps.MF?.computeLayout() || {};
+                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
+                    const headerHeight = layout.headerHeight || 28;
+                    const contentTop = margin + headerHeight;
+                    const bottomOffset = headerHeight + margin;
+
+                    this.contentBody.style.top = `${contentTop}px`;
+                    this.contentBody.style.bottom = `${bottomOffset}px`;
+                    this.contentBody.style.height = 'auto';
+                    
+                    // Remove borders for normal mode
+                    this.contentBody.style.borderTop = 'none';
+                    this.contentBody.style.borderBottom = 'none';
+                }
+            }
+        }
+
+        const modeStr = isFullMode ? ' [FULL MODE]' : '';
+        console.log(`📐 PageContainer: Layout state set to ${hasSubheader ? 'with' : 'no'} subheader${modeStr}`);
+    }
+    
+    /**
+     * Set margin mode (B=big frame/small margins, S=small frame/large margins) - replaces old override system
+     */
+    setMarginMode(mode) {
+        if (!window.Config?.setMarginMode) return;
+
+        window.Config.setMarginMode(mode);
+
+        // Refresh CSS vars to reflect new margin mode
+        if (this.deps.MF?.initializeCSSVars) {
+            this.deps.MF.initializeCSSVars();
+        }
+
+        this.applyLayoutGuideCalculations();
+        if (this.footerComponent?.updateMarginDisplay) {
+            this.footerComponent.updateMarginDisplay(mode);
+        }
+        // Propagate layout change to header/subheader
+        this.headerComponent?.onResize?.();
+        this.subheaderComponent?.onResize?.();
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    /**
+     * Legacy method for backward compatibility - now uses B/S system
+     */
+    setMarginOverride(value = null) {
+        // Convert old px override to closest B/S mode
+        if (value === null) {
+            this.setMarginMode(DEFAULT_MARGIN_MODE); // Default to configured mode
+        } else {
+            const F = window.Config?.F || 14;
+            const bMargin = F * 1; // B mode: 1F (big frame)
+            const sMargin = F * 4; // S mode: 4F (small frame)
+            this.setMarginMode(Math.abs(value - bMargin) < Math.abs(value - sMargin) ? 'B' : 'S');
+        }
     }
     
     /**
@@ -651,10 +755,48 @@ export class PageContainer extends BaseComponent {
     onResize() {
         // Recalculate layout on resize
         this.applyLayoutGuideCalculations();
-        
-        // Footer position handled by CSS variables - no manual updates needed
-        
-        console.log('📐 PageContainer: Layout recalculated for new viewport size');
+
+        // Update content container positioning like header/footer
+        if (this.contentBody) {
+            const hasSubheader = document.body.classList.contains('has-subheader');
+            const isFullMode = document.body.classList.contains('full-mode');
+            const layout = this.deps.MF?.computeLayout() || {};
+            const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
+            const headerHeight = layout.headerHeight || 28;
+
+            if (isFullMode) {
+                // Full mode positioning (no header/footer/subheader - all hidden)
+                const contentTop = margin; // Just margin
+                const bottomOffset = margin;
+                this.contentBody.style.top = `${contentTop}px`;
+                this.contentBody.style.bottom = `${bottomOffset}px`;
+                this.contentBody.style.height = 'auto';
+                
+                // Add borders for full mode
+                this.contentBody.style.borderTop = '1px solid var(--c-border)';
+                this.contentBody.style.borderBottom = '1px solid var(--c-border)';
+            } else {
+                // Normal mode positioning (with header/footer)
+                const bottomOffset = headerHeight + margin;
+                if (hasSubheader) {
+                    const contentTop = margin + (2 * headerHeight) - 1; // Account for border overlap
+                    this.contentBody.style.top = `${contentTop}px`;
+                    this.contentBody.style.bottom = `${bottomOffset}px`;
+                    this.contentBody.style.height = 'auto';
+                } else {
+                    const contentTop = margin + headerHeight;
+                    this.contentBody.style.top = `${contentTop}px`;
+                    this.contentBody.style.bottom = `${bottomOffset}px`;
+                    this.contentBody.style.height = 'auto';
+                }
+                
+                // Remove borders for normal mode
+                this.contentBody.style.borderTop = 'none';
+                this.contentBody.style.borderBottom = 'none';
+            }
+        }
+
+        window.debugLog('LAYOUT', '📐 PageContainer: Layout recalculated for new viewport size');
     }
     
     getContentContainer() {
@@ -665,6 +807,14 @@ export class PageContainer extends BaseComponent {
         if (this.headerComponent) this.headerComponent.destroy();
         if (this.subheaderComponent) this.subheaderComponent.destroy();
         if (this.footerComponent) this.footerComponent.destroy();
+        // Clean up content container like header/footer
+        if (this.contentBody && this.contentBody.parentNode) {
+            this.contentBody.parentNode.removeChild(this.contentBody);
+        }
+        if (this.windowResizeHandler) {
+            window.removeEventListener('resize', this.windowResizeHandler);
+            this.windowResizeHandler = null;
+        }
         super.destroy();
     }
 }
@@ -678,65 +828,117 @@ export class PageHeader extends BaseComponent {
         this.navigationItems = options.navigationItems || [];
         this.onNavigate = options.onNavigate || null;
     }
+
+    getLayoutFromVars() {
+        const fallback = this.deps.MF ? this.deps.MF.computeLayout() : {};
+        const root = getComputedStyle(document.documentElement);
+        const num = (name, fb) => {
+            const v = parseInt(root.getPropertyValue(name), 10);
+            return Number.isFinite(v) ? v : fb;
+        };
+        return {
+            mainHeaderLeftWidth: num('--header-left-width', fallback.mainHeaderLeftWidth || 0),
+            mainHeaderNavWidth: num('--header-nav-width', fallback.mainHeaderNavWidth || 0),
+            mainHeaderToggleWidth: num('--header-toggle-width', fallback.mainHeaderToggleWidth || 0)
+        };
+    }
     
     render() {
         if (!this.element) {
-            // Get layout directly from MF like subheader does
-            const layout = this.deps.MF ? this.deps.MF.computeLayout() : {};
-            const F = this.deps.MF ? this.deps.MF.F : 12;
+            const layout = this.getLayoutFromVars();
+            const { F } = this.getF();
             // Header height = 24px (2*F)
             
             this.element = this.createElement('header', 'page-header');
             this.element.id = 'header';
-            // Ensure visibility during debugging
-            this.element.style.visibility = 'visible';
-            this.element.style.display = 'flex';
-            console.log('📄 PageHeader created with class:', this.element.className);
-            
+            // Apply precise header styling - single container with full borders
+            this.element.style.cssText = `
+                position: fixed;
+                top: var(--header-y);
+                left: var(--layout-margin);
+                width: var(--layout-width);
+                height: var(--header-height);
+                background: var(--c-bg);
+                border: 1px solid var(--c-border);
+                box-sizing: border-box;
+                z-index: 200;
+                display: flex;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
+                font-size: var(--f);
+            `;
+            console.log('📄 PageHeader created with single-container approach');
+
             // Listen for resize events to update F-based styling
             this.resizeHandler = () => this.onResize();
             window.addEventListener('resize', this.resizeHandler);
-            
-            // LEFT BLOCK - Site title (PRECISE WIDTH from layout calculations)
-            const leftContainer = this.createElement('div', 'header-left');
-            leftContainer.style.cssText = `
-                position: absolute; left: 0; top: 0; 
-                width: ${layout.mainHeaderLeftWidth}px;
-                height: 100%;
-                background: var(--c-bg); border-right: 1px solid var(--c-border); 
-                box-sizing: border-box;
-            `;
-            
+
+            // Site title - EXACT SUBHEADER PATTERN
             const homeLink = this.createElement('div', 'header-item');
             homeLink.id = 'home-link';
             homeLink.textContent = 'AEINODER';
             homeLink.style.cssText = `
-                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-                padding: 0 ${F}px; display: flex; align-items: center; text-transform: uppercase;
-                font-size: ${F}px; box-sizing: border-box; cursor: pointer;
-                font-family: 'Atkinson Hyperlegible Mono', monospace; font-weight: 400;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: ${layout.mainHeaderLeftWidth}px;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                padding: 0 ${F}px;
+                text-transform: uppercase;
+                border-right: 1px solid var(--c-border);
+                box-sizing: border-box;
+                cursor: pointer;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
+                font-weight: 400;
+                font-size: ${F}px;
             `;
-            
+
             if (this.onNavigate) {
                 homeLink.addEventListener('click', () => {
                     this.onNavigate({ title: 'HOME' });
                 });
                 homeLink.classList.add('clickable');
             }
+
+            this.element.appendChild(homeLink);
             
-            leftContainer.appendChild(homeLink);
-            this.element.appendChild(leftContainer);
-            
-            // RIGHT BLOCK - Navigation dropdown and theme toggle (PRECISE WIDTH from calculations)
-            const rightContainer = this.createElement('div', 'header-right');
-            const rightWidth = layout.mainHeaderNavWidth + layout.mainHeaderToggleWidth;
-            rightContainer.style.cssText = `
-                position: absolute; right: 0; top: 0; 
-                width: ${rightWidth}px;
+            // Navigation area - BORDER BETWEEN NAV AND TOGGLE
+            // Unlike subheader, header needs separation between functional areas
+            // Nav gets border-right to separate from toggle button
+            const navContainer = this.createElement('div', 'header-nav');
+            navContainer.id = 'header-nav';
+            navContainer.style.cssText = `
+                position: absolute;
+                left: ${layout.mainHeaderLeftWidth}px; /* Position after title */
+                top: 0;
+                width: ${layout.mainHeaderNavWidth}px;
                 height: 100%;
-                background: var(--c-bg); box-sizing: border-box;
+                display: flex;
+                align-items: center;
+                padding: 0 ${F}px;
+                text-transform: uppercase;
+                border-right: 1px solid var(--c-border); /* Separation from toggle */
+                box-sizing: border-box;
+                cursor: pointer;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-size: ${F}px;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
             `;
-            
+
+            const navText = this.createElement('span');
+            navText.textContent = 'SECTIONS';
+            const menuSymbol = this.createElement('span');
+            menuSymbol.id = 'menu-symbol';
+            menuSymbol.style.cssText = `font-size: ${F}px; margin-left: 2px; line-height: 1; display: inline-block;`;
+            menuSymbol.textContent = '+';
+
+            navContainer.appendChild(navText);
+            navContainer.appendChild(menuSymbol);
+            this.element.appendChild(navContainer);
+
             // Create reusable navigation dropdown
             this.navigationDropdown = new BaseNavigationDropdown({
                 items: this.navigationItems,
@@ -746,67 +948,51 @@ export class PageHeader extends BaseComponent {
                     }
                 }
             }, this.deps);
-            
-            // Navigation area - PRECISE WIDTH from layout calculations
-            const navContainer = this.createElement('div', 'header-nav');
-            navContainer.id = 'header-nav';
-            navContainer.style.cssText = `
-                position: absolute; left: 0; top: 0; 
-                width: ${layout.mainHeaderNavWidth}px; height: 100%;
-                padding: 0 ${F}px; display: flex; align-items: center; text-transform: uppercase;
-                font-size: ${F}px; cursor: pointer; box-sizing: border-box;
-                border-left: 1px solid var(--c-border);
-                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            `;
-            
-            const navText = this.createElement('span');
-            navText.textContent = 'SECTIONS';
-            const menuSymbol = this.createElement('span');
-            menuSymbol.id = 'menu-symbol';
-            menuSymbol.style.cssText = `font-size: ${F}px; margin-left: 2px; line-height: 1; display: inline-block;`;
-            menuSymbol.textContent = '+';
-            
-            navContainer.appendChild(navText);
-            navContainer.appendChild(menuSymbol);
-            
-            rightContainer.appendChild(navContainer);
-            
+
             // Navigation dropdown positioning
             const dropdownMenu = this.navigationDropdown.createDropdownStructure('dropdown-menu', {
-                zIndex: 190
+                zIndex: 210 // Higher than header z-index of 200
             });
-            
-            // Position dropdown to match navigation area width exactly with border compensation
-            dropdownMenu.style.top = '100%'; // Position directly below header
-            dropdownMenu.style.left = '0px'; // Align with nav container
+
+            // Position dropdown to match navigation area width exactly
+            dropdownMenu.style.position = 'fixed'; // Use fixed positioning like subheader
+            dropdownMenu.style.top = 'auto'; // Will be set by positionDropdownToBody
+            dropdownMenu.style.left = 'auto'; // Will be set by positionDropdownToBody
             dropdownMenu.style.width = `${layout.mainHeaderNavWidth}px`; // Match navigation area width exactly
-            
-            rightContainer.appendChild(dropdownMenu);
-            
+
+            // Attach dropdown to document.body for consistent timing with subheader
+            document.body.appendChild(dropdownMenu);
+
             // Set symbol element for toggle functionality
             this.navigationDropdown.setSymbolElement(menuSymbol);
-            
+
             // Populate dropdown with navigation items
             this.navigationDropdown.populateDropdown(this.navigationItems);
-            
-            // Theme toggle button - PRECISE WIDTH from layout calculations
+
+            // Theme toggle button - EXACT SUBHEADER PATTERN (rightmost, no borders)
             const headerToggle = this.createElement('div', 'header-toggle');
             headerToggle.id = 'header-toggle';
             headerToggle.textContent = this.getThemeIcon();
             headerToggle.style.cssText = `
-                position: absolute; right: 0; top: 0; 
-                width: ${layout.mainHeaderToggleWidth}px; height: 100%;
-                display: flex; align-items: center; justify-content: center;
-                border-left: 1px solid var(--c-border); box-sizing: border-box;
-                font-size: ${F}px; line-height: 1; cursor: pointer;
+                position: absolute;
+                right: 0;
+                top: 0;
+                width: ${layout.mainHeaderToggleWidth}px;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                cursor: pointer;
+                font-size: ${F}px;
+                line-height: 1;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
-            `;
-            
+            `; /* No borders - rightmost element like subheader next button */
+
             headerToggle.addEventListener('click', () => this.toggleTheme());
             headerToggle.classList.add('clickable');
-            
-            rightContainer.appendChild(headerToggle);
-            this.element.appendChild(rightContainer);
+
+            this.element.appendChild(headerToggle);
             
             // Set symbol element for toggle functionality
             this.navigationDropdown.setSymbolElement(menuSymbol);
@@ -818,10 +1004,13 @@ export class PageHeader extends BaseComponent {
             
             // Setup click outside functionality
             this.navigationDropdown.setupClickOutside(navContainer);
-            
+
             // Subscribe to resize
             this.subscribeToResize();
-            
+            // Fallback window resize listener to match subheader timing
+            this.windowResizeHandler = () => this.onResize();
+            window.addEventListener('resize', this.windowResizeHandler);
+
             // Ensure header is visible after creation
             setTimeout(() => {
                 if (this.element) {
@@ -842,64 +1031,53 @@ export class PageHeader extends BaseComponent {
      * Handle resize - recalculate layout like subheader
      */
     onResize() {
-        if (this.element && this.deps.MF) {
-            const layout = this.deps.MF.computeLayout();
-            const F = this.deps.MF.F;
-            
-            // Update left container width
-            const leftContainer = this.element.querySelector('.header-left');
-            if (leftContainer) {
-                leftContainer.style.width = `${layout.mainHeaderLeftWidth}px`;
-            }
-            
-            // Update right container width
-            const rightContainer = this.element.querySelector('.header-right');
-            if (rightContainer) {
-                const rightWidth = layout.mainHeaderNavWidth + layout.mainHeaderToggleWidth;
-                rightContainer.style.width = `${rightWidth}px`;
-            }
-            
-            // Update navigation area width
-            const navContainer = this.element.querySelector('#header-nav');
-            if (navContainer) {
-                navContainer.style.width = `${layout.mainHeaderNavWidth}px`;
-                // Update font-size and padding for F scaling
-                navContainer.style.fontSize = `${F}px`;
-                navContainer.style.padding = `0 ${F}px`;
-            }
-            
-            // Update home link font-size and padding for F scaling
+        if (this.element) {
+            const layout = this.getLayoutFromVars();
+            const { F } = this.getF();
+
+            // Update home link width and positioning (subheader pattern)
             const homeLink = this.element.querySelector('#home-link');
             if (homeLink) {
+                homeLink.style.width = `${layout.mainHeaderLeftWidth}px`;
                 homeLink.style.fontSize = `${F}px`;
                 homeLink.style.padding = `0 ${F}px`;
             }
-            
+
+            // Update navigation area width and positioning (subheader pattern)
+            const navContainer = this.element.querySelector('#header-nav');
+            if (navContainer) {
+                navContainer.style.left = `${layout.mainHeaderLeftWidth}px`; /* After title */
+                navContainer.style.width = `${layout.mainHeaderNavWidth}px`;
+                navContainer.style.fontSize = `${F}px`;
+                navContainer.style.padding = `0 ${F}px`;
+            }
+
             // Update menu symbol font-size for F scaling
             const menuSymbol = this.element.querySelector('#menu-symbol');
             if (menuSymbol) {
                 menuSymbol.style.fontSize = `${F}px`;
             }
-            
-            // Update toggle width and font-size
+
+            // Update toggle width and positioning
             const headerToggle = this.element.querySelector('#header-toggle');
             if (headerToggle) {
                 headerToggle.style.width = `${layout.mainHeaderToggleWidth}px`;
                 headerToggle.style.fontSize = `${F}px`;
             }
-            
-            // Update dropdown width to match navigation area exactly
-            const dropdown = this.element.querySelector('#dropdown-menu');
+
+            // Update dropdown width and positioning to match navigation area exactly
+            const dropdown = document.getElementById('dropdown-menu');
             if (dropdown) {
+                dropdown.style.left = `${layout.mainHeaderLeftWidth}px`; /* After title */
                 dropdown.style.width = `${layout.mainHeaderNavWidth}px`;
             }
-            
+
             // Update dropdown items if they exist
             if (this.navigationDropdown) {
                 this.navigationDropdown.updateFontSizes(F);
             }
-            
-            console.log('📄 PageHeader: Layout and F-based styling recalculated on resize');
+
+            console.log('📄 PageHeader: Single-container layout and F-based styling recalculated on resize');
         }
     }
     
@@ -911,11 +1089,23 @@ export class PageHeader extends BaseComponent {
         document.documentElement.classList.toggle('inverted');
         const isInverted = document.documentElement.classList.contains('inverted');
         localStorage.setItem('theme', isInverted ? 'inverted' : 'normal');
-        
+
         const toggle = document.getElementById('header-toggle');
         if (toggle) {
             toggle.textContent = this.getThemeIcon();
         }
+    }
+
+    destroy() {
+        if (this.windowResizeHandler) {
+            window.removeEventListener('resize', this.windowResizeHandler);
+            this.windowResizeHandler = null;
+        }
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
+        }
+        super.destroy();
     }
 }
 
@@ -925,21 +1115,39 @@ export class PageHeader extends BaseComponent {
 export class PageFooter extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'footer' }, deps);
+        this.onMarginChange = options.onMarginChange || null;
+        this.getMarginMode = () => window.Config?.marginMode || 'S';
+        this.getMargins = options.getMargins || (() => ({
+            desktop: (window.Config?.F || 14) * 4,  // 4F for S mode
+            mobile: (window.Config?.F || 14) * 2    // 2F for B mode
+        }));
+        this.marginMode = this.getMarginMode() || DEFAULT_MARGIN_MODE;
     }
     
     render() {
         if (!this.element) {
             this.element = this.createElement('footer', 'page-footer');
             this.element.id = 'footer';
-            
-            const F = this.deps?.MF?.F || 12;
-            
-            // Back to top button (25%)
+
+            const F = this.deps?.MF?.F || 14;
+            const showFooterControls = window.Config?.showFooterControls !== false;
+            const hasControls = showFooterControls;
+
+            // Calculate widths based on whether controls are shown
+            const itemCount = hasControls ? 4 : 3;
+            const itemWidth = 100 / itemCount; // 25% when controls shown, 33.33% when hidden
+
+            // Initialize control element variables
+            let fDisplay = null;
+            let tightButton = null;
+            let looseButton = null;
+
+            // Back to top button
             const backToTop = this.createElement('div', 'footer-item');
             backToTop.id = 'back-to-top';
             backToTop.textContent = '↑ TOP';
             backToTop.style.cssText = `
-                position: absolute; top: 0; left: 0; height: 100%; width: 25%;
+                position: absolute; top: 0; left: 0; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px;
                 box-sizing: border-box; cursor: pointer;
@@ -950,99 +1158,144 @@ export class PageFooter extends BaseComponent {
             });
             backToTop.classList.add('clickable');
             this.element.appendChild(backToTop);
-            
-            // Instagram link (25%) - with right border separator
+
+            // Instagram link - with right border separator
             const instagramLink = this.createElement('a', 'footer-item');
             instagramLink.href = 'https://www.instagram.com/a.einoder/';
             instagramLink.target = '_blank';
             instagramLink.textContent = '@A.EINODER';
             instagramLink.style.cssText = `
-                position: absolute; top: 0; left: 25%; height: 100%; width: 25%;
+                position: absolute; top: 0; left: ${itemWidth}%; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
                 border-right: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
             `;
             instagramLink.classList.add('clickable');
             this.element.appendChild(instagramLink);
-            
-            // Contact link (25%) - with right border separator  
+
+            // Contact link - with conditional right border separator
             const contactLink = this.createElement('a', 'footer-item');
             contactLink.href = '#contact';
             contactLink.textContent = 'CONTACT';
+            const contactLeft = itemWidth * 2;
+            const contactBorder = hasControls ? 'border-right: 1px solid var(--c-border); ' : '';
             contactLink.style.cssText = `
-                position: absolute; top: 0; left: 50%; height: 100%; width: 25%;
+                position: absolute; top: 0; left: ${contactLeft}%; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
-                border-right: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
+                ${contactBorder}box-sizing: border-box; cursor: pointer;
             `;
             contactLink.classList.add('clickable');
             this.element.appendChild(contactLink);
-            
-            // F Controller Container (25%) - 3 separate buttons
-            const fControllerContainer = this.createElement('div', 'footer-item f-controller-container');
-            fControllerContainer.style.cssText = `
-                position: absolute; top: 0; left: 75%; height: 100%; width: 25%;
-                display: flex; align-items: center; justify-content: center;
-                font-size: ${F}px; font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
-                box-sizing: border-box;
-            `;
-            
-            // Plus button (33.33%)
-            const plusButton = this.createElement('button', 'f-control-btn f-plus');
-            plusButton.textContent = '+';
-            plusButton.title = 'Increase F by 1';
-            plusButton.style.cssText = `
-                width: 33.33%; height: 100%; border: none; background: transparent;
-                color: inherit; font-family: inherit; font-size: inherit;
-                cursor: pointer; border-right: 1px solid var(--c-border);
-                display: flex; align-items: center; justify-content: center;
-            `;
-            plusButton.addEventListener('click', () => this.adjustF(1));
-            
-            // F display/input (33.33%)
-            const fDisplay = this.createElement('div', 'f-display');
-            fDisplay.style.cssText = `
-                width: 33.34%; height: 100%; background: transparent;
-                color: inherit; font-family: inherit; font-size: inherit;
-                border: none; border-right: 1px solid var(--c-border);
-                display: flex; align-items: center; justify-content: center;
-                cursor: pointer; user-select: none;
-            `;
-            fDisplay.textContent = `F=${F}`;
-            fDisplay.title = 'Click to edit F value directly';
-            fDisplay.addEventListener('click', () => this.showFInput(fDisplay));
-            
-            // Minus button (33.33%)
-            const minusButton = this.createElement('button', 'f-control-btn f-minus');
-            minusButton.textContent = '-';
-            minusButton.title = 'Decrease F by 1';
-            minusButton.style.cssText = `
-                width: 33.33%; height: 100%; border: none; background: transparent;
-                color: inherit; font-family: inherit; font-size: inherit;
-                cursor: pointer; display: flex; align-items: center; justify-content: center;
-            `;
-            minusButton.addEventListener('click', () => this.adjustF(-1));
-            
-            // Add hover effects
-            [plusButton, fDisplay, minusButton].forEach(btn => {
-                btn.addEventListener('mouseenter', () => {
-                    btn.style.background = 'var(--c-accent)';
-                    btn.style.color = 'var(--c-bg)';
+
+            // F Controller Container (conditional)
+            let fControllerContainer = null;
+            if (hasControls) {
+                fControllerContainer = this.createElement('div', 'footer-item f-controller-container');
+                const controlsLeft = itemWidth * 3;
+                fControllerContainer.style.cssText = `
+                    position: absolute; top: 0; left: ${controlsLeft}%; height: 100%; width: ${itemWidth}%;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: ${F}px; font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                    box-sizing: border-box;
+                `;
+
+                const controlElements = [];
+
+                if (showFooterControls) {
+                    // Plus button
+                    const plusButton = this.createElement('button', 'f-control-btn f-plus');
+                    plusButton.textContent = '+';
+                    plusButton.title = 'Increase F by 1';
+                    plusButton.style.cssText = `
+                        flex: 1; height: 100%; border: none; background: transparent;
+                        color: inherit; font-family: inherit; font-size: inherit;
+                        cursor: pointer; border-right: 1px solid var(--c-border);
+                        display: flex; align-items: center; justify-content: center;
+                    `;
+                    plusButton.addEventListener('click', () => this.adjustF(1));
+                    controlElements.push(plusButton);
+
+                    // F display/input
+                    const fDisplay = this.createElement('div', 'f-display');
+                    fDisplay.style.cssText = `
+                        flex: 2; height: 100%; background: transparent;
+                        color: inherit; font-family: inherit; font-size: inherit;
+                        border: none; border-right: 1px solid var(--c-border);
+                        display: flex; align-items: center; justify-content: center;
+                        cursor: pointer; user-select: none;
+                    `;
+                    fDisplay.textContent = `F=${F}`;
+                    fDisplay.title = 'Click to edit F value directly';
+                    fDisplay.addEventListener('click', () => this.showFInput(fDisplay));
+                    controlElements.push(fDisplay);
+
+                    // Minus button
+                    const minusButton = this.createElement('button', 'f-control-btn f-minus');
+                    minusButton.textContent = '-';
+                    minusButton.title = 'Decrease F by 1';
+                    minusButton.style.cssText = `
+                        flex: 1; height: 100%; border: none; background: transparent;
+                        color: inherit; font-family: inherit; font-size: inherit;
+                        cursor: pointer; display: flex; align-items: center; justify-content: center;
+                    `;
+                    minusButton.addEventListener('click', () => this.adjustF(-1));
+                    controlElements.push(minusButton);
+                }
+
+                if (showFooterControls) {
+                    // Big frame (B) button
+                    const tightButton = this.createElement('button', 'f-control-btn margin-b');
+                    tightButton.textContent = 'B';
+                    tightButton.title = 'Big frame (1F margins)';
+                    tightButton.style.cssText = `
+                        flex: 1; height: 100%; border: none; background: transparent;
+                        color: inherit; font-family: inherit; font-size: inherit;
+                        cursor: pointer; border-left: 1px solid var(--c-border);
+                        display: flex; align-items: center; justify-content: center;
+                    `;
+                    tightButton.addEventListener('click', () => this.setMargin('B'));
+                    controlElements.push(tightButton);
+
+                    // Small frame (S) button
+                    const looseButton = this.createElement('button', 'f-control-btn margin-s');
+                    looseButton.textContent = 'S';
+                    looseButton.title = 'Small frame (4F margins)';
+                    looseButton.style.cssText = `
+                        flex: 1; height: 100%; border: none; background: transparent;
+                        color: inherit; font-family: inherit; font-size: inherit;
+                        cursor: pointer; display: flex; align-items: center; justify-content: center;
+                    `;
+                    looseButton.addEventListener('click', () => this.setMargin('S'));
+                    controlElements.push(looseButton);
+                }
+
+                // Add hover effects to all control elements
+                controlElements.forEach(btn => {
+                    btn.addEventListener('mouseenter', () => {
+                        btn.style.background = 'var(--c-accent)';
+                        btn.style.color = 'var(--c-bg)';
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.background = 'transparent';
+                        btn.style.color = 'inherit';
+                    });
                 });
-                btn.addEventListener('mouseleave', () => {
-                    btn.style.background = 'transparent';
-                    btn.style.color = 'inherit';
+
+                // Add all control elements to container
+                controlElements.forEach(element => {
+                    fControllerContainer.appendChild(element);
                 });
-            });
-            
-            fControllerContainer.appendChild(plusButton);
-            fControllerContainer.appendChild(fDisplay);
-            fControllerContainer.appendChild(minusButton);
-            this.element.appendChild(fControllerContainer);
-            
+
+                this.element.appendChild(fControllerContainer);
+            }
+
             // Store references for updates
-            this.fDisplay = fDisplay;
-            this.fControllerContainer = fControllerContainer;
+            this.fDisplay = showFooterControls ? fDisplay : null;
+            this.fControllerContainer = hasControls ? fControllerContainer : null;
+            this.tightButton = showFooterControls ? tightButton : null;
+            this.looseButton = showFooterControls ? looseButton : null;
+            this.updateMarginDisplay(this.marginMode);
             
             // Subscribe to resize
             this.subscribeToResize();
@@ -1054,7 +1307,7 @@ export class PageFooter extends BaseComponent {
      * Adjust F value by a delta amount
      */
     adjustF(delta) {
-        const currentF = window.Config?.F || 12;
+        const currentF = window.Config?.F || 14;
         const newF = Math.max(6, Math.min(30, currentF + delta)); // Range: 6-30
         
         if (newF !== currentF) {
@@ -1072,10 +1325,34 @@ export class PageFooter extends BaseComponent {
     }
     
     /**
+     * Set margin mode (B=big frame/small margins, S=small frame/large margins)
+     */
+    setMargin(mode) {
+        if (!this.onMarginChange) return;
+        this.onMarginChange(mode);
+        this.updateMarginDisplay(mode);
+    }
+    
+    /**
+     * Update margin mode button states (B=big frame, S=small frame)
+     */
+    updateMarginDisplay(currentMode) {
+        const setActive = (btn, active) => {
+            if (!btn) return;
+            btn.style.background = active ? 'var(--c-accent)' : 'transparent';
+            btn.style.color = active ? 'var(--c-bg)' : 'inherit';
+        };
+
+        const current = typeof currentMode === 'string' ? currentMode : this.getMarginMode();
+        if (this.tightButton) setActive(this.tightButton, current === 'B');
+        if (this.looseButton) setActive(this.looseButton, current === 'S');
+    }
+    
+    /**
      * Show input field for direct F value entry
      */
     showFInput(displayElement) {
-        const currentF = window.MathematicalFoundation?.F || window.Config?.F || 12;
+        const currentF = window.MathematicalFoundation?.F || window.Config?.F || 14;
         
         // Create input element
         const input = this.createElement('input', 'f-input');
@@ -1106,7 +1383,7 @@ export class PageFooter extends BaseComponent {
             }
             
             // Restore display
-            const finalF = window.MathematicalFoundation?.F || window.Config?.F || 12;
+            const finalF = window.MathematicalFoundation?.F || window.Config?.F || 14;
             displayElement.innerHTML = `F=${finalF}`;
         };
         
@@ -1117,7 +1394,7 @@ export class PageFooter extends BaseComponent {
                 completeInput();
             } else if (e.key === 'Escape') {
                 // Cancel - restore original display
-                const originalF = window.MathematicalFoundation?.F || window.Config?.F || 12;
+                const originalF = window.MathematicalFoundation?.F || window.Config?.F || 14;
                 displayElement.innerHTML = `F=${originalF}`;
             }
         });
@@ -1153,6 +1430,21 @@ export class Subheader extends BaseComponent {
         this.prevItem = null;
         this.nextItem = null;
     }
+
+    getLayoutFromVars() {
+        const fallback = this.deps.MF ? this.deps.MF.computeLayout() : {};
+        const root = getComputedStyle(document.documentElement);
+        const num = (name, fb) => {
+            const v = parseInt(root.getPropertyValue(name), 10);
+            return Number.isFinite(v) ? v : fb;
+        };
+        return {
+            subheaderTitleWidth: num('--subheader-title-width', fallback.subheaderTitleWidth || 0),
+            subheaderNavContainerWidth: num('--subheader-nav-width', fallback.subheaderNavContainerWidth || 0),
+            subheaderPrevButtonWidth: num('--subheader-prev-width', fallback.subheaderPrevButtonWidth || 0),
+            subheaderNextButtonWidth: num('--subheader-next-width', fallback.subheaderNextButtonWidth || 0)
+        };
+    }
     
     render() {
         if (!this.element) {
@@ -1176,8 +1468,8 @@ export class Subheader extends BaseComponent {
             `;
             
             // Title section - PRECISE WIDTH from layout calculations (same as header left block)
-            const layout = this.deps.MF ? this.deps.MF.computeLayout() : {};
-            const F = this.deps.MF ? this.deps.MF.F : 12;
+            const layout = this.getLayoutFromVars();
+            const { F } = this.getF();
             
             const subheaderTitle = this.createElement('div', 'subheader-title');
             subheaderTitle.textContent = this.sectionTitle;
@@ -1263,23 +1555,26 @@ export class Subheader extends BaseComponent {
             
             // Subscribe to resize
             this.subscribeToResize();
+            // Fallback window resize listener to keep widths in sync when ResizeManager is absent
+            this.windowResizeHandler = () => this.onResize();
+            window.addEventListener('resize', this.windowResizeHandler);
         }
         return this.element;
     }
     
     updateTitle(title) {
-        console.log(`🏷️ Subheader updateTitle called: "${title}"`);
+        window.debugLog('NAVIGATION', `🏷️ Subheader updateTitle called: "${title}"`);
         
         // Ensure subheader is rendered
         if (!this.element) {
-            console.log('🔄 Subheader not rendered, rendering now...');
+            window.debugLog('VERBOSE', '🔄 Subheader not rendered, rendering now...');
             this.render();
         }
         
         const titleElement = this.element?.querySelector('.subheader-title');
         if (titleElement) {
             titleElement.textContent = title.toUpperCase();
-            console.log(`✅ Subheader title updated to: "${titleElement.textContent}"`);
+            window.debugLog('NAVIGATION', `✅ Subheader title updated to: "${titleElement.textContent}"`);
         } else {
             console.warn('⚠️ Subheader title element not found');
         }
@@ -1364,14 +1659,18 @@ export class Subheader extends BaseComponent {
      * Handle resize - recalculate layout like PageHeader
      */
     onResize() {
-        if (this.element && this.deps.MF) {
-            const layout = this.deps.MF.computeLayout();
-            const F = this.deps.MF.F;
+        if (this.element) {
+            const layout = this.getLayoutFromVars();
+            const { F } = this.getF();
             
             // Update title section width
             const titleElement = this.element.querySelector('.subheader-title');
             if (titleElement) {
                 titleElement.style.width = `${layout.subheaderTitleWidth}px`;
+            }
+            const dropdownTrigger = this.element.querySelector('.subheader-dropdown-trigger');
+            if (dropdownTrigger) {
+                dropdownTrigger.style.width = `${layout.subheaderTitleWidth}px`;
             }
             
             // Update navigation container width and position
@@ -1379,6 +1678,10 @@ export class Subheader extends BaseComponent {
             if (navElement) {
                 navElement.style.left = `${layout.subheaderTitleWidth}px`;
                 navElement.style.width = `${layout.subheaderNavContainerWidth}px`;
+            }
+            const dropdownMenu = document.getElementById('subheader-dropdown');
+            if (dropdownMenu) {
+                dropdownMenu.style.width = `${layout.subheaderTitleWidth}px`;
             }
             
             // Update navigation button widths
@@ -1398,19 +1701,19 @@ export class Subheader extends BaseComponent {
     show() {
         // Ensure subheader is rendered
         if (!this.element) {
-            console.log('🔄 Subheader not rendered for show(), rendering now...');
+            window.debugLog('VERBOSE', '🔄 Subheader not rendered for show(), rendering now...');
             this.render();
         }
         
         if (this.element) {
+            // Don't use inline !important styles - let CSS handle visibility
             this.element.style.display = 'flex';
-            // Force the display property to override any CSS
-            this.element.style.setProperty('display', 'flex', 'important');
             
-            // Update body class to show subheader
-            document.body.className = 'with-subheader';
+            // Update body class to show subheader (preserve other classes like full-mode)
+            document.body.classList.add('has-subheader');
+            document.body.classList.remove('no-subheader');
             
-            console.log(`🧭 Subheader shown with title: "${this.sectionTitle || 'unknown'}" - display: ${this.element.style.display}, body class: ${document.body.className}`);
+            window.debugLog('NAVIGATION', `🧭 Subheader shown with title: "${this.sectionTitle || 'unknown'}" - display: ${this.element.style.display}, body class: ${document.body.className}`);
         }
     }
     
@@ -1421,10 +1724,29 @@ export class Subheader extends BaseComponent {
         if (this.element) {
             this.element.style.display = 'none';
             
-            // Update body class to hide subheader
-            document.body.className = 'no-subheader';
+            // Update body class to hide subheader (preserve other classes like full-mode)
+            document.body.classList.add('no-subheader');
+            document.body.classList.remove('has-subheader');
             
-            console.log(`🧭 Subheader hidden - body class: ${document.body.className}`);
+            // IMPORTANT: Also update the PageContainer layout state to reposition content
+            // Use a flag to prevent infinite recursion (setSubheaderState calls hide again)
+            if (!this._hiding && window.SiteBoyApp && window.SiteBoyApp.pageContainer) {
+                this._hiding = true;
+                // Directly reposition content container without calling setSubheaderState
+                const pc = window.SiteBoyApp.pageContainer;
+                if (pc.contentBody && pc.deps && pc.deps.MF) {
+                    const layout = pc.deps.MF.computeLayout() || {};
+                    const margin = pc.deps.MF.Config?.margin || layout.marginLeft || 14;
+                    const headerHeight = layout.headerHeight || 28;
+                    const contentTop = margin + headerHeight;
+                    const bottomOffset = headerHeight + margin;
+                    pc.contentBody.style.top = `${contentTop}px`;
+                    pc.contentBody.style.bottom = `${bottomOffset}px`;
+                }
+                this._hiding = false;
+            }
+            
+            window.debugLog('NAVIGATION', `🧭 Subheader hidden - body class: ${document.body.className}`);
         }
     }
     
@@ -1436,15 +1758,17 @@ export class Subheader extends BaseComponent {
     updateNavigationLegacy(onPrev = null, onNext = null) {
         if (!this.element) return;
         
-        const prevButton = this.element.querySelector('.nav-button:first-child');
-        const nextButton = this.element.querySelector('.nav-button:last-child');
+        const navContainer = this.element.querySelector('.subheader-nav');
+        if (!navContainer) return;
+        const prevButton = navContainer.querySelector('.nav-button:first-child');
+        const nextButton = navContainer.querySelector('.nav-button:last-child');
         
         // Clear existing handlers and update functionality
         if (prevButton) {
             // Store original styles before cloning
             const originalPrevStyle = prevButton.style.cssText;
             prevButton.replaceWith(prevButton.cloneNode(true));
-            const newPrevButton = this.element.querySelector('.nav-button:first-child');
+            const newPrevButton = navContainer.querySelector('.nav-button:first-child');
             newPrevButton.textContent = 'PREV ←';
             
             // Restore original styles
@@ -1465,7 +1789,7 @@ export class Subheader extends BaseComponent {
             // Store original styles before cloning
             const originalNextStyle = nextButton.style.cssText;
             nextButton.replaceWith(nextButton.cloneNode(true));
-            const newNextButton = this.element.querySelector('.nav-button:last-child');
+            const newNextButton = navContainer.querySelector('.nav-button:last-child');
             newNextButton.textContent = '→ NEXT';
             
             // Restore original styles
@@ -1492,14 +1816,16 @@ export class Subheader extends BaseComponent {
     updateNavigationButtons(navigateCallback = null) {
         if (!this.element) return;
         
-        const prevButton = this.element.querySelector('.nav-button:first-child');
-        const nextButton = this.element.querySelector('.nav-button:last-child');
+        const navContainer = this.element.querySelector('.subheader-nav');
+        if (!navContainer) return;
+        const prevButton = navContainer.querySelector('.nav-button:first-child');
+        const nextButton = navContainer.querySelector('.nav-button:last-child');
         
         // Update Previous Button
         if (prevButton) {
             const originalPrevStyle = prevButton.style.cssText;
             prevButton.replaceWith(prevButton.cloneNode(true));
-            const newPrevButton = this.element.querySelector('.nav-button:first-child');
+            const newPrevButton = navContainer.querySelector('.nav-button:first-child');
             
             // Restore original styles first
             newPrevButton.style.cssText = originalPrevStyle;
@@ -1534,7 +1860,7 @@ export class Subheader extends BaseComponent {
         if (nextButton) {
             const originalNextStyle = nextButton.style.cssText;
             nextButton.replaceWith(nextButton.cloneNode(true));
-            const newNextButton = this.element.querySelector('.nav-button:last-child');
+            const newNextButton = navContainer.querySelector('.nav-button:last-child');
             
             // Restore original styles first
             newNextButton.style.cssText = originalNextStyle;
@@ -1574,7 +1900,7 @@ export class Subheader extends BaseComponent {
         
         // Get actual button width from layout calculations
         const layout = this.deps.MF ? this.deps.MF.computeLayout() : {};
-        const F = this.deps.MF ? this.deps.MF.F : 12;
+        const F = this.deps.MF ? this.deps.MF.F : 14;
         
         const buttonWidth = direction === 'prev' ? 
             (layout.subheaderPrevButtonWidth || 100) : 
@@ -1584,7 +1910,7 @@ export class Subheader extends BaseComponent {
         const arrowAndSafetyWidth = 2 * F; // Space for " ←" or "→ " plus safety margin
         const availableWidth = buttonWidth - arrowAndSafetyWidth;
         
-        // Estimate character width (Atkinson Hyperlegible is roughly 0.7 * F per character at 12px)
+        // Estimate character width (Atkinson Hyperlegible is roughly 0.7 * F per character)
         const charWidth = F * 0.7;
         const maxChars = Math.floor(availableWidth / charWidth);
         
@@ -1629,20 +1955,20 @@ export class Subheader extends BaseComponent {
     setDropdownContent(items, onSelect = null) {
         // Ensure subheader is rendered
         if (!this.element) {
-            console.log('🔄 Subheader not rendered for setDropdownContent(), rendering now...');
+            window.debugLog('VERBOSE', '🔄 Subheader not rendered for setDropdownContent(), rendering now...');
             this.render();
         }
         
-        console.log('🔄 Subheader.setDropdownContent called with items:', items);
-        console.log('🔄 Subheader element exists:', !!this.element);
+        window.debugLog('VERBOSE', '🔄 Subheader.setDropdownContent called with items:', items);
+        window.debugLog('VERBOSE', '🔄 Subheader element exists:', !!this.element);
         
         const titleElement = this.element.querySelector('.subheader-title');
-        console.log('🔄 Title element found:', !!titleElement);
+        window.debugLog('VERBOSE', '🔄 Title element found:', !!titleElement);
         if (!titleElement) return;
         
         // Create actual dropdown if items provided
         if (items && items.length > 0) {
-            const F = this.deps.MF ? this.deps.MF.F : 12;
+            const F = this.deps.MF ? this.deps.MF.F : 14;
             const layout = this.deps.MF ? this.deps.MF.computeLayout() : {};
             
             // Create reusable navigation dropdown - like header but different positioning
@@ -1651,13 +1977,13 @@ export class Subheader extends BaseComponent {
                 onItemClick: onSelect
             }, this.deps);
             
-            // Create trigger element that fits precisely in the 50% title area
+            // Create trigger element sized by layout to avoid stale ellipsis on resize
             const triggerElement = this.createElement('div', 'subheader-dropdown-trigger');
             triggerElement.style.cssText = `
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 50%;
+                width: ${layout.subheaderTitleWidth}px;
                 height: 100%;
                 display: flex;
                 align-items: center;
@@ -1688,7 +2014,7 @@ export class Subheader extends BaseComponent {
             });
             
             // Position dropdown to match trigger width exactly
-            dropdownMenu.style.width = '50%';
+            dropdownMenu.style.width = `${layout.subheaderTitleWidth}px`;
             dropdownMenu.style.border = '1px solid var(--c-border)';
             dropdownMenu.style.borderTop = '1px solid var(--c-border)'; // Keep top border for separation
             dropdownMenu.style.zIndex = '1500';
@@ -1701,8 +2027,8 @@ export class Subheader extends BaseComponent {
             
             // Add toggle functionality
             triggerElement.addEventListener('click', (e) => {
-                console.log('🔄 Subheader dropdown trigger clicked!');
-                console.log('🔄 PageDropdown exists:', !!this.pageDropdown);
+                window.debugLog('VERBOSE', '🔄 Subheader dropdown trigger clicked!');
+                window.debugLog('VERBOSE', '🔄 PageDropdown exists:', !!this.pageDropdown);
                 e.preventDefault();
                 e.stopPropagation();
                 this.pageDropdown.toggle();
@@ -1745,6 +2071,14 @@ export class Subheader extends BaseComponent {
         } else {
             this.updateTitle(text);
         }
+    }
+
+    destroy() {
+        if (this.windowResizeHandler) {
+            window.removeEventListener('resize', this.windowResizeHandler);
+            this.windowResizeHandler = null;
+        }
+        super.destroy();
     }
 }
 

@@ -5,30 +5,21 @@
  * Shows hierarchical TOC on index, individual articles on routes
  * Always shows subheader with navigation
  * 
- * @version 3.0.0 - TOC + Articles Structure
+ * @version 3.2.0 - Auto-generated multi-root blog routing
  * @dependencies ['ComponentLibrary'] - Component system
  */
 
 const BlogSection = {
-    version: '3.0.0',
+    version: '3.1.1',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
+    slugIndex: new Map(),
     currentArticle: null,
     currentCategory: null,
-    
-    // Simple page list for navigation
-    pages: [
-        '#blog',
-        '#blog/docs/SITEBOY_ARCHITECTURE_FLOW',
-        '#blog/docs/ANALYSIS_OLD_BUILD_vs_CURRENT',
-        '#blog/docs/CLOUD_MIGRATION_AND_CLEANUP',
-        '#blog/docs/SITEBOY_DOCUMENTATION_PORTAL',
-        '#blog/music/chord',
-        '#blog/music/drum',
-        '#blog/site/plan',
-        '#blog/tools/color-quantizer'
-    ],
+    manifest: (typeof window !== 'undefined' && window.blogDocsManifest) || null,
+    manifestReady: false,
+    manifestPromise: null,
     
     /**
      * Handle route changes for blog section
@@ -43,71 +34,90 @@ const BlogSection = {
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
         this.cleanup();
+        await this.ensureManifestReady();
         
-        // Apply proper body sizing for blog section (with subheader)
-        if (window.MathematicalFoundation) {
-            const contentContainer = this.currentContainer.closest('.content-container');
-            if (contentContainer) {
-                window.MathematicalFoundation.applyContainerVars(contentContainer, { 
-                    withSubheader: true 
-                });
-                console.log('✅ Applied with-subheader body sizing for blog section');
-            }
+        if (!this.manifestReady) {
+            this.renderError('Blog manifest not available');
+            return;
         }
         
+        // Apply proper body sizing for blog section (with subheader)
+        // Content container positioning now handled by PageContainer like headers/footers
+        console.log('✅ Blog section loaded with deterministic container positioning');
+        
         // Setup unified navigation (same code for all sections)
-        window.NavigationController.setupNavigation('blog', subsection, this.pages, this.navigationCallbacks);
+        window.NavigationController.setupNavigation('blog', subsection, this.getNavigationPages(), this.navigationCallbacks);
         
         // Parse route to determine what to show
         if (!subsection) {
             // Show blog TOC index
             this.renderBlogIndex();
         } else {
-            // Parse category/article from subsection (e.g., 'music/chord')
-            const [category, articleId] = subsection.split('/');
-            if (category && articleId && this.blogStructure[category]) {
-                const article = this.blogStructure[category].articles.find(a => a.id === articleId);
-                if (article) {
-                    this.currentCategory = category;
-                    this.currentArticle = articleId;
-                    await this.renderArticle(category, article);
-                } else {
-                    this.renderError(`Article not found: ${articleId}`);
-                }
+            const targetEntry = this.slugIndex.get(subsection);
+            if (targetEntry) {
+                this.currentCategory = targetEntry.slug.split('/')[0] || 'docs';
+                this.currentArticle = targetEntry.slug;
+                await this.renderArticle(targetEntry);
             } else {
-                this.renderError(`Invalid blog route: ${subsection}`);
+                this.renderError(`Invalid blog route or missing document: ${subsection}`);
             }
         }
     },
     
-    // Blog structure for backward compatibility
-    blogStructure: {
-        'docs': {
-            title: 'DOCUMENTATION',
-            description: 'Technical documentation and analysis',
-            articles: [
-                { id: 'SITEBOY_ARCHITECTURE_FLOW', title: 'SiteBoy Architecture Flow' },
-                { id: 'ANALYSIS_OLD_BUILD_vs_CURRENT', title: 'Old Build Analysis' },
-                { id: 'CLOUD_MIGRATION_AND_CLEANUP', title: 'Cloud Migration & Cleanup Ops' },
-                { id: 'SITEBOY_DOCUMENTATION_PORTAL', title: 'Construction & Usability Portal' }
-            ]
-        },
-        'music': {
-            title: 'MUSIC THEORY',
-            description: 'Articles about musical composition, theory, and analysis',
-            articles: [
-                { id: 'chord', title: 'Chord Progressions' },
-                { id: 'drum', title: 'Drum Patterns' }
-            ]
-        },
-        'site': {
-            title: 'SITE DEVELOPMENT', 
-            articles: [{ id: 'plan', title: 'Site Plan' }]
-        },
-        'tools': {
-            title: 'DEVELOPMENT TOOLS',
-            articles: [{ id: 'color-quantizer', title: 'Color Quantizer' }]
+    async ensureManifestReady() {
+        if (this.manifestReady) return true;
+        
+        if (!this.manifest && typeof window !== 'undefined' && window.blogDocsManifest) {
+            this.setManifest(window.blogDocsManifest);
+            return true;
         }
+        
+        if (!this.manifestPromise) {
+            this.manifestPromise = fetch('blog/blog-docs-manifest.json')
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    this.setManifest(data);
+                })
+                .catch(error => {
+                    console.error('❌ Failed to load blog manifest:', error);
+                });
+        }
+        
+        await this.manifestPromise;
+        return this.manifestReady;
+    },
+    
+    setManifest(manifest) {
+        if (manifest && Array.isArray(manifest.files)) {
+            this.manifest = manifest;
+            this.slugIndex.clear();
+            this.manifest.files.forEach(file => {
+                this.slugIndex.set(file.slug, file);
+            });
+            this.manifestReady = true;
+            console.log(`🗂️ Loaded blog manifest with ${this.slugIndex.size} documents`);
+        } else {
+            console.warn('⚠️ Blog manifest not found or invalid');
+        }
+    },
+    
+    getNavigationPages() {
+        if (this.manifest && Array.isArray(this.manifest.flatRoutes) && this.manifest.flatRoutes.length) {
+            return this.manifest.flatRoutes;
+        }
+        return ['#blog'];
+    },
+    
+    formatTitle(text) {
+        if (!text) return '';
+        return text
+            .replace(/[_-]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .replace(/\b\w/g, c => c.toUpperCase());
     },
     
     /**
@@ -119,6 +129,22 @@ const BlogSection = {
         // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
         this.currentContainer.classList.add('toc-container');
+        
+        // Apply proper body sizing for blog index (no subheader)
+        const contentContainer = this.currentContainer.closest('.content-container');
+        if (contentContainer) {
+            contentContainer.classList.add('toc-container');
+            
+            // Reposition content container for no-subheader layout
+            if (window.MathematicalFoundation) {
+                const layout = window.MathematicalFoundation.computeLayout() || {};
+                const margin = window.MathematicalFoundation.Config?.margin || layout.marginLeft || 14;
+                const headerHeight = layout.headerHeight || 28;
+                const contentTop = margin + headerHeight;
+                contentContainer.style.top = `${contentTop}px`;
+                console.log(`✅ Applied no-subheader layout for blog index: top=${contentTop}px`);
+            }
+        }
         
         // Create blog title
         const title = new ComponentLibrary.Heading({
@@ -155,24 +181,63 @@ const BlogSection = {
      * Prepare blog TOC data for NumberedTOC component
      */
     prepareBlogTOCData() {
-        return Object.entries(this.blogStructure).map(([categoryKey, category]) => ({
-            title: category.title,
-            description: category.description,
-            articles: category.articles.map(article => ({
-                title: article.title,
-                description: `${article.id}.md`,
-                id: article.id,
-                categoryKey: categoryKey
-            }))
-        }));
+        if (!this.manifest || !this.manifest.tree || !Array.isArray(this.manifest.tree.children)) {
+            return [];
+        }
+        
+        const tocSections = [];
+        
+        this.manifest.tree.children.forEach(rootNode => {
+            if (rootNode.type !== 'root-folder' || !Array.isArray(rootNode.children)) return;
+            
+            const articles = this.mapChildrenToItems(rootNode.children, rootNode.name);
+            if (articles.length) {
+                tocSections.push({
+                    title: this.formatTitle(rootNode.title || rootNode.name),
+                    description: rootNode.name,
+                    articles
+                });
+            }
+        });
+        
+        return tocSections;
     },
-
+    
+    mapChildrenToItems(children, categoryKey, parentPath = '') {
+        const items = [];
+        if (!children) return items;
+        
+        children.forEach(child => {
+            const id = parentPath ? `${parentPath}/${child.name || child.slug}` : (child.slug || child.name);
+            
+            if (child.type === 'file') {
+                items.push({
+                    id,
+                    title: this.formatTitle(child.title || child.name),
+                    description: child.relPath || child.slug,
+                    slug: child.slug,
+                    categoryKey
+                });
+            } else if (child.type === 'folder' && Array.isArray(child.children)) {
+                items.push({
+                    id,
+                    title: this.formatTitle(child.title || child.name),
+                    description: child.name,
+                    categoryKey,
+                    children: this.mapChildrenToItems(child.children, categoryKey, id)
+                });
+            }
+        });
+        
+        return items;
+    },
+    
     /**
      * Handle blog TOC item click from NumberedTOC component
      */
     handleBlogTOCItemClick(item) {
         if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-            this.navigationCallbacks.navigateToSection('blog', `${item.categoryKey}/${item.id}`);
+            this.navigationCallbacks.navigateToSection('blog', item.slug);
         }
         console.log(`📝 Blog TOC item clicked: ${item.title}`);
     },
@@ -184,8 +249,8 @@ const BlogSection = {
     /**
      * Render individual article
      */
-    async renderArticle(category, article) {
-        console.log(`📝 Rendering article: ${category}/${article.id}`);
+    async renderArticle(entry) {
+        console.log(`📝 Rendering article: ${entry.slug}`);
         
         // Clear container 
         this.currentContainer.innerHTML = '';
@@ -194,20 +259,20 @@ const BlogSection = {
         // Create article title
         const title = new ComponentLibrary.Heading({
             level: 1,
-            content: article.title
+            content: entry.title
         });
         this.componentInstances.push(title);
         this.currentContainer.appendChild(title.render());
         
         // Create category breadcrumb
         const categoryInfo = new ComponentLibrary.Paragraph({
-            content: `${this.blogStructure[category].title} → ${article.title}`
+            content: `${entry.segments.join(' / ') || 'docs'} → ${entry.title}`
         });
         this.componentInstances.push(categoryInfo);
         this.currentContainer.appendChild(categoryInfo.render());
         
         // Load and render markdown content
-        await this.loadAndRenderMarkdown(category, article);
+        await this.loadAndRenderMarkdown(entry);
         
         console.log('✅ Article rendered');
     },
@@ -215,9 +280,9 @@ const BlogSection = {
     /**
      * Load and render markdown content for an article
      */
-    async loadAndRenderMarkdown(category, article) {
+    async loadAndRenderMarkdown(entry) {
         try {
-            const markdownPath = `blog/${category}/${article.id}.md`;
+            const markdownPath = `blog/${entry.slug}.md`;
             console.log(`📝 Loading markdown from: ${markdownPath}`);
             
             // Show loading message
@@ -258,7 +323,7 @@ const BlogSection = {
             
             // Show error message
             const errorMsg = new ComponentLibrary.Paragraph({
-                content: `Error loading content: ${error.message}. Please check that the file exists at blog/${category}/${article.id}.md`
+                content: `Error loading content: ${error.message}. Please check that the file exists at ${markdownPath}`
             });
             this.componentInstances.push(errorMsg);
             this.currentContainer.appendChild(errorMsg.render());
@@ -333,7 +398,7 @@ const BlogSection = {
             title: 'BLOG',
             currentArticle: this.currentArticle,
             currentCategory: this.currentCategory,
-            totalArticles: Object.values(this.blogStructure).reduce((sum, cat) => sum + cat.articles.length, 0),
+            totalArticles: this.slugIndex.size,
             componentCount: this.componentInstances.length
         };
     },
@@ -358,4 +423,4 @@ const BlogSection = {
 // Global registration
 window.BlogSection = BlogSection;
 
-console.log(`📝 Blog Section v${BlogSection.version} ready - JSON-Driven Content System`);
+window.debugLog('INIT', `📝 Blog Section v${BlogSection.version} ready - JSON-Driven Content System`);

@@ -1,5 +1,7 @@
 # Component Reference — Complete API
 
+For quick per-component summaries and paths, see `components/index.md` and linked category pages. This file is the definitive API.
+
 This is the definitive reference for all Tool UI components.  
 Each component has exact options, types, and examples.  
 **NO INTERPRETATION REQUIRED** — follow this specification literally.

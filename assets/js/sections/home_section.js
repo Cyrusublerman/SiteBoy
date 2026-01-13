@@ -104,15 +104,19 @@ const HomeSection = {
         this.currentContainer.classList.add('toc-container');
         
         // Ensure proper body sizing for home page (no subheader)
-        if (window.LayoutCalculator) {
-            // Apply layout calculations for content container  
-            const contentContainer = this.currentContainer.closest('.content-container');
-            if (contentContainer) {
-                // Force content container to use no-subheader layout
-                const F = window.LayoutCalculator.F;
-                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`); // Header only (2*F) + some padding
-                contentContainer.style.setProperty('--top-offset', `${F * 2}px`); // Just header height
-                console.log('✅ Applied no-subheader body sizing for home page');
+        const contentContainer = this.currentContainer.closest('.content-container');
+        if (contentContainer) {
+            // Add toc-container class for styling
+            contentContainer.classList.add('toc-container');
+            
+            // Reposition content container for no-subheader layout
+            if (window.MathematicalFoundation) {
+                const layout = window.MathematicalFoundation.computeLayout() || {};
+                const margin = window.MathematicalFoundation.Config?.margin || layout.marginLeft || 14;
+                const headerHeight = layout.headerHeight || 28;
+                const contentTop = margin + headerHeight;
+                contentContainer.style.top = `${contentTop}px`;
+                console.log(`✅ Applied no-subheader layout for home page: top=${contentTop}px`);
             }
         }
         
@@ -127,7 +131,7 @@ const HomeSection = {
             const paddingRight = computedStyle ? parseInt(computedStyle.paddingRight) : 0;
             const paddingTop = computedStyle ? parseInt(computedStyle.paddingTop) : 0;
             
-            const F = window.LayoutCalculator ? window.LayoutCalculator.F : 12;
+            const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 14;
             
             const solarSystemContainer = document.createElement('div');
             solarSystemContainer.className = 'solar-system-home';
@@ -145,7 +149,7 @@ const HomeSection = {
             console.log('🌌 Creating SolarSystemTool with computed padding:', {paddingLeft, paddingRight, paddingTop});
             
             const solarSystem = new window.SolarSystemTool(solarSystemContainer, {
-                MF: window.LayoutCalculator,
+                MF: window.MathematicalFoundation,
                 Resize: window.ResizeManager
             });
             
@@ -281,4 +285,4 @@ const HomeSection = {
 // Global registration
 window.HomeSection = HomeSection;
 
-console.log(`🏠 Home Section v${HomeSection.version} ready - TOC-Only Home Page`);
+window.debugLog('INIT', `🏠 Home Section v${HomeSection.version} ready - TOC-Only Home Page`);

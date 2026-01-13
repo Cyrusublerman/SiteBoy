@@ -105,10 +105,10 @@ const ProjectsSection = {
         this.currentContainer.classList.add('toc-container');
         
         // Apply proper body sizing for projects index (no subheader)
-        if (window.LayoutCalculator) {
+        if (window.MathematicalFoundation) {
             const contentContainer = this.currentContainer.closest('.content-container');
             if (contentContainer) {
-                const F = window.LayoutCalculator.F;
+                const F = window.MathematicalFoundation.F;
                 contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
                 contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
                 console.log('✅ Applied no-subheader body sizing for projects index');
@@ -121,7 +121,7 @@ const ProjectsSection = {
             sections: this.navigationConfig.structure,
             onItemClick: (item) => this.handleProjectClick(item)
         }, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         
@@ -241,15 +241,28 @@ const ProjectsSection = {
     /**
      * Render individual project
      */
-    renderProject(projectId) {
+    async renderProject(projectId) {
         console.log(`🚀 Rendering project: ${projectId}`);
-        
-        // Route Synthetic Biophilia to dedicated module to avoid bloating this file
-        if (projectId === 'synthetic-biophilia' && window.SyntheticBiophiliaProject) {
-            this.currentContainer.innerHTML = '';
-            window.SyntheticBiophiliaProject.render(this.currentContainer);
-            // Back link is handled within the SyntheticBiophiliaProject module
-            return;
+
+        // Lazy load Synthetic Biophilia project module when needed
+        if (projectId === 'synthetic-biophilia') {
+            if (!window.SyntheticBiophiliaProject) {
+                try {
+                    console.log('📦 Lazy loading Synthetic Biophilia project...');
+                    // await import('../../projects/Synthetic Biophilia/synthetic-biophilia.js'); // Temporarily disabled due to path issues
+                    console.log('✅ Synthetic Biophilia project loaded successfully');
+                } catch (err) {
+                    console.warn('⚠️ Failed to lazy load Synthetic Biophilia project:', err.message);
+                    // Fall through to mock rendering below
+                }
+            }
+
+            if (window.SyntheticBiophiliaProject) {
+                this.currentContainer.innerHTML = '';
+                window.SyntheticBiophiliaProject.render(this.currentContainer);
+                // Back link is handled within the SyntheticBiophiliaProject module
+                return;
+            }
         }
 
         // Mock project data - in real implementation, this would be loaded from JSON
@@ -370,4 +383,4 @@ const ProjectsSection = {
 // Global registration
 window.ProjectsSection = ProjectsSection;
 
-console.log(`🚀 Projects Section v${ProjectsSection.version} ready`);
+window.debugLog('INIT', `🚀 Projects Section v${ProjectsSection.version} ready`);

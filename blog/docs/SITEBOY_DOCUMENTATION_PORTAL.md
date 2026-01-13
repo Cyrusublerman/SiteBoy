@@ -12,41 +12,29 @@ Central entry point for planning, building, and maintaining the SiteBoy experien
 ---
 
 ## Build Path (Recommended Sequence)
-1. **Environment + Orientation**  
-   - [SETUP](docs/SETUP.md) - clone, serve locally, and understand the SPA shell.  
-   - [GETTING_STARTED](docs/onboarding/GETTING_STARTED.md) - onboarding checklist.  
-   - [AI_AGENT_HANDOFF](docs/onboarding/AI_AGENT_HANDOFF.md) - expectations when an agent takes over.
+1. **Orientation**  
+   - [rationale](rationale.md) — why the structure exists.  
+   - [guides/index](guides/index.md) — phases/checklists/standards entry.  
+   - [Processes/index](Processes/index.md) — process docs and gates.
 
-2. **Architecture & Rules**  
-   - [SITEBOY MASTER WEBSITE GUIDE](docs/siteboy-master-guide.md) - architecture, inheritance model, and math system.  
-   - [ARCHITECTURE](docs/ARCHITECTURE.md) - system overview, routing, and module structure.  
-   - [RULES](docs/RULES.md) - non-negotiable constraints (F=14px system, BaseComponent usage, asset loading).
+2. **Architecture & Rules (current)**  
+   - [site/ui-interface-overview](site/ui-interface-overview.md) — UI ideology and F-grid.  
+   - [guides/standards/coding-standards](guides/standards/coding-standards.md).  
+   - [guides/standards/f-system](guides/standards/f-system.md).  
+   - [guides/tool-standards](guides/tool-standards.md), [guides/page-design-guide](guides/page-design-guide.md), [guides/lazy-loading](guides/lazy-loading.md), [guides/shared-utilities](guides/shared-utilities.md).
 
-3. **Component & Layout Implementation**  
-   - [COMPONENT-REFERENCE-SYSTEM](docs/COMPONENT-REFERENCE-SYSTEM.md) - component taxonomy and responsibilities.  
-   - [MATHEMATICAL-COMPONENT-HIERARCHY](docs/MATHEMATICAL-COMPONENT-HIERARCHY.md) - class inheritance map.  
-   - Component documentation bundle (below) for patterns, workflows, and examples.
+3. **Execution Phases (for new tools/pages)**  
+   - Run P0→P6 in `guides/phases/` with matching checklists in `guides/checklists/`.  
+   - Active prompt: `guides/idea-to-implementation-promt-3-ENFORCED.md`.  
+   - Archives: `old-docs/legacy-prompts/`.
 
-4. **Page & Section Construction**  
-   - [plan](docs/site/plan.md) - site structure and navigation requirements.  
-   - [type](docs/site/type.md) - typography decisions.  
-   - [refined_logic](docs/site/refined_logic.md) - routing chronology and data flow.
+4. **Catalogs**  
+   - Components: `components/index.md`, `components/COMPONENT-REFERENCE.md`.  
+   - Algorithms: `algorithms/index.md` (+ category files).  
+   - Pages: `pages/`.
 
-5. **Media, Gallery, and Photo Pipelines**  
-   - Gallery packet (implementation -> verification -> improvements).  
-   - Photo processing packet (end-to-end processing cookbook).  
-   - [CLOUD_MIGRATION_AND_CLEANUP](CLOUD_MIGRATION_AND_CLEANUP.md) - current hosting + cleanup ops.
-
-6. **Tooling & Animations**  
-   - Tool readmes (Solar System, Asteroid Belt) plus Animation references in `/reference` as needed.
-
-7. **Operations & Maintenance**  
-   - [FIXES](docs/FIXES.md) - log of resolved issues and mitigations.  
-   - [changes](docs/changes.md) - running change log.  
-   - Migration packet - R2 restructuring and repo hygiene.
-
-8. **Deep Archive**  
-   - `old-docs/` contains legacy plans and analyses. Consult when tracing decisions or resurrecting prior behaviours.
+5. **Archive (legacy)**  
+   - Legacy docs moved to `old-docs/legacy-docs/` (formerly `docs/`). Use only for historical reference.
 
 ---
 

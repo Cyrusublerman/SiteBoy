@@ -3,12 +3,13 @@
  * 
  * UNIFIED NAVIGATION SYSTEM - One method, all sections
  * Every section uses identical navigation code
+ * Supports hierarchical file-directory style dropdowns
  * 
- * @version 2.0.0 - Simplified & Unified
+ * @version 2.1.0 - Hierarchical Dropdown Support
  */
 
 const NavigationController = {
-    version: '2.0.0',
+    version: '2.1.0',
     
     /**
      * Setup navigation for any section - SINGLE METHOD FOR ALL
@@ -23,10 +24,12 @@ const NavigationController = {
             return;
         }
         
-        const currentPath = currentPage ? `#${section}/${currentPage}` : `#${section}`;
+        const currentPath = currentPage
+            ? (currentPage.startsWith('#') ? currentPage : `#${section}/${currentPage}`)
+            : `#${section}`;
         const currentIndex = pages.indexOf(currentPath);
         
-        console.log(`🧭 Setting up unified navigation for ${section}, current: ${currentPath}, index: ${currentIndex}`);
+        window.debugLog('NAVIGATION', `🧭 Setting up unified navigation for ${section}, current: ${currentPath}, index: ${currentIndex}`);
         
         // Hide subheader for index pages, show for sub-pages
         if (!currentPage) {
@@ -40,17 +43,8 @@ const NavigationController = {
                 window.Subheader.show();
                 window.Subheader.updateTitle(currentPage.toUpperCase());
                 
-                // Create dropdown items
-                const dropdownItems = pages.map(page => {
-                    const isIndex = page === `#${section}`;
-                    const title = isIndex ? `${section.toUpperCase()} TOC` : page.replace(`#${section}/`, '').toUpperCase();
-                    
-                    return {
-                        text: title,
-                        path: page,
-                        isActive: page === currentPath
-                    };
-                });
+                // Build hierarchical dropdown items from pages array
+                const dropdownItems = this.buildHierarchicalItems(section, pages, currentPath);
                 
                 // Setup dropdown
                 window.Subheader.setDropdownContent(dropdownItems, (item) => {
@@ -84,22 +78,128 @@ const NavigationController = {
                     items: navigationItems,
                     navigate: (targetSection, targetSubsection) => {
                         if (callbacks && callbacks.navigateToSection) {
-                            console.log(`🧭 NavigationController navigating to: ${targetSection}/${targetSubsection || 'index'}`);
+                            window.debugLog('NAVIGATION', `🧭 NavigationController navigating to: ${targetSection}/${targetSubsection || 'index'}`);
                             callbacks.navigateToSection(targetSection, targetSubsection);
                         }
                     }
                 };
                 
                 window.Subheader.updateNavigation(navigationContext);
-                console.log(`🧭 Navigation setup: section=${section}, subsection=${currentPage}, items=${navigationItems.length}`);
+                window.debugLog('NAVIGATION', `🧭 Navigation setup: section=${section}, subsection=${currentPage}, items=${navigationItems.length}`);
             }
         }
         
-        console.log(`✅ Unified navigation setup complete for ${section}`);
+        window.debugLog('NAVIGATION', `✅ Unified navigation setup complete for ${section}`);
+    },
+    
+    /**
+     * Build hierarchical dropdown items from flat pages array
+     * Groups pages by their subsection prefix into collapsible folders
+     * 
+     * @param {string} section - Section name (blog, art, etc.)
+     * @param {Array} pages - Flat array of page paths
+     * @param {string} currentPath - Currently active path
+     * @returns {Array} Hierarchical items for dropdown
+     */
+    buildHierarchicalItems(section, pages, currentPath) {
+        const sectionPrefix = `#${section}`;
+        const groups = new Map(); // subsection -> array of child pages
+        const standaloneItems = []; // Items without a subsection
+        
+        pages.forEach(page => {
+            if (page === sectionPrefix) {
+                // Section index/TOC - always show at top
+                standaloneItems.unshift({
+                    title: `${section.toUpperCase()} TOC`,
+                    path: page,
+                    isActive: page === currentPath
+                });
+                return;
+            }
+            
+            // Parse path: #section/subsection/page or #section/subsection
+            const relativePath = page.replace(`${sectionPrefix}/`, '');
+            const parts = relativePath.split('/');
+            
+            if (parts.length === 1) {
+                // Direct child of section (e.g., #art/digital) - could be subsection or standalone
+                // Check if there are deeper pages under this
+                const hasChildren = pages.some(p => 
+                    p.startsWith(`${sectionPrefix}/${parts[0]}/`) && p !== page
+                );
+                
+                if (hasChildren) {
+                    // This is a subsection folder - initialize group
+                    if (!groups.has(parts[0])) {
+                        groups.set(parts[0], { 
+                            path: page, 
+                            items: [],
+                            isActive: page === currentPath
+                        });
+                    }
+                } else {
+                    // Standalone item at subsection level
+                    standaloneItems.push({
+                        title: parts[0].toUpperCase(),
+                        path: page,
+                        isActive: page === currentPath
+                    });
+                }
+            } else {
+                // Nested page (e.g., #art/generative/circles)
+                const subsection = parts[0];
+                const pageName = parts.slice(1).join('/');
+                
+                if (!groups.has(subsection)) {
+                    // Check if subsection itself is a valid page
+                    const subsectionPath = `${sectionPrefix}/${subsection}`;
+                    const subsectionIsPage = pages.includes(subsectionPath);
+                    groups.set(subsection, { 
+                        path: subsectionIsPage ? subsectionPath : null, 
+                        items: [],
+                        isActive: subsectionPath === currentPath
+                    });
+                }
+                
+                groups.get(subsection).items.push({
+                    title: pageName.toUpperCase(),
+                    path: page,
+                    isActive: page === currentPath
+                });
+            }
+        });
+        
+        // Build final items array
+        const result = [...standaloneItems];
+        
+        // Add grouped subsections as collapsible items
+        groups.forEach((groupData, subsectionName) => {
+            if (groupData.items.length > 0) {
+                // Has children - create collapsible subsection
+                result.push({
+                    type: 'subsection',
+                    id: subsectionName,
+                    title: subsectionName.toUpperCase(),
+                    path: groupData.path, // May be clickable if subsection is also a page
+                    isActive: groupData.isActive,
+                    items: groupData.items
+                });
+            } else if (groupData.path) {
+                // No children but has a path - standalone item
+                result.push({
+                    title: subsectionName.toUpperCase(),
+                    path: groupData.path,
+                    isActive: groupData.isActive
+                });
+            }
+        });
+        
+        window.debugLog('NAVIGATION', `🧭 Built hierarchical dropdown: ${result.length} top-level items`);
+        return result;
     }
 };
 
 // Register globally
 window.NavigationController = NavigationController;
 
-console.log(`🧭 NavigationController v${NavigationController.version} loaded - Unified navigation for all sections`);
+window.debugLog('INIT', `🧭 NavigationController v${NavigationController.version} loaded - Unified navigation for all sections`);

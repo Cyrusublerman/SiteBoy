@@ -39,7 +39,7 @@ export class Media extends BaseComponent {
     render() {
         if (this.element) return this.element;
         
-        const F = this.deps.MF?.F ?? 12;
+        const F = this.deps.MF?.F ?? 14;
         
         this.element = this.createElement('figure', 'media-container component');
         this.element.style.cssText = `

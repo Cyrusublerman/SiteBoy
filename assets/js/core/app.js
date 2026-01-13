@@ -65,7 +65,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { Config, LayoutCalculator, ComponentCalculator } from './config.js';
+// Config, LayoutCalculator, and ComponentCalculator are loaded globally from config.js
 
 // =================================================================
 // UTILITY MANAGERS - Simple, focused responsibilities
@@ -82,7 +82,7 @@ const ResizeManager = {
             this.resizeTimer = setTimeout(() => this.executeAllHandlers(), 100);
         });
         this.isInitialized = true;
-        console.log('🔄 ResizeManager initialized');
+        window.debugLog('INIT', '🔄 ResizeManager initialized');
     },
     
     subscribe(handler) {
@@ -234,7 +234,8 @@ const SiteBoyApp = {
         currentSection: null,
         currentSectionModule: null, // Track section module for cleanup
         currentSectionName: null,   // Track section name for cleanup
-        hasSubheader: false
+        hasSubheader: false,
+        isFullMode: false            // Track full-page mode state
     },
     
     // Component references
@@ -249,25 +250,32 @@ const SiteBoyApp = {
      */
     async init() {
         if (this.state.isInitialized) {
-            console.log('🔄 SiteBoy App already initialized');
+            window.debugLog('INIT', '🔄 SiteBoy App already initialized');
             return true;
         }
         
-        console.log(`🚀 Initializing SiteBoy App v${this.version}...`);
-        console.log('📋 Clean Page Building System');
+        window.debugLog('INIT', `🚀 Initializing SiteBoy App v${this.version}...`);
+        window.debugLog('INIT', '📋 Clean Page Building System');
         
         try {
             // Initialize CSS variables and core utilities first
             this.initializeCoreUtilities();
-            
+
             // Validate dependencies
             if (!this.checkDependencies()) {
                 throw new Error('Missing required dependencies');
             }
-            
+
+            // Initialize router
+            if (window.Router && typeof window.Router.init === 'function') {
+                window.Router.init();
+            } else {
+                throw new Error('Router not available');
+            }
+
             // Create page structure
             this.createPageStructure();
-            
+
             // Initialize integrated routing
             this.initializeRouting();
             
@@ -276,9 +284,9 @@ const SiteBoyApp = {
             
             this.state.isInitialized = true;
             
-            console.log('✅ SiteBoy App initialized successfully');
-            console.log(`📊 F=${Config.F}px Mathematical Layout Active`);
-            console.log(`📄 JSON-Driven Content System Ready`);
+            window.debugLog('INIT', '✅ SiteBoy App initialized successfully');
+            window.debugLog('INIT', `📊 F=${window.Config.F}px Mathematical Layout System Active`);
+            window.debugLog('INIT', `📄 JSON-Driven Content System Ready`);
             
             return true;
             
@@ -293,19 +301,20 @@ const SiteBoyApp = {
      * Initialize core utilities (CSS vars, resize handling)
      */
     initializeCoreUtilities() {
-        LayoutCalculator.initializeCSSVars();
+        // Initialize layout system
+        window.LayoutCalculator.initializeCSSVars();
         ResizeManager.init();
-        
+
         // Subscribe to resize events for page rebuilding
         this.resizeToken = ResizeManager.subscribe((evt) => {
             this.handlePageResize(evt);
         });
-        
+
         // Make utilities globally available for legacy compatibility
-        window.MathematicalFoundation = LayoutCalculator;
+        window.MathematicalFoundation = window.LayoutCalculator;
         window.ResizeManager = ResizeManager;
         window.BlockRenderer = BlockRenderer;
-        window.Config = Config;
+        // window.Config is already set by config.js
         window.SiteBoyApp = this;
         
         // Import and expose DynamicFManager
@@ -313,7 +322,7 @@ const SiteBoyApp = {
             window.DynamicFManager = module.DynamicFManager;
         });
         
-        console.log('✅ Core utilities initialized');
+        window.debugLog('INIT', '✅ Core utilities initialized');
     },
     
     /**
@@ -329,7 +338,7 @@ const SiteBoyApp = {
             }
         }
         
-        console.log('✅ All dependencies available');
+        window.debugLog('INIT', '✅ All dependencies available');
         return true;
     },
     
@@ -337,7 +346,7 @@ const SiteBoyApp = {
      * Create unified page structure
      */
     createPageStructure() {
-        console.log('🏗️ Creating page structure...');
+        window.debugLog('INIT', '🏗️ Creating page structure...');
         
         // Get app root
         const appRoot = document.getElementById('app-root');
@@ -386,7 +395,7 @@ const SiteBoyApp = {
         // Store references globally for sections to access  
         window.Subheader = this.pageContainer.subheaderComponent;
         
-        console.log('✅ Page structure created');
+        window.debugLog('INIT', '✅ Page structure created');
     },
     
     /**
@@ -399,78 +408,99 @@ const SiteBoyApp = {
             this.pageContainer.setSubheaderState(hasSubheader);
         }
         
-        console.log(`📐 Subheader state: ${hasSubheader ? 'with' : 'no'} subheader`);
+        window.debugLog('LAYOUT', `📐 Subheader state: ${hasSubheader ? 'with' : 'no'} subheader`);
     },
     
     // =================================================================
-    // INTEGRATED ROUTING - App tells what to build based on URL
+    // ROUTE HANDLING - App coordinates content building based on Router events
     // =================================================================
     
     /**
      * Initialize integrated routing system
      */
     initializeRouting() {
-        console.log('🧭 Initializing integrated routing...');
-        
-        // Available sections
-        this.sections = {
-            'home': 'HomeSection',
-            'blog': 'BlogSection',
-            'art': 'ArtSection', 
-            'tools': 'ToolsSection',
-            'projects': 'ProjectsSection',
-            'contact': 'ContactSection'
-        };
-        
-        // Listen for hash changes
-        window.addEventListener('hashchange', () => this.handleRouteChange());
-        
+        window.debugLog('INIT', '🧭 Initializing integrated routing...');
+
+        // Subscribe to router events
+        this.routerUnsubscribe = window.Router.subscribe((route) => {
+            this.handleRouteChange(route);
+        });
+
         // Handle initial route
-        this.handleRouteChange();
-        
+        const initialRoute = window.Router.getCurrentRoute();
+        this.handleRouteChange(initialRoute);
+
         // Restore UI state after initial load
         setTimeout(() => {
             this.restoreUIState();
         }, 200);
-        
-        // Make navigation available globally for backward compatibility
-        window.Router = {
-            navigateToSection: (section, subsection = null) => this.navigateToSection(section, subsection),
-            getCurrentRoute: () => this.getCurrentRoute()
-        };
-        
-        console.log('✅ Integrated routing initialized');
-    },
-    
-    /**
-     * Parse current URL hash into section and subsection
-     */
-    parseRoute() {
-        const hash = window.location.hash.slice(1); // Remove #
-        
-        if (!hash || hash === 'home') {
-            return { section: 'home', subsection: null };
-        }
-        
-        const parts = hash.split('/');
-        const section = parts[0] || 'home';
-        const subsection = parts.length > 1 ? parts.slice(1).join('/') : null;
-        
-        return { section, subsection };
+
+        window.debugLog('INIT', '✅ Integrated routing initialized');
     },
     
     /**
      * Handle route changes - app decides what to build
+     * @param {Object} route - Route object from Router { section, subsection, isFullMode }
      */
-    handleRouteChange() {
-        const route = this.parseRoute();
-        const { section, subsection } = route;
-        
-        console.log(`🧭 Route change: ${section}${subsection ? '/' + subsection : ''}`);
-        
+    handleRouteChange(route) {
+        const { section, subsection, isFullMode } = route;
+
+        const modeStr = isFullMode ? ' [FULL MODE]' : '';
+        window.debugLog('NAVIGATION', `🧭 Route change: ${section}${subsection ? '/' + subsection : ''}${modeStr}`);
+        console.log(`🔍 FULL MODE DEBUG: isFullMode=${isFullMode}, type=${typeof isFullMode}`);
+
+        // Apply full-mode class to body BEFORE building page structure
+        // This ensures CSS calculations happen with correct layout mode
+        if (isFullMode) {
+            document.body.classList.add('full-mode');
+            window.debugLog('NAVIGATION', '🖼️ Full-page mode enabled (header/footer hidden)');
+            console.log(`🔍 Body classes after adding full-mode: "${document.body.className}"`);
+            
+            // DIRECT MANIPULATION as fallback to ensure elements are hidden
+            // CSS should handle this, but this ensures it works even if CSS fails
+            requestAnimationFrame(() => {
+                const header = document.getElementById('header');
+                const footer = document.getElementById('footer');
+                const subheader = document.getElementById('subheader');
+                
+                if (header) {
+                    header.style.display = 'none';
+                    console.log(`🔍 Header forced hidden`);
+                }
+                if (footer) {
+                    footer.style.display = 'none';
+                    console.log(`🔍 Footer forced hidden`);
+                }
+                if (subheader) {
+                    subheader.style.display = 'none';
+                    console.log(`🔍 Subheader forced hidden`);
+                }
+                
+                console.log(`🔍 Header display: ${header?.style.display}, computed: ${header ? window.getComputedStyle(header).display : 'N/A'}`);
+                console.log(`🔍 Footer display: ${footer?.style.display}, computed: ${footer ? window.getComputedStyle(footer).display : 'N/A'}`);
+                console.log(`🔍 Subheader display: ${subheader?.style.display}, computed: ${subheader ? window.getComputedStyle(subheader).display : 'N/A'}`);
+            });
+        } else {
+            document.body.classList.remove('full-mode');
+            
+            // Restore header/footer/subheader visibility
+            requestAnimationFrame(() => {
+                const header = document.getElementById('header');
+                const footer = document.getElementById('footer');
+                const subheader = document.getElementById('subheader');
+                
+                if (header) header.style.display = '';
+                if (footer) footer.style.display = '';
+                if (subheader) subheader.style.display = '';
+            });
+            
+            console.log(`🔍 Full mode disabled, body classes: "${document.body.className}"`);
+        }
+
         // Update app state
         this.state.currentSection = section;
-        
+        this.state.isFullMode = isFullMode;
+
         // App tells what to build based on the route
         this.buildPageForRoute(section, subsection);
     },
@@ -538,15 +568,22 @@ const SiteBoyApp = {
         
         // Clear subheader state before switching sections to prevent stale content
         if (window.Subheader) {
-            console.log(`🧹 Clearing subheader before switching to: ${sectionName}/${subsectionName || 'index'}`);
+            window.debugLog('NAVIGATION', `🧹 Clearing subheader before switching to: ${sectionName}/${subsectionName || 'index'}`);
             window.Subheader.hide();
             window.Subheader.clearContent();
-            console.log(`✅ Subheader cleared, now calling section: ${sectionName}`);
+            window.debugLog('NAVIGATION', `✅ Subheader cleared, now calling section: ${sectionName}`);
         }
         
         try {
-            // Get section class
-            const sectionClass = this.sections[sectionName];
+            const isToolDetailPage = sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc';
+            const NO_SUBHEADER_SECTIONS = ['home', 'projects'];
+            const hasSubheader = isToolDetailPage || !NO_SUBHEADER_SECTIONS.includes(sectionName);
+            
+            // Normalise body class + subheader visibility before layout math
+            this.setSubheaderState(hasSubheader);
+            
+            // Get section class from Router
+            const sectionClass = window.Router.getSections()[sectionName];
             
             if (!sectionClass) {
                 console.error(`❌ Unknown section: ${sectionName}`);
@@ -567,17 +604,17 @@ const SiteBoyApp = {
             this.state.currentSectionName = sectionName;
             
             // FIX: Tool pages need special layout - they manage their own sizing/scrolling
-            if (sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc') {
+            if (isToolDetailPage) {
                 // Tools fill the entire content container with no padding
                 this.contentContainer.style.padding = '0';
-                // Get COMPUTED min-height (CSS sets it via variables, not inline)
-                const computedMinHeight = getComputedStyle(this.contentContainer).minHeight;
-                // Use explicit height so children can fill with height: 100%
-                this.contentContainer.style.height = computedMinHeight;
+                
+                // Don't set explicit height - let top/bottom positioning from layout.js handle it
+                // This ensures no gap between content container and footer
+                this.contentContainer.style.height = 'auto';
                 this.contentContainer.style.minHeight = 'auto';
                 // Tools manage their own scrolling
                 this.contentContainer.style.overflow = 'hidden';
-                console.log('📐 Tool page detected - applied tool layout mode, height:', computedMinHeight);
+                window.debugLog('LAYOUT', '📐 Tool page detected - applied tool layout mode');
             } else {
                 // Restore default styling for non-tool pages
                 this.contentContainer.style.padding = '';
@@ -671,13 +708,13 @@ const SiteBoyApp = {
         }
         
         const sectionName = this.state.currentSectionName || 'Unknown';
-        console.log(`🧹 Cleaning up section: ${sectionName}`);
+        window.debugLog('VERBOSE', `🧹 Cleaning up section: ${sectionName}`);
         
         try {
             // Call section's cleanup method if it exists
             if (typeof this.state.currentSectionModule.cleanup === 'function') {
                 this.state.currentSectionModule.cleanup();
-                console.log(`✅ Section ${sectionName} cleanup completed`);
+                window.debugLog('VERBOSE', `✅ Section ${sectionName} cleanup completed`);
             } else {
                 // ⚠️ CRITICAL WARNING: Missing cleanup method
                 // This section WILL leak resources!
@@ -696,25 +733,19 @@ const SiteBoyApp = {
     
     /**
      * Navigate to section (programmatic navigation)
+     * @param {string} section - Section name
+     * @param {string|null} subsection - Subsection name  
+     * @param {boolean} fullMode - Whether to use full-page mode
      */
-    navigateToSection(section, subsection = null) {
-        const hash = `#${section}${subsection ? '/' + subsection : ''}`;
-        
-        if (window.location.hash !== hash) {
-            window.location.hash = hash;
-            // hashchange event will trigger handleRouteChange
-        }
+    navigateToSection(section, subsection = null, fullMode = false) {
+        window.Router.navigateToSection(section, subsection, fullMode);
     },
-    
+
     /**
      * Get current route info
      */
     getCurrentRoute() {
-        const route = this.parseRoute();
-        return {
-            section: route.section,
-            subsection: route.subsection
-        };
+        return window.Router.getCurrentRoute();
     },
     
     /**
@@ -724,23 +755,23 @@ const SiteBoyApp = {
         if (!this.state.isInitialized || !this.state.currentSection) {
             return;
         }
-        
+
         // Get current route
-        const route = this.parseRoute();
+        const route = window.Router.parseRoute();
         
         // Skip rebuild for active animations/tools to prevent breaking running scripts
         if (route.section === 'art' && route.subsection && route.subsection.includes('generative/') && route.subsection !== 'generative') {
-            console.log(`⏭️ Skipping resize rebuild for active animation: ${route.subsection}`);
+            window.debugLog('VERBOSE', `⏭️ Skipping resize rebuild for active animation: ${route.subsection}`);
             return;
         }
         
         // Skip rebuild for tool pages - tools manage their own resize/state
         if (route.section === 'tools' && route.subsection) {
-            console.log(`⏭️ Skipping resize rebuild for tool: ${route.subsection}`);
+            window.debugLog('VERBOSE', `⏭️ Skipping resize rebuild for tool: ${route.subsection}`);
             return;
         }
         
-        console.log(`🔄 Page resize detected (${evt.width}x${evt.height}) - rebuilding current section`);
+        window.debugLog('LAYOUT', `🔄 Page resize detected (${evt.width}x${evt.height}) - rebuilding current section`);
         
         // Store current state before rebuild
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -754,7 +785,7 @@ const SiteBoyApp = {
             setTimeout(() => {
                 this.restoreUIState(uiState);
                 window.scrollTo(0, scrollTop);
-                console.log(`✅ Section rebuilt and scroll position restored (${scrollTop}px)`);
+                window.debugLog('VERBOSE', `✅ Section rebuilt and scroll position restored (${scrollTop}px)`);
             }, 100); // Allow time for DOM to stabilize
         });
     },
@@ -927,12 +958,12 @@ const SiteBoyApp = {
         
         // Return cached version if available
         if (this.jsonCache.has(cacheKey)) {
-            console.log(`📄 Loading cached JSON: ${cacheKey}`);
+            window.debugLog('VERBOSE', `📄 Loading cached JSON: ${cacheKey}`);
             return this.jsonCache.get(cacheKey);
         }
         
         try {
-            console.log(`📄 Fetching JSON: ${sectionName}/${pageName}.json`);
+            window.debugLog('VERBOSE', `📄 Fetching JSON: ${sectionName}/${pageName}.json`);
             
             const response = await fetch(`/${sectionName}/${pageName}.json`);
             
@@ -948,7 +979,7 @@ const SiteBoyApp = {
             // Cache the result
             this.jsonCache.set(cacheKey, jsonData);
             
-            console.log(`✅ JSON loaded successfully: ${cacheKey}`);
+            window.debugLog('VERBOSE', `✅ JSON loaded successfully: ${cacheKey}`);
             return jsonData;
             
         } catch (error) {
@@ -984,7 +1015,7 @@ const SiteBoyApp = {
             });
         }
         
-        console.log(`✅ JSON schema validation passed for ${context}`);
+        window.debugLog('VERBOSE', `✅ JSON schema validation passed for ${context}`);
     },
     
     /**
@@ -1060,7 +1091,7 @@ const SiteBoyApp = {
             }
         });
         
-        console.log('✅ Global features initialized');
+        window.debugLog('INIT', '✅ Global features initialized');
     },
     
     /**
@@ -1069,7 +1100,7 @@ const SiteBoyApp = {
     toggleTheme() {
         const isInverted = document.documentElement.classList.toggle('inverted');
         this.state.currentTheme = isInverted ? 'inverted' : 'normal';
-        console.log(`🎨 Theme toggled to: ${this.state.currentTheme}`);
+        window.debugLog('VERBOSE', `🎨 Theme toggled to: ${this.state.currentTheme}`);
     },
     
     /**
@@ -1104,35 +1135,51 @@ const SiteBoyApp = {
      * Cleanup application
      */
     destroy() {
-        console.log('🧹 Destroying SiteBoy App...');
-        
+        window.debugLog('VERBOSE', '🧹 Destroying SiteBoy App...');
+
+        // Unsubscribe from router
+        if (this.routerUnsubscribe) {
+            this.routerUnsubscribe();
+            this.routerUnsubscribe = null;
+        }
+
         // Unsubscribe from resize events
         if (this.resizeToken) {
             ResizeManager.unsubscribe(this.resizeToken);
             this.resizeToken = null;
         }
-        
+
         if (this.pageContainer) {
             this.pageContainer.destroy();
             this.pageContainer = null;
         }
-        
+
         this.contentContainer = null;
         this.jsonCache.clear();
         this.state.isInitialized = false;
-        
-        console.log('✅ SiteBoy App destroyed');
+
+        window.debugLog('VERBOSE', '✅ SiteBoy App destroyed');
     }
 };
 
 // =================================================================
-// GLOBAL REGISTRATION & AUTO-INITIALIZATION
+// ES MODULE EXPORT & BACKWARD COMPATIBILITY
 // =================================================================
 
-// Make SiteBoyApp globally available
-window.SiteBoyApp = SiteBoyApp;
+/**
+ * ES module export for modern code
+ * Provides tree-shakeable access to SiteBoyApp
+ */
+export { SiteBoyApp };
+
+/**
+ * Global compatibility layer for legacy tools
+ * Maintains backward compatibility during migration
+ */
+if (typeof window !== 'undefined') {
+  // Make SiteBoyApp globally available
+  window.SiteBoyApp = SiteBoyApp;
+}
 
 // App initialization is now handled manually from index.html
-// to ensure all dependencies (including ES6 modules) are loaded first
-
-export default SiteBoyApp;
+// to ensure all dependencies are loaded first

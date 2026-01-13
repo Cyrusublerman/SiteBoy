@@ -1191,3 +1191,753 @@ export class Carousel extends BaseComponent {
         super.destroy();
     }
 }
+
+/**
+ * CheckpointList - Draggable, reorderable list of saved states/checkpoints
+ * Used by: wave-interference, lissajous, any tool with state saving
+ * 
+ * Features:
+ * - Save/load checkpoints (parameter snapshots)
+ * - Rename checkpoints inline
+ * - Set duration per checkpoint
+ * - Drag-and-drop reordering
+ * - Delete/duplicate checkpoints
+ * - Empty state handling
+ */
+export class CheckpointList extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'checkpoint-list' }, deps);
+        this.items = options.items || [];
+        this.onLoad = options.onLoad || null;
+        this.onDelete = options.onDelete || null;
+        this.onDuplicate = options.onDuplicate || null;
+        this.onReorder = options.onReorder || null;
+        this.onRename = options.onRename || null;
+        this.onDurationChange = options.onDurationChange || null;
+        this.emptyMessage = options.emptyMessage || 'No checkpoints saved';
+        this.maxHeight = options.maxHeight || '250px';
+        
+        // Drag state
+        this._draggedIndex = null;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'checkpoint-list');
+        }
+        this._renderItems();
+        return this.element;
+    }
+    
+    /**
+     * Update items and re-render
+     */
+    setItems(items) {
+        this.items = items || [];
+        this._renderItems();
+    }
+    
+    /**
+     * Render all checkpoint items
+     */
+    _renderItems() {
+        // Clear existing content
+        this.element.innerHTML = '';
+        
+        if (this.items.length === 0) {
+            const empty = this.createElement('div', 'checkpoint-empty');
+            empty.textContent = this.emptyMessage;
+            this.element.appendChild(empty);
+            return;
+        }
+        
+        this.items.forEach((item, index) => {
+            const itemEl = this._createItemElement(item, index);
+            this.element.appendChild(itemEl);
+        });
+    }
+    
+    /**
+     * Create a single checkpoint item element
+     */
+    _createItemElement(item, index) {
+        const itemEl = this.createElement('div', 'checkpoint-item');
+        itemEl.draggable = true;
+        itemEl.dataset.index = index;
+        
+        // Drag handle
+        const handle = this.createElement('span', 'checkpoint-handle');
+        handle.textContent = '⋮⋮';
+        handle.title = 'Drag to reorder';
+        
+        // Name input
+        const nameInput = this.createElement('input', 'checkpoint-name');
+        nameInput.type = 'text';
+        nameInput.value = item.name || `State ${index + 1}`;
+        nameInput.addEventListener('change', () => {
+            if (this.onRename) {
+                this.onRename(index, nameInput.value);
+            }
+        });
+        nameInput.addEventListener('click', (e) => e.stopPropagation());
+        
+        // Duration input
+        const durInput = this.createElement('input', 'checkpoint-duration');
+        durInput.type = 'number';
+        durInput.value = item.duration || 3;
+        durInput.min = 0.5;
+        durInput.max = 60;
+        durInput.step = 0.5;
+        durInput.title = 'Duration (seconds)';
+        durInput.addEventListener('change', () => {
+            if (this.onDurationChange) {
+                this.onDurationChange(index, parseFloat(durInput.value) || 3);
+            }
+        });
+        durInput.addEventListener('click', (e) => e.stopPropagation());
+        
+        // Load button
+        const loadBtn = this.createElement('button', 'checkpoint-btn checkpoint-load');
+        loadBtn.textContent = '▶';
+        loadBtn.title = 'Load checkpoint';
+        loadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onLoad) this.onLoad(index);
+        });
+        
+        // Duplicate button
+        const dupBtn = this.createElement('button', 'checkpoint-btn checkpoint-duplicate');
+        dupBtn.textContent = '⎘';
+        dupBtn.title = 'Duplicate';
+        dupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onDuplicate) this.onDuplicate(index);
+        });
+        
+        // Delete button
+        const delBtn = this.createElement('button', 'checkpoint-btn checkpoint-delete');
+        delBtn.textContent = '×';
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onDelete) this.onDelete(index);
+        });
+        
+        // Assemble
+        itemEl.appendChild(handle);
+        itemEl.appendChild(nameInput);
+        itemEl.appendChild(durInput);
+        itemEl.appendChild(loadBtn);
+        itemEl.appendChild(dupBtn);
+        itemEl.appendChild(delBtn);
+        
+        // Drag events
+        itemEl.addEventListener('dragstart', (e) => this._onDragStart(e, index));
+        itemEl.addEventListener('dragend', (e) => this._onDragEnd(e));
+        itemEl.addEventListener('dragover', (e) => this._onDragOver(e, index));
+        itemEl.addEventListener('drop', (e) => this._onDrop(e, index));
+        
+        return itemEl;
+    }
+    
+    _onDragStart(e, index) {
+        this._draggedIndex = index;
+        e.target.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+    
+    _onDragEnd(e) {
+        e.target.classList.remove('dragging');
+        this._draggedIndex = null;
+    }
+    
+    _onDragOver(e, index) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+    
+    _onDrop(e, dropIndex) {
+        e.preventDefault();
+        if (this._draggedIndex !== null && this._draggedIndex !== dropIndex) {
+            if (this.onReorder) {
+                this.onReorder(this._draggedIndex, dropIndex);
+            }
+        }
+    }
+    
+    destroy() {
+        this._draggedIndex = null;
+        super.destroy();
+    }
+}
+
+/**
+ * Sequencer - Site-wide animation sequencer component
+ * 
+ * Creates a timeline of checkpoints with configurable transitions.
+ * Checkpoints hold parameter states; transitions interpolate between them.
+ * 
+ * Structure:
+ * [Checkpoint 1] → [Transition] → [Checkpoint 2] → [Transition] → [Checkpoint 3] → ...
+ * 
+ * Each Checkpoint has:
+ * - grab handle (drag reorder)
+ * - name (editable)
+ * - hold frames (how long to stay before transition)
+ * - load button (apply params)
+ * - duplicate button
+ * - delete button
+ * 
+ * Each Transition has:
+ * - frame count (interpolation duration)
+ * - mode: 'all' (interpolate all at once) or 'sequential' (one param at a time)
+ * - type: 'blend' (linear interpolation) or 'step' (jump at end)
+ * 
+ * Callbacks:
+ * - onSave(params): called when user clicks save, should return params object
+ * - onLoad(index, params): apply checkpoint params to tool
+ * - onPlay(sequenceData): start playing the sequence
+ * - onStop(): stop sequence playback
+ * - onTotalFramesChange(frames): fired when total frames changes
+ */
+export class Sequencer extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'sequencer' }, deps);
+        
+        // Sequence data: alternating checkpoints and transitions
+        // checkpoints[i] → transitions[i] → checkpoints[i+1]
+        this.checkpoints = options.checkpoints || [];
+        this.transitions = options.transitions || [];
+        
+        // Callbacks
+        this.onSave = options.onSave || null;
+        this.onLoad = options.onLoad || null;
+        this.onDelete = options.onDelete || null;
+        this.onDuplicate = options.onDuplicate || null;
+        this.onPlay = options.onPlay || null;
+        this.onStop = options.onStop || null;
+        this.onTotalFramesChange = options.onTotalFramesChange || null;
+        this.onSequenceChange = options.onSequenceChange || null;
+        
+        // Default transition settings
+        this.defaultTransitionFrames = options.defaultTransitionFrames || 60;
+        this.defaultHoldFrames = options.defaultHoldFrames || 60;
+        
+        // Playback state
+        this.isPlaying = false;
+        this.loop = options.loop !== false;
+        
+        // Drag state
+        this._draggedIndex = null;
+        this._draggedType = null; // 'checkpoint' or 'transition'
+        
+        // References
+        this._listEl = null;
+        this._controlsEl = null;
+    }
+    
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'sequencer');
+            
+            // Controls bar
+            this._controlsEl = this.createElement('div', 'sequencer-controls');
+            this._renderControls();
+            this.element.appendChild(this._controlsEl);
+            
+            // Sequence list
+            this._listEl = this.createElement('div', 'sequencer-list');
+            this._renderSequence();
+            this.element.appendChild(this._listEl);
+            
+            // Total frames display
+            this._totalEl = this.createElement('div', 'sequencer-total');
+            this._updateTotal();
+            this.element.appendChild(this._totalEl);
+        }
+        return this.element;
+    }
+    
+    /**
+     * Render control buttons
+     */
+    _renderControls() {
+        this._controlsEl.innerHTML = '';
+        
+        // Save checkpoint button
+        const saveBtn = this.createElement('button', 'sequencer-btn sequencer-save');
+        saveBtn.textContent = '+ SAVE STATE';
+        saveBtn.title = 'Save current parameters as checkpoint';
+        saveBtn.addEventListener('click', () => this._handleSave());
+        
+        // Play/Stop button
+        const playBtn = this.createElement('button', 'sequencer-btn sequencer-play');
+        playBtn.textContent = this.isPlaying ? '■ STOP' : '▶ PLAY';
+        playBtn.addEventListener('click', () => this._togglePlay());
+        this._playBtn = playBtn;
+        
+        // Loop toggle
+        const loopLabel = this.createElement('label', 'sequencer-loop-label');
+        const loopCheck = this.createElement('input', 'sequencer-loop');
+        loopCheck.type = 'checkbox';
+        loopCheck.checked = this.loop;
+        loopCheck.addEventListener('change', () => {
+            this.loop = loopCheck.checked;
+        });
+        loopLabel.appendChild(loopCheck);
+        loopLabel.appendChild(document.createTextNode(' Loop'));
+        
+        // Clear all button
+        const clearBtn = this.createElement('button', 'sequencer-btn sequencer-clear');
+        clearBtn.textContent = 'CLEAR';
+        clearBtn.title = 'Clear all checkpoints';
+        clearBtn.addEventListener('click', () => this._handleClearAll());
+        
+        this._controlsEl.appendChild(saveBtn);
+        this._controlsEl.appendChild(playBtn);
+        this._controlsEl.appendChild(loopLabel);
+        this._controlsEl.appendChild(clearBtn);
+    }
+    
+    /**
+     * Render the sequence (checkpoints + transitions)
+     */
+    _renderSequence() {
+        this._listEl.innerHTML = '';
+        
+        if (this.checkpoints.length === 0) {
+            const empty = this.createElement('div', 'sequencer-empty');
+            empty.textContent = 'No checkpoints. Click "SAVE STATE" to add one.';
+            this._listEl.appendChild(empty);
+            return;
+        }
+        
+        this.checkpoints.forEach((cp, i) => {
+            // Checkpoint item
+            const cpEl = this._createCheckpointElement(cp, i);
+            this._listEl.appendChild(cpEl);
+            
+            // Transition after (if not last checkpoint)
+            if (i < this.checkpoints.length - 1) {
+                const tr = this.transitions[i] || this._createDefaultTransition();
+                this.transitions[i] = tr; // ensure it exists
+                const trEl = this._createTransitionElement(tr, i);
+                this._listEl.appendChild(trEl);
+            }
+        });
+    }
+    
+    /**
+     * Create checkpoint element
+     */
+    _createCheckpointElement(cp, index) {
+        const el = this.createElement('div', 'sequencer-checkpoint');
+        el.draggable = true;
+        el.dataset.index = index;
+        el.dataset.type = 'checkpoint';
+        
+        // Grab handle
+        const handle = this.createElement('span', 'sequencer-handle');
+        handle.textContent = '⋮⋮';
+        handle.title = 'Drag to reorder';
+        
+        // Name input
+        const nameInput = this.createElement('input', 'sequencer-name');
+        nameInput.type = 'text';
+        nameInput.value = cp.name || `State ${index + 1}`;
+        nameInput.addEventListener('change', () => {
+            cp.name = nameInput.value;
+            this._fireChange();
+        });
+        nameInput.addEventListener('click', (e) => e.stopPropagation());
+        
+        // Hold frames input
+        const holdLabel = this.createElement('span', 'sequencer-label');
+        holdLabel.textContent = 'Hold:';
+        const holdInput = this.createElement('input', 'sequencer-frames');
+        holdInput.type = 'number';
+        holdInput.value = cp.holdFrames || this.defaultHoldFrames;
+        holdInput.min = 1;
+        holdInput.max = 10000;
+        holdInput.step = 1;
+        holdInput.title = 'Frames to hold before transition';
+        holdInput.addEventListener('change', () => {
+            cp.holdFrames = parseInt(holdInput.value) || this.defaultHoldFrames;
+            this._updateTotal();
+            this._fireChange();
+        });
+        holdInput.addEventListener('click', (e) => e.stopPropagation());
+        
+        // Load button
+        const loadBtn = this.createElement('button', 'sequencer-btn-sm');
+        loadBtn.textContent = '▶';
+        loadBtn.title = 'Load into parameters';
+        loadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onLoad) this.onLoad(index, cp.params);
+        });
+        
+        // Duplicate button
+        const dupBtn = this.createElement('button', 'sequencer-btn-sm');
+        dupBtn.textContent = '⎘';
+        dupBtn.title = 'Duplicate';
+        dupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._handleDuplicate(index);
+        });
+        
+        // Delete button
+        const delBtn = this.createElement('button', 'sequencer-btn-sm sequencer-del');
+        delBtn.textContent = '×';
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._handleDelete(index);
+        });
+        
+        // Assemble
+        el.appendChild(handle);
+        el.appendChild(nameInput);
+        el.appendChild(holdLabel);
+        el.appendChild(holdInput);
+        el.appendChild(loadBtn);
+        el.appendChild(dupBtn);
+        el.appendChild(delBtn);
+        
+        // Drag events
+        el.addEventListener('dragstart', (e) => this._onDragStart(e, index, 'checkpoint'));
+        el.addEventListener('dragend', () => this._onDragEnd());
+        el.addEventListener('dragover', (e) => this._onDragOver(e));
+        el.addEventListener('drop', (e) => this._onDrop(e, index, 'checkpoint'));
+        
+        return el;
+    }
+    
+    /**
+     * Create transition element
+     */
+    _createTransitionElement(tr, index) {
+        const el = this.createElement('div', 'sequencer-transition');
+        el.dataset.index = index;
+        el.dataset.type = 'transition';
+        
+        // Arrow indicator
+        const arrow = this.createElement('span', 'sequencer-arrow');
+        arrow.textContent = '↓';
+        
+        // Frames input
+        const framesLabel = this.createElement('span', 'sequencer-label');
+        framesLabel.textContent = 'Transition:';
+        const framesInput = this.createElement('input', 'sequencer-frames');
+        framesInput.type = 'number';
+        framesInput.value = tr.frames || this.defaultTransitionFrames;
+        framesInput.min = 1;
+        framesInput.max = 10000;
+        framesInput.step = 1;
+        framesInput.title = 'Frames to transition';
+        framesInput.addEventListener('change', () => {
+            tr.frames = parseInt(framesInput.value) || this.defaultTransitionFrames;
+            this._updateTotal();
+            this._fireChange();
+        });
+        
+        // Mode toggle: all vs sequential
+        const modeLabel = this.createElement('label', 'sequencer-toggle');
+        const modeCheck = this.createElement('input');
+        modeCheck.type = 'checkbox';
+        modeCheck.checked = tr.mode === 'sequential';
+        modeCheck.title = 'Sequential: animate one param at a time';
+        modeCheck.addEventListener('change', () => {
+            tr.mode = modeCheck.checked ? 'sequential' : 'all';
+            modeLabel.querySelector('span').textContent = tr.mode === 'sequential' ? 'SEQ' : 'ALL';
+            this._fireChange();
+        });
+        const modeSpan = this.createElement('span');
+        modeSpan.textContent = tr.mode === 'sequential' ? 'SEQ' : 'ALL';
+        modeLabel.appendChild(modeCheck);
+        modeLabel.appendChild(modeSpan);
+        
+        // Type toggle: blend vs step
+        const typeLabel = this.createElement('label', 'sequencer-toggle');
+        const typeCheck = this.createElement('input');
+        typeCheck.type = 'checkbox';
+        typeCheck.checked = tr.type === 'step';
+        typeCheck.title = 'Step: jump at end instead of blend';
+        typeCheck.addEventListener('change', () => {
+            tr.type = typeCheck.checked ? 'step' : 'blend';
+            typeLabel.querySelector('span').textContent = tr.type === 'step' ? 'STEP' : 'BLEND';
+            this._fireChange();
+        });
+        const typeSpan = this.createElement('span');
+        typeSpan.textContent = tr.type === 'step' ? 'STEP' : 'BLEND';
+        typeLabel.appendChild(typeCheck);
+        typeLabel.appendChild(typeSpan);
+        
+        // Assemble
+        el.appendChild(arrow);
+        el.appendChild(framesLabel);
+        el.appendChild(framesInput);
+        el.appendChild(modeLabel);
+        el.appendChild(typeLabel);
+        
+        return el;
+    }
+    
+    /**
+     * Create default transition object
+     */
+    _createDefaultTransition() {
+        return {
+            frames: this.defaultTransitionFrames,
+            mode: 'all',  // 'all' or 'sequential'
+            type: 'blend' // 'blend' or 'step'
+        };
+    }
+    
+    /**
+     * Calculate and display total frames
+     */
+    _updateTotal() {
+        let total = 0;
+        
+        // Sum checkpoint hold frames
+        this.checkpoints.forEach(cp => {
+            total += cp.holdFrames || this.defaultHoldFrames;
+        });
+        
+        // Sum transition frames
+        this.transitions.forEach(tr => {
+            total += tr.frames || this.defaultTransitionFrames;
+        });
+        
+        if (this._totalEl) {
+            this._totalEl.textContent = `Total: ${total} frames (${(total / 60).toFixed(1)}s @ 60fps)`;
+        }
+        
+        if (this.onTotalFramesChange) {
+            this.onTotalFramesChange(total);
+        }
+        
+        return total;
+    }
+    
+    /**
+     * Get total frames (for export)
+     */
+    getTotalFrames() {
+        return this._updateTotal();
+    }
+    
+    /**
+     * Get sequence data for playback
+     */
+    getSequenceData() {
+        return {
+            checkpoints: this.checkpoints,
+            transitions: this.transitions,
+            loop: this.loop,
+            totalFrames: this.getTotalFrames()
+        };
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // Event Handlers
+    // ═══════════════════════════════════════════════════════════════════
+    
+    _handleSave() {
+        if (this.onSave) {
+            const params = this.onSave();
+            if (params) {
+                this.addCheckpoint(params);
+            }
+        }
+    }
+    
+    /**
+     * Add a checkpoint
+     */
+    addCheckpoint(params, name = null) {
+        const cp = {
+            name: name || `State ${this.checkpoints.length + 1}`,
+            params: JSON.parse(JSON.stringify(params)),
+            holdFrames: this.defaultHoldFrames,
+            timestamp: Date.now()
+        };
+        
+        // Add transition if not first checkpoint
+        if (this.checkpoints.length > 0) {
+            this.transitions.push(this._createDefaultTransition());
+        }
+        
+        this.checkpoints.push(cp);
+        this._renderSequence();
+        this._updateTotal();
+        this._fireChange();
+    }
+    
+    _handleDelete(index) {
+        if (index < 0 || index >= this.checkpoints.length) return;
+        
+        this.checkpoints.splice(index, 1);
+        
+        // Remove associated transition
+        if (index > 0) {
+            this.transitions.splice(index - 1, 1);
+        } else if (this.transitions.length > 0) {
+            this.transitions.splice(0, 1);
+        }
+        
+        this._renderSequence();
+        this._updateTotal();
+        this._fireChange();
+        
+        if (this.onDelete) this.onDelete(index);
+    }
+    
+    _handleDuplicate(index) {
+        if (index < 0 || index >= this.checkpoints.length) return;
+        
+        const original = this.checkpoints[index];
+        const copy = {
+            name: original.name + ' (copy)',
+            params: JSON.parse(JSON.stringify(original.params)),
+            holdFrames: original.holdFrames,
+            timestamp: Date.now()
+        };
+        
+        // Insert after original
+        this.checkpoints.splice(index + 1, 0, copy);
+        this.transitions.splice(index, 0, this._createDefaultTransition());
+        
+        this._renderSequence();
+        this._updateTotal();
+        this._fireChange();
+        
+        if (this.onDuplicate) this.onDuplicate(index);
+    }
+    
+    _handleClearAll() {
+        this.checkpoints = [];
+        this.transitions = [];
+        this._renderSequence();
+        this._updateTotal();
+        this._fireChange();
+    }
+    
+    _togglePlay() {
+        this.isPlaying = !this.isPlaying;
+        
+        if (this._playBtn) {
+            this._playBtn.textContent = this.isPlaying ? '■ STOP' : '▶ PLAY';
+        }
+        
+        if (this.isPlaying) {
+            if (this.onPlay) this.onPlay(this.getSequenceData());
+        } else {
+            if (this.onStop) this.onStop();
+        }
+    }
+    
+    /**
+     * External control: set playing state
+     */
+    setPlaying(playing) {
+        this.isPlaying = playing;
+        if (this._playBtn) {
+            this._playBtn.textContent = this.isPlaying ? '■ STOP' : '▶ PLAY';
+        }
+    }
+    
+    _fireChange() {
+        if (this.onSequenceChange) {
+            this.onSequenceChange(this.getSequenceData());
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // Drag and Drop
+    // ═══════════════════════════════════════════════════════════════════
+    
+    _onDragStart(e, index, type) {
+        this._draggedIndex = index;
+        this._draggedType = type;
+        e.dataTransfer.effectAllowed = 'move';
+    }
+    
+    _onDragEnd() {
+        this._draggedIndex = null;
+        this._draggedType = null;
+    }
+    
+    _onDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+    
+    _onDrop(e, dropIndex, dropType) {
+        e.preventDefault();
+        
+        if (this._draggedIndex === null || this._draggedType !== 'checkpoint' || dropType !== 'checkpoint') {
+            return;
+        }
+        
+        if (this._draggedIndex !== dropIndex) {
+            // Reorder checkpoints
+            const [moved] = this.checkpoints.splice(this._draggedIndex, 1);
+            this.checkpoints.splice(dropIndex, 0, moved);
+            
+            // Rebuild transitions
+            this.transitions = [];
+            for (let i = 0; i < this.checkpoints.length - 1; i++) {
+                this.transitions.push(this._createDefaultTransition());
+            }
+            
+            this._renderSequence();
+            this._fireChange();
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // Public API
+    // ═══════════════════════════════════════════════════════════════════
+    
+    /**
+     * Set checkpoints from external data
+     */
+    setCheckpoints(checkpoints, transitions = null) {
+        this.checkpoints = checkpoints || [];
+        this.transitions = transitions || [];
+        
+        // Ensure transitions array matches
+        while (this.transitions.length < this.checkpoints.length - 1) {
+            this.transitions.push(this._createDefaultTransition());
+        }
+        
+        this._renderSequence();
+        this._updateTotal();
+    }
+    
+    /**
+     * Get current checkpoint at index
+     */
+    getCheckpoint(index) {
+        return this.checkpoints[index] || null;
+    }
+    
+    /**
+     * Get transition at index
+     */
+    getTransition(index) {
+        return this.transitions[index] || null;
+    }
+    
+    destroy() {
+        this._draggedIndex = null;
+        this._draggedType = null;
+        this._listEl = null;
+        this._controlsEl = null;
+        this._totalEl = null;
+        this._playBtn = null;
+        super.destroy();
+    }
+}

@@ -22,11 +22,9 @@
             }
         };
     </script>
-    <!-- Polyfill.io alternative - using cdnjs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/2.6.12/core.min.js"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <!-- SiteBoy Framework Styles -->
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- SiteBoy Framework Styles - Modular System -->
+    <link rel="stylesheet" href="assets/css/index.css">
     
     <!-- Theme Initialization -->
     <script>
@@ -41,82 +39,7 @@
     <!-- App root - All content rendered by SiteBoy App -->
     <div id="app-root"></div>
     
-    <!-- SiteBoy Framework Scripts - Canonical Loading Order (ESM) -->
-    
-    <!-- 0. External dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    
-    <!-- 1. Core foundation (Modular ES6) -->
-    <script type="module" src="assets/js/shared/component-library.js"></script>
-    <script type="module" src="assets/js/shared/dynamic-f-utils.js"></script>
-    <script type="module" src="assets/js/shared/latex-diagnostic.js"></script>
-    <script>
-        // Component library is now available globally via window.ComponentLibrary
-        // No imports needed - UMD bundle handles everything
-        
-        console.log('🚀 SiteBoy Framework v4.0.0 - Modular Architecture Loaded');
-        console.log('📊 F=12px Mathematical Precision System Active');
-        console.log('🎨 VGA-Constrained Color Palette Ready');
-        console.log('🔤 Atkinson Hyperlegible Typography System Ready');
-        console.log('🏗️ Component Libraries Ready (Bundled)');
-        console.log('📄 JSON-Driven Content System Ready');
-        console.log('📦 Modular Build System Active');
-    </script>
-    
-    <!-- 2. Core Navigation & App -->
-    <script src="assets/js/core/cleanup-manager.js"></script>
-    <script type="module" src="assets/js/core/animation-foundation.js"></script>
-    <script src="art/Generative/scripts/generative-animation-manager.js"></script>
-    <script src="assets/js/core/navigation-controller.js"></script>
-    <script type="module" src="assets/js/core/app.js"></script>
-    
-    <!-- 4. Tools -->
-    <script src="assets/js/tools/google-fonts-loader.js"></script>
-    <script src="assets/js/tools/font-analysis-tool.js"></script>
-    <script src="assets/js/tools/color-quantizer.js"></script>
-    <script src="assets/js/tools/pixel-tiler.js"></script>
-    <script src="assets/js/tools/polygon-calculator.js"></script>
-    <script src="assets/js/tools/asteroid-belt-tool.js"></script>
-    <script src="assets/js/tools/solar-system-tool.js"></script>
-    <script src="assets/js/tools/about-you-tool.js"></script>
-    <script src="assets/js/tools/tool-base.js"></script>
-    <script src="assets/js/tools/tool-test-ui.js"></script>
-    
-    <!-- 5. Sections -->
-    <script src="assets/js/sections/home_section.js"></script>
-    <script src="assets/js/sections/blog_section.js"></script>
-    <script type="module" src="assets/js/sections/art_section.js"></script>
-    <script src="assets/js/sections/tools_section.js"></script>
-    <script src="assets/js/sections/projects_section.js"></script>
-    <script src="assets/js/sections/contact_section.js"></script>
-    
-    <!-- 6. Project-specific scripts (lives under /projects) -->
-    <script src="projects/Synthetic Biophilia/synthetic-biophilia.js"></script>
-    
-    <!-- Optional: Preload p5.js for better performance (commented out to avoid conflicts) -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script> -->
-
-    <!-- Framework Ready -->
-    <script>
-        console.log('🎯 SiteBoy Framework v3.0.0 - Clean Architecture Complete');
-        console.log('✅ Features: Integrated Routing, JSON Content, Component Library');
-        console.log('📋 Clean 5-File Architecture: config → app → component-library → sections → styling');
-        
-        // Wait for ComponentLibrary to be ready before initializing app
-        function waitForDependencies() {
-            if (window.ComponentLibrary && window.SiteBoyApp) {
-                console.log('🎯 All dependencies ready, initializing app...');
-                window.SiteBoyApp.init();
-            } else {
-                console.log('⏳ Waiting for dependencies...');
-                setTimeout(waitForDependencies, 10);
-            }
-        }
-        
-        // Start waiting for dependencies
-        waitForDependencies();
-    </script>
+    <!-- VITE Entry Point - Modern ES Module Loading -->
+    <script type="module" src="/src/main.js"></script>
 </body>
 </html>

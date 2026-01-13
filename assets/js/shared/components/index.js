@@ -17,7 +17,9 @@ export {
     ToggleGroup,
     FileInput,
     ColorInput,
-    EquationEditor
+    EquationEditor,
+    DropZone,
+    FilamentPicker
 } from './input/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -40,8 +42,19 @@ export {
     Stack,
     Section,
     Tabs,
-    Collection
+    Collection,
+    FileTable
 } from './container/index.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TOOL COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+export {
+    NavigationDropdown,
+    CanvasTabs,
+    CategoryTabsBar,
+    SeedInput
+} from './tool/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONVENIENCE NAMESPACE
@@ -49,6 +62,7 @@ export {
 import * as Input from './input/index.js';
 import * as Output from './output/index.js';
 import * as Container from './container/index.js';
+import * as Tool from './tool/index.js';
 
 export const Components = {
     // Input
@@ -61,6 +75,7 @@ export const Components = {
     FileInput: Input.FileInput,
     ColorInput: Input.ColorInput,
     EquationEditor: Input.EquationEditor,
+    DropZone: Input.DropZone,
     
     // Output
     Text: Output.Text,
@@ -76,6 +91,11 @@ export const Components = {
     Section: Container.Section,
     Tabs: Container.Tabs,
     Collection: Container.Collection,
+    FileTable: Container.FileTable,
+    NavigationDropdown: Tool.NavigationDropdown,
+    CanvasTabs: Tool.CanvasTabs,
+    CategoryTabsBar: Tool.CategoryTabsBar,
+    SeedInput: Tool.SeedInput,
     
     // Factory method
     create(type, options, deps) {

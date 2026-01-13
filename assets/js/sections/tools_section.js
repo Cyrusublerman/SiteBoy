@@ -1,12 +1,15 @@
 /**
  * Tools Section - SiteBoy Framework
- * 
+ *
  * TOOLS SECTION HANDLER - Interactive development tools
  * Uses canonical Glossary components only, no router coupling
- * 
+ *
  * @version 2.0.0 - Refactored Section
  * @dependencies ['ComponentLibrary'] - Consolidated component system
  */
+
+
+import { LayoutCalculator } from '../core/config.js';
 
 const ToolsSection = {
     version: '2.0.0',
@@ -17,14 +20,37 @@ const ToolsSection = {
     // Simple page list for navigation
     pages: [
         '#tools',
+        // Utilities
         '#tools/tool-test',
+        '#tools/algorithms-test-lab',
         '#tools/font-analysis',
-        '#tools/color-quantizer',
-        '#tools/pixel-tiler',
         '#tools/polygon-calculator',
-        '#tools/asteroid-belt',
+        '#tools/about-you',
+        '#tools/media-manager',
+        // Processors
+        '#tools/colour-quantizer',
+        '#tools/pixel-tiler',
+        '#tools/image23d',
+        '#tools/ascii-art-generator',
+        '#tools/smart-halftone',
+        '#tools/topographic-dot-halftone',
+        '#tools/p5-to-video',
+        // Generators
         '#tools/clock',
-        '#tools/about-you'
+        '#tools/circles',
+        '#tools/torus',
+        '#tools/harmonics',
+        '#tools/lissajous',
+        '#tools/squares',
+        '#tools/cymatics',
+        '#tools/wave-interference',
+        '#tools/generative-pattern',
+        '#tools/unified-pattern',
+        '#tools/moire-generator',
+        '#tools/interference-figure',
+        '#tools/ribbon-breeze',
+        '#tools/tile-mosaic',
+        '#tools/wave-equation-synth',
     ],
     
     /**
@@ -33,9 +59,9 @@ const ToolsSection = {
      * @param {HTMLElement} container - Content container
      * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
-    handleRoute(subsection, container, callbacks) {
+    async handleRoute(subsection, container, callbacks) {
         callbacks = callbacks || {};
-        console.log(`🔧 Tools Section v${this.version} handling route: ${subsection || 'index'}`);
+        window.debugLog('TOOLS', `🔧 Tools Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
@@ -47,96 +73,284 @@ const ToolsSection = {
         if (!subsection) {
             this.renderToolsIndex();
         } else {
-            this.renderTool(subsection);
+            await this.renderTool(subsection);
         }
     },
     
     /**
-     * Render tools index using ComponentLibrary SimpleTOC
+     * Render tools index using ComponentLibrary NumberedTOC (hierarchical)
      */
     renderToolsIndex() {
-        console.log('🔧 Rendering tools index with SimpleTOC component');
+        console.log('🔧 Rendering tools index with NumberedTOC component');
         
         // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
         this.currentContainer.classList.add('toc-container');
         
         // Apply proper body sizing for tools index (no subheader)
-        if (window.LayoutCalculator) {
-            const contentContainer = this.currentContainer.closest('.content-container');
-            if (contentContainer) {
-                const F = window.LayoutCalculator.F;
-                contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
-                contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
-                console.log('✅ Applied no-subheader body sizing for tools index');
+        const contentContainer = this.currentContainer.closest('.content-container');
+        if (contentContainer) {
+            // Add toc-container class for styling
+            contentContainer.classList.add('toc-container');
+            
+            // Reposition content container for no-subheader layout
+            if (window.MathematicalFoundation) {
+                const layout = window.MathematicalFoundation.computeLayout() || {};
+                const margin = window.MathematicalFoundation.Config?.margin || layout.marginLeft || 14;
+                const headerHeight = layout.headerHeight || 28;
+                const contentTop = margin + headerHeight;
+                contentContainer.style.top = `${contentTop}px`;
+                console.log(`✅ Applied no-subheader layout for tools index: top=${contentTop}px`);
             }
         }
         
-        // Define simple tools sections (direct navigation, no nesting)
-        const toolsSections = [
-            {
-                id: 'tool-test',
-                title: 'TOOL TEST UI',
-                description: 'Component testbed — demonstrates all UI components for tool pages including inputs, outputs, containers, and layout patterns.'
-            },
-            {
-                id: 'font-analysis',
-                title: 'FONT ANALYSIS',
-                description: 'Comprehensive font analysis with dynamic Google Fonts loading. Compare multiple fonts and analyze detailed metrics with mathematical precision.'
-            },
-            {
-                id: 'color-quantizer',
-                title: 'COLOR QUANTIZER',
-                description: 'Image color reduction with dithering algorithms'
-            },
-            {
-                id: 'pixel-tiler',
-                title: 'PIXEL TILER',
-                description: 'Create 2×2 pixel combinations from 4 source images with animation'
-            },
-            {
-                id: 'polygon-calculator',
-                title: 'POLYGON CALCULATOR',
-                description: 'Interactive polygon geometry with mathematical precision and SVG export'
-            },
-            {
-                id: 'asteroid-belt',
-                title: 'ASTEROID BELT',
-                description: 'Canvas-based asteroid belt visualization with configurable parameters and rotation animation'
-            },
-            {
-                id: 'clock',
-                title: 'CLOCK',
-                description: 'Real-time solar system visualization showing planetary positions using NASA JPL Keplerian elements. Yellow dot shows your position on Earth.'
-            },
-            {
-                id: 'about-you',
-                title: 'ABOUT YOU',
-                description: 'Browser fingerprinting and tracking demonstration — see everything a website can collect about you'
-            }
-        ];
+        // Create tools title
+        const title = new ComponentLibrary.Heading({
+            level: 1,
+            content: 'TOOLS'
+        });
+        this.componentInstances.push(title);
+        this.currentContainer.appendChild(title.render());
         
-        // Create simple TOC component using ComponentLibrary with dependencies
-        const tocComponent = new ComponentLibrary.SimpleTOC({
-            sections: toolsSections,
-            onItemClick: (item) => this.handleToolClick(item)
+        const description = new ComponentLibrary.Paragraph({
+            content: 'Select a tool to use. Tools are organized by category and function.'
+        });
+        this.componentInstances.push(description);
+        this.currentContainer.appendChild(description.render());
+
+        // Create hierarchical TOC data
+        const toolsTOCData = this.prepareToolsTOCData();
+        
+        // Create numbered TOC component using ComponentLibrary with dependencies
+        const tocComponent = new ComponentLibrary.NumberedTOC({
+            sections: toolsTOCData,
+            onItemClick: (item) => this.handleToolClick(item),
+            collapsible: true, // Enable collapsible category sections
+            showCategories: true
         }, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         
         this.componentInstances.push(tocComponent);
         this.currentContainer.appendChild(tocComponent.render());
         
-        console.log('✅ Tools index rendered with SimpleTOC component');
+        console.log('✅ Tools index rendered with NumberedTOC component');
     },
     
     /**
-     * Handle tool click from SimpleTOC
+     * Prepare hierarchical TOC data for NumberedTOC component
+     */
+    prepareToolsTOCData() {
+        return [
+            {
+                title: 'GENERATIVE ART',
+                description: 'generative-art',
+                articles: [
+                    {
+                        id: 'clock',
+                        title: 'Solar System Clock',
+                        description: 'Real-time solar system visualization showing planetary positions using NASA JPL Keplerian elements',
+                        slug: 'clock'
+                    },
+                    {
+                        id: 'circles',
+                        title: 'Nested Circles',
+                        description: 'Nested circles rolling within each other - 3 display modes',
+                        slug: 'circles'
+                    },
+                    {
+                        id: 'torus',
+                        title: 'Toroidal Spirals',
+                        description: '3D toroidal spiral patterns in continuous rotation',
+                        slug: 'torus'
+                    },
+                    {
+                        id: 'harmonics',
+                        title: 'Musical Harmonics',
+                        description: 'Musical intervals as Lissajous patterns - 12 minute cycle',
+                        slug: 'harmonics'
+                    },
+                    {
+                        id: 'lissajous',
+                        title: 'Harmonic Manifold Lab',
+                        description: 'Parametric harmonic curves with presets and sequencer',
+                        slug: 'lissajous'
+                    },
+                    {
+                        id: 'squares',
+                        title: 'Squares Animation',
+                        description: 'Generative square patterns with timeline control',
+                        slug: 'squares'
+                    },
+                    {
+                        id: 'cymatics',
+                        title: 'Cymatics',
+                        description: 'Wave interference patterns - click canvas to add sources',
+                        slug: 'cymatics'
+                    },
+                    {
+                        id: 'wave-interference',
+                        title: 'Wave Interference',
+                        description: 'Advanced wave simulation with multiple sources and checkpoints',
+                        slug: 'wave-interference'
+                    },
+                    {
+                        id: 'generative-pattern',
+                        title: 'Generative Pattern',
+                        description: 'Algorithmic pattern generation with velocity fields and flow',
+                        slug: 'generative-pattern'
+                    },
+                    {
+                        id: 'unified-pattern',
+                        title: 'Tile Mosaic',
+                        description: 'Grammar-based tile patterns with procedural generation',
+                        slug: 'unified-pattern'
+                    },
+                    {
+                        id: 'moire-generator',
+                        title: 'Moiré Generator',
+                        description: 'Overlapping pattern interference creating moiré effects',
+                        slug: 'moire-generator'
+                    },
+                    {
+                        id: 'interference-figure',
+                        title: 'Interference Figure',
+                        description: 'Optical interference patterns with birefringence simulation',
+                        slug: 'interference-figure'
+                    },
+                    {
+                        id: 'ribbon-breeze',
+                        title: 'Ribbon Breeze',
+                        description: 'Flowing ribbon patterns with wind simulation',
+                        slug: 'ribbon-breeze'
+                    },
+                    {
+                        id: 'tile-mosaic',
+                        title: 'Tile Mosaic System',
+                        description: 'Wang tile based pattern generation with edge matching',
+                        slug: 'tile-mosaic'
+                    },
+                    {
+                        id: 'wave-equation-synth',
+                        title: 'Wave Equation Synth',
+                        description: 'Physical wave equation solver with boundary conditions',
+                        slug: 'wave-equation-synth'
+                    }
+                ]
+            },
+            {
+                title: 'IMAGE PROCESSORS',
+                description: 'image-processors',
+                articles: [
+                    {
+                        id: 'colour-quantizer',
+                        title: 'Colour Quantizer',
+                        description: 'Image colour reduction with dithering algorithms',
+                        slug: 'colour-quantizer'
+                    },
+                    {
+                        id: 'pixel-tiler',
+                        title: 'Pixel Tiler',
+                        description: 'Create 2×2 pixel combinations from 4 source images with animation',
+                        slug: 'pixel-tiler'
+                    },
+                    {
+                        id: 'image23d',
+                        title: 'Image 2→3D',
+                        description: 'Convert 2D images to 3D heightmaps and meshes',
+                        slug: 'image23d'
+                    },
+                    {
+                        id: 'ascii-art-generator',
+                        title: 'ASCII Art Generator',
+                        description: 'Convert images to ASCII art with multiple character sets and styles',
+                        slug: 'ascii-art-generator'
+                    },
+                    {
+                        id: 'smart-halftone',
+                        title: 'Smart Halftone',
+                        description: 'Intelligent halftone patterns with edge detection and gradient mapping',
+                        slug: 'smart-halftone'
+                    },
+                    {
+                        id: 'topographic-dot-halftone',
+                        title: 'Topographic Dot Halftone',
+                        description: 'Contour-based halftoning creating topographic map aesthetics',
+                        slug: 'topographic-dot-halftone'
+                    },
+                    {
+                        id: 'p5-to-video',
+                        title: 'P5.js to Video',
+                        description: 'Convert P5.js sketches to video with configurable FPS and frame count',
+                        slug: 'p5-to-video'
+                    }
+                ]
+            },
+            {
+                title: 'FABRICATION',
+                description: 'fabrication',
+                articles: [
+                    {
+                        id: 'multifilament-print',
+                        title: 'Multifilament Image Print',
+                        description: 'Convert images to multi-color 3D printable STL files using calibrated printer profiles',
+                        slug: 'multifilament-print'
+                    }
+                ]
+            },
+            {
+                title: 'UTILITIES',
+                description: 'utilities',
+                articles: [
+                    {
+                        id: 'tool-test',
+                        title: 'Tool Test UI',
+                        description: 'Component testbed — demonstrates all UI components for tool pages',
+                        slug: 'tool-test'
+                    },
+                    {
+                        id: 'algorithms-test-lab',
+                        title: 'Algorithm Test Lab',
+                        description: 'Dropdown-driven harness for exercising shared algorithms',
+                        slug: 'algorithms-test-lab'
+                    },
+                    {
+                        id: 'font-analysis',
+                        title: 'Font Analysis',
+                        description: 'Comprehensive font analysis with dynamic Google Fonts loading',
+                        slug: 'font-analysis'
+                    },
+                    {
+                        id: 'polygon-calculator',
+                        title: 'Polygon Calculator',
+                        description: 'Interactive polygon geometry with mathematical precision and SVG export',
+                        slug: 'polygon-calculator'
+                    },
+                    {
+                        id: 'about-you',
+                        title: 'About You',
+                        description: 'Browser fingerprinting and tracking demonstration',
+                        slug: 'about-you'
+                    },
+                    {
+                        id: 'media-manager',
+                        title: 'Gallery Uploader',
+                        description: 'Local-only gallery uploader/manager for batch uploads',
+                        slug: 'media-manager'
+                    }
+                ]
+            }
+        ];
+    },
+    
+    /**
+     * Handle tool click from NumberedTOC
      */
     handleToolClick(item) {
-        this.navigateToTool(item.id);
-        console.log(`🔧 Tool clicked: ${item.title} -> ${item.id}`);
+        const toolId = item.slug || item.id;
+        this.navigateToTool(toolId);
+        console.log(`🔧 Tool clicked: ${item.title} -> ${toolId}`);
     },
     
     /**
@@ -158,14 +372,36 @@ const ToolsSection = {
     getDropdownItems(currentSubsection) {
         const allTools = [
             { label: 'TOOLS INDEX', path: '#tools', isTOC: true },
+            // Utilities
             { label: 'TOOL TEST UI', path: '#tools/tool-test' },
+            { label: 'ALGORITHM TEST LAB', path: '#tools/algorithms-test-lab' },
             { label: 'FONT ANALYSIS', path: '#tools/font-analysis' },
-            { label: 'COLOR QUANTIZER', path: '#tools/color-quantizer' },
-            { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
             { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' },
-            { label: 'ASTEROID BELT', path: '#tools/asteroid-belt' },
+            { label: 'ABOUT YOU', path: '#tools/about-you' },
+            { label: 'MEDIA MANAGER', path: '#tools/media-manager' },
+            // Processors
+            { label: 'COLOUR QUANTIZER', path: '#tools/colour-quantizer' },
+            { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
+            { label: 'IMAGE 2→3D', path: '#tools/image23d' },
+            { label: 'ASCII ART', path: '#tools/ascii-art-generator' },
+            { label: 'SMART HALFTONE', path: '#tools/smart-halftone' },
+            { label: 'TOPO HALFTONE', path: '#tools/topographic-dot-halftone' },
+            // Generators
             { label: 'CLOCK', path: '#tools/clock' },
-            { label: 'ABOUT YOU', path: '#tools/about-you' }
+            { label: 'NESTED CIRCLES', path: '#tools/circles' },
+            { label: 'TOROIDAL SPIRALS', path: '#tools/torus' },
+            { label: 'HARMONICS', path: '#tools/harmonics' },
+            { label: 'LISSAJOUS LAB', path: '#tools/lissajous' },
+            { label: 'SQUARES', path: '#tools/squares' },
+            { label: 'CYMATICS', path: '#tools/cymatics' },
+            { label: 'WAVE INTERFERENCE', path: '#tools/wave-interference' },
+            { label: 'GENERATIVE PATTERN', path: '#tools/generative-pattern' },
+            { label: 'TILE MOSAIC', path: '#tools/unified-pattern' },
+            { label: 'MOIRÉ', path: '#tools/moire-generator' },
+            { label: 'INTERFERENCE FIGURE', path: '#tools/interference-figure' },
+            { label: 'RIBBON BREEZE', path: '#tools/ribbon-breeze' },
+            { label: 'TILE MOSAIC SYSTEM', path: '#tools/tile-mosaic' },
+            { label: 'WAVE EQ SYNTH', path: '#tools/wave-equation-synth' },
         ];
         
         const currentPath = `#tools/${currentSubsection}`;
@@ -187,13 +423,15 @@ const ToolsSection = {
         // Define all available tools in order for navigation
         const allTools = [
             { id: 'tool-test', title: 'Tool Test UI', description: 'Component testbed for tool pages', path: '#tools/tool-test' },
+            { id: 'algorithms-test-lab', title: 'Algorithm Test Lab', description: 'Dropdown-driven harness for algorithms library', path: '#tools/algorithms-test-lab' },
             { id: 'font-analysis', title: 'Font Analysis', description: 'Compare fonts and analyze detailed metrics with dynamic Google Fonts loading', path: '#tools/font-analysis' },
-            { id: 'color-quantizer', title: 'Color Quantizer', path: '#tools/color-quantizer' },
+            { id: 'image23d', title: 'Image 2→3D', description: 'Transform 2D images into 3D visualizations with depth mapping and perspective controls', path: '#tools/image23d' },
+            { id: 'colour-quantizer', title: 'Colour Quantizer', path: '#tools/colour-quantizer' },
             { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
             { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' },
-            { id: 'asteroid-belt', title: 'Asteroid Belt', path: '#tools/asteroid-belt' },
             { id: 'clock', title: 'Clock', path: '#tools/clock' },
-            { id: 'about-you', title: 'About You', path: '#tools/about-you' }
+            { id: 'about-you', title: 'About You', path: '#tools/about-you' },
+            { id: 'media-manager', title: 'Media Manager', description: 'Upload, edit, and manage gallery images', path: '#tools/media-manager' },
         ];
         
         return {
@@ -241,17 +479,205 @@ const ToolsSection = {
     },
     
     /**
-     * Render individual tool
+     * Render individual tool - LAZY LOADING
+     * Tools are loaded on-demand via AssetLoader
      */
-    renderTool(toolId) {
+    async renderTool(toolId) {
         console.log(`🔧 Rendering tool: ${toolId}`);
         
+        const normalizedToolId = (toolId || '').trim().toLowerCase();
+        
+        // Show loading indicator (use original label for readability)
+        this.showLoadingIndicator(toolId || normalizedToolId);
+        
+        try {
+            // Use AssetLoader to lazy load the tool
+            const hasAssetLoader = window.AssetLoader && window.AssetLoader.toolRegistry;
+            const toolInRegistry = hasAssetLoader && window.AssetLoader.toolRegistry[normalizedToolId];
+            
+            console.log(`📦 Lazy load check: AssetLoader=${!!window.AssetLoader}, registry=${!!hasAssetLoader}, tool=${normalizedToolId}, found=${!!toolInRegistry}`);
+            
+            if (toolInRegistry) {
+                await this.renderLazyTool(normalizedToolId);
+            } else {
+                // Fallback for tools not in registry (legacy)
+                console.log(`⚠️ Tool ${normalizedToolId} not in AssetLoader registry, using legacy loader`);
+                this.renderLegacyTool(normalizedToolId);
+            }
+        } catch (err) {
+            console.error(`❌ Failed to load tool: ${normalizedToolId}`, err);
+            this.showToolError(normalizedToolId || toolId, err.message);
+        }
+    },
+    
+    /**
+     * Show loading indicator while tool loads
+     */
+    showLoadingIndicator(toolId) {
+        const F = window.MathematicalFoundation?.F || 14;
+        this.currentContainer.innerHTML = `
+            <div style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                min-height: ${F * 20}px;
+                font-family: 'Atkinson Hyperlegible', monospace;
+                font-size: ${F}px;
+                color: var(--c-text);
+            ">
+                <div style="text-align: center;">
+                    <div style="margin-bottom: ${F}px;">LOADING ${toolId.toUpperCase().replace(/-/g, ' ')}...</div>
+                    <div style="opacity: 0.6; font-size: ${F - 2}px;">Fetching assets</div>
+                </div>
+            </div>
+        `;
+    },
+    
+    /**
+     * Show error when tool fails to load
+     */
+    showToolError(toolId, message) {
+        const F = window.MathematicalFoundation?.F || 14;
+        this.currentContainer.innerHTML = `
+            <div style="padding: ${F * 2}px; color: var(--c-text);">
+                <h1 style="color: var(--vga-red); margin: 0 0 ${F}px 0;">
+                    FAILED TO LOAD: ${toolId.toUpperCase()}
+                </h1>
+                <p style="margin: 0 0 ${F}px 0;">${message}</p>
+                <button onclick="window.location.reload()" style="
+                    padding: ${F/2}px ${F}px;
+                    background: var(--c-text);
+                    color: var(--c-bg);
+                    border: none;
+                    cursor: pointer;
+                    font-family: 'Atkinson Hyperlegible', monospace;
+                ">RELOAD PAGE</button>
+            </div>
+        `;
+    },
+    
+    /**
+     * Render tool using lazy loading via AssetLoader
+     */
+    async renderLazyTool(toolId) {
+        // Tool components are now loaded directly in component-library.js
+
+        // Map tool IDs to their ES module imports
+        const toolImports = {
+            // ═══════════════════════════════════════════════════════════════════
+            // CORE - Infrastructure tools
+            // ═══════════════════════════════════════════════════════════════════
+            'tool-test': () => import('../tools/core/tool-test-ui.js'),
+
+            // ═══════════════════════════════════════════════════════════════════
+            // GENERATORS - Generative art tools
+            // ═══════════════════════════════════════════════════════════════════
+            'circles': () => import('../tools/generators/circles-tool.js'),
+            'torus': () => import('../tools/generators/torus-tool.js'),
+            'harmonics': () => import('../tools/generators/harmonics-tool.js'),
+            'lissajous': () => import('../tools/generators/lissajous-tool.js'),
+            'squares': () => import('../tools/generators/squares-tool.js'),
+            'cymatics': () => import('../tools/generators/cymatics-tool.js'),
+            'wave-interference': () => import('../tools/generators/wave-interference-tool.js'),
+            'generative-pattern': () => import('../tools/generators/generative-pattern.js'),
+            'unified-pattern': () => import('../tools/generators/unified-pattern.js'),
+            'moire-generator': () => import('../tools/generators/moire-generator.js'),
+            'interference-figure': () => import('../tools/generators/interference-figure.js'),
+            'ribbon-breeze': () => import('../tools/generators/ribbon-breeze.js'),
+            'tile-mosaic': () => import('../tools/generators/tile-mosaic.js'),
+            'wave-equation-synth': () => import('../tools/generators/wave-equation-synth.js'),
+            'clock': () => import('../tools/generators/solar-system-tool.js'),
+
+            // ═══════════════════════════════════════════════════════════════════
+            // PROCESSORS - Image manipulation tools
+            // ═══════════════════════════════════════════════════════════════════
+            'ascii-art-generator': () => import('../tools/processors/ascii-art-generator.js'),
+            'smart-halftone': () => import('../tools/processors/smart-halftone.js'),
+            'topographic-dot-halftone': () => import('../tools/processors/topographic-dot-halftone.js'),
+            'colour-quantizer': () => import('../tools/processors/colour-quantizer-toolbase.js'),
+            'pixel-tiler': () => import('../tools/processors/pixel-tiler.js'),
+            'image23d': () => import('../tools/processors/image23d.js'),
+            'p5-to-video': () => import('../tools/processors/p5-to-video.js'),
+
+            // ═══════════════════════════════════════════════════════════════════
+            // FABRICATION - Physical making tools
+            // ═══════════════════════════════════════════════════════════════════
+            'multifilament-print': () => import('../tools/fabrication/multifilament-print-tool.js'),
+
+            // ═══════════════════════════════════════════════════════════════════
+            // UTILITIES - Support tools
+            // ═══════════════════════════════════════════════════════════════════
+            'font-analysis': () => import('../tools/utilities/font-analysis-tool.js'),
+            'polygon-calculator': () => import('../tools/utilities/polygon-calculator.js'),
+            'about-you': () => import('../tools/utilities/about-you-tool.js'),
+            'algorithms-test-lab': () => import('../tools/utilities/algorithms-test-lab.js'),
+            'media-manager': () => import('../tools/utilities/media-manager.js')
+        };
+
+        const importFn = toolImports[toolId];
+        if (!importFn) {
+            throw new Error(`Unknown tool: ${toolId}`);
+        }
+
+        // Load the tool module
+        console.log(`🔄 Importing tool module for ${toolId}...`);
+        const module = await importFn();
+        console.log(`✅ Module loaded for ${toolId}, finding class...`);
+        const ToolClass = module.default || Object.values(module).find(cls => typeof cls === 'function' && cls.name.endsWith('Tool'));
+        console.log(`🎯 Found ToolClass:`, ToolClass?.name || 'none');
+
+        if (!ToolClass) {
+            throw new Error(`Could not find tool class in module for ${toolId}`);
+        }
+
+        // Clear loading indicator
+        this.currentContainer.innerHTML = '';
+        
+        // Add tool-viewport class to content-container to remove padding
+        // This ensures ToolBase fills the container edge-to-edge (like tool-test-ui does)
+        const contentContainer = this.currentContainer.closest('.content-container') || 
+                                 (this.currentContainer.classList?.contains('content-container') ? this.currentContainer : null);
+        if (contentContainer) {
+            contentContainer.classList.add('tool-viewport');
+        }
+
+        try {
+            // Instantiate tool
+            const tool = new ToolClass(this.currentContainer, {
+                ComponentLibrary: window.ComponentLibrary,
+                MF: LayoutCalculator,
+                Resize: window.ResizeManager
+            });
+            
+            // Call render() if it exists (for tools that don't auto-render in constructor)
+            if (tool && typeof tool.render === 'function') {
+                tool.render();
+            }
+            
+            this.componentInstances.push(tool);
+
+            window.debugLog('TOOLS', `✅ Tool rendered: ${toolId}`);
+        } catch (instantiationError) {
+            console.error(`❌ Tool instantiation failed for ${toolId}:`, instantiationError);
+            this.showToolError(toolId, `Instantiation failed: ${instantiationError.message}`);
+        }
+    },
+    
+    /**
+     * Fallback for tools not in AssetLoader registry
+     */
+    renderLegacyTool(toolId) {
         switch (toolId) {
-            case 'tool-test':
-                this.renderToolTest();
+            // tool-test now uses AssetLoader (removed from legacy)
+            case 'algorithms-test-lab':
+                this.renderAlgorithmsTestLab();
                 break;
             case 'font-analysis':
                 this.renderFontAnalysis();
+                break;
+            case 'image23d':
+                this.renderImage23D();
                 break;
             case 'pixel-tiler':
                 this.renderPixelTiler();
@@ -259,17 +685,36 @@ const ToolsSection = {
             case 'polygon-calculator':
                 this.renderPolygonCalculator();
                 break;
-            case 'color-quantizer':
-                this.renderColorQuantizer();
-                break;
-            case 'asteroid-belt':
-                this.renderAsteroidBelt();
+            case 'colour-quantizer':
+                this.renderColourQuantizer();
                 break;
             case 'clock':
                 this.renderClock();
                 break;
             case 'about-you':
                 this.renderAboutYou();
+                break;
+            // Generative Art Tools (ToolBase)
+            case 'lissajous':
+                this.renderToolBaseTool('LissajousTool');
+                break;
+            case 'circles':
+                this.renderToolBaseTool('CirclesTool');
+                break;
+            case 'torus':
+                this.renderToolBaseTool('TorusTool');
+                break;
+            case 'harmonics':
+                this.renderToolBaseTool('HarmonicsTool');
+                break;
+            case 'squares':
+                this.renderToolBaseTool('SquaresTool');
+                break;
+            case 'cymatics':
+                this.renderToolBaseTool('CymaticsTool');
+                break;
+            case 'wave-interference':
+                this.renderToolBaseTool('WaveInterferenceTool');
                 break;
             default:
                 this.renderGenericTool(toolId);
@@ -316,8 +761,6 @@ const ToolsSection = {
         });
         this.componentInstances.push(description);
         this.currentContainer.appendChild(description.render());
-        
-        this.addBackLink();
     },
     
     /**
@@ -365,8 +808,6 @@ const ToolsSection = {
         
         this.componentInstances.push(testCanvas);
         this.currentContainer.appendChild(testCanvas.render());
-        
-        this.addBackLink();
     },
     
     /**
@@ -407,135 +848,152 @@ const ToolsSection = {
         });
         this.componentInstances.push(testButton);
         this.currentContainer.appendChild(testButton.render());
-        
-        this.addBackLink();
     },
 
     /**
-     * Render Color Quantizer Tool
+     * Render Colour Quantizer Tool - ToolBase version
      */
-    renderColorQuantizer() {
-        // Use window.ColorQuantizer (follows PolygonCalculator pattern)
-        const tool = new window.ColorQuantizer(this.currentContainer, {
+    renderColourQuantizer() {
+        // Full viewport mode (ToolBase handles container setup via mount())
+        const tool = new window.ColourQuantizerTool(this.currentContainer, {
+            MF: LayoutCalculator,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
+    },
+    
+    /**
+     * Render Algorithms Test Lab - ToolBase harness for algorithms
+     */
+    renderAlgorithmsTestLab() {
+        const tool = new window.AlgorithmsTestLab(this.currentContainer, {
             MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
         tool.render();
-        this.addBackLink();
     },
     
     /**
      * Render Font Analysis Tool - Combined font comparison and metrics analysis
      */
     renderFontAnalysis() {
+        // Full viewport mode (ToolBase handles container setup via mount())
         const tool = new window.FontAnalysisTool(this.currentContainer, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
         tool.render();
-        this.addBackLink();
+    },
+
+    renderImage23D() {
+        // Full viewport mode (ToolBase handles container setup via mount())
+        const tool = new window.Image23DTool(this.currentContainer, {
+            MF: window.MathematicalFoundation,
+            Resize: window.ResizeManager
+        });
+        this.componentInstances.push(tool);
+        tool.render();
     },
     
     /**
      * Render Pixel Tiler Tool
      */
     renderPixelTiler() {
+        // Full viewport mode (ToolBase handles container setup via mount())
         const tool = new window.PixelTiler(this.currentContainer, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
         tool.render();
-        this.addBackLink();
     },
     
     /**
      * Render Polygon Calculator Tool
      */
     renderPolygonCalculator() {
+        // Full viewport mode (ToolBase handles container setup via mount())
         const tool = new window.PolygonCalculator(this.currentContainer, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
         tool.render();
-        this.addBackLink();
-    },
-    
-    /**
-     * Render Asteroid Belt Tool - Canvas visualization
-     */
-    renderAsteroidBelt() {
-        const tool = new window.AsteroidBeltTool(this.currentContainer, {
-            MF: window.LayoutCalculator,
-            Resize: window.ResizeManager
-        });
-        this.componentInstances.push(tool);
-        tool.render();
-        this.addBackLink();
     },
     
     /**
      * Render Clock Tool - Solar System visualization with planetary positions
      */
     renderClock() {
+        // Full viewport mode (ToolBase handles container setup via mount())
         const tool = new window.SolarSystemTool(this.currentContainer, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
         tool.render();
-        this.addBackLink();
     },
     
     /**
      * Render About You Tool - Browser fingerprinting demonstration
      */
     renderAboutYou() {
+        // Full viewport mode (ToolBase handles container setup via mount())
         const tool = new window.AboutYouTool(this.currentContainer, {
-            MF: window.LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
         this.componentInstances.push(tool);
         tool.render();
-        this.addBackLink();
     },
     
     /**
      * Render Tool Test UI - Component testbed
      */
-    renderToolTest() {
-        console.log('🧪 Rendering Tool Test UI - start');
-        console.log('🧪 window.ToolTestUI exists:', !!window.ToolTestUI);
+    /**
+     * Render a ToolBase-powered tool (generative art tools)
+     */
+    renderToolBaseTool(toolClassName) {
+        console.log(`🎨 Rendering ToolBase tool: ${toolClassName}`);
         
         try {
-            // Full viewport mode for tool test
-            this.currentContainer.style.padding = '0';
-            
-            if (!window.ToolTestUI) {
-                throw new Error('ToolTestUI class not found on window');
+            const ToolClass = window[toolClassName];
+            if (!ToolClass) {
+                throw new Error(`${toolClassName} class not found on window`);
             }
             
-            const tool = new window.ToolTestUI(this.currentContainer, {
-                MF: window.LayoutCalculator,
+            const tool = new ToolClass(this.currentContainer, {
+                MF: LayoutCalculator,
                 Resize: window.ResizeManager
             });
             this.componentInstances.push(tool);
             tool.render();
-            console.log('🧪 ToolTestUI rendered successfully');
+            console.log(`✅ ${toolClassName} rendered successfully`);
         } catch (err) {
-            console.error('🧪 ToolTestUI error:', err);
-            // Fallback UI
+            console.error(`❌ ${toolClassName} error:`, err);
             this.currentContainer.innerHTML = `
                 <div style="padding: 24px; color: var(--c-text);">
-                    <h1>TOOL TEST UI</h1>
+                    <h1>${toolClassName.replace('Tool', '').toUpperCase()}</h1>
                     <p style="color: var(--vga-red);">Error: ${err.message}</p>
                     <pre style="font-size: 12px; background: #222; padding: 12px; overflow: auto;">${err.stack}</pre>
                 </div>
             `;
         }
+    },
+    
+    renderToolTest() {
+        if (typeof window.ToolTestUI === 'undefined') {
+            console.error('ToolTestUI class not found on window');
+            this.container.innerHTML = '<p>Error: ToolTestUI not loaded</p>';
+            return;
+        }
+        this.currentTool = new window.ToolTestUI(
+            window.App.contentContainer,
+            { MF: window.MathematicalFoundation }
+        );
     },
     
     /**
@@ -554,28 +1012,6 @@ const ToolsSection = {
         });
         this.componentInstances.push(description);
         this.currentContainer.appendChild(description.render());
-        
-        this.addBackLink();
-    },
-    
-    /**
-     * Add back navigation link
-     */
-    addBackLink() {
-        const backParagraph = new ComponentLibrary.Paragraph({
-            content: '← Back to Tools'
-        });
-        this.componentInstances.push(backParagraph);
-        
-        const backElement = backParagraph.render();
-        backElement.classList.add('clickable');
-        backElement.addEventListener('click', () => {
-            if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
-                this.navigationCallbacks.navigateToSection('tools');
-            }
-        });
-        
-        this.currentContainer.appendChild(backElement);
     },
     
     /**
@@ -1647,6 +2083,14 @@ const ToolsSection = {
     cleanup() {
         if (this.currentContainer) {
             this.currentContainer.innerHTML = '';
+            // Remove layout classes
+            this.currentContainer.classList.remove('toc-container');
+            
+            // Remove tool-viewport class from content-container
+            const contentContainer = this.currentContainer.closest('.content-container');
+            if (contentContainer) {
+                contentContainer.classList.remove('tool-viewport');
+            }
         }
         
         // Destroy tracked components using ComponentLibrary method
@@ -1673,4 +2117,4 @@ const ToolsSection = {
 // Global registration
 window.ToolsSection = ToolsSection;
 
-console.log(`🔧 Tools Section v${ToolsSection.version} ready - Refactored with Canonical Components`);
+window.debugLog('INIT', `🔧 Tools Section v${ToolsSection.version} ready - Refactored with Canonical Components`);

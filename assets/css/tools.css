@@ -1,0 +1,214 @@
+/**
+ * Tool Styles - Interactive Tools
+ *
+ * Styles for ToolBase components, canvas areas, sidebar layouts
+ * All tool-specific visual styling goes here
+ */
+
+/* =================================================================
+   TOOLBASE STYLES
+   ================================================================= */
+
+/* Tool container and viewport */
+.tool-viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Tool base layout - responsive grid/flex */
+.tool-base[data-orientation="portrait"] {
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-base[data-orientation="landscape"] {
+    display: grid;
+    grid-template-columns: var(--sidebar-width, 420px) 1fr;
+    gap: 0;
+}
+
+.tool-base {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--c-bg);
+}
+
+/* Tool sidebar */
+.tool-sidebar {
+    background: var(--c-bg);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Landscape layout */
+.tool-base[data-orientation="landscape"] .tool-sidebar {
+    height: 100%;
+    border-right: 1px solid var(--c-border);
+}
+
+/* Portrait layout */
+.tool-base[data-orientation="portrait"] .tool-sidebar {
+    flex: 1;
+    min-height: 0;
+    border-top: 1px solid var(--c-border);
+}
+
+/* Tool canvas column */
+.tool-canvas-column {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+}
+
+/* Landscape layout */
+.tool-base[data-orientation="landscape"] .tool-canvas-column {
+    height: 100%;
+}
+
+/* Portrait layout */
+.tool-base[data-orientation="portrait"] .tool-canvas-column {
+    flex: 1;
+}
+
+/* Tool canvas area */
+.tool-canvas-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--c-bg);
+    min-height: 0;
+}
+
+/* Tool canvas wrapper */
+.tool-canvas-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Tool canvas element */
+.tool-canvas {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Tool tabs container */
+.tool-tabs-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tool-tab-bar {
+    position: relative;
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.tool-tabs-inner {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.tool-panels {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Tool tabs */
+.tool-tab {
+    flex: 1;
+    min-width: max-content;
+    height: calc(var(--f) * 2); /* 28px */
+    padding: 0 var(--f); /* 14px */
+    border: none;
+    border-right: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible', monospace;
+    font-size: var(--f);
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tool-tab:last-child {
+    border-right: none;
+}
+
+/* Tool blocks */
+.tool-block {
+    border-top: 1px solid var(--c-border);
+}
+
+.tool-block:first-child {
+    border-top: none;
+}
+
+.tool-block-header {
+    font-family: 'Atkinson Hyperlegible', monospace;
+    font-size: var(--f);
+    font-weight: bold;
+    color: var(--c-text);
+    text-transform: uppercase;
+    padding: var(--f);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.tool-block-content {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--f) / 2); /* 7px */
+    padding: var(--f);
+}
+
+/* Tool status display */
+.tool-status {
+    margin-top: var(--f);
+    font-family: 'Atkinson Hyperlegible', monospace;
+    font-size: var(--f);
+    color: var(--c-text);
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+/* Hide scrollbars for tool interfaces */
+.tool-tabs-inner::-webkit-scrollbar,
+.tool-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+/* =================================================================
+   FULLSCREEN OVERLAY
+   ================================================================= */
+
+.tool-fullscreen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--c-bg);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}

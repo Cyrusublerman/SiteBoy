@@ -13,4 +13,6 @@ export { ToggleGroup } from './ToggleGroup.js';
 export { FileInput } from './FileInput.js';
 export { ColorInput } from './ColorInput.js';
 export { EquationEditor } from './EquationEditor.js';
+export { DropZone } from './DropZone.js';
+export { FilamentPicker } from './FilamentPicker.js';
 

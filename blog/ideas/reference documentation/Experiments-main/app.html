@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4-Colour FDM Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+
+<!-- TAB BAR -->
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="grid">Grid</button>
+  <button class="tab-btn" data-tab="scan">Scan</button>
+  <button class="tab-btn" data-tab="image-process">Image Process</button>
+  <button class="tab-btn" data-tab="model-builder">Model Builder</button>
+  <button class="tab-btn" data-tab="export">Export</button>
+  <button class="tab-btn" data-tab="docs">Docs</button>
+</nav>
+
+<!-- TAB 1: GRID -->
+<div class="tab-view active" id="tab-grid">
+  <div class="left-column">
+
+    <!-- Filament Picker -->
+    <section class="control-group">
+      <h3>Filament Picker</h3>
+      <div class="selected-colours-row" id="selectedColoursRow">
+        <span class="placeholder">Select 2-10 filaments below</span>
+      </div>
+      <input type="text" class="search-bar" placeholder="Search filaments..." id="filamentSearch">
+      <div class="filament-swatch-grid" id="filamentGrid"></div>
+    </section>
+
+    <!-- Physical Constraints -->
+    <section class="control-group">
+      <h3>Physical Constraints</h3>
+      <div class="form-row">
+        <label>Bed Width (mm)</label>
+        <input type="number" id="bedW" value="256" min="100">
+      </div>
+      <div class="form-row">
+        <label>Bed Height (mm)</label>
+        <input type="number" id="bedH" value="256" min="100">
+      </div>
+      <div class="form-row">
+        <label>Scan Width (mm)</label>
+        <input type="number" id="scanW" value="210" min="100">
+      </div>
+      <div class="form-row">
+        <label>Scan Height (mm)</label>
+        <input type="number" id="scanH" value="297" min="100">
+      </div>
+    </section>
+
+    <!-- Grid Z-Config -->
+    <section class="control-group">
+      <h3>Grid Z-Config</h3>
+      <div class="form-row">
+        <label>Layers per Tile</label>
+        <input type="number" id="layersPerTile" value="4" min="1" max="10">
+      </div>
+      <div class="form-row">
+        <label>Layer Height (mm)</label>
+        <input type="number" id="layerH" value="0.08" min="0.04" max="0.4" step="0.01">
+      </div>
+      <div class="form-row">
+        <label>Base Layers</label>
+        <input type="number" id="baseLayers" value="3" min="0" max="10">
+      </div>
+      <div class="form-row">
+        <label>Base Layer Colour</label>
+        <select id="baseColour">
+          <option value="-1">White (default)</option>
+        </select>
+      </div>
+      <div class="visualisation-box" id="zConfigViz">
+        <span class="placeholder">Side-view visualization</span>
+      </div>
+    </section>
+
+    <!-- Grid XY-Config -->
+    <section class="control-group">
+      <h3>Grid XY-Config</h3>
+      <div class="form-row">
+        <label>Tile Size (mm)</label>
+        <input type="number" id="tileSize" value="10" min="2" max="20" step="0.5">
+      </div>
+      <div class="form-row">
+        <label>Gap Size (mm)</label>
+        <input type="number" id="gapSize" value="1" min="0" max="5" step="0.5">
+      </div>
+      <div class="form-row">
+        <label>
+          <input type="checkbox" id="baseFill" checked>
+          Base Fill
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Multi-page Options</label>
+        <input type="number" id="pageCount" value="1" min="1" max="10" placeholder="Page count">
+      </div>
+      <div class="visualisation-box" id="xyConfigViz">
+        <span class="placeholder">Top-down visualization</span>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="control-group">
+      <h3>Actions</h3>
+      <button class="btn-primary" id="generateGrid">Generate Grid</button>
+      <div class="btn-group">
+        <button class="btn-secondary" id="exportGridJSON">Export Grid JSON</button>
+        <button class="btn-secondary" id="importGridJSON">Import Grid JSON</button>
+        <button class="btn-secondary" id="exportGridSTLs">Export STLs</button>
+        <button class="btn-secondary" id="exportRefImage">Export Reference Image</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="right-pane">
+    <div class="canvas-container">
+      <canvas id="gridCanvas"></canvas>
+      <div class="icon-btn-cluster">
+        <button class="btn-icon" title="Zoom In" id="gridZoomIn">+</button>
+        <button class="btn-icon" title="Zoom Out" id="gridZoomOut">−</button>
+        <button class="btn-icon" title="Reset" id="gridReset">⟲</button>
+      </div>
+      <button class="btn-info" title="Help">?</button>
+    </div>
+    <div class="stats-row" id="gridStats">
+      <div class="stat"><span class="stat-label">Sequences</span><span class="stat-value" id="statSeqs">0</span></div>
+      <div class="stat"><span class="stat-label">Rows</span><span class="stat-value" id="statRows">0</span></div>
+      <div class="stat"><span class="stat-label">Columns</span><span class="stat-value" id="statCols">0</span></div>
+      <div class="stat"><span class="stat-label">Size</span><span class="stat-value" id="statSize">0×0mm</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: SCAN -->
+<div class="tab-view" id="tab-scan">
+  <div class="left-column">
+
+    <!-- Scan List -->
+    <section class="control-group">
+      <h3>Scan List</h3>
+      <button class="btn-secondary" id="addScan">+ Add Scan</button>
+      <input type="file" id="scanFileInput" accept="image/*" style="display:none">
+      <div class="scan-list" id="scanList">
+        <p class="placeholder">No scans loaded</p>
+      </div>
+    </section>
+
+    <!-- Alignment -->
+    <section class="control-group">
+      <h3>Alignment</h3>
+      <div class="form-row">
+        <label>Offset X (px)</label>
+        <input type="number" id="alignOffsetX" value="0" step="1">
+      </div>
+      <div class="form-row">
+        <label>Offset Y (px)</label>
+        <input type="number" id="alignOffsetY" value="0" step="1">
+      </div>
+      <div class="form-row">
+        <label>Scale X</label>
+        <input type="number" id="alignScaleX" value="1" step="0.01" min="0.1" max="5">
+      </div>
+      <div class="form-row">
+        <label>Scale Y</label>
+        <input type="number" id="alignScaleY" value="1" step="0.01" min="0.1" max="5">
+      </div>
+      <div class="form-row">
+        <label>Dead Space (%)</label>
+        <input type="number" id="deadSpace" value="60" min="20" max="90">
+      </div>
+      <div class="btn-group">
+        <button class="btn-secondary" id="autoAlign">Auto-Align</button>
+        <button class="btn-tertiary" id="resetAlignment">Reset Alignment</button>
+      </div>
+    </section>
+
+    <!-- Analysis -->
+    <section class="control-group">
+      <h3>Analysis</h3>
+      <button class="btn-primary" id="analyseExtractPalette">Analyse & Extract Palette</button>
+      <div class="btn-group">
+        <button class="btn-secondary" id="exportAlignJSON">Export Alignment JSON</button>
+        <button class="btn-tertiary" id="removeDuplicates">Remove Duplicates</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="right-pane">
+    <div class="canvas-container">
+      <canvas id="scanCanvas"></canvas>
+      <div class="icon-btn-cluster">
+        <button class="btn-icon" title="Zoom In" id="scanZoomIn">+</button>
+        <button class="btn-icon" title="Zoom Out" id="scanZoomOut">−</button>
+        <button class="btn-icon" title="Toggle Overlay" id="scanToggleOverlay">⊞</button>
+        <button class="btn-icon" title="Reset" id="scanReset">⟲</button>
+      </div>
+      <button class="btn-info" title="Help">?</button>
+    </div>
+    <div class="palette-strip" id="paletteStrip">
+      <p class="placeholder">Palette will appear after analysis</p>
+    </div>
+    <div class="summary-metrics" id="scanMetrics">
+      <div class="metric"><span class="metric-label">Scanned</span><span class="metric-value" id="metricScanned">0</span></div>
+      <div class="metric"><span class="metric-label">Unique</span><span class="metric-value" id="metricUnique">0</span></div>
+      <div class="metric"><span class="metric-label">Duplicates</span><span class="metric-value" id="metricDups">0</span></div>
+      <div class="metric"><span class="metric-label">px/mm</span><span class="metric-value" id="metricPxMm">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: IMAGE PROCESS -->
+<div class="tab-view" id="tab-image-process">
+  <div class="left-column">
+
+    <!-- File Import -->
+    <section class="control-group">
+      <h3>File Import</h3>
+      <div class="upload-zone" id="imageUploadZone">
+        <p>Drag & drop image or click to upload</p>
+        <input type="file" id="imageFileInput" accept="image/*,.svg" style="display:none">
+      </div>
+      <div class="mode-display" id="modeDisplay">
+        <span class="mode-badge" id="modeBadge">Mode: Auto-detect</span>
+        <div class="mode-toggle">
+          <button class="btn-text" id="toggleToRaster">Raster</button>
+          <button class="btn-text" id="toggleToVector">Vector</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Raster Mode Controls -->
+    <section class="control-group mode-raster" id="rasterControls">
+      <h3>Raster Mode</h3>
+      <div class="form-row">
+        <label>Palette Source</label>
+        <label><input type="radio" name="paletteSrc" value="extracted" checked> Extracted (from scan)</label>
+        <label><input type="radio" name="paletteSrc" value="imported"> Import GPL</label>
+        <button class="btn-secondary" id="importGPL">Import GPL File</button>
+        <input type="file" id="gplFileInput" accept=".gpl" style="display:none">
+      </div>
+      <div class="form-row">
+        <label>Max Colours</label>
+        <input type="number" id="maxColours" value="4" min="2" max="340">
+      </div>
+      <div class="form-row">
+        <label>Min Detail (mm)</label>
+        <input type="number" id="minDetail" value="1.0" min="0.1" max="10" step="0.1">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" id="dithering" checked> Floyd-Steinberg Dithering</label>
+      </div>
+      <div class="form-row">
+        <label>Edge Threshold</label>
+        <input type="range" id="edgeThreshold" min="0" max="255" value="128">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" id="autoUpdate"> Auto-update Preview</label>
+      </div>
+      <button class="btn-primary" id="quantiseImage">Quantise Image</button>
+      <button class="btn-tertiary" id="resetRaster">Reset Settings</button>
+    </section>
+
+    <!-- Vector Mode Controls -->
+    <section class="control-group mode-vector hidden" id="vectorControls">
+      <h3>Vector Mode</h3>
+      <div class="form-row">
+        <label>Simplify Tolerance</label>
+        <input type="number" id="simplifyTol" value="1.0" min="0" max="10" step="0.1">
+      </div>
+      <div class="form-row">
+        <label>Merge Adjacent Paths</label>
+        <input type="checkbox" id="mergePaths" checked>
+      </div>
+      <div class="form-row">
+        <label>Convert Stroke to Fill</label>
+        <input type="checkbox" id="strokeToFill">
+      </div>
+      <div class="form-row">
+        <label>Colour Threshold</label>
+        <input type="range" id="colourThreshold" min="0" max="100" value="10">
+      </div>
+      <button class="btn-primary" id="processVector">Process Vector</button>
+      <button class="btn-tertiary" id="resetVector">Reset Settings</button>
+    </section>
+
+  </div>
+
+  <div class="right-pane">
+    <div class="canvas-container">
+      <canvas id="imageProcessCanvas"></canvas>
+      <div class="icon-btn-cluster">
+        <button class="btn-icon" title="Show Original" id="showOriginal">O</button>
+        <button class="btn-icon" title="Show Processed" id="showProcessed">P</button>
+        <button class="btn-icon" title="Zoom In" id="imgZoomIn">+</button>
+        <button class="btn-icon" title="Zoom Out" id="imgZoomOut">−</button>
+        <button class="btn-icon" title="Reset" id="imgReset">⟲</button>
+      </div>
+      <button class="btn-info" title="Help">?</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: MODEL BUILDER -->
+<div class="tab-view" id="tab-model-builder">
+  <div class="left-column">
+
+    <!-- Input Source -->
+    <section class="control-group">
+      <h3>Input Source</h3>
+      <label><input type="radio" name="modelSrc" value="raster" checked> Raster Output</label>
+      <label><input type="radio" name="modelSrc" value="vector"> Vector Output</label>
+      <label><input type="radio" name="modelSrc" value="grid"> Grid Test</label>
+    </section>
+
+    <!-- Geometry Options (Raster) -->
+    <section class="control-group geom-raster" id="geomRaster">
+      <h3>Geometry (Raster)</h3>
+      <div class="form-row">
+        <label>Height Scale</label>
+        <input type="number" id="heightScale" value="1.0" min="0.1" max="10" step="0.1">
+      </div>
+      <div class="form-row">
+        <label>Min Height (mm)</label>
+        <input type="number" id="minHeight" value="0.2" min="0.04" max="5" step="0.01">
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" id="smoothing"> Enable Smoothing</label>
+      </div>
+    </section>
+
+    <!-- Geometry Options (Vector) -->
+    <section class="control-group geom-vector hidden" id="geomVector">
+      <h3>Geometry (Vector)</h3>
+      <div class="form-row">
+        <label>Extrusion Depth (mm)</label>
+        <input type="number" id="extrusionDepth" value="0.2" min="0.04" max="10" step="0.01">
+      </div>
+      <div class="form-row">
+        <label>Bevel Size</label>
+        <input type="number" id="bevelSize" value="0" min="0" max="2" step="0.05">
+      </div>
+    </section>
+
+    <!-- General Options -->
+    <section class="control-group">
+      <h3>General</h3>
+      <div class="form-row">
+        <label>Merge Strategy</label>
+        <select id="mergeStrategy">
+          <option value="none">No Merge</option>
+          <option value="colour">Merge by Colour</option>
+          <option value="layer">Merge by Layer</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Mesh Mapping</label>
+        <select id="meshMapping">
+          <option value="colour">One Mesh per Colour</option>
+          <option value="layer">One Mesh per Layer</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="control-group">
+      <h3>Actions</h3>
+      <button class="btn-primary" id="generateModel">Generate Model</button>
+      <button class="btn-secondary" id="resetModel">Reset Model</button>
+    </section>
+
+  </div>
+
+  <div class="right-pane">
+    <div class="viewer-container" id="modelViewer">
+      <model-viewer id="viewer3d" camera-controls touch-action="pan-y"></model-viewer>
+      <div class="icon-btn-cluster">
+        <button class="btn-icon" title="Front View" id="viewFront">F</button>
+        <button class="btn-icon" title="Top View" id="viewTop">T</button>
+        <button class="btn-icon" title="Side View" id="viewSide">S</button>
+        <button class="btn-icon" title="Toggle Grid" id="toggleGrid">⊞</button>
+      </div>
+      <button class="btn-info" title="Help">?</button>
+    </div>
+    <div class="mesh-list" id="meshList">
+      <h4>Meshes</h4>
+      <div class="mesh-items" id="meshItems">
+        <p class="placeholder">No model generated yet</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: EXPORT -->
+<div class="tab-view" id="tab-export">
+  <div class="left-column">
+
+    <!-- Export Options -->
+    <section class="control-group">
+      <h3>Export Options</h3>
+      <label><input type="checkbox" id="expSTLPerColour" checked> STL per Colour</label>
+      <label><input type="checkbox" id="expSTLPerLayer"> STL per Layer</label>
+      <label><input type="checkbox" id="expSTLMerged"> Merged STL</label>
+      <label><input type="checkbox" id="exp3MF"> 3MF Format</label>
+      <label><input type="checkbox" id="expPaletteJSON" checked> Palette JSON</label>
+      <label><input type="checkbox" id="expGridJSON"> Grid JSON</label>
+      <label><input type="checkbox" id="expLogs"> Export Logs</label>
+    </section>
+
+    <!-- Actions -->
+    <section class="control-group">
+      <h3>Actions</h3>
+      <button class="btn-primary" id="runExport">Run Export</button>
+      <button class="btn-secondary" id="exportProjectArchive">Export Project Archive</button>
+    </section>
+
+  </div>
+
+  <div class="right-pane">
+    <div class="summary-card" id="exportSummary">
+      <h3>Project Summary</h3>
+      <div class="summary-content">
+        <p><strong>Filaments:</strong> <span id="sumFilaments">—</span></p>
+        <p><strong>Grid Sequences:</strong> <span id="sumSequences">—</span></p>
+        <p><strong>Scans:</strong> <span id="sumScans">—</span></p>
+        <p><strong>Image:</strong> <span id="sumImage">—</span></p>
+        <p><strong>Model Meshes:</strong> <span id="sumMeshes">—</span></p>
+        <div class="swatch-row" id="sumSwatches"></div>
+      </div>
+      <div class="nav-links">
+        <button class="btn-text" data-nav="grid">← Back to Grid</button>
+        <button class="btn-text" data-nav="scan">← Back to Scan</button>
+        <button class="btn-text" data-nav="model-builder">← Back to Model</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: DOCS -->
+<div class="tab-view" id="tab-docs">
+  <div class="right-pane" style="grid-column: 1 / -1;">
+    <div class="docs-content" id="docsContent">
+      <h1>Multifilament Image Print - Technical Documentation</h1>
+
+      <h2 id="overview">Overview</h2>
+      <p>This application implements a complete workflow for creating multi-colour FDM (Fused Deposition Modeling) prints through a calibration-based approach. The system generates a physical colour palette by printing all possible filament layer combinations, scanning them, and using those scanned colours to accurately reproduce artwork.</p>
+
+      <h2 id="workflow">Core Workflow</h2>
+      <ol>
+        <li><strong>Grid Generation:</strong> Algorithmic generation of all possible colour combinations</li>
+        <li><strong>Physical Calibration:</strong> Print and scan the grid to capture actual colour mixing results</li>
+        <li><strong>Image Quantization:</strong> Map artwork colours to calibrated palette</li>
+        <li><strong>3D Model Generation:</strong> Convert colour data to layered 3D geometry</li>
+        <li><strong>Export:</strong> Generate STL files with proper per-filament separation</li>
+      </ol>
+
+      <h2 id="sequence-generation">Sequence Generation Algorithm</h2>
+
+      <h3>Mathematical Foundation</h3>
+      <p>For <code>N</code> filament colours and <code>M</code> layers per tile, the system generates all valid sequences where:</p>
+      <ul>
+        <li>Each layer can be: empty (0) or filled with filament i (1 to N)</li>
+        <li>Sequences must have no gaps: no non-zero layer can appear after a zero layer</li>
+        <li>At least one layer must be non-zero (reject all-empty sequences)</li>
+      </ul>
+
+      <h3>Generation Process</h3>
+      <pre><code>function generateSequences(N, M):
+  sequences = []
+
+  function isValid(sequence):
+    // Reject all-empty
+    if all elements = 0: return false
+
+    // Reject sequences with gaps
+    foundZero = false
+    for each value in sequence:
+      if value = 0:
+        foundZero = true
+      else if foundZero:
+        return false  // Non-zero after zero
+    return true
+
+  function generate(current, depth):
+    if depth = M:
+      if isValid(current):
+        sequences.append(copy(current))
+      return
+
+    // If last layer was zero, only add zeros
+    if current.last() = 0:
+      generate(current + [0], depth + 1)
+    else:
+      // Try all filaments (0 to N)
+      for i in 0..N:
+        generate(current + [i], depth + 1)
+
+  generate([], 0)
+  return sequences</code></pre>
+
+      <h3>Sequence Count</h3>
+      <p>The number of valid sequences grows according to:</p>
+      <p><code>S(N, M) ≈ (N+1)^M / 2</code> (approximate, actual count excludes invalid patterns)</p>
+      <p>Examples:</p>
+      <ul>
+        <li>2 filaments, 4 layers: ~30 sequences</li>
+        <li>4 filaments, 4 layers: ~340 sequences</li>
+        <li>4 filaments, 5 layers: ~1700 sequences (requires multiple grids)</li>
+      </ul>
+
+      <h2 id="grid-layout">Grid Layout Calculation</h2>
+
+      <h3>Constraint Calculation</h3>
+      <pre><code>constraintWidth = min(bedWidth, scanWidth)
+constraintHeight = min(bedHeight, scanHeight)</code></pre>
+      <p>The effective constraint is the smaller of the printer bed size and scanner bed size, ensuring printed grids can be scanned.</p>
+
+      <h3>Capacity Calculation</h3>
+      <pre><code>tileStep = tileSize + gapSize
+tilesPerRow = floor(constraintWidth / tileStep)
+tilesPerCol = floor(constraintHeight / tileStep)
+maxCapacity = tilesPerRow × tilesPerCol</code></pre>
+
+      <h3>Layout Optimization</h3>
+      <p>The algorithm seeks a square-ish layout that minimizes wasted space:</p>
+      <pre><code>// Start with square layout
+cols = ceil(sqrt(sequenceCount))
+rows = ceil(sequenceCount / cols)
+
+// Adjust to fit constraints
+while cols > tilesPerRow OR rows > tilesPerCol:
+  if cols > tilesPerRow:
+    rows = rows + 1
+    cols = ceil(sequenceCount / rows)
+  else:
+    cols = cols + 1
+    rows = ceil(sequenceCount / cols)
+
+  if rows × cols > maxCapacity:
+    error: cannot fit</code></pre>
+
+      <h3>Physical Dimensions</h3>
+      <pre><code>gridWidth = cols × (tileSize + gapSize) - gapSize
+gridHeight = rows × (tileSize + gapSize) - gapSize</code></pre>
+      <p>Note: The final gap is subtracted since there's no gap after the last tile.</p>
+
+      <h2 id="colour-simulation">Colour Simulation</h2>
+
+      <h3>Layer Averaging Method</h3>
+      <p>Predicted colour is calculated by averaging all non-empty layers:</p>
+      <pre><code>function simulateColour(sequence, colours):
+  r_sum = 0, g_sum = 0, b_sum = 0
+  count = 0
+
+  for each layer in sequence:
+    if layer > 0:  // Non-empty
+      filament = colours[layer - 1]
+      (r, g, b) = hexToRGB(filament.hex)
+      r_sum += r
+      g_sum += g
+      b_sum += b
+      count += 1
+
+  if count = 0:
+    return (255, 255, 255)  // White default
+
+  return (
+    round(r_sum / count),
+    round(g_sum / count),
+    round(b_sum / count)
+  )</code></pre>
+
+      <h3>Limitations</h3>
+      <p>This simple averaging model does not account for:</p>
+      <ul>
+        <li>Light transmission and absorption through layers</li>
+        <li>Filament translucency vs opacity</li>
+        <li>Layer order effects (bottom vs top layer dominance)</li>
+        <li>Print temperature and material flow characteristics</li>
+      </ul>
+      <p><strong>This is why physical calibration (scanning) is essential for accurate colour reproduction.</strong></p>
+
+      <h2 id="scan-alignment">Scan Alignment</h2>
+
+      <h3>Coordinate Transform</h3>
+      <p>The scan overlay applies a 2D transformation to align the grid with the scanned image:</p>
+      <pre><code>transform = translate(offsetX, offsetY) × scale(scaleX, scaleY)</code></pre>
+
+      <h3>Auto-Alignment Calculation</h3>
+      <pre><code>// Calculate pixels per millimeter
+pxPerMM_X = scanImageWidth / scanPhysicalWidth
+pxPerMM_Y = scanImageHeight / scanPhysicalHeight
+
+// Calculate grid size in pixels
+gridPX_W = gridMM_W × pxPerMM_X
+gridPX_H = gridMM_H × pxPerMM_Y
+
+// Calculate scale factors
+scaleX = gridPX_W / scanImageWidth
+scaleY = gridPX_H / scanImageHeight
+
+// Center alignment
+offsetX = (scanImageWidth - gridPX_W / scaleX) / 2
+offsetY = (scanImageHeight - gridPX_H / scaleY) / 2</code></pre>
+
+      <h3>Cell Coordinate Mapping</h3>
+      <pre><code>cellWidth = scanImageWidth / gridCols
+cellHeight = scanImageHeight / gridRows
+
+for row in 0..gridRows:
+  for col in 0..gridCols:
+    cellX = offsetX + col × cellWidth × scaleX
+    cellY = offsetY + row × cellHeight × scaleY</code></pre>
+
+      <h2 id="colour-extraction">Colour Extraction</h2>
+
+      <h3>Sampling Region</h3>
+      <p>Each cell is sampled from its center region to avoid edge artifacts:</p>
+      <pre><code>deadSpace = 0.60  // Default: sample center 60%
+
+sampleX = cellX + cellWidth × (1 - deadSpace) / 2
+sampleY = cellY + cellHeight × (1 - deadSpace) / 2
+sampleW = cellWidth × deadSpace
+sampleH = cellHeight × deadSpace</code></pre>
+
+      <h3>Colour Averaging</h3>
+      <pre><code>imageData = getImageData(sampleX, sampleY, sampleW, sampleH)
+r_sum = 0, g_sum = 0, b_sum = 0
+pixelCount = 0
+
+for each pixel in imageData:
+  r_sum += pixel.r
+  g_sum += pixel.g
+  b_sum += pixel.b
+  pixelCount += 1
+
+avgColour = (
+  round(r_sum / pixelCount),
+  round(g_sum / pixelCount),
+  round(b_sum / pixelCount)
+)</code></pre>
+
+      <h2 id="visualization-scaling">Grid Visualization Scaling</h2>
+
+      <h3>Display Scale Calculation</h3>
+      <p>The grid preview always fits the available canvas space while maintaining aspect ratio:</p>
+      <pre><code>// Available space (minus margins)
+availableW = containerWidth - 40
+availableH = containerHeight - 100
+
+// Calculate pixels per millimeter to fit constraint
+pxPerMM = min(
+  availableW / constraintWidth,
+  availableH / constraintHeight
+)
+
+// Convert physical dimensions to display pixels
+constraintPX_W = constraintWidth × pxPerMM
+constraintPX_H = constraintHeight × pxPerMM
+gridPX_W = gridMM_W × pxPerMM
+gridPX_H = gridMM_H × pxPerMM
+cellSizePX = tileMM × pxPerMM</code></pre>
+
+      <h3>Centering</h3>
+      <pre><code>// Center constraint boundary on canvas
+offsetX = (canvasWidth - constraintPX_W) / 2
+offsetY = (canvasHeight - constraintPX_H) / 2
+
+// Center grid within constraint boundary
+gridOffsetX = (constraintPX_W - gridPX_W) / 2
+gridOffsetY = (constraintPX_H - gridPX_H) / 2</code></pre>
+
+      <h2 id="multi-grid">Multi-Grid Handling</h2>
+
+      <h3>Capacity Check</h3>
+      <pre><code>if sequenceCount > maxCapacity:
+  pagesNeeded = ceil(sequenceCount / maxCapacity)
+
+  // Option 1: Generate first page only
+  sequences = sequences[0..maxCapacity]
+
+  // Option 2: Generate all pages (future enhancement)
+  for page in 0..pagesNeeded:
+    start = page × maxCapacity
+    end = min((page + 1) × maxCapacity, sequenceCount)
+    pageSequences = sequences[start..end]
+    generateGridPage(page, pageSequences)</code></pre>
+
+      <h2 id="stl-generation">STL Generation</h2>
+
+      <h3>Per-Filament Separation</h3>
+      <p>For each filament colour, the system generates a separate STL containing all layers of that colour:</p>
+      <pre><code>for each filament in colours:
+  geometry = []
+
+  for each sequence in grid:
+    for layerIndex in 0..M:
+      if sequence[layerIndex] = filament:
+        // Generate quad for this tile at this layer height
+        z = baseLayerHeight + layerIndex × layerHeight
+        addTileGeometry(geometry, tileX, tileY, z, tileSize)
+
+  exportSTL(filament.name + ".stl", geometry)</code></pre>
+
+      <h3>Z-Height Calculation</h3>
+      <pre><code>baseHeight = baseLayerCount × layerHeight
+
+for layerIndex in 0..layersPerTile:
+  layerZ = baseHeight + layerIndex × layerHeight</code></pre>
+
+      <h2 id="data-structures">Key Data Structures</h2>
+
+      <h3>Sequence</h3>
+      <pre><code>Sequence = [layer0, layer1, ..., layerM]
+where layer_i ∈ {0, 1, 2, ..., N}
+  0 = empty
+  1..N = filament index</code></pre>
+
+      <h3>Grid Data</h3>
+      <pre><code>{
+  sequences: Array&lt;Sequence&gt;,
+  rows: number,
+  cols: number,
+  tile: number (mm),
+  gap: number (mm),
+  colours: Array&lt;Colour&gt;,
+  width: number (mm),
+  height: number (mm),
+  emptyCells: Array&lt;number&gt;
+}</code></pre>
+
+      <h3>Sequence Map</h3>
+      <pre><code>Map&lt;RGBKey, SequenceData&gt;
+where:
+  RGBKey = "r,g,b" (string)
+  SequenceData = {
+    sequence: Sequence,
+    colours: Array&lt;Colour&gt;,
+    gridPosition: {row, col, index}
+  }</code></pre>
+
+      <h2 id="performance">Performance Considerations</h2>
+
+      <h3>Sequence Generation</h3>
+      <p>Complexity: O((N+1)^M) - Exponential in layers</p>
+      <p>For large N or M, generation can take seconds. Results are cached in application state.</p>
+
+      <h3>Canvas Rendering</h3>
+      <p>Complexity: O(rows × cols) - Linear in grid size</p>
+      <p>Each cell requires multiple draw operations. For grids >1000 cells, consider render optimizations.</p>
+
+      <h3>Colour Extraction</h3>
+      <p>Complexity: O(rows × cols × samplingArea)</p>
+      <p>Each cell samples hundreds to thousands of pixels. Use deadSpace parameter to reduce sampling area if performance issues occur.</p>
+
+      <h2 id="troubleshooting">Common Issues</h2>
+
+      <h3>Grid Too Large</h3>
+      <p><strong>Symptom:</strong> Red warning overlay, grid exceeds constraint boundary</p>
+      <p><strong>Solutions:</strong></p>
+      <ul>
+        <li>Reduce tile size</li>
+        <li>Increase gap size (may affect scan accuracy)</li>
+        <li>Use fewer layers per tile</li>
+        <li>Use fewer filament colours</li>
+        <li>Increase bed/scan size constraints</li>
+        <li>Accept multi-grid workflow (generate multiple grids)</li>
+      </ul>
+
+      <h3>Misaligned Scan</h3>
+      <p><strong>Symptom:</strong> Grid overlay doesn't match printed tiles</p>
+      <p><strong>Solutions:</strong></p>
+      <ul>
+        <li>Use "Auto-Align" button (calculates from physical dimensions)</li>
+        <li>Manually adjust offset X/Y (translation)</li>
+        <li>Manually adjust scale X/Y (if printer/scanner have dimensional inaccuracies)</li>
+        <li>Ensure scan resolution is high enough (minimum 150 DPI recommended)</li>
+        <li>Check that scan dimensions match physical paper size exactly</li>
+      </ul>
+
+      <h3>Inaccurate Colours</h3>
+      <p><strong>Symptom:</strong> Extracted colours don't match visual appearance</p>
+      <p><strong>Solutions:</strong></p>
+      <ul>
+        <li>Increase deadSpace % (sample more from cell center, avoid edges)</li>
+        <li>Improve lighting during scanning (even, white light)</li>
+        <li>Calibrate scanner colour profile</li>
+        <li>Allow print to cool completely before scanning (material colour can shift)</li>
+        <li>Ensure consistent print settings (temperature, speed, layer height)</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<!-- Popup for sequence details -->
+<div class="popup" id="popup">
+  <button class="btn-close" id="closePopup">×</button>
+  <h4>Sequence Details</h4>
+  <div class="popup-content" id="popupContent"></div>
+</div>
+
+<!-- Hidden canvases for processing -->
+<canvas id="workCanvas" style="display:none"></canvas>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+<script type="module" src="app.js"></script>
+
+</body>
+</html>

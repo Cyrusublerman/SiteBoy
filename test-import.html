@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dynamic Import</title>
+</head>
+<body>
+    <h1>Testing Dynamic Import</h1>
+    <div id="output"></div>
+
+    <script type="module">
+        const output = document.getElementById('output');
+
+        try {
+            // Test the relative import path
+            const module = await import('../shared/algorithms/index.js');
+            output.innerHTML = '<p>✅ Import successful!</p>';
+            console.log('Import successful:', module);
+        } catch (error) {
+            output.innerHTML = `<p>❌ Import failed: ${error.message}</p>`;
+            console.error('Import failed:', error);
+        }
+    </script>
+</body>
+</html>
+
+

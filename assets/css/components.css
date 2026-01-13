@@ -1,0 +1,1436 @@
+/* Screen reader only - visually hidden but accessible */
+.sr-only {
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/**
+ * Component Styles - UI Components
+ *
+ * All component-specific CSS classes (forms, buttons, dropdowns, etc.)
+ * No inline styling - all styles must be defined here as reusable classes
+ */
+
+/* =================================================================
+   COMPONENT STYLES - CSS Classes Only (No Inline Styling)
+   ================================================================= */
+
+/* Base Component Styling */
+.component {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    box-sizing: border-box;
+    background: var(--c-bg);
+    color: var(--c-text);
+}
+
+/* Clickable Elements */
+.clickable {
+    cursor: pointer;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.clickable:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+    z-index: 2;
+}
+
+/* Gallery Grid - Efficient shared border system */
+.gallery-item {
+    outline: var(--outline-width) solid var(--c-border);
+    background: var(--c-bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+}
+
+.gallery-item .content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--f);
+    overflow: hidden;
+}
+
+.gallery-item .placeholder {
+    width: 100%;
+    text-align: justify;
+    text-align-last: justify;
+    font-size: calc(var(--f) * 0.92);
+    line-height: 1.3;
+    color: var(--c-border);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    hyphens: auto;
+    word-spacing: 0.2em;
+    padding: 8px;
+}
+
+.gallery-item .caption {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: var(--header-height);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.gallery-item .separator {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: var(--outline-width);
+    background: var(--c-border);
+    transition: background-color 0.2s ease;
+}
+
+.gallery-item .text {
+    flex: 1;
+    padding: 0 var(--f);
+    font-size: calc(var(--f) * 0.92);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gallery-item .icon {
+    width: var(--header-height);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--f);
+}
+
+/* Hover state */
+.gallery-item.hover {
+    background: var(--c-border);
+    color: var(--c-bg);
+    outline-color: var(--c-text);
+    z-index: 2;
+}
+
+.gallery-item.hover .placeholder {
+    color: var(--c-bg);
+}
+
+.gallery-item.hover .caption {
+    background: var(--c-border);
+    color: var(--c-bg);
+}
+
+.gallery-item.hover .separator {
+    background: var(--c-bg);
+}
+
+/* Container-Aware Grid System - F=12px Translation of Reference Perfect Grid */
+
+/* Gallery Grid Container - Setup handled by JavaScript */
+
+/* Grid Items - Outline-based separation (1px perfect like reference) */
+.gallery-item {
+    /* Inline styles from JavaScript for precise mathematical sizing */
+    cursor: pointer;
+}
+
+.gallery-item:hover {
+    outline-color: var(--c-text) !important;  /* Reference hover: outline color change */
+    z-index: 2 !important;                    /* Bring to front like reference */
+}
+
+/* Grid Content Area */
+.grid-content {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);                      /* F=12px consistent with system */
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 400;
+}
+
+/* Grid Caption System - F=24px Translation */
+.grid-caption {
+    display: flex;
+    align-items: center;
+    position: relative;                       /* Reference uses relative, not absolute */
+    background: var(--c-bg);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Caption separator line (reference ::before technique) */
+.grid-caption::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;                             /* 1px separator like reference */
+    background: var(--c-border);
+    transition: background-color 0.2s ease;
+}
+
+/* Hover effect on separator line */
+.gallery-item:hover .grid-caption::before {
+    background: var(--c-text);               /* Reference: separator changes on hover */
+}
+
+/* Caption Text */
+.caption-text {
+    flex: 1;
+    padding: 0 calc(var(--f));               /* F=12px padding like reference 12px */
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);                     /* F=12px for header consistency */
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 400;
+}
+
+/* Caption Arrow Icon */
+.caption-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);                     /* F=12px consistent */
+    transition: background-color 0.2s ease, color 0.2s ease;
+    /* Width and height set via JavaScript for mathematical precision */
+}
+
+/* Caption Arrow Hover (reference-style override) */
+.caption-icon:hover {
+    background: var(--c-border);             /* Reference arrow hover */
+    color: var(--c-bg);
+}
+
+/* Empty Grid Cells - Styling handled inline for mathematical precision */
+
+/* Legacy Grid Components (Deprecated - use Gallery Grid) */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-cols, 4), 1fr);
+    gap: 1px;
+    width: 100%;
+}
+
+.grid-item {
+    border: 1px solid var(--c-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    text-align: center;
+    padding: var(--f);
+    min-height: calc(var(--f) * 4);
+    position: relative;
+    transition: border-color 0.2s ease;
+}
+
+.grid-item.clickable:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+    border-color: var(--c-text);
+    z-index: 2;
+}
+
+/* VGA Grid Specific */
+.vga-grid-item {
+    position: relative;
+    min-height: calc(var(--f) * 6);
+    border: 1px solid var(--c-border);
+}
+
+/* Legacy caption styles cleaned up above */
+
+/* Header Navigation Hover Effects */
+#header-nav:hover,
+#header-toggle:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+/* Button Styles */
+.btn, button {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    padding: calc(var(--f) / 2) var(--f);
+    cursor: pointer;
+    text-transform: uppercase;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* NO border-radius allowed */
+}
+
+.btn:disabled, button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:not(:disabled):hover, button:not(:disabled):hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 0;
+}
+
+/* Lightbox Overlay */
+.lightbox-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--c-bg);
+    opacity: 0.95;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.lightbox-inner {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    outline: 1px solid var(--c-border);
+    background: var(--c-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--f);
+}
+
+.lightbox-image {
+    max-width: 88vw;
+    max-height: 86vh;
+    display: block;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--header-height);
+    height: var(--header-height);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+/* Carousel - Minimalist image carousel */
+.carousel {
+    width: 100%;
+    background: var(--c-bg);
+}
+
+.carousel-image-container {
+    width: 100%;
+    height: calc(var(--f) * 50);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-bottom: none;
+    overflow: hidden;
+}
+
+.carousel-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    object-fit: contain;
+}
+
+.carousel-caption {
+    width: 100%;
+    padding: var(--f);
+    font-size: calc(var(--f) * 0.875);
+    font-style: italic;
+    color: var(--c-text);
+    text-align: center;
+    background: var(--c-bg);
+    border-top: 1px solid var(--c-border);
+}
+
+.carousel-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    border: 1px solid var(--c-border);
+}
+
+.carousel-button {
+    height: var(--header-height);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: none;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: calc(var(--f) * 1.5);
+    text-transform: uppercase;
+    transition: all 0.1s ease;
+}
+
+.carousel-button:hover:not(:disabled) {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.carousel-button:disabled {
+    cursor: not-allowed;
+}
+
+.carousel-button-prev {
+    border-right: 1px solid var(--c-border);
+}
+
+/* CheckpointList - Draggable checkpoint/state list */
+.checkpoint-list {
+    max-height: calc(var(--f) * 18);
+    overflow-y: auto;
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.checkpoint-empty {
+    padding: var(--f);
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.85);
+    text-align: center;
+}
+
+.checkpoint-item {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    cursor: move;
+    font-size: calc(var(--f) * 0.85);
+}
+
+.checkpoint-item:last-child {
+    border-bottom: none;
+}
+
+.checkpoint-item.dragging {
+    opacity: 0.5;
+    background: var(--vga-navy);
+}
+
+.checkpoint-handle {
+    color: var(--vga-gray);
+    cursor: grab;
+    padding: 0 calc(var(--f) / 4);
+    user-select: none;
+}
+
+.checkpoint-name {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--c-text);
+    font-size: calc(var(--f) * 0.85);
+    padding: calc(var(--f) / 4);
+    font-family: inherit;
+}
+
+.checkpoint-name:focus {
+    outline: 1px solid var(--c-border);
+    background: var(--vga-black);
+}
+
+.checkpoint-duration {
+    width: calc(var(--f) * 3);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-size: calc(var(--f) * 0.7);
+    padding: calc(var(--f) / 4);
+    text-align: center;
+    font-family: inherit;
+}
+
+.checkpoint-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+}
+
+.checkpoint-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.checkpoint-delete {
+    color: var(--vga-red);
+}
+
+.checkpoint-delete:hover {
+    background: var(--vga-red);
+    color: var(--vga-white);
+}
+
+/* Sequencer - Site-wide animation sequencer */
+.sequencer {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.sequencer-controls {
+    display: flex;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.sequencer-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.sequencer-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.sequencer-save {
+    color: var(--vga-lime);
+}
+
+.sequencer-clear {
+    color: var(--vga-red);
+}
+
+.sequencer-loop-label {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 4);
+    font-size: calc(var(--f) * 0.85);
+    color: var(--c-text);
+}
+
+.sequencer-list {
+    max-height: calc(var(--f) * 20);
+    overflow-y: auto;
+}
+
+.sequencer-empty {
+    padding: var(--f);
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.85);
+    text-align: center;
+}
+
+.sequencer-checkpoint {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    font-size: calc(var(--f) * 0.85);
+    background: var(--c-bg);
+}
+
+.sequencer-checkpoint.dragging {
+    opacity: 0.5;
+    background: var(--vga-navy);
+}
+
+.sequencer-transition {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    font-size: calc(var(--f) * 0.85);
+    background: var(--vga-black);
+}
+
+.sequencer-handle {
+    color: var(--vga-gray);
+    cursor: grab;
+    padding: 0 calc(var(--f) / 4);
+    user-select: none;
+}
+
+.sequencer-arrow {
+    color: var(--vga-gray);
+    padding: 0 calc(var(--f) / 4);
+}
+
+.sequencer-name {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--c-text);
+    padding: calc(var(--f) / 4);
+    font-size: inherit;
+    font-family: inherit;
+}
+
+.sequencer-name:focus {
+    outline: 1px solid var(--c-border);
+    background: var(--vga-black);
+}
+
+.sequencer-label {
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.75);
+}
+
+.sequencer-frames {
+    width: calc(var(--f) * 4);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    padding: calc(var(--f) / 4);
+    font-size: inherit;
+    font-family: inherit;
+    text-align: center;
+}
+
+.sequencer-toggle {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 4);
+    font-size: calc(var(--f) * 0.75);
+    color: var(--vga-gray);
+    cursor: pointer;
+}
+
+.sequencer-toggle input {
+    margin: 0;
+}
+
+.sequencer-toggle span {
+    min-width: calc(var(--f) * 3);
+}
+
+.sequencer-btn-sm {
+    padding: calc(var(--f) / 6) calc(var(--f) / 3);
+    font-size: calc(var(--f) * 0.75);
+    cursor: pointer;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    font-family: inherit;
+}
+
+.sequencer-btn-sm:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.sequencer-del {
+    color: var(--vga-red);
+}
+
+.sequencer-del:hover {
+    background: var(--vga-red);
+    color: var(--vga-white);
+}
+
+.sequencer-total {
+    padding: calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    color: var(--vga-aqua);
+    text-align: center;
+    border-top: 1px solid var(--c-border);
+}
+
+.group-button {
+    flex: 1;
+}
+
+.group-button:not(:first-child) {
+    border-left: none;
+}
+
+/* Form Elements */
+.input, .select, input, select, textarea {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    padding: calc(var(--f) / 2) var(--f);
+    height: var(--header-height);
+    /* NO border-radius allowed */
+}
+
+.input:focus, .select:focus, input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--c-text);
+    outline-offset: -2px;
+}
+
+/* Progress Bar */
+.progress-bar {
+    position: relative;
+    width: 100%;
+    height: var(--header-height);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--c-border);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    pointer-events: none;
+    font-size: var(--f);
+}
+
+/* Canvas */
+.mathematical-canvas {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    display: block;
+    max-width: 100%;
+}
+
+/* Navigation Components */
+.menu {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+}
+
+.menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+.menu-item {
+    padding: calc(var(--f) / 2) var(--f);
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    border-right: 1px solid var(--c-border);
+    text-transform: uppercase;
+}
+
+.menu-item:last-child {
+    border-right: none;
+}
+
+.menu-item.current {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.breadcrumb {
+    background: var(--c-bg);
+}
+
+.breadcrumb-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item:not(:last-child)::after {
+    content: '/';
+    margin: 0 calc(var(--f) / 2);
+    color: var(--c-border);
+}
+
+.breadcrumb-link {
+    text-decoration: none;
+    color: var(--c-text);
+}
+
+.breadcrumb-link:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+    text-decoration: none;
+}
+
+/* Markdown Body */
+.markdown-body {
+    width: 100%;
+    background: var(--c-bg);
+    padding: var(--f);
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+    margin: var(--f) 0 calc(var(--f) / 2) 0;
+}
+
+.markdown-body p {
+    margin: 0 0 var(--f) 0;
+}
+
+.markdown-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: var(--f) 0;
+    border: 1px solid var(--c-border);
+}
+
+.markdown-body figure {
+    margin: var(--f) 0;
+}
+
+.markdown-body figcaption {
+    margin-top: calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.875);
+    font-style: italic;
+    color: var(--c-text);
+}
+
+/* Image Component Styles */
+figure.image {
+    margin: var(--f) 0;
+    max-width: 100%;
+}
+
+.image-element {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--c-border);
+}
+
+figure.image-s { max-width: 320px; }
+figure.image-m { max-width: 640px; }
+figure.image-l { max-width: 960px; }
+figure.image-full { max-width: 100%; }
+
+.image-caption {
+    margin-top: calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.875);
+    font-style: italic;
+    color: var(--c-text);
+    padding: calc(var(--f) / 2);
+    border: 1px solid var(--c-border);
+    border-top: none;
+}
+
+.markdown-body pre {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    padding: var(--f);
+    margin: var(--f) 0;
+    overflow-x: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);
+    line-height: calc(var(--f) * 1.5);
+}
+
+.markdown-body pre code {
+    background: transparent;
+    color: var(--c-text);
+    padding: 0;
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);
+}
+
+.markdown-body code {
+    background: var(--c-border);
+    color: var(--c-bg);
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-family: 'Space Mono', monospace;
+    font-size: var(--f);
+}
+
+/* Prism.js VGA Theme Override */
+/* Reset Prism defaults to match SiteBoy aesthetic */
+code[class*="language-"],
+pre[class*="language-"] {
+    color: var(--c-text) !important;
+    background: var(--c-bg) !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: var(--f) !important;
+    text-align: left !important;
+    white-space: pre !important;
+    word-spacing: normal !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    line-height: calc(var(--f) * 1.5) !important;
+    tab-size: 4 !important;
+    hyphens: none !important;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+    padding: var(--f) !important;
+    margin: var(--f) 0 !important;
+    overflow: auto !important;
+    border: 1px solid var(--c-border) !important;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2) !important;
+    border-radius: 0 !important;
+    white-space: normal !important;
+}
+
+/* VGA Color Palette for Syntax Tokens - Maximum Specificity */
+/* Comments and metadata */
+code[class*="language-"] .token.comment,
+pre[class*="language-"] .token.comment,
+code[class*="language-"] .token.prolog,
+pre[class*="language-"] .token.prolog,
+code[class*="language-"] .token.doctype,
+pre[class*="language-"] .token.doctype,
+code[class*="language-"] .token.cdata,
+pre[class*="language-"] .token.cdata {
+    color: var(--vga-dark-gray) !important;
+    font-style: italic;
+}
+
+/* Punctuation */
+code[class*="language-"] .token.punctuation,
+pre[class*="language-"] .token.punctuation {
+    color: var(--c-text) !important;
+}
+
+/* Numbers, booleans, constants */
+code[class*="language-"] .token.property,
+pre[class*="language-"] .token.property,
+code[class*="language-"] .token.tag,
+pre[class*="language-"] .token.tag,
+code[class*="language-"] .token.boolean,
+pre[class*="language-"] .token.boolean,
+code[class*="language-"] .token.number,
+pre[class*="language-"] .token.number,
+code[class*="language-"] .token.constant,
+pre[class*="language-"] .token.constant,
+code[class*="language-"] .token.symbol,
+pre[class*="language-"] .token.symbol {
+    color: var(--vga-cyan) !important;
+}
+
+/* Strings and selectors */
+code[class*="language-"] .token.selector,
+pre[class*="language-"] .token.selector,
+code[class*="language-"] .token.attr-name,
+pre[class*="language-"] .token.attr-name,
+code[class*="language-"] .token.string,
+pre[class*="language-"] .token.string,
+code[class*="language-"] .token.char,
+pre[class*="language-"] .token.char,
+code[class*="language-"] .token.builtin,
+pre[class*="language-"] .token.builtin,
+code[class*="language-"] .token.inserted,
+pre[class*="language-"] .token.inserted {
+    color: var(--vga-green) !important;
+}
+
+/* Operators and entities */
+code[class*="language-"] .token.operator,
+pre[class*="language-"] .token.operator,
+code[class*="language-"] .token.entity,
+pre[class*="language-"] .token.entity,
+code[class*="language-"] .token.url,
+pre[class*="language-"] .token.url,
+code[class*="language-"] .language-css .token.string,
+pre[class*="language-"] .language-css .token.string,
+code[class*="language-"] .style .token.string,
+pre[class*="language-"] .style .token.string {
+    color: var(--vga-yellow) !important;
+}
+
+/* Keywords */
+code[class*="language-"] .token.atrule,
+pre[class*="language-"] .token.atrule,
+code[class*="language-"] .token.attr-value,
+pre[class*="language-"] .token.attr-value,
+code[class*="language-"] .token.keyword,
+pre[class*="language-"] .token.keyword {
+    color: var(--vga-magenta) !important;
+    font-weight: 700;
+}
+
+/* Functions and class names */
+code[class*="language-"] .token.function,
+pre[class*="language-"] .token.function,
+code[class*="language-"] .token.class-name,
+pre[class*="language-"] .token.class-name {
+    color: var(--vga-bright-blue) !important;
+}
+
+/* Variables and regex */
+code[class*="language-"] .token.regex,
+pre[class*="language-"] .token.regex,
+code[class*="language-"] .token.important,
+pre[class*="language-"] .token.important,
+code[class*="language-"] .token.variable,
+pre[class*="language-"] .token.variable {
+    color: var(--vga-bright-red) !important;
+}
+
+/* Deleted */
+code[class*="language-"] .token.deleted,
+pre[class*="language-"] .token.deleted {
+    color: var(--vga-red) !important;
+}
+
+/* Bold and italic */
+code[class*="language-"] .token.important,
+pre[class*="language-"] .token.important,
+code[class*="language-"] .token.bold,
+pre[class*="language-"] .token.bold {
+    font-weight: 700 !important;
+}
+
+code[class*="language-"] .token.italic,
+pre[class*="language-"] .token.italic {
+    font-style: italic !important;
+}
+
+.markdown-body blockquote {
+    border-left: 2px solid var(--c-border);
+    margin: var(--f) 0;
+    padding-left: var(--f);
+    font-style: italic;
+}
+
+/* MathJax styling - F system integration with better control */
+mjx-container {
+    font-size: var(--f) !important;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+}
+
+/* Display math */
+mjx-container[display="true"] {
+    font-size: calc(var(--f) * 0.9) !important;
+    margin: var(--f) 0 !important;
+    text-align: center !important;
+}
+
+/* Inline math */
+mjx-container[display="false"] {
+    font-size: var(--f) !important;
+    margin: 0 2px !important;
+}
+
+/* Force font on all MathJax elements */
+mjx-container *,
+mjx-container mjx-math *,
+mjx-container mjx-assistive-mml * {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+}
+
+/* Override MathJax's default font sizing */
+.MathJax {
+    font-size: var(--f) !important;
+}
+
+/* Dynamic F-based sizing for math */
+:root {
+    --math-display-size: calc(var(--f) * 0.9);
+    --math-inline-size: var(--f);
+    --math-margin: var(--f);
+}
+
+/* P5.js Integration Styling - Perfect SiteBoy alignment */
+.p5-canvas-container {
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-bg) !important;
+    padding: var(--f) !important;
+    margin: calc(var(--f) * 2) 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* P5.js DOM elements (buttons, sliders, inputs) */
+.p5-canvas-container button {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    border: 1px solid var(--c-border) !important;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+    font-size: var(--f) !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    padding: calc(var(--f) * 0.5) var(--f) !important;
+    cursor: pointer !important;
+    transition: none !important;
+    margin: calc(var(--f) * 0.25) !important;
+}
+
+.p5-canvas-container button:hover {
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+}
+
+.p5-canvas-container input,
+.p5-canvas-container select {
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    border: 1px solid var(--c-border) !important;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+    font-size: var(--f) !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    padding: calc(var(--f) * 0.25) calc(var(--f) * 0.5) !important;
+    outline: none !important;
+    margin: calc(var(--f) * 0.25) !important;
+}
+
+.p5-canvas-container input:focus,
+.p5-canvas-container select:focus {
+    border-color: var(--c-accent) !important;
+}
+
+/* P5.js slider styling */
+.p5-canvas-container input[type="range"] {
+    -webkit-appearance: none !important;
+    background: var(--c-border) !important;
+    height: 4px !important;
+    opacity: 0.8 !important;
+    transition: opacity 0.2s !important;
+}
+
+.p5-canvas-container input[type="range"]:hover {
+    opacity: 1 !important;
+}
+
+.p5-canvas-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    height: var(--f) !important;
+    width: var(--f) !important;
+    background: var(--c-accent) !important;
+    border: 1px solid var(--c-border) !important;
+    cursor: pointer !important;
+}
+
+/* P5.js canvas styling */
+.p5-canvas-container canvas {
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-bg) !important;
+    display: block !important;
+    margin: 0 auto !important;
+}
+
+/* P5.js text elements */
+.p5-canvas-container p,
+.p5-canvas-container span,
+.p5-canvas-container div {
+    font-family: "Space Mono", monospace !important;
+    font-size: var(--f) !important;
+    color: var(--c-text) !important;
+    line-height: calc(var(--f) * 1.5) !important;
+}
+
+/* P5ControlledSketch responsive container */
+.p5-container {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.p5-controls {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.p5-canvas-box {
+    max-width: 100%;
+    overflow: auto;
+}
+
+.p5-canvas-box canvas {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .p5-container {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .p5-controls {
+        width: 100%;
+        margin-bottom: var(--f);
+    }
+    
+    .p5-canvas-box {
+        width: 100%;
+        min-height: 300px;
+    }
+    
+    /* Ensure controls are touch-friendly on mobile */
+    .p5-controls input[type="range"] {
+        height: 8px !important;
+    }
+    
+    .p5-controls input[type="range"]::-webkit-slider-thumb {
+        height: calc(var(--f) * 1.5) !important;
+        width: calc(var(--f) * 1.5) !important;
+    }
+    
+    .p5-controls button {
+        min-height: calc(var(--f) * 2.5);
+        padding: calc(var(--f) * 0.75) var(--f) !important;
+    }
+}
+
+/* F Controller 3-Button Styling */
+.f-controller-container {
+    position: relative;
+}
+
+.f-control-btn,
+.f-display {
+    transition: all 0.1s ease;
+    outline: none;
+}
+
+.f-control-btn:hover,
+.f-display:hover {
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+}
+
+.f-control-btn:active {
+    background: var(--c-text) !important;
+    color: var(--c-bg) !important;
+}
+
+/* F input field styling */
+.f-input {
+    border: none !important;
+    outline: 2px solid var(--c-accent) !important;
+    background: var(--c-bg) !important;
+    color: var(--c-text) !important;
+    font-family: 'Space Mono', monospace !important;
+}
+
+.f-input:focus {
+    outline: 2px solid var(--c-accent) !important;
+    background: var(--c-accent) !important;
+    color: var(--c-bg) !important;
+}
+
+/* Page Structure Components */
+.page-container {
+    position: relative;
+    width: 100vw;
+    min-height: 100vh;
+    background: var(--c-bg);
+}
+
+.page-header {
+    position: fixed;
+    top: var(--header-y);
+    left: var(--layout-margin);
+    width: var(--layout-width);
+    height: var(--header-height);
+    z-index: 200;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    box-sizing: border-box;
+    display: flex;
+}
+
+.header-left {
+    /* Width controlled by JavaScript calculations - no CSS override */
+    height: 100%;
+    background: var(--c-bg);
+    border-right: 1px solid var(--c-border);
+    box-sizing: border-box;
+}
+
+.header-right {
+    /* Width controlled by JavaScript calculations - no CSS override */
+    height: 100%;
+    background: var(--c-bg);
+    box-sizing: border-box;
+    display: flex;
+}
+
+.header-item {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--f);
+    text-transform: uppercase;
+    font-size: var(--f);
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#home-link {
+    width: 100%;
+    justify-content: flex-start;
+}
+
+#header-nav {
+    flex: 1;
+    justify-content: flex-start;
+}
+
+.square-button {
+    width: var(--header-height);
+    border-left: 1px solid var(--c-border);
+}
+
+.content-container {
+    /* Positioning handled by JavaScript like headers/footers */
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-top: none;
+    border-bottom: none;
+    box-sizing: border-box;
+    overflow-y: auto;
+    /* MOVED: All content padding handled here */
+    padding: calc(var(--f) * 4); /* 4F padding all around */
+}
+
+/* Content positioning with subheader - now handled by JavaScript */
+
+/* Tool/viewport mode - strict height constraints for ToolBase pages */
+/* Use this class when page content should fill exactly the available space */
+/* Height now handled by JavaScript positioning */
+.content-container.tool-viewport {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+/* Generic tool viewport class for tool containers that are not content-container */
+.tool-viewport {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Responsive padding for content container */
+@media (max-width: 768px) {
+    .content-container {
+        padding: var(--f); /* 1F padding on mobile */
+    }
+}
+
+/* Page curtains - top and bottom margins */
+/* Curtains removed per layout update */
+
+/* content-body class no longer needed - content-container handles padding */
+
+.page-footer {
+    position: fixed;
+    top: var(--footer-y, calc(100vh - var(--header-height) - var(--target-margin)));
+    left: var(--layout-margin);
+    width: var(--layout-width);
+    height: var(--header-height);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    box-sizing: border-box;
+    z-index: 100;
+    display: flex;
+}
+
+.footer-item {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    font-size: var(--f);
+    text-decoration: none;
+    color: inherit;
+    border-right: 1px solid var(--c-border);
+    box-sizing: border-box;
+}
+
+.footer-item:last-child {
+    border-right: none;
+}
+
+/* Subheader positioning and layout handled in JavaScript for precise control */
+.subheader {
+    /* Base styles only - positioning handled in JS */
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+}
+
+/* Navigation button alignment - left justify like other header elements */
+.nav-button {
+    justify-content: flex-start !important;
+    padding-left: var(--f) !important;
+}
+
+/* Navigation button hover states */
+.nav-button:hover:not([style*="opacity: 0.5"]) {
+    background: var(--c-text) !important;
+    color: var(--c-bg) !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Disabled navigation buttons */
+.nav-button[style*="opacity: 0.5"] {
+    cursor: default !important;
+}
+

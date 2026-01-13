@@ -1,0 +1,130 @@
+/**
+ * Base Styles - Core Foundation
+ *
+ * VGA color system, typography, resets, variables
+ * This is the foundation that everything else builds on
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* =================================================================
+   VGA COLOR PALETTE - ONLY ALLOWED COLORS
+   ================================================================= */
+
+:root {
+    /* VGA 16-color palette - ONLY these colors allowed */
+    --vga-black: #000000;
+    --vga-maroon: #800000;
+    --vga-green: #008000;
+    --vga-olive: #808000;
+    --vga-navy: #000080;
+    --vga-purple: #800080;
+    --vga-teal: #008080;
+    --vga-silver: #c0c0c0;
+    --vga-gray: #808080;
+    --vga-red: #ff0000;
+    --vga-lime: #00ff00;
+    --vga-yellow: #ffff00;
+    --vga-blue: #0000ff;
+    --vga-fuchsia: #ff00ff;
+    --vga-aqua: #00ffff;
+    --vga-white: #ffffff;
+
+    /* Theme mapping - normal (dark) theme */
+    --c-bg: var(--vga-black);
+    --c-text: var(--vga-silver);
+    --c-border: var(--vga-gray);
+    --c-accent: var(--vga-white);
+
+    /* F=14px constants */
+    --f: 14px;
+    --header-height: 28px;          /* 2*F = 28px (KEEP F SYSTEM) */
+    --target-margin: 56px;          /* 4*F = 56px (KEEP F SYSTEM) */
+    --mobile-margin: 14px;
+    --outline-width: 1px;
+}
+
+/* Light theme (inverted) */
+html.inverted {
+    --c-bg: var(--vga-white);
+    --c-text: var(--vga-black);
+    --c-border: var(--vga-gray);
+    --c-accent: var(--vga-black);
+}
+
+/* =================================================================
+   GLOBAL RESET & BASE STYLES
+   ================================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    line-height: 1.5;
+    background: var(--c-bg);
+    color: var(--c-text);
+    /* NO gradients, shadows, or rounded corners allowed */
+}
+
+/* =================================================================
+   F=12px TYPOGRAPHY SYSTEM
+   ================================================================= */
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.2;
+}
+
+h1 { font-size: calc(var(--f) * 2); }   /* 24px */
+h2 { font-size: calc(var(--f) * 1.5); } /* 18px */
+h3 { font-size: var(--f); }             /* 12px */
+h4 { font-size: var(--f); }             /* 12px */
+h5 { font-size: var(--f); }             /* 12px */
+h6 { font-size: var(--f); }             /* 12px */
+
+p, li, dd {
+    margin: 0;
+    line-height: 1.5;
+}
+
+a {
+    color: var(--c-accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* =================================================================
+   UTILITY CLASSES
+   ================================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

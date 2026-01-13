@@ -1,0 +1,136 @@
+/* Responsive utilities */
+@media (min-width: 768px) {
+    .responsive-hide-desktop {
+        display: none;
+    }
+}
+
+/**
+ * Layout Styles - Page Structure
+ *
+ * Responsive layout, grid systems, page containers, navigation
+ * Handles how content is positioned and flows on the page
+ */
+
+/* =================================================================
+   PAGE LAYOUT STYLES
+   ================================================================= */
+
+#app-root {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--c-bg);
+}
+
+/* content-body styling moved to content-container */
+
+/* TOC positioning handled by JavaScript */
+
+/* =================================================================
+   DROPDOWN COMPONENTS
+   ================================================================= */
+
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-trigger {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    padding: var(--f);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-height: calc(var(--f) * 2);
+    box-sizing: border-box;
+}
+
+.dropdown-trigger:hover,
+.dropdown-trigger:focus,
+.subheader-dropdown-trigger:hover,
+.subheader-dropdown-trigger:focus {
+    background: var(--c-text);
+    color: var(--c-bg);
+    outline: none;
+}
+
+.dropdown-trigger[aria-expanded="true"] {
+    background: var(--c-border);
+}
+
+.dropdown-list {
+    position: absolute;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    box-sizing: border-box;
+    z-index: 1000;
+    min-width: 100%;
+    max-height: calc(var(--f) * 25); /* 300px at F=12px */
+    overflow-y: auto;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+}
+
+.dropdown-item {
+    height: calc(var(--f) * 2 - 1px);
+    line-height: calc(var(--f) * 2 - 1px);
+    width: 100%;
+    padding: 0 var(--f);
+    cursor: pointer;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--c-text);
+    color: var(--c-bg);
+    outline: none;
+}
+
+/* Dropdown Subsection - Collapsible folder style */
+.dropdown-subsection {
+    height: calc(var(--f) * 2 - 1px);
+    line-height: calc(var(--f) * 2 - 1px);
+    width: 100%;
+    padding: 0 var(--f);
+    cursor: pointer;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-subsection:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.dropdown-subsection .subsection-toggle {
+    font-family: 'Space Mono', monospace;
+    flex-shrink: 0;
+}
+
+/* Children container for nested items */
+.dropdown-subsection-children {
+    /* Add styles here if needed */
+}

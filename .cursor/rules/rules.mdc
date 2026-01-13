@@ -5,6 +5,9 @@ alwaysApply: true
 ---
 # SiteBoy — Cursor Rules (Backend)
 
+# Language
+ - Australian English always
+
 ## Scope
 - Target: backend/CI + server-side reasoning for JS/CSS/JSON in this repo.
 - Assume Node 20+, no browser globals unless noted.
@@ -97,4 +100,10 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 ## Output Contract
 - Keep diffs minimal; do not add new files that duplicate owned concerns.
 - When unsure where logic goes: default to the owner listed above; never inline.
+
+## AI Routing (read these before build/verify)
+- Routing map: `blog/docs/guides/ai-routing-map.md` (choice tree).
+- Phases: `blog/docs/guides/phases/` P0→P6; use matching checklists in `blog/docs/guides/checklists/`.
+- Standards: coding/layout/UI/loading/color in `blog/docs/guides/standards/` and `blog/docs/site/ui-interface-overview.md`.
+- Catalogs: components (`blog/docs/components/index.md`), algorithms (`blog/docs/algorithms/index.md`).
 

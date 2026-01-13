@@ -173,7 +173,12 @@ export class BaseComponent {
                 child.destroy();
             }
         }
-        this.children.clear();
+        // Handle both Set (default) and Array (used by container components)
+        if (typeof this.children.clear === 'function') {
+            this.children.clear();
+        } else if (Array.isArray(this.children)) {
+            this.children.length = 0;
+        }
         
         // Remove from DOM
         if (this.element && this.element.parentNode) {
@@ -221,6 +226,7 @@ export class BaseComponent {
 
 /**
  * BaseNavigationDropdown - Complete dropdown component from original system
+ * Supports flat items, headers, and collapsible subsections with +/- toggles
  */
 export class BaseNavigationDropdown extends BaseComponent {
     constructor(options = {}, deps = {}) {
@@ -230,6 +236,7 @@ export class BaseNavigationDropdown extends BaseComponent {
         this.isOpen = false;
         this.dropdownElement = null;
         this.symbolElement = null;
+        this.subsectionStates = new Map(); // Track collapsed state of subsections
     }
     
     createDropdownStructure(containerId, position = {}) {
@@ -268,19 +275,19 @@ export class BaseNavigationDropdown extends BaseComponent {
     
     populateDropdown(items) {
         if (!this.dropdownElement) return;
-        
-        console.log('🔄 BaseNavigationDropdown.populateDropdown called with items:', items);
-        console.log('🔄 Dropdown element exists:', !!this.dropdownElement);
-        
+
         const F = this.deps.MF ? this.deps.MF.F : 12;
         this.dropdownElement.innerHTML = ''; // Clear existing items
-        
+
         items.forEach((item, index) => {
-            console.log(`🔄 Processing dropdown item ${index}:`, item);
-            
+            // Handle collapsible subsection items (file-directory style)
+            if (item.type === 'subsection') {
+                this.createSubsectionItem(item, F);
+                return;
+            }
+
             // Handle header items with special styling
             if (item.type === 'header') {
-                console.log(`📋 Creating header item: ${item.title}`);
                 const headerItem = this.createElement('div', 'dropdown-header');
                 headerItem.style.cssText = `
                     height: ${2 * F}px; line-height: ${2 * F}px;
@@ -294,34 +301,123 @@ export class BaseNavigationDropdown extends BaseComponent {
                 this.dropdownElement.appendChild(headerItem);
                 return;
             }
-            
-            const menuItem = this.createElement('div', 'dropdown-item');
-            
-            // Determine indentation based on item type
-            let leftPadding = F; // Default padding
-            if (item.subitem) {
-                leftPadding = F * 2; // Indent subitems (articles under categories)
-            }
-            
-            // Height and layout handled by CSS .dropdown-item rule
-            menuItem.style.cssText = `
-                padding-left: ${leftPadding}px;
-                background: var(--c-bg); color: var(--c-text);
-                font-size: ${F}px;
-            `;
-            menuItem.textContent = item.title || item.label || item.text || item;
-            console.log(`✅ Created menu item with text: "${menuItem.textContent}" and indentation: ${leftPadding}px`);
-            
-            menuItem.addEventListener('click', () => {
-                if (this.onItemClick) {
-                    this.onItemClick(item);
-                } else if (item.onClick) {
-                    item.onClick();
-                }
-                this.close();
+
+            // Regular clickable item
+            this.createMenuItem(item, F, item.depth || 0);
+        });
+
+        // Remove bottom border from last visible item
+        this.updateLastItemBorder();
+
+        // Check if content overflows and set overflow accordingly
+        this.updateOverflowBehavior();
+    }
+    
+    /**
+     * Create a collapsible subsection with +/- toggle
+     */
+    createSubsectionItem(item, F) {
+        const subsectionId = item.id || item.title;
+        const isCollapsed = this.subsectionStates.get(subsectionId) !== false; // Default collapsed
+        
+        // Create subsection header row (like a folder)
+        const subsectionHeader = this.createElement('div', 'dropdown-subsection');
+        subsectionHeader.dataset.subsectionId = subsectionId;
+        subsectionHeader.style.cssText = `
+            height: ${2 * F}px; line-height: ${2 * F}px;
+            padding: 0 ${F}px; box-sizing: border-box;
+            background: var(--c-bg); color: var(--c-text);
+            font-size: ${F}px; text-transform: uppercase;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--c-border);
+        `;
+        
+        // Title text
+        const titleSpan = this.createElement('span');
+        titleSpan.textContent = item.title;
+        titleSpan.style.cssText = 'flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        
+        // +/- toggle symbol
+        const toggleSymbol = this.createElement('span', 'subsection-toggle');
+        toggleSymbol.textContent = isCollapsed ? '+' : '-';
+        toggleSymbol.style.cssText = `font-size: ${F}px; margin-left: ${F/2}px; flex-shrink: 0;`;
+        
+        subsectionHeader.appendChild(titleSpan);
+        subsectionHeader.appendChild(toggleSymbol);
+        
+        // Create container for child items
+        const childContainer = this.createElement('div', 'dropdown-subsection-children');
+        childContainer.dataset.parentId = subsectionId;
+        childContainer.style.cssText = isCollapsed ? 'display: none;' : 'display: block;';
+        
+        // Add child items to container
+        if (item.items && item.items.length > 0) {
+            item.items.forEach(childItem => {
+                this.createMenuItem(childItem, F, 1, childContainer);
             });
-            
-            // Add hover effects only for clickable items (matching framework style)
+        }
+        
+        // Toggle click handler
+        subsectionHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentlyCollapsed = childContainer.style.display === 'none';
+            childContainer.style.display = currentlyCollapsed ? 'block' : 'none';
+            toggleSymbol.textContent = currentlyCollapsed ? '-' : '+';
+            this.subsectionStates.set(subsectionId, !currentlyCollapsed);
+            this.updateOverflowBehavior();
+            this.updateLastItemBorder();
+        });
+        
+        // Hover effect for subsection header
+        subsectionHeader.addEventListener('mouseenter', () => {
+            subsectionHeader.style.setProperty('background', 'var(--c-text)', 'important');
+            subsectionHeader.style.setProperty('color', 'var(--c-bg)', 'important');
+        });
+        subsectionHeader.addEventListener('mouseleave', () => {
+            subsectionHeader.style.setProperty('background', 'var(--c-bg)', 'important');
+            subsectionHeader.style.setProperty('color', 'var(--c-text)', 'important');
+        });
+        
+        this.dropdownElement.appendChild(subsectionHeader);
+        this.dropdownElement.appendChild(childContainer);
+    }
+    
+    /**
+     * Create a regular clickable menu item
+     */
+    createMenuItem(item, F, depth = 0, container = null) {
+        const targetContainer = container || this.dropdownElement;
+        const menuItem = this.createElement('div', 'dropdown-item');
+        
+        // Indentation: base F + depth * F for nested items
+        const leftPadding = F + (depth * F);
+        
+        menuItem.style.cssText = `
+            padding-left: ${leftPadding}px;
+            background: var(--c-bg); color: var(--c-text);
+            font-size: ${F}px;
+        `;
+        menuItem.textContent = item.title || item.label || item.text || item;
+        
+        // Mark active item
+        if (item.isActive) {
+            menuItem.style.setProperty('background', 'var(--c-text)', 'important');
+            menuItem.style.setProperty('color', 'var(--c-bg)', 'important');
+        }
+        
+        menuItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onItemClick) {
+                this.onItemClick(item);
+            } else if (item.onClick) {
+                item.onClick();
+            }
+            this.close();
+        });
+        
+        // Hover effects (skip for active item)
+        if (!item.isActive) {
             menuItem.addEventListener('mouseenter', () => {
                 menuItem.style.setProperty('background', 'var(--c-text)', 'important');
                 menuItem.style.setProperty('color', 'var(--c-bg)', 'important');
@@ -330,21 +426,40 @@ export class BaseNavigationDropdown extends BaseComponent {
                 menuItem.style.setProperty('background', 'var(--c-bg)', 'important');
                 menuItem.style.setProperty('color', 'var(--c-text)', 'important');
             });
-            
-            this.dropdownElement.appendChild(menuItem);
-        });
-        
-        // Remove bottom border from last item to avoid double border
-        const lastItem = this.dropdownElement.lastElementChild;
-        if (lastItem && lastItem.classList.contains('dropdown-item')) {
-            lastItem.style.borderBottom = 'none';
         }
         
-        console.log(`✅ Dropdown populated with ${this.dropdownElement.children.length} items`);
-        console.log('🔄 Dropdown element after population:', this.dropdownElement);
+        targetContainer.appendChild(menuItem);
+        return menuItem;
+    }
+    
+    /**
+     * Update last visible item to remove bottom border
+     */
+    updateLastItemBorder() {
+        if (!this.dropdownElement) return;
         
-        // Check if content overflows and set overflow accordingly
-        this.updateOverflowBehavior();
+        // Reset all borders first
+        const allItems = this.dropdownElement.querySelectorAll('.dropdown-item, .dropdown-subsection');
+        allItems.forEach(item => {
+            item.style.borderBottom = '1px solid var(--c-border)';
+        });
+        
+        // Find last visible item (accounting for collapsed sections)
+        const children = Array.from(this.dropdownElement.children);
+        for (let i = children.length - 1; i >= 0; i--) {
+            const child = children[i];
+            if (child.classList.contains('dropdown-subsection-children')) {
+                // Check if expanded and has visible children
+                if (child.style.display !== 'none' && child.children.length > 0) {
+                    const lastChild = child.lastElementChild;
+                    if (lastChild) lastChild.style.borderBottom = 'none';
+                    return;
+                }
+            } else if (child.classList.contains('dropdown-item') || child.classList.contains('dropdown-subsection')) {
+                child.style.borderBottom = 'none';
+                return;
+            }
+        }
     }
     
     /**
@@ -380,13 +495,6 @@ export class BaseNavigationDropdown extends BaseComponent {
     }
     
     toggle() {
-        console.log('🔄 BaseNavigationDropdown.toggle() called, current state:', this.isOpen);
-        console.log('🔄 DropdownElement exists:', !!this.dropdownElement);
-        if (this.dropdownElement) {
-            console.log('🔄 Current classes:', this.dropdownElement.classList.toString());
-            console.log('🔄 Current computed display:', window.getComputedStyle(this.dropdownElement).display);
-        }
-        
         if (this.isOpen) {
             this.close();
         } else {
@@ -396,39 +504,30 @@ export class BaseNavigationDropdown extends BaseComponent {
     
     open() {
         if (this.dropdownElement) {
-            console.log('🔄 BaseNavigationDropdown.open() called');
-            console.log('🔄 Dropdown element classList before:', this.dropdownElement.classList.toString());
-            console.log('🔄 Dropdown element style.display before:', this.dropdownElement.style.display);
-            
             // Position dropdown if attached to body
             if (this.dropdownElement.parentNode === document.body) {
                 this.positionDropdownToBody();
             }
-            
+
             // Force display block to override any CSS issues
             this.dropdownElement.classList.remove('hidden');
             this.dropdownElement.style.display = 'block';
+            this.dropdownElement.style.visibility = 'visible';
             this.isOpen = true;
-            
-            console.log('🔄 Dropdown element classList after:', this.dropdownElement.classList.toString());
-            console.log('🔄 Dropdown element style.display after:', this.dropdownElement.style.display);
-            console.log('🔄 Final computed display:', window.getComputedStyle(this.dropdownElement).display);
-            
+
             if (this.symbolElement) {
                 this.symbolElement.textContent = '-';
             }
-        } else {
-            console.error('❌ BaseNavigationDropdown.open() - no dropdownElement!');
         }
     }
     
     close() {
         if (this.dropdownElement) {
-            console.log('🔄 BaseNavigationDropdown.close() called');
+            window.debugLog('VERBOSE', '🔄 BaseNavigationDropdown.close() called');
             this.dropdownElement.classList.add('hidden');
             this.dropdownElement.style.display = 'none';
             this.isOpen = false;
-            console.log('🔄 Dropdown closed, display set to none');
+            window.debugLog('VERBOSE', '🔄 Dropdown closed, display set to none');
             if (this.symbolElement) {
                 this.symbolElement.textContent = '+';
             }
@@ -442,18 +541,29 @@ export class BaseNavigationDropdown extends BaseComponent {
     positionDropdownToBody() {
         // Position dropdown relative to trigger when attached to body
         if (this.symbolElement && this.dropdownElement) {
-            const trigger = this.symbolElement.closest('.subheader-dropdown-trigger');
+            // Try subheader trigger first
+            let trigger = this.symbolElement.closest('.subheader-dropdown-trigger');
+
+            // If not found, try header nav container - use the full clickable area, not just the span
+            if (!trigger) {
+                // For header dropdown, use the #header-nav container which is the full clickable area
+                trigger = document.getElementById('header-nav');
+            }
+
             if (trigger) {
                 const triggerRect = trigger.getBoundingClientRect();
                 this.dropdownElement.style.position = 'fixed';
                 this.dropdownElement.style.top = `${triggerRect.bottom}px`;
-                this.dropdownElement.style.left = `${triggerRect.left - 1}px`; // Shift left by 1px
+                this.dropdownElement.style.left = `${triggerRect.left}px`; // Align with trigger left edge
                 this.dropdownElement.style.width = `${triggerRect.width}px`; // Match trigger width exactly
                 console.log('🔄 Positioned dropdown to body at:', {
                     top: triggerRect.bottom,
-                    left: triggerRect.left - 1,
-                    width: triggerRect.width
+                    left: triggerRect.left,
+                    width: triggerRect.width,
+                    triggerId: trigger.id || trigger.className
                 });
+            } else {
+                console.warn('⚠️ positionDropdownToBody: Could not find trigger element for dropdown positioning');
             }
         }
     }
@@ -490,4 +600,24 @@ export class BaseNavigationDropdown extends BaseComponent {
         }
         super.destroy();
     }
+}
+
+// =================================================================
+// ES MODULE EXPORT & BACKWARD COMPATIBILITY
+// =================================================================
+
+/**
+ * ES module exports for modern code
+ * Provides tree-shakeable access to components
+ */
+// BaseComponent and BaseNavigationDropdown are already exported above in their class definitions
+
+/**
+ * Global compatibility layer for legacy tools
+ * Maintains backward compatibility during migration
+ */
+if (typeof window !== 'undefined') {
+  // Make components globally available
+  window.BaseComponent = BaseComponent;
+  window.BaseNavigationDropdown = BaseNavigationDropdown;
 }

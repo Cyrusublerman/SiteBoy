@@ -88,8 +88,8 @@ export class Grid extends BaseComponent {
                 // Each cell has right and bottom border; container has left and top via its own border
                 childEl.style.borderRight = '1px solid var(--c-border)';
                 childEl.style.borderBottom = '1px solid var(--c-border)';
-                childEl.style.borderTop = row === 0 ? 'none' : '0';
-                childEl.style.borderLeft = col === 0 ? 'none' : '0';
+                childEl.style.borderTop = 'none';
+                childEl.style.borderLeft = 'none';
                 childEl.style.boxSizing = 'border-box';
             }
             
@@ -141,10 +141,13 @@ export class Grid extends BaseComponent {
     }
     
     destroy() {
-        // Destroy all children
-        this.children.forEach(c => c.destroy && c.destroy());
-        // Reset to empty Set before super.destroy() (base expects Set with .clear())
-        this.children = new Set();
+        // Destroy all children (children is an array in this component)
+        for (const child of this.children) {
+            if (child && typeof child.destroy === 'function') {
+                child.destroy();
+            }
+        }
+        this.children = [];
         super.destroy();
     }
 }

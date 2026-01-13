@@ -130,12 +130,20 @@ export class Button extends BaseComponent {
             const height = this.size === 's' ? F * 1.5 : this.size === 'l' ? F * 3 : F * 2;
             const isActive = this._isActive(btn.value ?? index);
             
+            // Collapsing borders: default to no gap, add -1px for stacked rows/cols
+            let marginTop = '0';
+            if (this.layout === 'column' && index > 0) {
+                marginTop = '-1px';
+            } else if (this.layout === 'grid' && index >= this.columns) {
+                marginTop = '-1px';
+            }
+            
             btnEl.style.cssText = `
                 height: ${height}px;
                 padding: 0 ${F}px;
                 border: 1px solid var(--c-border);
                 margin-left: -1px;
-                margin-top: ${this.layout === 'column' || (this.layout === 'grid' && index >= this.columns) ? '-1px' : '0'};
+                margin-top: ${marginTop};
                 background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
                 color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
                 font-family: 'Atkinson Hyperlegible', monospace;
@@ -151,7 +159,7 @@ export class Button extends BaseComponent {
             if (index === 0 || (this.layout === 'grid' && index % this.columns === 0)) {
                 btnEl.style.marginLeft = '0';
             }
-            if (index === 0) {
+            if (index === 0 || (this.layout === 'grid' && index % this.columns === 0)) {
                 btnEl.style.marginTop = '0';
             }
             
