@@ -130,20 +130,6 @@ export class MultifilamentPrintTool {
         this.selectedFilaments = []; // Array of indices into FILAMENT_COLOURS
         this.filteredFilaments = FILAMENT_COLOURS; // For search filtering
         
-        // Scan alignment state
-        this.scanOverlay = {
-            x: 100,
-            y: 100,
-            scale: 1.0,
-            rotation: 0,
-            opacity: 0.7,
-            isDragging: false,
-            isResizing: false,
-            dragStartX: 0,
-            dragStartY: 0,
-            dragStartOverlayX: 0,
-            dragStartOverlayY: 0
-        };
         this.referenceGridData = null; // Grid to align against (from CSV or last generated)
         
         // Grid overlay alignment state (simple X/Y offset + rotation)
@@ -154,6 +140,9 @@ export class MultifilamentPrintTool {
             flipped: false,     // Mirror for back scans
             autoCalculated: false  // Whether auto-calc has been done
         };
+        
+        // Scan canvas display mode
+        this.scanDisplayMode = 'fit'; // 'fit', 'fill', 'actual'
         
         // Scroll interval for edge-hover scrolling
         this.scrollInterval = null;
@@ -493,11 +482,14 @@ export class MultifilamentPrintTool {
     }
     
     _getConfigForTab(tab) {
+        // For SCAN tab, canvas will be dynamically sized to match the uploaded image
+        // For others, use standard size
+        const canvasConfig = tab === 'SCAN' 
+            ? { width: 800, height: 600, dynamic: true }  // Will be resized on image load
+            : { width: 800, height: 600 };
+            
         const baseConfig = {
-            canvas: {
-                width: 800,
-                height: 600
-            },
+            canvas: canvasConfig,
             onInit: (values) => this._onInit(tab, values),
             onUpdate: (key, value, allValues) => this._onUpdate(tab, key, value, allValues),
             onDraw: (ctx, canvas, values) => this._onDraw(tab, ctx, canvas, values)
@@ -570,6 +562,8 @@ export class MultifilamentPrintTool {
                 ['number', 'Layer Height (mm)', state.layerHeight || 0.08, { key: 'layerHeight', min: 0.04, max: 0.4, step: 0.01 }],
                 ['number', 'Tile Size (mm)', state.tileSize || 10, { key: 'tileSize', min: 2, max: 20, step: 0.5 }],
                 ['number', 'Gap (mm)', state.gap !== undefined ? state.gap : 1, { key: 'gap', min: 0, max: 5, step: 0.5 }],
+                ['number', 'Perimeter Margin (mm)', state.perimeterMargin !== undefined ? state.perimeterMargin : 0, { key: 'perimeterMargin', min: 0, max: 10, step: 0.5 }],
+                ['label', 'Border around entire grid (for scan edge tolerance)', { variant: 'caption' }],
             ]],
             ['BASE & TOP LAYERS', [
                 ['number', 'Base Layers (bottom)', state.baseLayers !== undefined ? state.baseLayers : 3, { key: 'baseLayers', min: 0, max: 10 }],
@@ -655,7 +649,11 @@ export class MultifilamentPrintTool {
             ['SCAN IMAGE', [
                 ['file', 'Scan Image', null, { key: 'scanImage', accept: 'image/*' }],
                 ['label', '', { key: 'scanImageStatus', variant: 'caption' }],
-                ['label', 'Mouse: Wheel=Zoom, Drag=Pan', { variant: 'caption' }],
+                ['dropdown', 'Display Mode', ['Fit', 'Fill', 'Actual Size'], { 
+                    key: 'scanDisplayMode',
+                    value: 'Fit'
+                }],
+                ['label', 'Fit=contain, Fill=cover, Actual=1:1 pixels', { variant: 'caption' }],
             ]],
             ['GRID OVERLAY', [
                 ['label', 'Grid auto-sized on image upload', { key: 'gridInfo', variant: 'caption' }],
@@ -668,9 +666,15 @@ export class MultifilamentPrintTool {
                 }],
                 ['button', 'Reset Alignment', null, { key: 'resetGrid' }],
             ]],
+            ['SAMPLING', [
+                ['number', 'Deadzone (%)', 20, { key: 'deadzonePercent', min: 0, max: 40, step: 5 }],
+                ['label', 'Edge border to exclude (20% = 40% total removed)', { variant: 'caption' }],
+            ]],
             ['ANALYSIS', [
                 ['button', 'Analyze Scan', null, { key: 'analyzeScan' }],
+                ['button', 'View Analysis Data', null, { key: 'viewAnalysis' }],
                 ['button', 'Export Palette (GPL)', null, { key: 'exportPalette' }],
+                ['button', 'Export Quantization Config', null, { key: 'exportQuantConfig' }],
                 ['button', 'Export Comparison CSV', null, { key: 'exportComparisonCSV' }],
                 ['label', '', { key: 'scanStatus', variant: 'caption' }],
             ]],
@@ -709,12 +713,21 @@ export class MultifilamentPrintTool {
         
         // Show project status if available
         let projectStatusText = '';
+        let scanStatusText = '';
+        
         if (this.gridData) {
             const colors = this.gridData.colours.length;
             const layers = this.gridData.layerCount;
             const grid = `${this.gridData.rows}×${this.gridData.cols}`;
             const tiles = this.gridData.sequences.length;
-            projectStatusText = `✅ Project ready: ${colors}c${layers}L ${grid} grid (${tiles} tiles)`;
+            projectStatusText = `✅ Grid: ${colors}c${layers}L ${grid} (${tiles} tiles)`;
+            
+            if (this.scanAnalysis && this.scanAnalysis.length > 0) {
+                const avgDev = (this.scanAnalysis.reduce((s, t) => s + t.colorDeviation, 0) / this.scanAnalysis.length).toFixed(1);
+                scanStatusText = `✅ Scan analyzed: ${this.scanAnalysis.length} tiles (Δ ${avgDev})`;
+            } else {
+                scanStatusText = '⚠️ No scan analysis (optional)';
+            }
         } else {
             projectStatusText = '⚠️ No project loaded. Generate or import a grid first.';
         }
@@ -722,11 +735,17 @@ export class MultifilamentPrintTool {
         return [['CONTROLS', [
             ['PROJECT STATUS', [
                 ['label', projectStatusText, { key: 'exportProjectStatus', variant: 'caption' }],
+                ['label', scanStatusText, { key: 'exportScanStatus', variant: 'caption' }],
+            ]],
+            ['COMPLETE PROJECT', [
+                ['button', 'Export Complete Project ZIP', null, { key: 'exportCompleteProject' }],
+                ['label', 'Includes grid, STL files, visuals, and scan analysis if available', { variant: 'caption' }],
+                ['label', '', { key: 'exportProjectZipStatus', variant: 'caption' }],
             ]],
             ['STL EXPORT', [
                 ['number', 'Layer Height (mm)', state.layerHeight || 0.08, { key: 'layerHeight', min: 0.04, max: 0.3, step: 0.01 }],
-                ['button', 'Export STL Files', null, { key: 'exportSTL' }],
-                ['button', 'Export JSON', null, { key: 'exportJSON' }],
+                ['button', 'Export STL Files Only', null, { key: 'exportSTL' }],
+                ['button', 'Export JSON Only', null, { key: 'exportJSON' }],
                 ['label', '', { key: 'exportStatus', variant: 'caption' }],
             ]],
             ['CANVAS MODE', [
@@ -765,8 +784,13 @@ export class MultifilamentPrintTool {
                 this._wireFileInput('scanImage', (file) => this._loadScanImage(file));
                 this._wireButton('resetGrid', () => this._resetGridAlignment());
                 this._wireButton('analyzeScan', () => this._analyzeScanAction());
+                this._wireButton('viewAnalysis', () => this._viewAnalysisAction());
                 this._wireButton('exportPalette', () => this._exportPaletteAction());
+                this._wireButton('exportQuantConfig', () => this._exportQuantizationConfigAction());
                 this._wireButton('exportComparisonCSV', () => this._exportComparisonCSVAction());
+                
+                // Wire canvas interactions for corner dragging
+                this._setupScanCanvasInteraction();
                 
                 // Wire keyboard controls for pixel-perfect nudging
                 this._setupKeyboardControls();
@@ -780,9 +804,9 @@ export class MultifilamentPrintTool {
                 this._setStatus('quantizeStatus', 'Upload source image to quantize');
                 break;
             case 'EXPORT':
+                this._wireButton('exportCompleteProject', () => this._exportCompletePackageAction());
                 this._wireButton('exportSTL', () => this._exportSTLAction());
                 this._wireButton('exportJSON', () => this._exportJSONAction());
-                this._setStatus('exportStatus', 'Quantize an image first, then export STL');
                 break;
         }
     }
@@ -805,7 +829,12 @@ export class MultifilamentPrintTool {
         
         // Handle grid overlay controls
         if (tab === 'SCAN') {
-            if (key === 'gridOffsetX') {
+            if (key === 'scanDisplayMode') {
+                const mode = value.toLowerCase();
+                this.scanDisplayMode = mode;
+                this._applyScanDisplayMode(mode);
+                this.toolBase.draw();
+            } else if (key === 'gridOffsetX') {
                 this.gridAlignment.offsetX = value;
                 this.toolBase.draw();
             } else if (key === 'gridOffsetY') {
@@ -816,6 +845,9 @@ export class MultifilamentPrintTool {
                 this.toolBase.draw();
             } else if (key === 'gridOptions') {
                 // Checkbox array changed, redraw
+                this.toolBase.draw();
+            } else if (key === 'deadzonePercent') {
+                // Deadzone changed, redraw
                 this.toolBase.draw();
             }
         }
@@ -831,7 +863,7 @@ export class MultifilamentPrintTool {
         }
         
         // Handle grid parameter changes - update live preview
-        if (tab === 'SOURCE' && ['layerCount', 'tileSize', 'gap', 'baseLayers', 'topLayers', 'bedWidth', 'bedHeight', 'scanWidth', 'scanHeight'].includes(key)) {
+        if (tab === 'SOURCE' && ['layerCount', 'tileSize', 'gap', 'perimeterMargin', 'baseLayers', 'topLayers', 'bedWidth', 'bedHeight', 'scanWidth', 'scanHeight'].includes(key)) {
             this._updateSequenceCount();
             this._generateLivePreview(); // Auto-generate preview
         }
@@ -871,6 +903,7 @@ export class MultifilamentPrintTool {
             sequenceCount: this.sequences.length,
             tileSize: values.tileSize,
             gap: values.gap,
+            perimeterMargin: values.perimeterMargin || 0,
             maxWidth: constraints.maxWidth,
             maxHeight: constraints.maxHeight
         });
@@ -884,6 +917,7 @@ export class MultifilamentPrintTool {
                 cols: layout.cols,
                 tileSize: values.tileSize,
                 gap: values.gap,
+                perimeterMargin: values.perimeterMargin || 0,
                 width: layout.width,
                 height: layout.height,
                 emptyCells: layout.emptyCells,
@@ -899,9 +933,12 @@ export class MultifilamentPrintTool {
             // Use unconstrained square layout
             const cols = Math.ceil(Math.sqrt(this.sequences.length));
             const rows = Math.ceil(this.sequences.length / cols);
+            const perimeterMargin = values.perimeterMargin || 0;
             const step = values.tileSize + values.gap;
-            const width = cols * step - values.gap;
-            const height = rows * step - values.gap;
+            const gridWidth = cols * step - values.gap;
+            const gridHeight = rows * step - values.gap;
+            const width = gridWidth + (perimeterMargin * 2);
+            const height = gridHeight + (perimeterMargin * 2);
             
             const totalCells = rows * cols;
             const emptyCells = [];
@@ -916,6 +953,7 @@ export class MultifilamentPrintTool {
                 cols,
                 tileSize: values.tileSize,
                 gap: values.gap,
+                perimeterMargin: values.perimeterMargin || 0,
                 width,
                 height,
                 emptyCells,
@@ -960,29 +998,16 @@ export class MultifilamentPrintTool {
                 break;
             case 'SCAN':
                 if (this.scanImageElement) {
-                    // Draw scan image fitted to canvas
-                    const scaleX = canvas.width / this.scanImageElement.width;
-                    const scaleY = canvas.height / this.scanImageElement.height;
-                    const scale = Math.min(scaleX, scaleY);
+                    // Draw scan image at actual pixel size (canvas matches image dimensions)
+                    ctx.drawImage(this.scanImageElement, 0, 0);
                     
-                    const drawWidth = this.scanImageElement.width * scale;
-                    const drawHeight = this.scanImageElement.height * scale;
-                    const drawX = (canvas.width - drawWidth) / 2;
-                    const drawY = (canvas.height - drawHeight) / 2;
-                    
-                    ctx.drawImage(this.scanImageElement, drawX, drawY, drawWidth, drawHeight);
-                    
-                    // Draw grid overlay if grid data and calculations available
+                    // Draw grid overlay ONLY if we have both grid data AND calculations
                     if (this.referenceGridData && this.gridCalculated) {
-                        this._drawPrecisionGridOverlay(ctx, canvas, scale, drawX, drawY, values);
-                    } else if (this.referenceGridData) {
-                        // Show message that grid needs auto-calculation
-                        ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
-                        ctx.fillRect(10, 10, 300, 40);
-                        ctx.fillStyle = '#000000';
-                        ctx.font = '14px monospace';
-                        ctx.fillText('Upload scan image to auto-size grid', 20, 35);
+                        this._drawPrecisionGridOverlay(ctx, canvas, 1.0, 0, 0, values);
                     }
+                } else if (this.referenceGridData) {
+                    // Show message if grid loaded but no scan
+                    this._drawPlaceholder(ctx, canvas, 'Upload Scanned Image\nGrid ready to overlay');
                 } else {
                     this._drawPlaceholder(ctx, canvas, 'Upload Scan Image');
                 }
@@ -1102,6 +1127,7 @@ export class MultifilamentPrintTool {
             sequenceCount: count,
             tileSize: values.tileSize || 10,
             gap: values.gap || 1,
+            perimeterMargin: values.perimeterMargin || 0,
             maxWidth: constraints.maxWidth,
             maxHeight: constraints.maxHeight
         });
@@ -1259,6 +1285,7 @@ export class MultifilamentPrintTool {
                 sequenceCount: chunkSequences.length,
                 tileSize: info.tileSize,
                 gap: info.gap,
+                perimeterMargin: info.perimeterMargin || 0,
                 maxWidth: info.constraints.maxWidth,
                 maxHeight: info.constraints.maxHeight
             });
@@ -1462,13 +1489,639 @@ export class MultifilamentPrintTool {
         return layerMaps;
     }
     
-    _analyzeScanAction() {
-        console.log('Analyze scan action');
-        this._setStatus('scanStatus', 'Scan analysis not yet implemented');
+    async _analyzeScanAction() {
+        // Prerequisites
+        if (!this.scanImageElement) {
+            this._setStatus('scanStatus', '❌ Load scan image first');
+            return;
+        }
+        if (!this.referenceGridData) {
+            this._setStatus('scanStatus', '❌ Load grid first (CSV or generate)');
+            return;
+        }
+        if (!this.gridCalculated) {
+            this._setStatus('scanStatus', '❌ Grid overlay not calculated. Upload scan image to trigger auto-calculation.');
+            return;
+        }
+        
+        // Show loading state
+        const button = this.toolBase.components.get('analyzeScan');
+        if (button?.element) {
+            button.element.textContent = 'Analyzing...';
+            button.element.style.filter = 'invert(1)';
+            button.element.disabled = true;
+        }
+        
+        this._setStatus('scanStatus', '⏳ Analyzing scan (sampling all pixels)...');
+        
+        // Use setTimeout to let UI update before heavy computation
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        try {
+            const gridData = this.referenceGridData;
+            const calc = this.gridCalculated;
+            const align = this.gridAlignment;
+            const values = this.toolBase?.values || {};
+            
+            // Get deadzone settings
+            const deadzonePercent = values.deadzonePercent || 20;
+            const deadzoneFraction = deadzonePercent / 100;
+            
+            // Create canvas to read pixel data
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.scanImageElement.width;
+            tempCanvas.height = this.scanImageElement.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(this.scanImageElement, 0, 0);
+            
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Extract color from each tile (sample all pixels in safe zone)
+            const analysisData = [];
+            const { rows, cols, tileSize, gap } = gridData;
+            
+            let totalPixelsSampled = 0;
+            
+            for (let i = 0; i < gridData.sequences.length; i++) {
+                // Calculate tile position in image coordinates
+                const row = Math.floor(i / cols);
+                const col = i % cols;
+                
+                // Tile position in physical grid (mm)
+                const tileX_mm = col * (tileSize + gap);
+                const tileY_mm = row * (tileSize + gap);
+                
+                // Convert to image pixels (using calculated px/mm ratio)
+                const tileX_px = calc.gridX + (tileX_mm * calc.pxPerMm) + align.offsetX;
+                const tileY_px = calc.gridY + (tileY_mm * calc.pxPerMm) + align.offsetY;
+                const tileSize_px = tileSize * calc.pxPerMm;
+                
+                // Calculate safe zone (excluding deadzone)
+                const deadzone_px = tileSize_px * deadzoneFraction;
+                const safeX = Math.round(tileX_px + deadzone_px);
+                const safeY = Math.round(tileY_px + deadzone_px);
+                const safeSize = Math.round(tileSize_px - (deadzone_px * 2));
+                
+                // Sample all pixels in safe zone
+                const pixels = [];
+                for (let py = 0; py < safeSize; py++) {
+                    for (let px = 0; px < safeSize; px++) {
+                        const imgX = safeX + px;
+                        const imgY = safeY + py;
+                        
+                        // Bounds check
+                        if (imgX >= 0 && imgX < tempCanvas.width && imgY >= 0 && imgY < tempCanvas.height) {
+                            const pixelIndex = (imgY * tempCanvas.width + imgX) * 4;
+                            const r = imageData.data[pixelIndex];
+                            const g = imageData.data[pixelIndex + 1];
+                            const b = imageData.data[pixelIndex + 2];
+                            pixels.push({ r, g, b });
+                        }
+                    }
+                }
+                
+                totalPixelsSampled += pixels.length;
+                
+                // Calculate statistics
+                const avgR = pixels.reduce((sum, p) => sum + p.r, 0) / pixels.length;
+                const avgG = pixels.reduce((sum, p) => sum + p.g, 0) / pixels.length;
+                const avgB = pixels.reduce((sum, p) => sum + p.b, 0) / pixels.length;
+                
+                // Calculate standard deviation for each channel
+                const varR = pixels.reduce((sum, p) => sum + Math.pow(p.r - avgR, 2), 0) / pixels.length;
+                const varG = pixels.reduce((sum, p) => sum + Math.pow(p.g - avgG, 2), 0) / pixels.length;
+                const varB = pixels.reduce((sum, p) => sum + Math.pow(p.b - avgB, 2), 0) / pixels.length;
+                
+                const stdR = Math.sqrt(varR);
+                const stdG = Math.sqrt(varG);
+                const stdB = Math.sqrt(varB);
+                
+                // Overall color deviation (Euclidean distance in RGB space)
+                const colorDeviation = Math.sqrt(varR + varG + varB);
+                
+                // Round averages
+                const r = Math.round(avgR);
+                const g = Math.round(avgG);
+                const b = Math.round(avgB);
+                
+                const sequence = gridData.sequences[i];
+                const sequenceStr = sequence.join('');
+                
+                // Get filament names for this sequence
+                const filamentStack = sequence
+                    .map((filIdx, layer) => ({
+                        layer,
+                        filamentIndex: filIdx,
+                        filamentName: filIdx > 0 ? gridData.colours[filIdx - 1]?.n : 'Empty'
+                    }))
+                    .filter(f => f.filamentIndex > 0);
+                
+                analysisData.push({
+                    // Position
+                    index: i,
+                    row,
+                    col,
+                    
+                    // Sequence info
+                    sequence,
+                    sequenceStr,
+                    filamentStack,
+                    
+                    // Color measurements
+                    rgb: { r, g, b },
+                    hex: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
+                    
+                    // Statistics
+                    std: { r: stdR, g: stdG, b: stdB },
+                    variance: { r: varR, g: varG, b: varB },
+                    colorDeviation,
+                    
+                    // Sample info
+                    pixelsSampled: pixels.length,
+                    sampleArea_px: safeSize * safeSize,
+                    sampleArea_mm: (safeSize / calc.pxPerMm) ** 2
+                });
+            }
+            
+            // Store analysis data
+            this.scanAnalysis = analysisData;
+            
+            // Generate unique palette (for similar sequences)
+            const uniquePalette = this._generateUniquePaletteFromAnalysis(analysisData, gridData);
+            
+            // Generate RGB → Sequence lookup for quantization
+            this.quantizationConfig = this._generateQuantizationConfig(analysisData, gridData);
+            
+            const avgDeviation = (analysisData.reduce((sum, d) => sum + d.colorDeviation, 0) / analysisData.length).toFixed(2);
+            
+            this._setStatus('scanStatus', `✅ Analyzed ${analysisData.length} tiles (${totalPixelsSampled.toLocaleString()} pixels) | Avg deviation: ${avgDeviation}`);
+            
+            console.log('📊 Scan analysis complete:', {
+                tilesAnalyzed: analysisData.length,
+                totalPixels: totalPixelsSampled,
+                avgPixelsPerTile: Math.round(totalPixelsSampled / analysisData.length),
+                averageDeviation: avgDeviation,
+                uniqueSequences: uniquePalette.length,
+                data: analysisData
+            });
+            
+        } catch (err) {
+            this._setStatus('scanStatus', `❌ Analysis failed: ${err.message}`);
+            console.error('Scan analysis error:', err);
+        } finally {
+            // Restore button state
+            const button = this.toolBase.components.get('analyzeScan');
+            if (button?.element) {
+                button.element.textContent = 'Analyze Scan';
+                button.element.style.filter = '';
+                button.element.disabled = false;
+            }
+        }
+    }
+    
+    _generateUniquePaletteFromAnalysis(analysisData, gridData) {
+        // Group by sequence
+        const sequenceMap = new Map();
+        
+        analysisData.forEach(data => {
+            const key = data.sequenceStr;
+            if (!sequenceMap.has(key)) {
+                sequenceMap.set(key, {
+                    sequence: data.sequence,
+                    sequenceStr: key,
+                    filamentStack: data.filamentStack,
+                    tiles: []
+                });
+            }
+            sequenceMap.get(key).tiles.push(data);
+        });
+        
+        // Average colors for each unique sequence
+        const palette = [];
+        sequenceMap.forEach(({ sequence, sequenceStr, filamentStack, tiles }) => {
+            const avgR = Math.round(tiles.reduce((sum, t) => sum + t.rgb.r, 0) / tiles.length);
+            const avgG = Math.round(tiles.reduce((sum, t) => sum + t.rgb.g, 0) / tiles.length);
+            const avgB = Math.round(tiles.reduce((sum, t) => sum + t.rgb.b, 0) / tiles.length);
+            
+            const avgDeviation = tiles.reduce((sum, t) => sum + t.colorDeviation, 0) / tiles.length;
+            
+            palette.push({
+                sequence,
+                sequenceStr,
+                filamentStack,
+                rgb: { r: avgR, g: avgG, b: avgB },
+                hex: `#${avgR.toString(16).padStart(2, '0')}${avgG.toString(16).padStart(2, '0')}${avgB.toString(16).padStart(2, '0')}`,
+                tileCount: tiles.length,
+                averageDeviation: avgDeviation
+            });
+        });
+        
+        return palette;
+    }
+    
+    _generateQuantizationConfig(analysisData, gridData) {
+        // Create RGB → Sequence mapping for quantization
+        // Format: palette name = filament order, color names = sequence numbers
+        
+        const filamentNames = gridData.colours.map(c => c.n).join('');
+        const uniquePalette = this._generateUniquePaletteFromAnalysis(analysisData, gridData);
+        
+        return {
+            version: '1.0.0',
+            generatedAt: new Date().toISOString(),
+            paletteName: filamentNames,
+            filaments: gridData.colours,
+            
+            // Color lookup: RGB → Sequence
+            colorMap: uniquePalette.map(color => ({
+                name: color.sequenceStr,
+                rgb: color.rgb,
+                hex: color.hex,
+                sequence: color.sequence,
+                filamentStack: color.filamentStack,
+                tileCount: color.tileCount,
+                deviation: color.averageDeviation
+            })),
+            
+            // Full analysis data for advanced use
+            tileData: analysisData
+        };
     }
     
     _exportPaletteAction() {
-        console.log('Export palette action');
+        if (!this.scanAnalysis) {
+            this._setStatus('scanStatus', '❌ Analyze scan first');
+            return;
+        }
+        
+        const gridData = this.referenceGridData;
+        const uniquePalette = this._generateUniquePaletteFromAnalysis(this.scanAnalysis, gridData);
+        const filamentNames = gridData.colours.map(c => c.n).join('');
+        
+        // Generate GPL format
+        let gpl = 'GIMP Palette\n';
+        gpl += `Name: ${filamentNames}\n`;
+        gpl += `Columns: ${Math.min(uniquePalette.length, 16)}\n`;
+        gpl += `# Scanned from physical print calibration grid\n`;
+        gpl += `# Generated: ${new Date().toISOString()}\n`;
+        gpl += `# Filaments: ${gridData.colours.map(c => c.n).join(', ')}\n`;
+        gpl += `# Tiles analyzed: ${this.scanAnalysis.length}\n`;
+        gpl += `# Color names are layer sequences (e.g., "1234" = filament 1+2+3+4)\n`;
+        gpl += '#\n';
+        
+        uniquePalette.forEach(color => {
+            gpl += `${String(color.rgb.r).padStart(3)} ${String(color.rgb.g).padStart(3)} ${String(color.rgb.b).padStart(3)} ${color.sequenceStr}\n`;
+        });
+        
+        // Download
+        const blob = new Blob([gpl], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filamentNames}-palette-${new Date().toISOString().slice(0,10)}.gpl`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this._setStatus('scanStatus', `✅ Exported palette: ${uniquePalette.length} colors (${filamentNames})`);
+    }
+    
+    _generateCalibratedPaletteGPL() {
+        if (!this.scanAnalysis) return '';
+        
+        const gridData = this.referenceGridData;
+        const uniquePalette = this._generateUniquePaletteFromAnalysis(this.scanAnalysis, gridData);
+        const filamentNames = gridData.colours.map(c => c.n).join('');
+        
+        let gpl = 'GIMP Palette\n';
+        gpl += `Name: ${filamentNames}\n`;
+        gpl += `Columns: ${Math.min(uniquePalette.length, 16)}\n`;
+        gpl += `# Calibrated from scanned print\n`;
+        gpl += `# Generated: ${new Date().toISOString()}\n`;
+        gpl += `# Filaments: ${gridData.colours.map(c => c.n).join(', ')}\n`;
+        gpl += `# Tiles analyzed: ${this.scanAnalysis.length}\n`;
+        gpl += '#\n';
+        
+        uniquePalette.forEach(color => {
+            gpl += `${String(color.rgb.r).padStart(3)} ${String(color.rgb.g).padStart(3)} ${String(color.rgb.b).padStart(3)} ${color.sequenceStr}\n`;
+        });
+        
+        return gpl;
+    }
+    
+    _viewAnalysisAction() {
+        if (!this.scanAnalysis || !this.referenceGridData) {
+            this._setStatus('scanStatus', '❌ No analysis data available');
+            return;
+        }
+        
+        // Open a new window with interactive analysis view
+        const win = window.open('', 'Analysis View', 'width=1200,height=800');
+        if (!win) {
+            this._setStatus('scanStatus', '❌ Popup blocked - allow popups for analysis view');
+            return;
+        }
+        
+        const gridData = this.referenceGridData;
+        const analysis = this.scanAnalysis;
+        
+        // Generate HTML for analysis view
+        win.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Analysis - ${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Atkinson Hyperlegible', monospace;
+            padding: 20px;
+        }
+        h1 {
+            color: #00ff00;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .controls {
+            background: #111;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .controls label {
+            display: inline-block;
+            margin-right: 15px;
+            color: #0ff;
+        }
+        .controls select {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px;
+            font-family: monospace;
+            margin-right: 20px;
+        }
+        .stats {
+            background: #111;
+            border: 1px solid #ff0;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #ff0;
+        }
+        .grid-container {
+            display: inline-block;
+            background: #222;
+            padding: 10px;
+            border: 2px solid #0f0;
+        }
+        .grid {
+            display: grid;
+            gap: 2px;
+            background: #000;
+        }
+        .cell {
+            position: relative;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: border-color 0.1s;
+        }
+        .cell:hover {
+            border-color: #0ff !important;
+            z-index: 10;
+        }
+        .cell-info {
+            position: absolute;
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #0ff;
+            padding: 10px;
+            color: #0ff;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            display: none;
+        }
+        .cell:hover .cell-info {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 SCAN ANALYSIS: ${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols} (${analysis.length} tiles)</h1>
+    
+    <div class="controls">
+        <label>Sort by:
+            <select id="sortMode" onchange="updateSort()">
+                <option value="index">Grid Order (Row/Col)</option>
+                <option value="sequence">Sequence</option>
+                <option value="brightness">Brightness (L→D)</option>
+                <option value="brightness-rev">Brightness (D→L)</option>
+                <option value="hue">Hue (Rainbow)</option>
+                <option value="deviation">Color Deviation (Low→High)</option>
+                <option value="deviation-rev">Color Deviation (High→Low)</option>
+                <option value="red">Red Channel</option>
+                <option value="green">Green Channel</option>
+                <option value="blue">Blue Channel</option>
+            </select>
+        </label>
+        
+        <label>Cell Size:
+            <select id="cellSize" onchange="updateCellSize()">
+                <option value="20">Tiny (20px)</option>
+                <option value="40" selected>Small (40px)</option>
+                <option value="60">Medium (60px)</option>
+                <option value="80">Large (80px)</option>
+                <option value="100">Huge (100px)</option>
+            </select>
+        </label>
+    </div>
+    
+    <div class="stats" id="stats"></div>
+    
+    <div class="grid-container">
+        <div class="grid" id="grid"></div>
+    </div>
+    
+    <script>
+        const analysisData = ${JSON.stringify(analysis)};
+        const gridCols = ${gridData.cols};
+        let currentSort = 'index';
+        let currentCellSize = 40;
+        
+        function rgbToBrightness(r, g, b) {
+            return 0.299 * r + 0.587 * g + 0.114 * b;
+        }
+        
+        function rgbToHue(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            if (max === min) return 0;
+            const delta = max - min;
+            let h;
+            if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+            else if (max === g) h = ((b - r) / delta + 2) / 6;
+            else h = ((r - g) / delta + 4) / 6;
+            return h;
+        }
+        
+        function sortData(mode) {
+            const sorted = [...analysisData];
+            switch(mode) {
+                case 'index':
+                    sorted.sort((a, b) => a.index - b.index);
+                    break;
+                case 'sequence':
+                    sorted.sort((a, b) => a.sequenceStr.localeCompare(b.sequenceStr));
+                    break;
+                case 'brightness':
+                    sorted.sort((a, b) => {
+                        const bA = rgbToBrightness(a.rgb.r, a.rgb.g, a.rgb.b);
+                        const bB = rgbToBrightness(b.rgb.r, b.rgb.g, b.rgb.b);
+                        return bA - bB;
+                    });
+                    break;
+                case 'brightness-rev':
+                    sorted.sort((a, b) => {
+                        const bA = rgbToBrightness(a.rgb.r, a.rgb.g, a.rgb.b);
+                        const bB = rgbToBrightness(b.rgb.r, b.rgb.g, b.rgb.b);
+                        return bB - bA;
+                    });
+                    break;
+                case 'hue':
+                    sorted.sort((a, b) => {
+                        const hA = rgbToHue(a.rgb.r, a.rgb.g, a.rgb.b);
+                        const hB = rgbToHue(b.rgb.r, b.rgb.g, b.rgb.b);
+                        return hA - hB;
+                    });
+                    break;
+                case 'deviation':
+                    sorted.sort((a, b) => a.colorDeviation - b.colorDeviation);
+                    break;
+                case 'deviation-rev':
+                    sorted.sort((a, b) => b.colorDeviation - a.colorDeviation);
+                    break;
+                case 'red':
+                    sorted.sort((a, b) => a.rgb.r - b.rgb.r);
+                    break;
+                case 'green':
+                    sorted.sort((a, b) => a.rgb.g - b.rgb.g);
+                    break;
+                case 'blue':
+                    sorted.sort((a, b) => a.rgb.b - b.rgb.b);
+                    break;
+            }
+            return sorted;
+        }
+        
+        function updateStats() {
+            const avgR = Math.round(analysisData.reduce((s, d) => s + d.rgb.r, 0) / analysisData.length);
+            const avgG = Math.round(analysisData.reduce((s, d) => s + d.rgb.g, 0) / analysisData.length);
+            const avgB = Math.round(analysisData.reduce((s, d) => s + d.rgb.b, 0) / analysisData.length);
+            const avgDev = (analysisData.reduce((s, d) => s + d.colorDeviation, 0) / analysisData.length).toFixed(2);
+            const totalPx = analysisData.reduce((s, d) => s + d.pixelsSampled, 0);
+            
+            document.getElementById('stats').innerHTML = 
+                'Average Color: <span style="background:rgb(' + avgR + ',' + avgG + ',' + avgB + ');padding:2px 8px;color:#000;font-weight:bold;">RGB(' + avgR + ', ' + avgG + ', ' + avgB + ')</span> | ' +
+                'Avg Deviation: ' + avgDev + ' | ' +
+                'Total Pixels: ' + totalPx.toLocaleString();
+        }
+        
+        function render() {
+            const sorted = sortData(currentSort);
+            const grid = document.getElementById('grid');
+            grid.style.gridTemplateColumns = 'repeat(' + gridCols + ', ' + currentCellSize + 'px)';
+            grid.innerHTML = '';
+            
+            sorted.forEach(tile => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.style.width = currentCellSize + 'px';
+                cell.style.height = currentCellSize + 'px';
+                cell.style.background = tile.hex;
+                
+                const info = document.createElement('div');
+                info.className = 'cell-info';
+                info.innerHTML = 
+                    'Tile: ' + tile.index + ' (R' + tile.row + '/C' + tile.col + ')<br>' +
+                    'Sequence: ' + tile.sequenceStr + '<br>' +
+                    'RGB: ' + tile.rgb.r + ', ' + tile.rgb.g + ', ' + tile.rgb.b + '<br>' +
+                    'Hex: ' + tile.hex + '<br>' +
+                    'Deviation: ' + tile.colorDeviation.toFixed(2) + '<br>' +
+                    'Pixels: ' + tile.pixelsSampled.toLocaleString();
+                
+                cell.appendChild(info);
+                grid.appendChild(cell);
+            });
+        }
+        
+        function updateSort() {
+            currentSort = document.getElementById('sortMode').value;
+            render();
+        }
+        
+        function updateCellSize() {
+            currentCellSize = parseInt(document.getElementById('cellSize').value);
+            render();
+        }
+        
+        updateStats();
+        render();
+    </script>
+</body>
+</html>
+        `);
+        
+        this._setStatus('scanStatus', '✅ Analysis view opened in new window');
+    }
+    
+    _generateComparisonCSV() {
+        if (!this.scanAnalysis || !this.referenceGridData) return '';
+        
+        let csv = '# Expected vs Measured Color Comparison\n';
+        csv += `# Generated: ${new Date().toISOString()}\n`;
+        csv += '#\n';
+        csv += 'Index,Row,Col,Sequence,Expected_R,Expected_G,Expected_B,Measured_R,Measured_G,Measured_B,Delta_E,Std_R,Std_G,Std_B,Pixels_Sampled\n';
+        
+        this.scanAnalysis.forEach(tile => {
+            // Get expected color from simulation
+            const expectedColor = simColour(tile.sequence, this.referenceGridData.colours);
+            
+            // Calculate Delta E (color difference)
+            const deltaR = tile.rgb.r - expectedColor.r;
+            const deltaG = tile.rgb.g - expectedColor.g;
+            const deltaB = tile.rgb.b - expectedColor.b;
+            const deltaE = Math.sqrt(deltaR**2 + deltaG**2 + deltaB**2);
+            
+            csv += `${tile.index},${tile.row},${tile.col},"${tile.sequenceStr}",`;
+            csv += `${expectedColor.r},${expectedColor.g},${expectedColor.b},`;
+            csv += `${tile.rgb.r},${tile.rgb.g},${tile.rgb.b},`;
+            csv += `${deltaE.toFixed(2)},`;
+            csv += `${tile.std.r.toFixed(2)},${tile.std.g.toFixed(2)},${tile.std.b.toFixed(2)},`;
+            csv += `${tile.pixelsSampled}\n`;
+        });
+        
+        return csv;
+    }
+    
+    _exportQuantizationConfigAction() {
+        if (!this.quantizationConfig) {
+            this._setStatus('scanStatus', '❌ Analyze scan first');
+            return;
+        }
+        
+        const json = JSON.stringify(this.quantizationConfig, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.quantizationConfig.paletteName}-quantization-config-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this._setStatus('scanStatus', `✅ Exported quantization config (${this.quantizationConfig.colorMap.length} colors)`);
     }
     
     _quantizeAction() {
@@ -1512,26 +2165,28 @@ export class MultifilamentPrintTool {
     }
     
     _exportComparisonCSVAction() {
-        if (!this.gridData || !this.scannedPalette) {
+        if (!this.scanAnalysis || !this.referenceGridData) {
             this._setStatus('scanStatus', '❌ Analyze scan first');
             return;
         }
         
         // Generate comparison CSV
-        const csv = exportComparisonCSV(this.gridData, this.scannedPalette);
+        const csv = this._generateComparisonCSV();
         
         // Generate filename: cal-{colors}c{layers}L-{rows}x{cols}-comparison-YYYYMMDD.csv
-        const baseFilename = this._generateGridFilename(
-            this.gridData, 
-            null, 
-            null, 
-            'csv'
-        );
-        const filename = baseFilename.replace('.csv', '-comparison.csv');
+        const date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+        const filename = `cal-${this.referenceGridData.colours.length}c${this.referenceGridData.layerCount}L-${this.referenceGridData.rows}x${this.referenceGridData.cols}-comparison-${date}.csv`;
         
         // Trigger download
-        downloadCSV(csv, filename);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
         
+        this._setStatus('scanStatus', `✅ Exported ${filename}`);        
         this._setStatus('scanStatus', '✅ Comparison CSV exported');
     }
     
@@ -2361,6 +3016,14 @@ export class MultifilamentPrintTool {
             console.log('📊 Updating sequence count...');
             this._updateSequenceCount();
             
+            // Check for scan data in ZIP
+            console.log('🔍 Checking for scan analysis data...');
+            const scanFolder = Object.keys(zipData.files).find(k => k.includes('/scans/'));
+            if (scanFolder) {
+                console.log('📸 Scan data found, loading...');
+                await this._loadScanDataFromZip(zipData);
+            }
+            
             // Force canvas to show the loaded grid immediately
             console.log('🎨 Forcing canvas display of loaded grid...');
             console.log('Current tab:', this.currentTab);
@@ -2382,6 +3045,81 @@ export class MultifilamentPrintTool {
         } catch (err) {
             this._setStatus('projectStatus', `❌ Import failed: ${err.message}`);
             console.error('Project import error:', err);
+        }
+    }
+    
+    async _loadScanDataFromZip(zipData) {
+        try {
+            // Helper to find files in nested ZIP structures
+            const findFile = (endsWith) => {
+                const fileKey = Object.keys(zipData.files).find(k => k.endsWith(endsWith));
+                return fileKey ? zipData.files[fileKey] : null;
+            };
+            
+            // Load scan image
+            const scanFile = findFile('.png') || findFile('.jpg') || findFile('.jpeg');
+            if (scanFile) {
+                console.log('📸 Loading scan image...');
+                const scanBlob = await scanFile.async('blob');
+                const scanUrl = URL.createObjectURL(scanBlob);
+                const img = new Image();
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = scanUrl;
+                });
+                
+                this.scanImageElement = img;
+                console.log(`✅ Scan image loaded: ${img.width}×${img.height}px`);
+                
+                // If on SCAN tab, display it
+                if (this.currentTab === 'SCAN') {
+                    const canvas = this.toolBase.canvas;
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    
+                    this._autoCalculateGridOverlay();
+                    const values = this.toolBase.values;
+                    this._applyScanDisplayMode(values.scanDisplayMode || 'fit');
+                }
+            }
+            
+            // Load analysis data
+            const analysisFile = findFile('analysis.json');
+            if (analysisFile) {
+                console.log('📊 Loading analysis data...');
+                const analysisText = await analysisFile.async('text');
+                const analysisData = JSON.parse(analysisText);
+                this.scanAnalysis = analysisData.tiles;
+                console.log(`✅ Analysis data loaded: ${this.scanAnalysis.length} tiles`);
+                
+                this._setStatus('scanStatus', `✅ Loaded scan analysis (${this.scanAnalysis.length} tiles, avg deviation: ${analysisData.summary.averageDeviation})`);
+            }
+            
+            // Load quantization config
+            const quantFile = findFile('quantization-config.json');
+            if (quantFile) {
+                console.log('🎨 Loading quantization config...');
+                const quantText = await quantFile.async('text');
+                this.quantizationConfig = JSON.parse(quantText);
+                console.log(`✅ Quantization config loaded: ${Object.keys(this.quantizationConfig.colorMap).length} colors`);
+            }
+            
+            // Load calibrated palette
+            const paletteFile = findFile('calibrated-palette.gpl');
+            if (paletteFile) {
+                console.log('🎨 Loading calibrated palette...');
+                const paletteText = await paletteFile.async('text');
+                this.scannedPalette = paletteText;
+                console.log('✅ Calibrated palette loaded');
+            }
+            
+            console.log('✅ All scan data loaded from ZIP');
+        } catch (err) {
+            console.warn('⚠️ Error loading scan data from ZIP:', err);
         }
     }
     
@@ -2572,13 +3310,37 @@ export class MultifilamentPrintTool {
         img.onload = () => {
             this.scanImageElement = img;
             
-            // Auto-calculate grid size and position
+            // Resize canvas to EXACTLY match the image dimensions
+            const canvas = this.toolBase.canvas;
+            const oldWidth = canvas.width;
+            const oldHeight = canvas.height;
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            console.log(`📐 Canvas resized: ${oldWidth}×${oldHeight} → ${img.width}×${img.height}px`);
+            console.log(`   Image natural size: ${img.naturalWidth}×${img.naturalHeight}px`);
+            
+            // Apply display mode (fit by default)
+            const mode = this.scanDisplayMode || 'fit';
+            console.log(`   Applying display mode: ${mode}`);
+            this._applyScanDisplayMode(mode);
+            
+            // Calculate grid positioning if grid exists
             if (this.referenceGridData) {
+                console.log(`   Calculating grid overlay...`);
                 this._autoCalculateGridOverlay();
             }
             
+            console.log(`   Triggering redraw...`);
             this.toolBase.draw();
-            this._setStatus('scanImageStatus', `✅ Scan loaded (${img.width}×${img.height}px) | Grid auto-sized`);
+            
+            const sizeKB = (file.size / 1024).toFixed(0);
+            this._setStatus('scanImageStatus', `✅ Loaded ${img.width}×${img.height}px (${sizeKB}KB) | Mode: ${mode}`);
+        };
+        img.onerror = (err) => {
+            console.error('❌ Image load error:', err);
+            this._setStatus('scanImageStatus', '❌ Failed to load image');
         };
         img.src = URL.createObjectURL(file);
     }
@@ -2624,13 +3386,20 @@ export class MultifilamentPrintTool {
             gridY
         };
         
-        // Reset user adjustments
+        // Reset user adjustments - store grid as 4 corner points for transform
         this.gridAlignment = {
             offsetX: 0,
             offsetY: 0,
             rotation: 0,
             flipped: false,
-            autoCalculated: true
+            autoCalculated: true,
+            // Corner points (top-left, top-right, bottom-right, bottom-left)
+            corners: [
+                { x: gridX, y: gridY },                                    // TL
+                { x: gridX + gridWidth_px, y: gridY },                     // TR
+                { x: gridX + gridWidth_px, y: gridY + gridHeight_px },     // BR
+                { x: gridX, y: gridY + gridHeight_px }                     // BL
+            ]
         };
         
         // Update UI controls
@@ -2761,25 +3530,11 @@ export class MultifilamentPrintTool {
             console.log('✅ Grid fits within scan bounds');
         }
         
-        // Apply calculated values
-        this.scanOverlay.scale = optimalScale;
-        this.scanOverlay.x = optimalX;
-        this.scanOverlay.y = optimalY;
-        this.scanOverlay.rotation = 0;
-        
-        // Update UI controls
-        const overlayScaleComp = this.toolBase.components.get('overlayScale');
-        const overlayRotationComp = this.toolBase.components.get('overlayRotation');
-        
-        if (overlayScaleComp && typeof overlayScaleComp.setValue === 'function') {
-            overlayScaleComp.setValue(optimalScale);
-        }
-        if (overlayRotationComp && typeof overlayRotationComp.setValue === 'function') {
-            overlayRotationComp.setValue(0);
-        }
+        // Store grid calculations (no longer need to apply scale/position since canvas is actual size)
+        this.gridCalculated = calc;
         
         this.toolBase.draw();
-        this._setStatus('scanStatus', `✅ Auto-aligned: ${pxPerMm_displayed.toFixed(2)} px/mm`);
+        this._setStatus('scanStatus', `✅ Grid auto-calculated: ${calc.pxPerMm.toFixed(2)} px/mm`);
     }
     
     _resetGridAlignment() {
@@ -2799,6 +3554,165 @@ export class MultifilamentPrintTool {
         
         this.toolBase.draw();
         this._setStatus('scanStatus', '✅ Grid alignment reset');
+    }
+    
+    _setupScanCanvasInteraction() {
+        const canvas = this.toolBase.canvas;
+        if (!canvas) return;
+        
+        // Track drag state
+        this.scanDragState = {
+            isDragging: false,
+            dragType: null, // 'corner', 'body', 'pan'
+            dragCornerIndex: -1,
+            startX: 0,
+            startY: 0,
+            startCorners: null,
+            rafId: null
+        };
+        
+        const getCanvasCoords = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        };
+        
+        const isPointInQuad = (x, y, corners) => {
+            // Check if point is inside the quad using cross product
+            const sign = (p1, p2, p3) => {
+                return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+            };
+            
+            const d1 = sign({x, y}, corners[0], corners[1]);
+            const d2 = sign({x, y}, corners[1], corners[2]);
+            const d3 = sign({x, y}, corners[2], corners[3]);
+            const d4 = sign({x, y}, corners[3], corners[0]);
+            
+            const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0) || (d4 < 0);
+            const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0) || (d4 > 0);
+            
+            return !(hasNeg && hasPos);
+        };
+        
+        const findCornerUnderMouse = (mouseX, mouseY) => {
+            if (!this.gridAlignment?.corners) return -1;
+            
+            const HANDLE_RADIUS = 15; // Larger for easier grabbing
+            
+            for (let i = 0; i < this.gridAlignment.corners.length; i++) {
+                const corner = this.gridAlignment.corners[i];
+                const dx = mouseX - corner.x;
+                const dy = mouseY - corner.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist <= HANDLE_RADIUS) {
+                    return i;
+                }
+            }
+            return -1;
+        };
+        
+        const scheduleDraw = () => {
+            if (this.scanDragState.rafId) return;
+            this.scanDragState.rafId = requestAnimationFrame(() => {
+                this.toolBase.draw();
+                this.scanDragState.rafId = null;
+            });
+        };
+        
+        // Mouse down - start drag
+        canvas.addEventListener('mousedown', (e) => {
+            if (this.currentTab !== 'SCAN') return;
+            if (!this.gridAlignment?.corners) return;
+            
+            const { x, y } = getCanvasCoords(e);
+            const cornerIndex = findCornerUnderMouse(x, y);
+            
+            if (cornerIndex !== -1) {
+                // Start corner drag
+                this.scanDragState.isDragging = true;
+                this.scanDragState.dragType = 'corner';
+                this.scanDragState.dragCornerIndex = cornerIndex;
+                this.scanDragState.startX = x;
+                this.scanDragState.startY = y;
+                this.scanDragState.startCorners = this.gridAlignment.corners.map(c => ({...c}));
+                canvas.style.cursor = 'grabbing';
+                e.preventDefault();
+            } else if (isPointInQuad(x, y, this.gridAlignment.corners)) {
+                // Start body drag
+                this.scanDragState.isDragging = true;
+                this.scanDragState.dragType = 'body';
+                this.scanDragState.startX = x;
+                this.scanDragState.startY = y;
+                this.scanDragState.startCorners = this.gridAlignment.corners.map(c => ({...c}));
+                canvas.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        });
+        
+        // Mouse move - drag corner/body or show cursor
+        canvas.addEventListener('mousemove', (e) => {
+            if (this.currentTab !== 'SCAN') return;
+            if (!this.gridAlignment?.corners) return;
+            
+            const { x, y } = getCanvasCoords(e);
+            
+            if (this.scanDragState.isDragging) {
+                const dx = x - this.scanDragState.startX;
+                const dy = y - this.scanDragState.startY;
+                
+                if (this.scanDragState.dragType === 'corner') {
+                    // Update single corner
+                    const cornerIndex = this.scanDragState.dragCornerIndex;
+                    this.gridAlignment.corners[cornerIndex] = {
+                        x: this.scanDragState.startCorners[cornerIndex].x + dx,
+                        y: this.scanDragState.startCorners[cornerIndex].y + dy
+                    };
+                } else if (this.scanDragState.dragType === 'body') {
+                    // Move all corners together
+                    this.gridAlignment.corners = this.scanDragState.startCorners.map(c => ({
+                        x: c.x + dx,
+                        y: c.y + dy
+                    }));
+                }
+                
+                this.gridAlignment.autoCalculated = false;
+                scheduleDraw();
+                e.preventDefault();
+            } else {
+                // Update cursor based on hover
+                const cornerIndex = findCornerUnderMouse(x, y);
+                if (cornerIndex !== -1) {
+                    canvas.style.cursor = 'pointer';
+                } else if (isPointInQuad(x, y, this.gridAlignment.corners)) {
+                    canvas.style.cursor = 'move';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+            }
+        });
+        
+        // Mouse up - end drag
+        canvas.addEventListener('mouseup', (e) => {
+            if (this.scanDragState.isDragging) {
+                this.scanDragState.isDragging = false;
+                this.scanDragState.dragType = null;
+                this.scanDragState.dragCornerIndex = -1;
+                canvas.style.cursor = 'default';
+                e.preventDefault();
+            }
+        });
+        
+        // Mouse leave - cancel drag
+        canvas.addEventListener('mouseleave', () => {
+            if (this.scanDragState.isDragging) {
+                this.scanDragState.isDragging = false;
+                this.scanDragState.dragType = null;
+                canvas.style.cursor = 'default';
+            }
+        });
     }
     
     _setupKeyboardControls() {
@@ -2854,20 +3768,26 @@ export class MultifilamentPrintTool {
     }
     
     _resetAlignmentAction() {
-        this.scanOverlay.x = 100;
-        this.scanOverlay.y = 100;
-        this.scanOverlay.scale = 1.0;
-        this.scanOverlay.rotation = 0;
+        // Reset grid alignment to zero
+        this.gridAlignment.offsetX = 0;
+        this.gridAlignment.offsetY = 0;
+        this.gridAlignment.rotation = 0;
+        this.gridAlignment.flipped = false;
         
         // Update UI controls
         if (this.toolBase) {
-            const overlayScaleComp = this.toolBase.components.get('overlayScale');
-            const overlayRotationComp = this.toolBase.components.get('overlayRotation');
-            if (overlayScaleComp && typeof overlayScaleComp.setValue === 'function') {
-                overlayScaleComp.setValue(1.0);
+            const offsetXComp = this.toolBase.components.get('gridOffsetX');
+            const offsetYComp = this.toolBase.components.get('gridOffsetY');
+            const rotationComp = this.toolBase.components.get('gridRotation');
+            
+            if (offsetXComp && typeof offsetXComp.setValue === 'function') {
+                offsetXComp.setValue(0);
             }
-            if (overlayRotationComp && typeof overlayRotationComp.setValue === 'function') {
-                overlayRotationComp.setValue(0);
+            if (offsetYComp && typeof offsetYComp.setValue === 'function') {
+                offsetYComp.setValue(0);
+            }
+            if (rotationComp && typeof rotationComp.setValue === 'function') {
+                rotationComp.setValue(0);
             }
         }
         
@@ -2875,52 +3795,83 @@ export class MultifilamentPrintTool {
         this._setStatus('scanStatus', '✅ Alignment reset');
     }
     
-    _handleScanCanvasMouseDown(e) {
-        if (this.currentTab !== 'SCAN' || !this.referenceGridData) return;
-        
-        const rect = this.toolBase.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Check if clicking on overlay area (simple bounding box check)
-        const { x, y, scale } = this.scanOverlay;
-        const { rows, cols, tileSize, gap } = this.referenceGridData;
-        const step = tileSize + gap;
-        const gridWidth = (cols * step - gap) * scale;
-        const gridHeight = (rows * step - gap) * scale;
-        
-        if (mouseX >= x && mouseX <= x + gridWidth &&
-            mouseY >= y && mouseY <= y + gridHeight) {
-            this.scanOverlay.isDragging = true;
-            this.scanOverlay.dragStartX = mouseX;
-            this.scanOverlay.dragStartY = mouseY;
-            this.scanOverlay.dragStartOverlayX = this.scanOverlay.x;
-            this.scanOverlay.dragStartOverlayY = this.scanOverlay.y;
-            this.toolBase.canvas.style.cursor = 'move';
+    _applyScanDisplayMode(mode) {
+        if (!this.toolBase || !this.toolBase.canvas) {
+            console.warn('⚠️ Cannot apply display mode: canvas not available');
+            return;
         }
-    }
-    
-    _handleScanCanvasMouseMove(e) {
-        if (this.currentTab !== 'SCAN' || !this.scanOverlay.isDragging) return;
         
-        const rect = this.toolBase.canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        const canvas = this.toolBase.canvas;
+        const canvasArea = canvas.parentElement;
         
-        const deltaX = mouseX - this.scanOverlay.dragStartX;
-        const deltaY = mouseY - this.scanOverlay.dragStartY;
+        console.log(`📺 _applyScanDisplayMode called:`);
+        console.log(`   Mode requested: "${mode}"`);
+        console.log(`   Canvas element size: ${canvas.width}×${canvas.height}px`);
+        console.log(`   Canvas computed style: ${window.getComputedStyle(canvas).width} × ${window.getComputedStyle(canvas).height}`);
         
-        this.scanOverlay.x = this.scanOverlay.dragStartOverlayX + deltaX;
-        this.scanOverlay.y = this.scanOverlay.dragStartOverlayY + deltaY;
+        // Reset any inline size styles (use removeProperty for cleaner reset)
+        canvas.style.removeProperty('width');
+        canvas.style.removeProperty('height');
+        canvas.style.removeProperty('object-fit');
+        canvas.style.removeProperty('max-width');
+        canvas.style.removeProperty('max-height');
+        canvas.style.removeProperty('image-rendering');
         
-        this.toolBase.draw();
-    }
-    
-    _handleScanCanvasMouseUp(e) {
-        if (this.scanOverlay.isDragging) {
-            this.scanOverlay.isDragging = false;
-            this.toolBase.canvas.style.cursor = 'default';
+        switch (mode.toLowerCase()) {
+            case 'fit':
+                // Fit entire image in container (letterbox/pillarbox if needed)
+                canvas.style.setProperty('width', '100%', 'important');
+                canvas.style.setProperty('height', '100%', 'important');
+                canvas.style.setProperty('object-fit', 'contain', 'important');
+                canvas.style.setProperty('image-rendering', 'auto', 'important');
+                canvas.style.setProperty('max-width', 'none', 'important');
+                canvas.style.setProperty('max-height', 'none', 'important');
+                console.log('   ✓ Applied: Fit (contain, responsive)');
+                break;
+            
+            case 'fill':
+                // Fill container, may crop edges
+                canvas.style.setProperty('width', '100%', 'important');
+                canvas.style.setProperty('height', '100%', 'important');
+                canvas.style.setProperty('object-fit', 'cover', 'important');
+                canvas.style.setProperty('image-rendering', 'auto', 'important');
+                canvas.style.setProperty('max-width', 'none', 'important');
+                canvas.style.setProperty('max-height', 'none', 'important');
+                console.log('   ✓ Applied: Fill (cover, responsive)');
+                break;
+            
+            case 'actual size':
+                // Show at exact pixel dimensions (1:1, may need scrolling)
+                const actualWidth = `${canvas.width}px`;
+                const actualHeight = `${canvas.height}px`;
+                canvas.style.setProperty('width', actualWidth, 'important');
+                canvas.style.setProperty('height', actualHeight, 'important');
+                canvas.style.setProperty('object-fit', 'none', 'important');
+                canvas.style.setProperty('image-rendering', 'pixelated', 'important');
+                canvas.style.setProperty('max-width', 'none', 'important');
+                canvas.style.setProperty('max-height', 'none', 'important');
+                console.log(`   ✓ Applied: Actual Size (${actualWidth}×${actualHeight}, 1:1)`);
+                break;
+            
+            default:
+                console.warn(`   ⚠️ Unknown mode: "${mode}"`);
+                break;
         }
+        
+        // Ensure canvas area allows scrolling for actual size mode
+        if (mode === 'actual size') {
+            canvasArea.style.overflow = 'auto';
+            canvasArea.style.alignItems = 'flex-start';
+            canvasArea.style.justifyContent = 'flex-start';
+            console.log('   ✓ Canvas area: scrollable');
+        } else {
+            canvasArea.style.overflow = 'hidden';
+            canvasArea.style.alignItems = 'center';
+            canvasArea.style.justifyContent = 'center';
+            console.log('   ✓ Canvas area: centered');
+        }
+        
+        console.log(`   Final computed style: ${window.getComputedStyle(canvas).width} × ${window.getComputedStyle(canvas).height}`);
     }
     
     _drawCalibrationGrid(ctx, canvas) {
@@ -2952,8 +3903,8 @@ export class MultifilamentPrintTool {
     
     _drawCalibrationGridDetailed(ctx, canvas, gridData, mode = 'Combined') {
         console.log('🎨 _drawCalibrationGridDetailed called, mode:', mode);
-        const { sequences, colours, rows, cols, tileSize, gap, width, height, emptyCells } = gridData;
-        console.log('Grid details:', { sequences: sequences?.length, colours: colours?.length, rows, cols, tileSize, gap });
+        const { sequences, colours, rows, cols, tileSize, gap, width, height, emptyCells, perimeterMargin = 0 } = gridData;
+        console.log('Grid details:', { sequences: sequences?.length, colours: colours?.length, rows, cols, tileSize, gap, perimeterMargin });
         
         // Calculate scale to fit canvas with padding
         const padding = 40;
@@ -2976,16 +3927,42 @@ export class MultifilamentPrintTool {
             offsetY, 
             rows, 
             cols, 
-            scale 
+            scale,
+            perimeterMargin: perimeterMargin * scale 
         };
         
         ctx.save();
         ctx.translate(offsetX, offsetY);
         ctx.scale(scale, scale);
         
+        // Draw perimeter margin as a border (if enabled)
+        if (perimeterMargin > 0) {
+            ctx.strokeStyle = '#808080';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(0, 0, width, height);
+            
+            // Fill perimeter margin area with dark grey
+            ctx.fillStyle = '#202020';
+            // Top
+            ctx.fillRect(0, 0, width, perimeterMargin);
+            // Bottom
+            ctx.fillRect(0, height - perimeterMargin, width, perimeterMargin);
+            // Left
+            ctx.fillRect(0, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2));
+            // Right
+            ctx.fillRect(width - perimeterMargin, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2));
+        }
+        
+        // Translate to inner grid area (after perimeter margin)
+        ctx.translate(perimeterMargin, perimeterMargin);
+        
         // Draw gap fill if enabled
         const values = this.toolBase?.values || {};
         const gapFillEnabled = values.gapFillOptions && values.gapFillOptions.includes('Fill Gaps');
+        
+        // Calculate inner grid dimensions (without margin)
+        const innerWidth = width - (perimeterMargin * 2);
+        const innerHeight = height - (perimeterMargin * 2);
         
         if (gap > 0 && gapFillEnabled) {
             // Get gap filament color
@@ -2993,9 +3970,9 @@ export class MultifilamentPrintTool {
             const gapFilamentColor = FILAMENT_COLOURS.find(f => f.n === gapFilamentName);
             const gapHex = gapFilamentColor ? gapFilamentColor.h : '#FFFFFF';
             
-            // Fill entire grid area with gap color
+            // Fill entire inner grid area with gap color
             ctx.fillStyle = gapHex;
-            ctx.fillRect(0, 0, width, height);
+            ctx.fillRect(0, 0, innerWidth, innerHeight);
         }
         
         // Draw each tile
@@ -3010,17 +3987,17 @@ export class MultifilamentPrintTool {
                 if (emptyCells && emptyCells.includes(index)) {
                     // Draw empty cell with grey + X (or skip if gap fill is enabled)
                     if (!gapFillEnabled) {
-                        ctx.fillStyle = '#404040';
-                        ctx.fillRect(x, y, tileSize, tileSize);
-                        
-                        ctx.strokeStyle = '#808080';
-                        ctx.lineWidth = 0.3;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + tileSize, y + tileSize);
-                        ctx.moveTo(x + tileSize, y);
-                        ctx.lineTo(x, y + tileSize);
-                        ctx.stroke();
+                    ctx.fillStyle = '#404040';
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                    
+                    ctx.strokeStyle = '#808080';
+                    ctx.lineWidth = 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + tileSize, y + tileSize);
+                    ctx.moveTo(x + tileSize, y);
+                    ctx.lineTo(x, y + tileSize);
+                    ctx.stroke();
                     }
                     continue;
                 }
@@ -3033,7 +4010,7 @@ export class MultifilamentPrintTool {
                 let hexColor;
                 if (mode === 'Combined' || mode === 'combined') {
                     // Show simulated final color (all layers)
-                    const color = simColour(sequence, colours);
+                const color = simColour(sequence, colours);
                     hexColor = rgb2hex(color);
                 } else if (mode.startsWith('Layer ') || mode.startsWith('layer-')) {
                     // Show specific layer only
@@ -3175,106 +4152,121 @@ export class MultifilamentPrintTool {
         const calc = this.gridCalculated;
         const align = this.gridAlignment;
         
+        if (!align?.corners || align.corners.length !== 4) {
+            console.warn('Grid corners not initialized');
+            return;
+        }
+        
         // Get options
         const options = values.gridOptions || [];
         const showSampleZones = options.includes('Show Sample Zones');
         const showExpectedColors = options.includes('Show Expected Colors');
-        const flipped = options.includes('Flip/Mirror');
+        const deadzonePercent = (values.deadzonePercent || 10) / 100;
+        
+        const corners = align.corners;
+        const { rows, cols } = gridData;
+        
+        // Helper: bilinear interpolation
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const lerp2D = (p0, p1, t) => ({
+            x: lerp(p0.x, p1.x, t),
+            y: lerp(p0.y, p1.y, t)
+        });
+        
+        // Helper: get point in grid
+        const getGridPoint = (col, row) => {
+            const tCol = col / cols;
+            const tRow = row / rows;
+            
+            // Bilinear interpolation
+            const top = lerp2D(corners[0], corners[1], tCol);
+            const bottom = lerp2D(corners[3], corners[2], tCol);
+            return lerp2D(top, bottom, tRow);
+        };
         
         ctx.save();
         
-        // Transform to grid space
-        const gridX = drawX + (calc.gridX * displayScale) + align.offsetX;
-        const gridY = drawY + (calc.gridY * displayScale) + align.offsetY;
-        
-        ctx.translate(gridX, gridY);
-        
-        if (align.rotation !== 0) {
-            const centerX = (calc.gridWidth_px * displayScale) / 2;
-            const centerY = (calc.gridHeight_px * displayScale) / 2;
-            ctx.translate(centerX, centerY);
-            ctx.rotate((align.rotation * Math.PI) / 180);
-            ctx.translate(-centerX, -centerY);
-        }
-        
-        if (flipped) {
-            ctx.translate(calc.gridWidth_px * displayScale, 0);
-            ctx.scale(-1, 1);
-        }
-        
-        // Calculate tile dimensions in display pixels
-        const { rows, cols, tileSize, gap } = gridData;
-        const tileSizeDisplay = tileSize * calc.pxPerMm * displayScale;
-        const gapDisplay = gap * calc.pxPerMm * displayScale;
-        const step = tileSizeDisplay + gapDisplay;
-        
-        // Draw grid lines (black 1px)
+        // Draw ALL grid lines in one pass
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 1;
+        ctx.beginPath();
         
         // Vertical lines
         for (let col = 0; col <= cols; col++) {
-            const x = col * step;
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, rows * step - gapDisplay);
-            ctx.stroke();
+            const top = getGridPoint(col, 0);
+            const bottom = getGridPoint(col, rows);
+            ctx.moveTo(top.x, top.y);
+            ctx.lineTo(bottom.x, bottom.y);
         }
         
         // Horizontal lines
         for (let row = 0; row <= rows; row++) {
-            const y = row * step;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(cols * step - gapDisplay, y);
-            ctx.stroke();
+            const left = getGridPoint(0, row);
+            const right = getGridPoint(cols, row);
+            ctx.moveTo(left.x, left.y);
+            ctx.lineTo(right.x, right.y);
         }
         
-        // Draw sample zones and/or expected colors
+        ctx.stroke();
+        
+        // Draw zones/colors if needed
         if (showSampleZones || showExpectedColors) {
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
-                    const cellX = col * step;
-                    const cellY = row * step;
-                    const index = row * cols + col;
+                    const tileIndex = row * cols + col;
+                    
+                    // Get tile corners
+                    const tl = getGridPoint(col, row);
+                    const tr = getGridPoint(col + 1, row);
+                    const bl = getGridPoint(col, row + 1);
+                    const br = getGridPoint(col + 1, row + 1);
                     
                     if (showSampleZones) {
-                        // Draw safe sampling area (center region)
-                        const deadzone = Math.max(2, tileSizeDisplay * 0.2); // 20% border or 2px min
-                        const sampleSize = tileSizeDisplay - (deadzone * 2);
-                        
-                        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-                        ctx.fillRect(
-                            cellX + deadzone,
-                            cellY + deadzone,
-                            sampleSize,
-                            sampleSize
-                        );
-                        
-                        // Draw center point
-                        const centerX = cellX + tileSizeDisplay / 2;
-                        const centerY = cellY + tileSizeDisplay / 2;
-                        ctx.fillStyle = '#00ff00';
+                        // Draw deadzone
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
                         ctx.beginPath();
-                        ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+                        ctx.moveTo(tl.x, tl.y);
+                        ctx.lineTo(tr.x, tr.y);
+                        ctx.lineTo(br.x, br.y);
+                        ctx.lineTo(bl.x, bl.y);
+                        ctx.closePath();
                         ctx.fill();
+                        
+                        // Safe zone (inset by deadzone percentage)
+                        const safeTL = lerp2D(tl, br, deadzonePercent);
+                        const safeTR = lerp2D(tr, bl, deadzonePercent);
+                        const safeBR = lerp2D(br, tl, deadzonePercent);
+                        const safeBL = lerp2D(bl, tr, deadzonePercent);
+                        
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.beginPath();
+                        ctx.moveTo(safeTL.x, safeTL.y);
+                        ctx.lineTo(safeTR.x, safeTR.y);
+                        ctx.lineTo(safeBR.x, safeBR.y);
+                        ctx.lineTo(safeBL.x, safeBL.y);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
                     }
                     
-                    if (showExpectedColors && index < gridData.sequences.length) {
-                        // Show expected color from sequence
-                        const sequence = gridData.sequences[index];
-                        if (sequence && sequence.length > 0 && this.simColour) {
-                            const expectedColor = this.simColour(sequence, gridData.colours);
+                    if (showExpectedColors && tileIndex < gridData.sequences.length) {
+                        const sequence = gridData.sequences[tileIndex];
+                        if (sequence && this.simColour) {
+                            const color = this.simColour(sequence, gridData.colours);
                             
-                            // Draw small color swatch in corner
-                            const swatchSize = Math.min(tileSizeDisplay * 0.3, 10);
-                            ctx.fillStyle = `rgb(${expectedColor.r}, ${expectedColor.g}, ${expectedColor.b})`;
-                            ctx.fillRect(
-                                cellX + 2,
-                                cellY + 2,
-                                swatchSize,
-                                swatchSize
-                            );
+                            // Center swatch
+                            const centerX = (tl.x + tr.x + bl.x + br.x) / 4;
+                            const centerY = (tl.y + tr.y + bl.y + br.y) / 4;
+                            const size = 8;
+                            
+                            ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                            ctx.fillRect(centerX - size/2, centerY - size/2, size, size);
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(centerX - size/2, centerY - size/2, size, size);
                         }
                     }
                 }
@@ -3282,13 +4274,57 @@ export class MultifilamentPrintTool {
         }
         
         ctx.restore();
+        
+        // Draw corner handles
+        this._drawCornerHandles(ctx, corners);
+    }
+    
+    _drawCornerHandles(ctx, corners) {
+        const HANDLE_RADIUS = 8;
+        const HANDLE_COLORS = ['#ff0000', '#00ff00', '#0000ff', '#ffff00']; // TL, TR, BR, BL
+        const LABELS = ['TL', 'TR', 'BR', 'BL'];
+        
+        ctx.save();
+        
+        corners.forEach((corner, i) => {
+            // Outer circle (white border)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(corner.x, corner.y, HANDLE_RADIUS + 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner circle (colored)
+            ctx.fillStyle = HANDLE_COLORS[i];
+            ctx.beginPath();
+            ctx.arc(corner.x, corner.y, HANDLE_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Black outline
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(corner.x, corner.y, HANDLE_RADIUS, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 9px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(LABELS[i], corner.x, corner.y);
+        });
+        
+        ctx.restore();
     }
     
     _drawGridOverlay(ctx, canvas) {
+        // DEPRECATED: Use _drawPrecisionGridOverlay instead
+        // This function is no longer used
+        return;
+        
         if (!this.referenceGridData) return;
         
         const { rows, cols, tileSize, gap } = this.referenceGridData;
-        const { x, y, scale, rotation, opacity } = this.scanOverlay;
         
         // Get overlay style from UI
         const values = this.toolBase?.values || {};
@@ -3504,12 +4540,12 @@ export class MultifilamentPrintTool {
     
     async _exportCompletePackageAction() {
         if (!this.gridData) {
-            this._setStatus('exportStatus', '❌ Generate grid first');
+            this._setStatus('exportProjectZipStatus', '❌ Generate grid first');
             return;
         }
         
         try {
-            this._setStatus('exportStatus', '⏳ Creating export package...');
+            this._setStatus('exportProjectZipStatus', '⏳ Creating export package...');
             
             // Dynamically import JSZip
             const JSZip = (await import('jszip')).default;
@@ -3562,7 +4598,77 @@ export class MultifilamentPrintTool {
                 description: 'Machine-readable configuration'
             });
             
-            // 3. Add data files
+            // 3. Add scan analysis data if available
+            if (this.scanAnalysis) {
+                this._setStatus('exportStatus', '⏳ Adding scan analysis...');
+                const scansFolder = zip.folder(`${folderName}/scans`);
+                
+                // Add scan image if available
+                if (this.scanImageElement) {
+                    const scanCanvas = document.createElement('canvas');
+                    scanCanvas.width = this.scanImageElement.width;
+                    scanCanvas.height = this.scanImageElement.height;
+                    const scanCtx = scanCanvas.getContext('2d');
+                    scanCtx.drawImage(this.scanImageElement, 0, 0);
+                    
+                    const scanBlob = await new Promise(resolve => scanCanvas.toBlob(resolve, 'image/png'));
+                    scansFolder.file(`scan-${new Date().toISOString().slice(0,10)}.png`, scanBlob);
+                    manifestFiles.push({
+                        path: 'scans/scan-*.png',
+                        size: scanBlob.size,
+                        description: 'Scanned calibration grid image'
+                    });
+                }
+                
+                // Add scan analysis JSON
+                const analysisJSON = JSON.stringify({
+                    version: '1.0.0',
+                    analyzedAt: new Date().toISOString(),
+                    tiles: this.scanAnalysis,
+                    summary: {
+                        tilesAnalyzed: this.scanAnalysis.length,
+                        totalPixels: this.scanAnalysis.reduce((sum, t) => sum + t.pixelsSampled, 0),
+                        averageDeviation: (this.scanAnalysis.reduce((sum, t) => sum + t.colorDeviation, 0) / this.scanAnalysis.length).toFixed(3)
+                    }
+                }, null, 2);
+                scansFolder.file('analysis.json', analysisJSON);
+                manifestFiles.push({
+                    path: 'scans/analysis.json',
+                    size: analysisJSON.length,
+                    description: 'Complete scan analysis with statistics'
+                });
+                
+                // Add quantization config
+                if (this.quantizationConfig) {
+                    const quantJSON = JSON.stringify(this.quantizationConfig, null, 2);
+                    scansFolder.file('quantization-config.json', quantJSON);
+                    manifestFiles.push({
+                        path: 'scans/quantization-config.json',
+                        size: quantJSON.length,
+                        description: 'RGB to sequence mapping for quantization'
+                    });
+                }
+                
+                // Add calibrated palette (GPL)
+                const calibratedPalette = this._generateCalibratedPaletteGPL();
+                scansFolder.file('calibrated-palette.gpl', calibratedPalette);
+                manifestFiles.push({
+                    path: 'scans/calibrated-palette.gpl',
+                    size: calibratedPalette.length,
+                    description: 'Calibrated color palette from scan'
+                });
+                
+                // Add comparison CSV
+                const comparisonCSV = this._generateComparisonCSV();
+                scansFolder.file('comparison.csv', comparisonCSV);
+                manifestFiles.push({
+                    path: 'scans/comparison.csv',
+                    size: comparisonCSV.length,
+                    description: 'Expected vs measured color comparison'
+                });
+            }
+            
+            // 4. Add data files
             const dataFolder = zip.folder(`${folderName}/data`);
             
             // grid-layout.json
@@ -3609,9 +4715,9 @@ export class MultifilamentPrintTool {
                 description: 'GIMP palette (predicted colors)'
             });
             
-            // 4. Add grid visuals
+            // 5. Add grid visuals
             if (exportOptions.layerVisuals) {
-                this._setStatus('exportStatus', '⏳ Generating visuals...');
+                this._setStatus('exportProjectZipStatus', '⏳ Generating visuals...');
                 const gridsFolder = zip.folder(`${folderName}/grids`);
                 
                 // Combined view
@@ -3635,8 +4741,8 @@ export class MultifilamentPrintTool {
                 }
             }
             
-            // 5. Add STL files
-            this._setStatus('exportStatus', '⏳ Generating STL files...');
+            // 6. Add STL files
+            this._setStatus('exportProjectZipStatus', '⏳ Generating STL files...');
             const stlFolder = zip.folder(`${folderName}/stl`);
             
             if (exportOptions.stlCombined) {

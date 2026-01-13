@@ -397,8 +397,9 @@ export class ToolBase extends BaseComponent {
             // 3-level: panels contain blocks contain components
             let isFirstBlock = true;
             blocks.forEach(([panelTitle, nestedBlocks]) => {
-                nestedBlocks.forEach(([blockTitle, components]) => {
-                    const block = this._buildBlock(blockTitle, components, isFirstBlock);
+                nestedBlocks.forEach(blockDef => {
+                    const [blockTitle, components, options = {}] = blockDef;
+                    const block = this._buildBlock(blockTitle, components, isFirstBlock, options);
                     panel.appendChild(block);
                     this.blocks.push(block);
                     isFirstBlock = false;
@@ -406,8 +407,9 @@ export class ToolBase extends BaseComponent {
             });
         } else {
             // 2-level: blocks contain components (standard)
-            blocks.forEach(([blockTitle, components], blockIndex) => {
-                const block = this._buildBlock(blockTitle, components, blockIndex === 0);
+            blocks.forEach((blockDef, blockIndex) => {
+                const [blockTitle, components, options = {}] = blockDef;
+                const block = this._buildBlock(blockTitle, components, blockIndex === 0, options);
                 panel.appendChild(block);
                 this.blocks.push(block);
             });
@@ -439,7 +441,7 @@ export class ToolBase extends BaseComponent {
         return !isComponentType;
     }
 
-    _buildBlock(title, components, isFirst = false) {
+    _buildBlock(title, components, isFirst = false, options = {}) {
         const block = document.createElement('div');
         block.className = 'tool-block';
         // No padding on block - divider lines extend to edges
@@ -447,10 +449,25 @@ export class ToolBase extends BaseComponent {
             ${isFirst ? '' : `border-top: 1px solid var(--c-border);`}
         `;
 
-        // Block header - full width, padding inside, collapsible
+        const isSelectable = options.mode === 'selectable';
+        const isSelectableCollapsible = options.mode === 'selectableCollapsible';
+        const hasControls = components && components.length > 0;
+
+        // Block header - full width, padding inside
         if (title) {
             const header = document.createElement('div');
-            header.className = 'tool-block-header';
+            const headerClass = isSelectableCollapsible 
+                ? 'tool-block-header tool-block-header--selectable-collapsible'
+                : isSelectable 
+                    ? 'tool-block-header tool-block-header--selectable' 
+                    : 'tool-block-header tool-block-header--container';
+            header.className = headerClass;
+            
+            // Store block ID if provided (for selectable items)
+            if (options.id) {
+                header.dataset.blockId = options.id;
+            }
+            
             header.style.cssText = `
                 font-family: 'Atkinson Hyperlegible', monospace;
                 font-size: ${this.F}px;
@@ -467,62 +484,177 @@ export class ToolBase extends BaseComponent {
             
             const titleEl = document.createElement('span');
             titleEl.textContent = title;
+            titleEl.style.cssText = 'flex: 1; user-select: none;';
             header.appendChild(titleEl);
             
-            // Add toggle icon
-            const toggleIcon = document.createElement('span');
-            toggleIcon.textContent = '−';
-            toggleIcon.style.cssText = `
-                font-size: ${this.F}px;
-                font-weight: normal;
-            `;
-            header.appendChild(toggleIcon);
-            
-            // Store collapsed state
-            let collapsed = false;
-            
-            // Hover effect
-            header.addEventListener('mouseenter', () => {
-                header.style.background = 'var(--c-text)';
-                header.style.color = 'var(--c-bg)';
-            });
-            header.addEventListener('mouseleave', () => {
-                header.style.background = 'transparent';
-                header.style.color = 'var(--c-text)';
-            });
-            
-            block.appendChild(header);
-            
-            // Block content - padded
-            const content = document.createElement('div');
-            content.className = 'tool-block-content';
-            content.style.cssText = `
-                display: flex;
-                flex-direction: column;
-                gap: ${this.F2}px;
-                padding: ${this.F}px;
-            `;
-
-            components.forEach(componentDef => {
-                const component = this._buildComponent(componentDef);
-                if (component) {
-                    const rendered = component.render();
-                    if (rendered) {
-                        content.appendChild(rendered);
-                        this.componentInstances.push(component);
+            if (isSelectable && !hasControls) {
+                // SELECTABLE MODE (NO CONTROLS): No toggle icon, emit selection event on click
+                
+                // Hover effect
+                header.addEventListener('mouseenter', () => {
+                    if (!header.classList.contains('active')) {
+                        header.style.background = 'var(--vga-gray)';
+                        header.style.color = 'var(--vga-white)';
                     }
-                }
-            });
+                });
+                header.addEventListener('mouseleave', () => {
+                    if (!header.classList.contains('active')) {
+                        header.style.background = 'transparent';
+                        header.style.color = 'var(--c-text)';
+                    }
+                });
+                
+                // Click handler - emit selection event
+                header.addEventListener('click', () => {
+                    if (options.id) {
+                        // Trigger onUpdate with selection
+                        this.onUpdate(options.key || 'selectedItem', options.id);
+                    }
+                });
+                
+                block.appendChild(header);
+            } else if (isSelectable && hasControls || isSelectableCollapsible) {
+                // SELECTABLE + COLLAPSIBLE MODE: Split-zone interaction
+                // Title area = select, toggle icon = expand/collapse
+                
+                // Add toggle icon
+                const toggleIcon = document.createElement('span');
+                toggleIcon.textContent = '−';
+                toggleIcon.style.cssText = `
+                    font-size: ${this.F}px;
+                    font-weight: normal;
+                    padding: ${this.F2}px ${this.F}px;
+                    margin: -${this.F}px -${this.F}px -${this.F}px ${this.F2}px;
+                    user-select: none;
+                `;
+                toggleIcon.className = 'toggle-zone';
+                header.appendChild(toggleIcon);
+                
+                // Store collapsed state (default expanded if selectable)
+                let collapsed = options.defaultCollapsed !== undefined ? options.defaultCollapsed : false;
+                
+                // Title zone hover effect
+                titleEl.addEventListener('mouseenter', () => {
+                    if (!header.classList.contains('active')) {
+                        titleEl.style.textDecoration = 'underline';
+                    }
+                });
+                titleEl.addEventListener('mouseleave', () => {
+                    titleEl.style.textDecoration = 'none';
+                });
+                
+                // Toggle zone hover effect
+                toggleIcon.addEventListener('mouseenter', () => {
+                    toggleIcon.style.background = 'var(--vga-gray)';
+                    toggleIcon.style.color = 'var(--vga-white)';
+                });
+                toggleIcon.addEventListener('mouseleave', () => {
+                    toggleIcon.style.background = 'transparent';
+                    toggleIcon.style.color = 'inherit';
+                });
+                
+                block.appendChild(header);
+                
+                // Block content - padded
+                const content = document.createElement('div');
+                content.className = 'tool-block-content';
+                content.style.cssText = `
+                    display: ${collapsed ? 'none' : 'flex'};
+                    flex-direction: column;
+                    gap: ${this.F2}px;
+                    padding: ${this.F}px;
+                `;
 
-            block.appendChild(content);
-            
-            // Add click handler to toggle
-            header.addEventListener('click', () => {
-                collapsed = !collapsed;
-                content.style.display = collapsed ? 'none' : 'flex';
-                toggleIcon.textContent = collapsed ? '+' : '−';
+                components.forEach(componentDef => {
+                    const component = this._buildComponent(componentDef);
+                    if (component) {
+                        const rendered = component.render();
+                        if (rendered) {
+                            content.appendChild(rendered);
+                            this.componentInstances.push(component);
+                        }
+                    }
+                });
+
+                block.appendChild(content);
+                
+                // Title click = select
+                titleEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (options.id) {
+                        this.onUpdate(options.key || 'selectedItem', options.id);
+                    }
+                });
+                
+                // Toggle icon click = expand/collapse
+                toggleIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    collapsed = !collapsed;
+                    content.style.display = collapsed ? 'none' : 'flex';
+                    toggleIcon.textContent = collapsed ? '+' : '−';
+                    header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
+                });
+                
+                // Set initial border state
                 header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
-            });
+            } else {
+                // CONTAINER MODE: Collapsible with toggle icon
+                
+                // Add toggle icon
+                const toggleIcon = document.createElement('span');
+                toggleIcon.textContent = '−';
+                toggleIcon.style.cssText = `
+                    font-size: ${this.F}px;
+                    font-weight: normal;
+                `;
+                header.appendChild(toggleIcon);
+                
+                // Store collapsed state
+                let collapsed = false;
+                
+                // Hover effect
+                header.addEventListener('mouseenter', () => {
+                    header.style.background = 'var(--c-text)';
+                    header.style.color = 'var(--c-bg)';
+                });
+                header.addEventListener('mouseleave', () => {
+                    header.style.background = 'transparent';
+                    header.style.color = 'var(--c-text)';
+                });
+                
+                block.appendChild(header);
+                
+                // Block content - padded
+                const content = document.createElement('div');
+                content.className = 'tool-block-content';
+                content.style.cssText = `
+                    display: flex;
+                    flex-direction: column;
+                    gap: ${this.F2}px;
+                    padding: ${this.F}px;
+                `;
+
+                components.forEach(componentDef => {
+                    const component = this._buildComponent(componentDef);
+                    if (component) {
+                        const rendered = component.render();
+                        if (rendered) {
+                            content.appendChild(rendered);
+                            this.componentInstances.push(component);
+                        }
+                    }
+                });
+
+                block.appendChild(content);
+                
+                // Add click handler to toggle
+                header.addEventListener('click', () => {
+                    collapsed = !collapsed;
+                    content.style.display = collapsed ? 'none' : 'flex';
+                    toggleIcon.textContent = collapsed ? '+' : '−';
+                    header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
+                });
+            }
         } else {
             // No header - just content
             const content = document.createElement('div');

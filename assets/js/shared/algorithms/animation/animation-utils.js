@@ -339,3 +339,55 @@ export function createSpring(params) {
     };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CUSTOM EASING & REMAPPING
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Power easing with configurable exponent
+ * Creates ease-in-out curve with adjustable "sharpness"
+ * Higher power = more time at start/end, less in middle
+ * 
+ * @source reference/defecated.html:227-234
+ * @formula For t < 0.5: (2t)^p / 2, For t >= 0.5: 1 - (2(1-t))^p / 2
+ * 
+ * @param {number} t - Time (0-1)
+ * @param {number} power - Exponent (higher = more time at edges, default 6)
+ * @returns {number} Eased value (0-1)
+ * 
+ * @example
+ * // Dwell longer at start/end
+ * const morphT = powerEase(linearT, 6);
+ */
+export function powerEase(t, power = 6) {
+    if (t < 0.5) {
+        return Math.pow(t * 2, power) / 2;
+    } else {
+        return 1 - Math.pow((1 - t) * 2, power) / 2;
+    }
+}
+
+/**
+ * Remap time through sine wave with scale/offset
+ * Creates smooth bulge/dip in 0-1 curve for animation effects
+ * 
+ * @source reference/defecated.html:236-239
+ * @formula y = max(0, sin(t·π) · scale + offset)
+ * 
+ * @param {number} t - Time (0-1)
+ * @param {number} scale - Scale factor (>1.0 = over-swing, <1.0 = under-swing)
+ * @param {number} offset - Offset (negative creates dip for sharp edges)
+ * @param {boolean} clampNegative - Clamp negative values to 0
+ * @returns {number} Remapped value
+ * 
+ * @example
+ * // Create dip at start/end for sharp transitions
+ * const intensity = sineRemap(morphT, 1.1, -0.1, true);
+ */
+export function sineRemap(t, scale = 1.1, offset = -0.1, clampNegative = true) {
+    const raw = Math.sin(t * Math.PI);
+    const remapped = raw * scale + offset;
+    return clampNegative ? Math.max(0, remapped) : remapped;
+}
+
+

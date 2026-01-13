@@ -4,13 +4,7 @@ The issue with AI agents right now is that nobody actually understands what they
 
 I'm going to be blunt about this because the hype around these tools is getting ridiculous and nobody wants to have an honest conversation about what actually breaks in production.
 
----
-
-**Context**: This started as a discussion about why agentic systems keep falling over. Not because the models are bad, not because we need better prompts, but because we're deploying them without thinking about what happens when someone asks "why did this happen" three weeks later.
-
----
-
-## The Fake Debate Everyone's Having
+## The Misframed Debate
 
 People keep arguing about autonomy vs control, bureaucracy vs freedom, agents vs workflows — like it's some philosophical question about whether to "trust" AI or not.
 
@@ -37,7 +31,7 @@ Here's the pattern:
 
 Everything works fine — until three weeks later someone asks "why did we do it that way" and nobody knows. That's when your velocity dies.
 
-## Four Ways People Are Using These Wrong
+## Four Ways People Misuse These Systems
 
 ### Pattern 1: The Fake Employee
 
@@ -129,19 +123,15 @@ Decision debt is what builds up when:
 
 Just like technical debt eventually stops development, decision debt eventually stops operations. You spend all your time trying to figure out what the hell happened instead of making progress.
 
-### "But Look at Government—Governance Always Fails"
+## The Government Governance Objection
 
-Fair pushback. Government governance is often terrible. Rules without feedback. Authority without traceability. Enforcement without accountability.
+You might be thinking: "Look at government—governance always fails. This will just create bureaucracy that kills innovation."
 
-But that's actually proving the point—what fails in government isn't governance itself, it's **opaque governance**. The kind where you can't see who decided what or why. The kind where there's no mechanism to revise or revoke bad decisions.
+That's a reasonable concern, but it misses a critical distinction. What fails in government isn't governance itself—it's **opaque governance**. Rules without feedback. Authority without traceability. Enforcement without accountability.
 
-What I'm talking about here is the opposite: **operational governance**. The kind that lets you say:
-- Who made a decision
-- Under which constraints
-- Based on what information
-- How it can be revised or revoked
+The governance I'm describing is the opposite: **operational governance** that makes decisions visible and revisable. It's the difference between "you need approval from Department X" (opaque) and "here's who decided what, why, and how to change it" (operational).
 
-Without that, systems don't become freer—they just become unaccountable. The irony is that most failures people blame on "too much governance" are actually failures of **legibility, not control**.
+The irony is that most failures blamed on "too much governance" are actually failures of **legibility, not control**. People couldn't figure out who decided what or why, so the system ground to a halt trying to reconstruct context.
 
 Governance isn't about trusting the model. It's about **not trusting it—systematically**.
 
@@ -202,9 +192,11 @@ The difference is between opaque governance (rules with no feedback, authority w
 
 Most failures blamed on "too much governance" are actually failures of **legibility, not control**.
 
-## "Better Training Data Will Fix This"
+## The Training Data Objection
 
-Someone always says this. It won't.
+Another common response: "Better training data will fix this."
+
+It won't.
 
 Training data is absolutely a real constraint. LLMs don't have deep knowledge in specialized domains, and no amount of Reddit scraping fixes that. I'd love an LLM trained on all published scientific papers, but I also wouldn't trust any of the big players having full access to those databases. Same for every field of knowledge—legal, medical, engineering, finance. The incentives aren't aligned for that kind of responsible data access.
 

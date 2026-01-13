@@ -51,6 +51,7 @@ const ToolsSection = {
         '#tools/ribbon-breeze',
         '#tools/tile-mosaic',
         '#tools/wave-equation-synth',
+        '#tools/defecated',
     ],
     
     /**
@@ -236,6 +237,12 @@ const ToolsSection = {
                         title: 'Wave Equation Synth',
                         description: 'Physical wave equation solver with boundary conditions',
                         slug: 'wave-equation-synth'
+                    },
+                    {
+                        id: 'defecated',
+                        title: 'Defecated',
+                        description: 'Morphing text animation with gooey blur effects cycling through fonts',
+                        slug: 'defecated'
                     }
                 ]
             },
@@ -402,6 +409,7 @@ const ToolsSection = {
             { label: 'RIBBON BREEZE', path: '#tools/ribbon-breeze' },
             { label: 'TILE MOSAIC SYSTEM', path: '#tools/tile-mosaic' },
             { label: 'WAVE EQ SYNTH', path: '#tools/wave-equation-synth' },
+            { label: 'DEFECATED', path: '#tools/defecated' },
         ];
         
         const currentPath = `#tools/${currentSubsection}`;
@@ -480,10 +488,10 @@ const ToolsSection = {
     
     /**
      * Render individual tool - LAZY LOADING
-     * Tools are loaded on-demand via AssetLoader
+     * Tools are loaded on-demand via ES module dynamic imports
      */
     async renderTool(toolId) {
-        console.log(`🔧 Rendering tool: ${toolId}`);
+        window.debugLog('TOOLS', `🔧 Rendering tool: ${toolId}`);
         
         const normalizedToolId = (toolId || '').trim().toLowerCase();
         
@@ -491,19 +499,8 @@ const ToolsSection = {
         this.showLoadingIndicator(toolId || normalizedToolId);
         
         try {
-            // Use AssetLoader to lazy load the tool
-            const hasAssetLoader = window.AssetLoader && window.AssetLoader.toolRegistry;
-            const toolInRegistry = hasAssetLoader && window.AssetLoader.toolRegistry[normalizedToolId];
-            
-            console.log(`📦 Lazy load check: AssetLoader=${!!window.AssetLoader}, registry=${!!hasAssetLoader}, tool=${normalizedToolId}, found=${!!toolInRegistry}`);
-            
-            if (toolInRegistry) {
-                await this.renderLazyTool(normalizedToolId);
-            } else {
-                // Fallback for tools not in registry (legacy)
-                console.log(`⚠️ Tool ${normalizedToolId} not in AssetLoader registry, using legacy loader`);
-                this.renderLegacyTool(normalizedToolId);
-            }
+            // Try renderLazyTool first (handles toolImports map)
+            await this.renderLazyTool(normalizedToolId);
         } catch (err) {
             console.error(`❌ Failed to load tool: ${normalizedToolId}`, err);
             this.showToolError(normalizedToolId || toolId, err.message);
@@ -558,11 +555,9 @@ const ToolsSection = {
     },
     
     /**
-     * Render tool using lazy loading via AssetLoader
+     * Render tool using lazy loading via ES module dynamic imports
      */
     async renderLazyTool(toolId) {
-        // Tool components are now loaded directly in component-library.js
-
         // Map tool IDs to their ES module imports
         const toolImports = {
             // ═══════════════════════════════════════════════════════════════════
@@ -588,6 +583,7 @@ const ToolsSection = {
             'tile-mosaic': () => import('../tools/generators/tile-mosaic.js'),
             'wave-equation-synth': () => import('../tools/generators/wave-equation-synth.js'),
             'clock': () => import('../tools/generators/solar-system-tool.js'),
+            'defecated': () => import('../tools/generators/defecated-tool.js'),
 
             // ═══════════════════════════════════════════════════════════════════
             // PROCESSORS - Image manipulation tools
@@ -603,7 +599,7 @@ const ToolsSection = {
             // ═══════════════════════════════════════════════════════════════════
             // FABRICATION - Physical making tools
             // ═══════════════════════════════════════════════════════════════════
-            'multifilament-print': () => import('../tools/fabrication/multifilament-print-tool.js'),
+            'multifilament-print': () => import('../tools/fabrication/multifilament-print/MFP-Main.js'),
 
             // ═══════════════════════════════════════════════════════════════════
             // UTILITIES - Support tools
@@ -621,11 +617,11 @@ const ToolsSection = {
         }
 
         // Load the tool module
-        console.log(`🔄 Importing tool module for ${toolId}...`);
+        window.debugLog('TOOLS', `🔄 Importing tool module for ${toolId}...`);
         const module = await importFn();
-        console.log(`✅ Module loaded for ${toolId}, finding class...`);
+        window.debugLog('TOOLS', `✅ Module loaded for ${toolId}, finding class...`);
         const ToolClass = module.default || Object.values(module).find(cls => typeof cls === 'function' && cls.name.endsWith('Tool'));
-        console.log(`🎯 Found ToolClass:`, ToolClass?.name || 'none');
+        window.debugLog('TOOLS', `🎯 Found ToolClass: ${ToolClass?.name || 'none'}`);
 
         if (!ToolClass) {
             throw new Error(`Could not find tool class in module for ${toolId}`);

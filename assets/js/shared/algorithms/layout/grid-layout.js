@@ -19,13 +19,15 @@
  * @param {number} params.sequenceCount - Number of sequences/tiles to fit
  * @param {number} params.tileSize - Size of each tile in mm
  * @param {number} params.gap - Gap between tiles in mm
+ * @param {number} params.perimeterMargin - Border around entire grid in mm (default: 0)
  * @param {number} params.maxWidth - Maximum width constraint in mm
  * @param {number} params.maxHeight - Maximum height constraint in mm
  * @returns {Object} Layout result
  * @returns {number} returns.rows - Number of rows
  * @returns {number} returns.cols - Number of columns
- * @returns {number} returns.width - Total width in mm
- * @returns {number} returns.height - Total height in mm
+ * @returns {number} returns.width - Total width in mm (including perimeter margin)
+ * @returns {number} returns.height - Total height in mm (including perimeter margin)
+ * @returns {number} returns.perimeterMargin - Perimeter margin used
  * @returns {number[]} returns.emptyCells - Indices of empty cells
  * @returns {boolean} returns.fits - Whether sequences fit within constraints
  * @returns {string|null} returns.error - Error message if doesn't fit
@@ -35,21 +37,27 @@
  *   sequenceCount: 340,  // 4 colors × 4 layers
  *   tileSize: 10,
  *   gap: 1,
+ *   perimeterMargin: 5,  // 5mm border around entire grid
  *   maxWidth: 210,       // A4 width
  *   maxHeight: 297       // A4 height
  * });
- * // Returns: {rows: 18, cols: 19, width: 208, height: 197, emptyCells: [340,341,...], fits: true}
+ * // Returns: {rows: 18, cols: 19, width: 218, height: 207, emptyCells: [340,341,...], fits: true}
  */
 export function calculateGridLayout({
     sequenceCount,
     tileSize,
     gap,
+    perimeterMargin = 0,
     maxWidth,
     maxHeight
 }) {
+    // Reduce available space by perimeter margin (2× because margin on both sides)
+    const availableWidth = maxWidth - (perimeterMargin * 2);
+    const availableHeight = maxHeight - (perimeterMargin * 2);
+    
     const step = tileSize + gap;
-    const tilesPerRow = Math.floor((maxWidth + gap) / step);
-    const tilesPerCol = Math.floor((maxHeight + gap) / step);
+    const tilesPerRow = Math.floor((availableWidth + gap) / step);
+    const tilesPerCol = Math.floor((availableHeight + gap) / step);
     const maxTiles = tilesPerRow * tilesPerCol;
 
     // Check if sequences fit at all
@@ -59,9 +67,10 @@ export function calculateGridLayout({
             cols: 0,
             width: 0,
             height: 0,
+            perimeterMargin,
             emptyCells: [],
             fits: false,
-            error: `${sequenceCount} sequences won't fit in ${maxWidth}×${maxHeight}mm (max ${maxTiles} tiles)`
+            error: `${sequenceCount} sequences won't fit in ${maxWidth}×${maxHeight}mm with ${perimeterMargin}mm margin (max ${maxTiles} tiles)`
         };
     }
 
@@ -84,6 +93,7 @@ export function calculateGridLayout({
                 cols: 0,
                 width: 0,
                 height: 0,
+                perimeterMargin,
                 emptyCells: [],
                 fits: false,
                 error: 'Cannot fit within constraints'
@@ -98,15 +108,20 @@ export function calculateGridLayout({
         emptyCells.push(i);
     }
 
-    // Calculate physical dimensions
-    const width = cols * step - gap;
-    const height = rows * step - gap;
+    // Calculate physical dimensions (grid itself, without margin)
+    const gridWidth = cols * step - gap;
+    const gridHeight = rows * step - gap;
+    
+    // Total dimensions include perimeter margin on all sides
+    const width = gridWidth + (perimeterMargin * 2);
+    const height = gridHeight + (perimeterMargin * 2);
 
     return {
         rows,
         cols,
         width,
         height,
+        perimeterMargin,
         emptyCells,
         fits: true,
         error: null

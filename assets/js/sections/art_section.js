@@ -21,6 +21,7 @@ const ArtSection = {
     pages: [
         '#art',
         '#art/digital',
+        '#art/generative',
         '#art/sketches',
         '#art/photography',
         '#art/photography/life1',
@@ -44,6 +45,18 @@ const ArtSection = {
                 { id: 'digital-landscape', title: 'Digital Landscape' },
                 { id: 'geometric-01', title: 'Geometric' },
                 { id: 'color-composition', title: 'Color Comp' }
+            ]
+        },
+        'generative': {
+            title: 'GENERATIVE ART',
+            description: 'Algorithmic and procedural animations',
+            artworks: [
+                { 
+                    id: 'defecated', 
+                    title: 'Defecated',
+                    description: 'Morphing text cycling through fonts with gooey blur effects',
+                    link: '#tools/defecated'
+                }
             ]
         },
         'sketches': { 
@@ -925,7 +938,8 @@ const ArtSection = {
         // Create artwork grid using VGAGrid for visual placeholder squares
         const artworkItems = gallery.artworks.map((artwork, index) => ({
             value: `var(--vga-${['navy', 'teal', 'maroon', 'olive', 'purple', 'silver'][index % 6]})`,
-            title: artwork.title
+            title: artwork.title,
+            link: artwork.link || null
         }));
         
         const artworkGrid = new ComponentLibrary.VGAGrid({
@@ -933,8 +947,17 @@ const ArtSection = {
             cols: 3,
             showHex: false,
             onItemClick: (artwork, index) => {
-                console.log(`🖼️ Artwork clicked: ${artwork.title}`);
-                // Future: Navigate to individual artwork view
+                window.debugLog('NAVIGATION', `🖼️ Artwork clicked: ${artwork.title}`);
+                
+                // Check if artwork has a link
+                const actualArtwork = gallery.artworks[index];
+                if (actualArtwork && actualArtwork.link) {
+                    // Navigate to the linked page
+                    window.location.hash = actualArtwork.link;
+                } else {
+                    // Future: Navigate to individual artwork view
+                    window.debugLog('NAVIGATION', 'No link defined for this artwork');
+                }
             }
         });
         

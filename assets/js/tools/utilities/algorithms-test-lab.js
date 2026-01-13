@@ -3354,9 +3354,15 @@ import { ToolBase } from '../core/tool-base.js';
             domain.title.toUpperCase().split(' ')[0], // Short tab name (e.g., "NOISE", "SAMPLING")
             domain.algorithms.map(algo => {
                 const fullId = `${page.id}.${domain.id}.${algo.id}`;
+                const controls = getControlsForAlgorithm(fullId, algo);
+                
+                // Use selectableCollapsible if there are controls, otherwise pure selectable
+                const mode = controls.length > 0 ? 'selectableCollapsible' : 'selectable';
+                
                 return [
-                    algo.title,  // Block header (clickable algorithm name)
-                    getControlsForAlgorithm(fullId, algo)  // Algorithm-specific controls
+                    algo.title,  // Block header (selectable algorithm name)
+                    controls,  // Algorithm-specific controls
+                    { mode, id: fullId, key: 'selectedAlgorithm', defaultCollapsed: false }
                 ];
             })
         ]);
@@ -3383,6 +3389,15 @@ import { ToolBase } from '../core/tool-base.js';
         onUpdate: function(key, value) {
             if (key === 'modeTabs') {
                 setMode(this, value);
+            }
+            
+            // Handle algorithm selection from selectable block headers
+            if (key === 'selectedAlgorithm' && value) {
+                const instance = this._algorithmTestLabInstance;
+                if (instance) {
+                    instance.selectAlgorithm(value);
+                }
+                return; // Don't redraw yet, selectAlgorithm handles it
             }
             
             // Handle algorithm selection from radio buttons
@@ -3672,65 +3687,30 @@ export class AlgorithmsTestLab {
     };
 
     /**
-     * Setup algorithm selection by making block headers clickable
+     * Setup algorithm selection - select default algorithm and apply visual state
      */
         setupAlgorithmSelection = function() {
         if (!this.tool || !this.tool.element) {
-            console.warn('setupAlgorithmSelection: tool or tool.element not available');
+            window.debugLog('TOOLS', 'setupAlgorithmSelection: tool or tool.element not available');
             return;
         }
         
-        const F = this.deps.MF?.F || 14;
-        
-        // Find all block headers and make them selectable
-        const blockHeaders = this.tool.element.querySelectorAll('.tool-block-header');
-        console.log(`setupAlgorithmSelection: Found ${blockHeaders.length} block headers`);
-        
-        blockHeaders.forEach((header, index) => {
-            const blockTitle = header.textContent.trim();
-            
-            // Try to find the algorithm ID from the current page/domain structure
-            const algorithmId = this.findAlgorithmIdByTitle(blockTitle);
-            
-            if (algorithmId) {
-                // Store algorithm ID on header
-                header.dataset.algorithmId = algorithmId;
-                
-                // Make clickable
-                header.style.cursor = 'pointer';
-                header.style.transition = 'background-color 0.2s, border-color 0.2s';
-                
-                // Add hover effect
-                header.addEventListener('mouseenter', () => {
-                    if (state.selectedAlgorithmId !== algorithmId) {
-                        header.style.backgroundColor = 'var(--vga-gray)';
-                        header.style.color = 'var(--vga-white)';
-                    }
-                });
-                
-                header.addEventListener('mouseleave', () => {
-                    if (state.selectedAlgorithmId !== algorithmId) {
-                        header.style.backgroundColor = 'var(--vga-black)';
-                        header.style.color = 'var(--vga-white)';
-                    }
-                });
-                
-                // Add click handler
-                header.addEventListener('click', () => {
-                    console.log(`Block header clicked: ${algorithmId}`);
-                    this.selectAlgorithm(algorithmId);
-                });
-                
-                // Select first algorithm by default
-                if (index === 0 && !state.selectedAlgorithmId) {
-                    this.selectAlgorithm(algorithmId);
-                }
+        // Select the default algorithm (first in current page)
+        if (!state.selectedAlgorithmId) {
+            const currentPage = PAGES.find(p => p.id === state.selectedPageId) || PAGES[0];
+            if (currentPage.domains.length > 0 && currentPage.domains[0].algorithms.length > 0) {
+                const firstAlgo = currentPage.domains[0].algorithms[0];
+                const defaultId = `${currentPage.id}.${currentPage.domains[0].id}.${firstAlgo.id}`;
+                this.selectAlgorithm(defaultId);
             }
-        });
+        } else {
+            // Re-apply selection state (useful after rebuild)
+            this.selectAlgorithm(state.selectedAlgorithmId);
+        }
     };
 
     /**
-     * Find algorithm ID by block title
+     * Find algorithm ID by block title (no longer used for click handlers, kept for compatibility)
      * Search across ALL pages since all algorithms are in the DOM
      * Comparison is case-insensitive since headers are uppercase via CSS
      */
@@ -3772,20 +3752,22 @@ export class AlgorithmsTestLab {
             state.selectedDomainId = parts[1];
         }
         
-        // Update visual feedback for all headers - TRUE INVERSION
-        const blockHeaders = this.tool.element.querySelectorAll('.tool-block-header');
+        // Update visual feedback for all selectable headers (both modes)
+        const blockHeaders = this.tool.element.querySelectorAll('.tool-block-header--selectable, .tool-block-header--selectable-collapsible');
         blockHeaders.forEach(header => {
-            const headerId = header.dataset.algorithmId;
+            const headerId = header.dataset.blockId;
             if (headerId === algorithmId) {
                 // Active: INVERTED - Light background, dark text
                 header.style.backgroundColor = 'var(--vga-white)';
                 header.style.color = 'var(--vga-black)';
                 header.style.borderColor = 'var(--vga-white)';
+                header.classList.add('active');
             } else {
                 // Inactive: Normal - Dark background, light text
-                header.style.backgroundColor = 'var(--vga-black)';
-                header.style.color = 'var(--vga-white)';
+                header.style.backgroundColor = 'transparent';
+                header.style.color = 'var(--c-text)';
                 header.style.borderColor = 'var(--c-border)';
+                header.classList.remove('active');
             }
         });
         
