@@ -11,6 +11,7 @@
 // ES Module imports
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
+import { ExportUtils } from '../../shared/algorithms/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
     // CONFIGURATION — Following Design Spec
@@ -21,7 +22,7 @@ import ComponentLibrary from '../../shared/component-library.js';
         
         sidebar: [
             // ═══════════════════════════════════════════════════════════════════
-            // TAB 1: CONTROLS — Pattern Parameters
+            // TAB 1: CONTROLS — Pattern Parameters + Presets
             // ═══════════════════════════════════════════════════════════════════
             ['CONTROLS', [
                 ['Parameters', [
@@ -41,6 +42,20 @@ import ComponentLibrary from '../../shared/component-library.js';
                     ['slider', 'Global Scale', 0.2, 3, 0.01, { value: 1, key: 'globalScale', withNumber: true }],
                     ['stepper', 'Multi-Axis Count', 0, 4, 1, { value: 0, key: 'multiAxisCount' }],
                     ['slider', 'Axis Radius', 0, 0.5, 0.01, { value: 0.2, key: 'axisRadius', withNumber: true }],
+                ]],
+                ['Presets', [
+                    ['button', 'Newton Rings', null, { key: 'presetRings' }],
+                    ['button', 'Spiral Arms', null, { key: 'presetSpiral' }],
+                    ['button', 'Biaxial Cross', null, { key: 'presetBiaxial' }],
+                    ['button', 'Petal Flower', null, { key: 'presetPetal' }],
+                    ['button', 'Oil Slick', null, { key: 'presetOil' }],
+                    ['button', 'CD Surface', null, { key: 'presetCD' }],
+                    ['button', 'Bubble', null, { key: 'presetBubble' }],
+                ]],
+                ['Actions', [
+                    ['button', 'Regenerate', null, { key: 'regenerate' }],
+                    ['button', 'Download PNG', null, { key: 'exportPng' }],
+                    ['button', 'Download SVG', null, { key: 'exportSvg' }],
                 ]],
             ]],
             
@@ -64,42 +79,14 @@ import ComponentLibrary from '../../shared/component-library.js';
                     ['color', 'Tint', '#FFFFFF', { key: 'tintColor' }],
                 ]],
             ]],
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // TAB 3: CANVAS — Size & Export
-            // ═══════════════════════════════════════════════════════════════════
-            ['CANVAS', [
-                ['Size', [
-                    ['slider', 'Width', 196, 840, 14, { value: 420, key: 'canvasWidth', withNumber: true }],
-                    ['slider', 'Height', 196, 840, 14, { value: 420, key: 'canvasHeight', withNumber: true }],
-                    ['radio', 'Display', ['Fit', 'Actual'], { key: 'displayMode', selectedValue: 'Fit' }],
-                ]],
-                ['Export', [
-                    ['button', 'Download PNG', null, { key: 'exportPng' }],
-                    ['button', 'Download SVG', null, { key: 'exportSvg' }],
-                    ['button', 'Regenerate', null, { key: 'regenerate' }],
-                ]],
-            ]],
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // TAB 4: PRESETS — Pattern Recipes
-            // ═══════════════════════════════════════════════════════════════════
-            ['PRESETS', [
-                ['Patterns', [
-                    ['button', 'Newton Rings', null, { key: 'presetRings' }],
-                    ['button', 'Spiral Arms', null, { key: 'presetSpiral' }],
-                    ['button', 'Biaxial Cross', null, { key: 'presetBiaxial' }],
-                    ['button', 'Petal Flower', null, { key: 'presetPetal' }],
-                ]],
-                ['Effects', [
-                    ['button', 'Oil Slick', null, { key: 'presetOil' }],
-                    ['button', 'CD Surface', null, { key: 'presetCD' }],
-                    ['button', 'Bubble', null, { key: 'presetBubble' }],
-                ]],
-            ]],
         ],
         
-        canvas: { size: 420 },
+        // Auto-injects CANVAS tab (sizing controls)
+        canvas: { 
+            width: 420, 
+            height: 420,
+            showControls: true 
+        },
         
         onInit: function(values) {
             var self = this;
@@ -134,13 +121,8 @@ import ComponentLibrary from '../../shared/component-library.js';
         },
         
         onUpdate: function(key, value, allValues) {
-            if (key === 'canvasWidth' || key === 'canvasHeight' || key === 'displayMode') {
-                this.resizeCanvas(
-                    allValues.canvasWidth || 420,
-                    allValues.canvasHeight || 420,
-                    { displayMode: (allValues.displayMode || 'Fit').toLowerCase() }
-                );
-            }
+            // Canvas width/height now handled by auto-CANVAS tab
+            // Display mode removed (was custom feature)
             
             // Apply pattern family presets
             if (key === 'patternFamily') {
@@ -397,11 +379,9 @@ import ComponentLibrary from '../../shared/component-library.js';
     }
     
     function exportPNG(tool) {
-        var canvas = tool.getCanvas();
-        var a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'interference-figure.png';
-        a.click();
+        const canvas = tool.getCanvas();
+        if (!canvas) return;
+        ExportUtils.exportCanvasPNG(canvas, 'interference-figure');
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

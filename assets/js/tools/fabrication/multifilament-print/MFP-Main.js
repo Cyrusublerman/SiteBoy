@@ -9,6 +9,7 @@ import { ToolBase } from '../../core/tool-base.js';
 import ComponentLibrary from '../../../shared/component-library.js';
 import { LayoutCalculator } from '../../../core/config.js';
 import { FILAMENT_COLOURS, DEFAULTS } from './MFP-Constants.js';
+import { simColour, rgb2hex } from '../../../shared/algorithms/color/color-utils.js';
 import { MFPSourceActions } from './MFP-SourceActions.js';
 import { MFPScanActions } from './MFP-ScanActions.js';
 import { MFPQuantizeActions } from './MFP-QuantizeActions.js';
@@ -16,6 +17,7 @@ import { MFPExportActions } from './MFP-ExportActions.js';
 
 export class MultifilamentPrintTool {
     constructor(container, deps = {}) {
+        console.log('🏗️ MFP Constructor called');
         this.container = container;
         this.deps = {
             ComponentLibrary,
@@ -33,14 +35,19 @@ export class MultifilamentPrintTool {
             scanAnalysis: null,
             sourceImageElement: null,
             quantizedImage: null,
-            importedState: null
+            importedState: null,
+            showDocs: false  // Documentation viewer toggle
         };
+        
+        console.log('🏗️ MFP sharedState initialized:', this.sharedState);
         
         // Action modules (NO DOM manipulation - pure logic)
         this.sourceActions = new MFPSourceActions(this.sharedState);
         this.scanActions = new MFPScanActions(this.sharedState);
         this.quantizeActions = new MFPQuantizeActions(this.sharedState);
         this.exportActions = new MFPExportActions(this.sharedState);
+        
+        console.log('🏗️ MFP Action modules created');
         
         // Build config with ALL tabs and controls
         const config = {
@@ -51,13 +58,186 @@ export class MultifilamentPrintTool {
                 height: 600,
                 enabled: true
             },
-            onInit: (tab, values) => this._handleInit(tab, values),
-            onUpdate: (key, value, allValues, tab) => this._handleUpdate(key, value, allValues, tab),
-            onDraw: (ctx, canvas, values, tab) => this._handleDraw(ctx, canvas, values, tab)
+            onInit: (values) => this._handleInit(values),
+            onUpdate: (key, value, allValues) => this._handleUpdate(key, value, allValues),
+            onDraw: (ctx, canvas, values) => this._handleDraw(ctx, canvas, values)
         };
         
+        console.log('🏗️ MFP Creating ToolBase with config:', config);
         this.toolBase = new ToolBase(config, this.deps);
+        console.log('🏗️ MFP Mounting ToolBase to container');
         this.toolBase.mount(container);
+        console.log('🏗️ MFP Mount complete');
+        
+        // Add info button to canvas area
+        this._addInfoButton();
+    }
+    
+    _addInfoButton() {
+        // Get canvas container
+        const canvasArea = this.container.querySelector('.tool-canvas-area');
+        if (!canvasArea) {
+            console.warn('Canvas area not found, cannot add info button');
+            return;
+        }
+        
+        // Create info button - 2F square, flush top-right
+        const infoButton = document.createElement('button');
+        infoButton.className = 'info-button';
+        infoButton.textContent = 'i';  // lowercase i
+        infoButton.title = 'View Documentation';
+        infoButton.style.cssText = `
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: calc(var(--f) * 2);
+            height: calc(var(--f) * 2);
+            background: var(--c-bg);
+            color: var(--c-text);
+            border: 1px solid var(--c-border);
+            border-top: none;
+            border-right: none;
+            font-family: 'Atkinson Hyperlegible', monospace;
+            font-size: calc(var(--f) * 1);
+            font-weight: normal;
+            font-style: normal;
+            text-transform: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: all 0.2s;
+            margin: 0;
+            padding: 0;
+        `;
+        
+        // Hover effect
+        infoButton.addEventListener('mouseenter', () => {
+            infoButton.style.background = 'var(--c-text)';
+            infoButton.style.color = 'var(--c-bg)';
+        });
+        infoButton.addEventListener('mouseleave', () => {
+            infoButton.style.background = 'var(--c-bg)';
+            infoButton.style.color = 'var(--c-text)';
+        });
+        
+        // Click handler
+        infoButton.addEventListener('click', () => {
+            this.sharedState.showDocs = !this.sharedState.showDocs;
+            this._toggleDocumentation();
+        });
+        
+        // Ensure canvas area is position: relative
+        const currentPosition = window.getComputedStyle(canvasArea).position;
+        if (currentPosition === 'static') {
+            canvasArea.style.position = 'relative';
+        }
+        
+        canvasArea.appendChild(infoButton);
+        this.infoButton = infoButton;
+    }
+    
+    async _toggleDocumentation() {
+        const canvasArea = this.container.querySelector('.tool-canvas-area');
+        if (!canvasArea) return;
+        
+        if (this.sharedState.showDocs) {
+            // Show documentation
+            const canvas = canvasArea.querySelector('canvas');
+            if (canvas) {
+                canvas.style.display = 'none';
+            }
+            
+            // Create or show docs container
+            if (!this.docsContainer) {
+                this.docsContainer = document.createElement('div');
+                this.docsContainer.className = 'tool-docs-viewer';
+                this.docsContainer.style.cssText = `
+                    width: 100%;
+                    height: 100%;
+                    overflow-y: auto;
+                    padding: calc(var(--f) * 2);
+                    background: var(--c-bg);
+                    color: var(--c-text);
+                `;
+                
+                // Determine current tab
+                const currentTab = this.toolBase.currentTab || 'SOURCE';
+                const tabFile = currentTab.toLowerCase(); // source, scan, quantize, export
+                
+                // Load tab-specific documentation
+                const docPath = `/blog/docs/pages/tools/MFP/${tabFile}.md`;
+                
+                console.log('Loading documentation for tab:', currentTab, 'from:', docPath);
+                
+                try {
+                    const response = await fetch(docPath);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    const markdown = await response.text();
+                    
+                    // Use MarkdownBody component
+                    const MarkdownBody = ComponentLibrary.MarkdownBody;
+                    if (MarkdownBody) {
+                        this.markdownComponent = new MarkdownBody({
+                            markdownText: markdown,
+                            className: 'tool-documentation'
+                        }, this.deps);
+                        
+                        const markdownEl = this.markdownComponent.render();
+                        this.docsContainer.appendChild(markdownEl);
+                    } else {
+                        // Fallback: plain text with basic formatting
+                        const pre = document.createElement('pre');
+                        pre.textContent = markdown;
+                        pre.style.cssText = `
+                            font-family: 'Atkinson Hyperlegible', monospace;
+                            font-size: calc(var(--f) * 0.9);
+                            white-space: pre-wrap;
+                            word-wrap: break-word;
+                            line-height: 1.6;
+                        `;
+                        this.docsContainer.appendChild(pre);
+                    }
+                } catch (err) {
+                    console.error('Failed to load documentation:', err);
+                    this.docsContainer.innerHTML = `
+                        <div style="color: var(--vga-red); padding: calc(var(--f) * 2); font-family: 'Atkinson Hyperlegible', monospace;">
+                            <h2 style="color: var(--vga-yellow);">Documentation Not Found</h2>
+                            <p>Could not load: <code>${docPath}</code></p>
+                            <p>Tab: ${currentTab}</p>
+                            <p>Error: ${err.message}</p>
+                            <p>Check browser console for details.</p>
+                        </div>
+                    `;
+                }
+                
+                canvasArea.appendChild(this.docsContainer);
+            } else {
+                this.docsContainer.style.display = 'block';
+            }
+            
+            // Update button style
+            this.infoButton.style.background = 'var(--c-text)';
+            this.infoButton.style.color = 'var(--c-bg)';
+            
+        } else {
+            // Show canvas
+            const canvas = canvasArea.querySelector('canvas');
+            if (canvas) {
+                canvas.style.display = 'block';
+            }
+            
+            if (this.docsContainer) {
+                this.docsContainer.style.display = 'none';
+            }
+            
+            // Update button style
+            this.infoButton.style.background = 'var(--c-bg)';
+            this.infoButton.style.color = 'var(--c-text)';
+        }
     }
     
     _getSelectedFilamentNames() {
@@ -105,9 +285,10 @@ export class MultifilamentPrintTool {
                     ['number', 'Top Layers (top)', 0, 10, 1, {key: 'topLayers', value: state.topLayers || DEFAULTS.topLayers, withNumber: true}],
                     ['dropdown', 'Top Filament', this._getSelectedFilamentNames(), {key: 'topFilament', value: state.topFilament}],
                 ]],
-                ['GAP CONFIGURATION', [
-                    ['toggle', 'Fill Gaps', ['Fill Gaps'], {key: 'gapFillOptions', selected: state.gapFillOptions || [], multiSelect: true}],
-                    ['dropdown', 'Gap Filament', this._getSelectedFilamentNames(), {key: 'gapFilament', value: state.gapFilament}],
+                ['GAP & PERIMETER', [
+                    ['toggle', 'Fill Gaps & Perimeter', ['Fill Gaps'], {key: 'gapFillOptions', selected: state.gapFillOptions || [], multiSelect: true}],
+                    ['dropdown', 'Fill Filament', this._getSelectedFilamentNames(), {key: 'gapFilament', value: state.gapFilament}],
+                    ['label', 'Fills gaps between tiles AND perimeter margin', {variant: 'caption'}],
                 ]],
                 ['SORT & VIEW', [
                     ['dropdown', 'Sort Method', ['Layer Count', 'Base Color', 'Top Color', 'Complexity', 'Lexicographic'], {value: state.sortMethod || DEFAULTS.sortMethod, key: 'sortMethod'}],
@@ -219,31 +400,77 @@ export class MultifilamentPrintTool {
         ];
     }
     
-    _handleInit(tab, values) {
-        window.debugLog('TOOLS', `MFP: Init ${tab}`);
+    _handleInit(values) {
+        console.log('🎬 MFP _handleInit called:', { values });
+        window.debugLog('TOOLS', `MFP: Init`);
         
-        // Tab-specific initialization
-        if (tab === 'SOURCE') {
-            this.sourceActions.updateSequenceCount(this.toolBase);
-        } else if (tab === 'SCAN') {
-            this.scanActions.useLastGrid(this.toolBase); // Auto-load last grid
-        } else if (tab === 'QUANTIZE') {
-            this.quantizeActions.updatePaletteStatus(this.toolBase);
-        } else if (tab === 'EXPORT') {
-            this.exportActions.updateExportStatus(this.toolBase);
-        }
+        // Initialize SOURCE tab (always first tab)
+        console.log('🎬 Initializing SOURCE tab');
+        this.sourceActions.updateSequenceCount(this.toolBase);
     }
     
-    _handleUpdate(key, value, allValues, tab) {
-        window.debugLog('TOOLS', `MFP: Update ${key} in ${tab}`);
+    _handleUpdate(key, value, allValues) {
+        console.log('🔄 MFP _handleUpdate called:', { key, value, allValues });
+        window.debugLog('TOOLS', `MFP: Update ${key}`);
         
         // Handle all buttons and inputs from ALL tabs
         switch(key) {
             // SOURCE tab
             case 'importProject': this.sourceActions.importProject(value, this.toolBase); break;
-            case 'filamentPicker': 
+            case 'filamentPicker_indices':  // ToolBase sends '_indices' suffix!
+                console.log('🎨 filamentPicker_indices changed:', value);
                 this.sharedState.selectedFilaments = value || [];
+                console.log('🎨 Updated sharedState.selectedFilaments:', this.sharedState.selectedFilaments);
                 this.sourceActions.updateSequenceCount(this.toolBase);
+                // Live preview - generate as soon as 2+ filaments selected (EXACT behavior from monolith)
+                if (this.sharedState.selectedFilaments.length >= 2) {
+                    console.log('🎨 Triggering generateLivePreview...');
+                    this.sourceActions.generateLivePreview(allValues, this.toolBase);
+                } else {
+                    console.log('🎨 Not enough filaments to preview (need 2+)');
+                }
+                break;
+            case 'layerCount':
+            case 'baseLayers':
+            case 'topLayers':
+            case 'tileSize':
+            case 'gap':
+            case 'perimeterMargin':
+            case 'maxWidth':
+            case 'maxHeight':
+            case 'bedWidth':
+            case 'bedHeight':
+            case 'sortMethod':
+                // Any setting change triggers live preview if filaments selected (EXACT behavior from monolith)
+                if (this.sharedState.selectedFilaments && this.sharedState.selectedFilaments.length >= 2) {
+                    this.sourceActions.generateLivePreview(allValues, this.toolBase);
+                }
+                break;
+            case 'canvasView':
+            case 'gapFillOptions':
+            case 'gapFilament':
+            case 'baseFilament':
+            case 'topFilament':
+                // View mode changes just redraw (don't regenerate)
+                this.toolBase.draw();
+                break;
+            
+            // Tab change detection - clear docs so it reloads for new tab
+            default:
+                // If docs are showing and this might be a tab change, clear docs container
+                if (this.sharedState.showDocs && this.docsContainer) {
+                    // Clear container so it reloads for new tab
+                    if (this.markdownComponent && this.markdownComponent.destroy) {
+                        this.markdownComponent.destroy();
+                    }
+                    this.docsContainer.innerHTML = '';
+                    this.docsContainer.remove();
+                    this.docsContainer = null;
+                    this.markdownComponent = null;
+                    
+                    // Trigger reload
+                    this._toggleDocumentation();
+                }
                 break;
             case 'generateGrid': this.sourceActions.generateGrid(allValues, this.toolBase); break;
             case 'generateSplitGrids': this.sourceActions.generateSplitGrids(allValues, this.toolBase); break;
@@ -280,34 +507,21 @@ export class MultifilamentPrintTool {
         this.toolBase.draw();
     }
     
-    _handleDraw(ctx, canvas, values, tab) {
+    _handleDraw(ctx, canvas, values) {
         // Clear
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw based on tab and available data
-        if (tab === 'SOURCE' && this.sharedState.gridData) {
+        // Draw based on available data (tabs don't affect canvas)
+        if (this.sharedState.gridData) {
             this._drawGrid(ctx, canvas, values);
-        } else if (tab === 'SCAN' && this.sharedState.scanImageElement) {
-            this._drawScan(ctx, canvas, values);
-        } else if (tab === 'QUANTIZE' && (this.sharedState.quantizedImage || this.sharedState.sourceImageElement)) {
-            this._drawQuantize(ctx, canvas, values);
-        } else if (tab === 'EXPORT' && this.sharedState.gridData) {
-            this._drawExport(ctx, canvas, values);
         } else {
             // Placeholder message
             ctx.fillStyle = '#00ff00';
             ctx.font = '16px "Atkinson Hyperlegible", monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            
-            let message = '';
-            if (tab === 'SOURCE') message = 'Select filaments and generate grid';
-            else if (tab === 'SCAN') message = 'Load scan image to begin';
-            else if (tab === 'QUANTIZE') message = 'Load source image to begin';
-            else if (tab === 'EXPORT') message = 'Generate grid first';
-            
-            ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+            ctx.fillText('Select filaments to generate grid', canvas.width / 2, canvas.height / 2);
         }
     }
     
@@ -317,49 +531,293 @@ export class MultifilamentPrintTool {
     
     _drawGrid(ctx, canvas, values) {
         const gridData = this.sharedState.gridData;
-        if (!gridData) return;
+        if (!gridData) {
+            this._drawPlaceholder(ctx, canvas, 'Click Generate Grid');
+            return;
+        }
         
-        // TODO: Use MFP-GridRenderer module
-        // For now, simple placeholder
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '16px "Atkinson Hyperlegible", monospace';
+        // EXACT copy from monolith - draw grid with all details
+        const { sequences, colours, rows, cols, tileSize, gap, width, height, emptyCells, perimeterMargin = 0 } = gridData;
+        
+        // Get view mode and gap fill settings
+        const viewMode = values.canvasView || 'Combined';
+        const gapFillEnabled = values.gapFillOptions && values.gapFillOptions.includes('Fill Gaps');
+        
+        // Calculate scale to fit canvas with padding
+        const padding = 40;
+        const availableWidth = canvas.width - padding * 2;
+        const availableHeight = canvas.height - padding * 2;
+        const scaleX = availableWidth / width;
+        const scaleY = availableHeight / height;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Center the grid
+        const scaledWidth = width * scale;
+        const scaledHeight = height * scale;
+        const offsetX = (canvas.width - scaledWidth) / 2;
+        const offsetY = (canvas.height - scaledHeight) / 2;
+        
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(scale, scale);
+        
+        // Draw perimeter margin as a border (if enabled)
+        if (perimeterMargin > 0) {
+            // If gap fill is enabled, fill perimeter with same filament
+            if (gapFillEnabled) {
+                const gapFilamentName = values.gapFilament || 'Jade White';
+                const gapFilamentColor = FILAMENT_COLOURS.find(f => f.n === gapFilamentName);
+                const gapHex = gapFilamentColor ? gapFilamentColor.h : '#FFFFFF';
+                
+                ctx.fillStyle = gapHex;
+                // Fill perimeter areas
+                ctx.fillRect(0, 0, width, perimeterMargin); // Top
+                ctx.fillRect(0, height - perimeterMargin, width, perimeterMargin); // Bottom
+                ctx.fillRect(0, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2)); // Left
+                ctx.fillRect(width - perimeterMargin, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2)); // Right
+            } else {
+                // Just draw border outline
+                ctx.strokeStyle = '#808080';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(0, 0, width, height);
+                
+                // Fill with dark grey
+                ctx.fillStyle = '#202020';
+                ctx.fillRect(0, 0, width, perimeterMargin); // Top
+                ctx.fillRect(0, height - perimeterMargin, width, perimeterMargin); // Bottom
+                ctx.fillRect(0, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2)); // Left
+                ctx.fillRect(width - perimeterMargin, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2)); // Right
+            }
+        }
+        
+        // Translate to inner grid area (after perimeter margin)
+        ctx.translate(perimeterMargin, perimeterMargin);
+        
+        // Calculate inner grid dimensions (without margin)
+        const innerWidth = width - (perimeterMargin * 2);
+        const innerHeight = height - (perimeterMargin * 2);
+        
+        // Draw gap fill background if enabled
+        if (gap > 0 && gapFillEnabled) {
+            const gapFilamentName = values.gapFilament || 'Jade White';
+            const gapFilamentColor = FILAMENT_COLOURS.find(f => f.n === gapFilamentName);
+            const gapHex = gapFilamentColor ? gapFilamentColor.h : '#FFFFFF';
+            
+            // Fill entire inner grid area with gap color
+            ctx.fillStyle = gapHex;
+            ctx.fillRect(0, 0, innerWidth, innerHeight);
+        }
+        
+        // Draw each tile
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const index = row * cols + col;
+                const x = col * (tileSize + gap);
+                const y = row * (tileSize + gap);
+                
+                // Check if this is an empty cell
+                if (emptyCells && emptyCells.includes(index)) {
+                    // Skip if gap fill is enabled (gap color shows through)
+                    if (!gapFillEnabled) {
+                        ctx.fillStyle = '#404040';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                        
+                        // Draw X
+                        ctx.strokeStyle = '#808080';
+                        ctx.lineWidth = 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + tileSize, y + tileSize);
+                        ctx.moveTo(x + tileSize, y);
+                        ctx.lineTo(x, y + tileSize);
+                        ctx.stroke();
+                    }
+                    continue;
+                }
+                
+                if (index >= sequences.length) continue;
+                
+                const sequence = sequences[index];
+                
+                // Determine color based on view mode (EXACT monolith behavior)
+                let hexColor;
+                if (viewMode === 'Combined' || viewMode === 'combined') {
+                    // Show simulated final color (all layers)
+                    const color = simColour(sequence, colours);
+                    hexColor = rgb2hex(color);
+                } else if (viewMode.startsWith('Layer ')) {
+                    // Show specific layer only
+                    const layerMatch = viewMode.match(/(\d+)/);
+                    if (layerMatch) {
+                        const layerIndex = parseInt(layerMatch[1]);
+                        const filamentIndex = sequence[layerIndex];
+                        
+                        if (filamentIndex === 0 || filamentIndex === undefined) {
+                            // Empty layer - show grey
+                            hexColor = '#303030';
+                        } else {
+                            // Show filament color
+                            hexColor = colours[filamentIndex - 1].h;
+                        }
+                    } else {
+                        hexColor = '#404040';
+                    }
+                } else {
+                    // Default to combined
+                    const color = simColour(sequence, colours);
+                    hexColor = rgb2hex(color);
+                }
+                
+                // Fill tile
+                ctx.fillStyle = hexColor;
+                ctx.fillRect(x, y, tileSize, tileSize);
+            }
+        }
+        
+        ctx.restore();
+        
+        // Draw stats below
+        ctx.save();
+        ctx.font = '12px "Atkinson Hyperlegible", monospace';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`Grid: ${gridData.rows}×${gridData.cols} = ${gridData.sequences.length} tiles`, canvas.width / 2, canvas.height / 2);
-        ctx.fillText(`TODO: Implement full grid rendering`, canvas.width / 2, canvas.height / 2 + 24);
+        
+        const y = canvas.height - 15;
+        const centerX = canvas.width / 2;
+        
+        // Color-code based on fit
+        ctx.fillStyle = gridData.fitsConstraints === false ? '#ff0000' : '#00ff00';
+        
+        const stats = `Sequences: ${sequences.length} | Grid: ${rows}×${cols} | Size: ${width.toFixed(1)}×${height.toFixed(1)}mm`;
+        ctx.fillText(stats, centerX, y);
+        
+        if (gridData.fitsConstraints === false) {
+            ctx.fillStyle = '#ffff00';
+            ctx.fillText('⚠ OVERSIZED - Reduce layers/colors/tilesize', centerX, y - 20);
+        }
+        
+        ctx.restore();
+        
+        // Draw constraint bounding boxes if available
+        if (this.sharedState.gridConstraints) {
+            this._drawConstraintBounds(ctx, canvas, gridData, this.sharedState.gridConstraints);
+        }
+    }
+    
+    _drawConstraintBounds(ctx, canvas, gridData, constraints) {
+        const { width: gridWidth, height: gridHeight } = gridData;
+        const { bedWidth, bedHeight, scanWidth, scanHeight } = constraints;
+        
+        // Calculate same scale/offset as grid rendering
+        const padding = 40;
+        const availableWidth = canvas.width - padding * 2;
+        const availableHeight = canvas.height - padding * 2;
+        const scaleX = availableWidth / gridWidth;
+        const scaleY = availableHeight / gridHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        const scaledWidth = gridWidth * scale;
+        const scaledHeight = gridHeight * scale;
+        const offsetX = (canvas.width - scaledWidth) / 2;
+        const offsetY = (canvas.height - scaledHeight) / 2;
+        
+        ctx.save();
+        
+        // Draw bed constraint box (printer bed area)
+        const bedScaledW = bedWidth * scale;
+        const bedScaledH = bedHeight * scale;
+        ctx.strokeStyle = '#ff00ff'; // Magenta for bed
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 5]);
+        ctx.strokeRect(offsetX, offsetY, bedScaledW, bedScaledH);
+        
+        // Label
+        ctx.fillStyle = '#ff00ff';
+        ctx.font = 'bold 10px "Atkinson Hyperlegible", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`BED: ${bedWidth.toFixed(0)}×${bedHeight.toFixed(0)}mm`, offsetX + 5, offsetY + 15);
+        
+        // Draw scan constraint box (scan paper size)
+        const scanScaledW = scanWidth * scale;
+        const scanScaledH = scanHeight * scale;
+        ctx.strokeStyle = '#00ffff'; // Cyan for scan
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(offsetX, offsetY, scanScaledW, scanScaledH);
+        
+        // Label
+        ctx.fillStyle = '#00ffff';
+        ctx.fillText(`SCAN: ${scanWidth.toFixed(0)}×${scanHeight.toFixed(0)}mm`, offsetX + 5, offsetY + 30);
+        
+        ctx.restore();
     }
     
     _drawScan(ctx, canvas, values) {
-        // TODO: Use MFP-ScanRenderer module
+        // Draw scan image
         if (this.sharedState.scanImageElement) {
             ctx.drawImage(this.sharedState.scanImageElement, 0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '12px "Atkinson Hyperlegible", monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText('TODO: Overlay grid with alignment controls', 10, 20);
+            
+            // Draw grid overlay if available
+            if (this.sharedState.referenceGridData && this.sharedState.gridCalculated) {
+                import('./MFP-ScanRenderer.js').then(({ drawScanOverlay }) => {
+                    drawScanOverlay(ctx, canvas, this.sharedState);
+                });
+            }
+        } else {
+            this._drawPlaceholder(ctx, canvas, 'Upload Scan Image');
         }
     }
     
     _drawQuantize(ctx, canvas, values) {
-        // TODO: Draw quantized or source image
-        if (this.sharedState.quantizedImage) {
-            ctx.drawImage(this.sharedState.quantizedImage, 0, 0, canvas.width, canvas.height);
+        // Draw quantized or source image
+        if (this.sharedState.quantizedImageElement) {
+            ctx.drawImage(this.sharedState.quantizedImageElement, 0, 0, canvas.width, canvas.height);
         } else if (this.sharedState.sourceImageElement) {
             ctx.drawImage(this.sharedState.sourceImageElement, 0, 0, canvas.width, canvas.height);
+        } else {
+            this._drawPlaceholder(ctx, canvas, 'Load Source Image (QUANTIZE tab)');
         }
     }
     
     _drawExport(ctx, canvas, values) {
         const mode = values.canvasMode || 'Grid';
-        // TODO: Draw based on mode
-        ctx.fillStyle = '#00ff00';
+        
+        // Draw based on mode
+        if (mode === 'Grid' && this.sharedState.gridData) {
+            import('./MFP-GridRenderer.js').then(({ drawCalibrationGrid }) => {
+                drawCalibrationGrid(ctx, canvas, this.sharedState.gridData, this.sharedState.sequenceMap, values);
+            });
+        } else if (mode === 'Scan' && this.sharedState.scanImageElement) {
+            ctx.drawImage(this.sharedState.scanImageElement, 0, 0, canvas.width, canvas.height);
+        } else {
+            this._drawPlaceholder(ctx, canvas, `${mode} View`);
+        }
+    }
+    
+    _drawPlaceholder(ctx, canvas, message) {
+        ctx.fillStyle = '#808080';
         ctx.font = '16px "Atkinson Hyperlegible", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${mode} view - TODO: Implement`, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
     }
     
     destroy() {
+        // Clean up markdown component
+        if (this.markdownComponent && this.markdownComponent.destroy) {
+            this.markdownComponent.destroy();
+        }
+        
+        // Clean up docs container
+        if (this.docsContainer && this.docsContainer.parentNode) {
+            this.docsContainer.parentNode.removeChild(this.docsContainer);
+        }
+        
+        // Clean up info button
+        if (this.infoButton && this.infoButton.parentNode) {
+            this.infoButton.parentNode.removeChild(this.infoButton);
+        }
+        
+        // Clean up toolBase
         if (this.toolBase) {
             this.toolBase.destroy();
         }

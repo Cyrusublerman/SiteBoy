@@ -106,6 +106,12 @@ export * as HOG from './features/hog.js';
 // Image
 export * as Posterization from './image/posterization.js';
 export * as ImageAnalysis from './image/image-analysis.js';
+export * as ImageAdjustments from './image/image-adjustments.js';
+export * as ImageResize from './image/image-resize.js';
+
+// Color & Dithering (Color Quantizer algorithms)
+export * as ColorSpace from './color/color-space.js';
+export * as Dither from './dither/index.js';
 
 // Audio
 export * as WavEncoder from './audio/wav-encoder.js';
@@ -113,6 +119,9 @@ export * as DSPEvaluator from './audio/dsp-evaluator.js';
 
 // Animation
 export * as Animation from './animation/animation-utils.js';
+
+// Export utilities
+export * as ExportUtils from './export/export-utils.js';
 
 // Rendering
 export * as Rendering from './rendering/rendering-utils.js';

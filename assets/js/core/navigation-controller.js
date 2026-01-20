@@ -46,7 +46,10 @@ const NavigationController = {
                 // Build hierarchical dropdown items from pages array
                 const dropdownItems = this.buildHierarchicalItems(section, pages, currentPath);
                 
-                // Setup dropdown
+                // Determine which subsection should be expanded (contains current page)
+                const currentSubsection = this.findCurrentSubsection(section, currentPath);
+                
+                // Setup dropdown with auto-expand info
                 window.Subheader.setDropdownContent(dropdownItems, (item) => {
                     if (item.path && callbacks && callbacks.navigateToSection) {
                         const pathParts = item.path.replace('#', '').split('/');
@@ -54,23 +57,31 @@ const NavigationController = {
                         const targetSubsection = pathParts.slice(1).join('/') || null;
                         callbacks.navigateToSection(targetSection, targetSubsection);
                     }
-                });
+                }, currentSubsection);
                 
                 // Setup prev/next navigation with proper looping
                 // Convert pages array to items format that Subheader expects
-                const navigationItems = pages.map(page => {
-                    const pathParts = page.replace('#', '').split('/');
-                    const isIndex = pathParts.length === 1;
-                    const sectionName = pathParts[0];
-                    const subsectionName = pathParts.slice(1).join('/');
-                    
-                    return {
-                        id: isIndex ? null : subsectionName,
-                        path: page,
-                        title: isIndex ? `${sectionName.toUpperCase()} TOC` : subsectionName.toUpperCase(),
-                        isTOC: isIndex
-                    };
-                });
+                // Filter out subsection index pages (e.g., #tools/utilities, #tools/processors)
+                const navigationItems = pages
+                    .filter(page => {
+                        const pathParts = page.replace('#', '').split('/');
+                        // Keep only: section index (#tools - 1 part) or tool pages (#tools/utilities/tool-test - 3 parts)
+                        // Remove: subsection index pages (#tools/utilities - 2 parts)
+                        return pathParts.length === 1 || pathParts.length >= 3;
+                    })
+                    .map(page => {
+                        const pathParts = page.replace('#', '').split('/');
+                        const isIndex = pathParts.length === 1;
+                        const sectionName = pathParts[0];
+                        const subsectionName = pathParts.slice(1).join('/');
+                        
+                        return {
+                            id: isIndex ? null : subsectionName,
+                            path: page,
+                            title: isIndex ? `${sectionName.toUpperCase()} TOC` : subsectionName.toUpperCase(),
+                            isTOC: isIndex
+                        };
+                    });
                 
                 const navigationContext = {
                     section: section,
@@ -196,6 +207,30 @@ const NavigationController = {
         
         window.debugLog('NAVIGATION', `🧭 Built hierarchical dropdown: ${result.length} top-level items`);
         return result;
+    },
+    
+    /**
+     * Find which subsection contains the current page
+     * Returns the subsection ID (e.g., 'utilities', 'processors')
+     * 
+     * @param {string} section - Section name
+     * @param {string} currentPath - Current page path (e.g., '#tools/utilities/tool-test')
+     * @returns {string|null} Subsection ID or null
+     */
+    findCurrentSubsection(section, currentPath) {
+        if (!currentPath) return null;
+        
+        const sectionPrefix = `#${section}`;
+        const relativePath = currentPath.replace(`${sectionPrefix}/`, '');
+        const parts = relativePath.split('/');
+        
+        // If path has 2+ parts (e.g., utilities/tool-test), first part is subsection
+        if (parts.length >= 2) {
+            window.debugLog('NAVIGATION', `🧭 Current subsection: ${parts[0]}`);
+            return parts[0];
+        }
+        
+        return null;
     }
 };
 

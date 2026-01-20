@@ -9,6 +9,7 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { AnimationLoop } from '../../core/animation-foundation.js';
+import { WaveSolver } from '../../shared/algorithms/index.js';
 
 // Animation state
     let t = 0;
@@ -50,8 +51,12 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         var dx = px - this.x;
         var dy = py - this.y;
         var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        var w = 2 * Math.PI / this.freq;
-        return this.amp * Math.sin(w * dist - time);
+        
+        // Use shared WaveSolver for radial wave calculation
+        return WaveSolver.travellingWaveRadial(dist, time, {
+            freq: 1 / this.freq,
+            amp: this.amp
+        });
     };
     
     WaveSource.prototype.getDisplacement = function(px, py, time) {
@@ -78,33 +83,34 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         },
         
         sidebar: [
-            ['VISUALIZATION', [
-                ['Mode', [
+            // ═══════════════════════════════════════════════════════════════════
+            // TAB 1: CONTROLS — Visualization, Frequency, Parameters
+            // ═══════════════════════════════════════════════════════════════════
+            ['CONTROLS', [
+                ['Visualization', [
                     ['radio', 'Display', ['Particle', 'Density', 'Radial'], { 
                         key: 'vizMode', 
                         selectedValue: 'Particle' 
                     }],
                 ]],
-            ]],
-            ['FREQUENCY', [
-                ['Base', [
+                ['Frequency', [
                     ['dropdown', 'Root Note', ['C4 (262Hz)', 'D4 (294Hz)', 'E4 (330Hz)', 'F4 (349Hz)', 'G4 (392Hz)', 'A4 (440Hz)', 'B4 (494Hz)'], { 
                         key: 'rootNote'
                     }],
-                ]],
-                ['Chord', [
                     ['dropdown', 'Chord Type', ['Major', 'Minor', 'Diminished', 'Augmented', 'Major 7', 'Minor 7', 'Dom 7', 'Sus 4'], { 
                         key: 'chordType'
                     }],
                 ]],
-            ]],
-            ['PARAMETERS', [
-                ['Wave', [
+                ['Wave Parameters', [
                     ['slider', 'Amplitude', 1, 10, 0.5, { key: 'amplitude', value: 3, precision: 1, withNumber: true }],
                     ['slider', 'Speed', 0.01, 0.2, 0.01, { key: 'speed', value: 0.08, precision: 2, withNumber: true }],
                     ['slider', 'Contrast', 1, 10, 0.5, { key: 'boost', value: 3, precision: 1, withNumber: true }],
                 ]],
             ]],
+            
+            // ═══════════════════════════════════════════════════════════════════
+            // TAB 2: TEMPLATES — Pattern Layouts
+            // ═══════════════════════════════════════════════════════════════════
             ['TEMPLATES', [
                 ['Pattern', [
                     ['dropdown', 'Layout', ['Triangle', 'Circle 6', 'Circle 12', 'Grid 3x3', 'Grid 4x4', 'Star 5', 'Corners', 'Cross'], { 
@@ -115,7 +121,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                     ['button', 'Clear Sources', null, { key: 'clearSources' }],
                 ]],
             ]],
-            // CANVAS tab auto-injected by ToolBase
+            // Auto-CANVAS and Auto-ANIMATION tabs will be injected (total: 4 tabs)
         ],
         
         canvas: {

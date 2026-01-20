@@ -561,7 +561,7 @@ export class GenerativePatternTool {
                             ['stepper', 'Contour Count', 2, 32, 1, { value: 8, key: 'contourCount' }],
                         ]],
                     ]],
-                    ['ANIMATION', [
+                    ['EVOLUTION', [
                         ['Playback', [
                             ['button', 'Play/Pause', null, { key: 'playPause' }],
                             ['button', 'Reset', null, { key: 'reset' }],
@@ -575,18 +575,12 @@ export class GenerativePatternTool {
                         ['Display', [
                             ['toggle', 'Overlays', ['Show Points', 'Show Edges'], { key: 'overlays', selectedValues: [] }],
                         ]],
-                    ]],
-                    ['INFO', [
-                        ['About', [
+                        ['About System', [
                             ['label', 'UNIFIED GENERATIVE SYSTEM', { variant: 'heading' }],
                             ['label', 'All patterns emerge from one point network', { variant: 'body' }],
-                        ]],
-                        ['Evolution', [
                             ['label', 'Evolution runs ON the point network', { variant: 'caption' }],
                             ['label', 'RD: Diffuses via edges, modulates point weights', { variant: 'caption' }],
                             ['label', 'CA: Neighbors via edges, modulates point weights', { variant: 'caption' }],
-                        ]],
-                        ['Rendering', [
                             ['label', 'Truchet: Tile pattern from edge connectivity', { variant: 'caption' }],
                             ['label', 'Blob: Point/edge inflation by evolved weights', { variant: 'caption' }],
                             ['label', 'Contours: From single global distance field', { variant: 'caption' }],

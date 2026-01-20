@@ -30,7 +30,7 @@ import { DSPEvaluator } from '../../shared/algorithms/index.js';
         
         sidebar: [
             // ═══════════════════════════════════════════════════════════════════
-            // TAB 1: CONTROLS — Core Parameters
+            // TAB 1: CONTROLS — Core Parameters & Visualization
             // ═══════════════════════════════════════════════════════════════════
             ['CONTROLS', [
                 ['Core', [
@@ -43,6 +43,18 @@ import { DSPEvaluator } from '../../shared/algorithms/index.js';
                     ['text', 'Equation 2', '', { key: 'eq2', placeholder: 'sin(4*PI*p)*0.5' }],
                     ['text', 'Equation 3', '', { key: 'eq3', placeholder: 'tri(p)*0.3' }],
                     ['slider', 'Mix', 0, 1, 0.01, { value: 0.5, key: 'mix', withNumber: true }],
+                ]],
+                ['Visualization', [
+                    ['dropdown', 'Mode', ['Oscilloscope', 'Segmented', 'Circular'], { key: 'vizMode', value: 'Oscilloscope' }],
+                    ['stepper', 'Cycles Shown', 1, 64, 1, { value: 4, key: 'cycles' }],
+                    ['slider', 'Modulation Depth', 0, 1, 0.01, { value: 0.3, key: 'modDepth', withNumber: true }],
+                    ['color', 'Waveform', '#00FF00', { key: 'waveColor' }],
+                    ['color', 'Background', '#000000', { key: 'bgColor' }],
+                    ['slider', 'Line Width', 1, 5, 0.5, { value: 2, key: 'lineWidth', withNumber: true }],
+                ]],
+                ['Info', [
+                    ['label', 'Variables: p=phase, w=2π×freq, u=sample, t=time, g=global phase', { variant: 'caption' }],
+                    ['label', 'Functions: sin, cos, tan, abs, sqrt, tri(), saw(), sqr()', { variant: 'caption' }],
                 ]],
             ]],
             
@@ -64,48 +76,21 @@ import { DSPEvaluator } from '../../shared/algorithms/index.js';
                     ['button', 'Copy Equation', null, { key: 'copyEq' }],
                 ]],
             ]],
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // TAB 3: CANVAS — Visualization
-            // ═══════════════════════════════════════════════════════════════════
-            ['CANVAS', [
-                ['Style', [
-                    ['dropdown', 'Mode', ['Oscilloscope', 'Segmented', 'Circular'], { key: 'vizMode', value: 'Oscilloscope' }],
-                    ['stepper', 'Cycles Shown', 1, 64, 1, { value: 4, key: 'cycles' }],
-                    ['slider', 'Modulation Depth', 0, 1, 0.01, { value: 0.3, key: 'modDepth', withNumber: true }],
-                ]],
-                ['Colors', [
-                    ['color', 'Waveform', '#00FF00', { key: 'waveColor' }],
-                    ['color', 'Background', '#000000', { key: 'bgColor' }],
-                    ['slider', 'Line Width', 1, 5, 0.5, { value: 2, key: 'lineWidth', withNumber: true }],
-                ]],
-                ['Size', [
-                    ['slider', 'Width', 196, 840, 14, { value: 420, key: 'canvasWidth', withNumber: true }],
-                    ['slider', 'Height', 196, 840, 14, { value: 420, key: 'canvasHeight', withNumber: true }],
-                ]],
-            ]],
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // TAB 4: INFO — Variables Reference
-            // ═══════════════════════════════════════════════════════════════════
-            ['INFO', [
-                ['Variables', [
-                    ['label', 'p = phase [0,1) per cycle', { variant: 'body' }],
-                    ['label', 'w = angular velocity (2π×freq)', { variant: 'body' }],
-                    ['label', 'u = sample index / total', { variant: 'body' }],
-                    ['label', 't = time in seconds', { variant: 'body' }],
-                    ['label', 'g = global phase (continuous)', { variant: 'body' }],
-                ]],
-                ['Functions', [
-                    ['label', 'sin, cos, tan, abs, sqrt', { variant: 'body' }],
-                    ['label', 'tri(x) = triangle wave', { variant: 'body' }],
-                    ['label', 'saw(x) = sawtooth wave', { variant: 'body' }],
-                    ['label', 'sqr(x) = square wave', { variant: 'body' }],
-                ]],
-            ]],
         ],
         
-        canvas: { size: 420 },
+        // Auto-injects CANVAS tab (sizing controls)
+        canvas: { 
+            width: 420, 
+            height: 420,
+            showControls: true 
+        },
+        
+        // Animation config for waveform visualization
+        animation: {
+            type: 'infinite',
+            defaultFps: 60,
+            canPrerender: false  // Real-time audio visualization
+        },
         
         onInit: function(values) {
             var self = this;
@@ -127,9 +112,7 @@ import { DSPEvaluator } from '../../shared/algorithms/index.js';
         onUpdate: function(key, value, allValues) {
             var self = this;
             
-            if (key === 'canvasWidth' || key === 'canvasHeight') {
-                this.resizeCanvas(allValues.canvasWidth || 420, allValues.canvasHeight || 420);
-            }
+            // Canvas width/height now handled by auto-CANVAS tab
             
             if (key === 'volume' && this.gainNode) {
                 this.gainNode.gain.value = value / 100 * 0.5;

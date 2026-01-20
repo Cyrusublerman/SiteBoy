@@ -65,6 +65,9 @@ const COMPONENT_TYPES = {
     'value': 'Text',
     'progress': 'ProgressBar',
 
+    // Image Adjustment Bundles
+    'adjustment-bundle': 'AdjustmentBundle',
+
     // Containers
     'section': 'Section',
     'grid': 'Grid',
@@ -119,6 +122,17 @@ export class ToolBase extends BaseComponent {
                 ]],
             ]]);
         }
+        
+        // Auto-inject ANIMATION tab if animation config present
+        // Animation export controls go in sidebar, NOT in canvas area
+        if (this.animationConfig) {
+            this.sidebarConfig.push(['ANIMATION', [
+                ['Export Settings', [
+                    // AnimationExport component will be rendered here
+                    // Component is injected during sidebar build phase
+                ]],
+            ]]);
+        }
 
         // Callbacks
         this.onInit = config.onInit ?? (() => {});
@@ -143,6 +157,73 @@ export class ToolBase extends BaseComponent {
         this.F = deps.MF?.F || F;
         this.F2 = this.F / 2;
         this.SIDEBAR_WIDTH = this.F * 30; // 30F = 420px
+        
+        // Loading state (component-based)
+        this.loadingOverlayComponent = null;
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // LOADING STATE MANAGEMENT (Component-Based)
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    /**
+     * Show loading overlay with spinner and optional message
+     * @param {string} message - Loading message
+     * @param {number} progress - Optional progress (0-100), shows progress bar if provided
+     */
+    showLoading(message = 'Processing...', progress = null) {
+        if (!this.element) return;
+        
+        // Import LoadingOverlay component
+        const LoadingOverlay = this.deps.ComponentLibrary?.LoadingOverlay;
+        if (!LoadingOverlay) {
+            console.error('LoadingOverlay component not available in ComponentLibrary');
+            return;
+        }
+        
+        // Remove existing overlay if present
+        if (this.loadingOverlayComponent) {
+            this.hideLoading();
+        }
+        
+        // Create loading overlay component
+        this.loadingOverlayComponent = new LoadingOverlay({
+            message,
+            progress
+        }, this.deps);
+        
+        // Render and mount to canvas area (or element if no canvas area)
+        const target = this.canvasArea || this.element;
+        if (target.style.position !== 'relative' && target.style.position !== 'absolute') {
+            target.style.position = 'relative';
+        }
+        
+        const overlayElement = this.loadingOverlayComponent.render();
+        target.appendChild(overlayElement);
+    }
+    
+    /**
+     * Hide loading overlay
+     */
+    hideLoading() {
+        if (this.loadingOverlayComponent) {
+            this.loadingOverlayComponent.destroy();
+            this.loadingOverlayComponent = null;
+        }
+    }
+    
+    /**
+     * Update loading progress
+     * @param {number} percent - Progress percentage (0-100)
+     * @param {string} message - Optional new message
+     */
+    updateProgress(percent, message = null) {
+        if (this.loadingOverlayComponent) {
+            this.loadingOverlayComponent.setProgress(percent, message);
+        } else {
+            // No overlay shown yet, create one with progress
+            this.showLoading(message || 'Processing...', percent);
+        }
     }
 
     render() {
@@ -189,6 +270,11 @@ export class ToolBase extends BaseComponent {
             // Landscape: sidebar first, then canvas
             this.element.appendChild(this.sidebar);
             this.element.appendChild(this.canvasArea);
+        }
+
+        // Inject AnimationExport into ANIMATION tab if animation config present
+        if (this.animationConfig && this.canvas) {
+            this._injectAnimationExportIntoSidebar();
         }
 
         // Initialize values and trigger onInit
@@ -803,6 +889,7 @@ export class ToolBase extends BaseComponent {
                     label: args[0],
                     accept: args[1] ?? '*/*',
                     buttonText: extraOptions.buttonText ?? 'Choose...',
+                    multiple: extraOptions.multiple ?? false,
                     key: extraOptions.key ?? this._makeKey(args[0]),
                     onChange: (v) => this._handleChange(options.key, v),
                 };
@@ -820,6 +907,18 @@ export class ToolBase extends BaseComponent {
                         this._handleChange(options.key + '_indices', indices);
                         this._handleChange(options.key + '_colors', colors);
                     },
+                };
+                break;
+
+            case 'adjustment-bundle':
+                // args[0] is bundle type: 'minimal', 'standard', 'professional'
+                // args[1] is unused (null placeholder)
+                // extraOptions contains: key, onChange, onTransform
+                options = {
+                    bundleType: args[0] ?? 'standard',
+                    key: extraOptions.key ?? 'adjustmentBundle',
+                    onChange: extraOptions.onChange ?? null,
+                    onTransform: extraOptions.onTransform ?? null,
                 };
                 break;
 
@@ -936,12 +1035,8 @@ export class ToolBase extends BaseComponent {
         // Status text removed - canvas size info now in sidebar CANVAS tab
 
         // Canvas controls are now in sidebar (CANVAS tab) when showControls: true
-        // No controls added to canvas area to keep it clean
-        
-        // Inject AnimationExport if animation config present
-        if (this.animationConfig) {
-            this._injectAnimationExport(area);
-        }
+        // Animation export controls are now in sidebar (ANIMATION tab) when animationConfig present
+        // Canvas area contains ONLY the canvas element (no UI controls)
 
         return area;
     }
@@ -954,14 +1049,47 @@ export class ToolBase extends BaseComponent {
         return Math.floor(targetSize / this.F) * this.F;
     }
     
-    _injectAnimationExport(canvasArea) {
+    _injectAnimationExportIntoSidebar() {
         const { AnimationExport } = this.deps.ComponentLibrary;
         if (!AnimationExport) {
             console.warn('⚠️ AnimationExport not available in ComponentLibrary');
             return;
         }
         
-        window.debugLog('INIT', `🎬 Injecting AnimationExport for ${this.title}`);
+        window.debugLog('INIT', `🎬 Injecting AnimationExport into sidebar for ${this.title}`);
+        
+        // Find the ANIMATION tab panel in the sidebar
+        // Look for the panel that was created for the ANIMATION tab
+        const animationTabIndex = this.sidebarConfig.findIndex(
+            ([tabName]) => tabName === 'ANIMATION'
+        );
+        
+        if (animationTabIndex === -1) {
+            console.warn('⚠️ ANIMATION tab not found in sidebar config');
+            return;
+        }
+        
+        // Find the panel container (tool-panels) and get the correct panel
+        const panelsContainer = this.sidebar.querySelector('.tool-panels');
+        if (!panelsContainer) {
+            console.warn('⚠️ Panels container not found in sidebar');
+            return;
+        }
+        
+        const panels = panelsContainer.querySelectorAll('.tool-panel');
+        const animationPanel = panels[animationTabIndex];
+        
+        if (!animationPanel) {
+            console.warn('⚠️ Animation panel not found at index', animationTabIndex);
+            return;
+        }
+        
+        // Find the Export Settings block content
+        const blockContent = animationPanel.querySelector('.tool-block-content');
+        if (!blockContent) {
+            console.warn('⚠️ Block content not found in animation panel');
+            return;
+        }
         
         // Create export component
         const exportComponent = new AnimationExport({
@@ -989,21 +1117,11 @@ export class ToolBase extends BaseComponent {
         this.addChild(exportComponent);
         this.componentInstances.push(exportComponent);
         
-        // Render and append to canvas area
+        // Render and append to block content (no extra styling needed - block provides padding)
         const exportElement = exportComponent.render();
         if (exportElement) {
-            // Style export component to appear below canvas
-            exportElement.style.cssText = `
-                margin-top: ${this.F}px;
-                padding: ${this.F}px;
-                border: 1px solid var(--c-border);
-                background: var(--c-bg);
-                width: 100%;
-                max-width: ${this.canvas.width}px;
-                box-sizing: border-box;
-            `;
-            canvasArea.appendChild(exportElement);
-            window.debugLog('INIT', `✅ AnimationExport injected for ${this.title}`);
+            blockContent.appendChild(exportElement);
+            window.debugLog('INIT', `✅ AnimationExport injected into ANIMATION tab for ${this.title}`);
         }
     }
 

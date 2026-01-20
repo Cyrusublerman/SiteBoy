@@ -1605,6 +1605,8 @@ export class Subheader extends BaseComponent {
      * Calculate previous and next items based on current position with looping
      */
     calculateNavigationItems(items, currentSubsection) {
+        window.debugLog('NAVIGATION', `🧭 calculateNavigationItems: items=${items.length}, currentSubsection="${currentSubsection}"`);
+        
         let currentIndex = -1;
         
         if (currentSubsection === null || currentSubsection === undefined) {
@@ -1613,15 +1615,37 @@ export class Subheader extends BaseComponent {
                 item.isTOC === true || item.path === `#${this.currentSection}`
             );
         } else {
+            // Normalize currentSubsection for comparison (remove any leading/trailing slashes)
+            const normalizedCurrent = currentSubsection.replace(/^\/+|\/+$/g, '');
+            
             // For subsection pages, look for ID or full path match
-            currentIndex = items.findIndex(item => 
-                item.id === currentSubsection || item.path === `#${this.currentSection}/${currentSubsection}`
-            );
+            currentIndex = items.findIndex(item => {
+                // Normalize item.id for comparison
+                const normalizedId = item.id ? item.id.replace(/^\/+|\/+$/g, '') : null;
+                
+                // Try multiple matching strategies:
+                // 1. Direct ID match (e.g., "utilities/tool-test" === "utilities/tool-test")
+                // 2. Full path match (e.g., "#tools/utilities/tool-test")
+                // 3. Path suffix match (handles cases where section prefix might differ)
+                const directMatch = normalizedId === normalizedCurrent;
+                const pathMatch = item.path === `#${this.currentSection}/${normalizedCurrent}`;
+                const pathEndsMatch = item.path && item.path.endsWith(`/${normalizedCurrent}`);
+                
+                const matches = directMatch || pathMatch || pathEndsMatch;
+                
+                if (matches) {
+                    window.debugLog('NAVIGATION', `🧭 Found match: item.id="${item.id}", item.path="${item.path}", currentSubsection="${currentSubsection}"`);
+                }
+                return matches;
+            });
         }
+        
+        window.debugLog('NAVIGATION', `🧭 Current index: ${currentIndex} of ${items.length}`);
         
         if (currentIndex === -1 || items.length <= 1) {
             this.prevItem = null;
             this.nextItem = null;
+            window.debugLog('NAVIGATION', `🧭 No navigation: currentIndex=${currentIndex}, items.length=${items.length}`);
             return;
         }
         
@@ -1631,6 +1655,8 @@ export class Subheader extends BaseComponent {
         
         // Next: if at end (last index), go to first item
         this.nextItem = currentIndex < items.length - 1 ? items[currentIndex + 1] : items[0];
+        
+        window.debugLog('NAVIGATION', `🧭 Prev: "${this.prevItem?.title}", Next: "${this.nextItem?.title}"`);
     }
     
     /**
@@ -1896,7 +1922,15 @@ export class Subheader extends BaseComponent {
      * Format navigation text for buttons
      */
     formatNavigationText(item, direction) {
-        const title = item.title || item.id || 'ITEM';
+        // Extract display name from item
+        // For hierarchical paths like "utilities/tool-test", show just the tool name
+        let displayTitle = item.title || item.id || 'ITEM';
+        
+        // If title contains slashes (hierarchical path), show only the last part
+        if (displayTitle.includes('/')) {
+            const parts = displayTitle.split('/');
+            displayTitle = parts[parts.length - 1];
+        }
         
         // Get actual button width from layout calculations
         const layout = this.deps.MF ? this.deps.MF.computeLayout() : {};
@@ -1917,8 +1951,8 @@ export class Subheader extends BaseComponent {
         // Ensure minimum of 4 characters and maximum of reasonable length
         const maxLength = Math.max(4, Math.min(maxChars, 25));
         
-        let truncatedTitle = title.length > maxLength ? 
-            title.substring(0, maxLength - 1) + '…' : title;
+        let truncatedTitle = displayTitle.length > maxLength ? 
+            displayTitle.substring(0, maxLength - 1) + '…' : displayTitle;
         
         return direction === 'prev' ? 
             `${truncatedTitle.toUpperCase()} ←` : 
@@ -1951,8 +1985,9 @@ export class Subheader extends BaseComponent {
      * Set dropdown content for left side of subheader
      * @param {Array} items - Dropdown items {label, value, url}
      * @param {Function} onSelect - Selection handler
+     * @param {string|null} expandSubsection - Subsection ID to auto-expand
      */
-    setDropdownContent(items, onSelect = null) {
+    setDropdownContent(items, onSelect = null, expandSubsection = null) {
         // Ensure subheader is rendered
         if (!this.element) {
             window.debugLog('VERBOSE', '🔄 Subheader not rendered for setDropdownContent(), rendering now...');
@@ -1974,7 +2009,8 @@ export class Subheader extends BaseComponent {
             // Create reusable navigation dropdown - like header but different positioning
             this.pageDropdown = new BaseNavigationDropdown({
                 items: items,
-                onItemClick: onSelect
+                onItemClick: onSelect,
+                expandSubsection: expandSubsection // Pass auto-expand info
             }, this.deps);
             
             // Create trigger element sized by layout to avoid stale ellipsis on resize

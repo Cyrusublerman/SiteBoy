@@ -17,41 +17,41 @@ const ToolsSection = {
     componentInstances: [],
     navigationCallbacks: null,
     
-    // Simple page list for navigation
+    // Hierarchical page list for navigation with subsections
     pages: [
         '#tools',
-        // Utilities
-        '#tools/tool-test',
-        '#tools/algorithms-test-lab',
-        '#tools/font-analysis',
-        '#tools/polygon-calculator',
-        '#tools/about-you',
-        '#tools/media-manager',
-        // Processors
-        '#tools/colour-quantizer',
-        '#tools/pixel-tiler',
-        '#tools/image23d',
-        '#tools/ascii-art-generator',
-        '#tools/smart-halftone',
-        '#tools/topographic-dot-halftone',
-        '#tools/p5-to-video',
-        // Generators
-        '#tools/clock',
-        '#tools/circles',
-        '#tools/torus',
-        '#tools/harmonics',
-        '#tools/lissajous',
-        '#tools/squares',
-        '#tools/cymatics',
-        '#tools/wave-interference',
-        '#tools/generative-pattern',
-        '#tools/unified-pattern',
-        '#tools/moire-generator',
-        '#tools/interference-figure',
-        '#tools/ribbon-breeze',
-        '#tools/tile-mosaic',
-        '#tools/wave-equation-synth',
-        '#tools/defecated',
+        // Utilities subsection (no index page, just tools)
+        '#tools/utilities/tool-test',
+        '#tools/utilities/algorithms-test-lab',
+        '#tools/utilities/font-analysis',
+        '#tools/utilities/polygon-calculator',
+        '#tools/utilities/about-you',
+        '#tools/utilities/media-manager',
+        // Processors subsection (no index page, just tools)
+        '#tools/processors/colour-quantizer',
+        '#tools/processors/pixel-tiler',
+        '#tools/processors/image23d',
+        '#tools/processors/ascii-art-generator',
+        '#tools/processors/smart-halftone',
+        '#tools/processors/topographic-dot-halftone',
+        '#tools/processors/p5-to-video',
+        // Generators subsection (no index page, just tools)
+        '#tools/generators/clock',
+        '#tools/generators/circles',
+        '#tools/generators/torus',
+        '#tools/generators/harmonics',
+        '#tools/generators/lissajous',
+        '#tools/generators/squares',
+        '#tools/generators/cymatics',
+        '#tools/generators/wave-interference',
+        '#tools/generators/generative-pattern',
+        '#tools/generators/unified-pattern',
+        '#tools/generators/moire-generator',
+        '#tools/generators/interference-figure',
+        '#tools/generators/ribbon-breeze',
+        '#tools/generators/tile-mosaic',
+        '#tools/generators/wave-equation-synth',
+        '#tools/generators/defecated',
     ],
     
     /**
@@ -434,7 +434,7 @@ const ToolsSection = {
             { id: 'algorithms-test-lab', title: 'Algorithm Test Lab', description: 'Dropdown-driven harness for algorithms library', path: '#tools/algorithms-test-lab' },
             { id: 'font-analysis', title: 'Font Analysis', description: 'Compare fonts and analyze detailed metrics with dynamic Google Fonts loading', path: '#tools/font-analysis' },
             { id: 'image23d', title: 'Image 2→3D', description: 'Transform 2D images into 3D visualizations with depth mapping and perspective controls', path: '#tools/image23d' },
-            { id: 'colour-quantizer', title: 'Colour Quantizer', path: '#tools/colour-quantizer' },
+            { id: 'colour-quantizer', title: 'Colour Quantizer', description: 'Reduce image colours to limited palette with multiple dithering algorithms', path: '#tools/colour-quantizer' },
             { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#tools/pixel-tiler' },
             { id: 'polygon-calculator', title: 'Polygon Calculator', path: '#tools/polygon-calculator' },
             { id: 'clock', title: 'Clock', path: '#tools/clock' },
@@ -493,17 +493,22 @@ const ToolsSection = {
     async renderTool(toolId) {
         window.debugLog('TOOLS', `🔧 Rendering tool: ${toolId}`);
         
-        const normalizedToolId = (toolId || '').trim().toLowerCase();
+        // Extract actual tool name from hierarchical path
+        // e.g., 'utilities/tool-test' -> 'tool-test'
+        // or 'generators/clock' -> 'clock'
+        const pathParts = toolId.split('/');
+        const actualToolId = pathParts.length > 1 ? pathParts[pathParts.length - 1] : toolId;
+        const normalizedToolId = (actualToolId || '').trim().toLowerCase();
         
         // Show loading indicator (use original label for readability)
-        this.showLoadingIndicator(toolId || normalizedToolId);
+        this.showLoadingIndicator(actualToolId || normalizedToolId);
         
         try {
             // Try renderLazyTool first (handles toolImports map)
             await this.renderLazyTool(normalizedToolId);
         } catch (err) {
             console.error(`❌ Failed to load tool: ${normalizedToolId}`, err);
-            this.showToolError(normalizedToolId || toolId, err.message);
+            this.showToolError(normalizedToolId || actualToolId, err.message);
         }
     },
     
@@ -847,16 +852,25 @@ const ToolsSection = {
     },
 
     /**
-     * Render Colour Quantizer Tool - ToolBase version
+     * Render Colour Quantizer Tool - Phase 2 ToolBase version
      */
-    renderColourQuantizer() {
-        // Full viewport mode (ToolBase handles container setup via mount())
+    async renderColourQuantizer() {
+        // Load tool via AssetLoader
+        await window.AssetLoader.loadTool('colour-quantizer');
+        
+        if (typeof window.ColourQuantizerTool === 'undefined') {
+            console.error('ColourQuantizerTool class not found after loading');
+            this.currentContainer.innerHTML = '<p>Error: ColourQuantizerTool not loaded</p>';
+            return;
+        }
+        
+        // Instantiate tool (ToolBase handles container setup via mount())
         const tool = new window.ColourQuantizerTool(this.currentContainer, {
-            MF: LayoutCalculator,
+            MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
+        tool.render();  // Call render() to initialize ToolBase
         this.componentInstances.push(tool);
-        tool.render();
     },
     
     /**

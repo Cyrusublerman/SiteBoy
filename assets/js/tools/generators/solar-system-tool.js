@@ -11,6 +11,7 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { ThrottledLoop } from '../../core/animation-foundation.js';
+import { ExportUtils } from '../../shared/algorithms/index.js';
 
 // ES Module constants and state
 
@@ -73,20 +74,26 @@ import { ThrottledLoop } from '../../core/animation-foundation.js';
                     ['label', 'Click planets to select', { variant: 'caption' }],
                     ['label', 'Uses NASA JPL ephemeris', { variant: 'caption' }],
                 ]],
-            ]],
-            ['EXPORT', [
-                ['Canvas', [
-                    ['slider', 'Width', 420, 2048, 1, { value: 420, key: 'canvasWidth', withNumber: true }],
-                    ['slider', 'Height', 420, 2048, 1, { value: 420, key: 'canvasHeight', withNumber: true }],
-                ]],
-                ['Download', [
+                ['Export', [
                     ['button', 'Export PNG', null, { key: 'exportPng' }],
                     ['button', 'Export SVG', null, { key: 'exportSvg' }],
                 ]],
             ]],
         ],
         
-        canvas: { size: 420 },
+        // Auto-injects CANVAS tab (with standard size controls)
+        canvas: { 
+            width: 420, 
+            height: 420,
+            showControls: true 
+        },
+        
+        // Animation config for real-time updates
+        animation: {
+            type: 'infinite',
+            defaultFps: 1,  // Slow updates for planetary motion
+            canPrerender: false  // Real-time only
+        },
         
         onInit: function(values) {
             var self = this;
@@ -130,15 +137,12 @@ import { ThrottledLoop } from '../../core/animation-foundation.js';
         },
         
         onUpdate: function(key, value, allValues) {
+            // Canvas width/height now handled by auto-CANVAS tab
+            
+            // Regenerate asteroid belt if count changes
             if (key === 'asteroidCount') {
                 generateAsteroidBelt(value);
                 asteroidCached = null;
-            }
-            
-            // Handle canvas resize
-            if (key === 'canvasWidth' || key === 'canvasHeight') {
-                this.resizeCanvas(allValues.canvasWidth, allValues.canvasHeight);
-                this.draw();
             }
         },
         
@@ -518,86 +522,64 @@ import { ThrottledLoop } from '../../core/animation-foundation.js';
     // ═══════════════════════════════════════════════════════════════════════════════
 
     function exportPng(tool) {
-        var canvas = tool.getCanvas();
+        const canvas = tool.getCanvas();
         if (!canvas) {
             tool.setStatus('No canvas available');
             return;
         }
-        
-        var timestamp = new Date().toISOString().slice(0, 10);
-        var filename = 'solar-system-' + timestamp + '.png';
-        
-        var link = document.createElement('a');
-        link.download = filename;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        
-        tool.setStatus('Exported: ' + filename);
+        const filename = ExportUtils.exportCanvasPNG(canvas, 'solar-system');
+        tool.setStatus(`Exported: ${filename}`);
     }
 
     function exportSvg(tool) {
-        var canvas = tool.getCanvas();
+        const canvas = tool.getCanvas();
         if (!canvas) {
             tool.setStatus('No canvas available');
             return;
         }
         
-        var values = tool.getValues();
-        var s = canvas.width;
-        var cx = s / 2;
-        var cy = s / 2;
-        var T = getCenturiesPastJ2000();
+        const values = tool.getValues();
+        const s = canvas.width;
+        const cx = s / 2;
+        const cy = s / 2;
+        const T = getCenturiesPastJ2000();
         
         // Calculate scales
-        var distanceScale = values.distanceScale || 0.45;
-        var planetScale = values.planetScale || 1.0;
-        var cs = s * distanceScale;
-        var maxDist = scaleDistance(planets[planets.length - 1].a0);
-        var distScale = cs / maxDist;
-        var sunDisplayRadius = s * 0.04;
-        var sizeScale = sunDisplayRadius / 695700 * planetScale;
+        const distanceScale = values.distanceScale || 0.45;
+        const planetScale = values.planetScale || 1.0;
+        const cs = s * distanceScale;
+        const maxDist = scaleDistance(planets[planets.length - 1].a0);
+        const distScale = cs / maxDist;
+        const sunDisplayRadius = s * 0.04;
+        const sizeScale = sunDisplayRadius / 695700 * planetScale;
         
-        // Build SVG
-        var svgParts = [];
-        svgParts.push('<?xml version="1.0" encoding="UTF-8"?>');
-        svgParts.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '" viewBox="0 0 ' + s + ' ' + s + '">');
-        svgParts.push('<rect width="100%" height="100%" fill="#000000"/>');
-        svgParts.push('<g transform="translate(' + cx + ',' + cy + ')">');
+        // Build SVG parts
+        const svgParts = [];
+        svgParts.push(ExportUtils.buildSVGHeader(s, s));
+        svgParts.push(`<g transform="translate(${cx},${cy})">`);
         
         // Sun
-        var sunRadius = 695700 * sizeScale;
-        svgParts.push('<circle cx="0" cy="0" r="' + sunRadius.toFixed(2) + '" fill="#FFFFFF"/>');
+        const sunRadius = 695700 * sizeScale;
+        svgParts.push(`<circle cx="0" cy="0" r="${sunRadius.toFixed(2)}" fill="#FFFFFF"/>`);
         
         // Planets
-        for (var i = 0; i < planets.length; i++) {
-            var planet = planets[i];
-            var pos = computePlanetPosition(planet, T);
-            var angle = Math.atan2(pos.y, pos.x);
-            var scaledDist = scaleDistance(pos.distance) * distScale;
-            var px = scaledDist * Math.cos(angle);
-            var py = scaledDist * Math.sin(angle);
-            var pr = planet.radius * sizeScale;
+        for (let i = 0; i < planets.length; i++) {
+            const planet = planets[i];
+            const pos = computePlanetPosition(planet, T);
+            const angle = Math.atan2(pos.y, pos.x);
+            const scaledDist = scaleDistance(pos.distance) * distScale;
+            const px = scaledDist * Math.cos(angle);
+            const py = scaledDist * Math.sin(angle);
+            const pr = planet.radius * sizeScale;
             
-            svgParts.push('<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="' + pr.toFixed(2) + '" fill="' + planet.color + '"/>');
+            svgParts.push(`<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="${pr.toFixed(2)}" fill="${planet.color}"/>`);
         }
         
         svgParts.push('</g>');
-        svgParts.push('</svg>');
+        svgParts.push(ExportUtils.buildSVGFooter());
         
-        var svgContent = svgParts.join('\n');
-        var blob = new Blob([svgContent], { type: 'image/svg+xml' });
-        var url = URL.createObjectURL(blob);
-        
-        var timestamp = new Date().toISOString().slice(0, 10);
-        var filename = 'solar-system-' + timestamp + '.svg';
-        
-        var link = document.createElement('a');
-        link.download = filename;
-        link.href = url;
-        link.click();
-        
-        URL.revokeObjectURL(url);
-        tool.setStatus('Exported: ' + filename);
+        const filename = ExportUtils.exportSVG(svgParts.join('\n'), 'solar-system');
+        tool.setStatus(`Exported: ${filename}`);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

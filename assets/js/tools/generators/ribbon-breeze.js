@@ -11,6 +11,7 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { AnimationLoop } from '../../core/animation-foundation.js';
+import { ExportUtils } from '../../shared/algorithms/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
     // MODULE-LEVEL STATE
@@ -45,6 +46,14 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                     ['slider', 'Base Amplitude', 10, 100, 1, { value: 40, key: 'amplitude', withNumber: true }],
                     ['slider', 'Noise Amount', 0, 1, 0.01, { value: 0.2, key: 'noiseAmount', withNumber: true }],
                 ]],
+                ['Animation', [
+                    ['stepper', 'Loop Frames', 30, 300, 10, { value: 120, key: 'loopFrames' }],
+                    ['stepper', 'Wind Cycles', 1, 8, 1, { value: 2, key: 'windCycles' }],
+                    ['button', 'Play', null, { key: 'play' }],
+                    ['button', 'Pause', null, { key: 'pause' }],
+                    ['button', 'Reset', null, { key: 'reset' }],
+                    ['value', '0', { label: 'Frame', key: 'frameDisplay' }],
+                ]],
             ]],
             
             // ═══════════════════════════════════════════════════════════════════
@@ -65,46 +74,28 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                 ['Background', [
                     ['color', 'Background', '#000000', { key: 'bgColor' }],
                 ]],
-            ]],
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // TAB 3: ANIMATION — Full Suite
-            // ═══════════════════════════════════════════════════════════════════
-            ['ANIMATION', [
-                ['Playback', [
-                    ['button', 'Play', null, { key: 'play' }],
-                    ['button', 'Pause', null, { key: 'pause' }],
-                    ['button', 'Reset', null, { key: 'reset' }],
-                    ['slider', 'FPS', 1, 60, 1, { value: 30, key: 'fps', withNumber: true }],
-                ]],
-                ['Loop', [
-                    ['stepper', 'Loop Frames', 30, 300, 10, { value: 120, key: 'loopFrames' }],
-                    ['stepper', 'Wind Cycles', 1, 8, 1, { value: 2, key: 'windCycles' }],
-                    ['value', '0', { label: 'Frame', key: 'frameDisplay' }],
-                ]],
                 ['Export', [
                     ['button', 'Export Frame', null, { key: 'exportFrame' }],
+                    ['button', 'Export SVG', null, { key: 'exportSvg' }],
                     ['button', 'Export GIF', null, { key: 'exportGif' }],
-                ]],
-            ]],
-            
-            // ═══════════════════════════════════════════════════════════════════
-            // TAB 4: CANVAS — Size & Export
-            // ═══════════════════════════════════════════════════════════════════
-            ['CANVAS', [
-                ['Size', [
-                    ['slider', 'Width', 196, 840, 14, { value: 420, key: 'canvasWidth', withNumber: true }],
-                    ['slider', 'Height', 196, 840, 14, { value: 420, key: 'canvasHeight', withNumber: true }],
-                    ['radio', 'Display', ['Fit', 'Actual'], { key: 'displayMode', selectedValue: 'Fit' }],
-                ]],
-                ['Export', [
-                    ['button', 'Download PNG', null, { key: 'exportPng' }],
-                    ['button', 'Download SVG', null, { key: 'exportSvg' }],
                 ]],
             ]],
         ],
         
-        canvas: { size: 420 },
+        // Auto-injects CANVAS tab (sizing) and ANIMATION tab (export controls)
+        canvas: { 
+            width: 420, 
+            height: 420,
+            showControls: true 
+        },
+        
+        // Animation export configuration
+        animation: {
+            type: 'loop',
+            loopFrames: 120,  // Default from loopFrames stepper
+            defaultFps: 30,
+            canPrerender: true
+        },
         
         onInit: function(values) {
             var self = this;
@@ -117,7 +108,6 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             // Wire export buttons
             wireButton(this, 'exportFrame', function() { exportPNG(self); });
             wireButton(this, 'exportGif', function() { alert('GIF: Record ' + (values.loopFrames || 120) + ' frames'); });
-            wireButton(this, 'exportPng', function() { exportPNG(self); });
             wireButton(this, 'exportSvg', function() { exportSVG(self); });
             
             // Initialize ribbons
@@ -125,21 +115,13 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         },
         
         onUpdate: function(key, value, allValues) {
-            if (key === 'canvasWidth' || key === 'canvasHeight' || key === 'displayMode') {
-                this.resizeCanvas(
-                    allValues.canvasWidth || 420,
-                    allValues.canvasHeight || 420,
-                    { displayMode: (allValues.displayMode || 'Fit').toLowerCase() }
-                );
-            }
+            // Canvas width/height now handled by auto-CANVAS tab
+            // Display mode removed (was custom feature)
+            // FPS now handled by auto-ANIMATION tab
             
             // Layout changes require ribbon rebuild
             if (['rows', 'rowSpacing', 'ribbonLength', 'thickness'].indexOf(key) >= 0) {
                 initRibbons(allValues);
-            }
-            
-            if (key === 'fps' && animator) {
-                animator.fps = value;
             }
         },
         
@@ -415,11 +397,9 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     }
     
     function exportPNG(tool) {
-        var canvas = tool.getCanvas();
-        var a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'ribbon-breeze-' + frameIndex + '.png';
-        a.click();
+        const canvas = tool.getCanvas();
+        if (!canvas) return;
+        ExportUtils.exportCanvasPNG(canvas, 'ribbon-breeze');
     }
     
     function exportSVG(tool) {

@@ -217,10 +217,17 @@ function wrapSTL(facets, name) {
  * @param {Array<Array<Set<string>>>} layerMaps - From expandToLayers(): [layer][filament] = Set("x,y")
  * @param {Array<string>} filamentNames - Names for each filament
  * @param {Object} config - Export configuration
- * @param {number} config.imageWidth - Image width in pixels
- * @param {number} config.imageHeight - Image height in pixels
+ * @param {number} config.imageWidth - Image width in pixels (or grid cols)
+ * @param {number} config.imageHeight - Image height in pixels (or grid rows)
  * @param {number} config.printWidth - Print width in mm
  * @param {number} config.layerHeight - Layer height in mm
+ * @param {boolean} [config.isGrid=false] - True for calibration grids with explicit sizes
+ * @param {number} [config.tileSize] - Tile size in mm (grid mode only)
+ * @param {number} [config.gap] - Gap size in mm (grid mode only)
+ * @param {number} [config.perimeterMargin] - Perimeter margin in mm (grid mode only)
+ * @param {boolean} [config.gapFillEnabled=false] - True to fill gaps/perimeter with filament
+ * @param {string} [config.gapFilamentName] - Name of filament to use for gaps/perimeter
+ * @param {number} [config.baseLayers=0] - Number of base layers (grid mode only)
  * @returns {Object<string, string>} Map of filename → STL content
  * 
  * @example
@@ -241,10 +248,10 @@ function wrapSTL(facets, name) {
  * // Creates: artwork_Red_PLA.stl, artwork_Blue_PLA.stl, etc.
  */
 export function exportArtworkSTLs(layerMaps, filamentNames, config) {
-    const { imageWidth, imageHeight, printWidth, layerHeight } = config;
-    const printHeight = printWidth * (imageHeight / imageWidth);
-    const pixelSize = printWidth / imageWidth;
-
+    const { imageWidth, imageHeight, printWidth, layerHeight, 
+            isGrid = false, tileSize, gap = 0, perimeterMargin = 0,
+            gapFillEnabled = false, gapFilamentName = null, baseLayers = 0 } = config;
+    
     const stls = {};
     const filamentCount = layerMaps[0].length;
 
@@ -267,13 +274,36 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
             const z1 = z0 + layerHeight;
 
             for (let rect of rectangles) {
-                const x0 = rect.x * pixelSize;
-                const y0 = rect.y * pixelSize;
-                const x1 = (rect.x + rect.w) * pixelSize;
-                const y1 = (rect.y + rect.h) * pixelSize;
+                let x0, y0, x1, y1;
+                
+                if (isGrid) {
+                    // Grid mode: explicit tile/gap/perimeter sizes
+                    // Position tiles with gaps, starting after perimeter
+                    x0 = perimeterMargin + (rect.x * (tileSize + gap));
+                    y0 = perimeterMargin + (rect.y * (tileSize + gap));
+                    
+                    // Size based on tile size, plus internal gaps for merged rectangles
+                    x1 = x0 + (rect.w * tileSize) + ((rect.w - 1) * gap);
+                    y1 = y0 + (rect.h * tileSize) + ((rect.h - 1) * gap);
+                } else {
+                    // Image mode: uniform pixel scaling
+                    const pixelSize = printWidth / imageWidth;
+                    x0 = rect.x * pixelSize;
+                    y0 = rect.y * pixelSize;
+                    x1 = (rect.x + rect.w) * pixelSize;
+                    y1 = (rect.y + rect.h) * pixelSize;
+                }
 
                 filamentFacets += generateBox(x0, y0, z0, x1, y1, z1);
             }
+        }
+        
+        // Add gap/perimeter fill geometry if enabled (grid mode only)
+        if (isGrid && gapFillEnabled && gapFilamentName && filamentNames[fi] === gapFilamentName) {
+            filamentFacets += generateGapAndPerimeterGeometry(
+                imageWidth, imageHeight, tileSize, gap, perimeterMargin,
+                layerHeight, baseLayers, layerMaps.length
+            );
         }
 
         // Only create STL if this filament has geometry
@@ -284,5 +314,83 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
     }
 
     return stls;
+}
+
+/**
+ * Generate STL geometry for gaps and perimeter margin
+ * 
+ * Creates boxes for:
+ * - Horizontal gaps between tile rows
+ * - Vertical gaps between tile columns
+ * - Perimeter border around entire grid
+ * 
+ * @param {number} cols - Number of tile columns
+ * @param {number} rows - Number of tile rows
+ * @param {number} tileSize - Tile size in mm
+ * @param {number} gap - Gap size in mm
+ * @param {number} perimeterMargin - Perimeter margin in mm
+ * @param {number} layerHeight - Layer height in mm
+ * @param {number} baseLayers - Number of base layers (gaps fill these layers)
+ * @param {number} totalLayers - Total number of layers
+ * @returns {string} STL facet data
+ */
+function generateGapAndPerimeterGeometry(cols, rows, tileSize, gap, perimeterMargin, 
+                                          layerHeight, baseLayers, totalLayers) {
+    let facets = '';
+    
+    if (gap === 0 && perimeterMargin === 0) return facets;
+    
+    const totalWidth = (cols * tileSize) + ((cols - 1) * gap) + (2 * perimeterMargin);
+    const totalHeight = (rows * tileSize) + ((rows - 1) * gap) + (2 * perimeterMargin);
+    
+    // Gaps and perimeter only exist in base layers
+    const layerCount = Math.min(baseLayers, totalLayers);
+    
+    for (let li = 0; li < layerCount; li++) {
+        const z0 = li * layerHeight;
+        const z1 = z0 + layerHeight;
+        
+        // Generate perimeter border (if enabled)
+        if (perimeterMargin > 0) {
+            // Top border
+            facets += generateBox(0, 0, z0, totalWidth, perimeterMargin, z1);
+            
+            // Bottom border
+            facets += generateBox(0, totalHeight - perimeterMargin, z0, 
+                                 totalWidth, totalHeight, z1);
+            
+            // Left border (excluding corners already covered)
+            facets += generateBox(0, perimeterMargin, z0, 
+                                 perimeterMargin, totalHeight - perimeterMargin, z1);
+            
+            // Right border (excluding corners already covered)
+            facets += generateBox(totalWidth - perimeterMargin, perimeterMargin, z0,
+                                 totalWidth, totalHeight - perimeterMargin, z1);
+        }
+        
+        // Generate horizontal gaps (between rows)
+        if (gap > 0) {
+            for (let row = 0; row < rows - 1; row++) {
+                const y0 = perimeterMargin + ((row + 1) * tileSize) + (row * gap);
+                const y1 = y0 + gap;
+                
+                facets += generateBox(perimeterMargin, y0, z0,
+                                     totalWidth - perimeterMargin, y1, z1);
+            }
+        }
+        
+        // Generate vertical gaps (between columns)
+        if (gap > 0) {
+            for (let col = 0; col < cols - 1; col++) {
+                const x0 = perimeterMargin + ((col + 1) * tileSize) + (col * gap);
+                const x1 = x0 + gap;
+                
+                facets += generateBox(x0, perimeterMargin, z0,
+                                     x1, totalHeight - perimeterMargin, z1);
+            }
+        }
+    }
+    
+    return facets;
 }
 

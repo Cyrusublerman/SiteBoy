@@ -1,0 +1,137 @@
+/* Image Adjustment Bundles — Styling */
+
+.adjustment-bundle {
+    width: 100%;
+}
+
+.adjustment-section {
+    margin-bottom: calc(var(--f) * 1.43); /* 20px */
+}
+
+.adjustment-section h4 {
+    font-family: "Atkinson Hyperlegible", monospace;
+    font-size: calc(var(--f) * 0.79); /* 11px */
+    color: var(--vga-white);
+    margin: 0 0 calc(var(--f) * 0.71) 0; /* 0 0 10px 0 */
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) * 0.71); /* 10px */
+    margin-bottom: calc(var(--f) * 0.57); /* 8px */
+}
+
+.control-row label {
+    font-family: "Atkinson Hyperlegible", monospace;
+    font-size: calc(var(--f) * 0.71); /* 10px */
+    color: var(--vga-white);
+    min-width: calc(var(--f) * 7.14); /* 100px */
+}
+
+.adjustment-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: calc(var(--f) * 0.29); /* 4px */
+    background: var(--vga-black);
+    border: 1px solid var(--vga-white);
+    outline: none;
+}
+
+.adjustment-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: calc(var(--f) * 1.0); /* 14px */
+    height: calc(var(--f) * 1.0); /* 14px */
+    background: var(--vga-white);
+    cursor: pointer;
+}
+
+.adjustment-slider::-moz-range-thumb {
+    width: calc(var(--f) * 1.0); /* 14px */
+    height: calc(var(--f) * 1.0); /* 14px */
+    background: var(--vga-white);
+    cursor: pointer;
+    border: none;
+}
+
+.value-display {
+    font-family: "Atkinson Hyperlegible", monospace;
+    font-size: calc(var(--f) * 0.71); /* 10px */
+    color: var(--vga-white);
+    min-width: calc(var(--f) * 3.57); /* 50px */
+    text-align: right;
+}
+
+.button-row {
+    display: flex;
+    gap: calc(var(--f) * 0.71); /* 10px */
+    margin-top: calc(var(--f) * 1.43); /* 20px */
+}
+
+.button-row button,
+.adjustment-section button {
+    font-family: "Atkinson Hyperlegible", monospace;
+    font-size: calc(var(--f) * 0.71); /* 10px */
+    padding: calc(var(--f) * 0.43) calc(var(--f) * 0.86); /* 6px 12px */
+    background: var(--vga-black);
+    color: var(--vga-white);
+    border: 1px solid var(--vga-white);
+    cursor: pointer;
+}
+
+.button-row button:hover,
+.adjustment-section button:hover {
+    background: var(--vga-white);
+    color: var(--vga-black);
+}
+
+.button-row button:active,
+.adjustment-section button:active {
+    background: var(--vga-gray);
+}
+
+.control-row.button-group {
+    gap: calc(var(--f) * 0.43); /* 6px */
+}
+
+.control-row.button-group button {
+    font-size: calc(var(--f) * 0.64); /* 9px */
+    padding: calc(var(--f) * 0.29) calc(var(--f) * 0.57); /* 4px 8px */
+}
+
+.transform-controls {
+    width: 100%;
+}
+
+.transform-controls select {
+    font-family: "Atkinson Hyperlegible", monospace;
+    font-size: calc(var(--f) * 0.71); /* 10px */
+    padding: calc(var(--f) * 0.29); /* 4px */
+    background: var(--vga-black);
+    color: var(--vga-white);
+    border: 1px solid var(--vga-white);
+}
+
+/* Curve Editor */
+.curve-editor {
+    width: 100%;
+    margin-bottom: calc(var(--f) * 0.71); /* 10px */
+}
+
+.curve-canvas {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--vga-white);
+    cursor: crosshair;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.curve-canvas:hover {
+    border-color: var(--vga-green);
+}
+

@@ -6,8 +6,10 @@
  */
 
 import { FILAMENT_COLOURS, DEFAULTS } from './MFP-Constants.js';
-import { calculateGridLayout, buildSequenceMap, simColour, rgb_to_key } from '../../../shared/algorithms/index.js';
-import { exportArtworkSTLs } from '../../../shared/algorithms/index.js';
+import { calculateGridLayout, calculateConstraints } from '../../../shared/algorithms/layout/grid-layout.js';
+import { buildSequenceMap, generateSequences, sortSequences } from '../../../shared/algorithms/combinatorics/sequences.js';
+import { simColour, rgb_to_key } from '../../../shared/algorithms/color/color-utils.js';
+import { exportArtworkSTLs } from '../../../shared/algorithms/geometry/stl-generation.js';
 
 export class MFPSourceActions {
     constructor(sharedState) {
@@ -21,7 +23,7 @@ export class MFPSourceActions {
         if (!file) return;
         
         try {
-            toolBase.updateValue('projectStatus', '⏳ Loading project...');
+            toolBase.setValue('projectStatus', '⏳ Loading project...');
             
             // Read ZIP file
             const JSZip = (await import('jszip')).default;
@@ -67,14 +69,53 @@ export class MFPSourceActions {
             }
             
             if (!layout) {
-                toolBase.updateValue('projectStatus', '❌ No grid-layout.json or grid-config.json found in project');
+                toolBase.setValue('projectStatus', '❌ No grid-layout.json or grid-config.json found in project');
                 return;
             }
             
-            // Reconstruct gridData
-            const sequences = layout.tiles.map(t => t.sequence);
-            const colours = layout.palette;
-            const meta = layout.metadata;
+            // Handle different layout formats
+            let sequences, colours, meta;
+            
+            if (layout.tiles && layout.gridSize) {
+                // New format (from generateLayoutJSON algorithm)
+                sequences = layout.tiles.map(t => t.sequence);
+                colours = layout.palette.map(p => ({
+                    n: p.name || p.n,
+                    h: p.hex || p.h
+                }));
+                meta = {
+                    rows: layout.gridSize.rows,
+                    cols: layout.gridSize.cols,
+                    tileSize: layout.tileSize || layout.dimensions?.tileSize,
+                    gap: layout.gap,
+                    layerCount: layout.layerCount,
+                    baseLayers: layout.baseLayers || 2,
+                    topLayers: layout.topLayers || 0,
+                    perimeterMargin: layout.perimeterMargin || 0,
+                    emptyCells: layout.tiles.filter(t => t.isEmpty).map(t => t.index),
+                    sortMethod: layout.sortMethod,
+                    // Constraints
+                    maxWidth: layout.constraints?.maxWidth || layout.constraints?.bedWidth,
+                    maxHeight: layout.constraints?.maxHeight || layout.constraints?.bedHeight,
+                    scanWidth: layout.constraints?.scanWidth,
+                    scanHeight: layout.constraints?.scanHeight,
+                    // Filament settings
+                    baseFilament: layout.baseFilament,
+                    topFilament: layout.topFilament,
+                    gapFilament: layout.gapFilament,
+                    fillGaps: layout.fillGaps
+                };
+            } else if (layout.tiles && layout.metadata) {
+                // Old format (simplified metadata)
+                sequences = layout.tiles.map(t => t.sequence);
+                colours = layout.palette || layout.colours;
+                meta = layout.metadata;
+            } else {
+                toolBase.setValue('projectStatus', '❌ Unknown layout format');
+                return;
+            }
+            
+            console.log('✅ Parsed layout, meta:', meta);
             
             this.state.gridData = {
                 sequences,
@@ -102,8 +143,78 @@ export class MFPSourceActions {
                 return index !== -1 ? index : 0;
             });
             
-            toolBase.updateValue('filamentPicker', filamentIndices);
-            toolBase.updateValue('projectStatus', `✅ Loaded ${meta.rows}×${meta.cols} grid (${sequences.length} tiles)`);
+            toolBase.setValue('filamentPicker', filamentIndices);
+            
+            // Update ALL UI controls with imported values from ALL tabs
+            
+            // SOURCE tab - Grid settings
+            toolBase.setValue('layerCount', meta.layerCount);
+            toolBase.setValue('baseLayers', meta.baseLayers || 2);
+            toolBase.setValue('topLayers', meta.topLayers || 0);
+            toolBase.setValue('tileSize', meta.tileSize);
+            toolBase.setValue('gap', meta.gap);
+            toolBase.setValue('perimeterMargin', meta.perimeterMargin || 0);
+            toolBase.setValue('layerHeight', meta.layerHeight || 0.08);
+            
+            // SOURCE tab - Constraints
+            if (meta.maxWidth) toolBase.setValue('bedWidth', meta.maxWidth);
+            if (meta.maxHeight) toolBase.setValue('bedHeight', meta.maxHeight);
+            if (meta.scanWidth) toolBase.setValue('scanWidth', meta.scanWidth);
+            if (meta.scanHeight) toolBase.setValue('scanHeight', meta.scanHeight);
+            
+            // SOURCE tab - Filament dropdowns
+            const filamentNames = colours.map(c => c.n);
+            if (filamentNames.length > 0) {
+                const defaultFilament = filamentNames[0];
+                toolBase.setValue('baseFilament', meta.baseFilament || defaultFilament);
+                toolBase.setValue('topFilament', meta.topFilament || defaultFilament);
+                toolBase.setValue('gapFilament', meta.gapFilament || defaultFilament);
+            }
+            
+            // SOURCE tab - Options
+            if (meta.fillGaps) {
+                toolBase.setValue('gapFillOptions', ['Fill Gaps']);
+            }
+            if (meta.sortMethod) {
+                toolBase.setValue('sortMethod', meta.sortMethod);
+            }
+            if (meta.canvasView) {
+                toolBase.setValue('canvasView', meta.canvasView);
+            }
+            if (meta.exportOptions) {
+                toolBase.setValue('exportOptions', meta.exportOptions);
+            }
+            
+            // SCAN tab settings
+            if (meta.scanSettings) {
+                const scan = meta.scanSettings;
+                if (scan.displayMode) toolBase.setValue('scanDisplayMode', scan.displayMode);
+                if (scan.deadzonePercent !== undefined) toolBase.setValue('deadzonePercent', scan.deadzonePercent);
+                if (scan.gridOffsetX !== undefined) toolBase.setValue('gridOffsetX', scan.gridOffsetX);
+                if (scan.gridOffsetY !== undefined) toolBase.setValue('gridOffsetY', scan.gridOffsetY);
+                if (scan.gridRotation !== undefined) toolBase.setValue('gridRotation', scan.gridRotation);
+                if (scan.gridOptions) toolBase.setValue('gridOptions', scan.gridOptions);
+                if (scan.resortGrid) toolBase.setValue('resortGrid', scan.resortGrid);
+            }
+            
+            // QUANTIZE tab settings
+            if (meta.quantizeSettings) {
+                const quant = meta.quantizeSettings;
+                if (quant.printWidth !== undefined) toolBase.setValue('printWidth', quant.printWidth);
+                if (quant.ditherStrength !== undefined) toolBase.setValue('ditherStrength', quant.ditherStrength);
+                if (quant.minDetail !== undefined) toolBase.setValue('minDetail', quant.minDetail);
+            }
+            
+            // EXPORT tab settings
+            if (meta.exportSettings) {
+                const exp = meta.exportSettings;
+                if (exp.layerHeightExport !== undefined) toolBase.setValue('layerHeightExport', exp.layerHeightExport);
+                if (exp.canvasMode) toolBase.setValue('canvasMode', exp.canvasMode);
+            }
+            
+            toolBase.setValue('projectStatus', `✅ Loaded ${meta.rows}×${meta.cols} grid (${sequences.length} tiles) - All settings restored`);
+            
+            console.log('✅ All UI controls updated from imported project (ALL tabs)');
             
             // Save to localStorage
             localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
@@ -123,105 +234,234 @@ export class MFPSourceActions {
             
         } catch (err) {
             console.error('❌ Project import failed:', err);
-            toolBase.updateValue('projectStatus', `❌ Import failed: ${err.message}`);
+            toolBase.setValue('projectStatus', `❌ Import failed: ${err.message}`);
         }
     }
     
     /**
-     * Generate grid - COMPLETE IMPLEMENTATION
+     * Generate live preview (automatic grid generation as settings change)
+     * EXACT copy from working monolith - DO NOT MODIFY
+     */
+    generateLivePreview(values, toolBase) {
+        console.log('🔧 generateLivePreview called', {
+            selectedFilaments: this.state.selectedFilaments,
+            values
+        });
+        
+        // Generate preview grid without validation - just show what it would look like
+        const selectedCount = this.state.selectedFilaments ? this.state.selectedFilaments.length : 0;
+        if (selectedCount < 2) {
+            console.log('❌ Not enough filaments:', selectedCount);
+            return; // Requires at least 2 colors
+        }
+        
+        const selectedColors = this.state.selectedFilaments.map(idx => FILAMENT_COLOURS[idx]);
+        console.log('✅ Selected colors:', selectedColors);
+        
+        // Generate sequences using algorithm
+        this.state.sequences = generateSequences(selectedColors.length, values.layerCount);
+        
+        // Calculate layout (force it even if oversized)
+        const constraints = calculateConstraints({
+            bedW: values.bedWidth,
+            bedH: values.bedHeight,
+            scanW: values.scanWidth,
+            scanH: values.scanHeight
+        });
+        
+        // Store both bed and scan constraints for visualization
+        this.state.gridConstraints = {
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight,
+            bedWidth: values.bedWidth,
+            bedHeight: values.bedHeight,
+            scanWidth: values.scanWidth,
+            scanHeight: values.scanHeight
+        };
+        
+        // Try to fit in constraints
+        const layout = calculateGridLayout({
+            sequenceCount: this.state.sequences.length,
+            tileSize: values.tileSize,
+            gap: values.gap,
+            perimeterMargin: values.perimeterMargin || 0,
+            maxWidth: constraints.maxWidth,
+            maxHeight: constraints.maxHeight
+        });
+        
+        if (layout.fits) {
+            // Normal generation
+            this.state.gridData = {
+                sequences: this.state.sequences,
+                colours: selectedColors,
+                rows: layout.rows,
+                cols: layout.cols,
+                tileSize: values.tileSize,
+                gap: values.gap,
+                perimeterMargin: values.perimeterMargin || 0,
+                width: layout.width,
+                height: layout.height,
+                emptyCells: layout.emptyCells,
+                layerCount: values.layerCount,
+                baseLayers: values.baseLayers,
+                topLayers: values.topLayers,
+                sortMethod: values.sortMethod || 'Layer Count',
+                isPreview: true,
+                fitsConstraints: true
+            };
+        } else {
+            // Generate anyway, but mark as oversized
+            // Use unconstrained square layout
+            const cols = Math.ceil(Math.sqrt(this.state.sequences.length));
+            const rows = Math.ceil(this.state.sequences.length / cols);
+            const perimeterMargin = values.perimeterMargin || 0;
+            const step = values.tileSize + values.gap;
+            const gridWidth = cols * step - values.gap;
+            const gridHeight = rows * step - values.gap;
+            const width = gridWidth + (perimeterMargin * 2);
+            const height = gridHeight + (perimeterMargin * 2);
+            
+            const totalCells = rows * cols;
+            const emptyCells = [];
+            for (let i = this.state.sequences.length; i < totalCells; i++) {
+                emptyCells.push(i);
+            }
+            
+            this.state.gridData = {
+                sequences: this.state.sequences,
+                colours: selectedColors,
+                rows,
+                cols,
+                tileSize: values.tileSize,
+                gap: values.gap,
+                perimeterMargin: values.perimeterMargin || 0,
+                width,
+                height,
+                emptyCells,
+                layerCount: values.layerCount,
+                baseLayers: values.baseLayers,
+                topLayers: values.topLayers,
+                sortMethod: values.sortMethod || 'Layer Count',
+                isPreview: true,
+                fitsConstraints: false
+            };
+        }
+        
+        // Build sequence map
+        this.state.sequenceMap = buildSequenceMap(
+            this.state.sequences,
+            selectedColors,
+            this.state.gridData.cols,
+            { simColour, rgb_to_key }
+        );
+        
+        // Sort sequences if needed
+        if (values.sortMethod && values.sortMethod !== 'Layer Count') {
+            const sorted = sortSequences(
+                this.state.sequences,
+                values.sortMethod,
+                selectedColors,
+                { simColour }
+            );
+            this.state.sequences = sorted.sequences;
+            this.state.gridData.sequences = sorted.sequences;
+            this.state.sequenceMap = buildSequenceMap(
+                sorted.sequences,
+                selectedColors,
+                this.state.gridData.cols,
+                { simColour, rgb_to_key }
+            );
+        }
+        
+        // Set status
+        if (this.state.gridData.fitsConstraints) {
+            toolBase.setValue('gridStatus', 
+                `👁️ Preview: ${this.state.gridData.rows}×${this.state.gridData.cols} = ${this.state.sequences.length} tiles ` +
+                `(${this.state.gridData.width.toFixed(1)}×${this.state.gridData.height.toFixed(1)}mm) - Click "Generate Grid" to finalize`
+            );
+        } else {
+            const maxW = constraints.maxWidth;
+            const maxH = constraints.maxHeight;
+            toolBase.setValue('gridStatus',
+                `⚠️ Preview: ${this.state.sequences.length} tiles won't fit ` +
+                `(${this.state.gridData.width.toFixed(1)}×${this.state.gridData.height.toFixed(1)}mm > ${maxW}×${maxH}mm) - Reduce layers/colors/tilesize`
+            );
+        }
+        
+        // Update sequence count
+        this.updateSequenceCount(toolBase);
+        
+        // Draw preview
+        toolBase.draw();
+    }
+    
+    /**
+     * Update sequence count display
+     */
+    updateSequenceCount(toolBase) {
+        const count = this.state.sequences ? this.state.sequences.length : 0;
+        const colors = this.state.selectedFilaments ? this.state.selectedFilaments.length : 0;
+        if (count > 0 && colors > 0) {
+            toolBase.setValue('sequenceCount', `${count} unique tile sequences (${colors} colors)`);
+        } else {
+            toolBase.setValue('sequenceCount', '');
+        }
+    }
+    
+    /**
+     * Generate grid - COMPLETE IMPLEMENTATION (finalizes preview or generates from scratch)
      */
     generateGrid(values, toolBase) {
-        const selectedIndices = values.filamentPicker || [];
+        const selectedIndices = values.filamentPicker || this.state.selectedFilaments || [];
         
         if (!selectedIndices || selectedIndices.length < 2) {
-            toolBase.updateValue('gridStatus', '❌ Select at least 2 filaments first');
+            toolBase.setValue('gridStatus', '❌ Select at least 2 filaments first');
             return;
         }
         
         if (selectedIndices.length > 10) {
-            toolBase.updateValue('gridStatus', '❌ Maximum 10 filaments allowed');
+            toolBase.setValue('gridStatus', '❌ Maximum 10 filaments allowed');
             return;
         }
         
-        try {
-            toolBase.updateValue('gridStatus', '⏳ Generating grid...');
-            
-            const colours = selectedIndices.map(idx => FILAMENT_COLOURS[idx]);
-            const layerCount = values.layerCount || 4;
-            const baseLayers = values.baseLayers || 2;
-            const tileSize = values.tileSize || 10;
-            const gap = values.gap || 2;
-            const perimeterMargin = values.perimeterMargin || 0;
-            const maxWidth = values.maxWidth || 220;
-            const maxHeight = values.maxHeight || 220;
-            
-            // Generate all unique sequences
-            const sequences = [];
-            const numColours = colours.length;
-            const numVariableLayers = layerCount - baseLayers;
-            
-            for (let i = 0; i < Math.pow(numColours, numVariableLayers); i++) {
-                const seq = Array(layerCount).fill(0);
+        // If we have a preview, finalize it
+        if (this.state.gridData && this.state.gridData.isPreview) {
+            if (this.state.gridData.fitsConstraints) {
+                // Mark as finalized
+                this.state.gridData.isPreview = false;
+                this.state.splitGridInfo = null;
+                this.state.splitGrids = null;
                 
-                // Base layers (cycle through all colours)
-                for (let layer = 0; layer < baseLayers; layer++) {
-                    seq[layer] = (layer % numColours) + 1;
-                }
+                // state IS sharedState - already synced
                 
-                // Variable layers (all combinations)
-                let index = i;
-                for (let layer = baseLayers; layer < layerCount; layer++) {
-                    seq[layer] = (index % numColours) + 1;
-                    index = Math.floor(index / numColours);
-                }
+                // Save to localStorage
+                localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
                 
-                sequences.push(seq);
+                toolBase.setValue('gridStatus', `✅ Grid finalized: ${this.state.gridData.rows}×${this.state.gridData.cols} = ${this.state.sequences.length} tiles (${this.state.gridData.width.toFixed(1)}×${this.state.gridData.height.toFixed(1)}mm)`);
+                toolBase.draw();
+                return;
+            } else {
+                // Oversized
+                toolBase.setValue('gridStatus', `❌ Grid won't fit. Reduce layers, colors, or tile size.`);
+                return;
             }
+        }
+        
+        // No preview - generate fresh
+        try {
+            toolBase.setValue('gridStatus', '⏳ Generating grid...');
+            this.generateLivePreview(values, toolBase);
             
-            this.state.sequences = sequences;
-            
-            // Calculate grid dimensions
-            const layout = calculateGridLayout({
-                sequenceCount: sequences.length,
-                tileSize,
-                gap,
-                perimeterMargin,
-                maxWidth,
-                maxHeight
-            });
-            
-            // Store grid data
-            this.state.gridData = {
-                sequences,
-                colours,
-                rows: layout.rows,
-                cols: layout.cols,
-                tileSize,
-                gap,
-                width: layout.width,
-                height: layout.height,
-                layerCount,
-                baseLayers,
-                perimeterMargin,
-                emptyCells: layout.emptyCells || [],
-                fitsConstraints: layout.fits
-            };
-            
-            // Build sequence map for rendering
-            this.state.sequenceMap = buildSequenceMap(sequences, colours, layout.cols, { simColour, rgb_to_key });
-            
-            // Save to localStorage for SCAN tab
-            localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
-            
-            const status = layout.fits 
-                ? `✅ Grid: ${layout.rows}×${layout.cols} = ${sequences.length} tiles (${layout.width.toFixed(1)}×${layout.height.toFixed(1)}mm)`
-                : `❌ Grid won't fit (${layout.width.toFixed(1)}×${layout.height.toFixed(1)}mm). Max: ${maxWidth}×${maxHeight}mm`;
-            
-            toolBase.updateValue('gridStatus', status);
-            toolBase.draw();
-            
+            if (this.state.gridData && this.state.gridData.fitsConstraints) {
+                this.state.gridData.isPreview = false;
+                
+                // state IS sharedState - already synced
+                
+                localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
+                toolBase.setValue('gridStatus', `✅ Grid: ${this.state.gridData.rows}×${this.state.gridData.cols} = ${this.state.sequences.length} tiles`);
+            }
         } catch (err) {
-            toolBase.updateValue('gridStatus', `❌ Generation failed: ${err.message}`);
+            toolBase.setValue('gridStatus', `❌ Generation failed: ${err.message}`);
             console.error('Grid generation error:', err);
         }
     }
@@ -231,7 +471,7 @@ export class MFPSourceActions {
      */
     generateSplitGrids(values, toolBase) {
         if (!this.state.splitGridInfo) {
-            toolBase.updateValue('gridStatus', '❌ No split grid info available. Try "Generate Grid" first.');
+            toolBase.setValue('gridStatus', '❌ No split grid info available. Try "Generate Grid" first.');
             return;
         }
         
@@ -239,7 +479,7 @@ export class MFPSourceActions {
         const grids = [];
         
         try {
-            toolBase.updateValue('gridStatus', '⏳ Generating split grids...');
+            toolBase.setValue('gridStatus', '⏳ Generating split grids...');
             
             // Split sequences into chunks
             for (let i = 0; i < info.gridsNeeded; i++) {
@@ -258,7 +498,7 @@ export class MFPSourceActions {
                 });
                 
                 if (!layout.fits) {
-                    toolBase.updateValue('gridStatus', `❌ Grid ${i + 1} won't fit (${chunkSequences.length} tiles)`);
+                    toolBase.setValue('gridStatus', `❌ Grid ${i + 1} won't fit (${chunkSequences.length} tiles)`);
                     return;
                 }
                 
@@ -296,11 +536,11 @@ export class MFPSourceActions {
                 ).join('\n') +
                 `\nShowing Grid 1. Use Export buttons for all grids.`;
             
-            toolBase.updateValue('gridStatus', status);
+            toolBase.setValue('gridStatus', status);
             toolBase.draw();
             
         } catch (err) {
-            toolBase.updateValue('gridStatus', `❌ Split grid generation failed: ${err.message}`);
+            toolBase.setValue('gridStatus', `❌ Split grid generation failed: ${err.message}`);
             console.error('Split grid error:', err);
         }
     }
@@ -310,12 +550,13 @@ export class MFPSourceActions {
      */
     exportGridPNG(values, toolBase) {
         if (!this.state.gridData) {
-            toolBase.updateValue('exportStatus', '❌ Generate grid first');
+            toolBase.setValue('exportStatus', '❌ Generate grid first');
             return;
         }
         
         try {
             const gridsToExport = this.state.splitGrids || [this.state.gridData];
+            const currentValues = toolBase.values || {};
             
             gridsToExport.forEach((grid, index) => {
                 // Create high-res canvas for export
@@ -336,7 +577,8 @@ export class MFPSourceActions {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     const filename = this._generateGridFilename(
-                        grid, 
+                        grid,
+                        currentValues,
                         this.state.splitGrids ? index + 1 : null, 
                         this.state.splitGrids ? gridsToExport.length : null, 
                         'png'
@@ -349,10 +591,10 @@ export class MFPSourceActions {
             });
             
             const count = gridsToExport.length;
-            toolBase.updateValue('exportStatus', `✅ Exported ${count} grid PNG${count > 1 ? 's' : ''}`);
+            toolBase.setValue('exportStatus', `✅ Exported ${count} grid PNG${count > 1 ? 's' : ''}`);
             
         } catch (err) {
-            toolBase.updateValue('exportStatus', `❌ PNG export failed: ${err.message}`);
+            toolBase.setValue('exportStatus', `❌ PNG export failed: ${err.message}`);
             console.error('PNG export error:', err);
         }
     }
@@ -362,18 +604,22 @@ export class MFPSourceActions {
      */
     exportGridSTL(values, toolBase) {
         if (!this.state.gridData) {
-            toolBase.updateValue('exportStatus', '❌ Generate grid first');
+            toolBase.setValue('exportStatus', '❌ Generate grid first');
             return;
         }
         
         try {
-            toolBase.updateValue('exportStatus', '⏳ Generating STL files...');
+            toolBase.setValue('exportStatus', '⏳ Generating STL files...');
             
             const gridsToExport = this.state.splitGrids || [this.state.gridData];
             let totalFiles = 0;
             
             gridsToExport.forEach((grid, gridIndex) => {
-                // Export grid STLs using the algorithm
+                // Get gap fill settings
+                const gapFillEnabled = values.gapFillOptions && values.gapFillOptions.includes('Fill Gaps');
+                const gapFilamentName = gapFillEnabled ? (values.gapFilament || 'Jade White') : null;
+                
+                // Export grid STLs using the algorithm (with proper grid spacing)
                 const stls = exportArtworkSTLs(
                     this._createGridLayerMaps(grid),
                     grid.colours.map(c => c.n),
@@ -381,7 +627,16 @@ export class MFPSourceActions {
                         imageWidth: grid.cols,
                         imageHeight: grid.rows,
                         printWidth: grid.width,
-                        layerHeight: 0.08
+                        layerHeight: 0.08,
+                        // Grid mode: explicit tile/gap/perimeter sizes
+                        isGrid: true,
+                        tileSize: grid.tileSize,
+                        gap: grid.gap,
+                        perimeterMargin: grid.perimeterMargin || 0,
+                        // Gap fill settings
+                        gapFillEnabled: gapFillEnabled,
+                        gapFilamentName: gapFilamentName,
+                        baseLayers: grid.baseLayers
                     }
                 );
                 
@@ -393,7 +648,8 @@ export class MFPSourceActions {
                     
                     // Generate base filename
                     const baseFilename = this._generateGridFilename(
-                        grid, 
+                        grid,
+                        toolBase.values || {},
                         this.state.splitGrids ? gridIndex + 1 : null, 
                         this.state.splitGrids ? gridsToExport.length : null, 
                         'stl'
@@ -413,10 +669,10 @@ export class MFPSourceActions {
                 });
             });
             
-            toolBase.updateValue('exportStatus', `✅ Exported ${totalFiles} STL files`);
+            toolBase.setValue('exportStatus', `✅ Exported ${totalFiles} STL files`);
             
         } catch (err) {
-            toolBase.updateValue('exportStatus', `❌ STL export failed: ${err.message}`);
+            toolBase.setValue('exportStatus', `❌ STL export failed: ${err.message}`);
             console.error('STL export error:', err);
         }
     }
@@ -426,7 +682,7 @@ export class MFPSourceActions {
      */
     exportGridCSV(values, toolBase) {
         if (!this.state.gridData) {
-            toolBase.updateValue('exportStatus', '❌ Generate grid first');
+            toolBase.setValue('exportStatus', '❌ Generate grid first');
             return;
         }
         
@@ -457,14 +713,14 @@ export class MFPSourceActions {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = this._generateGridFilename(grid, null, null, 'csv');
+            a.download = this._generateGridFilename(grid, toolBase.values || {}, null, null, 'csv');
             a.click();
             URL.revokeObjectURL(url);
             
-            toolBase.updateValue('exportStatus', `✅ Exported grid CSV`);
+            toolBase.setValue('exportStatus', `✅ Exported grid CSV`);
             
         } catch (err) {
-            toolBase.updateValue('exportStatus', `❌ CSV export failed: ${err.message}`);
+            toolBase.setValue('exportStatus', `❌ CSV export failed: ${err.message}`);
             console.error('CSV export error:', err);
         }
     }
@@ -474,37 +730,100 @@ export class MFPSourceActions {
      */
     async exportCompletePackage(values, toolBase) {
         if (!this.state.gridData) {
-            toolBase.updateValue('exportProjectZipStatus', '❌ Generate grid first');
+            toolBase.setValue('exportProjectZipStatus', '❌ Generate grid first');
             return;
         }
         
         try {
-            toolBase.updateValue('exportProjectZipStatus', '⏳ Building project ZIP...');
+            toolBase.setValue('exportProjectZipStatus', '⏳ Building project ZIP...');
             
             const JSZip = (await import('jszip')).default;
             const zip = new JSZip();
             const grid = this.state.gridData;
             
-            // Add grid-layout.json
+            // Get current UI values for constraints/settings
+            const currentValues = toolBase.values || {};
+            
+            // Add grid-layout.json (matching algorithm format + ALL settings from ALL tabs)
             const layout = {
                 version: '1.2.0',
-                palette: grid.colours,
-                tiles: grid.sequences.map((seq, idx) => ({
-                    sequence: seq,
-                    row: Math.floor(idx / grid.cols),
-                    col: idx % grid.cols
-                })),
-                metadata: {
+                generatedAt: new Date().toISOString(),
+                layerCount: grid.layerCount,
+                baseLayers: grid.baseLayers,
+                topLayers: grid.topLayers || 0,
+                sortMethod: grid.sortMethod || currentValues.sortMethod || 'Layer Count',
+                tileSize: grid.tileSize,
+                gap: grid.gap,
+                layerHeight: currentValues.layerHeight || 0.08,
+                perimeterMargin: grid.perimeterMargin || 0,
+                gridSize: {
                     rows: grid.rows,
-                    cols: grid.cols,
-                    tileSize: grid.tileSize,
-                    gap: grid.gap,
-                    layerCount: grid.layerCount,
-                    baseLayers: grid.baseLayers,
-                    perimeterMargin: grid.perimeterMargin,
-                    emptyCells: grid.emptyCells,
-                    generatedAt: new Date().toISOString()
-                }
+                    cols: grid.cols
+                },
+                dimensions: {
+                    width: grid.width,
+                    height: grid.height,
+                    tileSize: grid.tileSize
+                },
+                constraints: {
+                    maxWidth: currentValues.bedWidth || currentValues.maxWidth || 220,
+                    maxHeight: currentValues.bedHeight || currentValues.maxHeight || 220,
+                    bedWidth: currentValues.bedWidth || 220,
+                    bedHeight: currentValues.bedHeight || 220,
+                    scanWidth: currentValues.scanWidth || 210,
+                    scanHeight: currentValues.scanHeight || 297
+                },
+                baseFilament: currentValues.baseFilament,
+                topFilament: currentValues.topFilament,
+                gapFilament: currentValues.gapFilament,
+                fillGaps: currentValues.gapFillOptions && currentValues.gapFillOptions.includes('Fill Gaps'),
+                // SOURCE tab settings
+                canvasView: currentValues.canvasView || 'Combined',
+                exportOptions: currentValues.exportOptions || [],
+                // SCAN tab settings
+                scanSettings: {
+                    displayMode: currentValues.scanDisplayMode || 'Fit',
+                    deadzonePercent: currentValues.deadzonePercent || 20,
+                    gridOffsetX: currentValues.gridOffsetX || 0,
+                    gridOffsetY: currentValues.gridOffsetY || 0,
+                    gridRotation: currentValues.gridRotation || 0,
+                    gridOptions: currentValues.gridOptions || [],
+                    resortGrid: currentValues.resortGrid
+                },
+                // QUANTIZE tab settings
+                quantizeSettings: {
+                    printWidth: currentValues.printWidth || 170,
+                    ditherStrength: currentValues.ditherStrength || 1.0,
+                    minDetail: currentValues.minDetail || 0.8
+                },
+                // EXPORT tab settings
+                exportSettings: {
+                    layerHeightExport: currentValues.layerHeightExport || 0.08,
+                    canvasMode: currentValues.canvasMode || 'Grid'
+                },
+                palette: grid.colours.map(c => ({
+                    name: c.n,
+                    hex: c.h
+                })),
+                tiles: grid.sequences.map((seq, idx) => {
+                    const row = Math.floor(idx / grid.cols);
+                    const col = idx % grid.cols;
+                    const step = grid.tileSize + grid.gap;
+                    
+                    return {
+                        index: idx,
+                        row,
+                        col,
+                        position: {
+                            x: col * step,
+                            y: row * step,
+                            width: grid.tileSize,
+                            height: grid.tileSize
+                        },
+                        sequence: seq,
+                        isEmpty: grid.emptyCells && grid.emptyCells.includes(idx)
+                    };
+                })
             };
             zip.file('grid-layout.json', JSON.stringify(layout, null, 2));
             
@@ -551,41 +870,64 @@ export class MFPSourceActions {
             const url = URL.createObjectURL(zipBlob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = this._generateGridFilename(grid, null, null, 'zip');
+            a.download = this._generateGridFilename(grid, toolBase.values || {}, null, null, 'zip');
             a.click();
             URL.revokeObjectURL(url);
             
             const hasScans = this.state.scanAnalysis ? ' (with scan data)' : '';
-            toolBase.updateValue('exportProjectZipStatus', `✅ Exported complete project ZIP${hasScans}`);
+            toolBase.setValue('exportProjectZipStatus', `✅ Exported complete project ZIP${hasScans}`);
             
         } catch (err) {
-            toolBase.updateValue('exportProjectZipStatus', `❌ ZIP export failed: ${err.message}`);
+            toolBase.setValue('exportProjectZipStatus', `❌ ZIP export failed: ${err.message}`);
             console.error('ZIP export error:', err);
         }
     }
     
     // ===== HELPER METHODS =====
     
-    _generateGridFilename(gridData, gridIndex, totalGrids, extension) {
-        // Format: cal-{colors}c{layers}L-{rows}x{cols}-{tilesize}mm[-gXofY]-YYYYMMDD.ext
+    /**
+     * Generate systematic filename following the naming convention
+     * Format: cal-{colors}c{layers}L-{rows}x{cols}-{tilesize}mm-g{gap}mm-base{B}top{T}-{sort}-YYYYMMDD.{ext}
+     */
+    _generateGridFilename(gridData, currentValues, gridIndex, totalGrids, extension) {
         const colors = gridData.colours.length;
         const layers = gridData.layerCount;
         const rows = gridData.rows;
         const cols = gridData.cols;
         const tileSize = gridData.tileSize;
+        const gap = gridData.gap;
+        const baseLayers = gridData.baseLayers || 0;
+        const topLayers = gridData.topLayers || 0;
+        const sortMethod = (gridData.sortMethod || currentValues.sortMethod || 'LayerCount').toLowerCase().replace(/\s+/g, '');
         
+        // Date stamp: YYYYMMDD
         const now = new Date();
         const dateStamp = now.getFullYear().toString() +
                          (now.getMonth() + 1).toString().padStart(2, '0') +
                          now.getDate().toString().padStart(2, '0');
         
-        let filename = `cal-${colors}c${layers}L-${rows}x${cols}-${tileSize}mm`;
+        // Build filename parts
+        let filename = `cal-${colors}c${layers}L-${rows}x${cols}-${tileSize}mm-g${gap}mm`;
         
+        // Add base/top layers if non-zero
+        if (baseLayers > 0 || topLayers > 0) {
+            filename += `-base${baseLayers}top${topLayers}`;
+        }
+        
+        // Add sort method
+        filename += `-${sortMethod}`;
+        
+        // Add grid index if split
         if (gridIndex !== null && totalGrids !== null && totalGrids > 1) {
             filename += `-g${gridIndex}of${totalGrids}`;
         }
         
-        filename += `-${dateStamp}.${extension}`;
+        // Add date stamp
+        filename += `-${dateStamp}`;
+        
+        // Add extension
+        filename += `.${extension}`;
+        
         return filename;
     }
     

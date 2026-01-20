@@ -11,6 +11,7 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { AnimationLoop } from '../../core/animation-foundation.js';
+import { ExportUtils } from '../../shared/algorithms/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
     // MODULE-LEVEL STATE
@@ -783,10 +784,9 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     // ═══════════════════════════════════════════════════════════════════════════════
     
     function exportPNG(tool) {
-        var canvas = tool.getCanvas();
-        var dataUrl = canvas.toDataURL('image/png');
-        var filename = 'tile-mosaic-' + Date.now() + '.png';
-        window.DownloadUtils.downloadDataUrl(dataUrl, filename);
+        const canvas = tool.getCanvas();
+        if (!canvas) return;
+        ExportUtils.exportCanvasPNG(canvas, 'unified-pattern');
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

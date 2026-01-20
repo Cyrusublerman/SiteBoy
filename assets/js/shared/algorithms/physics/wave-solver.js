@@ -285,6 +285,23 @@ export function travellingWave(length, time, params) {
 }
 
 /**
+ * Evaluate radial travelling wave at a distance
+ * 
+ * @param {number} dist - Distance from source
+ * @param {number} time - Current time
+ * @param {Object} params - Wave parameters
+ * @param {number} params.freq - Spatial frequency (1/wavelength)
+ * @param {number} params.amp - Wave amplitude
+ * @param {number} [params.phase=0] - Initial phase
+ * @returns {number} Wave intensity
+ */
+export function travellingWaveRadial(dist, time, params) {
+    const { freq, amp, phase = 0 } = params;
+    const w = 2 * Math.PI * freq;
+    return amp * Math.sin(w * dist - time + phase);
+}
+
+/**
  * Generate standing wave (superposition of two travelling waves)
  * 
  * @param {number} length - Array length

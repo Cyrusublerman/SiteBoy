@@ -128,7 +128,7 @@ const AssetLoader = {
         'colour-quantizer': {
             script: '/assets/js/tools/processors/colour-quantizer-toolbase.js',
             className: 'ColourQuantizerTool',
-            dependencies: []
+            dependencies: []  // No algorithms dependency yet (will add when using algorithm library)
         },
         'pixel-tiler': {
             script: '/assets/js/tools/processors/pixel-tiler.js',

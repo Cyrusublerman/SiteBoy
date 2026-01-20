@@ -237,6 +237,7 @@ export class BaseNavigationDropdown extends BaseComponent {
         this.dropdownElement = null;
         this.symbolElement = null;
         this.subsectionStates = new Map(); // Track collapsed state of subsections
+        this.expandSubsection = options.expandSubsection || null; // Auto-expand this subsection
     }
     
     createDropdownStructure(containerId, position = {}) {
@@ -318,7 +319,15 @@ export class BaseNavigationDropdown extends BaseComponent {
      */
     createSubsectionItem(item, F) {
         const subsectionId = item.id || item.title;
-        const isCollapsed = this.subsectionStates.get(subsectionId) !== false; // Default collapsed
+        
+        // Auto-expand if this is the current subsection, otherwise default to collapsed
+        const shouldExpand = this.expandSubsection === subsectionId;
+        const isCollapsed = this.subsectionStates.get(subsectionId) !== false && !shouldExpand;
+        
+        // Initialize state for this subsection
+        if (shouldExpand) {
+            this.subsectionStates.set(subsectionId, true); // true = expanded
+        }
         
         // Create subsection header row (like a folder)
         const subsectionHeader = this.createElement('div', 'dropdown-subsection');

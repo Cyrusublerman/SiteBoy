@@ -39,6 +39,93 @@ import { ToolBase } from '../core/tool-base.js';
         animationFrameId: null
     };
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // IMAGE STATE & FETCHING (for image processing algorithms)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const imageState = {
+        currentImage: null,
+        currentImageData: null,
+        isLoading: false,
+        lastSeed: Math.floor(Math.random() * 10000)
+    };
+
+    /**
+     * Fetch a random image from Lorem Picsum
+     * @param {number} width - Image width
+     * @param {number} height - Image height
+     * @param {number} seed - Optional seed for consistent random image
+     * @returns {Promise<HTMLImageElement>}
+     */
+    async function fetchLoremPicsum(width, height, seed = null) {
+        const useSeed = seed !== null ? seed : imageState.lastSeed;
+        const url = `https://picsum.photos/seed/${useSeed}/${width}/${height}?grayscale`;
+        
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = () => {
+                imageState.lastSeed = useSeed;
+                resolve(img);
+            };
+            
+            img.onerror = () => {
+                reject(new Error('Failed to load image from Lorem Picsum'));
+            };
+            
+            img.src = url;
+        });
+    }
+
+    /**
+     * Load and cache an image for processing algorithms
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {HTMLCanvasElement} canvas
+     * @param {boolean} forceNew - Force fetch a new image
+     */
+    async function ensureTestImage(ctx, canvas, forceNew = false) {
+        if (imageState.currentImage && !forceNew) {
+            return imageState.currentImage;
+        }
+
+        if (imageState.isLoading) {
+            // Wait for existing load
+            return new Promise((resolve) => {
+                const checkLoading = () => {
+                    if (!imageState.isLoading) {
+                        resolve(imageState.currentImage);
+                    } else {
+                        setTimeout(checkLoading, 50);
+                    }
+                };
+                checkLoading();
+            });
+        }
+
+        imageState.isLoading = true;
+        
+        try {
+            const img = await fetchLoremPicsum(canvas.width, canvas.height);
+            imageState.currentImage = img;
+            
+            // Draw to temporary canvas to extract ImageData
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            imageState.currentImageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            imageState.isLoading = false;
+            return img;
+        } catch (error) {
+            console.error('Failed to load test image:', error);
+            imageState.isLoading = false;
+            throw error;
+        }
+    }
+
     /**
      * Animation wrapper for iterative algorithms
      */
@@ -210,12 +297,20 @@ import { ToolBase } from '../core/tool-base.js';
                     title: 'Edge Detection',
                     docsPath: '01_Edge_Gradient_Differential_Operators',
                     algorithms: [
+                        // Gradient operators (first derivative)
                         { id: 'sobel', title: 'Sobel', impl: true },
-                        { id: 'canny', title: 'Canny', impl: true },
+                        { id: 'scharr', title: 'Scharr', impl: true },
+                        { id: 'prewitt', title: 'Prewitt', impl: true },
+                        { id: 'robertsCross', title: 'Roberts Cross', impl: true },
+                        // Second derivative
                         { id: 'laplacian', title: 'Laplacian', impl: true },
                         { id: 'laplacianOfGaussian', title: 'LoG', impl: true },
                         { id: 'differenceOfGaussians', title: 'DoG', impl: true },
-                        { id: 'structureTensor', title: 'Structure Tensor', impl: true }
+                        // Advanced
+                        { id: 'canny', title: 'Canny', impl: true },
+                        { id: 'structureTensor', title: 'Structure Tensor', impl: true },
+                        { id: 'zeroCrossings', title: 'Zero Crossings', impl: true },
+                        { id: 'dominantOrientation', title: 'Dominant Orientation', impl: true }
                     ]
                 },
                 {
@@ -862,6 +957,16 @@ import { ToolBase } from '../core/tool-base.js';
         console.log(`[Algorithms Test Lab] ${action} triggered for ${fullId}`);
     }
 
+    /**
+     * Handle fetching a new random image
+     */
+    function handleFetchNewImage(fullId) {
+        window.debugLog('TOOLS', `Fetching new image for ${fullId}`);
+        imageState.lastSeed = Math.floor(Math.random() * 10000);
+        imageState.currentImage = null;
+        imageState.currentImageData = null;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // ALGORITHM CONTROLS MAPPING
     // ═══════════════════════════════════════════════════════════════════════
@@ -1052,14 +1157,89 @@ import { ToolBase } from '../core/tool-base.js';
                 ];
 
             case 'edges':
-                return [
-                    ['number', 'Seed', 0, 9999, 1, { key: `${fullId}_seed`, value: 0, withNumber: true }]
-                ];
+                switch (algoId) {
+                    case 'canny':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Low Threshold', 0.01, 0.2, 0.01, { key: `${fullId}_lowThreshold`, value: 0.05, withNumber: true, precision: 2 }],
+                            ['slider', 'High Threshold', 0.05, 0.4, 0.01, { key: `${fullId}_highThreshold`, value: 0.15, withNumber: true, precision: 2 }],
+                            ['slider', 'Gaussian σ', 0.5, 3.0, 0.1, { key: `${fullId}_sigma`, value: 1.4, withNumber: true, precision: 1 }]
+                        ];
+                    case 'laplacianOfGaussian':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Gaussian σ', 0.5, 5.0, 0.5, { key: `${fullId}_sigma`, value: 2.0, withNumber: true, precision: 1 }]
+                        ];
+                    case 'differenceOfGaussians':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'σ1 (small)', 0.5, 3.0, 0.1, { key: `${fullId}_sigma1`, value: 1.0, withNumber: true, precision: 1 }],
+                            ['slider', 'σ2 (large)', 1.0, 5.0, 0.5, { key: `${fullId}_sigma2`, value: 2.0, withNumber: true, precision: 1 }]
+                        ];
+                    case 'structureTensor':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Window σ', 0.5, 3.0, 0.1, { key: `${fullId}_sigma`, value: 1.5, withNumber: true, precision: 1 }]
+                        ];
+                    case 'laplacian':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['toggle', 'Kernel', ['4-connected', '8-connected'], { key: `${fullId}_kernel`, value: '4-connected' }]
+                        ];
+                    case 'zeroCrossings':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Threshold', 0, 0.5, 0.01, { key: `${fullId}_threshold`, value: 0.05, withNumber: true, precision: 2 }]
+                        ];
+                    default:
+                        // Sobel, Scharr, Prewitt, Roberts Cross, Dominant Orientation - no parameters
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }]
+                        ];
+                }
+
+            case 'filtering':
+                switch (algoId) {
+                    case 'gaussian':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Gaussian σ', 0.5, 5.0, 0.5, { key: `${fullId}_sigma`, value: 1.5, withNumber: true, precision: 1 }],
+                            ['slider', 'Kernel Size', 3, 15, 2, { key: `${fullId}_kernelSize`, value: 5, withNumber: true }]
+                        ];
+                    case 'bilateral':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Spatial σd', 1, 10, 1, { key: `${fullId}_sigmaSpatial`, value: 3, withNumber: true }],
+                            ['slider', 'Range σr', 0.01, 0.3, 0.01, { key: `${fullId}_sigmaRange`, value: 0.1, withNumber: true, precision: 2 }]
+                        ];
+                    case 'median':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
+                            ['slider', 'Kernel Size', 3, 9, 2, { key: `${fullId}_kernelSize`, value: 3, withNumber: true }]
+                        ];
+                    default:
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }]
+                        ];
+                }
 
             case 'segmentation':
-                return [
-                    ['number', 'Seed', 0, 9999, 1, { key: `${fullId}_seed`, value: 0, withNumber: true }]
-                ];
+                switch (algoId) {
+                    case 'otsu':
+                        // Otsu is automatic - no parameters
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }]
+                        ];
+                    case 'connectedComponents':
+                    case 'floodFill':
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }]
+                        ];
+                    default:
+                        return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }]
+                        ];
+                }
 
             case 'curves':
                 return [
@@ -1086,7 +1266,7 @@ import { ToolBase } from '../core/tool-base.js';
 
             case 'vectorization':
                 return [
-                    ['number', 'Seed', 0, 9999, 1, { key: `${fullId}_seed`, value: 0, withNumber: true }],
+                    ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
                     ['slider', 'Threshold', 0.1, 0.9, 0.1, { key: `${fullId}_threshold`, value: 0.5, withNumber: true, precision: 1 }]
                 ];
 
@@ -1175,11 +1355,13 @@ import { ToolBase } from '../core/tool-base.js';
                     case 'posterize':
                     case 'posterizeGamma':
                         return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
                             ['slider', 'Levels', 2, 16, 1, { key: `${fullId}_levels`, value: 4, withNumber: true }]
                         ];
                     case 'dither':
                     case 'bayerDither':
                         return [
+                            ['button', 'New Image', () => handleFetchNewImage(fullId), { key: `${fullId}_fetchImage` }],
                             ['slider', 'Threshold', 0, 1, 0.1, { key: `${fullId}_threshold`, value: 0.5, withNumber: true, precision: 1 }]
                         ];
                     default:
@@ -1296,7 +1478,7 @@ import { ToolBase } from '../core/tool-base.js';
     /**
      * Main render function - uses state.selectedAlgorithmId to determine what to render
      */
-    function renderAlgorithm(ctx, canvas, values) {
+    async function renderAlgorithm(ctx, canvas, values) {
         // Use the selected algorithm from state
         let activeAlgoId = state.selectedAlgorithmId;
         
@@ -1337,7 +1519,7 @@ import { ToolBase } from '../core/tool-base.js';
         const [pageId, domainId, algoId] = parts;
         
         // Route to appropriate renderer based on domain
-        // Renderers now assume algorithm exists - no checks needed
+        // Some renderers are async (image processing), others are sync
         switch (domainId) {
             case 'noise':
                 renderNoise(algoId, ctx, canvas, activeValues);
@@ -1349,10 +1531,10 @@ import { ToolBase } from '../core/tool-base.js';
                 renderPatterns(algoId, ctx, canvas, activeValues);
                 break;
             case 'edges':
-                renderEdges(algoId, ctx, canvas, activeValues);
+                await renderEdges(algoId, ctx, canvas, activeValues);
                 break;
             case 'segmentation':
-                renderSegmentation(algoId, ctx, canvas, activeValues);
+                await renderSegmentation(algoId, ctx, canvas, activeValues);
                 break;
             case 'curves':
                 renderCurves(algoId, ctx, canvas, activeValues);
@@ -1361,7 +1543,7 @@ import { ToolBase } from '../core/tool-base.js';
                 renderDistance(algoId, ctx, canvas, activeValues);
                 break;
             case 'vectorization':
-                renderVectorization(algoId, ctx, canvas, activeValues);
+                await renderVectorization(algoId, ctx, canvas, activeValues);
                 break;
             case 'spaceFilling':
                 renderSpaceFilling(algoId, ctx, canvas, activeValues);
@@ -1382,7 +1564,7 @@ import { ToolBase } from '../core/tool-base.js';
                 renderReactionDiffusion(algoId, ctx, canvas, activeValues);
                 break;
             case 'quantization':
-                renderQuantization(algoId, ctx, canvas, activeValues);
+                await renderQuantization(algoId, ctx, canvas, activeValues);
                 break;
             default:
                 // All other domains not implemented - already caught by algorithmExists()
@@ -2402,24 +2584,20 @@ import { ToolBase } from '../core/tool-base.js';
     /**
      * Render edge detection algorithms
      */
-    function renderEdges(algoId, ctx, canvas, values) {
-        const seed = values.seed || 0;
-        const rng = A.MathUtils?.seededRandom ? A.MathUtils.seededRandom(seed) : Math.random;
-        
-        // Generate synthetic test image (gradient + noise)
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        const data = imageData.data;
-        
-        for (let y = 0; y < canvas.height; y++) {
-            for (let x = 0; x < canvas.width; x++) {
-                const gradient = (x / canvas.width + y / canvas.height) * 127;
-                const noise = (rng() - 0.5) * 50;
-                const value = Math.max(0, Math.min(255, gradient + noise));
-                const i = (y * canvas.width + x) * 4;
-                data[i] = data[i+1] = data[i+2] = value;
-                data[i+3] = 255;
-            }
+    async function renderEdges(algoId, ctx, canvas, values) {
+        // Ensure we have a test image
+        let img;
+        try {
+            img = await ensureTestImage(ctx, canvas);
+        } catch (error) {
+            renderFallback(ctx, canvas, 'Loading image...');
+            return;
         }
+        
+        // Draw image to canvas to get pixel data
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
         
         // Convert to grayscale array
         const gray = new Float32Array(canvas.width * canvas.height);
@@ -2437,7 +2615,14 @@ import { ToolBase } from '../core/tool-base.js';
                 break;
             case 'canny':
                 if (A.EdgeDetection?.canny) {
-                    edges = A.EdgeDetection.canny(gray, canvas.width, canvas.height, { lowThreshold: 0.05, highThreshold: 0.15 });
+                    const lowThreshold = values.lowThreshold !== undefined ? values.lowThreshold : 0.05;
+                    const highThreshold = values.highThreshold !== undefined ? values.highThreshold : 0.15;
+                    const sigma = values.sigma !== undefined ? values.sigma : 1.4;
+                    edges = A.EdgeDetection.canny(gray, canvas.width, canvas.height, { 
+                        lowThreshold, 
+                        highThreshold,
+                        sigma 
+                    });
                 }
                 break;
             case 'laplacian':
@@ -2447,17 +2632,21 @@ import { ToolBase } from '../core/tool-base.js';
                 break;
             case 'laplacianOfGaussian':
                 if (A.EdgeDetection?.laplacianOfGaussian) {
-                    edges = A.EdgeDetection.laplacianOfGaussian(gray, canvas.width, canvas.height, 2);
+                    const sigma = values.sigma !== undefined ? values.sigma : 2.0;
+                    edges = A.EdgeDetection.laplacianOfGaussian(gray, canvas.width, canvas.height, sigma);
                 }
                 break;
             case 'differenceOfGaussians':
                 if (A.EdgeDetection?.differenceOfGaussians) {
-                    edges = A.EdgeDetection.differenceOfGaussians(gray, canvas.width, canvas.height, 1, 2);
+                    const sigma1 = values.sigma1 !== undefined ? values.sigma1 : 1.0;
+                    const sigma2 = values.sigma2 !== undefined ? values.sigma2 : 2.0;
+                    edges = A.EdgeDetection.differenceOfGaussians(gray, canvas.width, canvas.height, sigma1, sigma2);
                 }
                 break;
             case 'structureTensor':
                 if (A.EdgeDetection?.structureTensor) {
-                    edges = A.EdgeDetection.structureTensor(gray, canvas.width, canvas.height);
+                    const sigma = values.sigma !== undefined ? values.sigma : 1.5;
+                    edges = A.EdgeDetection.structureTensor(gray, canvas.width, canvas.height, sigma);
                 }
                 break;
             default:
@@ -2487,18 +2676,25 @@ import { ToolBase } from '../core/tool-base.js';
     /**
      * Render segmentation algorithms
      */
-    function renderSegmentation(algoId, ctx, canvas, values) {
-        const seed = values.seed || 0;
-        const rng = A.MathUtils?.seededRandom ? A.MathUtils.seededRandom(seed) : Math.random;
+    async function renderSegmentation(algoId, ctx, canvas, values) {
+        // Ensure we have a test image
+        let img;
+        try {
+            img = await ensureTestImage(ctx, canvas);
+        } catch (error) {
+            renderFallback(ctx, canvas, 'Loading image...');
+            return;
+        }
         
-        // Generate synthetic test image with regions
+        // Draw image to canvas to get pixel data
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Convert to grayscale array
         const gray = new Float32Array(canvas.width * canvas.height);
-        for (let y = 0; y < canvas.height; y++) {
-            for (let x = 0; x < canvas.width; x++) {
-                const regions = Math.floor((x / (canvas.width / 4)) + (y / (canvas.height / 4)));
-                const value = ((regions % 4) / 3) * 0.7 + rng() * 0.3;
-                gray[y * canvas.width + x] = value;
-            }
+        for (let i = 0; i < gray.length; i++) {
+            gray[i] = data[i * 4] / 255;
         }
         
         let result = null;
@@ -2668,26 +2864,27 @@ import { ToolBase } from '../core/tool-base.js';
     /**
      * Render vectorization algorithms
      */
-    function renderVectorization(algoId, ctx, canvas, values) {
-        const seed = values.seed || 0;
+    async function renderVectorization(algoId, ctx, canvas, values) {
         const threshold = values.threshold || 0.5;
-        const rng = A.MathUtils?.seededRandom ? A.MathUtils.seededRandom(seed) : Math.random;
         
-        // Generate synthetic scalar field
+        // Ensure we have a test image
+        let img;
+        try {
+            img = await ensureTestImage(ctx, canvas);
+        } catch (error) {
+            renderFallback(ctx, canvas, 'Loading image...');
+            return;
+        }
+        
+        // Draw image to canvas to get pixel data
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Convert to grayscale array
         const field = new Float32Array(canvas.width * canvas.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const maxDist = Math.sqrt(cx * cx + cy * cy);
-        
-        for (let y = 0; y < canvas.height; y++) {
-            for (let x = 0; x < canvas.width; x++) {
-                const dx = x - cx;
-                const dy = y - cy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const radial = 1 - dist / maxDist;
-                const noise = (rng() - 0.5) * 0.3;
-                field[y * canvas.width + x] = Math.max(0, Math.min(1, radial + noise));
-            }
+        for (let i = 0; i < field.length; i++) {
+            field[i] = data[i * 4] / 255;
         }
         
         ctx.fillStyle = '#000000';
@@ -3257,20 +3454,20 @@ import { ToolBase } from '../core/tool-base.js';
     /**
      * Render color/quantization algorithms
      */
-    function renderQuantization(algoId, ctx, canvas, values) {
-        // Generate synthetic grayscale gradient image
-        const imageData = ctx.createImageData(canvas.width, canvas.height);
-        const data = imageData.data;
-        
-        for (let y = 0; y < canvas.height; y++) {
-            for (let x = 0; x < canvas.width; x++) {
-                const gradient = (x / canvas.width + y / canvas.height) * 0.5;
-                const value = Math.floor(gradient * 255);
-                const i = (y * canvas.width + x) * 4;
-                data[i] = data[i+1] = data[i+2] = value;
-                data[i+3] = 255;
-            }
+    async function renderQuantization(algoId, ctx, canvas, values) {
+        // Ensure we have a test image
+        let img;
+        try {
+            img = await ensureTestImage(ctx, canvas);
+        } catch (error) {
+            renderFallback(ctx, canvas, 'Loading image...');
+            return;
         }
+        
+        // Draw image to canvas to get pixel data
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
         
         switch (algoId) {
             case 'posterize':
@@ -3410,6 +3607,15 @@ import { ToolBase } from '../core/tool-base.js';
                 }
             }
             
+            // Handle fetch new image button
+            if (key.endsWith('_fetchImage')) {
+                handleFetchNewImage(key.replace('_fetchImage', ''));
+                if (state.viewMode === 'output') {
+                    this.draw();
+                }
+                return;
+            }
+            
             // Handle randomise button clicks
             if (key.endsWith('_randomise')) {
                 const baseKey = key.replace('_randomise', '_seed');
@@ -3462,9 +3668,9 @@ import { ToolBase } from '../core/tool-base.js';
                 updateAboutPanel(this);
             }
         },
-        onDraw: function(ctx, canvas, values) {
+        onDraw: async function(ctx, canvas, values) {
             if (state.viewMode !== 'output') return;
-            renderAlgorithm(ctx, canvas, values);
+            await renderAlgorithm(ctx, canvas, values);
         }
     };
 

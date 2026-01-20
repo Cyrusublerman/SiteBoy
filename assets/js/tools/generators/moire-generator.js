@@ -11,6 +11,7 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { AnimationLoop } from '../../core/animation-foundation.js';
+import { ExportUtils, Patterns } from '../../shared/algorithms/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODULE-LEVEL STATE
@@ -27,7 +28,7 @@ export const TOOL_CONFIG = {
         title: 'MOIRÉ GENERATOR',
         
         sidebar: [
-            // TAB 1: CONTROLS
+            // TAB 1: CONTROLS — Pattern Parameters
             ['CONTROLS', [
                 ['Gratings', [
                     ['stepper', 'Count', 1, 4, 1, { value: 2, key: 'gratingCount' }],
@@ -44,9 +45,18 @@ export const TOOL_CONFIG = {
                     ['slider', 'Weight A', 0, 1, 0.01, { value: 1, key: 'weightA', withNumber: true }],
                     ['slider', 'Weight B', 0, 1, 0.01, { value: 1, key: 'weightB', withNumber: true }],
                 ]],
+                ['Motion Parameters', [
+                    ['slider', 'Phase Speed', 0, 1, 0.01, { value: 0.1, key: 'phaseSpeed', withNumber: true }],
+                    ['slider', 'Wave Mod', 0, 0.2, 0.01, { value: 0, key: 'waveMod', withNumber: true }],
+                    ['slider', 'Centre Osc', 0, 1, 0.01, { value: 0, key: 'centreOsc', withNumber: true }],
+                ]],
+                ['Playback', [
+                    ['button', 'Play/Pause', null, { key: 'playPause' }],
+                    ['button', 'Reset', null, { key: 'reset' }],
+                ]],
             ]],
             
-            // TAB 2: STYLE
+            // TAB 2: STYLE — Visual Appearance
             ['STYLE', [
                 ['Mask', [
                     ['dropdown', 'Type', ['None', 'Circle', 'Triangle', 'Square'], { key: 'maskType', value: 'None' }],
@@ -58,37 +68,26 @@ export const TOOL_CONFIG = {
                     ['color', 'Background', '#000000', { key: 'bgColor' }],
                     ['toggle', 'Options', ['Invert'], { key: 'colorOptions', selectedValues: [] }],
                 ]],
-            ]],
-            
-            // TAB 3: CANVAS
-            ['CANVAS', [
-                ['Canvas', [
-                    ['slider', 'Width', 196, 840, 14, { value: 420, key: 'canvasWidth', withNumber: true }],
-                    ['slider', 'Height', 196, 840, 14, { value: 420, key: 'canvasHeight', withNumber: true }],
-                    ['radio', 'Display', ['Fit', 'Actual'], { key: 'displayMode', selectedValue: 'Fit' }],
-                ]],
                 ['Export', [
                     ['button', 'Download PNG', null, { key: 'exportPng' }],
                     ['button', 'Download GIF', null, { key: 'exportGif' }],
                 ]],
             ]],
-            
-            // TAB 4: ANIMATION
-            ['ANIMATION', [
-                ['Playback', [
-                    ['button', 'Play/Pause', null, { key: 'playPause' }],
-                    ['button', 'Reset', null, { key: 'reset' }],
-                    ['slider', 'FPS', 1, 60, 1, { value: 30, key: 'fps', withNumber: true }],
-                ]],
-                ['Motion', [
-                    ['slider', 'Phase Speed', 0, 1, 0.01, { value: 0.1, key: 'phaseSpeed', withNumber: true }],
-                    ['slider', 'Wave Mod', 0, 0.2, 0.01, { value: 0, key: 'waveMod', withNumber: true }],
-                    ['slider', 'Centre Osc', 0, 1, 0.01, { value: 0, key: 'centreOsc', withNumber: true }],
-                ]],
-            ]],
         ],
         
-        canvas: { size: 420 },
+        // Auto-injects CANVAS tab (canvas sizing) and ANIMATION tab (export)
+        canvas: { 
+            width: 420, 
+            height: 420,
+            showControls: true 
+        },
+        
+        // Animation export configuration
+        animation: {
+            type: 'infinite',
+            defaultFps: 30,
+            canPrerender: true
+        },
         
         onInit: function(values) {
             var self = this;
@@ -100,17 +99,11 @@ export const TOOL_CONFIG = {
         },
         
         onUpdate: function(key, value, allValues) {
-            if (key === 'canvasWidth' || key === 'canvasHeight' || key === 'displayMode') {
-                this.resizeCanvas(
-                    allValues.canvasWidth || 420,
-                    allValues.canvasHeight || 420,
-                    { displayMode: (allValues.displayMode || 'Fit').toLowerCase() }
-                );
-            }
+            // Canvas width/height now handled by auto-CANVAS tab (_canvasWidth/_canvasHeight)
+            // Display mode removed (was custom feature, can be added back if needed)
+            // FPS now handled by auto-ANIMATION tab
             
-            if (key === 'fps' && animator) {
-                animator.fps = value;
-            }
+            // No canvas-specific updates needed - auto-CANVAS handles resizing
         },
         
         onDraw: function(ctx, canvas, values) {
@@ -184,22 +177,19 @@ export const TOOL_CONFIG = {
         var values = [];
         
         // Centre A (origin)
-        var rA = Math.sqrt(x * x + y * y);
-        var thetaA = Math.atan2(y, x);
-        var gA = radialGrating(rA, wavelength, phase) * weightA;
+        // Adjust phase by -0.25 to maintain sin() behavior from cos() implementation
+        var gA = Patterns.radialGrating(x, y, 0, 0, wavelength, phase - 0.25) * weightA;
         if (angularFreq > 0) {
-            gA *= angularGrating(thetaA, angularFreq);
+            gA *= Patterns.angularGrating(x, y, 0, 0, angularFreq, -Math.PI / 2);
         }
         values.push(gA);
         
         // Centre B (offset)
         if (count >= 2 && centreOffset > 0) {
             var xB = x - centreOffset;
-            var rB = Math.sqrt(xB * xB + y * y);
-            var thetaB = Math.atan2(y, xB);
-            var gB = radialGrating(rB, wavelength, phase) * weightB;
+            var gB = Patterns.radialGrating(x, y, centreOffset, 0, wavelength, phase - 0.25) * weightB;
             if (angularFreq > 0) {
-                gB *= angularGrating(thetaB, angularFreq);
+                gB *= Patterns.angularGrating(x, y, centreOffset, 0, angularFreq, -Math.PI / 2);
             }
             values.push(gB);
         }
@@ -207,49 +197,26 @@ export const TOOL_CONFIG = {
         // Additional gratings with rotation
         for (var i = 2; i < count; i++) {
             var angle = (i - 1) * Math.PI / count;
-            var xR = x * Math.cos(angle) + y * Math.sin(angle);
-            var yR = -x * Math.sin(angle) + y * Math.cos(angle);
-            var rR = Math.sqrt(xR * xR + yR * yR);
-            values.push(radialGrating(rR, wavelength, phase + i * 0.1));
+            // For rotated gratings, we use linearGrating as it supports an angle parameter
+            // Note: the original radialGrating loop was slightly odd as it didn't use i in radial calculation
+            // but the original code did: var rR = Math.sqrt(xR * xR + yR * yR);
+            // We can just use radialGrating with 0,0 center on rotated coordinates
+            var cosA = Math.cos(angle);
+            var sinA = Math.sin(angle);
+            var xR = x * cosA + y * sinA;
+            var yR = -x * sinA + y * cosA;
+            values.push(Patterns.radialGrating(xR, yR, 0, 0, wavelength, phase - 0.25 + i * 0.1));
         }
         
         // Combine
-        return combineValues(values, mode);
-    }
-    
-    function radialGrating(r, wavelength, phase) {
-        return (Math.sin(2 * Math.PI * r / wavelength + phase * Math.PI * 2) + 1) / 2;
-    }
-    
-    function angularGrating(theta, freq) {
-        return (Math.sin(freq * theta) + 1) / 2;
-    }
-    
-    function combineValues(values, mode) {
-        if (values.length === 0) return 0;
-        if (values.length === 1) return values[0];
-        
-        switch (mode) {
-            case 'Sum':
-                var sum = 0;
-                for (var i = 0; i < values.length; i++) sum += values[i];
-                return sum / values.length;
-            case 'Product':
-                var prod = 1;
-                for (var i = 0; i < values.length; i++) prod *= values[i];
-                return prod;
-            case 'Min':
-                var min = values[0];
-                for (var i = 1; i < values.length; i++) if (values[i] < min) min = values[i];
-                return min;
-            case 'Max':
-                var max = values[0];
-                for (var i = 1; i < values.length; i++) if (values[i] > max) max = values[i];
-                return max;
-            default:
-                return values[0];
+        var intensity = values[0];
+        for (var i = 1; i < values.length; i++) {
+            intensity = Patterns.combineMoire(intensity, values[i], mode.toLowerCase());
         }
+        return intensity;
     }
+    
+    // Inline functions removed (using Patterns library)
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // MASK
@@ -344,11 +311,9 @@ export const TOOL_CONFIG = {
     }
     
     function exportPNG(tool) {
-        var canvas = tool.getCanvas();
-        var a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'moire-pattern.png';
-        a.click();
+        const canvas = tool.getCanvas();
+        if (!canvas) return;
+        ExportUtils.exportCanvasPNG(canvas, 'moire-pattern');
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

@@ -82,6 +82,9 @@ import { BarGraph, LineGraph, PieGraph } from './graphs.js';
 // Import specialized components
 import { VGAGrid, MathematicalCanvas, SVGDisplay, AnimationControls } from './specialized.js';
 
+// Import feedback components
+import LoadingOverlay from './components/feedback/LoadingOverlay.js';
+
 // Import P5.js integration components
 import { P5Canvas, P5EmbeddedSketch, P5ControlledSketch } from './p5-integration.js';
 
@@ -122,6 +125,42 @@ import {
     Collection,
     FileTable
 } from './components/container/index.js';
+
+// Import image adjustment bundles
+import {
+    MinimalBundle,
+    StandardBundle,
+    ProfessionalBundle
+} from './image-adjustments/index.js';
+
+/**
+ * AdjustmentBundle - Factory function that routes to correct bundle type
+ * Used by ToolBase to handle ['adjustment-bundle', 'standard'] config
+ */
+const AdjustmentBundle = function(options = {}, deps = {}) {
+    console.log('🏭 AdjustmentBundle factory called with:', { bundleType: options.bundleType, options, deps });
+    
+    const { bundleType = 'standard' } = options;
+    
+    const bundles = {
+        'minimal': MinimalBundle,
+        'standard': StandardBundle,
+        'professional': ProfessionalBundle
+    };
+    
+    const BundleClass = bundles[bundleType.toLowerCase()];
+    if (!BundleClass) {
+        console.error(`❌ Unknown adjustment bundle type: ${bundleType}`);
+        return null;
+    }
+    
+    console.log('✅ Creating bundle of type:', bundleType, BundleClass.name);
+    
+    // Return instance of the correct bundle
+    const instance = new BundleClass(options, deps);
+    console.log('✅ Bundle instance created:', instance);
+    return instance;
+};
 
 
 // Create ComponentLibrary as a global object for backward compatibility
@@ -339,6 +378,12 @@ ComponentLibrary.NavigationDropdown = NavigationDropdown;
 // Assign additional output components
 ComponentLibrary.OutputProgressBar = OutputProgressBar;  // Output-specific progress bar
 
+// Assign image adjustment bundles to ComponentLibrary immediately
+ComponentLibrary.AdjustmentBundle = AdjustmentBundle;
+ComponentLibrary.MinimalBundle = MinimalBundle;
+ComponentLibrary.StandardBundle = StandardBundle;
+ComponentLibrary.ProfessionalBundle = ProfessionalBundle;
+
 // Make it available globally for legacy tools
 if (typeof window !== 'undefined') {
     window.ComponentLibrary = ComponentLibrary;
@@ -394,6 +439,9 @@ export {
     CollapsibleSection,
     Lightbox,
     Carousel,
+    
+    // Feedback
+    LoadingOverlay,
 
     // Graphs
     BarGraph,
@@ -413,7 +461,7 @@ export {
 
     // Gallery
     MasonryGallery,
-
+    
     // Tool Components
     ToolContainer,
     ToolSidebar,
@@ -434,7 +482,13 @@ export {
     Section,
     Collection,
     FileTable,
-    AnimationExport
+    AnimationExport,
+
+    // Image Adjustment Bundles
+    AdjustmentBundle,
+    MinimalBundle,
+    StandardBundle,
+    ProfessionalBundle
 };
 
 // Export ComponentLibrary as default for backward compatibility

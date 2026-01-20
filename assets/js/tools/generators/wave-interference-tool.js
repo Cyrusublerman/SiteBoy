@@ -15,6 +15,7 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { AnimationLoop } from '../../core/animation-foundation.js';
+import { ExportUtils } from '../../shared/algorithms/index.js';
 
 // ═══════════════════════════════════════════════════════════════════
     // MODULE STATE
@@ -209,7 +210,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                     ['button', 'Stop', null, { key: 'stopAnim' }],
                 ]],
             ]],
-            // CANVAS tab auto-injected by ToolBase (includes animation export when animation config present)
+            // Auto-CANVAS tab injected (no auto-ANIMATION - uses custom checkpoint animator)
         ],
         
         canvas: { 
@@ -219,14 +220,8 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             showControls: true
         },
         
-        // Animation configuration for export
-        animation: {
-            type: 'sequence',              // sequence-based (checkpoints), can also do phase loops
-            sequenceLength: 0,             // Updated dynamically when checkpoints are saved
-            sequenceDuration: 0,           // Updated dynamically
-            defaultFps: 60,
-            canPrerender: true
-        },
+        // NO animation config - uses custom checkpoint-based interpolation
+        // AnimationExport would conflict with checkpoint system
         
         onInit: function(values) {
             var self = this;
@@ -957,49 +952,46 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     // ═══════════════════════════════════════════════════════════════════
 
     function exportPng(toolInstance) {
-        var canvas = toolInstance.getCanvas();
-        var a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'wave-interference-' + Date.now() + '.png';
-        a.click();
+        const canvas = toolInstance.getCanvas();
+        if (!canvas) return;
+        ExportUtils.exportCanvasPNG(canvas, 'wave-interference');
     }
 
     function exportSvg(toolInstance) {
-        var canvas = toolInstance.getCanvas();
-        var values = toolInstance.getValues();
-        var w = canvas.width;
-        var h = canvas.height;
-        var scale = values.scale || 300;
-        var TWO_PI = Math.PI * 2;
+        const canvas = toolInstance.getCanvas();
+        if (!canvas) return;
         
-        var paths = [];
-        var resolution = 2;
+        const values = toolInstance.getValues();
+        const w = canvas.width;
+        const h = canvas.height;
+        const scale = values.scale || 300;
+        const TWO_PI = Math.PI * 2;
         
-        for (var py = 0; py < h; py += resolution) {
-            for (var px = 0; px < w; px += resolution) {
-                var x = (px - w/2) / scale;
-                var y = (py - h/2) / scale;
-                var r = Math.sqrt(x * x + y * y);
+        const paths = [];
+        const resolution = 2;
+        
+        for (let py = 0; py < h; py += resolution) {
+            for (let px = 0; px < w; px += resolution) {
+                const x = (px - w/2) / scale;
+                const y = (py - h/2) / scale;
+                const r = Math.sqrt(x * x + y * y);
                 
-                var rVal = values.Ar1 ? values.Ar1 * safePow(Math.sin(values.fr1 * TWO_PI * r), values.pr1 || 1) : 0;
-                var xVal = values.Ax1 ? values.Ax1 * safePow(Math.sin(values.fx1 * TWO_PI * x), values.px1 || 1) : 0;
-                var yVal = values.Ay1 ? values.Ay1 * safePow(Math.sin(values.fy1 * TWO_PI * y), values.py1 || 1) : 0;
+                const rVal = values.Ar1 ? values.Ar1 * safePow(Math.sin(values.fr1 * TWO_PI * r), values.pr1 || 1) : 0;
+                const xVal = values.Ax1 ? values.Ax1 * safePow(Math.sin(values.fx1 * TWO_PI * x), values.px1 || 1) : 0;
+                const yVal = values.Ay1 ? values.Ay1 * safePow(Math.sin(values.fy1 * TWO_PI * y), values.py1 || 1) : 0;
                 
                 if (rVal + xVal + yVal <= 0) {
-                    paths.push('M' + px + ',' + py + ' h' + resolution + ' v' + resolution + ' h-' + resolution + 'Z');
+                    paths.push(`M${px},${py} h${resolution} v${resolution} h-${resolution}Z`);
                 }
             }
         }
         
-        var svg = '<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">\n' +
-                  '<rect width="' + w + '" height="' + h + '" fill="white"/>\n' +
-                  '<path d="' + paths.join(' ') + '" fill="black"/>\n</svg>';
+        const svgParts = [];
+        svgParts.push(ExportUtils.buildSVGHeader(w, h, 'white'));
+        svgParts.push(`<path d="${paths.join(' ')}" fill="black"/>`);
+        svgParts.push(ExportUtils.buildSVGFooter());
         
-        var blob = new Blob([svg], { type: 'image/svg+xml' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'wave-interference-' + Date.now() + '.svg';
-        a.click();
+        ExportUtils.exportSVG(svgParts.join('\n'), 'wave-interference');
     }
 
     // ═══════════════════════════════════════════════════════════════════
