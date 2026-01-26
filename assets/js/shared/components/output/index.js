@@ -6,6 +6,8 @@
 
 export { Text } from './Text.js';
 export { Canvas } from './Canvas.js';
+export { ImageViewport } from './ImageViewport.js';
+export { PalettePreview } from './PalettePreview.js';
 export { SVG } from './SVG.js';
 export { Media } from './Media.js';
 export { ProgressBar } from './ProgressBar.js';

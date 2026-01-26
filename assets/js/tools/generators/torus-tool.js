@@ -136,11 +136,10 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                     break;
                     
                 // Canvas resize - update radii
-                case '_canvasWidth':
-                case '_canvasHeight':
-                    updateRadii(this.canvas.width, this.canvas.height, allValues.torusSize || 0.18);
-                    centerX = this.canvas.width / 2;
-                    centerY = this.canvas.height / 2;
+                case '_canvasResize':
+                    updateRadii(value.width, value.height, allValues.torusSize || 0.18);
+                    centerX = value.width / 2;
+                    centerY = value.height / 2;
                     break;
             }
         },

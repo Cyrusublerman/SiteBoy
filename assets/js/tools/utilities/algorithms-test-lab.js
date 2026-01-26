@@ -3739,6 +3739,7 @@ export class AlgorithmsTestLab {
         this.categoryBar = new window.ComponentLibrary.CategoryTabsBar({
             categories: PAGES.map(p => ({id: p.id, title: p.title})),
             activeCategory: defaultPage.id,
+            enableScrollbar: true,
             onCategoryChange: (pageId) => {
                 rebuildToolForPage(this, pageId);
             }

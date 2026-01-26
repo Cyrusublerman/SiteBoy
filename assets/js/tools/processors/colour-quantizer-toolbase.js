@@ -11,91 +11,19 @@ import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import PaletteSystemModule from '../../shared/data/palettes/index.js';
 import { parseGPL, exportGPL, parseHexFile, exportHexFile, parsePaletteJson, exportPaletteJson } from '../../shared/data/palettes/utils.js';
+import * as ColorSpace from '../../shared/algorithms/color/color-space.js';
+import * as ImageAdjustments from '../../shared/algorithms/image/image-adjustments.js';
 import * as ErrorDiffusion from '../../shared/algorithms/dither/error-diffusion.js';
 import * as OrderedDither from '../../shared/algorithms/dither/ordered.js';
 import * as PaletteExtraction from '../../shared/algorithms/color/palette-extraction.js';
 
+// Alias for legacy code compatibility
+const ColorSpaceConverter = ColorSpace;
+const { deltaE76 } = ColorSpace;
+import { imageDataToCanvas, imageToImageData, loadImageFromFile } from '../../shared/utils/canvas-utils.js';
+import { downloadBlob, downloadDataURL, downloadZIP } from '../../shared/utils/download.js';
+
 // ES Module state and utilities
-
-    // ═══════════════════════════════════════════════════════════════════════════════
-    // COLOR SPACE CONVERTER
-    // ═══════════════════════════════════════════════════════════════════════════════
-
-    const ColorSpaceConverter = {
-        cache: new Map(),
-        WHITE_REFERENCE: { X: 0.95047, Y: 1.0, Z: 1.08883 },
-        epsilon: 0.008856,
-        kappa: 903.3,
-
-        hexToRgb: function(hex) {
-            const key = 'hex-' + hex;
-            if (this.cache.has(key)) return this.cache.get(key);
-
-            const c = (hex || '').startsWith('#') ? hex.slice(1) : (hex || '');
-            let fullHex = c;
-            if (c.length === 3) {
-                fullHex = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
-            }
-            if (fullHex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(fullHex)) {
-                fullHex = '000000';
-            }
-
-            const rgb = {
-                r: parseInt(fullHex.slice(0, 2), 16),
-                g: parseInt(fullHex.slice(2, 4), 16),
-                b: parseInt(fullHex.slice(4, 6), 16)
-            };
-            this.cache.set(key, rgb);
-            return rgb;
-        },
-
-        rgbToLab: function(r, g, b) {
-            const key = 'rgb-' + r + '-' + g + '-' + b;
-            if (this.cache.has(key)) return this.cache.get(key);
-
-            r = Number.isFinite(r) ? r : 0;
-            g = Number.isFinite(g) ? g : 0;
-            b = Number.isFinite(b) ? b : 0;
-
-            const linear = this._srgbToLinear([r, g, b]);
-            const xyz = this._linearToXyz(linear);
-            const lab = this._xyzToLab(xyz[0], xyz[1], xyz[2]);
-
-            this.cache.set(key, lab);
-            return lab;
-        },
-
-        _srgbToLinear: function(rgbArray) {
-            return rgbArray.map(function(v) {
-                v /= 255.0;
-                return (v <= 0.04045) ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-            });
-        },
-
-        _linearToXyz: function(linear) {
-            const lr = linear[0], lg = linear[1], lb = linear[2];
-            return [
-                lr * 0.4124564 + lg * 0.3575761 + lb * 0.1804375,
-                lr * 0.2126729 + lg * 0.7151522 + lb * 0.0721750,
-                lr * 0.0193339 + lg * 0.1191920 + lb * 0.9503041
-            ];
-        },
-
-        _xyzToLab: function(X, Y, Z) {
-            const ref = this.WHITE_REFERENCE;
-            const xr = X / ref.X, yr = Y / ref.Y, zr = Z / ref.Z;
-
-            const fx = xr > this.epsilon ? Math.cbrt(xr) : (this.kappa * xr + 16) / 116;
-            const fy = yr > this.epsilon ? Math.cbrt(yr) : (this.kappa * yr + 16) / 116;
-            const fz = zr > this.epsilon ? Math.cbrt(zr) : (this.kappa * zr + 16) / 116;
-
-            return {
-                L: 116 * fy - 16,
-                a: 500 * (fx - fy),
-                b: 200 * (fy - fz)
-            };
-        }
-    };
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // PALETTE SYSTEM
@@ -126,14 +54,6 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
         batchFiles: [],
         batchResults: [],
         isBatchProcessing: false,
-        viewTransform: {
-            scale: 1,
-            offsetX: 0,
-            offsetY: 0,
-            isPanning: false,
-            lastX: 0,
-            lastY: 0
-        },
         canvasHandlers: null
     };
 
@@ -141,22 +61,12 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
     // QUANTIZATION FUNCTIONS
     // ═══════════════════════════════════════════════════════════════════════════════
 
-    function clamp(v) {
-        return Math.max(0, Math.min(255, Math.round(v)));
-    }
-
-    function deltaE76(lab1, lab2) {
-        const dL = lab1.L - lab2.L;
-        const da = lab1.a - lab2.a;
-        const db = lab1.b - lab2.b;
-        return Math.sqrt(dL*dL + da*da + db*db);
-    }
-
+    // Helper function for finding nearest color in palette
     function findNearestColor(pixelLab, paletteLabs) {
         var minDist = Infinity;
         var nearestIdx = 0;
         for (var i = 0; i < paletteLabs.length; i++) {
-            var dist = deltaE76(pixelLab, paletteLabs[i]);
+            var dist = ColorSpace.deltaE76(pixelLab, paletteLabs[i]);
             if (dist < minDist) {
                 minDist = dist;
                 nearestIdx = i;
@@ -165,59 +75,15 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
         return nearestIdx;
     }
 
-    function applyImageAdjustments(imageData, gamma, contrast, saturation) {
-        if (!imageData) return null;
-
-        var data = imageData.data;
-        var newData = new Uint8ClampedArray(data.length);
-        var gammaExponent = gamma === 0 ? Infinity : 1.0 / gamma;
-        var contrastFactor = contrast / 100;
-        var saturationFactor = saturation / 100;
-        var lumR = 0.2126, lumG = 0.7152, lumB = 0.0722;
-
-        for (var i = 0; i < data.length; i += 4) {
-            var r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
-
-            // Saturation
-            if (saturationFactor !== 1.0) {
-                var gray = r * lumR + g * lumG + b * lumB;
-                r = clamp(gray + saturationFactor * (r - gray));
-                g = clamp(gray + saturationFactor * (g - gray));
-                b = clamp(gray + saturationFactor * (b - gray));
-            }
-
-            // Contrast
-            if (contrastFactor !== 1.0) {
-                r = clamp(((r / 255.0 - 0.5) * contrastFactor + 0.5) * 255.0);
-                g = clamp(((g / 255.0 - 0.5) * contrastFactor + 0.5) * 255.0);
-                b = clamp(((b / 255.0 - 0.5) * contrastFactor + 0.5) * 255.0);
-            }
-
-            // Gamma
-            if (gamma !== 1.0 && gamma > 0) {
-                r = clamp(Math.pow(r / 255.0, gammaExponent) * 255.0);
-                g = clamp(Math.pow(g / 255.0, gammaExponent) * 255.0);
-                b = clamp(Math.pow(b / 255.0, gammaExponent) * 255.0);
-            }
-
-            newData[i] = Math.round(r);
-            newData[i+1] = Math.round(g);
-            newData[i+2] = Math.round(b);
-            newData[i+3] = a;
-        }
-
-        return new ImageData(newData, imageData.width, imageData.height);
-    }
-
     function quantizeNoDither(imageData, palette, paletteLabs) {
         var data = imageData.data;
         var outArr = new Uint8ClampedArray(data.length);
 
         for (var i = 0; i < data.length; i += 4) {
             var r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
-            var labPix = ColorSpaceConverter.rgbToLab(r, g, b);
+            var labPix = ColorSpace.rgbToLab(r, g, b);
             var idx = findNearestColor(labPix, paletteLabs);
-            var rgb = ColorSpaceConverter.hexToRgb(palette[idx]);
+            var rgb = ColorSpace.hexToRgb(palette[idx]);
             outArr[i] = rgb.r;
             outArr[i+1] = rgb.g;
             outArr[i+2] = rgb.b;
@@ -239,7 +105,7 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
             for (var x = 0; x < width; x++) {
                 var i = (y * width + x) * 4;
                 var r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
-                var labPix = ColorSpaceConverter.rgbToLab(r, g, b);
+                var labPix = ColorSpace.rgbToLab(r, g, b);
 
                 // Get blue noise threshold
                 var noiseX = x % noiseWidth;
@@ -272,7 +138,7 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
 
                 // Choose color based on threshold
                 var chosenIdx = (threshold < blendFactor) ? oppositeIdx : nearestIdx;
-                var rgb = ColorSpaceConverter.hexToRgb(palette[chosenIdx]);
+                var rgb = ColorSpace.hexToRgb(palette[chosenIdx]);
 
                 outArr[i] = rgb.r;
                 outArr[i+1] = rgb.g;
@@ -289,42 +155,14 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
     // ═══════════════════════════════════════════════════════════════════════════════
 
     function applyDisplayMode(toolInstance, mode) {
-        if (!toolInstance.canvas) return;
-        
-        var canvas = toolInstance.canvas;
-        
-        console.log('🎭 Applying display mode:', mode);
-        
-        switch(mode) {
-            case 'Fit':
-            case 'fit':
-                // Scale to fit container, maintain aspect ratio
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.objectFit = 'contain';
-                canvas.style.imageRendering = 'auto';
-                break;
-                
-            case 'Fill':
-            case 'fill':
-                // Scale to fill container, may crop
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.objectFit = 'cover';
-                canvas.style.imageRendering = 'auto';
-                break;
-                
-            case 'Actual':
-            case 'actual':
-                // Show at actual pixel size, no scaling
-                canvas.style.width = canvas.width + 'px';
-                canvas.style.height = canvas.height + 'px';
-                canvas.style.objectFit = 'none';
-                canvas.style.imageRendering = 'pixelated';
-                break;
+        // Delegate to Canvas component - it handles all display modes
+        if (!toolInstance.canvasComponent) {
+            console.warn('⚠️ Canvas component not available for display mode');
+            return;
         }
         
-        console.log('✅ Display mode applied:', mode, 'Canvas:', canvas.width, 'x', canvas.height);
+        var normalizedMode = (mode || 'fit').toLowerCase();
+        toolInstance.canvasComponent.setDisplayMode(normalizedMode);
     }
 
     function formatHex(hex) {
@@ -386,19 +224,25 @@ import * as PaletteExtraction from '../../shared/algorithms/color/palette-extrac
 
     function loadBlueNoise() {
         var img = new Image();
+        // No crossOrigin needed for same-origin resources
         img.onload = function() {
-            var tempCanvas = document.createElement('canvas');
-            var tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = img.naturalWidth;
-            tempCanvas.height = img.naturalHeight;
-            tempCtx.drawImage(img, 0, 0);
-            state.blueNoiseTextureData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-            window.debugLog('TOOLS', 'Blue noise texture loaded:', tempCanvas.width, 'x', tempCanvas.height);
+            try {
+                var tempCanvas = document.createElement('canvas');
+                var tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = img.naturalWidth || img.width || 64;
+                tempCanvas.height = img.naturalHeight || img.height || 64;
+                tempCtx.drawImage(img, 0, 0);
+                state.blueNoiseTextureData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                window.debugLog('TOOLS', 'Blue noise texture loaded:', tempCanvas.width, 'x', tempCanvas.height);
+            } catch (err) {
+                console.warn('Blue noise getImageData failed:', err.message);
+            }
         };
-        img.onerror = function() {
-            console.error('Failed to load blue noise texture');
+        img.onerror = function(evt) {
+            console.warn('Blue noise texture failed to load, using Floyd-Steinberg as fallback');
         };
-        img.src = '/assets/images/blue-noise-64x64.png';
+        // Use LDR grayscale blue noise texture (64x64)
+        img.src = '/assets/images/blue%20noise/64_64/LDR_LLL1_0.png';
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -440,24 +284,25 @@ export const TOOL_CONFIG = {
                         '─── CUSTOM ───',
                         'Custom'
                     ], { key: 'palette', value: 'Custom' }],
+                    ['palettePreview', { colours: [], key: 'palettePreview' }],
                 ]],
                 ['Extract from Image', [
                     ['dropdown', 'Method', ['Median Cut', 'K-means', 'Histogram'], { key: 'extractMethod', value: 'Median Cut' }],
                     ['stepper', 'Colours', 2, 32, 1, { value: 16, key: 'extractCount' }],
                     ['button', 'Extract Palette', null, { key: 'extractPalette' }],
                     ['label', 'Extracted: 0 colours', { key: 'extractedCount', variant: 'caption' }],
-                ]],
+                ], { defaultCollapsed: true }],
                 ['Custom Colors', [
                     ['color', 'New Colour', '#FF0000', { key: 'newColour' }],
                     ['button', 'Add Colour', null, { key: 'addColour' }],
                     ['button', 'Clear Custom', null, { key: 'clearCustom' }],
                     ['label', 'Custom: 2 colours', { key: 'customCount', variant: 'caption' }],
-                ]],
+                ], { defaultCollapsed: true }],
                 ['Import/Export', [
                     ['file', 'Import Palette', '.gpl,.hex,.json', { key: 'importPalette', buttonText: 'Choose...' }],
                     ['dropdown', 'Format', ['GPL', 'HEX', 'JSON'], { key: 'exportFormat', value: 'GPL' }],
                     ['button', 'Export Palette', null, { key: 'exportPalette' }],
-                ]],
+                ], { defaultCollapsed: true }],
             ]],
             ['PROCESS', [
                 ['Options', [
@@ -509,7 +354,12 @@ export const TOOL_CONFIG = {
             ]],
         ],
 
-        canvas: { size: 420 },
+        canvas: { 
+            size: 420, 
+            enableZoom: true, 
+            enablePan: true,
+            displayMode: 'fit'
+        },
 
         onInit: function(values) {
             var self = this;
@@ -521,8 +371,9 @@ export const TOOL_CONFIG = {
             loadCustomPalette();
             updateCustomCount(this);
             updateBatchCount(this);
+            updatePalettePreview(this);
 
-            attachCanvasInteractions(this);
+            // Canvas component handles zoom/pan - see canvas config
 
             // Get adjustment bundle from ToolBase's component registry
             state.adjustmentBundle = this.components.get('imageAdjust');
@@ -564,6 +415,7 @@ export const TOOL_CONFIG = {
                     if (newColour && !state.customPalette.includes(newColour)) {
                         state.customPalette.push(newColour);
                         updateCustomCount(self);
+                        updatePalettePreview(self);
                         persistCustomPalette();
                         self.setStatus('Added ' + newColour + ' to custom palette');
                     }
@@ -576,6 +428,7 @@ export const TOOL_CONFIG = {
                 clearCustomBtn.element.addEventListener('click', function() {
                     state.customPalette = ['#000000', '#FFFFFF'];
                     updateCustomCount(self);
+                    updatePalettePreview(self);
                     persistCustomPalette();
                     var extractedLabel = self.getComponent('extractedCount');
                     if (extractedLabel && extractedLabel.element) {
@@ -630,6 +483,7 @@ export const TOOL_CONFIG = {
 
                     state.customPalette = extracted.slice();
                     updateCustomCount(self);
+                    updatePalettePreview(self);
                     persistCustomPalette();
 
                     self.setValue('palette', 'Custom');
@@ -763,14 +617,23 @@ export const TOOL_CONFIG = {
             // Adjustment bundle handles its own updates now
             // No need to handle gamma/contrast/saturation individually
 
+            // Handle palette change
+            if (key === 'palette') {
+                updatePalettePreview(self);
+                return;
+            }
+
             // Handle canvas resize or display mode change
             // Skip if we're in the middle of resizing from upload
             if ((key === 'canvasWidth' || key === 'canvasHeight' || key === 'displayMode') && !isResizingFromUpload) {
                 // Update canvas dimensions directly
                 if (key === 'canvasWidth' || key === 'canvasHeight') {
                     if (this.canvas) {
-                        this.canvas.width = allValues.canvasWidth || 420;
-                        this.canvas.height = allValues.canvasHeight || 420;
+                        // Canvas resolution matches content exactly - CSS handles zoom/pan
+                        var displayWidth = allValues.canvasWidth || 420;
+                        var displayHeight = allValues.canvasHeight || 420;
+                        this.canvas.width = Math.ceil(displayWidth);
+                        this.canvas.height = Math.ceil(displayHeight);
                         console.log('📐 Canvas resized to:', this.canvas.width, 'x', this.canvas.height);
                     }
                 }
@@ -792,24 +655,9 @@ export const TOOL_CONFIG = {
 
             // Draw current image data if available
             if (state.currentImageData) {
-                // Create temporary canvas for ImageData
-                var tempCanvas = document.createElement('canvas');
-                tempCanvas.width = state.currentImageData.width;
-                tempCanvas.height = state.currentImageData.height;
-                var tempCtx = tempCanvas.getContext('2d');
-                tempCtx.putImageData(state.currentImageData, 0, 0);
-
-                // CRITICAL: Draw at 1:1 pixel ratio - NO SCALING
-                // The canvas resolution should already match the image dimensions
-                // Display mode (Fit/Fill/Actual) only affects CSS display size, not pixel data
+                // Draw image at (0,0) - Canvas.js handles zoom/pan via CSS
                 ctx.imageSmoothingEnabled = false;
-
-                // Apply pan/zoom transform
-                var vt = state.viewTransform;
-                ctx.save();
-                ctx.setTransform(vt.scale, 0, 0, vt.scale, vt.offsetX, vt.offsetY);
-                ctx.drawImage(tempCanvas, 0, 0);
-                ctx.restore();
+                ctx.putImageData(state.currentImageData, 0, 0);
             } else {
                 // Draw placeholder
                 ctx.fillStyle = 'var(--c-text)';
@@ -862,19 +710,20 @@ export const TOOL_CONFIG = {
                 // Get current values including display mode
                 var values = tool.getValues();
                 
-                // Update canvas dimensions directly
+                // Canvas resolution matches image exactly - CSS handles zoom/pan
                 if (tool.canvas) {
                     tool.canvas.width = img.naturalWidth;
                     tool.canvas.height = img.naturalHeight;
                     console.log('📐 Canvas resized to:', tool.canvas.width, 'x', tool.canvas.height);
                     
-                    // Apply display mode
-                    applyDisplayMode(tool, values.displayMode || 'Fit');
+                    // Apply display mode via Canvas component
+                    if (tool.canvasComponent) {
+                        var mode = (values.displayMode || 'Fit').toLowerCase();
+                        tool.canvasComponent.setDisplayMode(mode);
+                    }
                 } else {
                     console.error('❌ tool.canvas is null!');
                 }
-                
-                resetViewTransform();
 
                 // Ensure immediate draw from original image data
                 state.previewImageData = state.originalImageData;
@@ -919,6 +768,19 @@ export const TOOL_CONFIG = {
             var count = state.batchFiles.length;
             batchLabel.element.textContent = count ? (count + ' files selected') : 'No files selected';
         }
+    }
+
+    function updatePalettePreview(tool) {
+        var previewComponent = tool.getComponent('palettePreview');
+        if (!previewComponent || typeof previewComponent.setColours !== 'function') return;
+        
+        var values = tool.getValues();
+        var palette = getCurrentPalette(values);
+        
+        // Update preview component with palette colours
+        previewComponent.setColours(palette);
+        
+        window.debugLog('VERBOSE', `Palette preview updated: ${palette.length} colours`);
     }
 
     function setBatchProgress(tool, value) {
@@ -977,98 +839,7 @@ export const TOOL_CONFIG = {
         }
     }
 
-    function resetViewTransform() {
-        state.viewTransform.scale = 1;
-        state.viewTransform.offsetX = 0;
-        state.viewTransform.offsetY = 0;
-    }
-
-    function canvasPointFromEvent(canvas, event) {
-        var rect = canvas.getBoundingClientRect();
-        var scaleX = canvas.width / rect.width;
-        var scaleY = canvas.height / rect.height;
-        return {
-            x: (event.clientX - rect.left) * scaleX,
-            y: (event.clientY - rect.top) * scaleY
-        };
-    }
-
-    function attachCanvasInteractions(tool) {
-        if (!tool.canvas) return;
-
-        var canvas = tool.canvas;
-        var onWheel = function(event) {
-            event.preventDefault();
-            var point = canvasPointFromEvent(canvas, event);
-            var vt = state.viewTransform;
-            var scaleFactor = event.deltaY < 0 ? 1.1 : 0.9;
-            var newScale = Math.max(0.1, Math.min(20, vt.scale * scaleFactor));
-            var worldX = (point.x - vt.offsetX) / vt.scale;
-            var worldY = (point.y - vt.offsetY) / vt.scale;
-            vt.scale = newScale;
-            vt.offsetX = point.x - worldX * newScale;
-            vt.offsetY = point.y - worldY * newScale;
-            tool.draw();
-        };
-
-        var onMouseDown = function(event) {
-            if (event.button !== 0) return;
-            var point = canvasPointFromEvent(canvas, event);
-            state.viewTransform.isPanning = true;
-            state.viewTransform.lastX = point.x;
-            state.viewTransform.lastY = point.y;
-            canvas.style.cursor = 'grabbing';
-            event.preventDefault();
-        };
-
-        var onMouseMove = function(event) {
-            if (!state.viewTransform.isPanning) return;
-            var point = canvasPointFromEvent(canvas, event);
-            var dx = point.x - state.viewTransform.lastX;
-            var dy = point.y - state.viewTransform.lastY;
-            state.viewTransform.offsetX += dx;
-            state.viewTransform.offsetY += dy;
-            state.viewTransform.lastX = point.x;
-            state.viewTransform.lastY = point.y;
-            tool.draw();
-        };
-
-        var onMouseUp = function() {
-            state.viewTransform.isPanning = false;
-            canvas.style.cursor = 'grab';
-        };
-
-        var onMouseLeave = function() {
-            state.viewTransform.isPanning = false;
-            canvas.style.cursor = 'grab';
-        };
-
-        canvas.addEventListener('wheel', onWheel, { passive: false });
-        canvas.addEventListener('mousedown', onMouseDown);
-        canvas.addEventListener('mousemove', onMouseMove);
-        canvas.addEventListener('mouseup', onMouseUp);
-        canvas.addEventListener('mouseleave', onMouseLeave);
-        canvas.style.cursor = 'grab';
-
-        state.canvasHandlers = {
-            onWheel: onWheel,
-            onMouseDown: onMouseDown,
-            onMouseMove: onMouseMove,
-            onMouseUp: onMouseUp,
-            onMouseLeave: onMouseLeave
-        };
-    }
-
-    function detachCanvasInteractions(tool) {
-        if (!tool || !tool.canvas || !state.canvasHandlers) return;
-        var canvas = tool.canvas;
-        canvas.removeEventListener('wheel', state.canvasHandlers.onWheel);
-        canvas.removeEventListener('mousedown', state.canvasHandlers.onMouseDown);
-        canvas.removeEventListener('mousemove', state.canvasHandlers.onMouseMove);
-        canvas.removeEventListener('mouseup', state.canvasHandlers.onMouseUp);
-        canvas.removeEventListener('mouseleave', state.canvasHandlers.onMouseLeave);
-        state.canvasHandlers = null;
-    }
+    // Canvas component handles zoom/pan - no internal handlers needed
 
     function readImageDataFromFile(file) {
         return new Promise(function(resolve, reject) {
@@ -1244,8 +1015,8 @@ export const TOOL_CONFIG = {
         var values = tool.getValues();
         var palette = getCurrentPalette(values);
         var paletteLabs = palette.map(function(hex) {
-            var rgb = ColorSpaceConverter.hexToRgb(hex);
-            return ColorSpaceConverter.rgbToLab(rgb.r, rgb.g, rgb.b);
+            var rgb = ColorSpace.hexToRgb(hex);
+            return ColorSpace.rgbToLab(rgb.r, rgb.g, rgb.b);
         });
         var algorithm = values.ditherAlgorithm || 'None';
         if (algorithm && algorithm.startsWith('───')) {
@@ -1305,6 +1076,7 @@ export const TOOL_CONFIG = {
 
                 state.customPalette = colours;
                 updateCustomCount(tool);
+                updatePalettePreview(tool);
                 persistCustomPalette();
                 tool.setValue('palette', 'Custom');
 
@@ -1422,7 +1194,6 @@ export class ColourQuantizerTool {
 
     destroy() {
         if (this.tool) {
-            detachCanvasInteractions(this.tool);
             this.tool.destroy();
         }
         // Reset state

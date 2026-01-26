@@ -147,18 +147,27 @@ export class ToolTestUI {
         // Get sidebar config for this mode
         const sidebarConfig = this._getSidebarConfigForMode(mode);
 
-        return {
+        const config = {
             title: 'TOOL TEST UI',
             sidebar: sidebarConfig,
             canvas: {
-                width: 420,
-                height: 420,
-                showControls: false
+                fillContainer: true,     // Viewport fills panel (rectangular)
+                contentWidth: 2100,      // Canvas width (2x typical viewport width)
+                contentHeight: 1400,     // Canvas height (2x typical viewport height)
+                showControls: false,
+                enableZoom: true,
+                enablePan: true,
+                minZoom: 0.25,
+                maxZoom: 4.0,
+                showScrollbar: true  // Enable custom scrollbar
             },
             onInit: (values) => this._onInit(values),
             onUpdate: (key, value, allValues) => this._onUpdate(key, value, allValues),
             onDraw: (ctx, canvas, values) => this._onDraw(ctx, canvas, values)
         };
+        
+        console.log('🎨 ToolTestUI creating config with canvas:', config.canvas);
+        return config;
     }
 
     _getSidebarConfigForMode(mode) {
@@ -468,6 +477,8 @@ export class ToolTestUI {
     }
 
     _updateAnimation() {
+        if (!this.tool) return; // Guard against null tool
+        
         var values = this.tool.getValues();
         var gravity = values.gravity || 0.5;
         var bounce = values.bounce || 0.8;

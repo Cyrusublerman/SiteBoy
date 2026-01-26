@@ -2023,10 +2023,10 @@ body.with-subheader .content-container.tool-viewport {
 }
 
 /* =================================================================
-   SCROLLBAR STYLING - Clean & Simple
+   SCROLLBAR STYLING - Native & Custom
    ================================================================= */
 
-/* RULE: No arrows ever. Only thumb. Always pinned right. Width matches margin system. */
+/* NATIVE SCROLLBAR STYLING (Fallback) */
 
 /* Remove ALL scrollbar buttons/arrows globally */
 ::-webkit-scrollbar-button {
@@ -2080,6 +2080,73 @@ body.with-subheader .content-container.tool-viewport {
     :root {
         --mobile-margin: 12px; /* Restore full margin since no scrollbar */
     }
+}
+
+/* CUSTOM SCROLLBAR COMPONENT */
+
+.custom-scrollbar {
+    position: absolute;
+    z-index: 100;
+    pointer-events: all;
+    transition: opacity 0.3s ease;
+}
+
+.custom-scrollbar[data-orientation="vertical"] {
+    /* Position/dimensions set via inline styles (mathematical precision) */
+}
+
+.custom-scrollbar[data-orientation="horizontal"] {
+    /* Position/dimensions set via inline styles (mathematical precision) */
+}
+
+.scrollbar-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--c-bg);
+    box-sizing: border-box;
+}
+
+.scrollbar-track.with-border {
+    border: 1px solid var(--c-border);
+}
+
+.scrollbar-thumb {
+    position: absolute;
+    background: var(--c-text);
+    cursor: grab;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.scrollbar-thumb:active {
+    cursor: grabbing;
+}
+
+.scrollbar-thumb:hover {
+    background: var(--c-accent);
+}
+
+/* Hide when inactive (optional fade behavior) */
+.custom-scrollbar.inactive {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.custom-scrollbar.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Hide native scrollbar when custom scrollbar present */
+[data-custom-scrollbar]::-webkit-scrollbar {
+    display: none;
+}
+
+[data-custom-scrollbar] {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
 }
 
 /* =================================================================

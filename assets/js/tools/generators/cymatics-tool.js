@@ -214,9 +214,8 @@ import { WaveSolver } from '../../shared/algorithms/index.js';
                     break;
                     
                 // Canvas resize - reinitialize particles
-                case '_canvasWidth':
-                case '_canvasHeight':
-                    initParticles(this.canvas.width, this.canvas.height);
+                case '_canvasResize':
+                    initParticles(value.width, value.height);
                     break;
             }
         },

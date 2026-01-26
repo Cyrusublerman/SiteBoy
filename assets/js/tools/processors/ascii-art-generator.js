@@ -12,7 +12,15 @@
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { sobel } from '../../shared/algorithms/edge-detection/edge-operators.js';
-import { extractTileMetrics, findBestMatch } from '../../shared/algorithms/ascii/index.js';
+import { 
+    extractTileMetrics, 
+    findBestMatch, 
+    calculateToneCost, 
+    calculateQuadrantCost, 
+    calculateSignatureCost, 
+    calculateOrientationCostWithMode 
+} from '../../shared/algorithms/ascii/index.js';
+import { quantizeByPixelGroup } from '../../shared/algorithms/image/image-quantize-grid.js';
 import { 
     detectSystemFonts, 
     loadGoogleFont, 
@@ -30,6 +38,8 @@ let asciiGrid = null; // Now stores structured data with colors
 let glyphAtlas = null;
 let processedImageData = null;
 let processedImageBitmap = null;
+let processedPreviewData = null;
+let lastCanvasScale = 1;
 let isPreparingBitmap = false;
 let systemFonts = []; // Detected system fonts
 let loadedCustomFonts = []; // Google Fonts or uploaded fonts
@@ -76,7 +86,8 @@ const CHAR_SETS = {
                         'Web Page',
                         'Print (A4 Portrait)',
                         'Print (A4 Landscape)',
-                        'Document (Monospace)'
+                        'Document (Monospace)',
+                        'Document (Non-monospace)'
                     ], { key: 'outputTarget', value: 'Generic' }],
                 ]],
                 ['Source', [
@@ -85,10 +96,10 @@ const CHAR_SETS = {
                 ['Resolution', [
                     ['slider', 'Canvas Width', 196, 4096, 14, { value: 420, key: 'canvasWidth', withNumber: true }],
                     ['slider', 'Canvas Height', 196, 4096, 14, { value: 420, key: 'canvasHeight', withNumber: true }],
-                    ['slider', 'Target Width (chars)', 40, 200, 1, { value: 80, key: 'targetCharWidth', withNumber: true }],
-                    ['radio', 'Image Fit', ['Stretch', 'Fit', 'Fill', 'Center', 'Canvas from Image'], { key: 'imageFit', selectedValue: 'Stretch' }],
-                    ['button', 'A4 Portrait (595×842)', null, { key: 'setA4Portrait' }],
-                    ['button', 'A4 Landscape (842×595)', null, { key: 'setA4Landscape' }],
+                    ['radio', 'Image Fit (default: Canvas from Image)', ['Stretch', 'Fit', 'Fill', 'Center', 'Canvas from Image'], { key: 'imageFit', selectedValue: 'Canvas from Image' }],
+                    ['dropdown', 'Canvas Scale', ['¼×', '½×', '1×', '2×', '4×'], { key: 'canvasScale', value: '1×' }],
+                    ['button', 'A4 Portrait', null, { key: 'setA4Portrait' }],
+                    ['button', 'A4 Landscape', null, { key: 'setA4Landscape' }],
                 ]],
                 ['Image Adjustments', [
                     ['adjustment-bundle', 'professional', null, {
@@ -105,7 +116,7 @@ const CHAR_SETS = {
                         'Guide Only'
                     ], { key: 'edgeMode', value: 'Off' }],
                     ['slider', 'Edge Strength', 0, 100, 1, { value: 100, key: 'edgeStrength', withNumber: true }],
-                    ['toggle', 'Options', ['Invert'], { key: 'processOptions', selectedValues: [] }],
+                    ['toggle', 'Options', ['Invert Image'], { key: 'processOptions', selectedValues: [] }],
                 ]],
                 ['Preview', [
                     ['toggle', 'Split View', ['Split View'], { key: 'showSplitView', selectedValues: [] }],
@@ -130,6 +141,12 @@ const CHAR_SETS = {
                     ['slider', 'Line Height %', 80, 120, 1, { value: 100, key: 'lineHeight', withNumber: true }],
                     ['slider', 'Letter Spacing', -2, 2, 0.1, { value: 0, key: 'letterSpacing', withNumber: true }],
                 ]],
+                ['Layout', [
+                    ['slider', 'Margin X (chars)', 0, 20, 1, { value: 0, key: 'marginX', withNumber: true }],
+                    ['slider', 'Margin Y (chars)', 0, 20, 1, { value: 0, key: 'marginY', withNumber: true }],
+                    ['slider', 'Offset X (px)', -200, 200, 1, { value: 0, key: 'offsetX', withNumber: true }],
+                    ['slider', 'Offset Y (px)', -200, 200, 1, { value: 0, key: 'offsetY', withNumber: true }],
+                ]],
                 ['Layout Mode', [
                     ['radio', 'Mode', ['Monospace (Grid)', 'Proportional (Sequential)'], { key: 'fontMode', selectedValue: 'Monospace (Grid)' }],
                 ]],
@@ -149,13 +166,8 @@ const CHAR_SETS = {
                 ['Generate', [
                     ['button', 'Generate ASCII', null, { key: 'process' }],
                 ]],
-                ['Spatial Resolution', [
-                    ['dropdown', 'Quadrants', [
-                        '2×2 (Fast)',
-                        '3×3 (Balanced)',
-                        '4×4 (Accurate)',
-                        '5×5 (Maximum)'
-                    ], { key: 'spatialResolution', value: '3×3 (Balanced)' }],
+                ['Sampling Resolution', [
+                    ['dropdown', 'Pixel Group (px)', ['1', '2', '3', '4', '5'], { key: 'pixelGroup', value: '1' }],
                 ]],
                 ['Matching Weights', [
                     ['slider', 'Tone α', 0, 1, 0.01, { value: 0.4, key: 'toneWeight', withNumber: true }],
@@ -168,6 +180,7 @@ const CHAR_SETS = {
                         'Ignore'
                     ], { key: 'flowMode', value: 'Gradient Perpendicular (Contour)' }],
                     ['slider', 'Signature δ', 0, 1, 0.01, { value: 0.1, key: 'sigWeight', withNumber: true }],
+                    ['toggle', 'Mapping', ['Invert Mapping'], { key: 'invertMapping', selectedValues: [] }],
                 ]],
             ]],
             
@@ -287,8 +300,8 @@ const CHAR_SETS = {
             wireButton(this, 'process', function() { processImage(self); });
             wireButton(this, 'loadGoogleFont', function() { loadGoogleFontHandler(self); });
             wireButton(this, 'buildAtlas', function() { handleBuildAtlas(self); });
-            wireButton(this, 'setA4Portrait', function() { setCanvasSize(self, 595, 842); });
-            wireButton(this, 'setA4Landscape', function() { setCanvasSize(self, 842, 595); });
+            wireButton(this, 'setA4Portrait', function() { applyCanvasAspectRatio(self, 595 / 842); });
+            wireButton(this, 'setA4Landscape', function() { applyCanvasAspectRatio(self, 842 / 595); });
             
             // Apply initial display mode (Actual)
             applyDisplayMode(this, values.displayMode || 'Actual');
@@ -304,7 +317,7 @@ const CHAR_SETS = {
                 return;
             }
             
-            // Canvas resize - resize AND reprocess if image loaded
+            // Canvas resize - resize AND rebuild/reprocess if image loaded
             if (key === 'canvasWidth' || key === 'canvasHeight') {
                 // Update canvas dimensions directly
                 if (this.canvas) {
@@ -316,6 +329,7 @@ const CHAR_SETS = {
                 }
                 // Reprocess with new canvas size
                 if (sourceImage) {
+                    triggerAutoRebuild(self, true);
                     processImage(self);
                 }
                 return;
@@ -349,21 +363,26 @@ const CHAR_SETS = {
             // Output target mode
             if (key === 'outputTarget') {
                 applyOutputTargetConstraints(self, value);
+                triggerAutoRebuild(self, true);
+                if (sourceImage) {
+                    processImage(self);
+                } else {
+                    self.draw();
+                }
                 return;
             }
             
-            // Typography changes - allow edits but require rebuild when locked
-            if (key === 'font' || key === 'fontSize' || key === 'charSet' || key === 'lineHeight' || key === 'letterSpacing' || key === 'spatialResolution') {
-                if (atlasLocked) {
-                    atlasWarning = true;
-                    rebuildArmed = false;
-                    updateAtlasStatusLabel(self);
-                    updateAtlasButton(self);
-                    return;
+            // Typography changes - always rebuild
+            if (key === 'font' || key === 'fontSize' || key === 'charSet' || key === 'lineHeight' || key === 'letterSpacing') {
+                if (key === 'font') {
+                    applyFontModeFromFont(self, value);
                 }
-                
-                updateAtlasStatusLabel(self);
-                updateAtlasButton(self);
+                triggerAutoRebuild(self, true);
+                if (sourceImage) {
+                    processImage(self);
+                } else {
+                    self.draw();
+                }
                 return;
             }
             
@@ -385,33 +404,53 @@ const CHAR_SETS = {
                 return;
             }
             
-            // Image fit mode / target width - update canvas or reprocess
-            if (key === 'imageFit' || key === 'targetCharWidth') {
+            // Image fit mode / canvas scale - update canvas and rebuild
+            if (key === 'imageFit' || key === 'canvasScale') {
                 if (allValues.imageFit === 'Canvas from Image') {
                     applyCanvasFromImage(self, allValues);
+                    triggerAutoRebuild(self, true);
+                    if (sourceImage) {
+                        processImage(self);
+                    }
+                    return;
+                }
+                if (key === 'canvasScale') {
+                    applyCanvasScale(self, allValues);
+                    triggerAutoRebuild(self, true);
+                    if (sourceImage) {
+                        processImage(self);
+                    }
                     return;
                 }
                 if (sourceImage) {
+                    triggerAutoRebuild(self, true);
                     processImage(self);
                 }
                 return;
             }
             
-            // Processing options - reprocess image
-            if (key === 'processOptions' || key === 'edgeMode' || key === 'edgeStrength') {
+            // Processing options - rebuild + reprocess
+            if (key === 'processOptions' || key === 'edgeMode' || key === 'edgeStrength' || key === 'pixelGroup') {
+                if (sourceImage) {
+                    triggerAutoRebuild(self, true);
+                    processImage(self);
+                }
+                return;
+            }
+            
+            // Density and layout controls - rebuild + reprocess
+            if (key === 'lineHeight' || key === 'letterSpacing' || key === 'marginX' || key === 'marginY' || key === 'offsetX' || key === 'offsetY') {
+                triggerAutoRebuild(self, true);
                 if (sourceImage) {
                     processImage(self);
+                } else {
+                    self.draw();
                 }
-                return;
-            }
-            
-            // Density controls - just redraw (affects display, not processing)
-            if (key === 'lineHeight' || key === 'letterSpacing') {
-                self.draw();
                 return;
             }
             
             if (key === 'fontMode') {
+                triggerAutoRebuild(self, true);
                 if (sourceImage) {
                     processImage(self);
                 } else {
@@ -453,13 +492,13 @@ const CHAR_SETS = {
             var splitPosition = Math.max(0, Math.min(100, values.splitPosition || 50)) / 100;
             var dividerX = Math.floor(w * splitPosition);
             
-            if (showSplit && processedImageData) {
+            if (showSplit && (processedPreviewData || processedImageData)) {
                 // Left: adjusted image
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(0, 0, dividerX, h);
                 ctx.clip();
-                drawAdjustedImage(ctx, dividerX, h);
+                drawAdjustedImage(ctx, w, h, values);
                 ctx.restore();
                 
                 // Right: ASCII output
@@ -467,7 +506,7 @@ const CHAR_SETS = {
                 ctx.beginPath();
                 ctx.rect(dividerX, 0, w - dividerX, h);
                 ctx.clip();
-                if (asciiGrid && asciiGrid.length > 0) {
+            if (asciiGrid && asciiGrid.length > 0) {
                     drawAscii(ctx, w, h, values);
                 }
                 ctx.restore();
@@ -540,29 +579,29 @@ const CHAR_SETS = {
         toolInstance.values.lineHeight = atlasConfig.lineHeight;
         toolInstance.values.letterSpacing = atlasConfig.letterSpacing;
         toolInstance.values.charSet = atlasConfig.charSet;
-        toolInstance.values.spatialResolution = atlasConfig.spatialResolution;
+        toolInstance.values.pixelGroup = atlasConfig.pixelGroup;
         
         var fontComponent = toolInstance.getComponent('font');
         var fontSizeComponent = toolInstance.getComponent('fontSize');
         var lineHeightComponent = toolInstance.getComponent('lineHeight');
         var letterSpacingComponent = toolInstance.getComponent('letterSpacing');
         var charSetComponent = toolInstance.getComponent('charSet');
-        var resolutionComponent = toolInstance.getComponent('spatialResolution');
+        var resolutionComponent = toolInstance.getComponent('pixelGroup');
         
         if (fontComponent && fontComponent.setValue) fontComponent.setValue(atlasConfig.font);
         if (fontSizeComponent && fontSizeComponent.setValue) fontSizeComponent.setValue(atlasConfig.fontSize, false);
         if (lineHeightComponent && lineHeightComponent.setValue) lineHeightComponent.setValue(atlasConfig.lineHeight, false);
         if (letterSpacingComponent && letterSpacingComponent.setValue) letterSpacingComponent.setValue(atlasConfig.letterSpacing, false);
         if (charSetComponent && charSetComponent.setValue) charSetComponent.setValue(atlasConfig.charSet);
-        if (resolutionComponent && resolutionComponent.setValue) resolutionComponent.setValue(atlasConfig.spatialResolution);
+        if (resolutionComponent && resolutionComponent.setValue) resolutionComponent.setValue(atlasConfig.pixelGroup);
         
         isRevertingAtlas = false;
     }
     
-    function handleBuildAtlas(toolInstance, skipProcess) {
+    function handleBuildAtlas(toolInstance, skipProcess, forceRebuild) {
         var values = toolInstance.getValues();
         
-        if (atlasLocked && !rebuildArmed) {
+        if (atlasLocked && !rebuildArmed && !forceRebuild) {
             rebuildArmed = true;
             atlasWarning = false;
             updateAtlasButton(toolInstance);
@@ -582,7 +621,7 @@ const CHAR_SETS = {
             lineHeight: values.lineHeight,
             letterSpacing: values.letterSpacing,
             charSet: values.charSet,
-            spatialResolution: values.spatialResolution
+            pixelGroup: values.pixelGroup
         };
         
         updateAtlasButton(toolInstance);
@@ -592,12 +631,16 @@ const CHAR_SETS = {
             processImage(toolInstance);
         }
     }
+
+    function triggerAutoRebuild(toolInstance, skipProcess) {
+        handleBuildAtlas(toolInstance, skipProcess, true);
+    }
     
     function buildGlyphAtlas(values) {
         var charSet = CHAR_SETS[values.charSet] || CHAR_SETS['Extended'];
         var font = values.font || 'Atkinson Hyperlegible';
         var fontSize = values.fontSize || 12;
-        var resolution = parseSpatialResolution(values.spatialResolution || '3×3 (Balanced)');
+        var resolution = parsePixelGroup(values.pixelGroup || '1');
         
         // Measure exact character dimensions
         var metrics = measureCharacterMetrics(font, fontSize);
@@ -637,13 +680,13 @@ const CHAR_SETS = {
             ctx.fillText(char, 0, 0);
             
             // Measure character width for proportional mode
-            var charWidth = Math.ceil(ctx.measureText(char).width);
+            var charWidth = Math.max(1, Math.ceil(ctx.measureText(char).width));
             glyphAtlas.widthMap[char] = charWidth;
             totalWidth += charWidth;
             
-            // Get image data and extract metrics
+            // Get image data and extract metrics using glyph width
             var imageData = ctx.getImageData(0, 0, tw, th);
-            var metricsData = extractTileMetrics(imageData.data, tw, 0, 0, tw, th, resolution);
+        var metricsData = extractTileMetrics(imageData.data, tw, 0, 0, Math.min(charWidth, tw), th, resolution);
             
             var density = metricsData.density;
             var quadrants = metricsData.quadrants;
@@ -652,6 +695,7 @@ const CHAR_SETS = {
             
             glyphAtlas.push({
                 char: char,
+                width: charWidth,
                 density: density,
                 quadrants: quadrants,
                 orientation: orientation,
@@ -717,6 +761,8 @@ const CHAR_SETS = {
             var img = new Image();
             img.onload = function() {
                 sourceImage = img;
+                toolInstance.values.sourceImageWidth = img.width;
+                toolInstance.values.sourceImageHeight = img.height;
                 window.debugLog('TOOLS', `Image loaded: ${img.width}×${img.height}px`);
                 processedImageData = null;
                 processedImageBitmap = null;
@@ -739,84 +785,15 @@ const CHAR_SETS = {
                     console.error('❌ Adjustment bundle not found');
                 }
                 
-                if (!atlasLocked) {
-                    window.debugLog('TOOLS', '🔨 Auto-building atlas on first image upload');
-                    var values = toolInstance.getValues();
-                    var skipProcess = values.imageFit === 'Canvas from Image';
-                    handleBuildAtlas(toolInstance, skipProcess);
-                    if (skipProcess) {
-                        applyCanvasFromImage(toolInstance, values);
-                    }
-                }
+                window.debugLog('TOOLS', '🔨 Auto-building atlas after image upload');
+                var values = toolInstance.getValues();
+                var skipProcess = values.imageFit === 'Canvas from Image';
+                triggerAutoRebuild(toolInstance, true);
                 
-                // Set canvas to exact image dimensions (no scaling)
-                var width = img.width;
-                var height = img.height;
-                
-                // Snap to 14px grid for F-system compatibility
-                width = Math.floor(width / 14) * 14;
-                height = Math.floor(height / 14) * 14;
-                
-                console.log(`📐 Setting canvas to ${width}×${height}px (snapped to 14px grid)`);
-                window.debugLog('TOOLS', `Setting canvas to ${width}×${height}px (snapped to 14px grid)`);
-                
-                // Update canvas size directly
-                if (toolInstance.canvas) {
-                    console.log(`✏️ Updating canvas from ${toolInstance.canvas.width}×${toolInstance.canvas.height} to ${width}×${height}`);
-                    toolInstance.canvas.width = width;
-                    toolInstance.canvas.height = height;
-                    console.log(`✅ Canvas resized to ${toolInstance.canvas.width}×${toolInstance.canvas.height}px`);
-                    window.debugLog('TOOLS', `Canvas resized to ${width}×${height}px`);
-                    
-                    // Reapply display mode after canvas resize
-                    var displayMode = toolInstance.values.displayMode || 'Actual';
-                    applyDisplayMode(toolInstance, displayMode);
-                    console.log(`🎭 Display mode reapplied: ${displayMode}`);
+                if (skipProcess) {
+                    applyCanvasFromImage(toolInstance, values);
                 } else {
-                    console.error('❌ toolInstance.canvas is null!');
-                }
-                
-                // Update canvas size sliders and their displays (without triggering onUpdate loop)
-                var widthSlider = toolInstance.getComponent('canvasWidth');
-                var heightSlider = toolInstance.getComponent('canvasHeight');
-                
-                console.log('🎚️ Width component:', widthSlider);
-                console.log('🎚️ Width component keys:', widthSlider ? Object.keys(widthSlider) : 'none');
-                
-                // Update the tool's values directly
-                toolInstance.values.canvasWidth = width;
-                toolInstance.values.canvasHeight = height;
-                console.log('📊 Tool values updated:', toolInstance.values.canvasWidth, toolInstance.values.canvasHeight);
-                
-                // Try to find and update input elements directly via DOM
-                if (widthSlider && widthSlider.element) {
-                    var sliderInputs = widthSlider.element.querySelectorAll('input[type="range"]');
-                    var numberInputs = widthSlider.element.querySelectorAll('input[type="number"]');
-                    
-                    console.log('🔍 Found via DOM:', sliderInputs.length, 'range inputs,', numberInputs.length, 'number inputs');
-                    
-                    if (sliderInputs.length > 0) {
-                        sliderInputs[0].value = width;
-                        console.log('✅ Width slider updated via DOM to', width);
-                    }
-                    if (numberInputs.length > 0) {
-                        numberInputs[0].value = width;
-                        console.log('✅ Width field updated via DOM to', width);
-                    }
-                }
-                
-                if (heightSlider && heightSlider.element) {
-                    var sliderInputs = heightSlider.element.querySelectorAll('input[type="range"]');
-                    var numberInputs = heightSlider.element.querySelectorAll('input[type="number"]');
-                    
-                    if (sliderInputs.length > 0) {
-                        sliderInputs[0].value = height;
-                        console.log('✅ Height slider updated via DOM to', height);
-                    }
-                    if (numberInputs.length > 0) {
-                        numberInputs[0].value = height;
-                        console.log('✅ Height field updated via DOM to', height);
-                    }
+                    setCanvasSize(toolInstance, img.width, img.height);
                 }
                 
             };
@@ -854,11 +831,14 @@ const CHAR_SETS = {
         // Get processing options (ASCII-specific)
         var edgeMode = values.edgeMode || 'Off';
         var edgeStrength = (values.edgeStrength || 100) / 100;
-        var invert = (values.processOptions || []).indexOf('Invert') >= 0;
+        var invert = (values.processOptions || []).indexOf('Invert Image') >= 0;
         
         // Use measured character dimensions (pixel-perfect)
         var tw = glyphAtlas.charMetrics.width;
         var th = glyphAtlas.charMetrics.height;
+        var lineHeightPercent = values.lineHeight || 100;
+        var letterSpacing = values.letterSpacing || 0;
+        var lineHeight = (th * lineHeightPercent) / 100;
         
         // Calculate grid dimensions - use CANVAS size, not source image
         // This prevents cropping by making the canvas size determine the grid
@@ -866,20 +846,25 @@ const CHAR_SETS = {
         var canvasHeight = values.canvasHeight || 420;
         
         // Calculate how many characters fit the canvas
-        var cols = Math.floor(canvasWidth / tw);
-        var rows = Math.floor(canvasHeight / th);
+        var cols = Math.floor(canvasWidth / (tw + letterSpacing));
+        var rows = Math.floor(canvasHeight / lineHeight);
         
         // Calculate exact output dimensions (may be slightly less than canvas)
-        var outputWidth = cols * tw;
-        var outputHeight = rows * th;
+        var outputWidth = cols * (tw + letterSpacing);
+        var outputHeight = rows * lineHeight;
+        
+        toolInstance.values.gridCols = cols;
+        toolInstance.values.gridRows = rows;
+        toolInstance.values.outputWidth = Math.round(outputWidth);
+        toolInstance.values.outputHeight = Math.round(outputHeight);
         
         window.debugLog('TOOLS', `Canvas: ${canvasWidth}×${canvasHeight}px → Grid: ${cols}×${rows} chars → Output: ${outputWidth}×${outputHeight}px`);
         
-        // Create temporary canvas at output resolution (not source!)
-        // Scale source image to fit exactly into character grid based on fit mode
+        // Create temporary canvas at canvas resolution
+        // Scale source image to fit exactly into canvas based on fit mode
         var canvas = document.createElement('canvas');
-        canvas.width = outputWidth;
-        canvas.height = outputHeight;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
         var ctx = canvas.getContext('2d');
         
         // Get image fit mode
@@ -902,8 +887,15 @@ const CHAR_SETS = {
         
         // Calculate source region and destination region based on fit mode
         var sx = 0, sy = 0, sw = sourceWidth, sh = sourceHeight;
-        var dx = 0, dy = 0, dw = outputWidth, dh = outputHeight;
+        var dx = 0, dy = 0, dw = canvasWidth, dh = canvasHeight;
         
+        var sourceMatchesCanvas = sourceWidth === canvasWidth && sourceHeight === canvasHeight;
+        
+        if (sourceMatchesCanvas) {
+            imageFit = 'Stretch';
+        }
+        
+        if (!sourceMatchesCanvas) {
         switch(imageFit) {
             case 'Stretch':
                 // Default - stretch to fill entire output
@@ -912,60 +904,69 @@ const CHAR_SETS = {
                 
             case 'Fit':
                 // Scale to fit, maintain aspect ratio, may have margins
-                var scale = Math.min(outputWidth / sourceWidth, outputHeight / sourceHeight);
+                var canvasAspect = canvasWidth / canvasHeight;
+                var sourceAspect = sourceWidth / sourceHeight;
+                var scale = (canvasAspect >= sourceAspect)
+                    ? (canvasHeight / sourceHeight)
+                    : (canvasWidth / sourceWidth);
                 dw = sourceWidth * scale;
                 dh = sourceHeight * scale;
-                dx = (outputWidth - dw) / 2;
-                dy = (outputHeight - dh) / 2;
+                dx = (canvasWidth - dw) / 2;
+                dy = (canvasHeight - dh) / 2;
                 break;
                 
             case 'Fill':
                 // Scale to fill, maintain aspect ratio, may crop
-                var scale = Math.max(outputWidth / sourceWidth, outputHeight / sourceHeight);
+                var canvasAspect = canvasWidth / canvasHeight;
+                var sourceAspect = sourceWidth / sourceHeight;
+                var scale = (canvasAspect >= sourceAspect)
+                    ? (canvasWidth / sourceWidth)
+                    : (canvasHeight / sourceHeight);
                 var scaledWidth = sourceWidth * scale;
                 var scaledHeight = sourceHeight * scale;
-                sx = (scaledWidth > outputWidth) ? (scaledWidth - outputWidth) / (2 * scale) : 0;
-                sy = (scaledHeight > outputHeight) ? (scaledHeight - outputHeight) / (2 * scale) : 0;
-                sw = outputWidth / scale;
-                sh = outputHeight / scale;
+                sx = (scaledWidth > canvasWidth) ? (scaledWidth - canvasWidth) / (2 * scale) : 0;
+                sy = (scaledHeight > canvasHeight) ? (scaledHeight - canvasHeight) / (2 * scale) : 0;
+                sw = canvasWidth / scale;
+                sh = canvasHeight / scale;
                 break;
                 
             case 'Center':
                 // No scaling, center crop
-                sx = Math.max(0, (sourceWidth - outputWidth) / 2);
-                sy = Math.max(0, (sourceHeight - outputHeight) / 2);
-                sw = Math.min(sourceWidth, outputWidth);
-                sh = Math.min(sourceHeight, outputHeight);
-                dx = Math.max(0, (outputWidth - sourceWidth) / 2);
-                dy = Math.max(0, (outputHeight - sourceHeight) / 2);
+                sx = Math.max(0, (sourceWidth - canvasWidth) / 2);
+                sy = Math.max(0, (sourceHeight - canvasHeight) / 2);
+                sw = Math.min(sourceWidth, canvasWidth);
+                sh = Math.min(sourceHeight, canvasHeight);
+                dx = Math.max(0, (canvasWidth - sourceWidth) / 2);
+                dy = Math.max(0, (canvasHeight - sourceHeight) / 2);
                 dw = sw;
                 dh = sh;
                 break;
+            }
         }
         
         // Fill with black first (for Fit mode margins)
         ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, outputWidth, outputHeight);
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         
         // Draw source image with calculated regions
         ctx.drawImage(sourceCanvas, sx, sy, sw, sh, dx, dy, dw, dh);
-        var imageData = ctx.getImageData(0, 0, outputWidth, outputHeight);
+        processedPreviewData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
         
-        var data = imageData.data;
+        var data = new Uint8ClampedArray(processedPreviewData.data);
         
         // Apply ASCII-specific processing options
         // (Edge detection and invert are NOT in adjustment bundle)
         
         if (edgeMode !== 'Off') {
             window.debugLog('TOOLS', `🔍 Applying edge detection: ${edgeMode}`);
-            var edges = applyEdgeDetection(data, outputWidth, outputHeight);
+            var edges = applyEdgeDetection(data, canvasWidth, canvasHeight);
             
             switch (edgeMode) {
                 case 'Replace (Current)':
                     data = edges;
                     break;
                 case 'Overlay (Multiply)':
-                    for (var i = 0; i < data.length; i += 4) {
+            for (var i = 0; i < data.length; i += 4) {
                         var edgeValue = edges[i] / 255;
                         var darkness = 1 - (edgeValue * edgeStrength);
                         data[i] = Math.min(255, data[i] * darkness);
@@ -1002,16 +1003,19 @@ const CHAR_SETS = {
             data = applyInvert(data);
         }
         
-        var resolution = parseSpatialResolution(values.spatialResolution || '3×3 (Balanced)');
+        var pixelGroup = parsePixelGroup(values.pixelGroup || '1');
         var fontMode = values.fontMode || 'Monospace (Grid)';
+        var sampleData = (pixelGroup > 1)
+            ? quantizeByPixelGroup(data, canvasWidth, canvasHeight, pixelGroup)
+            : data;
         
         if (fontMode === 'Proportional (Sequential)') {
-            processImageProportional(toolInstance, data, outputWidth, outputHeight, values, {
+            processImageProportional(toolInstance, sampleData, canvasWidth, canvasHeight, values, {
                 tone: toneWeight,
                 quadrant: quadrantWeight,
                 orientation: orientWeight,
                 signature: sigWeight
-            }, flowMode, resolution);
+            }, flowMode, pixelGroup);
             return;
         }
         
@@ -1023,7 +1027,13 @@ const CHAR_SETS = {
         for (var row = 0; row < rows; row++) {
             var line = [];
             for (var col = 0; col < cols; col++) {
-                var tile = extractTileMetrics(data, outputWidth, col * tw, row * th, tw, th, resolution);
+                var offsets = getLayoutOffsets(values, canvasWidth, canvasHeight, outputWidth, outputHeight, lineHeight, tw);
+                var tileX = offsets.offsetX + col * (tw + letterSpacing);
+                var tileY = offsets.offsetY + row * lineHeight;
+                var tile = extractTileMetrics(sampleData, canvasWidth, Math.floor(tileX), Math.floor(tileY), Math.floor(tw), Math.floor(th), pixelGroup);
+                if ((values.invertMapping || []).indexOf('Invert Mapping') >= 0) {
+                    tile = invertTileMetrics(tile);
+                }
                 var bestChar = findBestMatch(tile, glyphAtlas, {
                     tone: toneWeight,
                     quadrant: quadrantWeight,
@@ -1041,7 +1051,7 @@ const CHAR_SETS = {
         toolInstance.draw();
     }
     
-    function processImageProportional(toolInstance, data, outputWidth, outputHeight, values, weights, flowMode, resolution) {
+    function processImageProportional(toolInstance, data, canvasWidth, canvasHeight, values, weights, flowMode, pixelGroup) {
         if (!glyphAtlas || !glyphAtlas.charMetrics) return;
         
         var charHeight = glyphAtlas.charMetrics.height;
@@ -1049,21 +1059,57 @@ const CHAR_SETS = {
         var lineHeight = (charHeight * lineHeightPercent) / 100;
         var letterSpacing = values.letterSpacing || 0;
         var avgWidth = glyphAtlas.averageWidth || glyphAtlas.charMetrics.width;
+        var marginX = (values.marginX || 0) * avgWidth;
+        var marginY = (values.marginY || 0) * lineHeight;
+        var startX = marginX + (values.offsetX || 0);
+        var startY = marginY + (values.offsetY || 0);
+        var maxX = Math.max(startX, canvasWidth - marginX);
+        var maxY = Math.max(startY, canvasHeight - marginY);
         
         asciiGrid = [];
         
-        var y = 0;
-        while (y + charHeight <= outputHeight) {
+        var y = startY;
+        while (y + charHeight <= maxY) {
             var line = [];
-            var x = 0;
+            var x = startX;
             
-            while (x + avgWidth <= outputWidth) {
-                var tile = extractTileMetrics(data, outputWidth, Math.floor(x), Math.floor(y), Math.floor(avgWidth), Math.floor(charHeight), resolution);
-                var bestChar = findBestMatch(tile, glyphAtlas, weights, flowMode);
-                var charWidth = (glyphAtlas.widthMap && glyphAtlas.widthMap[bestChar]) ? glyphAtlas.widthMap[bestChar] : avgWidth;
+            while (x + 1 <= maxX) {
+                var bestChar = ' ';
+                var bestCost = Infinity;
+                var bestWidth = avgWidth;
+                
+                for (var i = 0; i < glyphAtlas.length; i++) {
+                    var glyph = glyphAtlas[i];
+                    var glyphWidth = Math.max(1, glyph.width || avgWidth);
+                    
+                    if (x + glyphWidth > maxX) {
+                        continue;
+                    }
+                    
+                    var tile = extractTileMetrics(data, canvasWidth, Math.floor(x), Math.floor(y), Math.floor(glyphWidth), Math.floor(charHeight), pixelGroup);
+                    if ((values.invertMapping || []).indexOf('Invert Mapping') >= 0) {
+                        tile = invertTileMetrics(tile);
+                    }
+                    
+                    var toneCost = calculateToneCost(glyph.density, tile.density);
+                    var quadCost = calculateQuadrantCost(glyph.quadrants, tile.quadrants);
+                    var orientCost = calculateOrientationCostWithMode(glyph.orientation, tile, flowMode);
+                    var sigCost = calculateSignatureCost(glyph.signature, tile.signature);
+                    
+                    var cost = weights.tone * toneCost
+                             + weights.quadrant * quadCost
+                             + weights.orientation * orientCost
+                             + weights.signature * sigCost;
+                    
+                    if (cost < bestCost) {
+                        bestCost = cost;
+                        bestChar = glyph.char;
+                        bestWidth = glyphWidth;
+                    }
+                }
                 
                 line.push({ char: bestChar, x: x, y: y });
-                x += charWidth + letterSpacing;
+                x += bestWidth + letterSpacing;
             }
             
             asciiGrid.push(line);
@@ -1163,18 +1209,60 @@ const CHAR_SETS = {
     // RENDERING
     // ═══════════════════════════════════════════════════════════════════════════════
     
+    function getLayoutOffsets(values, canvasWidth, canvasHeight, outputWidth, outputHeight, lineHeight, charWidth) {
+        var marginX = (values.marginX || 0) * charWidth;
+        var marginY = (values.marginY || 0) * lineHeight;
+        var offsetX = (values.offsetX || 0);
+        var offsetY = (values.offsetY || 0);
+        
+        var availableWidth = Math.max(0, canvasWidth - (marginX * 2));
+        var availableHeight = Math.max(0, canvasHeight - (marginY * 2));
+        
+        var baseX = marginX + Math.max(0, (availableWidth - outputWidth) / 2);
+        var baseY = marginY + Math.max(0, (availableHeight - outputHeight) / 2);
+        
+        return {
+            offsetX: baseX + offsetX,
+            offsetY: baseY + offsetY
+        };
+    }
+    
+    function getAsciiLayout(values, canvasWidth, canvasHeight) {
+        if (!asciiGrid || !glyphAtlas || !glyphAtlas.charMetrics) return null;
+        
+        var charWidth = glyphAtlas.charMetrics.width;
+        var charHeight = glyphAtlas.charMetrics.height;
+        var lineHeightPercent = values.lineHeight || 100;
+        var letterSpacing = values.letterSpacing || 0;
+        var lineHeight = (charHeight * lineHeightPercent) / 100;
+        var rows = asciiGrid.length;
+        var cols = asciiGrid[0] ? asciiGrid[0].length : 0;
+        
+        var outputWidth = cols * (charWidth + letterSpacing);
+        var outputHeight = rows * lineHeight;
+        var offsets = getLayoutOffsets(values, canvasWidth, canvasHeight, outputWidth, outputHeight, lineHeight, charWidth);
+        
+        return {
+            charWidth: charWidth,
+            charHeight: charHeight,
+            lineHeight: lineHeight,
+            letterSpacing: letterSpacing,
+            rows: rows,
+            cols: cols,
+            outputWidth: outputWidth,
+            outputHeight: outputHeight,
+            offsetX: offsets.offsetX,
+            offsetY: offsets.offsetY
+        };
+    }
+    
     function drawAscii(ctx, w, h, values) {
         if (!asciiGrid || !glyphAtlas || !glyphAtlas.charMetrics) return;
         
         var font = glyphAtlas.charMetrics.font;
         var fontSize = glyphAtlas.charMetrics.fontSize;
-        var charWidth = glyphAtlas.charMetrics.width;
-        var charHeight = glyphAtlas.charMetrics.height;
-        
-        // Apply density controls
-        var lineHeightPercent = values.lineHeight || 100;
-        var letterSpacing = values.letterSpacing || 0;
-        var lineHeight = (charHeight * lineHeightPercent) / 100;
+        var layout = getAsciiLayout(values, w, h);
+        if (!layout) return;
         
         // Get appearance settings
         var textColor = values.textColor || '#FFFFFF';
@@ -1187,16 +1275,12 @@ const CHAR_SETS = {
         ctx.textBaseline = 'top';
         
         var fontMode = values.fontMode || 'Monospace (Grid)';
-        var rows = asciiGrid.length;
-        var cols = asciiGrid[0] ? asciiGrid[0].length : 0;
-        
-        // Calculate output dimensions with density controls
-        var outputWidth = cols * (charWidth + letterSpacing);
-        var outputHeight = rows * lineHeight;
-        
-        // Center in canvas
-        var offsetX = Math.max(0, (w - outputWidth) / 2);
-        var offsetY = Math.max(0, (h - outputHeight) / 2);
+        var rows = layout.rows;
+        var cols = layout.cols;
+        var outputWidth = layout.outputWidth;
+        var outputHeight = layout.outputHeight;
+        var offsetX = layout.offsetX;
+        var offsetY = layout.offsetY;
         
         if (fontMode === 'Proportional (Sequential)') {
             for (var row = 0; row < rows; row++) {
@@ -1206,21 +1290,21 @@ const CHAR_SETS = {
                 }
             }
         } else {
-            // Draw character grid
-            for (var row = 0; row < rows; row++) {
-                for (var col = 0; col < cols; col++) {
-                    var char = asciiGrid[row][col];
-                    var x = offsetX + col * (charWidth + letterSpacing);
-                    var y = offsetY + row * lineHeight;
-                    
-                    // Draw grid if enabled
-                    if (showGrid) {
-                        ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(x, y, charWidth, charHeight);
-                    }
-                    
-                    ctx.fillText(char, x, y);
+        // Draw character grid
+        for (var row = 0; row < rows; row++) {
+            for (var col = 0; col < cols; col++) {
+                var char = asciiGrid[row][col];
+                    var x = offsetX + col * (layout.charWidth + layout.letterSpacing);
+                    var y = offsetY + row * layout.lineHeight;
+                
+                // Draw grid if enabled
+                if (showGrid) {
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, layout.charWidth, layout.charHeight);
+                }
+                
+                ctx.fillText(char, x, y);
                 }
             }
         }
@@ -1231,25 +1315,36 @@ const CHAR_SETS = {
         ctx.fillText(`${cols}×${rows} chars | ${Math.round(outputWidth)}×${Math.round(outputHeight)}px`, 5, h - 15);
     }
     
-    function drawAdjustedImage(ctx, areaWidth, areaHeight) {
+    function drawAdjustedImage(ctx, areaWidth, areaHeight, values) {
         if (areaWidth <= 0 || areaHeight <= 0) return;
         
-        if (processedImageBitmap) {
-            var scale = Math.min(areaWidth / processedImageBitmap.width, areaHeight / processedImageBitmap.height);
-            var drawWidth = processedImageBitmap.width * scale;
-            var drawHeight = processedImageBitmap.height * scale;
-            var offsetX = Math.floor((areaWidth - drawWidth) / 2);
-            var offsetY = Math.floor((areaHeight - drawHeight) / 2);
-            
+        var previewData = processedPreviewData || processedImageData;
+        if (!previewData) return;
+        
+        var drawWidth = previewData.width;
+        var drawHeight = previewData.height;
+        var offsetX = 0;
+        var offsetY = 0;
+        
+        if (previewData.width !== areaWidth || previewData.height !== areaHeight) {
+            var scale = Math.min(areaWidth / previewData.width, areaHeight / previewData.height);
+            drawWidth = previewData.width * scale;
+            drawHeight = previewData.height * scale;
+            offsetX = Math.floor((areaWidth - drawWidth) / 2);
+            offsetY = Math.floor((areaHeight - drawHeight) / 2);
+        }
+        
+        if (processedImageBitmap && !processedPreviewData) {
             ctx.drawImage(processedImageBitmap, offsetX, offsetY, drawWidth, drawHeight);
             return;
         }
         
-        if (!processedImageData) return;
-        
-        var x = Math.max(0, Math.floor((areaWidth - processedImageData.width) / 2));
-        var y = Math.max(0, Math.floor((areaHeight - processedImageData.height) / 2));
-        ctx.putImageData(processedImageData, x, y);
+        var tempCanvas = document.createElement('canvas');
+        tempCanvas.width = previewData.width;
+        tempCanvas.height = previewData.height;
+        var tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(previewData, 0, 0);
+        ctx.drawImage(tempCanvas, offsetX, offsetY, drawWidth, drawHeight);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -1538,10 +1633,18 @@ const CHAR_SETS = {
         window.debugLog('TOOLS', `Display mode set to: ${mode}`);
     }
     
-    function setCanvasSize(toolInstance, width, height) {
+    function setCanvasSize(toolInstance, width, height, options) {
+        var opts = options || {};
+        var snapToGrid = !!opts.snapToGrid;
+        
+        width = Math.round(width);
+        height = Math.round(height);
+        
+        if (snapToGrid) {
         // Snap to 14px grid
         width = Math.floor(width / 14) * 14;
         height = Math.floor(height / 14) * 14;
+        }
         
         window.debugLog('TOOLS', `Setting canvas to ${width}×${height}px`);
         
@@ -1559,19 +1662,27 @@ const CHAR_SETS = {
         var widthSlider = toolInstance.getComponent('canvasWidth');
         var heightSlider = toolInstance.getComponent('canvasHeight');
         
-        toolInstance.values.canvasWidth = width;
-        toolInstance.values.canvasHeight = height;
+        toolInstance.values.canvasWidth = Math.round(width);
+        toolInstance.values.canvasHeight = Math.round(height);
         
         if (widthSlider) {
+            if (widthSlider.setValue) {
+                widthSlider.setValue(width, false);
+            } else {
             if (widthSlider.sliderEl) widthSlider.sliderEl.value = width;
             if (widthSlider.fieldEl) widthSlider.fieldEl.value = width;
             if (widthSlider.valueDisplay) widthSlider.valueDisplay.textContent = width + (widthSlider.unit || '');
+            }
         }
         
         if (heightSlider) {
+            if (heightSlider.setValue) {
+                heightSlider.setValue(height, false);
+            } else {
             if (heightSlider.sliderEl) heightSlider.sliderEl.value = height;
             if (heightSlider.fieldEl) heightSlider.fieldEl.value = height;
             if (heightSlider.valueDisplay) heightSlider.valueDisplay.textContent = height + (heightSlider.unit || '');
+            }
         }
         
         // Reprocess if image loaded
@@ -1583,18 +1694,12 @@ const CHAR_SETS = {
     }
     
     function applyCanvasFromImage(toolInstance, values) {
-        if (!sourceImage || !glyphAtlas || !glyphAtlas.charMetrics) return;
+        if (!sourceImage) return;
         
-        var targetChars = values.targetCharWidth || 80;
-        var aspect = sourceImage.width / sourceImage.height;
-        var cols = Math.max(1, Math.round(targetChars));
-        var rows = Math.max(1, Math.round(cols / aspect));
-        
-        var tw = glyphAtlas.charMetrics.width;
-        var th = glyphAtlas.charMetrics.height;
-        
-        var width = cols * tw;
-        var height = rows * th;
+        var scale = parseCanvasScale(values.canvasScale || '1×');
+        lastCanvasScale = scale;
+        var width = Math.max(1, Math.round(sourceImage.width * scale));
+        var height = Math.max(1, Math.round(sourceImage.height * scale));
         
         setCanvasSize(toolInstance, width, height);
     }
@@ -1616,6 +1721,7 @@ const CHAR_SETS = {
                     fontFilterComponent.setValue(['Monospace Only']);
                 }
                 updateFontDropdown(toolInstance, toolInstance.values);
+                forceFontMode(toolInstance, 'Monospace (Grid)');
                 setCanvasSize(toolInstance, 80 * charWidth, 24 * charHeight);
                 break;
             }
@@ -1625,15 +1731,16 @@ const CHAR_SETS = {
                     fontFilterComponent.setValue(['Monospace Only']);
                 }
                 updateFontDropdown(toolInstance, toolInstance.values);
+                forceFontMode(toolInstance, 'Monospace (Grid)');
                 setCanvasSize(toolInstance, 120 * charWidth, 40 * charHeight);
                 break;
             }
             case 'Print (A4 Portrait)': {
-                setCanvasSize(toolInstance, 595, 842);
+                applyCanvasAspectRatio(toolInstance, 595 / 842);
                 break;
             }
             case 'Print (A4 Landscape)': {
-                setCanvasSize(toolInstance, 842, 595);
+                applyCanvasAspectRatio(toolInstance, 842 / 595);
                 break;
             }
             case 'Document (Monospace)': {
@@ -1642,7 +1749,18 @@ const CHAR_SETS = {
                     fontFilterComponent.setValue(['Monospace Only']);
                 }
                 updateFontDropdown(toolInstance, toolInstance.values);
+                forceFontMode(toolInstance, 'Monospace (Grid)');
                 setCanvasSize(toolInstance, 80 * charWidth, toolInstance.values.canvasHeight || 420);
+                break;
+            }
+            case 'Document (Non-monospace)': {
+                toolInstance.values.fontFilter = [];
+                if (fontFilterComponent && fontFilterComponent.setValue) {
+                    fontFilterComponent.setValue([]);
+                }
+                updateFontDropdown(toolInstance, toolInstance.values);
+                forceFontMode(toolInstance, 'Proportional (Sequential)');
+                setCanvasSize(toolInstance, toolInstance.values.canvasWidth || 420, toolInstance.values.canvasHeight || 420);
                 break;
             }
             case 'Web Page': {
@@ -1652,13 +1770,80 @@ const CHAR_SETS = {
             case 'Terminal (Custom)':
             case 'Generic':
             default:
+                toolInstance.values.imageFit = 'Canvas from Image';
+                var imageFitComponent = toolInstance.getComponent('imageFit');
+                if (imageFitComponent && imageFitComponent.setValue) {
+                    imageFitComponent.setValue('Canvas from Image');
+                }
                 break;
         }
     }
     
-    function parseSpatialResolution(value) {
-        var match = String(value || '').match(/^(\\d+)/);
-        return match ? parseInt(match[1], 10) : 3;
+    function parsePixelGroup(value) {
+        var parsed = parseInt(value, 10);
+        if (isNaN(parsed) || parsed < 1) return 1;
+        return Math.min(5, parsed);
+    }
+
+    function parseCanvasScale(value) {
+        switch (value) {
+            case '¼×':
+                return 0.25;
+            case '½×':
+                return 0.5;
+            case '2×':
+                return 2;
+            case '4×':
+                return 4;
+            case '1×':
+            default:
+                return 1;
+        }
+    }
+
+    function applyCanvasScale(toolInstance, values) {
+        var nextScale = parseCanvasScale(values.canvasScale || '1×');
+        var currentWidth = values.canvasWidth || (toolInstance.canvas ? toolInstance.canvas.width : 420);
+        var currentHeight = values.canvasHeight || (toolInstance.canvas ? toolInstance.canvas.height : 420);
+        var baseWidth = currentWidth / (lastCanvasScale || 1);
+        var baseHeight = currentHeight / (lastCanvasScale || 1);
+        
+        lastCanvasScale = nextScale;
+        setCanvasSize(toolInstance, baseWidth * nextScale, baseHeight * nextScale);
+    }
+    
+    function applyFontModeFromFont(toolInstance, fontName) {
+        if (!fontName) return;
+        var mode = isMonospaceFont(fontName) ? 'Monospace (Grid)' : 'Proportional (Sequential)';
+        forceFontMode(toolInstance, mode);
+    }
+    
+    function forceFontMode(toolInstance, mode) {
+        toolInstance.values.fontMode = mode;
+        var fontModeComponent = toolInstance.getComponent('fontMode');
+        if (fontModeComponent && fontModeComponent.setValue) {
+            fontModeComponent.setValue(mode);
+        }
+    }
+    
+    function invertTileMetrics(tile) {
+        return {
+            density: 1 - tile.density,
+            quadrants: tile.quadrants ? tile.quadrants.map(function(q) { return 1 - q; }) : tile.quadrants,
+            orientation: tile.orientation,
+            signature: tile.signature
+        };
+    }
+    
+    function applyCanvasAspectRatio(toolInstance, aspect) {
+        var width = toolInstance.values.canvasWidth || (toolInstance.canvas ? toolInstance.canvas.width : 420);
+        var height = toolInstance.values.canvasHeight || (toolInstance.canvas ? toolInstance.canvas.height : 420);
+        var area = Math.max(1, width * height);
+        
+        var newWidth = Math.sqrt(area * aspect);
+        var newHeight = area / newWidth;
+        
+        setCanvasSize(toolInstance, newWidth, newHeight);
     }
     
     
@@ -1676,25 +1861,17 @@ const CHAR_SETS = {
             window.debugLog('TOOLS', `Filtered to ${fonts.length} monospace fonts`);
         }
         
-        // Update dropdown options
-        if (fontComponent.element && fontComponent.element.tagName === 'SELECT') {
-            // Clear existing options
-            fontComponent.element.innerHTML = '';
-            
-            // Add fonts as options
-            for (var i = 0; i < fonts.length; i++) {
-                var option = document.createElement('option');
-                option.value = fonts[i];
-                option.textContent = fonts[i];
-                
-                // Select current font if it matches
-                if (fonts[i] === values.font) {
-                    option.selected = true;
-                }
-                
-                fontComponent.element.appendChild(option);
+        // Update dropdown options via component API
+        if (fontComponent.setOptions) {
+            fontComponent.setOptions(fonts);
+            var nextFont = values.font;
+            if (!nextFont || fonts.indexOf(nextFont) < 0) {
+                nextFont = fonts[0] || '';
             }
-            
+            if (nextFont) {
+                fontComponent.setValue(nextFont);
+                tool.values.font = nextFont;
+            }
             window.debugLog('TOOLS', `Font dropdown updated with ${fonts.length} fonts`);
         }
     }
@@ -1720,12 +1897,8 @@ const CHAR_SETS = {
                 
                 // Select the newly loaded font
                 var fontComponent = toolInstance.getComponent('font');
-                if (fontComponent && fontComponent.element) {
-                    fontComponent.element.value = loadedFont;
-                    
-                    // Trigger change event
-                    var event = new Event('change', { bubbles: true });
-                    fontComponent.element.dispatchEvent(event);
+                if (fontComponent && fontComponent.setValue) {
+                    fontComponent.setValue(loadedFont);
                 }
                 
                 // Clear input

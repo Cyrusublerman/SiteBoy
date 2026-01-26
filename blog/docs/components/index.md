@@ -27,10 +27,16 @@ Use this as the entry point for all component docs.
 ### Output
 - `output/Text.md`
 - `output/ProgressBar.md`
-- `output/Canvas.md`
+- `output/Canvas.md` ✨ UPDATED (CSS transform architecture)
+- `output/ImageViewport.md` ✨ NEW
+- `output/PalettePreview.md` ✨ NEW
 - `output/SVG.md`
 - `output/Media.md`
 - `output/AudioOutput.md`
+
+**Architecture Docs**:
+- `output/Canvas-Architecture-Issues.md` — Why Canvas was rebuilt
+- `output/Canvas-Aims-And-Current-State.md` — Design goals
 
 ### Container
 - `container/Stack.md`
@@ -76,6 +82,9 @@ Use this as the entry point for all component docs.
 - `interactive/CheckpointList.md`
 - `interactive/Sequencer.md`
 
+### Navigation
+- `navigation/Scrollbar.md`
+
 ### Graphs
 - `graphs/BarGraph.md`
 - `graphs/LineGraph.md`
@@ -98,6 +107,8 @@ Use this as the entry point for all component docs.
 ### Utility
 - `utility/AnimationContainer.md`
 - `utility/ExportController.md`
+- `utilities/canvas-utils.md` ✨ NEW
+- `utilities/download.md` ✨ NEW
 
 ## Where components live (code)
 - `assets/js/shared/components/<category>/<Name>.js`

@@ -115,9 +115,8 @@ let radiusDecrement = 0;
                     break;
                     
                 // Canvas resize - reinitialize circles when canvas size changes
-                case '_canvasWidth':
-                case '_canvasHeight':
-                    initCircles(this.canvas.width, this.canvas.height, numCircles);
+                case '_canvasResize':
+                    initCircles(value.width, value.height, numCircles);
                     break;
             }
         },

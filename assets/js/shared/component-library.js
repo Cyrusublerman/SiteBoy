@@ -106,10 +106,15 @@ import {
     NavigationDropdown
 } from './components/tool/index.js';
 
+// Import navigation components
+import { Scrollbar } from './components/navigation/index.js';
+
 // Import additional components from output
 import {
     Text,
     Canvas,
+    ImageViewport,
+    PalettePreview,
     SVG,
     Media,
     ProgressBar as OutputProgressBar,
@@ -237,9 +242,23 @@ const ComponentLibrary = {
             'category-tabs-bar': CategoryTabsBar,
             'seed-input': SeedInput,
             'navigation-dropdown': NavigationDropdown,
+            
+            // Navigation
+            'scrollbar': Scrollbar,
 
             // Animation export
-            'animation-export': AnimationExport
+            'animation-export': AnimationExport,
+            
+            // Output components
+            'text': Text,
+            'canvas': Canvas,
+            'imageviewport': ImageViewport,
+            'image-viewport': ImageViewport,
+            'palettepreview': PalettePreview,
+            'palette-preview': PalettePreview,
+            'svg': SVG,
+            'media': Media,
+            'audio-output': AudioOutput
         };
 
         const ComponentClass = components[type.toLowerCase()];
@@ -353,6 +372,8 @@ ComponentLibrary.MasonryGallery = MasonryGallery;
 ComponentLibrary.AnimationExport = AnimationExport;
 ComponentLibrary.Text = Text;
 ComponentLibrary.Canvas = Canvas;
+ComponentLibrary.ImageViewport = ImageViewport;
+ComponentLibrary.PalettePreview = PalettePreview;
 ComponentLibrary.SVG = SVG;
 ComponentLibrary.Media = Media;
 ComponentLibrary.AudioOutput = AudioOutput;
@@ -374,6 +395,9 @@ ComponentLibrary.CanvasTabs = CanvasTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.SeedInput = SeedInput;
 ComponentLibrary.NavigationDropdown = NavigationDropdown;
+
+// Assign navigation components to ComponentLibrary immediately
+ComponentLibrary.Scrollbar = Scrollbar;
 
 // Assign additional output components
 ComponentLibrary.OutputProgressBar = OutputProgressBar;  // Output-specific progress bar

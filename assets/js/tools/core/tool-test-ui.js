@@ -120,6 +120,10 @@ export class ToolTestUI {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Store canvas dimensions for drawing methods
+        this.canvasWidth = canvas.width;
+        this.canvasHeight = canvas.height;
+
         switch(this.currentMode) {
             case 'ANIMATION':
                 this._drawAnimation(ctx, values);
@@ -147,18 +151,26 @@ export class ToolTestUI {
         // Get sidebar config for this mode
         const sidebarConfig = this._getSidebarConfigForMode(mode);
 
-        return {
+        const config = {
             title: 'TOOL TEST UI',
             sidebar: sidebarConfig,
             canvas: {
-                width: 420,
-                height: 420,
-                showControls: false
+                fillContainer: true,     // Viewport fills panel (rectangular)
+                contentWidth: 2100,      // Canvas width (2x typical viewport width)
+                contentHeight: 1400,     // Canvas height (2x typical viewport height)
+                showControls: false,
+                enableZoom: true,
+                enablePan: true,
+                minZoom: 0.25,
+                maxZoom: 4.0
             },
             onInit: (values) => this._onInit(values),
             onUpdate: (key, value, allValues) => this._onUpdate(key, value, allValues),
             onDraw: (ctx, canvas, values) => this._onDraw(ctx, canvas, values)
         };
+        
+        console.log('🎨 ToolTestUI /core/ creating config with canvas:', config.canvas);
+        return config;
     }
 
     _getSidebarConfigForMode(mode) {
@@ -468,9 +480,15 @@ export class ToolTestUI {
     }
 
     _updateAnimation() {
+        if (!this.tool) return;  // Guard against null tool
+        
         var values = this.tool.getValues();
         var gravity = values.gravity || 0.5;
         var bounce = values.bounce || 0.8;
+        
+        // Use stored canvas dimensions (default to 420 for backwards compat)
+        var canvasWidth = this.canvasWidth || 420;
+        var canvasHeight = this.canvasHeight || 420;
 
         this.balls.forEach(function(ball) {
             ball.x += ball.vx;
@@ -478,15 +496,15 @@ export class ToolTestUI {
             ball.vy += gravity;
 
             // Bounce off walls
-            if (ball.x - ball.radius < 0 || ball.x + ball.radius > 420) {
+            if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvasWidth) {
                 ball.vx *= -0.8;
-                ball.x = Math.max(ball.radius, Math.min(420 - ball.radius, ball.x));
+                ball.x = Math.max(ball.radius, Math.min(canvasWidth - ball.radius, ball.x));
             }
 
             // Bounce off bottom
-            if (ball.y + ball.radius > 420) {
+            if (ball.y + ball.radius > canvasHeight) {
                 ball.vy *= -bounce;
-                ball.y = 420 - ball.radius;
+                ball.y = canvasHeight - ball.radius;
                 if (Math.abs(ball.vy) < 0.1) ball.vy = 0;
             }
         });
@@ -495,12 +513,16 @@ export class ToolTestUI {
     _generateBalls(count, color) {
         count = count || 5;
         color = color || '#FF5500';
+        
+        // Use stored canvas dimensions (default to 420 for backwards compat)
+        var canvasWidth = this.canvasWidth || 420;
+        var canvasHeight = this.canvasHeight || 420;
 
         var balls = [];
         for (var i = 0; i < count; i++) {
             balls.push({
-                x: Math.random() * 420,
-                y: Math.random() * 200,
+                x: Math.random() * canvasWidth,
+                y: Math.random() * (canvasHeight * 0.5),  // Top half
                 vx: (Math.random() - 0.5) * 4,
                 vy: 0,
                 radius: 10 + Math.random() * 10,
@@ -652,6 +674,11 @@ export class ToolTestUI {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     _drawAnimation(ctx, values) {
+        console.log('🎨 Drawing animation - balls:', this.balls.length, 'canvas dims:', this.canvasWidth, 'x', this.canvasHeight);
+        if (this.balls.length > 0) {
+            console.log('   First ball position:', this.balls[0].x, this.balls[0].y);
+        }
+        
         this.balls.forEach(function(ball) {
             ctx.fillStyle = ball.color;
             ctx.beginPath();

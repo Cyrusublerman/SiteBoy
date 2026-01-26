@@ -390,4 +390,3 @@ export function sineRemap(t, scale = 1.1, offset = -0.1, clampNegative = true) {
     return clampNegative ? Math.max(0, remapped) : remapped;
 }
 
-

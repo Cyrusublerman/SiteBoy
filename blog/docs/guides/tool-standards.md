@@ -10,10 +10,24 @@ Minimum requirements and consistency patterns for all tool/generative art pages.
 | Feature | Required | Component |
 |---------|----------|-----------|
 | Canvas sizing | ✓ | `['slider', 'Width/Height', ...]` |
+| Zoom/Pan | ✓ | Canvas config: `enableZoom: true, enablePan: true` |
+| Display modes | ✓ | Canvas config: `displayMode: 'fit'` |
 | Export PNG | ✓ | `['button', 'Download PNG']` |
 | Export SVG | If vector | `['button', 'Download SVG']` |
 | Background color | Optional | `['color', 'Background', ...]` |
 | Clear/Reset | ✓ | `['button', 'Clear']` |
+
+**Canvas Component Integration:**
+All zoom/pan/display mode handled by Canvas component. Tools draw at (0,0) with no internal transforms.
+```javascript
+canvas: {
+    size: 600,
+    enableZoom: true,
+    enablePan: true,
+    displayMode: 'fit',
+    showControls: true
+}
+```
 
 ### Animation Output
 | Feature | Required | Component |
@@ -247,6 +261,8 @@ Before submitting a tool conversion:
 - [ ] All minimum features for output type present
 - [ ] Export buttons work
 - [ ] Canvas sizing works
+- [ ] Zoom/pan works (via Canvas component config)
+- [ ] Display modes work (Fit/Fill/Actual)
 - [ ] Reset/clear works
 
 ### Consistency
@@ -257,6 +273,8 @@ Before submitting a tool conversion:
 
 ### Code Quality
 - [ ] No duplicate logic from other tools
+- [ ] No internal zoom/pan code (use Canvas component)
+- [ ] Canvas draws at (0,0) with no transforms
 - [ ] Complex code noted in "Reusable Code Candidates"
 - [ ] Uses existing shared utilities where applicable
 

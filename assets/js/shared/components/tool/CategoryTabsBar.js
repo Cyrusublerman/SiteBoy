@@ -1,9 +1,10 @@
 import { BaseComponent } from '../../foundation.js';
+import { AnimationLoop } from '../../../core/animation-foundation.js';
 
 /**
  * CategoryTabsBar - Horizontal bar with category buttons
  * Used for page/category selection in tools like AlgorithmsTestLab
- * Scrolls via edge-hover (no visible scrollbar)
+ * Supports optional visible scrollbar or edge-hover scrolling
  */
 export class CategoryTabsBar extends BaseComponent {
     constructor(options = {}, deps = {}) {
@@ -12,9 +13,12 @@ export class CategoryTabsBar extends BaseComponent {
         this.categories = options.categories || []; // [{id, title}, ...]
         this.activeCategory = options.activeCategory || (this.categories[0]?.id);
         this.onCategoryChange = options.onCategoryChange || (() => {});
+        this.showScrollbar = options.showScrollbar ?? false;  // Show visible scrollbar
         
         this.categoryButtons = [];
-        this.scrollInterval = null;
+        this.scrollAnimator = null;
+        this.scrollDirection = null;
+        this.scrollbar = null;
     }
 
     render() {
@@ -30,23 +34,48 @@ export class CategoryTabsBar extends BaseComponent {
             position: relative;
         `;
         
-        // Category row (page selection) - hidden scrollbar, edge-scroll
+        // Category row (page selection)
         if (this.categories.length > 0) {
-            const categoryRow = this.createElement('div', 'category-row');
-            categoryRow.style.cssText = `
+            // Wrapper for scrollbar positioning
+            const wrapper = this.createElement('div', 'category-wrapper');
+            wrapper.style.cssText = `
+                position: relative;
                 display: flex;
-                border-bottom: 1px solid var(--c-border);
-                overflow-x: scroll;
-                overflow-y: hidden;
+                flex-direction: column;
+                width: 100%;
                 flex-shrink: 0;
-                flex: 1;
-                scrollbar-width: none;
-                -ms-overflow-style: none;
             `;
-            // Hide webkit scrollbar
-            const style = document.createElement('style');
-            style.textContent = `.category-row::-webkit-scrollbar { display: none; }`;
-            this.element.appendChild(style);
+            
+            const categoryRow = this.createElement('div', 'category-row');
+            
+            if (this.showScrollbar) {
+                // Visible scrollbar mode
+                categoryRow.style.cssText = `
+                    display: flex;
+                    border-bottom: 1px solid var(--c-border);
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    flex-shrink: 0;
+                    flex: 1;
+                    scrollbar-width: thin;
+                `;
+            } else {
+                // Hidden scrollbar mode (original)
+                categoryRow.style.cssText = `
+                    display: flex;
+                    border-bottom: 1px solid var(--c-border);
+                    overflow-x: scroll;
+                    overflow-y: hidden;
+                    flex-shrink: 0;
+                    flex: 1;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
+                `;
+                // Hide webkit scrollbar
+                const style = document.createElement('style');
+                style.textContent = `.category-row::-webkit-scrollbar { display: none; }`;
+                this.element.appendChild(style);
+            }
             
             this.categories.forEach(cat => {
                 const btn = this.createElement('button', 'category-btn');
@@ -89,10 +118,14 @@ export class CategoryTabsBar extends BaseComponent {
                 categoryRow.appendChild(btn);
             });
             
-            // Edge-scroll on hover
-            this._setupEdgeScroll(categoryRow);
+            wrapper.appendChild(categoryRow);
             
-            this.element.appendChild(categoryRow);
+            // Setup edge-scroll with AnimationFoundation
+            if (!this.showScrollbar) {
+                this._setupEdgeScroll(categoryRow);
+            }
+            
+            this.element.appendChild(wrapper);
             this.categoryRow = categoryRow;
         }
         
@@ -103,46 +136,62 @@ export class CategoryTabsBar extends BaseComponent {
         const EDGE_ZONE = 40; // pixels from edge to trigger scroll
         const SCROLL_SPEED = 3; // pixels per frame
         
+        // Use AnimationLoop instead of setInterval
+        this.scrollAnimator = new AnimationLoop({
+            onFrame: () => {
+                if (this.scrollDirection === 'left' && container.scrollLeft > 0) {
+                    container.scrollLeft -= SCROLL_SPEED;
+                    if (container.scrollLeft <= 0) {
+                        this.scrollAnimator.stop();
+                    }
+                } else if (this.scrollDirection === 'right') {
+                    const maxScroll = container.scrollWidth - container.clientWidth;
+                    if (container.scrollLeft < maxScroll) {
+                        container.scrollLeft += SCROLL_SPEED;
+                        if (container.scrollLeft >= maxScroll) {
+                            this.scrollAnimator.stop();
+                        }
+                    } else {
+                        this.scrollAnimator.stop();
+                    }
+                }
+            }
+        });
+        
         container.addEventListener('mousemove', (e) => {
             const rect = container.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const width = rect.width;
             
-            // Clear existing interval
-            if (this.scrollInterval) {
-                clearInterval(this.scrollInterval);
-                this.scrollInterval = null;
-            }
+            const maxScroll = container.scrollWidth - container.clientWidth;
             
             // Left edge - scroll left
             if (x < EDGE_ZONE && container.scrollLeft > 0) {
-                this.scrollInterval = setInterval(() => {
-                    container.scrollLeft -= SCROLL_SPEED;
-                    if (container.scrollLeft <= 0) {
-                        clearInterval(this.scrollInterval);
-                        this.scrollInterval = null;
-                    }
-                }, 16);
+                this.scrollDirection = 'left';
+                if (!this.scrollAnimator.isRunning) {
+                    this.scrollAnimator.start();
+                }
             }
             // Right edge - scroll right
-            else if (x > width - EDGE_ZONE) {
-                const maxScroll = container.scrollWidth - container.clientWidth;
-                if (container.scrollLeft < maxScroll) {
-                    this.scrollInterval = setInterval(() => {
-                        container.scrollLeft += SCROLL_SPEED;
-                        if (container.scrollLeft >= maxScroll) {
-                            clearInterval(this.scrollInterval);
-                            this.scrollInterval = null;
-                        }
-                    }, 16);
+            else if (x > width - EDGE_ZONE && container.scrollLeft < maxScroll) {
+                this.scrollDirection = 'right';
+                if (!this.scrollAnimator.isRunning) {
+                    this.scrollAnimator.start();
+                }
+            }
+            // Middle - stop scrolling
+            else {
+                this.scrollDirection = null;
+                if (this.scrollAnimator.isRunning) {
+                    this.scrollAnimator.stop();
                 }
             }
         });
         
         container.addEventListener('mouseleave', () => {
-            if (this.scrollInterval) {
-                clearInterval(this.scrollInterval);
-                this.scrollInterval = null;
+            this.scrollDirection = null;
+            if (this.scrollAnimator && this.scrollAnimator.isRunning) {
+                this.scrollAnimator.stop();
             }
         });
     }
@@ -157,9 +206,13 @@ export class CategoryTabsBar extends BaseComponent {
     }
     
     destroy() {
-        if (this.scrollInterval) {
-            clearInterval(this.scrollInterval);
-            this.scrollInterval = null;
+        if (this.scrollAnimator) {
+            this.scrollAnimator.destroy();
+            this.scrollAnimator = null;
+        }
+        if (this.scrollbar) {
+            this.scrollbar.destroy();
+            this.scrollbar = null;
         }
         super.destroy();
     }

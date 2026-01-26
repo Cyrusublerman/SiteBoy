@@ -63,6 +63,10 @@ const COMPONENT_TYPES = {
     // Outputs
     'label': 'Text',
     'value': 'Text',
+    'imageviewport': 'ImageViewport',
+    'image-viewport': 'ImageViewport',
+    'palettepreview': 'PalettePreview',
+    'palette-preview': 'PalettePreview',
     'progress': 'ProgressBar',
 
     // Image Adjustment Bundles
@@ -686,17 +690,17 @@ export class ToolBase extends BaseComponent {
             } else {
                 // CONTAINER MODE: Collapsible with toggle icon
                 
+                // Store collapsed state (must define before using in toggleIcon)
+                let collapsed = options.defaultCollapsed !== undefined ? options.defaultCollapsed : false;
+                
                 // Add toggle icon
                 const toggleIcon = document.createElement('span');
-                toggleIcon.textContent = '−';
+                toggleIcon.textContent = collapsed ? '+' : '−';
                 toggleIcon.style.cssText = `
                     font-size: ${this.F}px;
                     font-weight: normal;
                 `;
                 header.appendChild(toggleIcon);
-                
-                // Store collapsed state
-                let collapsed = false;
                 
                 // Hover effect
                 header.addEventListener('mouseenter', () => {
@@ -714,7 +718,7 @@ export class ToolBase extends BaseComponent {
                 const content = document.createElement('div');
                 content.className = 'tool-block-content';
                 content.style.cssText = `
-                    display: flex;
+                    display: ${collapsed ? 'none' : 'flex'};
                     flex-direction: column;
                     gap: ${this.F2}px;
                     padding: ${this.F}px;
@@ -732,6 +736,9 @@ export class ToolBase extends BaseComponent {
                 });
 
                 block.appendChild(content);
+                
+                // Set initial border state
+                header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
                 
                 // Add click handler to toggle
                 header.addEventListener('click', () => {
@@ -994,59 +1001,216 @@ export class ToolBase extends BaseComponent {
         area.className = 'tool-canvas-area';
 
         if (isPortrait) {
-            // Portrait: fixed size canvas area at top
+            // Portrait: canvas area at top, flexible height
             area.style.cssText = `
                 display: flex;
                 flex-direction: column;
-                align-items: center;
-                justify-content: center;
+                align-items: stretch;
+                justify-content: stretch;
                 padding: ${this.F}px;
                 background: var(--c-bg);
-                flex-shrink: 0;
+                flex: 1;
+                min-height: 200px;
             `;
         } else {
-            // Landscape: take full available space
+            // Landscape: fill available space, allow Canvas component to manage overflow
             area.style.cssText = `
                 display: flex;
                 flex-direction: column;
-                align-items: center;
-                justify-content: center;
+                align-items: stretch;
+                justify-content: stretch;
                 height: 100%;
                 min-height: 0;
-                overflow: hidden;
                 background: var(--c-bg);
             `;
         }
 
-        // Canvas - match old version: append directly to area
-        const size = this._calculateCanvasSize();
-        this.canvas = document.createElement('canvas');
-        this.canvas.className = 'tool-canvas';
-        this.canvas.width = size;
-        this.canvas.height = size;
-        this.canvas.style.cssText = `
-            border: 1px solid var(--c-border);
-            background: var(--c-bg);
-        `;
-        this.ctx = this.canvas.getContext('2d');
-
-        area.appendChild(this.canvas);
-
-        // Status text removed - canvas size info now in sidebar CANVAS tab
-
-        // Canvas controls are now in sidebar (CANVAS tab) when showControls: true
-        // Animation export controls are now in sidebar (ANIMATION tab) when animationConfig present
-        // Canvas area contains ONLY the canvas element (no UI controls)
+        // Store reference for later size calculation
+        this.canvasArea = area;
+        
+        // Calculate initial size
+        let size = this._calculateCanvasSize();
+        
+        // Check for ImageViewport mode
+        const useImageViewport = this.canvasConfig.mode === 'imageViewport';
+        
+        if (useImageViewport) {
+            // Use ImageViewport component for image display
+            const { ImageViewport } = this.deps.ComponentLibrary;
+            if (!ImageViewport) {
+                console.warn('⚠️ ImageViewport component not available');
+                return area;
+            }
+            
+            this.imageViewport = new ImageViewport({
+                width: size,
+                height: size,
+                displayMode: this.canvasConfig.displayMode ?? 'fit',
+                enableZoom: this.canvasConfig.enableZoom ?? false,
+                enablePan: this.canvasConfig.enablePan ?? false,
+                minZoom: this.canvasConfig.minZoom ?? 0.1,
+                maxZoom: this.canvasConfig.maxZoom ?? 10,
+            }, this.deps);
+            
+            const viewportElement = this.imageViewport.render();
+            this.canvas = this.imageViewport.canvasEl;
+            this.ctx = this.imageViewport.ctx;
+            this.componentInstances.push(this.imageViewport);
+            area.appendChild(viewportElement);
+            
+            console.log('✅ Using ImageViewport component');
+        } else {
+            // ALWAYS use Canvas component for procedural rendering
+            const { Canvas } = this.deps.ComponentLibrary;
+            if (!Canvas) {
+                console.error('❌ Canvas component not available in ComponentLibrary');
+                return area;
+            }
+            
+            // Hook up tool's onDraw to Canvas component's draw callback
+            const toolOnDraw = this.onDraw;
+            const toolValues = () => this.values;
+            const self = this;
+            
+            this.canvasComponent = new Canvas({
+                width: size,
+                height: size,
+                context: this.canvasConfig.context ?? '2d',
+                
+                // Feature flags
+                enableZoom: this.canvasConfig.enableZoom ?? false,
+                enablePan: this.canvasConfig.enablePan ?? false,
+                displayMode: this.canvasConfig.displayMode ?? 'auto',
+                enableHUD: this.canvasConfig.enableHUD ?? false,
+                hud: this.canvasConfig.hud ?? [],
+                
+                // Zoom/pan config
+                minZoom: this.canvasConfig.minZoom ?? 0.1,
+                maxZoom: this.canvasConfig.maxZoom ?? 10,
+                zoomSpeed: this.canvasConfig.zoomSpeed ?? 0.1,
+                
+                // Interactive features
+                interactive: this.canvasConfig.interactive ?? false,
+                onClick: this.canvasConfig.onClick ?? null,
+                onDrag: this.canvasConfig.onDrag ?? null,
+                onWheel: this.canvasConfig.onWheel ?? null,
+                
+                // Draw callback
+                // Note: self.canvas may not be assigned yet during initial render,
+                // so fall back to canvasComponent.canvasEl for the initial draw
+                draw: (ctx, width, height) => {
+                    if (toolOnDraw) {
+                        const canvasEl = self.canvas || self.canvasComponent?.canvasEl;
+                        if (canvasEl) {
+                            toolOnDraw.call(self, ctx, canvasEl, toolValues());
+                        }
+                    }
+                },
+                
+                // Resize notification
+                onResize: (width, height, oldWidth, oldHeight) => {
+                    self.onUpdate.call(self, '_canvasResize', {
+                        width,
+                        height,
+                        previousWidth: oldWidth,
+                        previousHeight: oldHeight
+                    }, self.values);
+                }
+            }, this.deps);
+            
+            const canvasElement = this.canvasComponent.render();
+            
+            // Expose for tool access (API unchanged for tools)
+            this.canvas = this.canvasComponent.canvasEl;
+            this.ctx = this.canvasComponent.ctx;
+            
+            // Track component for cleanup
+            this.componentInstances.push(this.canvasComponent);
+            area.appendChild(canvasElement);
+            
+            console.log('✅ Using Canvas component');
+        }
 
         return area;
     }
 
     _calculateCanvasSize() {
+        // If fillContainer is true, calculate size based on available space
+        if (this.canvasConfig.fillContainer && this.element) {
+            const container = this.canvasArea || this.element.querySelector('.tool-canvas-area');
+            if (container) {
+                const rect = container.getBoundingClientRect();
+                // Use smaller dimension to keep square, subtract padding
+                const availableWidth = rect.width - (this.F * 2);
+                const availableHeight = rect.height - (this.F * 2);
+                const size = Math.min(availableWidth, availableHeight);
+                // Snap to F grid
+                return Math.floor(size / this.F) * this.F;
+            }
+        }
+        
+        // If explicit dimensions provided, use smaller dimension for square canvas
         if (this.canvasConfig.width && this.canvasConfig.height) {
             return Math.min(this.canvasConfig.width, this.canvasConfig.height);
         }
+        
+        // Default: 30F (420px at F=14)
         const targetSize = this.canvasConfig.size ?? this.F * 30;
         return Math.floor(targetSize / this.F) * this.F;
+    }
+    
+    _resizeCanvasToFit() {
+        if (!this.canvasArea) {
+            console.warn('⚠️ Cannot resize: canvasArea not available');
+            return;
+        }
+        
+        const rect = this.canvasArea.getBoundingClientRect();
+        const padding = this.F * 2;
+        const availableWidth = rect.width - padding;
+        const availableHeight = rect.height - padding;
+        
+        // Snap to F-grid
+        const width = Math.floor(availableWidth / this.F) * this.F;
+        const height = Math.floor(availableHeight / this.F) * this.F;
+        
+        console.log('📐 Resizing canvas to fit container:', {
+            container: { width: rect.width, height: rect.height },
+            available: { width: availableWidth, height: availableHeight },
+            canvas: { width, height }
+        });
+        
+        if (this.canvasComponent) {
+            // Use Canvas component's public resize API
+            // This triggers onResize callback which fires _canvasResize event
+            this.canvasComponent.resize(width, height, { resetTransform: true });
+            
+            // Update local refs
+            this.canvas = this.canvasComponent.canvasEl;
+            this.ctx = this.canvasComponent.ctx;
+            
+            console.log('✅ Canvas resized via component API');
+        } else if (this.imageViewport) {
+            // Use ImageViewport's resize API
+            this.imageViewport.resize(width, height);
+            
+            // Update local refs
+            this.canvas = this.imageViewport.canvasEl;
+            this.ctx = this.imageViewport.ctx;
+            
+            console.log('✅ ImageViewport resized');
+        }
+    }
+    
+    /**
+     * Set canvas display mode (fit/fill/actual)
+     */
+    setCanvasDisplayMode(mode) {
+        if (this.canvasComponent) {
+            this.canvasComponent.setDisplayMode(mode);
+        } else if (this.imageViewport) {
+            this.imageViewport.setDisplayMode(mode);
+        }
     }
     
     _injectAnimationExportIntoSidebar() {
@@ -1186,6 +1350,17 @@ export class ToolBase extends BaseComponent {
     mount(container) {
         container.innerHTML = '';
         container.appendChild(this.render());
+        
+        // If fillContainer is enabled, resize canvas after mount
+        if (this.canvasConfig.fillContainer) {
+            console.log('🔍 fillContainer enabled, resizing after mount');
+            // Use a longer delay to ensure Canvas component is fully initialized
+            setTimeout(() => {
+                console.log('🔍 Executing resize callback after mount');
+                this._resizeCanvasToFit();
+            }, 200);
+        }
+        
         return this;
     }
 
@@ -1215,7 +1390,13 @@ export class ToolBase extends BaseComponent {
 
     draw() {
         if (this.onDraw && this.ctx) {
-            this.onDraw.call(this, this.ctx, this.canvas, this.values);
+            // If using Canvas component, use its redraw method
+            if (this.canvasComponent) {
+                this.canvasComponent.redraw();
+            } else {
+                // Standard drawing without Canvas component
+                this.onDraw.call(this, this.ctx, this.canvas, this.values);
+            }
         }
     }
 
@@ -1227,6 +1408,15 @@ export class ToolBase extends BaseComponent {
 
     getComponent(key) {
         return this.components.get(key);
+    }
+
+    /**
+     * Trigger canvas redraw - calls the onDraw callback
+     */
+    draw() {
+        if (this.canvasComponent) {
+            this.canvasComponent.redraw();
+        }
     }
 
     destroy() {
