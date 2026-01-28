@@ -902,16 +902,59 @@ export const TOOL_CONFIG = {
                 algorithm = 'None';
             }
 
-            for (var i = 0; i < state.batchFiles.length; i++) {
-                var file = state.batchFiles[i];
-                var imageData = await readImageDataFromFile(file);
-                var processed = applyDitherAlgorithm(imageData, algorithm, palette, paletteLabs);
-                state.batchResults.push({
-                    file: file,
-                    imageData: processed
-                });
-                setBatchProgress(tool, Math.round(((i + 1) / state.batchFiles.length) * 100));
-            }
+            // Process all images in parallel using workers
+            var completedCount = 0;
+            var processingPromises = state.batchFiles.map(async function(file, index) {
+                try {
+                    var imageData = await readImageDataFromFile(file);
+                    
+                    // Process using Web Worker
+                    var result = await tool.processAsync('processDither', {
+                        imageData: {
+                            data: imageData.data,
+                            width: imageData.width,
+                            height: imageData.height
+                        },
+                        algorithm: algorithm,
+                        palette: palette,
+                        paletteLabs: paletteLabs,
+                        blueNoiseTexture: state.blueNoiseTextureData ? {
+                            data: state.blueNoiseTextureData.data,
+                            width: state.blueNoiseTextureData.width,
+                            height: state.blueNoiseTextureData.height
+                        } : null
+                    }, {
+                        showLoadingOverlay: false // Don't show overlay for batch items
+                    });
+                    
+                    // Reconstruct ImageData from worker result
+                    var processedImageData = new ImageData(
+                        new Uint8ClampedArray(result.data),
+                        result.width,
+                        result.height
+                    );
+                    
+                    completedCount++;
+                    setBatchProgress(tool, Math.round((completedCount / state.batchFiles.length) * 100));
+                    
+                    return {
+                        file: file,
+                        imageData: processedImageData,
+                        index: index
+                    };
+                } catch (err) {
+                    console.error('Failed to process', file.name, ':', err);
+                    return null;
+                }
+            });
+            
+            // Wait for all images to complete
+            var results = await Promise.all(processingPromises);
+            
+            // Filter out failures and sort by original index
+            state.batchResults = results
+                .filter(function(r) { return r !== null; })
+                .sort(function(a, b) { return a.index - b.index; });
 
             tool.setStatus('Batch processed: ' + state.batchResults.length + ' files');
         } catch (err) {
@@ -929,18 +972,7 @@ export const TOOL_CONFIG = {
         }
     }
 
-    function imageDataToBlob(imageData) {
-        return new Promise(function(resolve) {
-            var canvas = document.createElement('canvas');
-            canvas.width = imageData.width;
-            canvas.height = imageData.height;
-            var ctx = canvas.getContext('2d');
-            ctx.putImageData(imageData, 0, 0);
-            canvas.toBlob(function(blob) {
-                resolve(blob);
-            }, 'image/png');
-        });
-    }
+    // imageDataToBlob removed - use tool.imageDataToBlob() from ToolBase instead
 
     async function downloadBatchZip(tool) {
         if (!state.batchResults || state.batchResults.length === 0) {
@@ -970,17 +1002,12 @@ export const TOOL_CONFIG = {
                 var result = state.batchResults[i];
                 var baseName = (result.file.name || 'image').replace(/\.[^/.]+$/, '');
                 var filename = baseName + '_quant_' + paletteSlug + '_' + algoSlug + '.png';
-                var blob = await imageDataToBlob(result.imageData);
+                var blob = await tool.imageDataToBlob(result.imageData);
                 zip.file(filename, blob);
             }
 
             var zipBlob = await zip.generateAsync({ type: 'blob' });
-            var url = URL.createObjectURL(zipBlob);
-            var link = document.createElement('a');
-            link.download = 'batch_quantized_' + paletteSlug + '_' + algoSlug + '.zip';
-            link.href = url;
-            link.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(zipBlob, 'batch_quantized_' + paletteSlug + '_' + algoSlug + '.zip');
 
             tool.setStatus('Batch ZIP exported');
         } catch (err) {
@@ -991,7 +1018,7 @@ export const TOOL_CONFIG = {
         }
     }
 
-    function processImage(tool) {
+    async function processImage(tool) {
         var imageData = state.previewImageData || state.originalImageData;
         if (!imageData) {
             tool.setStatus('Please load an image first');
@@ -1023,29 +1050,84 @@ export const TOOL_CONFIG = {
             algorithm = 'None';
         }
 
-        // Use setTimeout to allow UI to update
-        setTimeout(function() {
+        try {
+            var startTime = performance.now();
+            var result;
+            
+            // Try Web Worker first, fallback to synchronous if it fails
             try {
-                var startTime = performance.now();
-                var result;
-
-                result = applyDitherAlgorithm(imageData, algorithm, palette, paletteLabs);
-
-                var endTime = performance.now();
-                state.currentImageData = result;
-                tool.draw();
-                tool.setStatus('Processed in ' + ((endTime - startTime) / 1000).toFixed(2) + 's');
-            } catch (err) {
-                tool.setStatus('Error: ' + err.message);
-                console.error('Processing error:', err);
-            } finally {
-                state.isProcessing = false;
-                tool.hideLoading();
-                if (processBtn && typeof processBtn.setDisabled === 'function') {
-                    processBtn.setDisabled(false);
+                // Use Web Worker for processing
+                result = await tool.processAsync('processDither', {
+                    imageData: {
+                        data: imageData.data,
+                        width: imageData.width,
+                        height: imageData.height
+                    },
+                    algorithm: algorithm,
+                    palette: palette,
+                    paletteLabs: paletteLabs,
+                    blueNoiseTexture: state.blueNoiseTextureData ? {
+                        data: state.blueNoiseTextureData.data,
+                        width: state.blueNoiseTextureData.width,
+                        height: state.blueNoiseTextureData.height
+                    } : null
+                }, {
+                    message: 'Applying ' + algorithm + ' dithering...',
+                    onProgress: function(percent) {
+                        window.debugLog('TOOLS', 'Processing: ' + percent + '%');
+                    }
+                });
+                
+                // Reconstruct ImageData from worker result
+                // result.data is already Uint8ClampedArray from transfer - don't copy it!
+                console.log('📥 Main: Received result data type:', result.data?.constructor?.name);
+                console.log('📥 Main: Is Uint8ClampedArray?', result.data instanceof Uint8ClampedArray);
+                
+                var data = result.data instanceof Uint8ClampedArray 
+                    ? result.data 
+                    : new Uint8ClampedArray(result.data);
+                
+                if (!(result.data instanceof Uint8ClampedArray)) {
+                    console.warn('⚠️ Main: Had to copy result data');
+                } else {
+                    console.log('✅ Main: Using transferred data directly (zero-copy)');
                 }
+                
+                var processedImageData = new ImageData(data, result.width, result.height);
+                result = processedImageData;
+                console.log('⏱️ Worker total time:', (performance.now() - startTime).toFixed(2), 'ms');
+            } catch (workerErr) {
+                // Fallback to synchronous processing
+                console.warn('Worker processing failed, using synchronous fallback:', workerErr);
+                tool.setStatus('Processing (synchronous)...');
+                
+                var syncStartTime = performance.now();
+                // Use setTimeout to allow UI update
+                await new Promise(function(resolve) {
+                    setTimeout(function() {
+                        result = applyDitherAlgorithm(imageData, algorithm, palette, paletteLabs);
+                        resolve();
+                    }, 50);
+                });
+                console.log('⏱️ Synchronous total time:', (performance.now() - syncStartTime).toFixed(2), 'ms');
             }
-        }, 50);
+
+            var endTime = performance.now();
+            state.currentImageData = result;
+            tool.draw();
+            tool.setStatus('Processed in ' + ((endTime - startTime) / 1000).toFixed(2) + 's');
+        } catch (err) {
+            tool.setStatus('Error: ' + err.message);
+            console.error('Processing error:', err);
+            console.error('Error stack:', err.stack);
+            console.error('Error name:', err.name);
+        } finally {
+            state.isProcessing = false;
+            tool.hideLoading();
+            if (processBtn && typeof processBtn.setDisabled === 'function') {
+                processBtn.setDisabled(false);
+            }
+        }
     }
 
     function importPalette(tool, file) {
@@ -1133,7 +1215,7 @@ export const TOOL_CONFIG = {
         tool.setStatus('Exported palette: ' + fileName);
     }
 
-    function exportPng(tool) {
+    async function exportPng(tool) {
         if (!state.currentImageData) {
             tool.setStatus('No image to export');
             return;
@@ -1147,16 +1229,9 @@ export const TOOL_CONFIG = {
         var algoSlug = algorithm.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         var filename = state.originalFileName + '_quant_' + values.palette.toLowerCase() + '_' + (algoSlug || 'none') + '.png';
 
-        var tempCanvas = document.createElement('canvas');
-        tempCanvas.width = state.currentImageData.width;
-        tempCanvas.height = state.currentImageData.height;
-        var tempCtx = tempCanvas.getContext('2d');
-        tempCtx.putImageData(state.currentImageData, 0, 0);
-
-        var link = document.createElement('a');
-        link.download = filename;
-        link.href = tempCanvas.toDataURL('image/png');
-        link.click();
+        // Use ToolBase imageDataToBlob + downloadBlob utilities
+        var blob = await tool.imageDataToBlob(state.currentImageData);
+        downloadBlob(blob, filename);
 
         tool.setStatus('Exported: ' + filename);
     }
@@ -1184,11 +1259,13 @@ export class ColourQuantizerTool {
             console.log('✅ ColourQuantizerTool rendered');
         } catch (error) {
             console.error('❌ ColourQuantizerTool error:', error);
-            this.container.innerHTML = 
-                '<div style="padding: 20px; color: var(--c-text);">' +
-                '<h2>COLOUR QUANTIZER ERROR</h2>' +
-                '<p style="color: red;">' + error.message + '</p>' +
-                '</div>';
+            // Use ComponentLibrary Text for error display
+            this.container.textContent = '';
+            var errorText = ComponentLibrary.create('text', {
+                variant: 'heading',
+                text: 'COLOUR QUANTIZER ERROR: ' + error.message
+            }, this.deps);
+            this.container.appendChild(errorText.render());
         }
     };
 

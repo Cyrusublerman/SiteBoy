@@ -634,6 +634,18 @@ export class Canvas extends BaseComponent {
         return null;
     }
     
+    /**
+     * Put ImageData onto canvas
+     * @param {ImageData} imageData - ImageData to display
+     * @param {number} x - X offset (default 0)
+     * @param {number} y - Y offset (default 0)
+     */
+    setImageData(imageData, x = 0, y = 0) {
+        if (this.contextType === '2d' && this.ctx && imageData) {
+            this.ctx.putImageData(imageData, x, y);
+        }
+    }
+    
     getTransform() {
         return {
             x: this.transform.x,
@@ -653,10 +665,31 @@ export class Canvas extends BaseComponent {
         return this.canvasEl?.toDataURL(type, quality) ?? '';
     }
     
+    /**
+     * Get canvas content as Blob
+     * @param {string} type - MIME type (default 'image/png')
+     * @param {number} quality - Quality 0-1 for JPEG (default 1)
+     * @returns {Promise<Blob>}
+     */
+    toBlob(type = 'image/png', quality = 1) {
+        return new Promise((resolve) => {
+            if (!this.canvasEl) {
+                resolve(null);
+                return;
+            }
+            this.canvasEl.toBlob(resolve, type, quality);
+        });
+    }
+    
+    /**
+     * Download canvas as file
+     * @param {string} filename - Filename for download
+     */
     download(filename = 'canvas.png') {
+        const url = this.toDataURL();
         const link = document.createElement('a');
         link.download = filename;
-        link.href = this.toDataURL();
+        link.href = url;
         link.click();
     }
     

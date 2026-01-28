@@ -1388,15 +1388,12 @@ export class ToolBase extends BaseComponent {
         return this.ctx;
     }
 
+    /**
+     * Trigger canvas redraw - calls the onDraw callback
+     */
     draw() {
-        if (this.onDraw && this.ctx) {
-            // If using Canvas component, use its redraw method
-            if (this.canvasComponent) {
-                this.canvasComponent.redraw();
-            } else {
-                // Standard drawing without Canvas component
-                this.onDraw.call(this, this.ctx, this.canvas, this.values);
-            }
+        if (this.canvasComponent) {
+            this.canvasComponent.redraw();
         }
     }
 
@@ -1410,16 +1407,159 @@ export class ToolBase extends BaseComponent {
         return this.components.get(key);
     }
 
+    // =========================================================================
+    // IMAGE DATA METHODS
+    // =========================================================================
+
     /**
-     * Trigger canvas redraw - calls the onDraw callback
+     * Display ImageData on canvas
+     * @param {ImageData} imageData - ImageData to display
+     * @param {number} x - X offset (default 0)
+     * @param {number} y - Y offset (default 0)
      */
-    draw() {
+    setImageData(imageData, x = 0, y = 0) {
         if (this.canvasComponent) {
-            this.canvasComponent.redraw();
+            this.canvasComponent.setImageData(imageData, x, y);
+        }
+    }
+
+    /**
+     * Get current canvas content as ImageData
+     * @returns {ImageData|null}
+     */
+    getImageData() {
+        return this.canvasComponent?.getImageData() ?? null;
+    }
+
+    // =========================================================================
+    // EXPORT METHODS
+    // =========================================================================
+
+    /**
+     * Download canvas as PNG file
+     * @param {string} filename - Filename for download
+     */
+    exportPNG(filename = 'export.png') {
+        if (this.canvasComponent) {
+            this.canvasComponent.download(filename);
+        }
+    }
+
+    /**
+     * Get canvas content as Blob (for batch processing)
+     * @param {string} type - MIME type (default 'image/png')
+     * @returns {Promise<Blob|null>}
+     */
+    async exportBlob(type = 'image/png') {
+        return this.canvasComponent?.toBlob(type) ?? null;
+    }
+
+    /**
+     * Convert ImageData to Blob without affecting canvas display
+     * Useful for batch processing where you don't want to change what's shown
+     * @param {ImageData} imageData - ImageData to convert
+     * @param {string} type - MIME type (default 'image/png')
+     * @returns {Promise<Blob>}
+     */
+    imageDataToBlob(imageData, type = 'image/png') {
+        return new Promise((resolve) => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = imageData.width;
+            tempCanvas.height = imageData.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(imageData, 0, 0);
+            tempCanvas.toBlob(resolve, type);
+        });
+    }
+
+    // =========================================================================
+    // ASYNC PROCESSING (Web Workers)
+    // =========================================================================
+
+    /**
+     * Process data asynchronously using Web Worker
+     * 
+     * Offloads heavy computation to a background thread, keeping UI responsive.
+     * Automatically shows/hides loading overlay with progress.
+     * 
+     * @param {string} algorithmName - Algorithm path like 'Dither.floydSteinberg'
+     * @param {Object} data - Input data to process
+     * @param {Object} options - Processing options
+     * @param {Function} options.onProgress - Progress callback (percent 0-100)
+     * @param {boolean} options.showLoadingOverlay - Show loading UI (default true)
+     * @param {string} options.message - Loading message (default 'Processing...')
+     * @returns {Promise<any>} Processing result
+     * 
+     * @example
+     * const result = await tool.processAsync('Dither.floydSteinberg', {
+     *     imageData: myImageData,
+     *     palette: ['#000000', '#FFFFFF'],
+     *     paletteLabs: [...labs]
+     * }, {
+     *     onProgress: (p) => console.log(`${p}% complete`),
+     *     message: 'Applying dithering...'
+     * });
+     */
+    async processAsync(algorithmName, data, options = {}) {
+        const { 
+            onProgress, 
+            showLoadingOverlay = true, 
+            message = 'Processing...' 
+        } = options;
+        
+        // Lazy import ProcessingManager
+        if (!this._processingManager) {
+            const module = await import('../../shared/workers/processing-manager.js');
+            this._processingManager = module.default;
+        }
+        
+        // Create abort controller for cancellation
+        if (!this._processingAbortController) {
+            this._processingAbortController = new AbortController();
+        }
+        
+        if (showLoadingOverlay) {
+            this.showLoading(message, 0);
+        }
+        
+        try {
+            const result = await this._processingManager.process(algorithmName, data, {
+                onProgress: (percent) => {
+                    if (showLoadingOverlay) {
+                        this.setProgress(percent, message);
+                    }
+                    if (onProgress) {
+                        onProgress(percent);
+                    }
+                },
+                signal: this._processingAbortController.signal
+            });
+            
+            return result;
+        } catch (error) {
+            // Re-throw error for caller to handle
+            throw error;
+        } finally {
+            if (showLoadingOverlay) {
+                this.hideLoading();
+            }
+        }
+    }
+
+    /**
+     * Cancel ongoing async processing
+     */
+    cancelProcessing() {
+        if (this._processingAbortController) {
+            this._processingAbortController.abort();
+            this._processingAbortController = null;
         }
     }
 
     destroy() {
+        // Cancel any ongoing processing
+        this.cancelProcessing();
+        
         // Remove resize listener
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);

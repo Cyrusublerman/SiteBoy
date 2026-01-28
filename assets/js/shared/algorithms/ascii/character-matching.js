@@ -20,6 +20,7 @@ export function findBestMatch(tileMetrics, glyphAtlas, weights, flowMode) {
     var quadrantWeight = weights.quadrant ?? 0.2;
     var orientWeight = weights.orientation ?? 0.3;
     var sigWeight = weights.signature ?? 0.1;
+    var correlationWeight = weights.correlation ?? 0.0;
     
     for (var i = 0; i < glyphAtlas.length; i++) {
         var glyph = glyphAtlas[i];
@@ -28,11 +29,18 @@ export function findBestMatch(tileMetrics, glyphAtlas, weights, flowMode) {
         var quadCost = calculateQuadrantCost(glyph.quadrants, tileMetrics.quadrants);
         var orientCost = calculateOrientationCostWithMode(glyph.orientation, tileMetrics, flowMode);
         var sigCost = calculateSignatureCost(glyph.signature, tileMetrics.signature);
+        var corrCost = 0;
+        
+        // Pixel correlation cost (if weight > 0 and data available)
+        if (correlationWeight > 0 && glyph.pixelData && tileMetrics.pixelData) {
+            corrCost = calculatePixelCorrelationCost(glyph.pixelData, tileMetrics.pixelData);
+        }
         
         var cost = toneWeight * toneCost 
                  + quadrantWeight * quadCost 
                  + orientWeight * orientCost 
-                 + sigWeight * sigCost;
+                 + sigWeight * sigCost
+                 + correlationWeight * corrCost;
         
         if (cost < bestCost) {
             bestCost = cost;
@@ -107,6 +115,29 @@ export function calculateSignatureCost(glyphSignature, tileSignature) {
     var sum = 0;
     for (var i = 0; i < count; i++) {
         sum += Math.abs(glyphSignature[i] - tileSignature[i]);
+    }
+    
+    return sum / count;
+}
+
+/**
+ * Calculate pixel correlation cost (direct pixel-by-pixel comparison).
+ * 
+ * This measures the average luminance difference between glyph and image pixels.
+ * Lower cost = better match = glyph pixels align with image pixels.
+ * 
+ * @source Direct pixel comparison for ASCII art matching
+ * @formula C_corr = (1/N) * sum(|glyph_luma[i] - image_luma[i]|)
+ */
+export function calculatePixelCorrelationCost(glyphPixels, tilePixels) {
+    if (!glyphPixels || !tilePixels) return 0;
+    
+    var count = Math.min(glyphPixels.length, tilePixels.length);
+    if (count === 0) return 0;
+    
+    var sum = 0;
+    for (var i = 0; i < count; i++) {
+        sum += Math.abs(glyphPixels[i] - tilePixels[i]);
     }
     
     return sum / count;

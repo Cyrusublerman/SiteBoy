@@ -30,31 +30,33 @@ import {
 } from '../../core/font-loader.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MODULE-LEVEL STATE
+// HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
-
-let sourceImage = null;
-let asciiGrid = null; // Now stores structured data with colors
-let glyphAtlas = null;
-let processedImageData = null;
-let processedImageBitmap = null;
-let processedPreviewData = null;
-let lastCanvasScale = 1;
-let isPreparingBitmap = false;
-let systemFonts = []; // Detected system fonts
-let loadedCustomFonts = []; // Google Fonts or uploaded fonts
-let atlasLocked = false;
-let atlasConfig = null;
-let isRevertingAtlas = false;
-let rebuildArmed = false;
-let atlasWarning = false;
 
 /**
  * Get combined font list (system + loaded custom)
+ * Falls back to common fonts if detection fails
  */
-function getAvailableFonts() {
-    const combined = [...systemFonts, ...loadedCustomFonts];
-    return [...new Set(combined)].sort(); // Deduplicate and sort
+function getAvailableFonts(instance) {
+    const systemFonts = instance.state.systemFonts || [];
+    const customFonts = instance.state.loadedCustomFonts || [];
+    const combined = [...systemFonts, ...customFonts];
+    
+    // Ensure at least the site default font is available
+    if (!combined.includes('Atkinson Hyperlegible')) {
+        combined.push('Atkinson Hyperlegible');
+    }
+    
+    // If detection failed completely, provide fallback common fonts
+    if (combined.length <= 1) {
+        const fallbackFonts = [
+            'Courier New', 'Consolas', 'Monaco', 'Menlo', 'Lucida Console',
+            'Arial', 'Helvetica', 'Verdana', 'Times New Roman', 'Georgia'
+        ];
+        combined.push(...fallbackFonts);
+    }
+    
+    return [...new Set(combined)].sort();
 }
 
 // Character sets
@@ -69,7 +71,8 @@ const CHAR_SETS = {
     // CONFIGURATION
     // ═══════════════════════════════════════════════════════════════════════════════
 
-    export const TOOL_CONFIG = {
+    function createToolConfig(instance) {
+        return {
         title: 'ASCII ART GENERATOR',
         
         sidebar: [
@@ -92,6 +95,7 @@ const CHAR_SETS = {
                 ]],
                 ['Source', [
                     ['file', 'Upload Image', 'image/*', { key: 'imageFile' }],
+                    ['radio', 'Text Mode', ['Black on White', 'White on Black'], { key: 'textMode', selectedValue: 'Black on White' }],
                 ]],
                 ['Resolution', [
                     ['slider', 'Canvas Width', 196, 4096, 14, { value: 420, key: 'canvasWidth', withNumber: true }],
@@ -119,8 +123,9 @@ const CHAR_SETS = {
                     ['toggle', 'Options', ['Invert Image'], { key: 'processOptions', selectedValues: [] }],
                 ]],
                 ['Preview', [
-                    ['toggle', 'Split View', ['Split View'], { key: 'showSplitView', selectedValues: [] }],
+                    ['toggle', 'Split View', ['Split View', 'ASCII Over Image', 'Show Edge Detection'], { key: 'showSplitView', selectedValues: [] }],
                     ['slider', 'Divider %', 0, 100, 1, { value: 50, key: 'splitPosition', withNumber: true }],
+                    ['slider', 'ASCII Opacity %', 0, 100, 1, { value: 50, key: 'asciiOpacity', withNumber: true }],
                 ]],
             ]],
             
@@ -147,9 +152,6 @@ const CHAR_SETS = {
                     ['slider', 'Offset X (px)', -200, 200, 1, { value: 0, key: 'offsetX', withNumber: true }],
                     ['slider', 'Offset Y (px)', -200, 200, 1, { value: 0, key: 'offsetY', withNumber: true }],
                 ]],
-                ['Layout Mode', [
-                    ['radio', 'Mode', ['Monospace (Grid)', 'Proportional (Sequential)'], { key: 'fontMode', selectedValue: 'Monospace (Grid)' }],
-                ]],
                 ['Characters', [
                     ['dropdown', 'Character Set', Object.keys(CHAR_SETS), { key: 'charSet', value: 'Extended' }],
                 ]],
@@ -170,17 +172,16 @@ const CHAR_SETS = {
                     ['dropdown', 'Pixel Group (px)', ['1', '2', '3', '4', '5'], { key: 'pixelGroup', value: '1' }],
                 ]],
                 ['Matching Weights', [
-                    ['slider', 'Tone α', 0, 1, 0.01, { value: 0.4, key: 'toneWeight', withNumber: true }],
-                    ['slider', 'Quadrant β', 0, 1, 0.01, { value: 0.2, key: 'quadrantWeight', withNumber: true }],
-                    ['slider', 'Orientation γ', 0, 1, 0.01, { value: 0.3, key: 'orientWeight', withNumber: true }],
+                    ['slider', 'Tone α', 0, 1, 0.01, { value: 0.2, key: 'toneWeight', withNumber: true }],
+                    ['slider', 'Quadrant β', 0, 1, 0.01, { value: 0.6, key: 'quadrantWeight', withNumber: true }],
+                    ['slider', 'Orientation γ', 0, 1, 0.01, { value: 0.2, key: 'orientWeight', withNumber: true }],
                     ['dropdown', 'Flow Mode', [
                         'Gradient Perpendicular (Contour)',
                         'Gradient Parallel (Extrusion)',
                         'Character Stroke (Edges)',
                         'Ignore'
-                    ], { key: 'flowMode', value: 'Gradient Perpendicular (Contour)' }],
+                    ], { key: 'flowMode', value: 'Ignore' }],
                     ['slider', 'Signature δ', 0, 1, 0.01, { value: 0.1, key: 'sigWeight', withNumber: true }],
-                    ['toggle', 'Mapping', ['Invert Mapping'], { key: 'invertMapping', selectedValues: [] }],
                 ]],
             ]],
             
@@ -189,9 +190,7 @@ const CHAR_SETS = {
             // ═══════════════════════════════════════════════════════════════════
             ['DISPLAY', [
                 ['View', [
-                    ['radio', 'Display Mode', ['Fit', 'Fill', 'Actual'], { key: 'displayMode', selectedValue: 'Actual' }],
-                    ['color', 'Text Color', '#FFFFFF', { key: 'textColor' }],
-                    ['dropdown', 'Background', ['Black', 'White', 'Transparent'], { key: 'bgMode', value: 'Black' }],
+                    ['radio', 'Display Mode', ['Fit', 'Fill', 'Actual'], { key: 'displayMode', selectedValue: 'Fit' }],
                     ['toggle', 'Show Grid', ['Grid'], { key: 'showGrid', selectedValues: [] }],
                 ]],
                 ['Export', [
@@ -199,11 +198,23 @@ const CHAR_SETS = {
                     ['button', 'Copy Text', null, { key: 'copyText' }],
                     ['button', 'Export File', null, { key: 'exportFile' }],
                 ]],
+                ['Batch Process', [
+                    ['file', 'Upload Folder', 'image/*', { key: 'batchFolder', multiple: true }],
+                    ['button', 'Add Current to Batch', null, { key: 'addToBatch' }],
+                    ['label', 'Batch: 0 images', { key: 'batchStatus', variant: 'caption' }],
+                    ['label', 'Ready', { key: 'batchProgress', variant: 'caption' }],
+                    ['button', 'Process Batch', null, { key: 'processBatch' }],
+                    ['button', 'Export All', null, { key: 'exportBatch' }],
+                    ['button', 'Clear Batch', null, { key: 'clearBatch' }],
+                ]],
             ]],
         ],
         
         canvas: { 
             size: 420,
+            enableZoom: true,
+            enablePan: true,
+            displayMode: 'fit',
             info: {
                 title: 'Algorithm Info',
                 content: [
@@ -245,12 +256,12 @@ const CHAR_SETS = {
                 // Wire onChange callback
                 adjustmentBundle.options.onChange = function(adjustedImage, settings) {
                     window.debugLog('TOOLS', '📊 ASCII Art: Image adjusted', settings);
-                    processedImageData = adjustedImage;
-                    prepareProcessedBitmap(adjustedImage, self);
+                    instance.state.processedImageData = adjustedImage;
+                    prepareProcessedBitmap(instance, adjustedImage, self);
                     
                     // Regenerate ASCII if atlas ready
-                    if (glyphAtlas && glyphAtlas.charMetrics) {
-                        processImage(self);
+                    if (instance.state.glyphAtlas && instance.state.glyphAtlas.charMetrics) {
+                        processImage(instance, self);
                     } else {
                         self.draw(); // Just show adjusted image
                     }
@@ -260,8 +271,8 @@ const CHAR_SETS = {
                 adjustmentBundle.options.onTransform = function(transformedImage, transform) {
                     window.debugLog('TOOLS', '🔄 ASCII Art: Transform applied -', transform.type);
                     
-                    processedImageData = transformedImage;
-                    prepareProcessedBitmap(transformedImage, self);
+                    instance.state.processedImageData = transformedImage;
+                    prepareProcessedBitmap(instance, transformedImage, self);
                     
                     // Create temporary canvas to convert ImageData back to Image
                     var tempCanvas = document.createElement('canvas');
@@ -272,17 +283,16 @@ const CHAR_SETS = {
                     
                     var newImage = new Image();
                     newImage.onload = function() {
-                        sourceImage = newImage;
+                        instance.state.sourceImage = newImage;
                         
                         // Update canvas dimensions if resized
-                        if (transform.type === 'resize' && self.canvas) {
-                            self.canvas.width = transformedImage.width;
-                            self.canvas.height = transformedImage.height;
-                        }
+                    if (transform.type === 'resize') {
+                        setCanvasSize(instance, self, transformedImage.width, transformedImage.height);
+                    }
                         
                         // Reprocess with new dimensions
-                        if (glyphAtlas && glyphAtlas.charMetrics) {
-                            processImage(self);
+                        if (instance.state.glyphAtlas && instance.state.glyphAtlas.charMetrics) {
+                            processImage(instance, self);
                         }
                     };
                     newImage.src = tempCanvas.toDataURL();
@@ -290,22 +300,27 @@ const CHAR_SETS = {
             }
             
             // Detect system fonts
-            systemFonts = await detectSystemFonts();
+            instance.state.systemFonts = await detectSystemFonts();
             
             // Update font dropdown with detected fonts
-            updateFontDropdown(this, values);
+            updateFontDropdown(instance, this, values);
             
-            wireButton(this, 'copyText', function() { copyToClipboard(self); });
-            wireButton(this, 'exportFile', function() { exportFile(self); });
-            wireButton(this, 'process', function() { processImage(self); });
-            wireButton(this, 'loadGoogleFont', function() { loadGoogleFontHandler(self); });
-            wireButton(this, 'buildAtlas', function() { handleBuildAtlas(self); });
-            wireButton(this, 'setA4Portrait', function() { applyCanvasAspectRatio(self, 595 / 842); });
-            wireButton(this, 'setA4Landscape', function() { applyCanvasAspectRatio(self, 842 / 595); });
+            wireButton(this, 'copyText', function() { copyToClipboard(instance, self); });
+            wireButton(this, 'exportFile', function() { exportFile(instance, self); });
+            wireButton(this, 'process', function() { processImage(instance, self); });
+            wireButton(this, 'loadGoogleFont', function() { loadGoogleFontHandler(instance, self); });
+            wireButton(this, 'buildAtlas', function() { handleBuildAtlas(instance, self); });
+            wireButton(this, 'setA4Portrait', function() { applyCanvasAspectRatio(instance, self, 595 / 842); });
+            wireButton(this, 'setA4Landscape', function() { applyCanvasAspectRatio(instance, self, 842 / 595); });
+            wireButton(this, 'addToBatch', function() { addToBatch(instance, self); });
+            wireButton(this, 'processBatch', function() { processBatch(instance, self); });
+            wireButton(this, 'exportBatch', function() { exportBatch(instance, self); });
+            wireButton(this, 'clearBatch', function() { clearBatch(instance, self); });
             
             // Apply initial display mode (Actual)
             applyDisplayMode(this, values.displayMode || 'Actual');
-            updateAtlasStatusLabel(this);
+            updateAtlasStatusLabel(instance, this);
+            updateBatchStatus(instance, this);
         },
         
         onUpdate: function(key, value, allValues) {
@@ -313,25 +328,14 @@ const CHAR_SETS = {
             
             window.debugLog('TOOLS', `onUpdate triggered: key="${key}", value type=${typeof value}, has value=${!!value}`);
             
-            if (isRevertingAtlas) {
+            if (instance.state.isRevertingAtlas) {
                 return;
             }
             
             // Canvas resize - resize AND rebuild/reprocess if image loaded
             if (key === 'canvasWidth' || key === 'canvasHeight') {
-                // Update canvas dimensions directly
-                if (this.canvas) {
-                    this.canvas.width = allValues.canvasWidth || 420;
-                    this.canvas.height = allValues.canvasHeight || 420;
-                    
-                    // Reapply display mode after resize
-                    applyDisplayMode(this, allValues.displayMode || 'Actual');
-                }
-                // Reprocess with new canvas size
-                if (sourceImage) {
-                    triggerAutoRebuild(self, true);
-                    processImage(self);
-                }
+                triggerAutoRebuild(instance, self, true);
+                setCanvasSize(instance, this, allValues.canvasWidth || 420, allValues.canvasHeight || 420);
                 return;
             }
             
@@ -343,7 +347,7 @@ const CHAR_SETS = {
             
             // Font filter changed - update dropdown
             if (key === 'fontFilter') {
-                updateFontDropdown(this, allValues);
+                updateFontDropdown(instance, this, allValues);
                 return;
             }
             
@@ -356,16 +360,23 @@ const CHAR_SETS = {
             // Image upload
             if (key === 'imageFile' && value) {
                 window.debugLog('TOOLS', `Image file detected, type: ${value.constructor.name}, size: ${value.size || 'unknown'}`);
-                loadImage(value, self);
+                loadImage(instance, value, self);
                 return; // loadImage calls processImage internally
+            }
+            
+            // Batch folder upload
+            if (key === 'batchFolder' && value) {
+                window.debugLog('TOOLS', `Batch folder upload detected`);
+                loadBatchFolder(instance, value, self);
+                return;
             }
             
             // Output target mode
             if (key === 'outputTarget') {
-                applyOutputTargetConstraints(self, value);
-                triggerAutoRebuild(self, true);
-                if (sourceImage) {
-                    processImage(self);
+                applyOutputTargetConstraints(instance, self, value);
+                triggerAutoRebuild(instance, self, true);
+                if (instance.state.sourceImage) {
+                    processImage(instance, self);
                 } else {
                     self.draw();
                 }
@@ -375,11 +386,11 @@ const CHAR_SETS = {
             // Typography changes - always rebuild
             if (key === 'font' || key === 'fontSize' || key === 'charSet' || key === 'lineHeight' || key === 'letterSpacing') {
                 if (key === 'font') {
-                    applyFontModeFromFont(self, value);
+                    applyFontModeFromFont(instance, self, value);
                 }
-                triggerAutoRebuild(self, true);
-                if (sourceImage) {
-                    processImage(self);
+                triggerAutoRebuild(instance, self, true);
+                if (instance.state.sourceImage) {
+                    processImage(instance, self);
                 } else {
                     self.draw();
                 }
@@ -389,17 +400,17 @@ const CHAR_SETS = {
             // Matching weights - reprocess image
             if (key === 'toneWeight' || key === 'quadrantWeight' || 
                 key === 'orientWeight' || key === 'sigWeight' || key === 'flowMode') {
-                if (sourceImage) {
+                if (instance.state.sourceImage) {
                     window.debugLog('TOOLS', 'Reprocessing image after weight change...');
-                    processImage(self);
+                    processImage(instance, self);
                 }
                 return;
             }
             
             // Image adjustments - reprocess image
             if (key === 'gamma' || key === 'contrast' || key === 'saturation' || key === 'brightness') {
-                if (sourceImage) {
-                    processImage(self);
+                if (instance.state.sourceImage) {
+                    processImage(instance, self);
                 }
                 return;
             }
@@ -407,52 +418,56 @@ const CHAR_SETS = {
             // Image fit mode / canvas scale - update canvas and rebuild
             if (key === 'imageFit' || key === 'canvasScale') {
                 if (allValues.imageFit === 'Canvas from Image') {
-                    applyCanvasFromImage(self, allValues);
-                    triggerAutoRebuild(self, true);
-                    if (sourceImage) {
-                        processImage(self);
+                    applyCanvasFromImage(instance, self, allValues);
+                    triggerAutoRebuild(instance, self, true);
+                    if (instance.state.sourceImage) {
+                        processImage(instance, self);
                     }
                     return;
                 }
                 if (key === 'canvasScale') {
-                    applyCanvasScale(self, allValues);
-                    triggerAutoRebuild(self, true);
-                    if (sourceImage) {
-                        processImage(self);
+                    applyCanvasScale(instance, self, allValues);
+                    triggerAutoRebuild(instance, self, true);
+                    if (instance.state.sourceImage) {
+                        processImage(instance, self);
                     }
                     return;
                 }
-                if (sourceImage) {
-                    triggerAutoRebuild(self, true);
-                    processImage(self);
+                if (instance.state.sourceImage) {
+                    triggerAutoRebuild(instance, self, true);
+                    processImage(instance, self);
                 }
                 return;
             }
             
-            // Processing options - rebuild + reprocess
-            if (key === 'processOptions' || key === 'edgeMode' || key === 'edgeStrength' || key === 'pixelGroup') {
-                if (sourceImage) {
-                    triggerAutoRebuild(self, true);
-                    processImage(self);
-                }
-                return;
-            }
-            
-            // Density and layout controls - rebuild + reprocess
-            if (key === 'lineHeight' || key === 'letterSpacing' || key === 'marginX' || key === 'marginY' || key === 'offsetX' || key === 'offsetY') {
-                triggerAutoRebuild(self, true);
-                if (sourceImage) {
-                    processImage(self);
+            // Text mode - reprocess with inverted mapping and update display
+            if (key === 'textMode') {
+                if (instance.state.sourceImage) {
+                    triggerAutoRebuild(instance, self, true);
+                    processImage(instance, self);
                 } else {
                     self.draw();
                 }
                 return;
             }
             
-            if (key === 'fontMode') {
-                triggerAutoRebuild(self, true);
-                if (sourceImage) {
-                    processImage(self);
+            // Processing options - rebuild + reprocess
+            // But also trigger immediate draw for preview
+            if (key === 'processOptions' || key === 'edgeMode' || key === 'edgeStrength' || key === 'pixelGroup') {
+                if (instance.state.sourceImage) {
+                    triggerAutoRebuild(instance, self, true);
+                    processImage(instance, self);
+                } else {
+                    self.draw();
+                }
+                return;
+            }
+            
+            // Density and layout controls - rebuild + reprocess
+            if (key === 'lineHeight' || key === 'letterSpacing' || key === 'marginX' || key === 'marginY' || key === 'offsetX' || key === 'offsetY') {
+                triggerAutoRebuild(instance, self, true);
+                if (instance.state.sourceImage) {
+                    processImage(instance, self);
                 } else {
                     self.draw();
                 }
@@ -460,7 +475,7 @@ const CHAR_SETS = {
             }
             
             // Display settings - just redraw
-            if (key === 'bgMode' || key === 'showGrid' || key === 'textColor') {
+            if (key === 'showGrid' || key === 'asciiOpacity') {
                 self.draw();
                 return;
             }
@@ -476,38 +491,55 @@ const CHAR_SETS = {
             var w = canvas.width;
             var h = canvas.height;
             
-            // Get background mode
-            var bgMode = values.bgMode || 'Black';
-            var bgColor = bgMode === 'White' ? '#FFFFFF' : bgMode === 'Transparent' ? 'transparent' : '#000000';
+            // Get text rendering mode and set colors accordingly
+            var textMode = values.textMode || 'Black on White';
+            var bgColor = textMode === 'Black on White' ? '#FFFFFF' : '#000000';
+            var textColor = textMode === 'Black on White' ? '#000000' : '#FFFFFF';
             
-            // Clear
-            if (bgMode !== 'Transparent') {
-                ctx.fillStyle = bgColor;
-                ctx.fillRect(0, 0, w, h);
-            } else {
-                ctx.clearRect(0, 0, w, h);
-            }
+            // Clear with background color
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, w, h);
             
-            var showSplit = (values.showSplitView || []).indexOf('Split View') >= 0;
+            // Parse split view options from showSplitView toggle
+            var showSplitView = values.showSplitView || [];
+            var splitViewEnabled = showSplitView.indexOf('Split View') >= 0;
+            var showAsciiOverImage = showSplitView.indexOf('ASCII Over Image') >= 0;
+            var showEdgeDetection = showSplitView.indexOf('Show Edge Detection') >= 0;
             var splitPosition = Math.max(0, Math.min(100, values.splitPosition || 50)) / 100;
             var dividerX = Math.floor(w * splitPosition);
             
-            if (showSplit && (processedPreviewData || processedImageData)) {
-                // Left: adjusted image
+            if (splitViewEnabled && (instance.state.processedPreviewData || instance.state.processedImageData)) {
+                // Left: adjusted image (with optional edge detection overlay)
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(0, 0, dividerX, h);
                 ctx.clip();
-                drawAdjustedImage(ctx, w, h, values);
+                drawAdjustedImage(instance, ctx, w, h, values);
+                
+                // Optionally overlay edge detection on left side
+                if (showEdgeDetection && instance.state.edgeDetectionData) {
+                    drawEdgeDetection(instance, ctx, w, h, values);
+                }
                 ctx.restore();
                 
-                // Right: ASCII output
+                // Right: ASCII output (with optional image underlay)
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dividerX, 0, w - dividerX, h);
                 ctx.clip();
-            if (asciiGrid && asciiGrid.length > 0) {
-                    drawAscii(ctx, w, h, values);
+                
+                // Optionally draw image under ASCII on right side
+                if (showAsciiOverImage) {
+                    drawAdjustedImage(instance, ctx, w, h, values);
+                }
+                
+                if (instance.state.asciiGrid && instance.state.asciiGrid.length > 0) {
+                    if (showAsciiOverImage) {
+                        var asciiOpacity = (values.asciiOpacity || 50) / 100;
+                        ctx.globalAlpha = asciiOpacity;
+                    }
+                    drawAscii(instance, ctx, w, h, values);
+                    ctx.globalAlpha = 1.0;
                 }
                 ctx.restore();
                 
@@ -518,38 +550,50 @@ const CHAR_SETS = {
                 ctx.moveTo(dividerX, 0);
                 ctx.lineTo(dividerX, h);
                 ctx.stroke();
-            } else if (asciiGrid && asciiGrid.length > 0) {
-                drawAscii(ctx, w, h, values);
+            } else if (showEdgeDetection && instance.state.edgeDetectionData) {
+                // Show edge detection
+                drawAdjustedImage(instance, ctx, w, h, values);
+                drawEdgeDetection(instance, ctx, w, h, values);
+            } else if (showAsciiOverImage && instance.state.asciiGrid && instance.state.asciiGrid.length > 0) {
+                // Draw image first
+                drawAdjustedImage(instance, ctx, w, h, values);
+                // Then draw ASCII with transparency
+                var asciiOpacity = (values.asciiOpacity || 50) / 100;
+                ctx.globalAlpha = asciiOpacity;
+                drawAscii(instance, ctx, w, h, values);
+                ctx.globalAlpha = 1.0;
+            } else if (instance.state.asciiGrid && instance.state.asciiGrid.length > 0) {
+                drawAscii(instance, ctx, w, h, values);
             } else {
                 // Placeholder
-                var textColor = values.textColor || '#FFFFFF';
                 ctx.fillStyle = textColor;
                 ctx.font = '14px "Atkinson Hyperlegible", monospace';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('Upload an image to convert', w / 2, h / 2);
             }
-        },
-    };
+        }
+    }; // end of config object
+    } // end createToolConfig
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GLYPH ATLAS
 // ═══════════════════════════════════════════════════════════════════════════════
     
-    function updateAtlasStatusLabel(toolInstance) {
+    function updateAtlasStatusLabel(instance, toolInstance) {
         var label = toolInstance.getComponent('atlasStatus');
         if (label && label.setContent) {
-            if (!atlasLocked) {
+            if (!instance.state.atlasLocked) {
                 label.setContent('Atlas not built');
                 return;
             }
             
-            if (rebuildArmed) {
+            if (instance.state.rebuildArmed) {
                 label.setContent('Atlas locked - click Rebuild again to confirm');
                 return;
             }
             
-            if (atlasWarning) {
+            if (instance.state.atlasWarning) {
                 label.setContent('Atlas locked - rebuild to apply changes');
                 return;
             }
@@ -558,28 +602,28 @@ const CHAR_SETS = {
         }
     }
     
-    function updateAtlasButton(toolInstance) {
+    function updateAtlasButton(instance, toolInstance) {
         var button = toolInstance.getComponent('buildAtlas');
         if (button && button.setText) {
-            if (!atlasLocked) {
+            if (!instance.state.atlasLocked) {
                 button.setText('Build Atlas');
                 return;
             }
             
-            button.setText(rebuildArmed ? 'Confirm Rebuild' : 'Rebuild Atlas');
+            button.setText(instance.state.rebuildArmed ? 'Confirm Rebuild' : 'Rebuild Atlas');
         }
     }
     
-    function restoreAtlasConfig(toolInstance) {
-        if (!atlasConfig) return;
+    function restoreAtlasConfig(instance, toolInstance) {
+        if (!instance.state.atlasConfig) return;
         
-        isRevertingAtlas = true;
-        toolInstance.values.font = atlasConfig.font;
-        toolInstance.values.fontSize = atlasConfig.fontSize;
-        toolInstance.values.lineHeight = atlasConfig.lineHeight;
-        toolInstance.values.letterSpacing = atlasConfig.letterSpacing;
-        toolInstance.values.charSet = atlasConfig.charSet;
-        toolInstance.values.pixelGroup = atlasConfig.pixelGroup;
+        instance.state.isRevertingAtlas = true;
+        toolInstance.values.font = instance.state.atlasConfig.font;
+        toolInstance.values.fontSize = instance.state.atlasConfig.fontSize;
+        toolInstance.values.lineHeight = instance.state.atlasConfig.lineHeight;
+        toolInstance.values.letterSpacing = instance.state.atlasConfig.letterSpacing;
+        toolInstance.values.charSet = instance.state.atlasConfig.charSet;
+        toolInstance.values.pixelGroup = instance.state.atlasConfig.pixelGroup;
         
         var fontComponent = toolInstance.getComponent('font');
         var fontSizeComponent = toolInstance.getComponent('fontSize');
@@ -588,34 +632,34 @@ const CHAR_SETS = {
         var charSetComponent = toolInstance.getComponent('charSet');
         var resolutionComponent = toolInstance.getComponent('pixelGroup');
         
-        if (fontComponent && fontComponent.setValue) fontComponent.setValue(atlasConfig.font);
-        if (fontSizeComponent && fontSizeComponent.setValue) fontSizeComponent.setValue(atlasConfig.fontSize, false);
-        if (lineHeightComponent && lineHeightComponent.setValue) lineHeightComponent.setValue(atlasConfig.lineHeight, false);
-        if (letterSpacingComponent && letterSpacingComponent.setValue) letterSpacingComponent.setValue(atlasConfig.letterSpacing, false);
-        if (charSetComponent && charSetComponent.setValue) charSetComponent.setValue(atlasConfig.charSet);
-        if (resolutionComponent && resolutionComponent.setValue) resolutionComponent.setValue(atlasConfig.pixelGroup);
+        if (fontComponent && fontComponent.setValue) fontComponent.setValue(instance.state.atlasConfig.font);
+        if (fontSizeComponent && fontSizeComponent.setValue) fontSizeComponent.setValue(instance.state.atlasConfig.fontSize, false);
+        if (lineHeightComponent && lineHeightComponent.setValue) lineHeightComponent.setValue(instance.state.atlasConfig.lineHeight, false);
+        if (letterSpacingComponent && letterSpacingComponent.setValue) letterSpacingComponent.setValue(instance.state.atlasConfig.letterSpacing, false);
+        if (charSetComponent && charSetComponent.setValue) charSetComponent.setValue(instance.state.atlasConfig.charSet);
+        if (resolutionComponent && resolutionComponent.setValue) resolutionComponent.setValue(instance.state.atlasConfig.pixelGroup);
         
-        isRevertingAtlas = false;
+        instance.state.isRevertingAtlas = false;
     }
     
-    function handleBuildAtlas(toolInstance, skipProcess, forceRebuild) {
+    function handleBuildAtlas(instance, toolInstance, skipProcess, forceRebuild) {
         var values = toolInstance.getValues();
         
-        if (atlasLocked && !rebuildArmed && !forceRebuild) {
-            rebuildArmed = true;
-            atlasWarning = false;
-            updateAtlasButton(toolInstance);
-            updateAtlasStatusLabel(toolInstance);
+        if (instance.state.atlasLocked && !instance.state.rebuildArmed && !forceRebuild) {
+            instance.state.rebuildArmed = true;
+            instance.state.atlasWarning = false;
+            updateAtlasButton(instance, toolInstance);
+            updateAtlasStatusLabel(instance, toolInstance);
             window.debugLog('TOOLS', 'Atlas rebuild armed. Click Rebuild again to confirm.');
             return;
         }
         
-        rebuildArmed = false;
+        instance.state.rebuildArmed = false;
         
-        buildGlyphAtlas(values);
-        atlasLocked = true;
-        atlasWarning = false;
-        atlasConfig = {
+        buildGlyphAtlas(instance, values);
+        instance.state.atlasLocked = true;
+        instance.state.atlasWarning = false;
+        instance.state.atlasConfig = {
             font: values.font,
             fontSize: values.fontSize,
             lineHeight: values.lineHeight,
@@ -624,19 +668,19 @@ const CHAR_SETS = {
             pixelGroup: values.pixelGroup
         };
         
-        updateAtlasButton(toolInstance);
-        updateAtlasStatusLabel(toolInstance);
+        updateAtlasButton(instance, toolInstance);
+        updateAtlasStatusLabel(instance, toolInstance);
         
-        if (sourceImage && !skipProcess) {
-            processImage(toolInstance);
+        if (instance.state.sourceImage && !skipProcess) {
+            processImage(instance, toolInstance);
         }
     }
 
-    function triggerAutoRebuild(toolInstance, skipProcess) {
-        handleBuildAtlas(toolInstance, skipProcess, true);
+    function triggerAutoRebuild(instance, toolInstance, skipProcess) {
+        handleBuildAtlas(instance, toolInstance, skipProcess, true);
     }
     
-    function buildGlyphAtlas(values) {
+    function buildGlyphAtlas(instance, values) {
         var charSet = CHAR_SETS[values.charSet] || CHAR_SETS['Extended'];
         var font = values.font || 'Atkinson Hyperlegible';
         var fontSize = values.fontSize || 12;
@@ -647,10 +691,10 @@ const CHAR_SETS = {
         var tw = metrics.width;
         var th = metrics.height;
         
-        glyphAtlas = [];
+        instance.state.glyphAtlas = [];
         
         // Store metrics for use in processing
-        glyphAtlas.charMetrics = {
+        instance.state.glyphAtlas.charMetrics = {
             width: tw,
             height: th,
             baseline: metrics.baseline,
@@ -664,7 +708,7 @@ const CHAR_SETS = {
         canvas.height = th;
         var ctx = canvas.getContext('2d', { willReadFrequently: true });
         
-        glyphAtlas.widthMap = {};
+        instance.state.glyphAtlas.widthMap = {};
         var totalWidth = 0;
         
         for (var i = 0; i < charSet.length; i++) {
@@ -681,7 +725,7 @@ const CHAR_SETS = {
             
             // Measure character width for proportional mode
             var charWidth = Math.max(1, Math.ceil(ctx.measureText(char).width));
-            glyphAtlas.widthMap[char] = charWidth;
+            instance.state.glyphAtlas.widthMap[char] = charWidth;
             totalWidth += charWidth;
             
             // Get image data and extract metrics using glyph width
@@ -693,7 +737,7 @@ const CHAR_SETS = {
             var orientation = metricsData.orientation;
             var signature = metricsData.signature;
             
-            glyphAtlas.push({
+            instance.state.glyphAtlas.push({
                 char: char,
                 width: charWidth,
                 density: density,
@@ -703,9 +747,9 @@ const CHAR_SETS = {
             });
         }
         
-        glyphAtlas.averageWidth = totalWidth / Math.max(1, charSet.length);
+        instance.state.glyphAtlas.averageWidth = totalWidth / Math.max(1, charSet.length);
         
-        window.debugLog('TOOLS', `Glyph atlas built: ${glyphAtlas.length} characters at ${tw}×${th}px`);
+        window.debugLog('TOOLS', `Glyph atlas built: ${instance.state.glyphAtlas.length} characters at ${tw}×${th}px`);
     }
     
     
@@ -727,32 +771,32 @@ const CHAR_SETS = {
         return result;
     }
     
-    function prepareProcessedBitmap(imageData, toolInstance) {
+    function prepareProcessedBitmap(instance, imageData, toolInstance) {
         if (!imageData) return;
         if (typeof createImageBitmap !== 'function') {
-            processedImageBitmap = null;
+            instance.state.processedImageBitmap = null;
             return;
         }
         
-        if (isPreparingBitmap) return;
-        isPreparingBitmap = true;
+        if (instance.state.isPreparingBitmap) return;
+        instance.state.isPreparingBitmap = true;
         
         createImageBitmap(imageData)
             .then(function(bitmap) {
-                processedImageBitmap = bitmap;
-                isPreparingBitmap = false;
+                instance.state.processedImageBitmap = bitmap;
+                instance.state.isPreparingBitmap = false;
                 
                 if (toolInstance) {
                     toolInstance.draw();
                 }
             })
             .catch(function(error) {
-                isPreparingBitmap = false;
+                instance.state.isPreparingBitmap = false;
                 console.error('Failed to create image bitmap', error);
             });
     }
     
-    function loadImage(file, toolInstance) {
+    function loadImage(instance, file, toolInstance) {
         window.debugLog('TOOLS', `loadImage called with file: ${file ? file.name : 'null'}`);
         
         var reader = new FileReader();
@@ -760,13 +804,13 @@ const CHAR_SETS = {
             window.debugLog('TOOLS', 'FileReader loaded successfully');
             var img = new Image();
             img.onload = function() {
-                sourceImage = img;
+                instance.state.sourceImage = img;
                 toolInstance.values.sourceImageWidth = img.width;
                 toolInstance.values.sourceImageHeight = img.height;
                 window.debugLog('TOOLS', `Image loaded: ${img.width}×${img.height}px`);
-                processedImageData = null;
-                processedImageBitmap = null;
-                isPreparingBitmap = false;
+                instance.state.processedImageData = null;
+                instance.state.processedImageBitmap = null;
+                instance.state.isPreparingBitmap = false;
                 
                 // Create ImageData and feed to adjustment bundle
                 var tempCanvas = document.createElement('canvas');
@@ -788,12 +832,12 @@ const CHAR_SETS = {
                 window.debugLog('TOOLS', '🔨 Auto-building atlas after image upload');
                 var values = toolInstance.getValues();
                 var skipProcess = values.imageFit === 'Canvas from Image';
-                triggerAutoRebuild(toolInstance, true);
+                triggerAutoRebuild(instance, toolInstance, true);
                 
                 if (skipProcess) {
-                    applyCanvasFromImage(toolInstance, values);
+                    applyCanvasFromImage(instance, toolInstance, values);
                 } else {
-                    setCanvasSize(toolInstance, img.width, img.height);
+                    setCanvasSize(instance, toolInstance, img.width, img.height);
                 }
                 
             };
@@ -808,13 +852,13 @@ const CHAR_SETS = {
         reader.readAsDataURL(file);
     }
     
-    function processImage(toolInstance) {
-        if (!sourceImage) {
+    function processImage(instance, toolInstance) {
+        if (!instance.state.sourceImage) {
             window.debugLog('TOOLS', '⚠️ Cannot process: no source image');
             return;
         }
         
-        if (!glyphAtlas || !glyphAtlas.charMetrics) {
+        if (!instance.state.glyphAtlas || !instance.state.glyphAtlas.charMetrics) {
             window.debugLog('TOOLS', '⚠️ Cannot process: glyph atlas not ready');
             return;
         }
@@ -834,8 +878,8 @@ const CHAR_SETS = {
         var invert = (values.processOptions || []).indexOf('Invert Image') >= 0;
         
         // Use measured character dimensions (pixel-perfect)
-        var tw = glyphAtlas.charMetrics.width;
-        var th = glyphAtlas.charMetrics.height;
+        var tw = instance.state.glyphAtlas.charMetrics.width;
+        var th = instance.state.glyphAtlas.charMetrics.height;
         var lineHeightPercent = values.lineHeight || 100;
         var letterSpacing = values.letterSpacing || 0;
         var lineHeight = (th * lineHeightPercent) / 100;
@@ -869,20 +913,20 @@ const CHAR_SETS = {
         
         // Get image fit mode
         var imageFit = values.imageFit || 'Stretch';
-        var sourceWidth = sourceImage.width;
-        var sourceHeight = sourceImage.height;
+        var sourceWidth = instance.state.sourceImage.width;
+        var sourceHeight = instance.state.sourceImage.height;
         var sourceCanvas = null;
         
-        if (processedImageData) {
+        if (instance.state.processedImageData) {
             sourceCanvas = document.createElement('canvas');
-            sourceCanvas.width = processedImageData.width;
-            sourceCanvas.height = processedImageData.height;
+            sourceCanvas.width = instance.state.processedImageData.width;
+            sourceCanvas.height = instance.state.processedImageData.height;
             var sourceCtx = sourceCanvas.getContext('2d');
-            sourceCtx.putImageData(processedImageData, 0, 0);
-            sourceWidth = processedImageData.width;
-            sourceHeight = processedImageData.height;
+            sourceCtx.putImageData(instance.state.processedImageData, 0, 0);
+            sourceWidth = instance.state.processedImageData.width;
+            sourceHeight = instance.state.processedImageData.height;
         } else {
-            sourceCanvas = sourceImage;
+            sourceCanvas = instance.state.sourceImage;
         }
         
         // Calculate source region and destination region based on fit mode
@@ -950,9 +994,9 @@ const CHAR_SETS = {
         
         // Draw source image with calculated regions
         ctx.drawImage(sourceCanvas, sx, sy, sw, sh, dx, dy, dw, dh);
-        processedPreviewData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+        instance.state.processedPreviewData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
         
-        var data = new Uint8ClampedArray(processedPreviewData.data);
+        var data = new Uint8ClampedArray(instance.state.processedPreviewData.data);
         
         // Apply ASCII-specific processing options
         // (Edge detection and invert are NOT in adjustment bundle)
@@ -960,6 +1004,13 @@ const CHAR_SETS = {
         if (edgeMode !== 'Off') {
             window.debugLog('TOOLS', `🔍 Applying edge detection: ${edgeMode}`);
             var edges = applyEdgeDetection(data, canvasWidth, canvasHeight);
+            
+            // Store edge detection for visualization
+            instance.state.edgeDetectionData = new ImageData(
+                new Uint8ClampedArray(edges),
+                canvasWidth,
+                canvasHeight
+            );
             
             switch (edgeMode) {
                 case 'Replace (Current)':
@@ -996,6 +1047,8 @@ const CHAR_SETS = {
                     // No visual change; edges reserved for future guidance
                     break;
             }
+        } else {
+            instance.state.edgeDetectionData = null;
         }
         
         if (invert) {
@@ -1010,7 +1063,7 @@ const CHAR_SETS = {
             : data;
         
         if (fontMode === 'Proportional (Sequential)') {
-            processImageProportional(toolInstance, sampleData, canvasWidth, canvasHeight, values, {
+            processImageProportional(instance, toolInstance, sampleData, canvasWidth, canvasHeight, values, {
                 tone: toneWeight,
                 quadrant: quadrantWeight,
                 orientation: orientWeight,
@@ -1020,7 +1073,7 @@ const CHAR_SETS = {
         }
         
         // Convert to ASCII grid
-        asciiGrid = [];
+        instance.state.asciiGrid = [];
         
         window.debugLog('TOOLS', `Processing image: ${cols}×${rows} tiles`);
         
@@ -1031,10 +1084,11 @@ const CHAR_SETS = {
                 var tileX = offsets.offsetX + col * (tw + letterSpacing);
                 var tileY = offsets.offsetY + row * lineHeight;
                 var tile = extractTileMetrics(sampleData, canvasWidth, Math.floor(tileX), Math.floor(tileY), Math.floor(tw), Math.floor(th), pixelGroup);
-                if ((values.invertMapping || []).indexOf('Invert Mapping') >= 0) {
+                // Apply inversion for "Black on White" mode (glyph atlas is white-on-black, so invert image to match)
+                if (values.textMode === 'Black on White') {
                     tile = invertTileMetrics(tile);
                 }
-                var bestChar = findBestMatch(tile, glyphAtlas, {
+                var bestChar = findBestMatch(tile, instance.state.glyphAtlas, {
                     tone: toneWeight,
                     quadrant: quadrantWeight,
                     orientation: orientWeight,
@@ -1042,7 +1096,7 @@ const CHAR_SETS = {
                 }, flowMode);
                 line.push(bestChar);
             }
-            asciiGrid.push(line);
+            instance.state.asciiGrid.push(line);
         }
         
         // Coherence disabled per critical analysis (kept for future research)
@@ -1051,14 +1105,14 @@ const CHAR_SETS = {
         toolInstance.draw();
     }
     
-    function processImageProportional(toolInstance, data, canvasWidth, canvasHeight, values, weights, flowMode, pixelGroup) {
-        if (!glyphAtlas || !glyphAtlas.charMetrics) return;
+    function processImageProportional(instance, toolInstance, data, canvasWidth, canvasHeight, values, weights, flowMode, pixelGroup) {
+        if (!instance.state.glyphAtlas || !instance.state.glyphAtlas.charMetrics) return;
         
-        var charHeight = glyphAtlas.charMetrics.height;
+        var charHeight = instance.state.glyphAtlas.charMetrics.height;
         var lineHeightPercent = values.lineHeight || 100;
         var lineHeight = (charHeight * lineHeightPercent) / 100;
         var letterSpacing = values.letterSpacing || 0;
-        var avgWidth = glyphAtlas.averageWidth || glyphAtlas.charMetrics.width;
+        var avgWidth = instance.state.glyphAtlas.averageWidth || instance.state.glyphAtlas.charMetrics.width;
         var marginX = (values.marginX || 0) * avgWidth;
         var marginY = (values.marginY || 0) * lineHeight;
         var startX = marginX + (values.offsetX || 0);
@@ -1066,53 +1120,35 @@ const CHAR_SETS = {
         var maxX = Math.max(startX, canvasWidth - marginX);
         var maxY = Math.max(startY, canvasHeight - marginY);
         
-        asciiGrid = [];
+        instance.state.asciiGrid = [];
+        
+        // PERFORMANCE FIX: Extract tile ONCE per position using average width,
+        // then match against pre-computed glyph metrics (same as monospace mode)
+        var sampleWidth = Math.floor(avgWidth);
+        var sampleHeight = Math.floor(charHeight);
+        var shouldInvert = (values.textMode === 'Black on White');
         
         var y = startY;
         while (y + charHeight <= maxY) {
             var line = [];
             var x = startX;
             
-            while (x + 1 <= maxX) {
-                var bestChar = ' ';
-                var bestCost = Infinity;
-                var bestWidth = avgWidth;
-                
-                for (var i = 0; i < glyphAtlas.length; i++) {
-                    var glyph = glyphAtlas[i];
-                    var glyphWidth = Math.max(1, glyph.width || avgWidth);
-                    
-                    if (x + glyphWidth > maxX) {
-                        continue;
-                    }
-                    
-                    var tile = extractTileMetrics(data, canvasWidth, Math.floor(x), Math.floor(y), Math.floor(glyphWidth), Math.floor(charHeight), pixelGroup);
-                    if ((values.invertMapping || []).indexOf('Invert Mapping') >= 0) {
-                        tile = invertTileMetrics(tile);
-                    }
-                    
-                    var toneCost = calculateToneCost(glyph.density, tile.density);
-                    var quadCost = calculateQuadrantCost(glyph.quadrants, tile.quadrants);
-                    var orientCost = calculateOrientationCostWithMode(glyph.orientation, tile, flowMode);
-                    var sigCost = calculateSignatureCost(glyph.signature, tile.signature);
-                    
-                    var cost = weights.tone * toneCost
-                             + weights.quadrant * quadCost
-                             + weights.orientation * orientCost
-                             + weights.signature * sigCost;
-                    
-                    if (cost < bestCost) {
-                        bestCost = cost;
-                        bestChar = glyph.char;
-                        bestWidth = glyphWidth;
-                    }
+            while (x + sampleWidth <= maxX) {
+                // Extract tile metrics ONCE per position
+                var tile = extractTileMetrics(data, canvasWidth, Math.floor(x), Math.floor(y), sampleWidth, sampleHeight, pixelGroup);
+                if (shouldInvert) {
+                    tile = invertTileMetrics(tile);
                 }
+                
+                // Use existing findBestMatch for O(n) glyph comparison
+                var bestChar = findBestMatch(tile, instance.state.glyphAtlas, weights, flowMode);
+                var bestWidth = instance.state.glyphAtlas.widthMap[bestChar] || avgWidth;
                 
                 line.push({ char: bestChar, x: x, y: y });
                 x += bestWidth + letterSpacing;
             }
             
-            asciiGrid.push(line);
+            instance.state.asciiGrid.push(line);
             y += lineHeight;
         }
         
@@ -1227,16 +1263,16 @@ const CHAR_SETS = {
         };
     }
     
-    function getAsciiLayout(values, canvasWidth, canvasHeight) {
-        if (!asciiGrid || !glyphAtlas || !glyphAtlas.charMetrics) return null;
+    function getAsciiLayout(instance, values, canvasWidth, canvasHeight) {
+        if (!instance.state.asciiGrid || !instance.state.glyphAtlas || !instance.state.glyphAtlas.charMetrics) return null;
         
-        var charWidth = glyphAtlas.charMetrics.width;
-        var charHeight = glyphAtlas.charMetrics.height;
+        var charWidth = instance.state.glyphAtlas.charMetrics.width;
+        var charHeight = instance.state.glyphAtlas.charMetrics.height;
         var lineHeightPercent = values.lineHeight || 100;
         var letterSpacing = values.letterSpacing || 0;
         var lineHeight = (charHeight * lineHeightPercent) / 100;
-        var rows = asciiGrid.length;
-        var cols = asciiGrid[0] ? asciiGrid[0].length : 0;
+        var rows = instance.state.asciiGrid.length;
+        var cols = instance.state.asciiGrid[0] ? instance.state.asciiGrid[0].length : 0;
         
         var outputWidth = cols * (charWidth + letterSpacing);
         var outputHeight = rows * lineHeight;
@@ -1256,17 +1292,17 @@ const CHAR_SETS = {
         };
     }
     
-    function drawAscii(ctx, w, h, values) {
-        if (!asciiGrid || !glyphAtlas || !glyphAtlas.charMetrics) return;
+    function drawAscii(instance, ctx, w, h, values) {
+        if (!instance.state.asciiGrid || !instance.state.glyphAtlas || !instance.state.glyphAtlas.charMetrics) return;
         
-        var font = glyphAtlas.charMetrics.font;
-        var fontSize = glyphAtlas.charMetrics.fontSize;
-        var layout = getAsciiLayout(values, w, h);
+        var font = instance.state.glyphAtlas.charMetrics.font;
+        var fontSize = instance.state.glyphAtlas.charMetrics.fontSize;
+        var layout = getAsciiLayout(instance, values, w, h);
         if (!layout) return;
         
         // Get appearance settings
-        var textColor = values.textColor || '#FFFFFF';
-        var bgMode = values.bgMode || 'Black';
+        var textMode = values.textMode || 'Black on White';
+        var textColor = textMode === 'Black on White' ? '#000000' : '#FFFFFF';
         var showGrid = (values.showGrid || []).indexOf('Grid') >= 0;
         
         ctx.fillStyle = textColor;
@@ -1284,8 +1320,8 @@ const CHAR_SETS = {
         
         if (fontMode === 'Proportional (Sequential)') {
             for (var row = 0; row < rows; row++) {
-                for (var col = 0; col < asciiGrid[row].length; col++) {
-                    var item = asciiGrid[row][col];
+                for (var col = 0; col < instance.state.asciiGrid[row].length; col++) {
+                    var item = instance.state.asciiGrid[row][col];
                     ctx.fillText(item.char, offsetX + item.x, offsetY + item.y);
                 }
             }
@@ -1293,13 +1329,13 @@ const CHAR_SETS = {
         // Draw character grid
         for (var row = 0; row < rows; row++) {
             for (var col = 0; col < cols; col++) {
-                var char = asciiGrid[row][col];
+                var char = instance.state.asciiGrid[row][col];
                     var x = offsetX + col * (layout.charWidth + layout.letterSpacing);
                     var y = offsetY + row * layout.lineHeight;
                 
                 // Draw grid if enabled
                 if (showGrid) {
-                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.strokeStyle = '#800000'; // VGA maroon
                     ctx.lineWidth = 1;
                         ctx.strokeRect(x, y, layout.charWidth, layout.charHeight);
                 }
@@ -1310,15 +1346,15 @@ const CHAR_SETS = {
         }
         
         // Show dimensions info
-        ctx.fillStyle = 'rgba(128, 128, 128, 0.7)';
+        ctx.fillStyle = '#808080'; // VGA gray
         ctx.font = '10px "Atkinson Hyperlegible", monospace';
         ctx.fillText(`${cols}×${rows} chars | ${Math.round(outputWidth)}×${Math.round(outputHeight)}px`, 5, h - 15);
     }
     
-    function drawAdjustedImage(ctx, areaWidth, areaHeight, values) {
+    function drawAdjustedImage(instance, ctx, areaWidth, areaHeight, values) {
         if (areaWidth <= 0 || areaHeight <= 0) return;
         
-        var previewData = processedPreviewData || processedImageData;
+        var previewData = instance.state.processedPreviewData || instance.state.processedImageData;
         if (!previewData) return;
         
         var drawWidth = previewData.width;
@@ -1334,8 +1370,8 @@ const CHAR_SETS = {
             offsetY = Math.floor((areaHeight - drawHeight) / 2);
         }
         
-        if (processedImageBitmap && !processedPreviewData) {
-            ctx.drawImage(processedImageBitmap, offsetX, offsetY, drawWidth, drawHeight);
+        if (instance.state.processedImageBitmap && !instance.state.processedPreviewData) {
+            ctx.drawImage(instance.state.processedImageBitmap, offsetX, offsetY, drawWidth, drawHeight);
             return;
         }
         
@@ -1346,19 +1382,469 @@ const CHAR_SETS = {
         tempCtx.putImageData(previewData, 0, 0);
         ctx.drawImage(tempCanvas, offsetX, offsetY, drawWidth, drawHeight);
     }
+    
+    function drawEdgeDetection(instance, ctx, areaWidth, areaHeight, values) {
+        if (areaWidth <= 0 || areaHeight <= 0) return;
+        if (!instance.state.edgeDetectionData) return;
+        
+        var edgeData = instance.state.edgeDetectionData;
+        var drawWidth = edgeData.width;
+        var drawHeight = edgeData.height;
+        var offsetX = 0;
+        var offsetY = 0;
+        
+        if (edgeData.width !== areaWidth || edgeData.height !== areaHeight) {
+            var scale = Math.min(areaWidth / edgeData.width, areaHeight / edgeData.height);
+            drawWidth = edgeData.width * scale;
+            drawHeight = edgeData.height * scale;
+            offsetX = Math.floor((areaWidth - drawWidth) / 2);
+            offsetY = Math.floor((areaHeight - drawHeight) / 2);
+        }
+        
+        var tempCanvas = document.createElement('canvas');
+        tempCanvas.width = edgeData.width;
+        tempCanvas.height = edgeData.height;
+        var tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(edgeData, 0, 0);
+        ctx.drawImage(tempCanvas, offsetX, offsetY, drawWidth, drawHeight);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // BATCH PROCESSING
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    function updateBatchStatus(instance, toolInstance) {
+        var label = toolInstance.getComponent('batchStatus');
+        if (label && label.setContent) {
+            var count = instance.state.batchQueue.length;
+            label.setContent(`Batch: ${count} image${count !== 1 ? 's' : ''}`);
+        }
+    }
+    
+    function updateBatchProgress(instance, toolInstance, message) {
+        var label = toolInstance.getComponent('batchProgress');
+        if (label && label.setContent) {
+            label.setContent(message);
+        }
+    }
+    
+    function loadBatchFolder(instance, files, toolInstance) {
+        // Handle FileList or array of files
+        var fileArray = Array.isArray(files) ? files : Array.from(files);
+        var imageFiles = fileArray.filter(function(file) {
+            return file.type.startsWith('image/');
+        });
+        
+        if (imageFiles.length === 0) {
+            window.debugLog('TOOLS', '⚠️ No image files found in selection');
+            updateBatchProgress(instance, toolInstance, 'No images found');
+            return;
+        }
+        
+        if (imageFiles.length > 1000) {
+            window.debugLog('TOOLS', `⚠️ ${imageFiles.length} images exceeds recommended limit of 1000`);
+            if (!confirm(`Processing ${imageFiles.length} images may take several minutes and use significant memory. Continue?`)) {
+                updateBatchProgress(instance, toolInstance, 'Cancelled');
+                return;
+            }
+        }
+        
+        window.debugLog('TOOLS', `📁 Loading batch folder: ${imageFiles.length} images`);
+        updateBatchProgress(instance, toolInstance, `Loading ${imageFiles.length} images...`);
+        
+        var values = toolInstance.getValues();
+        var processedCount = 0;
+        var failedCount = 0;
+        var totalFiles = imageFiles.length;
+        var startTime = Date.now();
+        
+        // Sort files by name for sequential frame processing
+        imageFiles.sort(function(a, b) {
+            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+        });
+        
+        // Process each image sequentially with progress updates
+        function processNextImage(index) {
+            if (index >= imageFiles.length) {
+                var duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                var message = `Complete: ${processedCount}/${totalFiles} processed in ${duration}s`;
+                if (failedCount > 0) {
+                    message += ` (${failedCount} failed)`;
+                }
+                window.debugLog('TOOLS', `✅ ${message}`);
+                updateBatchProgress(instance, toolInstance, message);
+                updateBatchStatus(instance, toolInstance);
+                return;
+            }
+            
+            // Update progress every 10 images or on last image
+            if (index % 10 === 0 || index === imageFiles.length - 1) {
+                var percent = Math.round((index / imageFiles.length) * 100);
+                var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                var rate = (index / (Date.now() - startTime) * 1000).toFixed(1);
+                updateBatchProgress(instance, toolInstance, 
+                    `Processing: ${index}/${totalFiles} (${percent}%) - ${rate} img/s`);
+                updateBatchStatus(instance, toolInstance);
+            }
+            
+            var file = imageFiles[index];
+            var fileName = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+            
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    try {
+                        // Create ImageData for processing (don't store full image to save memory)
+                        var tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = img.width;
+                        tempCanvas.height = img.height;
+                        var tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.drawImage(img, 0, 0);
+                        var imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                        
+                        // Process to ASCII with current atlas
+                        if (instance.state.glyphAtlas && instance.state.glyphAtlas.charMetrics) {
+                            var asciiGrid = processImageDataToGrid(instance, imageData, values);
+                            
+                            // Store only essential data (no full image to save memory)
+                            var timestamp = Date.now() + index; // Unique timestamp
+                            instance.state.batchQueue.push({
+                                asciiGrid: asciiGrid,
+                                glyphAtlas: instance.state.glyphAtlas, // Reference, not copy
+                                settings: {
+                                    font: values.font,
+                                    fontSize: values.fontSize,
+                                    lineHeight: values.lineHeight,
+                                    letterSpacing: values.letterSpacing,
+                                    textColor: values.textColor,
+                                    bgMode: values.bgMode
+                                },
+                                name: fileName,
+                                timestamp: timestamp,
+                                width: img.width,
+                                height: img.height
+                            });
+                            processedCount++;
+                        }
+                    } catch (error) {
+                        window.debugLog('TOOLS', `⚠️ Failed to process: ${file.name} - ${error.message}`);
+                        failedCount++;
+                    }
+                    
+                    // Process next image with minimal delay (use 0 for maximum speed)
+                    setTimeout(function() {
+                        processNextImage(index + 1);
+                    }, 0);
+                };
+                img.onerror = function() {
+                    window.debugLog('TOOLS', `⚠️ Failed to load: ${file.name}`);
+                    failedCount++;
+                    processNextImage(index + 1);
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                window.debugLog('TOOLS', `⚠️ Failed to read: ${file.name}`);
+                failedCount++;
+                processNextImage(index + 1);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Start processing
+        processNextImage(0);
+    }
+    
+    function processImageDataToGrid(instance, imageData, values) {
+        // Optimized batch processing - returns only the ASCII grid
+        var toneWeight = values.toneWeight || 0.4;
+        var quadrantWeight = values.quadrantWeight || 0.2;
+        var orientWeight = values.orientWeight || 0.3;
+        var sigWeight = values.sigWeight || 0.1;
+        var flowMode = values.flowMode || 'Gradient Perpendicular (Contour)';
+        
+        var tw = instance.state.glyphAtlas.charMetrics.width;
+        var th = instance.state.glyphAtlas.charMetrics.height;
+        var lineHeightPercent = values.lineHeight || 100;
+        var letterSpacing = values.letterSpacing || 0;
+        var lineHeight = (th * lineHeightPercent) / 100;
+        
+        var canvasWidth = imageData.width;
+        var canvasHeight = imageData.height;
+        
+        var cols = Math.floor(canvasWidth / (tw + letterSpacing));
+        var rows = Math.floor(canvasHeight / lineHeight);
+        
+        var outputWidth = cols * (tw + letterSpacing);
+        var outputHeight = rows * lineHeight;
+        
+        var data = new Uint8ClampedArray(imageData.data);
+        var pixelGroup = parsePixelGroup(values.pixelGroup || '1');
+        var sampleData = (pixelGroup > 1)
+            ? quantizeByPixelGroup(data, canvasWidth, canvasHeight, pixelGroup)
+            : data;
+        
+        var asciiGrid = [];
+        var shouldInvert = (values.textMode === 'Black on White');
+        var weights = {
+            tone: toneWeight,
+            quadrant: quadrantWeight,
+            orientation: orientWeight,
+            signature: sigWeight
+        };
+        
+        for (var row = 0; row < rows; row++) {
+            var line = [];
+            for (var col = 0; col < cols; col++) {
+                var offsets = getLayoutOffsets(values, canvasWidth, canvasHeight, outputWidth, outputHeight, lineHeight, tw);
+                var tileX = offsets.offsetX + col * (tw + letterSpacing);
+                var tileY = offsets.offsetY + row * lineHeight;
+                var tile = extractTileMetrics(sampleData, canvasWidth, Math.floor(tileX), Math.floor(tileY), Math.floor(tw), Math.floor(th), pixelGroup);
+                if (shouldInvert) {
+                    tile = invertTileMetrics(tile);
+                }
+                var bestChar = findBestMatch(tile, instance.state.glyphAtlas, weights, flowMode);
+                line.push(bestChar);
+            }
+            asciiGrid.push(line);
+        }
+        
+        return asciiGrid;
+    }
+    
+    function processImageForBatch(instance, toolInstance, fileName) {
+        // DEPRECATED: Replaced by processImageDataToGrid for better memory efficiency
+        // Kept for backwards compatibility
+        var imageData = instance.state.processedImageData;
+        if (!imageData) return;
+        
+        var values = toolInstance.getValues();
+        var asciiGrid = processImageDataToGrid(instance, imageData, values);
+        
+        var timestamp = Date.now();
+        instance.state.batchQueue.push({
+            asciiGrid: asciiGrid,
+            glyphAtlas: instance.state.glyphAtlas,
+            settings: {
+                font: values.font,
+                fontSize: values.fontSize,
+                lineHeight: values.lineHeight,
+                letterSpacing: values.letterSpacing,
+                textColor: values.textColor,
+                bgMode: values.bgMode
+            },
+            name: fileName || `ascii-art-${timestamp}`,
+            timestamp: timestamp,
+            width: imageData.width,
+            height: imageData.height
+        });
+    }
+    
+    function addToBatch(instance, toolInstance) {
+        if (!instance.state.sourceImage || !instance.state.asciiGrid) {
+            window.debugLog('TOOLS', '⚠️ No ASCII result to add to batch');
+            return;
+        }
+        
+        var values = toolInstance.getValues();
+        var timestamp = Date.now();
+        var name = `ascii-art-${timestamp}`;
+        
+        instance.state.batchQueue.push({
+            asciiGrid: JSON.parse(JSON.stringify(instance.state.asciiGrid)),
+            glyphAtlas: instance.state.glyphAtlas, // Reference, not copy
+            settings: {
+                font: values.font,
+                fontSize: values.fontSize,
+                lineHeight: values.lineHeight,
+                letterSpacing: values.letterSpacing,
+                textColor: values.textColor,
+                bgMode: values.bgMode
+            },
+            name: name,
+            timestamp: timestamp,
+            width: instance.state.sourceImage.width,
+            height: instance.state.sourceImage.height
+        });
+        
+        updateBatchStatus(instance, toolInstance);
+        updateBatchProgress(instance, toolInstance, `Added: ${name}`);
+        window.debugLog('TOOLS', `✅ Added to batch: ${name} (${instance.state.batchQueue.length} total)`);
+    }
+    
+    function processBatch(instance, toolInstance) {
+        if (instance.state.batchQueue.length === 0) {
+            window.debugLog('TOOLS', '⚠️ Batch queue is empty');
+            return;
+        }
+        
+        window.debugLog('TOOLS', `🔄 Processing batch of ${instance.state.batchQueue.length} images...`);
+        // Batch is already processed when added, just confirm
+        window.debugLog('TOOLS', `✅ Batch ready for export`);
+    }
+    
+    function exportBatch(instance, toolInstance) {
+        if (instance.state.batchQueue.length === 0) {
+            window.debugLog('TOOLS', '⚠️ Batch queue is empty');
+            return;
+        }
+        
+        var values = toolInstance.getValues();
+        var format = values.exportFormat || 'HTML Colored';
+        var timestamp = Date.now();
+        
+        window.debugLog('TOOLS', `📦 Exporting batch of ${instance.state.batchQueue.length} images as ${format}...`);
+        
+        // Export each item in batch
+        for (var i = 0; i < instance.state.batchQueue.length; i++) {
+            var item = instance.state.batchQueue[i];
+            var tempGrid = instance.state.asciiGrid;
+            var tempAtlas = instance.state.glyphAtlas;
+            
+            // Temporarily swap to batch item
+            instance.state.asciiGrid = item.asciiGrid;
+            instance.state.glyphAtlas = item.glyphAtlas;
+            
+            // Export with batch item name
+            var itemName = item.name + '-' + (i + 1);
+            
+            switch (format) {
+                case 'Plain Text':
+                    exportPlainTextWithName(instance, itemName);
+                    break;
+                case 'HTML Colored':
+                    exportHTMLWithName(instance, toolInstance, itemName);
+                    break;
+                case 'SVG (Vector)':
+                    exportSVGWithName(instance, toolInstance, itemName);
+                    break;
+                default:
+                    exportPlainTextWithName(instance, itemName);
+            }
+            
+            // Restore
+            instance.state.asciiGrid = tempGrid;
+            instance.state.glyphAtlas = tempAtlas;
+        }
+        
+        window.debugLog('TOOLS', `✅ Batch export complete: ${instance.state.batchQueue.length} files`);
+    }
+    
+    function clearBatch(instance, toolInstance) {
+        var count = instance.state.batchQueue.length;
+        instance.state.batchQueue = [];
+        updateBatchStatus(instance, toolInstance);
+        updateBatchProgress(instance, toolInstance, `Cleared ${count} images`);
+        window.debugLog('TOOLS', `🗑️ Batch cleared (${count} images removed)`);
+    }
+    
+    function exportPlainTextWithName(instance, name) {
+        var text = gridToPlainText(instance.state.asciiGrid);
+        var blob = new Blob([text], { type: 'text/plain' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name + '.txt';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+    
+    function exportHTMLWithName(instance, toolInstance, name) {
+        if (!instance.state.asciiGrid || !instance.state.glyphAtlas) return;
+        
+        var values = toolInstance.getValues();
+        var font = instance.state.glyphAtlas.charMetrics.font;
+        var fontSize = instance.state.glyphAtlas.charMetrics.fontSize;
+        var lineHeightPercent = values.lineHeight || 100;
+        var letterSpacing = values.letterSpacing || 0;
+        var textMode = values.textMode || 'Black on White';
+        var bgColor = textMode === 'Black on White' ? '#FFFFFF' : '#000000';
+        var textColor = textMode === 'Black on White' ? '#000000' : '#FFFFFF';
+        
+        var html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<style>\n';
+        html += 'body { background: ' + bgColor + '; margin: 0; padding: 20px; }\n';
+        html += 'pre { font-family: "' + font + '", monospace; color: ' + textColor + '; font-size: ' + fontSize + 'px; ';
+        html += 'line-height: ' + (lineHeightPercent / 100) + '; ';
+        html += 'letter-spacing: ' + letterSpacing + 'px; ';
+        html += 'white-space: pre; overflow-x: auto; margin: 0; }\n';
+        html += '</style>\n</head>\n<body>\n<pre>';
+        
+        var text = gridToPlainText(instance.state.asciiGrid);
+        html += text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        html += '</pre>\n</body>\n</html>';
+        
+        var blob = new Blob([html], { type: 'text/html' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name + '.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+    
+    function exportSVGWithName(instance, toolInstance, name) {
+        if (!instance.state.asciiGrid || !instance.state.glyphAtlas) return;
+        
+        var values = toolInstance.getValues();
+        var font = instance.state.glyphAtlas.charMetrics.font;
+        var fontSize = instance.state.glyphAtlas.charMetrics.fontSize;
+        var charWidth = instance.state.glyphAtlas.charMetrics.width;
+        var charHeight = instance.state.glyphAtlas.charMetrics.height;
+        var lineHeightPercent = values.lineHeight || 100;
+        var letterSpacing = values.letterSpacing || 0;
+        var lineHeight = (charHeight * lineHeightPercent) / 100;
+        var textMode = values.textMode || 'Black on White';
+        var bgColor = textMode === 'Black on White' ? '#FFFFFF' : '#000000';
+        var textColor = textMode === 'Black on White' ? '#000000' : '#FFFFFF';
+        
+        var rows = instance.state.asciiGrid.length;
+        var cols = instance.state.asciiGrid[0] ? instance.state.asciiGrid[0].length : 0;
+        var outputWidth = Math.max(1, Math.round(cols * (charWidth + letterSpacing)));
+        var outputHeight = Math.max(1, Math.round(rows * lineHeight));
+        
+        var svg = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            `<svg xmlns="http://www.w3.org/2000/svg" width="${outputWidth}" height="${outputHeight}" viewBox="0 0 ${outputWidth} ${outputHeight}">`
+        ];
+        
+        if (bgColor !== 'transparent') {
+            svg.push(`<rect width="100%" height="100%" fill="${bgColor}" />`);
+        }
+        
+        svg.push(`<text font-family="${font}, monospace" font-size="${fontSize}" fill="${textColor}" letter-spacing="${letterSpacing}">`);
+        for (var i = 0; i < rows; i++) {
+            var line = '';
+            for (var j = 0; j < instance.state.asciiGrid[i].length; j++) {
+                var item = instance.state.asciiGrid[i][j];
+                line += typeof item === 'string' ? item : item.char;
+            }
+            var y = Math.round((i + 1) * lineHeight);
+            svg.push(`<tspan x="0" y="${y}">${escapeXML(line)}</tspan>`);
+        }
+        svg.push('</text>');
+        svg.push('</svg>');
+        
+        var content = svg.join('\n');
+        var blob = new Blob([content], { type: 'image/svg+xml' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name + '.svg';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════════
     // EXPORT
     // ═══════════════════════════════════════════════════════════════════════════════
     
-    function copyToClipboard(toolInstance) {
-        if (!asciiGrid || asciiGrid.length === 0) {
+    function copyToClipboard(instance, toolInstance) {
+        if (!instance.state.asciiGrid || instance.state.asciiGrid.length === 0) {
             window.debugLog('TOOLS', 'No ASCII result to copy');
             return;
         }
         
         // Convert grid to plain text
-        var text = gridToPlainText(asciiGrid);
+        var text = gridToPlainText(instance.state.asciiGrid);
         
         navigator.clipboard.writeText(text).then(function() {
             window.debugLog('TOOLS', 'ASCII art copied to clipboard');
@@ -1370,13 +1856,19 @@ const CHAR_SETS = {
     function gridToPlainText(grid) {
         var lines = [];
         for (var i = 0; i < grid.length; i++) {
-            lines.push(grid[i].join(''));
+            var line = '';
+            for (var j = 0; j < grid[i].length; j++) {
+                var item = grid[i][j];
+                // Handle both string characters and {char, x, y} objects (proportional mode)
+                line += typeof item === 'string' ? item : (item.char || '');
+            }
+            lines.push(line);
         }
         return lines.join('\n');
     }
     
-    function exportFile(toolInstance) {
-        if (!asciiGrid || asciiGrid.length === 0) {
+    function exportFile(instance, toolInstance) {
+        if (!instance.state.asciiGrid || instance.state.asciiGrid.length === 0) {
             window.debugLog('TOOLS', 'No ASCII result to export');
             return;
         }
@@ -1386,30 +1878,30 @@ const CHAR_SETS = {
         
         switch (format) {
             case 'Plain Text':
-                exportPlainText(toolInstance);
+                exportPlainText(instance);
                 break;
             case 'HTML Colored':
-                exportHTML(toolInstance);
+                exportHTML(instance, toolInstance);
                 break;
             case 'ANSI':
-                exportANSI(toolInstance);
+                exportANSI(instance);
                 break;
             case 'SVG (Vector)':
-                exportSVG(toolInstance);
+                exportSVG(instance, toolInstance);
                 break;
             case 'LaTeX':
-                exportLatex(toolInstance);
+                exportLatex(instance);
                 break;
             case 'Image PNG':
                 exportImage(toolInstance);
                 break;
             default:
-                exportPlainText(toolInstance);
+                exportPlainText(instance);
         }
     }
     
-    function exportPlainText(toolInstance) {
-        var text = gridToPlainText(asciiGrid);
+    function exportPlainText(instance) {
+        var text = gridToPlainText(instance.state.asciiGrid);
         var blob = new Blob([text], { type: 'text/plain' });
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -1419,30 +1911,30 @@ const CHAR_SETS = {
         window.debugLog('TOOLS', 'ASCII art exported as plain text');
     }
     
-    function exportHTML(toolInstance) {
-        if (!asciiGrid || asciiGrid.length === 0 || !glyphAtlas || !glyphAtlas.charMetrics) {
+    function exportHTML(instance, toolInstance) {
+        if (!instance.state.asciiGrid || instance.state.asciiGrid.length === 0 || !instance.state.glyphAtlas || !instance.state.glyphAtlas.charMetrics) {
             window.debugLog('TOOLS', 'No ASCII result to export');
             return;
         }
         
         var values = toolInstance.getValues();
-        var font = glyphAtlas.charMetrics.font;
-        var fontSize = glyphAtlas.charMetrics.fontSize;
+        var font = instance.state.glyphAtlas.charMetrics.font;
+        var fontSize = instance.state.glyphAtlas.charMetrics.fontSize;
         var lineHeightPercent = values.lineHeight || 100;
         var letterSpacing = values.letterSpacing || 0;
-        var bgMode = values.bgMode || 'Black';
-        var bgColor = bgMode === 'White' ? '#FFFFFF' : bgMode === 'Transparent' ? 'transparent' : '#000000';
-        var textColor = values.textColor || '#FFFFFF';
+        var textMode = values.textMode || 'Black on White';
+        var bgColor = textMode === 'Black on White' ? '#FFFFFF' : '#000000';
+        var textColor = textMode === 'Black on White' ? '#000000' : '#FFFFFF';
         
         var html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<style>\n';
-        html += 'body { background: ' + bgColor + '; margin: 0; padding: 20px; font-family: "' + font + '", monospace; }\n';
-        html += 'pre { color: ' + textColor + '; font-size: ' + fontSize + 'px; ';
+        html += 'body { background: ' + bgColor + '; margin: 0; padding: 20px; }\n';
+        html += 'pre { font-family: "' + font + '", monospace; color: ' + textColor + '; font-size: ' + fontSize + 'px; ';
         html += 'line-height: ' + (lineHeightPercent / 100) + '; ';
         html += 'letter-spacing: ' + letterSpacing + 'px; ';
         html += 'white-space: pre; overflow-x: auto; margin: 0; }\n';
         html += '</style>\n</head>\n<body>\n<pre>';
         
-        var text = gridToPlainText(asciiGrid);
+        var text = gridToPlainText(instance.state.asciiGrid);
         html += text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         
         html += '</pre>\n</body>\n</html>';
@@ -1456,14 +1948,14 @@ const CHAR_SETS = {
         window.debugLog('TOOLS', 'ASCII art exported as HTML');
     }
     
-    function exportANSI(toolInstance) {
-        if (!asciiGrid || asciiGrid.length === 0) {
+    function exportANSI(instance) {
+        if (!instance.state.asciiGrid || instance.state.asciiGrid.length === 0) {
             window.debugLog('TOOLS', 'No ASCII result to export');
             return;
         }
         
         // For now, export as plain text (ANSI color codes would go here later)
-        var text = gridToPlainText(asciiGrid);
+        var text = gridToPlainText(instance.state.asciiGrid);
         var blob = new Blob([text], { type: 'text/plain' });
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -1473,17 +1965,17 @@ const CHAR_SETS = {
         window.debugLog('TOOLS', 'ASCII art exported as ANSI');
     }
     
-    function exportSVG(toolInstance) {
-        if (!asciiGrid || asciiGrid.length === 0 || !glyphAtlas || !glyphAtlas.charMetrics) {
+    function exportSVG(instance, toolInstance) {
+        if (!instance.state.asciiGrid || instance.state.asciiGrid.length === 0 || !instance.state.glyphAtlas || !instance.state.glyphAtlas.charMetrics) {
             window.debugLog('TOOLS', 'No ASCII result to export');
             return;
         }
         
         var values = toolInstance.getValues();
-        var font = glyphAtlas.charMetrics.font;
-        var fontSize = glyphAtlas.charMetrics.fontSize;
-        var charWidth = glyphAtlas.charMetrics.width;
-        var charHeight = glyphAtlas.charMetrics.height;
+        var font = instance.state.glyphAtlas.charMetrics.font;
+        var fontSize = instance.state.glyphAtlas.charMetrics.fontSize;
+        var charWidth = instance.state.glyphAtlas.charMetrics.width;
+        var charHeight = instance.state.glyphAtlas.charMetrics.height;
         var lineHeightPercent = values.lineHeight || 100;
         var letterSpacing = values.letterSpacing || 0;
         var lineHeight = (charHeight * lineHeightPercent) / 100;
@@ -1492,8 +1984,8 @@ const CHAR_SETS = {
         var bgColor = bgMode === 'White' ? '#FFFFFF' : bgMode === 'Transparent' ? 'transparent' : '#000000';
         var fontMode = values.fontMode || 'Monospace (Grid)';
         
-        var rows = asciiGrid.length;
-        var cols = asciiGrid[0] ? asciiGrid[0].length : 0;
+        var rows = instance.state.asciiGrid.length;
+        var cols = instance.state.asciiGrid[0] ? instance.state.asciiGrid[0].length : 0;
         var outputWidth = Math.max(1, Math.round(cols * (charWidth + letterSpacing)));
         var outputHeight = Math.max(1, Math.round(rows * lineHeight));
         
@@ -1509,8 +2001,8 @@ const CHAR_SETS = {
         if (fontMode === 'Proportional (Sequential)') {
             svg.push(`<g font-family="${font}, monospace" font-size="${fontSize}" fill="${textColor}">`);
             for (var row = 0; row < rows; row++) {
-                for (var col = 0; col < asciiGrid[row].length; col++) {
-                    var item = asciiGrid[row][col];
+                for (var col = 0; col < instance.state.asciiGrid[row].length; col++) {
+                    var item = instance.state.asciiGrid[row][col];
                     var x = Math.round(item.x);
                     var y = Math.round(item.y + charHeight);
                     svg.push(`<text x="${x}" y="${y}">${escapeXML(item.char)}</text>`);
@@ -1520,7 +2012,7 @@ const CHAR_SETS = {
         } else {
             svg.push(`<text font-family="${font}, monospace" font-size="${fontSize}" fill="${textColor}" letter-spacing="${letterSpacing}">`);
             for (var i = 0; i < rows; i++) {
-                var line = asciiGrid[i].join('');
+                var line = instance.state.asciiGrid[i].join('');
                 var y = Math.round((i + 1) * lineHeight);
                 svg.push(`<tspan x="0" y="${y}">${escapeXML(line)}</tspan>`);
             }
@@ -1539,13 +2031,13 @@ const CHAR_SETS = {
         window.debugLog('TOOLS', 'ASCII art exported as SVG');
     }
     
-    function exportLatex(toolInstance) {
-        if (!asciiGrid || asciiGrid.length === 0) {
+    function exportLatex(instance) {
+        if (!instance.state.asciiGrid || instance.state.asciiGrid.length === 0) {
             window.debugLog('TOOLS', 'No ASCII result to export');
             return;
         }
         
-        var text = gridToPlainText(asciiGrid);
+        var text = gridToPlainText(instance.state.asciiGrid);
         var content = [
             '\\\\documentclass{article}',
             '\\\\usepackage[utf8]{inputenc}',
@@ -1600,40 +2092,29 @@ const CHAR_SETS = {
     // ═══════════════════════════════════════════════════════════════════════════════
     
     function applyDisplayMode(toolInstance, mode) {
-        if (!toolInstance.canvas) return;
+        if (!toolInstance || !toolInstance.setCanvasDisplayMode) return;
         
-        var canvas = toolInstance.canvas;
-        
-        switch(mode) {
+        var mappedMode = 'auto';
+        switch (mode) {
             case 'Fit':
-                // Scale to fit container, maintain aspect ratio
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.objectFit = 'contain';
-                canvas.style.imageRendering = 'auto';
+                mappedMode = 'fit';
                 break;
-                
             case 'Fill':
-                // Scale to fill container, may crop
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.objectFit = 'cover';
-                canvas.style.imageRendering = 'auto';
+                mappedMode = 'fill';
                 break;
-                
             case 'Actual':
-                // Show at actual pixel size, no scaling
-                canvas.style.width = canvas.width + 'px';
-                canvas.style.height = canvas.height + 'px';
-                canvas.style.objectFit = 'none';
-                canvas.style.imageRendering = 'pixelated';
+                mappedMode = 'actual';
+                break;
+            default:
+                mappedMode = 'auto';
                 break;
         }
         
+        toolInstance.setCanvasDisplayMode(mappedMode);
         window.debugLog('TOOLS', `Display mode set to: ${mode}`);
     }
     
-    function setCanvasSize(toolInstance, width, height, options) {
+    function setCanvasSize(instance, toolInstance, width, height, options) {
         var opts = options || {};
         var snapToGrid = !!opts.snapToGrid;
         
@@ -1649,14 +2130,18 @@ const CHAR_SETS = {
         window.debugLog('TOOLS', `Setting canvas to ${width}×${height}px`);
         
         // Update canvas
-        if (toolInstance.canvas) {
+        if (toolInstance.canvasComponent && toolInstance.canvasComponent.resize) {
+            toolInstance.canvasComponent.resize(width, height, { resetTransform: true });
+            toolInstance.canvas = toolInstance.canvasComponent.canvasEl;
+            toolInstance.ctx = toolInstance.canvasComponent.ctx;
+        } else if (toolInstance.canvas) {
             toolInstance.canvas.width = width;
             toolInstance.canvas.height = height;
-            
-            // Reapply display mode
-            var displayMode = toolInstance.values.displayMode || 'Actual';
-            applyDisplayMode(toolInstance, displayMode);
         }
+        
+        // Reapply display mode
+        var displayMode = toolInstance.values.displayMode || 'Actual';
+        applyDisplayMode(toolInstance, displayMode);
         
         // Update sliders and displays
         var widthSlider = toolInstance.getComponent('canvasWidth');
@@ -1686,25 +2171,25 @@ const CHAR_SETS = {
         }
         
         // Reprocess if image loaded
-        if (sourceImage) {
-            processImage(toolInstance);
+        if (instance.state.sourceImage) {
+            processImage(instance, toolInstance);
         } else {
             toolInstance.draw();
         }
     }
     
-    function applyCanvasFromImage(toolInstance, values) {
-        if (!sourceImage) return;
+    function applyCanvasFromImage(instance, toolInstance, values) {
+        if (!instance.state.sourceImage) return;
         
         var scale = parseCanvasScale(values.canvasScale || '1×');
-        lastCanvasScale = scale;
-        var width = Math.max(1, Math.round(sourceImage.width * scale));
-        var height = Math.max(1, Math.round(sourceImage.height * scale));
+        instance.state.lastCanvasScale = scale;
+        var width = Math.max(1, Math.round(instance.state.sourceImage.width * scale));
+        var height = Math.max(1, Math.round(instance.state.sourceImage.height * scale));
         
-        setCanvasSize(toolInstance, width, height);
+        setCanvasSize(instance, toolInstance, width, height);
     }
     
-    function applyOutputTargetConstraints(toolInstance, target) {
+    function applyOutputTargetConstraints(instance, toolInstance, target) {
         var values = toolInstance.getValues();
         var font = values.font || 'Atkinson Hyperlegible';
         var fontSize = values.fontSize || 12;
@@ -1720,9 +2205,9 @@ const CHAR_SETS = {
                 if (fontFilterComponent && fontFilterComponent.setValue) {
                     fontFilterComponent.setValue(['Monospace Only']);
                 }
-                updateFontDropdown(toolInstance, toolInstance.values);
-                forceFontMode(toolInstance, 'Monospace (Grid)');
-                setCanvasSize(toolInstance, 80 * charWidth, 24 * charHeight);
+                updateFontDropdown(instance, toolInstance, toolInstance.values);
+                forceFontMode(instance, toolInstance, 'Monospace (Grid)');
+                setCanvasSize(instance, toolInstance, 80 * charWidth, 24 * charHeight);
                 break;
             }
             case 'Terminal (120×40)': {
@@ -1730,17 +2215,17 @@ const CHAR_SETS = {
                 if (fontFilterComponent && fontFilterComponent.setValue) {
                     fontFilterComponent.setValue(['Monospace Only']);
                 }
-                updateFontDropdown(toolInstance, toolInstance.values);
-                forceFontMode(toolInstance, 'Monospace (Grid)');
-                setCanvasSize(toolInstance, 120 * charWidth, 40 * charHeight);
+                updateFontDropdown(instance, toolInstance, toolInstance.values);
+                forceFontMode(instance, toolInstance, 'Monospace (Grid)');
+                setCanvasSize(instance, toolInstance, 120 * charWidth, 40 * charHeight);
                 break;
             }
             case 'Print (A4 Portrait)': {
-                applyCanvasAspectRatio(toolInstance, 595 / 842);
+                applyCanvasAspectRatio(instance, toolInstance, 595 / 842);
                 break;
             }
             case 'Print (A4 Landscape)': {
-                applyCanvasAspectRatio(toolInstance, 842 / 595);
+                applyCanvasAspectRatio(instance, toolInstance, 842 / 595);
                 break;
             }
             case 'Document (Monospace)': {
@@ -1748,9 +2233,9 @@ const CHAR_SETS = {
                 if (fontFilterComponent && fontFilterComponent.setValue) {
                     fontFilterComponent.setValue(['Monospace Only']);
                 }
-                updateFontDropdown(toolInstance, toolInstance.values);
-                forceFontMode(toolInstance, 'Monospace (Grid)');
-                setCanvasSize(toolInstance, 80 * charWidth, toolInstance.values.canvasHeight || 420);
+                updateFontDropdown(instance, toolInstance, toolInstance.values);
+                forceFontMode(instance, toolInstance, 'Monospace (Grid)');
+                setCanvasSize(instance, toolInstance, 80 * charWidth, toolInstance.values.canvasHeight || 420);
                 break;
             }
             case 'Document (Non-monospace)': {
@@ -1758,13 +2243,13 @@ const CHAR_SETS = {
                 if (fontFilterComponent && fontFilterComponent.setValue) {
                     fontFilterComponent.setValue([]);
                 }
-                updateFontDropdown(toolInstance, toolInstance.values);
-                forceFontMode(toolInstance, 'Proportional (Sequential)');
-                setCanvasSize(toolInstance, toolInstance.values.canvasWidth || 420, toolInstance.values.canvasHeight || 420);
+                updateFontDropdown(instance, toolInstance, toolInstance.values);
+                forceFontMode(instance, toolInstance, 'Proportional (Sequential)');
+                setCanvasSize(instance, toolInstance, toolInstance.values.canvasWidth || 420, toolInstance.values.canvasHeight || 420);
                 break;
             }
             case 'Web Page': {
-                setCanvasSize(toolInstance, 600, toolInstance.values.canvasHeight || 420);
+                setCanvasSize(instance, toolInstance, 600, toolInstance.values.canvasHeight || 420);
                 break;
             }
             case 'Terminal (Custom)':
@@ -1801,24 +2286,24 @@ const CHAR_SETS = {
         }
     }
 
-    function applyCanvasScale(toolInstance, values) {
+    function applyCanvasScale(instance, toolInstance, values) {
         var nextScale = parseCanvasScale(values.canvasScale || '1×');
         var currentWidth = values.canvasWidth || (toolInstance.canvas ? toolInstance.canvas.width : 420);
         var currentHeight = values.canvasHeight || (toolInstance.canvas ? toolInstance.canvas.height : 420);
-        var baseWidth = currentWidth / (lastCanvasScale || 1);
-        var baseHeight = currentHeight / (lastCanvasScale || 1);
+        var baseWidth = currentWidth / (instance.state.lastCanvasScale || 1);
+        var baseHeight = currentHeight / (instance.state.lastCanvasScale || 1);
         
-        lastCanvasScale = nextScale;
-        setCanvasSize(toolInstance, baseWidth * nextScale, baseHeight * nextScale);
+        instance.state.lastCanvasScale = nextScale;
+        setCanvasSize(instance, toolInstance, baseWidth * nextScale, baseHeight * nextScale);
     }
     
-    function applyFontModeFromFont(toolInstance, fontName) {
+    function applyFontModeFromFont(instance, toolInstance, fontName) {
         if (!fontName) return;
         var mode = isMonospaceFont(fontName) ? 'Monospace (Grid)' : 'Proportional (Sequential)';
-        forceFontMode(toolInstance, mode);
+        forceFontMode(instance, toolInstance, mode);
     }
     
-    function forceFontMode(toolInstance, mode) {
+    function forceFontMode(instance, toolInstance, mode) {
         toolInstance.values.fontMode = mode;
         var fontModeComponent = toolInstance.getComponent('fontMode');
         if (fontModeComponent && fontModeComponent.setValue) {
@@ -1835,7 +2320,7 @@ const CHAR_SETS = {
         };
     }
     
-    function applyCanvasAspectRatio(toolInstance, aspect) {
+    function applyCanvasAspectRatio(instance, toolInstance, aspect) {
         var width = toolInstance.values.canvasWidth || (toolInstance.canvas ? toolInstance.canvas.width : 420);
         var height = toolInstance.values.canvasHeight || (toolInstance.canvas ? toolInstance.canvas.height : 420);
         var area = Math.max(1, width * height);
@@ -1843,22 +2328,24 @@ const CHAR_SETS = {
         var newWidth = Math.sqrt(area * aspect);
         var newHeight = area / newWidth;
         
-        setCanvasSize(toolInstance, newWidth, newHeight);
+        setCanvasSize(instance, toolInstance, newWidth, newHeight);
     }
     
     
-    function updateFontDropdown(tool, values) {
+    function updateFontDropdown(instance, tool, values) {
         // Get font component
         var fontComponent = tool.getComponent('font');
         if (!fontComponent) return;
         
         // Get available fonts based on filter
         var showMonospaceOnly = (values.fontFilter || []).indexOf('Monospace Only') >= 0;
-        var fonts = getAvailableFonts();
+        var fonts = getAvailableFonts(instance);
         
         if (showMonospaceOnly) {
             fonts = getMonospaceFonts(fonts);
             window.debugLog('TOOLS', `Filtered to ${fonts.length} monospace fonts`);
+        } else {
+            window.debugLog('TOOLS', `Showing all ${fonts.length} fonts`);
         }
         
         // Update dropdown options via component API
@@ -1876,7 +2363,7 @@ const CHAR_SETS = {
         }
     }
     
-    function loadGoogleFontHandler(toolInstance) {
+    function loadGoogleFontHandler(instance, toolInstance) {
         var values = toolInstance.getValues();
         var fontName = values.googleFontName;
         
@@ -1888,12 +2375,12 @@ const CHAR_SETS = {
         loadGoogleFont(fontName)
             .then(function(loadedFont) {
                 // Font loaded successfully - track it
-                loadedCustomFonts.push(loadedFont);
+                instance.state.loadedCustomFonts.push(loadedFont);
                 
                 window.debugLog('TOOLS', `Google Font "${loadedFont}" loaded successfully`);
                 
                 // Update dropdown
-                updateFontDropdown(toolInstance, values);
+                updateFontDropdown(instance, toolInstance, values);
                 
                 // Select the newly loaded font
                 var fontComponent = toolInstance.getComponent('font');
@@ -1932,12 +2419,35 @@ export class AsciiArtGeneratorTool {
             ...(deps || {})
         };
         this.tool = null;
+        
+        // Instance state - replaces module-level variables
+        this.state = {
+            sourceImage: null,
+            asciiGrid: null,
+            glyphAtlas: null,
+            processedImageData: null,
+            processedImageBitmap: null,
+            processedPreviewData: null,
+            edgeDetectionData: null,
+            lastCanvasScale: 1,
+            isPreparingBitmap: false,
+            systemFonts: [],
+            loadedCustomFonts: [],
+            atlasLocked: false,
+            atlasConfig: null,
+            isRevertingAtlas: false,
+            rebuildArmed: false,
+            atlasWarning: false,
+            batchQueue: [] // Array of {sourceImage, asciiGrid, settings, name}
+        };
+        
         this.render();
     }
     
     render() {
         try {
-            this.tool = new ToolBase(TOOL_CONFIG, this.deps);
+            const config = createToolConfig(this);
+            this.tool = new ToolBase(config, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
             
@@ -1953,10 +2463,19 @@ export class AsciiArtGeneratorTool {
     };
     
     destroy() {
-        sourceImage = null;
-        asciiGrid = null;
-        glyphAtlas = null;
-        processedImageData = null;
+        // Clear instance state
+        this.state.sourceImage = null;
+        this.state.asciiGrid = null;
+        this.state.glyphAtlas = null;
+        this.state.processedImageData = null;
+        this.state.processedImageBitmap = null;
+        this.state.processedPreviewData = null;
+        this.state.edgeDetectionData = null;
+        this.state.systemFonts = [];
+        this.state.loadedCustomFonts = [];
+        this.state.atlasConfig = null;
+        this.state.batchQueue = [];
+        this.state = null;
         
         if (this.tool) {
             this.tool.destroy();

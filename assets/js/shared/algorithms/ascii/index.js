@@ -9,7 +9,8 @@ export {
     calculateToneCost,
     calculateQuadrantCost,
     calculateOrientationCost,
-    calculateSignatureCost
+    calculateSignatureCost,
+    calculatePixelCorrelationCost
 } from './character-matching.js';
 
 export {
