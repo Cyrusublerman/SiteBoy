@@ -14,6 +14,7 @@
  */
 
 import { ToolBase } from '../core/tool-base.js';
+import { ThrottledLoop, IntervalAnimator } from '../../core/animation-foundation.js';
 import {
     generateSequences,
     buildSequenceMap,
@@ -62,6 +63,11 @@ import {
     autoCalculateScale,
     drawGridOverlay
 } from '../../shared/algorithms/image/image-utils.js';
+import * as ColorSpace from '../../shared/algorithms/color/color-space.js';
+import { nearestColorQuantize } from '../../shared/algorithms/dither/nearest-color.js';
+import { floydSteinberg } from '../../shared/algorithms/dither/error-diffusion.js';
+import { bayer4x4 } from '../../shared/algorithms/dither/ordered.js';
+import { ditherBlueNoiseBracketing } from '../../shared/algorithms/dither/blue-noise-bracketing.js';
 
 // Bambu Lab PLA Basic - 29 Colors
 const FILAMENT_COLOURS = [
@@ -125,6 +131,7 @@ export class MultifilamentPrintTool {
         this.palette = [];
         this.quantizedImage = null;
         this.layerMaps = [];
+        this.blueNoiseTexture = null; // For blue noise dithering
         
         // Filament selection state
         this.selectedFilaments = []; // Array of indices into FILAMENT_COLOURS
@@ -418,41 +425,49 @@ export class MultifilamentPrintTool {
             const x = e.clientX - rect.left;
             const width = rect.width;
             
-            // Clear existing interval
-            if (this.scrollInterval) {
-                clearInterval(this.scrollInterval);
-                this.scrollInterval = null;
+            // Stop existing animator
+            if (this.scrollAnimator) {
+                this.scrollAnimator.stop();
+                this.scrollAnimator.destroy();
+                this.scrollAnimator = null;
             }
             
             // Left edge - scroll left
             if (x < EDGE_ZONE && container.scrollLeft > 0) {
-                this.scrollInterval = setInterval(() => {
-                    container.scrollLeft -= SCROLL_SPEED;
-                    if (container.scrollLeft <= 0) {
-                        clearInterval(this.scrollInterval);
-                        this.scrollInterval = null;
+                this.scrollAnimator = new IntervalAnimator({
+                    interval: 16,
+                    onTick: () => {
+                        container.scrollLeft -= SCROLL_SPEED;
+                        if (container.scrollLeft <= 0) {
+                            this.scrollAnimator.stop();
+                        }
                     }
-                }, 16);
+                });
+                this.scrollAnimator.start();
             }
             // Right edge - scroll right
             else if (x > width - EDGE_ZONE) {
                 const maxScroll = container.scrollWidth - container.clientWidth;
                 if (container.scrollLeft < maxScroll) {
-                    this.scrollInterval = setInterval(() => {
-                        container.scrollLeft += SCROLL_SPEED;
-                        if (container.scrollLeft >= maxScroll) {
-                            clearInterval(this.scrollInterval);
-                            this.scrollInterval = null;
+                    this.scrollAnimator = new IntervalAnimator({
+                        interval: 16,
+                        onTick: () => {
+                            container.scrollLeft += SCROLL_SPEED;
+                            if (container.scrollLeft >= maxScroll) {
+                                this.scrollAnimator.stop();
+                            }
                         }
-                    }, 16);
+                    });
+                    this.scrollAnimator.start();
                 }
             }
         });
         
         container.addEventListener('mouseleave', () => {
-            if (this.scrollInterval) {
-                clearInterval(this.scrollInterval);
-                this.scrollInterval = null;
+            if (this.scrollAnimator) {
+                this.scrollAnimator.stop();
+                this.scrollAnimator.destroy();
+                this.scrollAnimator = null;
             }
         });
     }
@@ -684,21 +699,36 @@ export class MultifilamentPrintTool {
     _getQuantizeSidebar() {
         // Show loaded palette info if available
         let paletteStatusText = '';
+        let paletteColours = [];
         if (this.gridData && this.gridData.colours) {
             const colorNames = this.gridData.colours.map(c => c.n).join(', ');
-            paletteStatusText = `✅ Palette loaded: ${this.gridData.colours.length} colors (${colorNames})`;
+            paletteStatusText = `✅ ${this.gridData.colours.length} colours: ${colorNames}`;
+            paletteColours = this.gridData.colours.map(c => c.h);
         } else {
-            paletteStatusText = '⚠️ No palette loaded. Generate or import a grid first.';
+            paletteStatusText = '⚠️ No palette. Generate/import grid first.';
         }
         
         return [['CONTROLS', [
-            ['PALETTE STATUS', [
+            ['PALETTE', [
                 ['label', paletteStatusText, { key: 'paletteStatus', variant: 'caption' }],
+                ['palettePreview', { colours: paletteColours, key: 'palettePreview' }],
             ]],
-            ['IMAGE PROCESSING', [
+            ['IMAGE', [
                 ['file', 'Source Image', null, { key: 'sourceImage', accept: 'image/*' }],
                 ['number', 'Print Width (mm)', 170, { key: 'printWidth', min: 50, max: 300 }],
-                ['number', 'Dither Strength', 1.0, { key: 'ditherStrength', min: 0, max: 1, step: 0.1 }],
+            ]],
+            ['IMAGE ADJUSTMENTS', [
+                ['adjustment-bundle', 'professional', null, {
+                    key: 'imageAdjust'
+                }],
+            ]],
+            ['RESOLUTION', [
+                ['number', 'Max Detail (mm)', 0.4, { key: 'maxDetail', min: 0.1, max: 2, step: 0.1 }],
+                ['button', 'Downscale to Detail', null, { key: 'downscale' }],
+                ['label', '', { key: 'resolutionStatus', variant: 'caption' }],
+            ]],
+            ['DITHER', [
+                ['dropdown', 'Algorithm', ['None', 'Floyd-Steinberg', 'Bayer 4×4', 'Blue Noise'], { key: 'ditherAlgorithm', value: 'Floyd-Steinberg' }],
                 ['number', 'Min Detail (mm)', 0.8, { key: 'minDetail', min: 0, max: 2, step: 0.1 }],
             ]],
             ['ACTIONS', [
@@ -789,6 +819,12 @@ export class MultifilamentPrintTool {
                 this._wireButton('exportQuantConfig', () => this._exportQuantizationConfigAction());
                 this._wireButton('exportComparisonCSV', () => this._exportComparisonCSVAction());
                 
+                // Create throttled draw loop for scan canvas interactions
+                this.scanDrawLoop = new ThrottledLoop({
+                    fps: 60,
+                    onFrame: () => this.toolBase.draw()
+                });
+                
                 // Wire canvas interactions for corner dragging
                 this._setupScanCanvasInteraction();
                 
@@ -800,8 +836,26 @@ export class MultifilamentPrintTool {
                 break;
             case 'QUANTIZE':
                 this._wireFileInput('sourceImage', (file) => this._loadSourceImage(file));
+                this._wireButton('downscale', () => this._downscaleAction());
                 this._wireButton('quantize', () => this._quantizeAction());
+                this._loadBlueNoise();
+                this._updatePalettePreview();
                 this._setStatus('quantizeStatus', 'Upload source image to quantize');
+                
+                // Wire adjustment bundle to feed adjusted image into workflow
+                const adjustBundle = this.toolBase.components.get('imageAdjust');
+                if (adjustBundle) {
+                    // When user clicks "Apply" in adjustment bundle
+                    adjustBundle.onTransform = (adjustedImageData) => {
+                        // Store adjusted image as the source for downscaling/quantization
+                        this.sourceImageData = adjustedImageData;
+                        
+                        // Update canvas to show adjusted result
+                        this.toolBase.draw();
+                        
+                        console.log('✅ Image adjustments applied, canvas updated');
+                    };
+                }
                 break;
             case 'EXPORT':
                 this._wireButton('exportCompleteProject', () => this._exportCompletePackageAction());
@@ -1014,8 +1068,13 @@ export class MultifilamentPrintTool {
                 break;
             case 'QUANTIZE':
                 if (this.quantizedImage) {
+                    // Show quantized result
                     ctx.putImageData(this.quantizedImage, 0, 0);
+                } else if (this.sourceImageData) {
+                    // Show adjusted image data (from adjustments or downscale)
+                    ctx.putImageData(this.sourceImageData, 0, 0);
                 } else if (this.sourceImageElement) {
+                    // Show original image
                     ctx.drawImage(this.sourceImageElement, 0, 0, canvas.width, canvas.height);
                 } else {
                     this._drawPlaceholder(ctx, canvas, 'Upload Source Image');
@@ -2124,9 +2183,236 @@ export class MultifilamentPrintTool {
         this._setStatus('scanStatus', `✅ Exported quantization config (${this.quantizationConfig.colorMap.length} colors)`);
     }
     
+    /**
+     * Load blue noise texture for dithering
+     */
+    _loadBlueNoise() {
+        if (this.blueNoiseTexture) return; // Already loaded
+        
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = img.naturalWidth || img.width || 64;
+                tempCanvas.height = img.naturalHeight || img.height || 64;
+                tempCtx.drawImage(img, 0, 0);
+                this.blueNoiseTexture = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                console.log('✅ Blue noise texture loaded:', tempCanvas.width, 'x', tempCanvas.height);
+            } catch (err) {
+                console.warn('Blue noise getImageData failed:', err.message);
+            }
+        };
+        img.onerror = () => {
+            console.warn('Blue noise texture failed to load');
+        };
+        img.src = '/assets/images/blue%20noise/64_64/LDR_LLL1_0.png';
+    }
+    
+    /**
+     * Update palette preview component with current grid colours
+     */
+    _updatePalettePreview() {
+        if (!this.toolBase) return;
+        
+        const previewComponent = this.toolBase.getComponent('palettePreview');
+        if (!previewComponent || typeof previewComponent.setColours !== 'function') return;
+        
+        if (this.gridData && this.gridData.colours) {
+            const colours = this.gridData.colours.map(c => c.h);
+            previewComponent.setColours(colours);
+        } else {
+            previewComponent.setColours([]);
+        }
+    }
+    
+    /**
+     * Downscale image to match printer resolution limits
+     */
+    _downscaleAction() {
+        if (!this.sourceImageElement) {
+            this._setStatus('resolutionStatus', '❌ Load image first');
+            return;
+        }
+        
+        const values = this.toolBase.getValues();
+        const printWidth = parseFloat(values.printWidth) || 170;
+        const maxDetail = parseFloat(values.maxDetail) || 0.4;
+        
+        // Calculate target resolution based on print width and max detail
+        const targetWidth = Math.ceil(printWidth / maxDetail);
+        
+        // Determine source dimensions and data
+        let sourceWidth, sourceHeight, sourceImageData;
+        
+        if (this.sourceImageData) {
+            // Use adjusted image data if available
+            sourceWidth = this.sourceImageData.width;
+            sourceHeight = this.sourceImageData.height;
+            sourceImageData = this.sourceImageData;
+            console.log('📐 Downscaling from adjusted image');
+        } else {
+            // Fall back to original image element
+            sourceWidth = this.sourceImageElement.naturalWidth;
+            sourceHeight = this.sourceImageElement.naturalHeight;
+            console.log('📐 Downscaling from original image');
+        }
+        
+        const aspectRatio = sourceHeight / sourceWidth;
+        
+        // Only downscale if image is larger than target
+        if (sourceWidth <= targetWidth) {
+            this._setStatus('resolutionStatus', `✅ Already ≤ ${targetWidth}px (no change)`);
+            return;
+        }
+        
+        const targetHeight = Math.ceil(targetWidth * aspectRatio);
+        
+        // Create downscaled canvas
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = targetWidth;
+        tempCanvas.height = targetHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Use high-quality downscaling
+        tempCtx.imageSmoothingEnabled = true;
+        tempCtx.imageSmoothingQuality = 'high';
+        
+        if (sourceImageData) {
+            // Downscale from ImageData
+            const sourceCanvas = document.createElement('canvas');
+            sourceCanvas.width = sourceWidth;
+            sourceCanvas.height = sourceHeight;
+            const sourceCtx = sourceCanvas.getContext('2d');
+            sourceCtx.putImageData(sourceImageData, 0, 0);
+            tempCtx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+        } else {
+            // Downscale from image element
+            tempCtx.drawImage(this.sourceImageElement, 0, 0, targetWidth, targetHeight);
+        }
+        
+        // Store the downscaled image data
+        this.sourceImageData = tempCtx.getImageData(0, 0, targetWidth, targetHeight);
+        
+        // Update canvas size using ToolBase API
+        this.toolBase.resizeCanvas(targetWidth, targetHeight);
+        
+        // Redraw
+        this.toolBase.draw();
+        
+        this._setStatus('resolutionStatus', `✅ ${sourceWidth}→${targetWidth}px (${maxDetail}mm detail)`);
+    }
+        this._setStatus('resolutionStatus', `✅ ${sourceWidth}→${targetWidth}px (${maxDetail}mm detail)`);
+    }
+    
+    /**
+     * Quantize source image to grid palette
+     */
     _quantizeAction() {
-        console.log('Quantize action');
-        this._setStatus('quantizeStatus', 'Quantization not yet implemented');
+        if (!this.gridData || !this.gridData.colours) {
+            this._setStatus('quantizeStatus', '❌ No palette. Generate/import grid first.');
+            return;
+        }
+        
+        if (!this.sourceImageElement && !this.sourceImageData) {
+            this._setStatus('quantizeStatus', '❌ Load source image first');
+            return;
+        }
+        
+        this._setStatus('quantizeStatus', 'Processing...');
+        
+        // Get image data (use pre-downscaled if available)
+        let imageData;
+        if (this.sourceImageData) {
+            // Clone the source data so we don't mutate it
+            imageData = new ImageData(
+                new Uint8ClampedArray(this.sourceImageData.data),
+                this.sourceImageData.width,
+                this.sourceImageData.height
+            );
+        } else {
+            // Get from image element
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.sourceImageElement.naturalWidth;
+            tempCanvas.height = this.sourceImageElement.naturalHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(this.sourceImageElement, 0, 0);
+            imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        }
+        
+        // Build palette from grid colours
+        const palette = this.gridData.colours.map(c => c.h);
+        const paletteLabs = palette.map(hex => {
+            const rgb = ColorSpace.hexToRgb(hex);
+            return ColorSpace.rgbToLab(rgb.r, rgb.g, rgb.b);
+        });
+        
+        // Get dither settings
+        const values = this.toolBase.getValues();
+        const algorithm = values.ditherAlgorithm || 'Floyd-Steinberg';
+        const minDetail = parseFloat(values.minDetail) || 0.8;
+        const printWidth = parseFloat(values.printWidth) || 170;
+        
+        // Apply dithering
+        let result;
+        const startTime = performance.now();
+        
+        try {
+            switch (algorithm) {
+                case 'None':
+                    result = nearestColorQuantize(imageData, palette, paletteLabs, ColorSpace);
+                    break;
+                case 'Floyd-Steinberg':
+                    result = floydSteinberg(imageData, palette, paletteLabs, ColorSpace);
+                    break;
+                case 'Bayer 4×4':
+                    result = bayer4x4(imageData, palette, paletteLabs, ColorSpace);
+                    break;
+                case 'Blue Noise':
+                    if (!this.blueNoiseTexture) {
+                        this._setStatus('quantizeStatus', '⚠️ Blue noise loading, using Floyd-Steinberg');
+                        result = floydSteinberg(imageData, palette, paletteLabs, ColorSpace);
+                    } else {
+                        result = ditherBlueNoiseBracketing(imageData, palette, paletteLabs, this.blueNoiseTexture, ColorSpace);
+                    }
+                    break;
+                default:
+                    result = floydSteinberg(imageData, palette, paletteLabs, ColorSpace);
+            }
+            
+            // Apply min detail filter if set
+            if (minDetail > 0) {
+                const mask = applyMinDetailFilter(result, palette.map(h => {
+                    const rgb = ColorSpace.hexToRgb(h);
+                    return { r: rgb.r, g: rgb.g, b: rgb.b };
+                }), minDetail, printWidth);
+                
+                // Apply mask to result (semi-transparent filtered pixels)
+                const data = result.data;
+                for (let i = 0; i < mask.length; i++) {
+                    if (mask[i] === 0) {
+                        data[i * 4 + 3] = 128; // Semi-transparent for filtered
+                    }
+                }
+            }
+            
+            const endTime = performance.now();
+            
+            // Store result
+            this.quantizedImage = result;
+            
+            // Update canvas size and redraw
+            const canvas = this.toolBase.canvas;
+            canvas.width = result.width;
+            canvas.height = result.height;
+            this.toolBase.draw();
+            
+            this._setStatus('quantizeStatus', `✅ ${algorithm} (${((endTime - startTime) / 1000).toFixed(2)}s)`);
+            
+        } catch (err) {
+            console.error('Quantization failed:', err);
+            this._setStatus('quantizeStatus', `❌ Error: ${err.message}`);
+        }
     }
     
     _exportSTLAction() {
@@ -3299,8 +3585,32 @@ export class MultifilamentPrintTool {
         const img = new Image();
         img.onload = () => {
             this.sourceImageElement = img;
+            this.sourceImageData = null; // Reset downscaled data
+            this.quantizedImage = null; // Reset quantized result
+            
+            // Update canvas to match image size using ToolBase API
+            this.toolBase.resizeCanvas(img.naturalWidth, img.naturalHeight);
+            
+            // Feed image to adjustment bundle
+            const adjustBundle = this.toolBase.components.get('imageAdjust');
+            if (adjustBundle && typeof adjustBundle.setSourceImage === 'function') {
+                // Get ImageData from loaded image
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.naturalWidth;
+                tempCanvas.height = img.naturalHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(img, 0, 0);
+                const imageData = tempCtx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
+                
+                // Pass to adjustment bundle
+                adjustBundle.setSourceImage(imageData);
+                
+                console.log('✅ Source image loaded into adjustment bundle');
+            }
+            
             this.toolBase.draw();
-            this._setStatus('quantizeStatus', 'Source image loaded');
+            this._setStatus('quantizeStatus', `Image loaded: ${img.naturalWidth}×${img.naturalHeight}`);
+            this._setStatus('resolutionStatus', '');
         };
         img.src = URL.createObjectURL(file);
     }
@@ -3310,15 +3620,10 @@ export class MultifilamentPrintTool {
         img.onload = () => {
             this.scanImageElement = img;
             
-            // Resize canvas to EXACTLY match the image dimensions
-            const canvas = this.toolBase.canvas;
-            const oldWidth = canvas.width;
-            const oldHeight = canvas.height;
+            // Resize canvas to EXACTLY match the image dimensions using ToolBase API
+            this.toolBase.resizeCanvas(img.width, img.height);
             
-            canvas.width = img.width;
-            canvas.height = img.height;
-            
-            console.log(`📐 Canvas resized: ${oldWidth}×${oldHeight} → ${img.width}×${img.height}px`);
+            console.log(`📐 Canvas resized to match image: ${img.width}×${img.height}px`);
             console.log(`   Image natural size: ${img.naturalWidth}×${img.naturalHeight}px`);
             
             // Apply display mode (fit by default)
@@ -3567,8 +3872,7 @@ export class MultifilamentPrintTool {
             dragCornerIndex: -1,
             startX: 0,
             startY: 0,
-            startCorners: null,
-            rafId: null
+            startCorners: null
         };
         
         const getCanvasCoords = (e) => {
@@ -3612,14 +3916,6 @@ export class MultifilamentPrintTool {
                 }
             }
             return -1;
-        };
-        
-        const scheduleDraw = () => {
-            if (this.scanDragState.rafId) return;
-            this.scanDragState.rafId = requestAnimationFrame(() => {
-                this.toolBase.draw();
-                this.scanDragState.rafId = null;
-            });
         };
         
         // Mouse down - start drag
@@ -3679,7 +3975,7 @@ export class MultifilamentPrintTool {
                 }
                 
                 this.gridAlignment.autoCalculated = false;
-                scheduleDraw();
+                this.scanDrawLoop.requestFrame();
                 e.preventDefault();
             } else {
                 // Update cursor based on hover
@@ -3796,82 +4092,12 @@ export class MultifilamentPrintTool {
     }
     
     _applyScanDisplayMode(mode) {
-        if (!this.toolBase || !this.toolBase.canvas) {
-            console.warn('⚠️ Cannot apply display mode: canvas not available');
-            return;
-        }
+        if (!this.toolBase) return;
         
-        const canvas = this.toolBase.canvas;
-        const canvasArea = canvas.parentElement;
-        
-        console.log(`📺 _applyScanDisplayMode called:`);
-        console.log(`   Mode requested: "${mode}"`);
-        console.log(`   Canvas element size: ${canvas.width}×${canvas.height}px`);
-        console.log(`   Canvas computed style: ${window.getComputedStyle(canvas).width} × ${window.getComputedStyle(canvas).height}`);
-        
-        // Reset any inline size styles (use removeProperty for cleaner reset)
-        canvas.style.removeProperty('width');
-        canvas.style.removeProperty('height');
-        canvas.style.removeProperty('object-fit');
-        canvas.style.removeProperty('max-width');
-        canvas.style.removeProperty('max-height');
-        canvas.style.removeProperty('image-rendering');
-        
-        switch (mode.toLowerCase()) {
-            case 'fit':
-                // Fit entire image in container (letterbox/pillarbox if needed)
-                canvas.style.setProperty('width', '100%', 'important');
-                canvas.style.setProperty('height', '100%', 'important');
-                canvas.style.setProperty('object-fit', 'contain', 'important');
-                canvas.style.setProperty('image-rendering', 'auto', 'important');
-                canvas.style.setProperty('max-width', 'none', 'important');
-                canvas.style.setProperty('max-height', 'none', 'important');
-                console.log('   ✓ Applied: Fit (contain, responsive)');
-                break;
-            
-            case 'fill':
-                // Fill container, may crop edges
-                canvas.style.setProperty('width', '100%', 'important');
-                canvas.style.setProperty('height', '100%', 'important');
-                canvas.style.setProperty('object-fit', 'cover', 'important');
-                canvas.style.setProperty('image-rendering', 'auto', 'important');
-                canvas.style.setProperty('max-width', 'none', 'important');
-                canvas.style.setProperty('max-height', 'none', 'important');
-                console.log('   ✓ Applied: Fill (cover, responsive)');
-                break;
-            
-            case 'actual size':
-                // Show at exact pixel dimensions (1:1, may need scrolling)
-                const actualWidth = `${canvas.width}px`;
-                const actualHeight = `${canvas.height}px`;
-                canvas.style.setProperty('width', actualWidth, 'important');
-                canvas.style.setProperty('height', actualHeight, 'important');
-                canvas.style.setProperty('object-fit', 'none', 'important');
-                canvas.style.setProperty('image-rendering', 'pixelated', 'important');
-                canvas.style.setProperty('max-width', 'none', 'important');
-                canvas.style.setProperty('max-height', 'none', 'important');
-                console.log(`   ✓ Applied: Actual Size (${actualWidth}×${actualHeight}, 1:1)`);
-                break;
-            
-            default:
-                console.warn(`   ⚠️ Unknown mode: "${mode}"`);
-                break;
-        }
-        
-        // Ensure canvas area allows scrolling for actual size mode
-        if (mode === 'actual size') {
-            canvasArea.style.overflow = 'auto';
-            canvasArea.style.alignItems = 'flex-start';
-            canvasArea.style.justifyContent = 'flex-start';
-            console.log('   ✓ Canvas area: scrollable');
-        } else {
-            canvasArea.style.overflow = 'hidden';
-            canvasArea.style.alignItems = 'center';
-            canvasArea.style.justifyContent = 'center';
-            console.log('   ✓ Canvas area: centered');
-        }
-        
-        console.log(`   Final computed style: ${window.getComputedStyle(canvas).width} × ${window.getComputedStyle(canvas).height}`);
+        // Map 'actual size' to 'actual' for Canvas.js API
+        const normalizedMode = mode.toLowerCase() === 'actual size' ? 'actual' : mode.toLowerCase();
+        this.toolBase.setCanvasDisplayMode(normalizedMode);
+        this.scanDisplayMode = mode;
     }
     
     _drawCalibrationGrid(ctx, canvas) {
@@ -4874,10 +5100,15 @@ export class MultifilamentPrintTool {
     }
     
     destroy() {
-        // Clear scroll interval
-        if (this.scrollInterval) {
-            clearInterval(this.scrollInterval);
-            this.scrollInterval = null;
+        // Clean up animators
+        if (this.scrollAnimator) {
+            this.scrollAnimator.destroy();
+            this.scrollAnimator = null;
+        }
+        
+        if (this.scanDrawLoop) {
+            this.scanDrawLoop.destroy();
+            this.scanDrawLoop = null;
         }
         
         // Destroy ToolBase

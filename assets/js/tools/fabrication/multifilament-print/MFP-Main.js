@@ -364,9 +364,17 @@ export class MultifilamentPrintTool {
                 ['PALETTE STATUS', [
                     ['label', '⚠️ No palette loaded. Generate or import a grid first.', {key: 'paletteStatus', variant: 'caption'}],
                 ]],
-                ['IMAGE PROCESSING', [
+                ['IMAGE', [
                     ['file', 'Source Image', {key: 'sourceImage', accept: 'image/*'}],
+                ]],
+                ['IMAGE ADJUSTMENTS', [
+                    ['adjustment-bundle', 'professional', null, {
+                        key: 'imageAdjust'
+                    }],
+                ]],
+                ['PROCESSING', [
                     ['number', 'Print Width (mm)', 50, 300, 1, {key: 'printWidth', value: 170, withNumber: true}],
+                    ['dropdown', 'Dither Algorithm', ['None', 'Floyd-Steinberg', 'Bayer 4×4', 'Blue Noise'], {key: 'ditherAlgorithm', value: 'Floyd-Steinberg'}],
                     ['number', 'Dither Strength', 0, 1, 0.1, {key: 'ditherStrength', value: 1.0, withNumber: true}],
                     ['number', 'Min Detail (mm)', 0, 2, 0.1, {key: 'minDetail', value: 0.8, withNumber: true}],
                 ]],
@@ -407,6 +415,18 @@ export class MultifilamentPrintTool {
         // Initialize SOURCE tab (always first tab)
         console.log('🎬 Initializing SOURCE tab');
         this.sourceActions.updateSequenceCount(this.toolBase);
+        
+        // Wire adjustment bundle for QUANTIZE tab
+        const adjustBundle = this.toolBase.components.get('imageAdjust');
+        if (adjustBundle) {
+            adjustBundle.onTransform = (adjustedImageData) => {
+                // Store adjusted image for quantization
+                this.sharedState.sourceImageData = adjustedImageData;
+                this.toolBase.draw();
+                console.log('✅ Image adjustments applied');
+            };
+            console.log('✅ AdjustmentBundle wired');
+        }
     }
     
     _handleUpdate(key, value, allValues) {

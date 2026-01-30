@@ -20,6 +20,22 @@ export class MFPQuantizeActions {
         const img = new Image();
         img.onload = () => {
             this.state.sourceImageElement = img;
+            
+            // Feed image to adjustment bundle
+            const adjustBundle = toolBase.components.get('imageAdjust');
+            if (adjustBundle && typeof adjustBundle.setSourceImage === 'function') {
+                // Convert image to ImageData
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(img, 0, 0);
+                const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                
+                adjustBundle.setSourceImage(imageData);
+                console.log('✅ Source image loaded into adjustment bundle');
+            }
+            
             toolBase.draw();
             toolBase.setValue('quantizeStatus', `✅ Source image loaded (${img.width}×${img.height}px)`);
         };

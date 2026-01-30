@@ -1,7 +1,7 @@
 # Tool Build Guide — Precise Specification
 
-**VERSION:** 2.2  
-**UPDATED:** 2025-11-26 — Added AnimationFoundation patterns, ToolBase API, Audio patterns  
+**VERSION:** 2.3  
+**UPDATED:** 2026-01-30 — Added ToolBase Universal Extensions (category tabs, canvas mode tabs, dynamic sidebar)  
 **RELATED:**
 - `blog/docs/guides/tool-standards.md` — Minimum functionality requirements
 - `blog/docs/guides/shared-utilities.md` — Reusable code registry
@@ -587,12 +587,342 @@ this.container.appendChild(this.tool.render());
 | `this.setStatus(text)` | void | Update status text below canvas |
 | `this.resizeCanvas(w, h, opts)` | void | Resize canvas resolution |
 | `this.setDisplayMode(mode)` | void | Set 'fit' or 'actual' display |
+| **`this.rebuildSidebar(config)`** | void | **Rebuild sidebar without destroying canvas** |
+| **`this.setActiveCategory(id)`** | void | **Set active category tab programmatically** |
+| **`this.setActiveCanvasTab(id)`** | void | **Set active canvas mode tab programmatically** |
 
 ### Responsive Layout
 
 ToolBase automatically switches layout based on viewport:
 - **Landscape** (width ≥ 800px): Sidebar left, canvas right
 - **Portrait** (width < 800px): Canvas top, sidebar below
+
+---
+
+## Step 6A: Advanced ToolBase Features (Optional)
+
+### Category Tabs (Top-Level Page Selection)
+
+Category tabs appear above the entire tool for high-level organization. Useful for tools with multiple distinct "pages" of content (e.g., Algorithms Test Lab with 6 algorithm categories).
+
+#### Configuration
+
+```javascript
+var TOOL_CONFIG = {
+    title: 'MY MULTI-PAGE TOOL',
+    
+    categoryTabs: {
+        categories: [
+            { id: 'page1', title: 'NOISE, SAMPLING, PATTERNS' },
+            { id: 'page2', title: 'EDGES, FILTERING, SEGMENTATION' },
+            { id: 'page3', title: 'CURVES, DISTANCE, TOPOLOGY' }
+        ],
+        activeCategory: 'page1',
+        enableScrollbar: true,
+        onCategoryChange: function(categoryId, tool) {
+            // Update sidebar for new category
+            var newSidebar = buildSidebarForCategory(categoryId);
+            tool.rebuildSidebar(newSidebar);
+            tool.draw();
+        }
+    },
+    
+    sidebar: buildSidebarForCategory('page1'),
+    // ... rest of config
+};
+```
+
+#### Visual Structure
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ NOISE, SAMPLING  │ EDGES, FILTERING │ CURVES, DISTANCE  │ ← Category Tabs
+├─────────────────────────────────────────────────────────┤
+│ Sidebar │ Canvas                                        │
+│ for     │ Area                                          │
+│ Page 1  │                                               │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `categories` | Array<{id, title}> | required | Category definitions |
+| `activeCategory` | string | first category | Initially active category |
+| `enableScrollbar` | boolean | `true` | Show visible scrollbar if tabs overflow |
+| `onCategoryChange` | function(id, tool) | none | Called when category switches |
+
+#### Helper: buildSidebarForCategory()
+
+```javascript
+function buildSidebarForCategory(categoryId) {
+    switch (categoryId) {
+        case 'page1':
+            return [
+                ['NOISE', [
+                    ['Perlin 2D', [/* controls */]],
+                    ['Simplex 2D', [/* controls */]],
+                ]],
+            ];
+        case 'page2':
+            return [
+                ['EDGE', [
+                    ['Sobel', [/* controls */]],
+                    ['Canny', [/* controls */]],
+                ]],
+            ];
+        // ... more categories
+    }
+}
+```
+
+---
+
+### Canvas Mode Tabs (OUTPUT/ABOUT Style)
+
+Canvas mode tabs appear above the canvas area for switching between output view and documentation. Common pattern: OUTPUT | ABOUT.
+
+#### Configuration
+
+```javascript
+var TOOL_CONFIG = {
+    title: 'MY DOCUMENTED TOOL',
+    
+    canvasModeTabs: {
+        tabs: [
+            { id: 'output', label: 'OUTPUT' },
+            { id: 'about', label: 'ABOUT' }
+        ],
+        defaultTab: 'output',
+        onTabChange: function(tabId, tool) {
+            if (tabId === 'output') {
+                showCanvas(tool);
+            } else if (tabId === 'about') {
+                showAboutPanel(tool);
+            }
+        }
+    },
+    
+    // ... rest of config
+};
+```
+
+#### Visual Structure
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Sidebar │ ┌─────────────────────────────────────────┐ │
+│         │ │ OUTPUT │ ABOUT │                        │ │ ← Canvas Mode Tabs
+│         │ ├─────────────────────────────────────────┤ │
+│         │ │                                         │ │
+│         │ │ Canvas or About Content                 │ │
+│         │ │                                         │ │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `tabs` | Array<{id, label}> | required | Tab definitions |
+| `defaultTab` | string | first tab | Initially active tab |
+| `onTabChange` | function(id, tool) | none | Called when tab switches |
+
+#### Show/Hide Pattern
+
+```javascript
+// Module-level state
+var aboutPanel = null;
+var canvasVisible = true;
+
+function showCanvas(tool) {
+    if (tool.canvasComponent && tool.canvasComponent.element) {
+        tool.canvasComponent.element.style.display = 'flex';
+    }
+    if (aboutPanel) {
+        aboutPanel.style.display = 'none';
+    }
+    canvasVisible = true;
+}
+
+function showAboutPanel(tool) {
+    if (tool.canvasComponent && tool.canvasComponent.element) {
+        tool.canvasComponent.element.style.display = 'none';
+    }
+    
+    if (!aboutPanel) {
+        aboutPanel = document.createElement('div');
+        aboutPanel.style.cssText = `
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: var(--c-bg);
+            padding: calc(var(--f) * 2);
+        `;
+        aboutPanel.innerHTML = '<h2>About This Tool</h2><p>Documentation...</p>';
+        tool.canvasArea.appendChild(aboutPanel);
+    }
+    
+    aboutPanel.style.display = 'block';
+    canvasVisible = false;
+}
+```
+
+---
+
+### Dynamic Sidebar Rebuilding
+
+`rebuildSidebar()` allows changing sidebar content without destroying the canvas. Essential for multi-page tools.
+
+#### API
+
+```javascript
+tool.rebuildSidebar(newSidebarConfig)
+```
+
+#### Example: Category Switching
+
+```javascript
+categoryTabs: {
+    onCategoryChange: function(categoryId, tool) {
+        // Build new sidebar for this category
+        var newSidebar = [
+            ['TAB 1', [
+                ['Block', [
+                    ['slider', 'Param', 0, 100, 1, { key: 'param1', value: 50 }],
+                ]],
+            ]],
+        ];
+        
+        // Rebuild sidebar (preserves canvas and scroll position)
+        tool.rebuildSidebar(newSidebar);
+        
+        // Redraw with new values
+        tool.draw();
+    }
+}
+```
+
+#### What rebuildSidebar() Does
+
+1. Preserves scroll position
+2. Destroys old sidebar components
+3. Clears sidebar DOM
+4. Builds new sidebar from config
+5. Restores scroll position
+6. Re-collects values from new components
+7. Triggers `onInit` with new values
+
+#### What It Preserves
+
+- Canvas state (no redraw needed)
+- Canvas zoom/pan state
+- Module-level state variables
+- Event listeners on canvas
+
+#### When to Use
+
+| Use Case | Example |
+|----------|---------|
+| **Multi-page tools** | Algorithm categories, different tool modes |
+| **Dynamic parameter sets** | Parameters depend on selected algorithm/mode |
+| **Conditional controls** | Show advanced controls only when enabled |
+
+---
+
+### Tab Control Methods
+
+Control tabs programmatically from code:
+
+```javascript
+// Set active category tab
+tool.setActiveCategory('page2');
+
+// Set active canvas mode tab
+tool.setActiveCanvasTab('about');
+```
+
+---
+
+### Complete Multi-Feature Example
+
+Combining category tabs, canvas mode tabs, and dynamic sidebar:
+
+```javascript
+var TOOL_CONFIG = {
+    title: 'ALGORITHMS TEST LAB',
+    
+    // Top-level category tabs
+    categoryTabs: {
+        categories: [
+            { id: 'noise', title: 'NOISE, SAMPLING, PATTERNS' },
+            { id: 'edges', title: 'EDGES, FILTERING, SEGMENTATION' },
+            { id: 'curves', title: 'CURVES, DISTANCE, TOPOLOGY' }
+        ],
+        activeCategory: 'noise',
+        enableScrollbar: true,
+        onCategoryChange: function(categoryId, tool) {
+            state.currentCategory = categoryId;
+            tool.rebuildSidebar(buildSidebarForCategory(categoryId));
+            tool.draw();
+        }
+    },
+    
+    // Canvas area tabs
+    canvasModeTabs: {
+        tabs: [
+            { id: 'output', label: 'OUTPUT' },
+            { id: 'about', label: 'ABOUT' }
+        ],
+        defaultTab: 'output',
+        onTabChange: function(tabId, tool) {
+            if (tabId === 'output') {
+                showCanvas(tool);
+            } else {
+                showAboutPanel(tool);
+            }
+        }
+    },
+    
+    sidebar: buildSidebarForCategory('noise'),
+    canvas: { width: 720, height: 720 },
+    
+    onInit: function(values) {
+        // Initial setup
+    },
+    
+    onUpdate: function(key, value, allValues) {
+        // Handle changes
+    },
+    
+    onDraw: function(ctx, canvas, values) {
+        // Render based on current category
+        if (state.currentCategory === 'noise') {
+            drawNoiseVisualization(ctx, canvas, values);
+        } else if (state.currentCategory === 'edges') {
+            drawEdgeDetection(ctx, canvas, values);
+        }
+        // ... etc
+    }
+};
+```
+
+---
+
+### Advanced Features: When to Use
+
+| Feature | Use When | Don't Use When |
+|---------|----------|----------------|
+| **Category Tabs** | Tool has 3+ distinct pages/modes with different sidebars | Tool has simple mode switching |
+| **Canvas Mode Tabs** | Need OUTPUT/ABOUT or other view modes above canvas | Single canvas view is sufficient |
+| **rebuildSidebar()** | Sidebar content depends on user selection | Sidebar is static |
+
+**Rule of thumb:**
+- 1-2 tabs → Use regular sidebar tabs
+- 3-4 major sections → Consider category tabs
+- Need documentation view → Use canvas mode tabs
+- Dynamic parameters → Use rebuildSidebar()
 
 ---
 
@@ -1627,6 +1957,11 @@ If any parameter fails test:
 | Sidebar not visible/broken | Used `appendChild(render())` instead of `mount()` | Use `this.tool.mount(this.container)` |
 | `ToolBase not loaded` | Script order wrong | Load tool-base.js BEFORE your tool in index.html |
 | `ComponentLibrary not available` | ComponentLibrary not loaded | Load component-library.js BEFORE tool-base.js |
+| `CategoryTabsBar component not available` | CategoryTabsBar not in ComponentLibrary | Check component-library.js includes CategoryTabsBar |
+| `CanvasModeTabs component not available` | CanvasModeTabs not in ComponentLibrary | Check component-library.js includes CanvasModeTabs |
+| Category tabs too tall/wrong position | Missing F-based offset | ToolBase handles this automatically; check categoryTabs config |
+| Sidebar doesn't rebuild | Wrong config format | Check `rebuildSidebar()` receives standard sidebar array |
+| Canvas destroyed on category change | Using old rebuild pattern | Use `tool.rebuildSidebar()`, NOT destroy/recreate ToolBase |
 | `ToolXxx class not found` | Missing window export | Add `window.ToolName = ToolName;` at end of IIFE |
 | `Unknown component type: xxx` | Typo in type string | Check component type table above |
 | `ComponentLibrary.Tool may not have: xxx` | Missing Tool component | Check ComponentLibrary has ToolNumericInput, ToolDropdown, etc. |
@@ -1645,9 +1980,10 @@ If any parameter fails test:
 
 ## Full Example
 
-See: `assets/js/tools/tool-test-ui.js`
+See: `assets/js/tools/tool-test-ui.js` and `assets/js/tools/utilities/algorithms-test-lab.js`
 
-This reference implementation demonstrates:
+### tool-test-ui.js
+Reference implementation demonstrating:
 - Multi-mode tool (Animation, Image, SVG, Graphs, Audio)
 - All component types
 - Button wiring
@@ -1658,6 +1994,16 @@ This reference implementation demonstrates:
 - Export functionality
 - Proper cleanup on mode switch and destroy
 
+### algorithms-test-lab.js
+Advanced implementation demonstrating:
+- **Category tabs** for 6 algorithm pages
+- **Canvas mode tabs** (OUTPUT/ABOUT)
+- **Dynamic sidebar rebuilding** via `rebuildSidebar()`
+- Selectable/collapsible block headers
+- Complex multi-page tool architecture
+- Integration with algorithms library
+- About panel documentation system
+
 ---
 
-End of Tool Build Guide v2.1
+End of Tool Build Guide v2.3

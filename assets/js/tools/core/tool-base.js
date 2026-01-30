@@ -164,6 +164,12 @@ export class ToolBase extends BaseComponent {
         
         // Loading state (component-based)
         this.loadingOverlayComponent = null;
+        
+        // Advanced tab configs
+        this.categoryTabsConfig = config.categoryTabs ?? null;
+        this.canvasModeTabsConfig = config.canvasModeTabs ?? null;
+        this.categoryTabsComponent = null;
+        this.canvasModeTabsComponent = null;
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
@@ -238,6 +244,11 @@ export class ToolBase extends BaseComponent {
 
         this.element = document.createElement('div');
         this.element.className = 'tool-base';
+        
+        // If category tabs present, element needs to be positioned for absolute children
+        if (this.categoryTabsConfig) {
+            this.element.style.position = 'relative';
+        }
 
         if (isPortrait) {
             // Portrait: stack vertically (canvas on top, sidebar below)
@@ -247,6 +258,7 @@ export class ToolBase extends BaseComponent {
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
+                ${this.categoryTabsConfig ? 'position: relative;' : ''}
             `;
         } else {
             // Landscape: sidebar left, canvas right
@@ -257,6 +269,39 @@ export class ToolBase extends BaseComponent {
                 grid-template-columns: ${this.SIDEBAR_WIDTH}px 1fr;
                 gap: 0;
                 overflow: hidden;
+                ${this.categoryTabsConfig ? 'position: relative;' : ''}
+            `;
+        }
+
+        // Build category tabs at top if configured
+        if (this.categoryTabsConfig) {
+            this._buildCategoryTabs();
+        }
+
+        // Create main content area (offset if category tabs present)
+        const mainContent = document.createElement('div');
+        mainContent.className = 'tool-main-content';
+        const topOffset = this.categoryTabsConfig ? this.F * 2 : 0;
+        
+        if (isPortrait) {
+            mainContent.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                flex: 1;
+                ${this.categoryTabsConfig ? `margin-top: ${topOffset}px;` : ''}
+            `;
+        } else {
+            mainContent.style.cssText = `
+                display: grid;
+                grid-template-columns: ${this.SIDEBAR_WIDTH}px 1fr;
+                gap: 0;
+                overflow: hidden;
+                position: absolute;
+                top: ${topOffset}px;
+                left: 0;
+                right: 0;
+                bottom: 0;
             `;
         }
 
@@ -268,13 +313,15 @@ export class ToolBase extends BaseComponent {
 
         if (isPortrait) {
             // Portrait: canvas first, then sidebar
-            this.element.appendChild(this.canvasArea);
-            this.element.appendChild(this.sidebar);
+            mainContent.appendChild(this.canvasArea);
+            mainContent.appendChild(this.sidebar);
         } else {
             // Landscape: sidebar first, then canvas
-            this.element.appendChild(this.sidebar);
-            this.element.appendChild(this.canvasArea);
+            mainContent.appendChild(this.sidebar);
+            mainContent.appendChild(this.canvasArea);
         }
+        
+        this.element.appendChild(mainContent);
 
         // Inject AnimationExport into ANIMATION tab if animation config present
         if (this.animationConfig && this.canvas) {
@@ -305,14 +352,79 @@ export class ToolBase extends BaseComponent {
         const wasPortrait = this.element.style.flexDirection === 'column';
 
         if (isPortrait !== wasPortrait) {
-            // Layout changed - rebuild
+            // Layout orientation changed - full rebuild
             const parent = this.element.parentNode;
             if (parent) {
                 this.destroy();
                 parent.appendChild(this.render());
                 this.draw();
             }
+        } else {
+            // Same orientation - update positioning if category tabs present
+            if (this.categoryTabsConfig) {
+                // Recalculate F from CSS or deps
+                const cssF = getComputedStyle(document.documentElement).getPropertyValue('--f');
+                const newF = cssF ? parseInt(cssF, 10) : (this.deps.MF?.F || 14);
+                
+                if (newF && !isNaN(newF)) {
+                    this.F = newF;
+                    this.F2 = this.F / 2;
+                    this.SIDEBAR_WIDTH = this.F * 30;
+                    const topOffset = this.F * 2;
+                    
+                    // Update mainContent positioning
+                    const mainContent = this.element.querySelector('.tool-main-content');
+                    if (mainContent) {
+                        if (isPortrait) {
+                            mainContent.style.marginTop = `${topOffset}px`;
+                        } else {
+                            mainContent.style.top = `${topOffset}px`;
+                            mainContent.style.gridTemplateColumns = `${this.SIDEBAR_WIDTH}px 1fr`;
+                        }
+                        window.debugLog('LAYOUT', `ToolBase: Updated layout - F=${newF}, offset=${topOffset}px, sidebarWidth=${this.SIDEBAR_WIDTH}px`);
+                    }
+                    
+                    // Update canvas area padding if needed
+                    if (this.canvasArea && isPortrait) {
+                        this.canvasArea.style.padding = `${this.F}px`;
+                    }
+                }
+            }
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CATEGORY TABS (TOP-LEVEL)
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    _buildCategoryTabs() {
+        const { CategoryTabsBar } = this.deps.ComponentLibrary;
+        if (!CategoryTabsBar) {
+            console.error('❌ CategoryTabsBar component not available in ComponentLibrary');
+            return;
+        }
+        
+        this.categoryTabsComponent = new CategoryTabsBar({
+            categories: this.categoryTabsConfig.categories,
+            activeCategory: this.categoryTabsConfig.activeCategory,
+            enableScrollbar: this.categoryTabsConfig.enableScrollbar ?? true,
+            onCategoryChange: (id) => {
+                if (this.categoryTabsConfig.onCategoryChange) {
+                    this.categoryTabsConfig.onCategoryChange(id, this);
+                }
+            }
+        }, this.deps);
+        
+        const el = this.categoryTabsComponent.render();
+        el.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 5;
+        `;
+        this.element.appendChild(el);
+        this.componentInstances.push(this.categoryTabsComponent);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1028,6 +1140,28 @@ export class ToolBase extends BaseComponent {
         // Store reference for later size calculation
         this.canvasArea = area;
         
+        // Build canvas mode tabs if configured
+        if (this.canvasModeTabsConfig) {
+            const { CanvasModeTabs } = this.deps.ComponentLibrary;
+            if (!CanvasModeTabs) {
+                console.error('❌ CanvasModeTabs component not available in ComponentLibrary');
+            } else {
+                this.canvasModeTabsComponent = new CanvasModeTabs({
+                    tabs: this.canvasModeTabsConfig.tabs,
+                    activeTab: this.canvasModeTabsConfig.defaultTab || this.canvasModeTabsConfig.tabs[0]?.id,
+                    onChange: (id) => {
+                        if (this.canvasModeTabsConfig.onTabChange) {
+                            this.canvasModeTabsConfig.onTabChange(id, this);
+                        }
+                    }
+                }, this.deps);
+                
+                const tabsElement = this.canvasModeTabsComponent.render();
+                area.appendChild(tabsElement);
+                this.componentInstances.push(this.canvasModeTabsComponent);
+            }
+        }
+        
         // Calculate initial size
         let size = this._calculateCanvasSize();
         
@@ -1472,94 +1606,95 @@ export class ToolBase extends BaseComponent {
         });
     }
 
-    // =========================================================================
-    // ASYNC PROCESSING (Web Workers)
-    // =========================================================================
-
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DYNAMIC SIDEBAR REBUILDING
+    // ═══════════════════════════════════════════════════════════════════════════
+    
     /**
-     * Process data asynchronously using Web Worker
-     * 
-     * Offloads heavy computation to a background thread, keeping UI responsive.
-     * Automatically shows/hides loading overlay with progress.
-     * 
-     * @param {string} algorithmName - Algorithm path like 'Dither.floydSteinberg'
-     * @param {Object} data - Input data to process
-     * @param {Object} options - Processing options
-     * @param {Function} options.onProgress - Progress callback (percent 0-100)
-     * @param {boolean} options.showLoadingOverlay - Show loading UI (default true)
-     * @param {string} options.message - Loading message (default 'Processing...')
-     * @returns {Promise<any>} Processing result
-     * 
-     * @example
-     * const result = await tool.processAsync('Dither.floydSteinberg', {
-     *     imageData: myImageData,
-     *     palette: ['#000000', '#FFFFFF'],
-     *     paletteLabs: [...labs]
-     * }, {
-     *     onProgress: (p) => console.log(`${p}% complete`),
-     *     message: 'Applying dithering...'
-     * });
+     * Rebuild sidebar with new configuration without destroying canvas
+     * Useful for dynamic tools that change sidebar content based on user selection
+     * @param {Array} newSidebarConfig - New sidebar configuration array
      */
-    async processAsync(algorithmName, data, options = {}) {
-        const { 
-            onProgress, 
-            showLoadingOverlay = true, 
-            message = 'Processing...' 
-        } = options;
-        
-        // Lazy import ProcessingManager
-        if (!this._processingManager) {
-            const module = await import('../../shared/workers/processing-manager.js');
-            this._processingManager = module.default;
+    rebuildSidebar(newSidebarConfig) {
+        if (!this.sidebar || !this.element) {
+            console.warn('⚠️ Cannot rebuild sidebar: sidebar or element not initialized');
+            return;
         }
         
-        // Create abort controller for cancellation
-        if (!this._processingAbortController) {
-            this._processingAbortController = new AbortController();
-        }
+        // Store current scroll position
+        const scrollTop = this.sidebar.scrollTop;
         
-        if (showLoadingOverlay) {
-            this.showLoading(message, 0);
-        }
-        
-        try {
-            const result = await this._processingManager.process(algorithmName, data, {
-                onProgress: (percent) => {
-                    if (showLoadingOverlay) {
-                        this.setProgress(percent, message);
-                    }
-                    if (onProgress) {
-                        onProgress(percent);
-                    }
-                },
-                signal: this._processingAbortController.signal
-            });
-            
-            return result;
-        } catch (error) {
-            // Re-throw error for caller to handle
-            throw error;
-        } finally {
-            if (showLoadingOverlay) {
-                this.hideLoading();
+        // Destroy existing sidebar components
+        this.blocks.forEach(block => {
+            if (block.componentInstances) {
+                block.componentInstances.forEach(c => c.destroy && c.destroy());
             }
+        });
+        
+        // Clear sidebar DOM
+        while (this.sidebar.firstChild) {
+            this.sidebar.removeChild(this.sidebar.firstChild);
+        }
+        
+        // Update config
+        this.sidebarConfig = newSidebarConfig;
+        
+        // Rebuild content
+        const isPortrait = this.element.style.flexDirection === 'column';
+        const hasTabs = newSidebarConfig.length > 1 &&
+                        newSidebarConfig.every(item => Array.isArray(item) && typeof item[0] === 'string');
+        
+        if (hasTabs) {
+            this.sidebar.appendChild(this._buildTabs());
+        } else {
+            // Single panel
+            let blocks;
+            if (newSidebarConfig.length === 1 && Array.isArray(newSidebarConfig[0]) && newSidebarConfig[0].length === 2) {
+                blocks = newSidebarConfig[0][1];
+            } else {
+                blocks = newSidebarConfig;
+            }
+            const panel = this._buildPanel(blocks);
+            panel.style.height = '100%';
+            panel.style.overflowY = 'auto';
+            this.sidebar.appendChild(panel);
+        }
+        
+        // Restore scroll position
+        this.sidebar.scrollTop = scrollTop;
+        
+        // Re-collect values and notify
+        this._collectInitialValues();
+        
+        // Trigger onInit with new values
+        this.onInit.call(this, this.values);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CONVENIENCE METHODS FOR TAB CONTROL
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    /**
+     * Set active category tab (if category tabs are configured)
+     * @param {string} id - Category ID to activate
+     */
+    setActiveCategory(id) {
+        if (this.categoryTabsComponent && this.categoryTabsComponent.setActiveCategory) {
+            this.categoryTabsComponent.setActiveCategory(id);
         }
     }
-
+    
     /**
-     * Cancel ongoing async processing
+     * Set active canvas mode tab (if canvas mode tabs are configured)
+     * @param {string} id - Tab ID to activate
      */
-    cancelProcessing() {
-        if (this._processingAbortController) {
-            this._processingAbortController.abort();
-            this._processingAbortController = null;
+    setActiveCanvasTab(id) {
+        if (this.canvasModeTabsComponent && this.canvasModeTabsComponent.setActiveTab) {
+            this.canvasModeTabsComponent.setActiveTab(id);
         }
     }
 
     destroy() {
-        // Cancel any ongoing processing
-        this.cancelProcessing();
-        
         // Remove resize listener
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);

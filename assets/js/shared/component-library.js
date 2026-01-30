@@ -101,6 +101,7 @@ import {
     ToolCanvas,
     ToolTabs,
     CanvasTabs,
+    CanvasModeTabs,
     CategoryTabsBar,
     SeedInput,
     NavigationDropdown
@@ -239,6 +240,7 @@ const ComponentLibrary = {
             'tool-canvas': ToolCanvas,
             'tool-tabs': ToolTabs,
             'canvas-tabs': CanvasTabs,
+            'canvas-mode-tabs': CanvasModeTabs,
             'category-tabs-bar': CategoryTabsBar,
             'seed-input': SeedInput,
             'navigation-dropdown': NavigationDropdown,
@@ -392,6 +394,7 @@ ComponentLibrary.ToolSidebar = ToolSidebar;
 ComponentLibrary.ToolCanvas = ToolCanvas;
 ComponentLibrary.ToolTabs = ToolTabs;
 ComponentLibrary.CanvasTabs = CanvasTabs;
+ComponentLibrary.CanvasModeTabs = CanvasModeTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.SeedInput = SeedInput;
 ComponentLibrary.NavigationDropdown = NavigationDropdown;
@@ -492,6 +495,7 @@ export {
     ToolCanvas,
     ToolTabs,
     CanvasTabs,
+    CanvasModeTabs,
     CategoryTabsBar,
     SeedInput,
     NavigationDropdown,

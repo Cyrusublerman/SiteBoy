@@ -5,11 +5,42 @@
  * - Motion blur (fade overlay)
  * - Batch drawing (reduce draw calls)
  * - Interactive rotation (mouse/touch drag)
+ * - Off-screen canvas helpers (image processing)
  * 
  * Based on DePasquale.art analysis findings.
  * 
- * @version 1.0.0
+ * @version 1.1.0
  */
+
+/**
+ * Create an off-screen canvas for image processing
+ * Centralises document.createElement('canvas') calls
+ * 
+ * @param {number} width - Canvas width
+ * @param {number} height - Canvas height
+ * @returns {{canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D}}
+ */
+export function createOffscreenCanvas(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    return { canvas, ctx };
+}
+
+/**
+ * Convert an image to ImageData using an off-screen canvas
+ * 
+ * @param {HTMLImageElement} img - Image to convert
+ * @param {number} width - Target width
+ * @param {number} height - Target height
+ * @returns {ImageData}
+ */
+export function imageToImageData(img, width, height) {
+    const { canvas, ctx } = createOffscreenCanvas(width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    return ctx.getImageData(0, 0, width, height);
+}
 
 /**
  * Apply motion blur by drawing a semi-transparent overlay
@@ -308,12 +339,14 @@ export class InteractiveRotation {
 export const CanvasUtils = {
     applyMotionBlur,
     BatchDrawer,
-    InteractiveRotation
+    InteractiveRotation,
+    createOffscreenCanvas,
+    imageToImageData
 };
 
 // UMD export for non-module usage (ToolBase compatibility)
 if (typeof window !== 'undefined') {
     window.CanvasUtils = CanvasUtils;
-    console.log('🎨 CanvasUtils v1.0.0 ready - Motion blur, batch drawing, interactive rotation');
+    console.log('🎨 CanvasUtils v1.1.0 ready - Motion blur, batch drawing, interactive rotation, off-screen canvas');
 }
 

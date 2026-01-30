@@ -11,6 +11,8 @@
 import * as Algorithms from '../../shared/algorithms/index.js';
 import ComponentLibrary from '../../shared/component-library.js';
 import { ToolBase } from '../core/tool-base.js';
+import { IntervalAnimator } from '../../core/animation-foundation.js';
+import { imageToImageData, BatchDrawer } from '../../shared/utils/canvas.js';
 
     // ═══════════════════════════════════════════════════════════════════════
     // CONSTANTS & STATE
@@ -33,10 +35,9 @@ import { ToolBase } from '../core/tool-base.js';
     const animationState = {
         // Current animation instance (if any)
         instance: null,
-        isPlaying: false,
         frameRate: 30,
-        lastFrameTime: 0,
-        animationFrameId: null
+        animator: null,
+        currentTool: null
     };
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -109,13 +110,8 @@ import { ToolBase } from '../core/tool-base.js';
             const img = await fetchLoremPicsum(canvas.width, canvas.height);
             imageState.currentImage = img;
             
-            // Draw to temporary canvas to extract ImageData
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            imageState.currentImageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+            // Convert image to ImageData using canvas utility
+            imageState.currentImageData = imageToImageData(img, canvas.width, canvas.height);
             
             imageState.isLoading = false;
             return img;
@@ -172,55 +168,52 @@ import { ToolBase } from '../core/tool-base.js';
      * Start animation loop
      */
     function startAnimation(tool) {
-        if (animationState.isPlaying) return;
-        animationState.isPlaying = true;
-        animationState.lastFrameTime = performance.now();
-        animationLoop(tool);
+        if (animationState.animator?.isRunning) return;
+        
+        // Stop any existing animator
+        if (animationState.animator) {
+            animationState.animator.destroy();
+        }
+        
+        animationState.currentTool = tool;
+        
+        // Create IntervalAnimator
+        animationState.animator = new IntervalAnimator({
+            interval: 1000 / animationState.frameRate,
+            onFrame: () => {
+                if (!animationState.instance) {
+                    stopAnimation();
+                    return;
+                }
+                
+                // Step the animation
+                const stepped = animationState.instance.step();
+                
+                // Redraw
+                if (animationState.currentTool && animationState.currentTool.draw) {
+                    animationState.currentTool.draw();
+                }
+                
+                // Check if complete
+                if (!stepped || animationState.instance.isComplete()) {
+                    stopAnimation();
+                }
+            }
+        });
+        
+        animationState.animator.start();
     }
 
     /**
      * Stop animation loop
      */
     function stopAnimation() {
-        animationState.isPlaying = false;
-        if (animationState.animationFrameId) {
-            cancelAnimationFrame(animationState.animationFrameId);
-            animationState.animationFrameId = null;
+        if (animationState.animator) {
+            animationState.animator.stop();
+            animationState.animator.destroy();
+            animationState.animator = null;
         }
-    }
-
-    /**
-     * Animation loop
-     */
-    function animationLoop(tool) {
-        if (!animationState.isPlaying || !animationState.instance) {
-            stopAnimation();
-            return;
-        }
-
-        const now = performance.now();
-        const elapsed = now - animationState.lastFrameTime;
-        const frameTime = 1000 / animationState.frameRate;
-
-        if (elapsed >= frameTime) {
-            animationState.lastFrameTime = now;
-
-            // Step the animation
-            const stepped = animationState.instance.step();
-
-            // Redraw
-            if (tool && tool.draw) {
-                tool.draw();
-            }
-
-            // Check if complete
-            if (!stepped || animationState.instance.isComplete()) {
-                stopAnimation();
-                return;
-            }
-        }
-
-        animationState.animationFrameId = requestAnimationFrame(() => animationLoop(tool));
+        animationState.currentTool = null;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -914,45 +907,6 @@ import { ToolBase } from '../core/tool-base.js';
         }
     }
 
-    /**
-     * Rebuild the tool sidebar for a different page
-     * This destroys and recreates the ToolBase with new domain tabs
-     */
-    function rebuildToolForPage(instance, pageId) {
-        if (!instance || !instance.contentArea) return;
-        
-        state.selectedPageId = pageId;
-        
-        // Destroy old tool
-        if (instance.tool) {
-            instance.tool.destroy();
-            instance.tool = null;
-        }
-        
-        // Clear content area
-        instance.contentArea.innerHTML = '';
-        
-        // Build new config with this page's domains
-        const newConfig = {
-            ...TOOL_CONFIG,
-            sidebar: buildSidebarForPage(pageId)
-        };
-        
-        // Create and mount new tool
-        instance.tool = new ToolBase(newConfig, instance.deps);
-        instance.tool._algorithmTestLabInstance = instance;
-        instance.tool.mount(instance.contentArea);
-        
-        // Add OUTPUT/ABOUT tabs above canvas
-        instance._addCanvasTabs();
-        
-        // Setup algorithm selection (make headers clickable)
-        instance.setupAlgorithmSelection();
-        
-        // Draw
-        instance.tool.draw();
-    }
-
     function handlePlaybackAction(fullId, action) {
         console.log(`[Algorithms Test Lab] ${action} triggered for ${fullId}`);
     }
@@ -1410,7 +1364,6 @@ import { ToolBase } from '../core/tool-base.js';
 
     async function updateAboutPanel(tool) {
         if (!tool || !tool.canvasArea) return;
-        const F = tool.F || 14;
         
         // Create panel if it doesn't exist
         if (!state.aboutPanel) {
@@ -1419,29 +1372,57 @@ import { ToolBase } from '../core/tool-base.js';
                 content: '' // Will be filled dynamically
             });
             const panelElement = panel.render();
-            // Position as overlay on the main tool container
+            // Position as overlay - start hidden, toggleAboutPanel will show when needed
             panelElement.style.cssText = `
                 position: absolute;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0, 0, 0, 0.9);
-                z-index: 1000;
+                display: none;
+                background: var(--c-bg);
+                z-index: 10;
                 pointer-events: auto;
+                overflow: auto;
             `;
-            tool.element.appendChild(panelElement);
+            // Ensure canvas area can contain absolute children
+            tool.canvasArea.style.position = 'relative';
+            tool.canvasArea.appendChild(panelElement);
             state.aboutPanel = panelElement;
         }
 
+        // Clear previous content
+        while (state.aboutPanel.firstChild) {
+            state.aboutPanel.removeChild(state.aboutPanel.firstChild);
+        }
+        
         // Show loading state
-        state.aboutPanel.innerHTML = '<div style="padding: 28px; font-family: \'Atkinson Hyperlegible\', monospace;">Loading documentation...</div>';
+        const { Text } = ComponentLibrary;
+        const loadingText = new Text({
+            text: 'Loading documentation...',
+            variant: 'body'
+        }, tool.deps);
+        const loadingDiv = tool.element.ownerDocument.createElement('div');
+        loadingDiv.className = 'atl-about-message';
+        loadingDiv.appendChild(loadingText.render());
+        state.aboutPanel.appendChild(loadingDiv);
 
         // Use the currently selected algorithm from state
         const currentAlgoId = state.selectedAlgorithmId || state.selectedId;
         
         if (!currentAlgoId) {
-            state.aboutPanel.innerHTML = '<div style="padding: 28px; font-family: \'Atkinson Hyperlegible\', monospace;">Select an algorithm to view documentation.</div>';
+            // Clear and show selection prompt
+            while (state.aboutPanel.firstChild) {
+                state.aboutPanel.removeChild(state.aboutPanel.firstChild);
+            }
+            const promptText = new Text({
+                text: 'Select an algorithm to view documentation.',
+                variant: 'body'
+            }, tool.deps);
+            const promptDiv = tool.element.ownerDocument.createElement('div');
+            promptDiv.className = 'atl-about-message';
+            promptDiv.appendChild(promptText.render());
+            state.aboutPanel.appendChild(promptDiv);
             return;
         }
 
@@ -1453,21 +1434,58 @@ import { ToolBase } from '../core/tool-base.js';
                 if (!response.ok) throw new Error(`Failed to fetch: ${docPath}`);
                 const markdownText = await response.text();
 
-                state.aboutPanel.innerHTML = '';
+                // Clear and show markdown
+                while (state.aboutPanel.firstChild) {
+                    state.aboutPanel.removeChild(state.aboutPanel.firstChild);
+                }
                 const markdownComponent = new window.ComponentLibrary.MarkdownBody({ markdownText });
                 const renderedElement = markdownComponent.render();
                 state.aboutPanel.appendChild(renderedElement);
             } catch (error) {
                 console.error(`Error loading markdown from ${docPath}:`, error);
-                state.aboutPanel.innerHTML = `<div style="padding: 28px; font-family: 'Atkinson Hyperlegible', monospace; color: var(--vga-red);">Failed to load documentation.</div>`;
+                
+                // Clear and show error
+                while (state.aboutPanel.firstChild) {
+                    state.aboutPanel.removeChild(state.aboutPanel.firstChild);
+                }
+                const errorText = new Text({
+                    text: 'Failed to load documentation.',
+                    variant: 'body'
+                }, tool.deps);
+                const errorDiv = tool.element.ownerDocument.createElement('div');
+                errorDiv.className = 'atl-about-message atl-about-error';
+                errorDiv.appendChild(errorText.render());
+                state.aboutPanel.appendChild(errorDiv);
             }
         } else {
             const meta = ALGORITHM_MAP[currentAlgoId];
             const algoTitle = meta ? meta.title : 'this algorithm';
-            state.aboutPanel.innerHTML = `<div style="padding: 28px; font-family: 'Atkinson Hyperlegible', monospace;">
-                <p>Documentation for ${algoTitle} is not yet available.</p>
-                <p style="opacity: 0.7; margin-top: 14px;">Algorithm ID: ${currentAlgoId}</p>
-            </div>`;
+            
+            // Clear and show unavailable message
+            while (state.aboutPanel.firstChild) {
+                state.aboutPanel.removeChild(state.aboutPanel.firstChild);
+            }
+            
+            const messageDiv = tool.element.ownerDocument.createElement('div');
+            messageDiv.className = 'atl-about-message';
+            
+            const titleText = new Text({
+                text: `Documentation for ${algoTitle} is not yet available.`,
+                variant: 'body'
+            }, tool.deps);
+            messageDiv.appendChild(titleText.render());
+            
+            const idText = new Text({
+                text: `Algorithm ID: ${currentAlgoId}`,
+                variant: 'caption'
+            }, tool.deps);
+            const idP = tool.element.ownerDocument.createElement('p');
+            idP.style.opacity = '0.7';
+            idP.style.marginTop = '14px';
+            idP.appendChild(idText.render());
+            messageDiv.appendChild(idP);
+            
+            state.aboutPanel.appendChild(messageDiv);
         }
     }
 
@@ -1854,10 +1872,13 @@ import { ToolBase } from '../core/tool-base.js';
         
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ffffff';
+        
+        // Use BatchDrawer for performance with many points
+        const batch = new BatchDrawer(ctx);
         points.forEach(p => {
-            ctx.fillRect(Math.floor(p.x) - 1, Math.floor(p.y) - 1, 3, 3);
+            batch.addRect(Math.floor(p.x) - 1, Math.floor(p.y) - 1, 3, 3, '#ffffff');
         });
+        batch.flush();
     }
 
     /**
@@ -3572,9 +3593,43 @@ import { ToolBase } from '../core/tool-base.js';
 
     const TOOL_CONFIG = {
         title: 'ALGORITHM TEST LAB',
-        useTabs: true,
+        
+        // Category tabs for page selection
+        categoryTabs: {
+            categories: PAGES.map(p => ({ id: p.id, title: p.title })),
+            activeCategory: state.selectedPageId || 'page1',
+            enableScrollbar: true,
+            onCategoryChange: (pageId, tool) => {
+                state.selectedPageId = pageId;
+                tool.rebuildSidebar(buildSidebarForPage(pageId));
+                
+                // Store reference for algorithm selection
+                tool._algorithmTestLabInstance = tool._algorithmTestLabInstance || {};
+                tool._algorithmTestLabInstance.tool = tool;
+                
+                // Setup algorithm selection after rebuild
+                if (tool._algorithmTestLabInstance.setupAlgorithmSelection) {
+                    tool._algorithmTestLabInstance.setupAlgorithmSelection();
+                }
+                
+                tool.draw();
+            }
+        },
+        
+        // Canvas mode tabs for OUTPUT/ABOUT
+        canvasModeTabs: {
+            tabs: [
+                { id: 'output', label: 'OUTPUT' },
+                { id: 'about', label: 'ABOUT' }
+            ],
+            defaultTab: state.viewMode || 'output',
+            onTabChange: (tabId, tool) => {
+                state.viewMode = tabId;
+                setMode(tool, tabId);
+            }
+        },
+        
         canvas: { width: 720, height: 720, displayMode: 'fit', showControls: false },
-        canvasTabs: null,  // Canvas tabs are now in sub-sub-header, not managed by ToolBase
         sidebar: buildSidebarTabs(),
         onInit: async function() {
             // Select default algorithm
@@ -3584,10 +3639,6 @@ import { ToolBase } from '../core/tool-base.js';
             setMode(this, state.viewMode);
         },
         onUpdate: function(key, value) {
-            if (key === 'modeTabs') {
-                setMode(this, value);
-            }
-            
             // Handle algorithm selection from selectable block headers
             if (key === 'selectedAlgorithm' && value) {
                 const instance = this._algorithmTestLabInstance;
@@ -3700,62 +3751,43 @@ export class AlgorithmsTestLab {
         }
     }
 
-        render = function() {
+    render = function() {
+        // Show loading message if algorithms not ready
+        if (!this.algorithmsReady) {
+            // Create loading component
+            const { Text } = ComponentLibrary;
+            const loadingText = new Text({
+                text: 'Loading algorithms library...',
+                variant: 'body'
+            }, this.deps);
             
-            if (!window.ComponentLibrary?.CategoryTabsBar) {
-                throw new Error('CategoryTabsBar component not loaded');
-            }
+            const loadingWrapper = this.container.ownerDocument.createElement('div');
+            loadingWrapper.className = 'atl-loading';
+            loadingWrapper.appendChild(loadingText.render());
+            this.container.appendChild(loadingWrapper);
 
-            // Show loading message if algorithms not ready
-            if (!this.algorithmsReady) {
-                this.container.innerHTML = '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: \'Atkinson Hyperlegible\', monospace; color: var(--vga-white);">Loading algorithms library...</div>';
-
-                // Wait for algorithms and then render
-                const checkReady = () => {
-                    if (this.algorithmsReady) {
-                        this._actualRender();
-                    } else {
-                        setTimeout(checkReady, 100);
-                    }
-                };
-                checkReady();
-                return this;
-            }
-
-            this._actualRender();
+            // Wait for algorithms and then render
+            const checkReady = () => {
+                if (this.algorithmsReady) {
+                    this.container.removeChild(loadingWrapper);
+                    loadingText.destroy();
+                    this._actualRender();
+                } else {
+                    setTimeout(checkReady, 100);
+                }
+            };
+            checkReady();
             return this;
-        };
+        }
+
+        this._actualRender();
+        return this;
+    };
     
-        _actualRender = function() {
-        const F = this.deps.MF?.F || 14;
-        
-        // Create wrapper
-        this.wrapper = document.createElement('div');
-        this.wrapper.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column;';
-        
-        // Create CategoryTabsBar component using PAGES structure
+    _actualRender = function() {
+        // Build ToolBase with integrated category and canvas mode tabs
         const defaultPage = PAGES.find(p => p.id === state.selectedPageId) || PAGES[0];
         
-        this.categoryBar = new window.ComponentLibrary.CategoryTabsBar({
-            categories: PAGES.map(p => ({id: p.id, title: p.title})),
-            activeCategory: defaultPage.id,
-            enableScrollbar: true,
-            onCategoryChange: (pageId) => {
-                rebuildToolForPage(this, pageId);
-            }
-        }, this.deps);
-        
-        const barElement = this.categoryBar.render();
-        this.wrapper.appendChild(barElement);
-        
-        // Content area for ToolBase
-        this.contentArea = document.createElement('div');
-        this.contentArea.style.cssText = 'flex: 1; min-height: 0; overflow: hidden;';
-        this.wrapper.appendChild(this.contentArea);
-        
-        this.container.appendChild(this.wrapper);
-        
-        // Build ToolBase in content area with initial page's domains
         const initialConfig = {
             ...TOOL_CONFIG,
             sidebar: buildSidebarForPage(defaultPage.id)
@@ -3763,13 +3795,19 @@ export class AlgorithmsTestLab {
         
         this.tool = new ToolBase(initialConfig, this.deps);
         
-        // Store reference so onInit can access this instance
+        // Store reference so onInit and callbacks can access this instance
         this.tool._algorithmTestLabInstance = this;
         
-        this.tool.mount(this.contentArea);
+        // Mount directly to container (no wrapper needed)
+        this.tool.mount(this.container);
         
-        // Add OUTPUT/ABOUT tabs above the canvas
-        this._addCanvasTabs();
+        // Add resize handler for Canvas component
+        this._resizeHandler = () => {
+            if (this.tool?.canvasComponent?._applyDisplayMode) {
+                this.tool.canvasComponent._applyDisplayMode();
+            }
+        };
+        window.addEventListener('resize', this._resizeHandler);
         
         // Setup algorithm selection (make headers clickable)
         this.setupAlgorithmSelection();
@@ -3782,121 +3820,11 @@ export class AlgorithmsTestLab {
     /**
      * Add OUTPUT/ABOUT tabs above the canvas area
      */
-    _addCanvasTabs = function() {
-        if (!this.tool || !this.tool.canvasArea) return;
-        
-        const F = this.deps.MF?.F || 14;
-        const canvasArea = this.tool.canvasArea;
-        
-        // Adjust canvas area to have tabs at top (override center alignment for full width tabs)
-        canvasArea.style.alignItems = 'stretch';
-        
-        // Create tabs container
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'canvas-mode-tabs';
-        tabsContainer.style.cssText = `
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid var(--c-border);
-            flex-shrink: 0;
-            align-self: stretch;
-        `;
-        
-        const tabs = [
-            { id: 'output', label: 'OUTPUT' },
-            { id: 'about', label: 'ABOUT' }
-        ];
-        
-        this.canvasTabButtons = [];
-        
-        tabs.forEach((tab, index) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = tab.label;
-            const isActive = tab.id === state.viewMode;
-            
-            btn.style.cssText = `
-                flex: 1;
-                height: ${F * 2}px;
-                padding: 0 ${F}px;
-                border: none;
-                ${index < tabs.length - 1 ? 'border-right: 1px solid var(--c-border);' : ''}
-                background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
-                color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
-                font-family: 'Atkinson Hyperlegible', monospace;
-                font-size: ${F}px;
-                text-transform: uppercase;
-                cursor: pointer;
-            `;
-            
-            btn.addEventListener('click', () => {
-                this._setCanvasTab(tab.id);
-            });
-            
-            btn.addEventListener('mouseenter', () => {
-                if (tab.id !== state.viewMode) {
-                    btn.style.background = 'var(--vga-gray)';
-                }
-            });
-            
-            btn.addEventListener('mouseleave', () => {
-                if (tab.id !== state.viewMode) {
-                    btn.style.background = 'var(--c-bg)';
-                }
-            });
-            
-            this.canvasTabButtons.push({ id: tab.id, element: btn });
-            tabsContainer.appendChild(btn);
-        });
-        
-        // Create a canvas wrapper to maintain centering
-        const canvasWrapper = document.createElement('div');
-        canvasWrapper.className = 'canvas-wrapper';
-        canvasWrapper.style.cssText = `
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 0;
-            overflow: hidden;
-        `;
-        
-        // Move existing canvas into wrapper
-        const canvas = canvasArea.querySelector('canvas');
-        if (canvas) {
-            canvasWrapper.appendChild(canvas);
-        }
-        
-        // Insert tabs at top, then wrapper
-        canvasArea.insertBefore(tabsContainer, canvasArea.firstChild);
-        canvasArea.appendChild(canvasWrapper);
-        
-        this.canvasTabsContainer = tabsContainer;
-    };
     
-    /**
-     * Switch canvas tab (OUTPUT/ABOUT)
-     */
-    _setCanvasTab = function(tabId) {
-        state.viewMode = tabId;
-        
-        // Update button styles
-        if (this.canvasTabButtons) {
-            this.canvasTabButtons.forEach(({ id, element }) => {
-                const isActive = id === tabId;
-                element.style.background = isActive ? 'var(--c-text)' : 'var(--c-bg)';
-                element.style.color = isActive ? 'var(--c-bg)' : 'var(--c-text)';
-            });
-        }
-        
-        // Trigger mode change
-        setMode(this.tool, tabId);
-    };
-
     /**
      * Setup algorithm selection - select default algorithm and apply visual state
      */
-        setupAlgorithmSelection = function() {
+    setupAlgorithmSelection = function() {
         if (!this.tool || !this.tool.element) {
             window.debugLog('TOOLS', 'setupAlgorithmSelection: tool or tool.element not available');
             return;
@@ -3988,7 +3916,14 @@ export class AlgorithmsTestLab {
     };
     
 
-        destroy = function() {
+    destroy = function() {
+        // Remove resize handler
+        if (this._resizeHandler) {
+            window.removeEventListener('resize', this._resizeHandler);
+            this._resizeHandler = null;
+        }
+        
+        // ToolBase now handles all component cleanup
         if (this.tool) {
             this.tool.destroy();
             this.tool = null;

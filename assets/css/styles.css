@@ -2856,3 +2856,29 @@ body.full-mode.no-subheader .content-container {
     border-top: 1px solid var(--c-border) !important;
     border-bottom: 1px solid var(--c-border) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Algorithm Test Lab Components
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Loading state message */
+.atl-loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-family);
+    color: var(--vga-white);
+}
+
+/* About panel messages */
+.atl-about-message {
+    padding: calc(var(--f) * 2);
+    font-family: var(--font-family);
+}
+
+.atl-about-error {
+    color: var(--vga-red);
+}
+
