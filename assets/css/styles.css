@@ -850,8 +850,17 @@ blockquote {
     color: var(--c-text);
     border: 1px solid var(--c-border);
     padding: calc(var(--f) / 2) var(--f);
-    height: var(--header-height);
     /* NO border-radius allowed */
+}
+
+/* Single-line inputs only (not multi-line textareas) */
+.input, .select, input, select {
+    height: var(--header-height);
+}
+
+/* Textareas should be resizable */
+textarea {
+    resize: vertical;
 }
 
 .input:focus, .select:focus, input:focus, select:focus, textarea:focus {
@@ -1540,6 +1549,190 @@ body.with-subheader .content-container.tool-viewport {
 .tool-viewport {
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* =================================================================
+   GENERATOR TOOLBAR - Unified generators page toolbar
+   Between subheader and tool content
+   ================================================================= */
+
+.generator-toolbar {
+    display: flex;
+    width: 100%;
+    height: calc(var(--f) * 2);
+    min-height: calc(var(--f) * 2);
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-bg);
+    flex-shrink: 0;
+}
+
+.generator-toolbar-cell {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.generator-toolbar-cell--generator {
+    flex: 2;
+    position: relative;
+}
+
+.generator-toolbar-cell--display {
+    flex: 1;
+    border-left: 1px solid var(--c-border);
+}
+
+.generator-toolbar-cell--export {
+    flex: 1;
+    border-left: 1px solid var(--c-border);
+    position: relative;
+}
+
+.generator-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    padding: 0 var(--f);
+    box-sizing: border-box;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    text-transform: uppercase;
+    overflow: hidden;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: none;
+    text-align: left;
+}
+
+.generator-dropdown-trigger:hover,
+.generator-dropdown-trigger:focus {
+    background: var(--c-text);
+    color: var(--c-bg);
+    outline: none;
+}
+
+.generator-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.generator-symbol {
+    font-size: var(--f);
+    margin-left: 2px;
+    line-height: 1;
+    display: inline-block;
+}
+
+.display-mode-btn {
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.display-mode-btn:not(:last-child) {
+    border-right: 1px solid var(--c-border);
+}
+
+.display-mode-btn:hover {
+    background: var(--vga-gray);
+    color: var(--vga-white);
+}
+
+.display-mode-btn--active,
+.display-mode-btn--active:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.export-btn {
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.85);
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.export-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.export-btn--active,
+.export-btn--active:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.export-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-top: none;
+    padding: var(--f);
+    display: none;
+    z-index: 100;
+}
+
+.export-panel--visible {
+    display: block;
+}
+
+.export-panel-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    margin-bottom: calc(var(--f) / 2);
+}
+
+.export-panel-label {
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.85);
+    color: var(--c-text);
+}
+
+.export-panel-input {
+    flex: 1;
+    height: calc(var(--f) * 1.5);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.85);
+    padding: 0 calc(var(--f) / 2);
+}
+
+.export-execute-btn {
+    width: 100%;
+    height: calc(var(--f) * 2);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.85);
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.export-execute-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
 }
 
 /* TOC container class - used by index pages for styling hooks */
@@ -2465,7 +2658,7 @@ body.with-subheader .content-container.tool-viewport {
     .gallery-item__label {
         opacity: 1; /* Always visible on mobile */
     }
-}}
+}
 
 /* =================================================================
    GENERATIVE ANIMATIONS - Standard Container Pattern
@@ -2880,5 +3073,47 @@ body.full-mode.no-subheader .content-container {
 
 .atl-about-error {
     color: var(--vga-red);
+}
+
+/* =================================================================
+   P5 TO VIDEO TOOL - IFRAME SANDBOX & CODE EDITOR
+   ================================================================= */
+
+/* P5 to Video tool - Code editor textarea (tool-specific only) */
+.tool-base .p5-code-textarea {
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.857);
+    height: calc(var(--f) * 15);
+    resize: vertical;
+    tab-size: 2;
+    white-space: pre;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    padding: calc(var(--f) * 0.5);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Iframe sandbox base styling */
+.iframe-sandbox {
+    border: 1px solid var(--c-border);
+    background: var(--vga-white);
+    display: block;
+    width: calc(var(--f) * 35.7); /* 500px at F=14 */
+    height: calc(var(--f) * 35.7);
+}
+
+/* Iframe sandbox - 500x500 size variant (explicit) */
+.iframe-sandbox--500 {
+    width: calc(var(--f) * 35.7);
+    height: calc(var(--f) * 35.7);
+}
+
+/* Iframe sandbox - hidden (for silent recording/off-screen rendering) */
+.iframe-sandbox--hidden {
+    position: absolute;
+    left: -9999px;
+    visibility: hidden;
 }
 

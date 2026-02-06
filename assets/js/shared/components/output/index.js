@@ -7,6 +7,7 @@
 export { Text } from './Text.js';
 export { Canvas } from './Canvas.js';
 export { ImageViewport } from './ImageViewport.js';
+export { IframeSandbox } from './IframeSandbox.js';
 export { PalettePreview } from './PalettePreview.js';
 export { SVG } from './SVG.js';
 export { Media } from './Media.js';

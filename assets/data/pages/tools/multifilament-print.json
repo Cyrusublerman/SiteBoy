@@ -6,7 +6,7 @@
         {
             "type": "CanvasWidget",
             "props": {
-                "toolPath": "./tools/fabrication/multifilament-print-tool.js",
+                "toolPath": "./tools/fabrication/multifilament-print/MFP-Main.js",
                 "toolClass": "MultifilamentPrintTool"
             }
         }

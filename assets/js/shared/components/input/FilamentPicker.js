@@ -273,6 +273,16 @@ export class FilamentPicker extends BaseComponent {
         this._renderSwatchGrid(F, F2);
     }
     
+    /**
+     * setValue - ToolBase compatibility
+     * ToolBase calls setValue(value), maps to setSelection for FilamentPicker
+     */
+    setValue(value) {
+        if (Array.isArray(value)) {
+            this.setSelection(value);
+        }
+    }
+    
     clearSelection() {
         this.selectedIndices = [];
         const { F, F2 } = this.getF();

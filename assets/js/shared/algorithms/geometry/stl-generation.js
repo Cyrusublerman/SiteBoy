@@ -250,7 +250,11 @@ function wrapSTL(facets, name) {
 export function exportArtworkSTLs(layerMaps, filamentNames, config) {
     const { imageWidth, imageHeight, printWidth, layerHeight, 
             isGrid = false, tileSize, gap = 0, perimeterMargin = 0,
-            gapFillEnabled = false, gapFilamentName = null, baseLayers = 0 } = config;
+            gapFillEnabled = false, gapFilamentName = null, baseLayers = 0,
+            totalLayers = null } = config;
+    
+    // Use provided totalLayers or calculate from layerMaps
+    const actualTotalLayers = totalLayers || layerMaps.length;
     
     const stls = {};
     const filamentCount = layerMaps[0].length;
@@ -274,27 +278,32 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
             const z1 = z0 + layerHeight;
 
             for (let rect of rectangles) {
-                let x0, y0, x1, y1;
-                
                 if (isGrid) {
-                    // Grid mode: explicit tile/gap/perimeter sizes
-                    // Position tiles with gaps, starting after perimeter
-                    x0 = perimeterMargin + (rect.x * (tileSize + gap));
-                    y0 = perimeterMargin + (rect.y * (tileSize + gap));
-                    
-                    // Size based on tile size, plus internal gaps for merged rectangles
-                    x1 = x0 + (rect.w * tileSize) + ((rect.w - 1) * gap);
-                    y1 = y0 + (rect.h * tileSize) + ((rect.h - 1) * gap);
+                    // Grid mode: generate individual tile boxes to avoid spanning gaps
+                    // Each tile in the merged rectangle gets its own box
+                    for (let dy = 0; dy < rect.h; dy++) {
+                        for (let dx = 0; dx < rect.w; dx++) {
+                            const tileCol = rect.x + dx;
+                            const tileRow = rect.y + dy;
+                            
+                            const x0 = perimeterMargin + (tileCol * (tileSize + gap));
+                            const y0 = perimeterMargin + (tileRow * (tileSize + gap));
+                            const x1 = x0 + tileSize;
+                            const y1 = y0 + tileSize;
+                            
+                            filamentFacets += generateBox(x0, y0, z0, x1, y1, z1);
+                        }
+                    }
                 } else {
-                    // Image mode: uniform pixel scaling
+                    // Image mode: uniform pixel scaling (can merge)
                     const pixelSize = printWidth / imageWidth;
-                    x0 = rect.x * pixelSize;
-                    y0 = rect.y * pixelSize;
-                    x1 = (rect.x + rect.w) * pixelSize;
-                    y1 = (rect.y + rect.h) * pixelSize;
+                    const x0 = rect.x * pixelSize;
+                    const y0 = rect.y * pixelSize;
+                    const x1 = (rect.x + rect.w) * pixelSize;
+                    const y1 = (rect.y + rect.h) * pixelSize;
+                    
+                    filamentFacets += generateBox(x0, y0, z0, x1, y1, z1);
                 }
-
-                filamentFacets += generateBox(x0, y0, z0, x1, y1, z1);
             }
         }
         
@@ -302,7 +311,7 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
         if (isGrid && gapFillEnabled && gapFilamentName && filamentNames[fi] === gapFilamentName) {
             filamentFacets += generateGapAndPerimeterGeometry(
                 imageWidth, imageHeight, tileSize, gap, perimeterMargin,
-                layerHeight, baseLayers, layerMaps.length
+                layerHeight, baseLayers, actualTotalLayers
             );
         }
 
@@ -368,25 +377,32 @@ function generateGapAndPerimeterGeometry(cols, rows, tileSize, gap, perimeterMar
                                  totalWidth, totalHeight - perimeterMargin, z1);
         }
         
-        // Generate horizontal gaps (between rows)
+        // Generate gap fill using individual cells to avoid overlaps
+        // Horizontal gaps: full-width strips between rows
         if (gap > 0) {
             for (let row = 0; row < rows - 1; row++) {
                 const y0 = perimeterMargin + ((row + 1) * tileSize) + (row * gap);
                 const y1 = y0 + gap;
                 
+                // Full width horizontal gap strip
                 facets += generateBox(perimeterMargin, y0, z0,
                                      totalWidth - perimeterMargin, y1, z1);
             }
         }
         
-        // Generate vertical gaps (between columns)
+        // Vertical gaps: only fill between horizontal gaps (avoid overlap)
         if (gap > 0) {
             for (let col = 0; col < cols - 1; col++) {
                 const x0 = perimeterMargin + ((col + 1) * tileSize) + (col * gap);
                 const x1 = x0 + gap;
                 
-                facets += generateBox(x0, perimeterMargin, z0,
-                                     x1, totalHeight - perimeterMargin, z1);
+                // Generate separate boxes for each tile row to avoid overlapping horizontal gaps
+                for (let row = 0; row < rows; row++) {
+                    const y0 = perimeterMargin + (row * (tileSize + gap));
+                    const y1 = y0 + tileSize;  // Only tile height, not including gap
+                    
+                    facets += generateBox(x0, y0, z0, x1, y1, z1);
+                }
             }
         }
     }

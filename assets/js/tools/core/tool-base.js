@@ -122,7 +122,10 @@ export class ToolBase extends BaseComponent {
             this.sidebarConfig.push(['CANVAS', [
                 ['Canvas Controls', [
                     ['label', `Size: ${canvasSize}×${canvasSize}px`, { variant: 'caption' }],
-                    ['button', 'Fit to Container', null, { key: 'fitCanvas' }],
+                    ['radio', 'Display Mode', ['Fit', 'Fill', 'Actual'], { 
+                        key: 'displayMode', 
+                        selectedValue: 'Fit' 
+                    }],
                 ]],
             ]]);
         }
@@ -962,6 +965,8 @@ export class ToolBase extends BaseComponent {
                     value: args[1] ?? '',
                     placeholder: extraOptions.placeholder ?? '',
                     multiline: typeLower === 'textarea',
+                    inputClassName: extraOptions.inputClassName ?? null,
+                    rows: extraOptions.rows ?? 4,
                     key: extraOptions.key ?? this._makeKey(args[0]),
                     onChange: (v) => this._handleChange(options.key, v),
                 };
@@ -1041,13 +1046,20 @@ export class ToolBase extends BaseComponent {
                 };
                 break;
 
-            case 'button':
+            case 'button': {
+                const buttonKey = extraOptions.key ?? this._makeKey(args[0]);
                 options = {
                     text: args[0],
-                    onClick: args[1] ?? (() => {}),
+                    onClick: args[1] ?? (() => {
+                        // Trigger onUpdate when clicked
+                        this._handleChange(buttonKey, true);
+                    }),
                     size: extraOptions.size ?? 'm',
+                    fill: extraOptions.fill ?? true,
+                    key: buttonKey,
                 };
                 break;
+            }
 
             case 'label':
             case 'value':
@@ -1165,6 +1177,12 @@ export class ToolBase extends BaseComponent {
         // Calculate initial size
         let size = this._calculateCanvasSize();
         
+        // Check for 'none' mode - tool will manage canvas area directly
+        if (this.canvasConfig.mode === 'none') {
+            window.debugLog('INIT', 'ToolBase: Canvas mode set to "none", tool will manage canvas area');
+            return area;
+        }
+        
         // Check for ImageViewport mode
         const useImageViewport = this.canvasConfig.mode === 'imageViewport';
         
@@ -1201,20 +1219,24 @@ export class ToolBase extends BaseComponent {
                 return area;
             }
             
+            // Use configured canvas dimensions for buffer resolution (NOT container size)
+            const canvasWidth = this.canvasConfig.width ?? size;
+            const canvasHeight = this.canvasConfig.height ?? size;
+            
             // Hook up tool's onDraw to Canvas component's draw callback
             const toolOnDraw = this.onDraw;
             const toolValues = () => this.values;
             const self = this;
             
             this.canvasComponent = new Canvas({
-                width: size,
-                height: size,
+                width: canvasWidth,
+                height: canvasHeight,
                 context: this.canvasConfig.context ?? '2d',
                 
                 // Feature flags
                 enableZoom: this.canvasConfig.enableZoom ?? false,
                 enablePan: this.canvasConfig.enablePan ?? false,
-                displayMode: this.canvasConfig.displayMode ?? 'auto',
+                displayMode: this.canvasConfig.displayMode ?? 'fit',  // Default to 'fit' mode
                 enableHUD: this.canvasConfig.enableHUD ?? false,
                 hud: this.canvasConfig.hud ?? [],
                 
@@ -1468,6 +1490,15 @@ export class ToolBase extends BaseComponent {
     }
 
     _handleChange(key, value) {
+        // Handle displayMode radio button
+        if (key === 'displayMode') {
+            const modeMap = { 'Fit': 'fit', 'Fill': 'fill', 'Actual': 'actual' };
+            const mode = modeMap[value] || 'fit';
+            this.setCanvasDisplayMode(mode);
+            // Don't store in values or call onUpdate for internal controls
+            return;
+        }
+        
         this.values[key] = value;
         this.onUpdate.call(this, key, value, this.values);
 
@@ -1507,6 +1538,16 @@ export class ToolBase extends BaseComponent {
     }
 
     setValue(key, value) {
+        // Handle special _filename suffix for FileInput components
+        if (key.endsWith('_filename')) {
+            const baseKey = key.slice(0, -9); // Remove '_filename'
+            const fileInput = this.components.get(baseKey);
+            if (fileInput && typeof fileInput.setFilename === 'function') {
+                fileInput.setFilename(value);
+            }
+            return;
+        }
+        
         const component = this.components.get(key);
         if (component && typeof component.setValue === 'function') {
             component.setValue(value);

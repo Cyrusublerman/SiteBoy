@@ -2,7 +2,7 @@
 
 **Category:** Fabrication  
 **Status:** Production  
-**Version:** 2.0.0 (Modular)
+**Version:** 2.1.0 (Bug Fixes)
 
 ## Overview
 
@@ -208,27 +208,33 @@ canvasHeight = round(heightInches × 300)
 ```
 
 #### Grid STL
-3D printable files. One file per filament-layer combination.
+3D printable files. One file per filament colour (all layers combined).
 
-**Geometry:**
+**Layer Structure:**
+```
+Total layers = baseLayers + sequenceLayers + topLayers
+
+Base layers:   All tiles filled with base filament
+Sequence layers: Each tile gets its sequence colours
+Top layers:    All tiles filled with top filament
+```
+
+**Tile Geometry (non-clipping):**
+Each tile is rendered as an individual box to prevent overlap with gaps:
 ```
 For each tile at position (row, col):
   x = col × (tileSize + gap) + perimeterMargin
   y = row × (tileSize + gap) + perimeterMargin
   z = layerIndex × layerHeight
   
-  Create rectangular prism:
-    vertices = [
-      (x, y, z),
-      (x+tileSize, y, z),
-      (x+tileSize, y+tileSize, z),
-      (x, y+tileSize, z),
-      (x, y, z+layerHeight),
-      (x+tileSize, y, z+layerHeight),
-      (x+tileSize, y+tileSize, z+layerHeight),
-      (x, y+tileSize, z+layerHeight)
-    ]
+  Create rectangular prism: tileSize × tileSize × layerHeight
 ```
+
+**Gap/Perimeter Geometry (non-overlapping):**
+Gap fill uses segmented boxes to avoid intersection overlap:
+- Horizontal gaps: Full-width strips between rows
+- Vertical gaps: Segmented per tile row (stops at horizontal gap boundaries)
+- Perimeter: Four border strips (top, bottom, left, right)
 
 #### Grid CSV
 Sequence index, layer-by-layer filament indices.
@@ -246,20 +252,18 @@ Sequence,Layer_0,Layer_1,Layer_2,Layer_3
 
 #### Complete Package (ZIP)
 Contains:
-- `grid-layout.json`: Grid metadata + all settings
-- `sequences.json`: Full sequence definitions
-- `sequences.csv`: Human-readable sequence table
-- `README.md`: Usage instructions
-- `config.json`: All tool settings for reimport
-- `manifest.json`: File inventory
-- `stl/`: STL files per layer/color
-- `visuals/`: PNG renders
-- `scans/` (if analysis done):
-  - `scan-image.png`
-  - `analysis.json`
-  - `quantization-config.json`
-  - `calibrated-palette.gpl`
-  - `comparison.csv`
+- `grid-layout.json`: Grid metadata + all settings (v1.2.0 format)
+- `README.txt`: Usage instructions
+- `stl/`: STL files per filament colour (if STL export enabled)
+- `images/`: PNG renders (if Layer Visuals enabled)
+  - `grid-combined.png`: Combined view at 300 DPI
+  - `grid-layer-0.png`, `grid-layer-1.png`, etc.: Per-layer views
+- `scans/` (if scan analysis completed):
+  - `scan.png`: Original scan image
+  - `analysis.json`: Extracted colour data
+  - `quantization-config.json`: Colour mapping config
+  - `calibrated-palette.gpl`: GIMP palette file
+  - `comparison.csv`: Expected vs actual colours
 
 **Filename format:**
 ```
@@ -705,9 +709,29 @@ class MultifilamentPrintTool {
 - **3D Geometry:** STL binary format specification
 - **File Formats:** GIMP GPL palette, CSV RFC 4180
 
+## Changelog
+
+### v2.1.0 (2026-01-31)
+**Bug Fixes:**
+- **FilamentPicker setValue:** Added ToolBase compatibility method for project import UI sync
+- **Filament dropdown updates:** Base/Top/Gap dropdowns now update when filaments selected
+- **Toggle components:** Fixed `selectedValues` config property for correct initial display
+- **Export argument passing:** Fixed `allValues` propagation to export action methods
+- **Sort method normalisation:** Mapped dropdown values to algorithm method names
+- **ZIP export content:** STLs and PNG images now included based on export options
+- **STL base layers:** Base/top layers correctly applied to layer maps
+- **STL clipping prevention:** Individual tile boxes prevent merged rectangles spanning gaps
+- **Gap geometry overlap:** Vertical gaps segmented to avoid horizontal gap intersections
+- **Project import state sync:** `selectedFilaments` now updated in sharedState post-import
+
+### v2.0.0 (2026-01-14)
+- Modular refactor: Split monolithic file into action modules
+- ToolBase integration
+- Algorithm library separation
+
 ---
 
-**Last Updated:** 2026-01-14  
+**Last Updated:** 2026-01-31  
 **Maintained By:** SiteBoy Development  
-**Tool Version:** 2.0.0 (Modular Refactor)
+**Tool Version:** 2.1.0 (Bug Fixes)
 

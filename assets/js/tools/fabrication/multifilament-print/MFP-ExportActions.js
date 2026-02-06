@@ -15,13 +15,30 @@ export class MFPExportActions {
     }
     
     /**
-     * Export complete project ZIP - COMPLETE (delegates to Source)
+     * Export complete project ZIP - COMPLETE (wraps Source with EXPORT tab status label)
      */
     async exportCompleteProject(values, toolBase) {
-        // Import SourceActions and delegate
-        const { MFPSourceActions } = await import('./MFP-SourceActions.js');
-        const sourceActions = new MFPSourceActions(this.state);
-        return sourceActions.exportCompletePackage(values, toolBase);
+        if (!this.state.gridData) {
+            toolBase.setValue('exportProjectZipStatus', '❌ Generate grid first');
+            return;
+        }
+        
+        try {
+            toolBase.setValue('exportProjectZipStatus', '⏳ Building project ZIP...');
+            
+            // Import SourceActions and delegate
+            const { MFPSourceActions } = await import('./MFP-SourceActions.js');
+            const sourceActions = new MFPSourceActions(this.state);
+            await sourceActions.exportCompletePackage(values, toolBase);
+            
+            // Override status with EXPORT tab label
+            const hasScans = this.state.scanAnalysis ? ' (with scan data)' : '';
+            toolBase.setValue('exportProjectZipStatus', `✅ Exported complete project ZIP${hasScans}`);
+            
+        } catch (err) {
+            toolBase.setValue('exportProjectZipStatus', `❌ ZIP export failed: ${err.message}`);
+            console.error('ZIP export error:', err);
+        }
     }
     
     /**

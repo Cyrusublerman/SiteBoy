@@ -16,6 +16,192 @@ export class MFPScanActions {
     }
     
     /**
+     * Point-in-quadrilateral test using cross product signs
+     * @param {number} px - point x
+     * @param {number} py - point y
+     * @param {Object} tl - top-left corner {x, y}
+     * @param {Object} tr - top-right corner {x, y}
+     * @param {Object} br - bottom-right corner {x, y}
+     * @param {Object} bl - bottom-left corner {x, y}
+     * @returns {boolean} true if point is inside quad
+     */
+    _pointInQuad(px, py, tl, tr, br, bl) {
+        const sign = (p1x, p1y, p2x, p2y, p3x, p3y) => 
+            (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+        
+        const d1 = sign(px, py, tl.x, tl.y, tr.x, tr.y);
+        const d2 = sign(px, py, tr.x, tr.y, br.x, br.y);
+        const d3 = sign(px, py, br.x, br.y, bl.x, bl.y);
+        const d4 = sign(px, py, bl.x, bl.y, tl.x, tl.y);
+        
+        const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0) || (d4 < 0);
+        const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0) || (d4 > 0);
+        
+        return !(hasNeg && hasPos);
+    }
+    
+    /**
+     * Import project ZIP on SCAN tab
+     * Re-uses the same ZIP parsing as SOURCE tab but focuses on grid data for analysis
+     */
+    async importProject(file, toolBase) {
+        if (!file) return;
+        
+        try {
+            toolBase.setValue('gridLoadStatus', '⏳ Importing project ZIP...');
+            
+            const JSZip = (await import('jszip')).default;
+            const zip = await JSZip.loadAsync(file);
+            
+            // Find layout file
+            const findFile = (pattern) => {
+                const entries = Object.keys(zip.files);
+                return entries.find(name => name.endsWith(pattern) || name.includes(pattern));
+            };
+            
+            const layoutPath = findFile('grid-layout.json') || findFile('layout.json');
+            if (!layoutPath) {
+                toolBase.setValue('gridLoadStatus', '❌ No grid-layout.json found in ZIP');
+                return;
+            }
+            
+            const layoutText = await zip.file(layoutPath).async('string');
+            const layout = JSON.parse(layoutText);
+            
+            // Parse layout (same logic as SOURCE tab)
+            let sequences, colours, meta;
+            
+            if (layout.tiles && layout.gridSize) {
+                sequences = layout.tiles.map(t => t.sequence);
+                colours = layout.palette.map(p => ({
+                    n: p.name,
+                    h: p.hex
+                }));
+                meta = {
+                    rows: layout.gridSize.rows,
+                    cols: layout.gridSize.cols,
+                    tileSize: layout.tileSize,
+                    gap: layout.gap,
+                    layerCount: layout.layerCount,
+                    baseLayers: layout.baseLayers || 2,
+                    sortMethod: layout.sortMethod
+                };
+            } else if (layout.sequences && layout.colours) {
+                sequences = layout.sequences;
+                colours = layout.colours;
+                meta = {
+                    rows: layout.rows,
+                    cols: layout.cols,
+                    tileSize: layout.tileSize,
+                    gap: layout.gap,
+                    layerCount: layout.layerCount,
+                    baseLayers: layout.baseLayers || 2,
+                    sortMethod: layout.sortMethod
+                };
+            } else {
+                toolBase.setValue('gridLoadStatus', '❌ Unrecognised layout format');
+                return;
+            }
+            
+            // Set up grid data for analysis
+            this.state.referenceGridData = {
+                sequences,
+                colours,
+                rows: meta.rows,
+                cols: meta.cols,
+                tileSize: meta.tileSize,
+                gap: meta.gap,
+                width: meta.cols * (meta.tileSize + meta.gap) - meta.gap,
+                height: meta.rows * (meta.tileSize + meta.gap) - meta.gap,
+                layerCount: meta.layerCount,
+                baseLayers: meta.baseLayers
+            };
+            
+            // Also set gridData for overlay drawing
+            this.state.gridData = this.state.referenceGridData;
+            this.state.sequences = sequences;
+            
+            // Build sequence map
+            this.state.sequenceMap = buildSequenceMap(sequences, colours, meta.cols, { simColour, rgb_to_key });
+            
+            // Update sort dropdown if sort method was saved
+            if (meta.sortMethod) {
+                toolBase.setValue('resortGrid', meta.sortMethod);
+            }
+            
+            const gridSummary = `${colours.length}c${meta.layerCount}L ${meta.rows}×${meta.cols}`;
+            toolBase.setValue('gridLoadStatus', `✅ Loaded: ${gridSummary} (${sequences.length} tiles)`);
+            
+            // Load scan image if present
+            const scanPath = findFile('scans/scan.png') || findFile('scan.png');
+            if (scanPath) {
+                try {
+                    const scanBlob = await zip.file(scanPath).async('blob');
+                    const scanImg = new Image();
+                    scanImg.onload = () => {
+                        this.state.scanImageElement = scanImg;
+                        
+                        // Resize canvas to scan dimensions (1:1)
+                        const canvasComponent = toolBase.canvasComponent;
+                        if (canvasComponent) {
+                            canvasComponent.resize(scanImg.width, scanImg.height);
+                        }
+                        
+                        // Initialize grid corners
+                        this._initializeGridCornersPixel(scanImg.width, scanImg.height, this.state.referenceGridData);
+                        
+                        toolBase.setValue('scanImageStatus', `✅ Scan loaded: ${scanImg.width}×${scanImg.height}px`);
+                        toolBase.draw();
+                    };
+                    scanImg.src = URL.createObjectURL(scanBlob);
+                    console.log('✅ Scan image loaded from ZIP');
+                } catch (scanErr) {
+                    console.warn('Could not load scan image:', scanErr);
+                }
+            }
+            
+            // Load analysis data if present
+            const analysisPath = findFile('scans/analysis.json') || findFile('analysis.json');
+            if (analysisPath) {
+                try {
+                    const analysisText = await zip.file(analysisPath).async('string');
+                    this.state.scanAnalysis = JSON.parse(analysisText);
+                    toolBase.setValue('scanStatus', `✅ Analysis loaded: ${this.state.scanAnalysis.length} tiles`);
+                    console.log('✅ Analysis data loaded from ZIP:', this.state.scanAnalysis.length, 'tiles');
+                } catch (analysisErr) {
+                    console.warn('Could not load analysis:', analysisErr);
+                }
+            }
+            
+            // Load grid corner positions - try grid-alignment.json first, then layout fallback
+            const alignmentPath = findFile('scans/grid-alignment.json') || findFile('grid-alignment.json');
+            if (alignmentPath) {
+                try {
+                    const alignmentText = await zip.file(alignmentPath).async('string');
+                    const alignmentData = JSON.parse(alignmentText);
+                    if (alignmentData.gridCornersPixel && alignmentData.gridCornersPixel.length === 4) {
+                        this.state.gridCornersPixel = alignmentData.gridCornersPixel;
+                        console.log('✅ Grid alignment restored from grid-alignment.json');
+                    }
+                } catch (alignErr) {
+                    console.warn('Could not load grid alignment:', alignErr);
+                }
+            } else if (layout.scanSettings?.gridCornersPixel) {
+                // Fallback to layout.json if no separate alignment file
+                this.state.gridCornersPixel = layout.scanSettings.gridCornersPixel;
+                console.log('✅ Grid corner positions restored from layout');
+            }
+            
+            toolBase.draw();
+            console.log('✅ Project imported on SCAN tab');
+            
+        } catch (err) {
+            console.error('❌ Import error:', err);
+            toolBase.setValue('gridLoadStatus', `❌ Import failed: ${err.message}`);
+        }
+    }
+    
+    /**
      * Import grid from CSV - COMPLETE
      */
     async importCSV(file, toolBase) {
@@ -143,7 +329,17 @@ export class MFPScanActions {
             return;
         }
         
-        const sortMethod = values.resortGrid || 'Layer Count';
+        const sortMethodDropdown = values.resortGrid || 'Layer Count';
+        
+        // Convert dropdown value to sortSequences method name
+        const methodMap = {
+            'Layer Count': 'layercount',
+            'Base Color': 'basecolor',
+            'Top Color': 'topcolor',
+            'Complexity': 'complexity',
+            'Lexicographic': 'lexicographic'
+        };
+        const sortMethod = methodMap[sortMethodDropdown] || 'layercount';
         
         // Get unique sequences
         const uniqueSequences = this.state.referenceGridData.sequences.filter(seq => seq && seq.length > 0);
@@ -169,41 +365,92 @@ export class MFPScanActions {
             emptyCells,
             layerCount,
             baseLayers,
-            sortMethod
+            sortMethod: sortMethodDropdown
         };
         
         // Rebuild sequence map
         this.state.sequenceMap = buildSequenceMap(sortedSequences, colours, cols, { simColour, rgb_to_key });
         
-        toolBase.setValue('gridLoadStatus', `✅ Grid re-sorted: ${sortMethod}`);
+        toolBase.setValue('gridLoadStatus', `✅ Grid re-sorted: ${sortMethodDropdown}`);
         toolBase.draw();
     }
     
     /**
      * Load scan image - COMPLETE
+     * Canvas is resized to EXACT image dimensions for 1:1 pixel mapping
+     * This is critical for accurate colour sampling
      */
     async loadScanImage(file, toolBase) {
         if (!file) return;
+        
+        // Hide documentation if showing
+        if (this.state.showingDocumentation) {
+            this.hideDocumentation(toolBase);
+        }
         
         const img = new Image();
         img.onload = () => {
             this.state.scanImageElement = img;
             
-            // Calculate grid positioning if grid exists
-            if (this.state.referenceGridData) {
-                this._autoCalculateGridOverlay(toolBase);
+            // CRITICAL: Resize canvas to exact image dimensions for 1:1 pixel mapping
+            // Any scaling would corrupt colour measurement accuracy
+            const canvasComponent = toolBase.canvasComponent;
+            if (canvasComponent) {
+                canvasComponent.resize(img.width, img.height);
+                console.log(`📐 Canvas resized to scan: ${img.width}×${img.height}px (1:1 mapping)`);
+            }
+            
+            // Store image bounds (now same as canvas since 1:1)
+            this.state.scanImageBounds = { x: 0, y: 0, width: img.width, height: img.height };
+            
+            // Initialize grid corners in IMAGE PIXEL coordinates
+            const gridData = this.state.gridData || this.state.referenceGridData;
+            if (gridData) {
+                this._initializeGridCornersPixel(img.width, img.height, gridData);
             }
             
             toolBase.draw();
             
             const sizeKB = (file.size / 1024).toFixed(0);
-            toolBase.setValue('scanImageStatus', `✅ Loaded ${img.width}×${img.height}px (${sizeKB}KB)`);
+            toolBase.setValue('scanImageStatus', `✅ 1:1 loaded: ${img.width}×${img.height}px (${sizeKB}KB) - Use scroll/zoom to navigate`);
         };
         img.onerror = (err) => {
             console.error('❌ Image load error:', err);
             toolBase.setValue('scanImageStatus', '❌ Failed to load image');
         };
         img.src = URL.createObjectURL(file);
+    }
+    
+    /**
+     * Initialize grid corners in IMAGE PIXEL coordinates
+     * Grid is centered and scaled to fit within the scan
+     */
+    _initializeGridCornersPixel(imgWidth, imgHeight, gridData) {
+        const { rows, cols, tileSize, gap } = gridData;
+        const gridWidth = cols * (tileSize + gap) - gap;
+        const gridHeight = rows * (tileSize + gap) - gap;
+        
+        // Scale grid to fit 90% of image while maintaining aspect ratio
+        const scaleX = (imgWidth * 0.9) / gridWidth;
+        const scaleY = (imgHeight * 0.9) / gridHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        const scaledWidth = gridWidth * scale;
+        const scaledHeight = gridHeight * scale;
+        
+        // Center in image
+        const x = (imgWidth - scaledWidth) / 2;
+        const y = (imgHeight - scaledHeight) / 2;
+        
+        // Store corners in PIXEL coordinates: TL, TR, BR, BL
+        this.state.gridCornersPixel = [
+            { x: x, y: y },
+            { x: x + scaledWidth, y: y },
+            { x: x + scaledWidth, y: y + scaledHeight },
+            { x: x, y: y + scaledHeight }
+        ];
+        
+        console.log('✅ Grid corners (pixel) initialized:', this.state.gridCornersPixel);
     }
     
     /**
@@ -238,29 +485,38 @@ export class MFPScanActions {
      * Analyze scan - COMPLETE (pixel sampling, statistics, color extraction)
      */
     async analyzeScan(values, toolBase) {
+        console.log('🔬 analyzeScan called');
+        console.log('  - scanImageElement:', !!this.state.scanImageElement);
+        console.log('  - referenceGridData:', !!this.state.referenceGridData);
+        console.log('  - gridCornersPixel:', this.state.gridCornersPixel);
+        
         if (!this.state.scanImageElement) {
+            console.log('❌ No scan image');
             toolBase.setValue('scanStatus', '❌ Load scan image first');
             return;
         }
         if (!this.state.referenceGridData) {
+            console.log('❌ No reference grid data');
             toolBase.setValue('scanStatus', '❌ Load grid first (CSV or generate)');
             return;
         }
-        if (!this.state.gridCalculated) {
-            toolBase.setValue('scanStatus', '❌ Grid overlay not calculated. Upload scan image to trigger auto-calculation.');
+        
+        // CRITICAL: Use the actual corner positions for perspective-correct sampling
+        const corners = this.state.gridCornersPixel;
+        if (!corners || corners.length !== 4) {
+            console.log('❌ No grid corners');
+            toolBase.setValue('scanStatus', '❌ Grid overlay not aligned. Drag corners to align with scan.');
             return;
         }
         
-        toolBase.setValue('scanStatus', '⏳ Analyzing scan (sampling all pixels)...');
+        console.log('✅ All prerequisites met, starting analysis...');
+        toolBase.setValue('scanStatus', '⏳ Analyzing scan (perspective-correct sampling)...');
         
         // Small delay for UI update
         await new Promise(resolve => setTimeout(resolve, 50));
         
         try {
             const gridData = this.state.referenceGridData;
-            const calc = this.state.gridCalculated;
-            const align = this.state.gridAlignment || { offsetX: 0, offsetY: 0 };
-            
             const deadzonePercent = values.deadzonePercent || 20;
             const deadzoneFraction = deadzonePercent / 100;
             
@@ -273,48 +529,83 @@ export class MFPScanActions {
             
             const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
             
-            // Extract color from each tile
+            // Bilinear interpolation for perspective-correct grid sampling
+            // corners: [TL, TR, BR, BL]
+            const [tl, tr, br, bl] = corners;
+            
+            const lerp = (a, b, t) => a + (b - a) * t;
+            
+            // Get pixel position for normalized grid coordinates (u, v) where u,v ∈ [0,1]
+            const gridToPixel = (u, v) => {
+                const topX = lerp(tl.x, tr.x, u);
+                const topY = lerp(tl.y, tr.y, u);
+                const bottomX = lerp(bl.x, br.x, u);
+                const bottomY = lerp(bl.y, br.y, u);
+                return {
+                    x: lerp(topX, bottomX, v),
+                    y: lerp(topY, bottomY, v)
+                };
+            };
+            
+            // Extract color from each tile using perspective-correct positions
             const analysisData = [];
-            const { rows, cols, tileSize, gap } = gridData;
+            const { rows, cols } = gridData;
             let totalPixelsSampled = 0;
             
             for (let i = 0; i < gridData.sequences.length; i++) {
                 const row = Math.floor(i / cols);
                 const col = i % cols;
                 
-                // Tile position in physical grid (mm)
-                const tileX_mm = col * (tileSize + gap);
-                const tileY_mm = row * (tileSize + gap);
+                // Normalized cell boundaries (0-1)
+                const u0 = col / cols;
+                const u1 = (col + 1) / cols;
+                const v0 = row / rows;
+                const v1 = (row + 1) / rows;
                 
-                // Convert to image pixels
-                const tileX_px = calc.gridX + (tileX_mm * calc.pxPerMm) + align.offsetX;
-                const tileY_px = calc.gridY + (tileY_mm * calc.pxPerMm) + align.offsetY;
-                const tileSize_px = tileSize * calc.pxPerMm;
+                // Apply deadzone to get safe sampling region
+                const du = (u1 - u0) * deadzoneFraction;
+                const dv = (v1 - v0) * deadzoneFraction;
+                const safeU0 = u0 + du;
+                const safeU1 = u1 - du;
+                const safeV0 = v0 + dv;
+                const safeV1 = v1 - dv;
                 
-                // Calculate safe zone (excluding deadzone)
-                const deadzone_px = tileSize_px * deadzoneFraction;
-                const safeX = Math.round(tileX_px + deadzone_px);
-                const safeY = Math.round(tileY_px + deadzone_px);
-                const safeSize = Math.round(tileSize_px - (deadzone_px * 2));
+                // Get corner positions of the safe zone in pixel coordinates
+                const safeTL = gridToPixel(safeU0, safeV0);
+                const safeTR = gridToPixel(safeU1, safeV0);
+                const safeBL = gridToPixel(safeU0, safeV1);
+                const safeBR = gridToPixel(safeU1, safeV1);
                 
-                // Sample all pixels in safe zone
+                // Sample pixels within the safe quadrilateral
+                // Use bounding box for efficiency, then check if inside quad
+                const minX = Math.floor(Math.min(safeTL.x, safeTR.x, safeBL.x, safeBR.x));
+                const maxX = Math.ceil(Math.max(safeTL.x, safeTR.x, safeBL.x, safeBR.x));
+                const minY = Math.floor(Math.min(safeTL.y, safeTR.y, safeBL.y, safeBR.y));
+                const maxY = Math.ceil(Math.max(safeTL.y, safeTR.y, safeBL.y, safeBR.y));
+                
                 const pixels = [];
-                for (let py = 0; py < safeSize; py++) {
-                    for (let px = 0; px < safeSize; px++) {
-                        const imgX = safeX + px;
-                        const imgY = safeY + py;
-                        
-                        if (imgX >= 0 && imgX < tempCanvas.width && imgY >= 0 && imgY < tempCanvas.height) {
-                            const pixelIndex = (imgY * tempCanvas.width + imgX) * 4;
-                            const r = imageData.data[pixelIndex];
-                            const g = imageData.data[pixelIndex + 1];
-                            const b = imageData.data[pixelIndex + 2];
-                            pixels.push({ r, g, b });
+                for (let py = minY; py <= maxY; py++) {
+                    for (let px = minX; px <= maxX; px++) {
+                        // Check if point is inside the safe quadrilateral
+                        if (this._pointInQuad(px, py, safeTL, safeTR, safeBR, safeBL)) {
+                            if (px >= 0 && px < tempCanvas.width && py >= 0 && py < tempCanvas.height) {
+                                const pixelIndex = (py * tempCanvas.width + px) * 4;
+                                const r = imageData.data[pixelIndex];
+                                const g = imageData.data[pixelIndex + 1];
+                                const b = imageData.data[pixelIndex + 2];
+                                pixels.push({ r, g, b });
+                            }
                         }
                     }
                 }
                 
                 totalPixelsSampled += pixels.length;
+                
+                // Skip tiles with no sampled pixels (outside image bounds)
+                if (pixels.length === 0) {
+                    console.warn(`⚠️ Tile ${i} (${row},${col}) has no pixels - skipping`);
+                    continue;
+                }
                 
                 // Calculate statistics
                 const avgR = pixels.reduce((sum, p) => sum + p.r, 0) / pixels.length;
@@ -345,6 +636,11 @@ export class MFPScanActions {
                     }))
                     .filter(f => f.filamentIndex > 0);
                 
+                // Calculate approximate sample area from quadrilateral
+                const sampleWidth = Math.sqrt(Math.pow(safeTR.x - safeTL.x, 2) + Math.pow(safeTR.y - safeTL.y, 2));
+                const sampleHeight = Math.sqrt(Math.pow(safeBL.x - safeTL.x, 2) + Math.pow(safeBL.y - safeTL.y, 2));
+                const sampleArea_px = sampleWidth * sampleHeight;
+                
                 analysisData.push({
                     index: i,
                     row,
@@ -358,118 +654,198 @@ export class MFPScanActions {
                     variance: { r: varR, g: varG, b: varB },
                     colorDeviation,
                     pixelsSampled: pixels.length,
-                    sampleArea_px: safeSize * safeSize,
-                    sampleArea_mm: (safeSize / calc.pxPerMm) ** 2
+                    sampleArea_px
                 });
             }
             
             // Store analysis data
             this.state.scanAnalysis = analysisData;
+            console.log('✅ Analysis data stored:', analysisData.length, 'tiles');
             
             // Generate quantization config
-            this.state.quantizationConfig = this._generateQuantizationConfig(analysisData, gridData);
+            if (typeof this._generateQuantizationConfig === 'function') {
+                this.state.quantizationConfig = this._generateQuantizationConfig(analysisData, gridData);
+                console.log('✅ Quantization config generated');
+            } else {
+                console.warn('⚠️ _generateQuantizationConfig not found');
+            }
             
-            const avgDeviation = (analysisData.reduce((sum, d) => sum + d.colorDeviation, 0) / analysisData.length).toFixed(2);
+            const avgDeviation = analysisData.length > 0 
+                ? (analysisData.reduce((sum, d) => sum + d.colorDeviation, 0) / analysisData.length).toFixed(2)
+                : 'N/A';
             
             toolBase.setValue('scanStatus', `✅ Analyzed ${analysisData.length} tiles (${totalPixelsSampled.toLocaleString()} pixels) | Avg deviation: ${avgDeviation}`);
             
             console.log('📊 Scan analysis complete:', {
                 tilesAnalyzed: analysisData.length,
                 totalPixels: totalPixelsSampled,
-                avgPixelsPerTile: Math.round(totalPixelsSampled / analysisData.length),
+                avgPixelsPerTile: analysisData.length > 0 ? Math.round(totalPixelsSampled / analysisData.length) : 0,
                 averageDeviation: avgDeviation
             });
             
         } catch (err) {
             toolBase.setValue('scanStatus', `❌ Analysis failed: ${err.message}`);
             console.error('Scan analysis error:', err);
+            console.error('Stack:', err.stack);
         }
     }
     
     /**
-     * View analysis in interactive grid popup - COMPLETE (250+ lines HTML/JS)
+     * View analysis in canvas area (replaces popup)
+     * Shows interactive grid with all analysis data
      */
     viewAnalysis(toolBase) {
-        if (!this.state.scanAnalysis || !this.state.referenceGridData) {
-            toolBase.setValue('scanStatus', '❌ No analysis data available');
-            return;
-        }
+        console.log('👁️ viewAnalysis called');
+        console.log('  - scanAnalysis:', this.state.scanAnalysis?.length, 'tiles');
+        console.log('  - referenceGridData:', !!this.state.referenceGridData);
         
-        const win = window.open('', 'Analysis View', 'width=1200,height=800');
-        if (!win) {
-            toolBase.setValue('scanStatus', '❌ Popup blocked - allow popups for analysis view');
+        if (!this.state.scanAnalysis || !this.state.referenceGridData) {
+            console.log('❌ Missing analysis or grid data');
+            toolBase.setValue('scanStatus', '❌ No analysis data available. Run "Analyze Scan" first.');
             return;
         }
         
         const gridData = this.state.referenceGridData;
         const analysis = this.state.scanAnalysis;
         
-        win.document.write(`
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Scan Analysis - ${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #000; color: #0f0; font-family: 'Atkinson Hyperlegible', monospace; padding: 20px; }
-        h1 { color: #00ff00; margin-bottom: 20px; font-size: 20px; }
-        .controls { background: #111; border: 1px solid #0f0; padding: 15px; margin-bottom: 20px; }
-        .controls label { display: inline-block; margin-right: 15px; color: #0ff; }
-        .controls select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px; font-family: monospace; margin-right: 20px; }
-        .stats { background: #111; border: 1px solid #ff0; padding: 10px; margin-bottom: 20px; font-size: 12px; color: #ff0; }
-        .grid-container { display: inline-block; background: #222; padding: 10px; border: 2px solid #0f0; }
-        .grid { display: grid; gap: 2px; background: #000; }
-        .cell { position: relative; border: 1px solid #333; cursor: pointer; transition: border-color 0.1s; }
-        .cell:hover { border-color: #0ff !important; z-index: 10; }
-        .cell-info { position: absolute; background: rgba(0,0,0,0.95); border: 2px solid #0ff; padding: 10px; color: #0ff; font-size: 11px; pointer-events: none; z-index: 1000; white-space: nowrap; display: none; }
-        .cell:hover .cell-info { display: block; }
-    </style>
-</head>
-<body>
-    <h1>🔬 SCAN ANALYSIS: ${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols} (${analysis.length} tiles)</h1>
-    
-    <div class="controls">
-        <label>Sort by:
-            <select id="sortMode" onchange="updateSort()">
-                <option value="index">Grid Order (Row/Col)</option>
-                <option value="sequence">Sequence</option>
-                <option value="brightness">Brightness (L→D)</option>
-                <option value="brightness-rev">Brightness (D→L)</option>
-                <option value="hue">Hue (Rainbow)</option>
-                <option value="deviation">Color Deviation (Low→High)</option>
-                <option value="deviation-rev">Color Deviation (High→Low)</option>
-                <option value="red">Red Channel</option>
-                <option value="green">Green Channel</option>
-                <option value="blue">Blue Channel</option>
-            </select>
-        </label>
+        // Toggle view - if already showing, hide it
+        if (this.state.showingAnalysisView) {
+            this.hideAnalysisView(toolBase);
+            return;
+        }
         
-        <label>Cell Size:
-            <select id="cellSize" onchange="updateCellSize()">
-                <option value="20">Tiny (20px)</option>
-                <option value="40" selected>Small (40px)</option>
-                <option value="60">Medium (60px)</option>
-                <option value="80">Large (80px)</option>
-                <option value="100">Huge (100px)</option>
-            </select>
-        </label>
-    </div>
-    
-    <div class="stats" id="stats"></div>
-    
-    <div class="grid-container">
-        <div class="grid" id="grid"></div>
-    </div>
-    
-    <script>
-        const analysisData = ${JSON.stringify(analysis)};
-        const gridCols = ${gridData.cols};
-        let currentSort = 'index';
-        let currentCellSize = 40;
+        console.log('📊 Showing analysis view with', analysis.length, 'tiles');
         
-        function rgbToBrightness(r, g, b) { return 0.299 * r + 0.587 * g + 0.114 * b; }
+        // Get canvas area container
+        const canvasArea = toolBase.container?.querySelector('.tool-canvas-area');
+        if (!canvasArea) {
+            toolBase.setValue('scanStatus', '❌ Canvas area not found');
+            return;
+        }
         
-        function rgbToHue(r, g, b) {
+        // Hide the canvas
+        const canvas = canvasArea.querySelector('canvas');
+        if (canvas) canvas.style.display = 'none';
+        
+        // Create analysis container
+        let container = canvasArea.querySelector('.analysis-view-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'analysis-view-container';
+            container.style.cssText = `
+                position: absolute; inset: 0; 
+                background: var(--c-bg, #000); color: var(--c-text, #c0c0c0);
+                font-family: 'Atkinson Hyperlegible', monospace; font-size: calc(var(--f) * 0.85);
+                overflow: auto; padding: calc(var(--f) * 1);
+                z-index: 50;
+            `;
+            canvasArea.appendChild(container);
+        } else {
+            container.style.display = 'block';
+        }
+        
+        // Build controls and grid
+        const avgR = Math.round(analysis.reduce((s, d) => s + d.rgb.r, 0) / analysis.length);
+        const avgG = Math.round(analysis.reduce((s, d) => s + d.rgb.g, 0) / analysis.length);
+        const avgB = Math.round(analysis.reduce((s, d) => s + d.rgb.b, 0) / analysis.length);
+        const avgDev = (analysis.reduce((s, d) => s + d.colorDeviation, 0) / analysis.length).toFixed(2);
+        const totalPx = analysis.reduce((s, d) => s + d.pixelsSampled, 0);
+        
+        container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: calc(var(--f) * 1); border-bottom: 1px solid var(--c-border); padding-bottom: calc(var(--f) * 0.5);">
+                <h2 style="margin: 0; font-size: calc(var(--f) * 1.1);">SCAN ANALYSIS: ${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols} (${analysis.length} tiles)</h2>
+                <button id="closeAnalysisBtn" style="background: var(--c-text); color: var(--c-bg); border: none; padding: calc(var(--f) * 0.4) calc(var(--f) * 0.8); cursor: pointer; font-family: inherit;">✕ CLOSE</button>
+            </div>
+            
+            <div style="display: flex; gap: calc(var(--f) * 2); margin-bottom: calc(var(--f) * 1); flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: calc(var(--f) * 0.5);">
+                    Sort:
+                    <select id="analysisSort" style="background: var(--c-bg); color: var(--c-text); border: 1px solid var(--c-border); padding: calc(var(--f) * 0.3); font-family: inherit;">
+                        <option value="index">Grid Order</option>
+                        <option value="sequence">Sequence</option>
+                        <option value="brightness">Brightness (L→D)</option>
+                        <option value="brightness-rev">Brightness (D→L)</option>
+                        <option value="hue">Hue</option>
+                        <option value="deviation">Deviation (Low→High)</option>
+                        <option value="deviation-rev">Deviation (High→Low)</option>
+                    </select>
+                </label>
+                <label style="display: flex; align-items: center; gap: calc(var(--f) * 0.5);">
+                    Size:
+                    <select id="analysisCellSize" style="background: var(--c-bg); color: var(--c-text); border: 1px solid var(--c-border); padding: calc(var(--f) * 0.3); font-family: inherit;">
+                        <option value="20">Tiny</option>
+                        <option value="30" selected>Small</option>
+                        <option value="40">Medium</option>
+                        <option value="60">Large</option>
+                    </select>
+                </label>
+            </div>
+            
+            <div style="background: var(--c-surface, #111); border: 1px solid var(--c-border); padding: calc(var(--f) * 0.5); margin-bottom: calc(var(--f) * 1);">
+                <span style="display: inline-block; background: rgb(${avgR},${avgG},${avgB}); padding: 2px 8px; color: ${avgR + avgG + avgB > 400 ? '#000' : '#fff'}; margin-right: calc(var(--f) * 1);">AVG RGB(${avgR}, ${avgG}, ${avgB})</span>
+                Deviation: ${avgDev} | Pixels: ${totalPx.toLocaleString()}
+            </div>
+            
+            <div id="analysisGrid" style="display: grid; gap: 1px; background: var(--c-border, #333);"></div>
+            
+            <div id="tileDetail" style="position: fixed; background: var(--c-bg, #000); border: 2px solid var(--c-text); padding: calc(var(--f) * 0.75); font-size: calc(var(--f) * 0.8); pointer-events: none; z-index: 1000; display: none; white-space: nowrap;"></div>
+        `;
+        
+        // Store data for event handlers
+        this._analysisViewData = { analysis, gridData };
+        
+        // Bind close button
+        container.querySelector('#closeAnalysisBtn').addEventListener('click', () => {
+            this.hideAnalysisView(toolBase);
+        });
+        
+        // Render grid
+        this._renderAnalysisGrid(container, 'index', 30);
+        
+        // Bind controls
+        container.querySelector('#analysisSort').addEventListener('change', (e) => {
+            const size = parseInt(container.querySelector('#analysisCellSize').value);
+            this._renderAnalysisGrid(container, e.target.value, size);
+        });
+        container.querySelector('#analysisCellSize').addEventListener('change', (e) => {
+            const sort = container.querySelector('#analysisSort').value;
+            this._renderAnalysisGrid(container, sort, parseInt(e.target.value));
+        });
+        
+        this.state.showingAnalysisView = true;
+        toolBase.setValue('scanStatus', '📊 Viewing analysis - click tiles for details');
+    }
+    
+    /**
+     * Hide analysis view and restore canvas
+     */
+    hideAnalysisView(toolBase) {
+        const canvasArea = toolBase.container?.querySelector('.tool-canvas-area');
+        if (!canvasArea) return;
+        
+        const container = canvasArea.querySelector('.analysis-view-container');
+        if (container) container.style.display = 'none';
+        
+        const canvas = canvasArea.querySelector('canvas');
+        if (canvas) canvas.style.display = 'block';
+        
+        this.state.showingAnalysisView = false;
+        toolBase.setValue('scanStatus', '');
+        toolBase.draw();
+    }
+    
+    /**
+     * Render the analysis grid with sorting
+     */
+    _renderAnalysisGrid(container, sortMode, cellSize) {
+        const { analysis, gridData } = this._analysisViewData;
+        const grid = container.querySelector('#analysisGrid');
+        const detail = container.querySelector('#tileDetail');
+        
+        // Sort
+        const sorted = [...analysis];
+        const brightness = (r, g, b) => 0.299 * r + 0.587 * g + 0.114 * b;
+        const hue = (r, g, b) => {
             r /= 255; g /= 255; b /= 255;
             const max = Math.max(r, g, b), min = Math.min(r, g, b);
             if (max === min) return 0;
@@ -479,86 +855,60 @@ export class MFPScanActions {
             else if (max === g) h = ((b - r) / delta + 2) / 6;
             else h = ((r - g) / delta + 4) / 6;
             return h;
+        };
+        
+        switch(sortMode) {
+            case 'sequence': sorted.sort((a, b) => a.sequenceStr.localeCompare(b.sequenceStr)); break;
+            case 'brightness': sorted.sort((a, b) => brightness(a.rgb.r, a.rgb.g, a.rgb.b) - brightness(b.rgb.r, b.rgb.g, b.rgb.b)); break;
+            case 'brightness-rev': sorted.sort((a, b) => brightness(b.rgb.r, b.rgb.g, b.rgb.b) - brightness(a.rgb.r, a.rgb.g, a.rgb.b)); break;
+            case 'hue': sorted.sort((a, b) => hue(a.rgb.r, a.rgb.g, a.rgb.b) - hue(b.rgb.r, b.rgb.g, b.rgb.b)); break;
+            case 'deviation': sorted.sort((a, b) => a.colorDeviation - b.colorDeviation); break;
+            case 'deviation-rev': sorted.sort((a, b) => b.colorDeviation - a.colorDeviation); break;
+            default: sorted.sort((a, b) => a.index - b.index);
         }
         
-        function sortData(mode) {
-            const sorted = [...analysisData];
-            switch(mode) {
-                case 'index': sorted.sort((a, b) => a.index - b.index); break;
-                case 'sequence': sorted.sort((a, b) => a.sequenceStr.localeCompare(b.sequenceStr)); break;
-                case 'brightness': sorted.sort((a, b) => rgbToBrightness(a.rgb.r, a.rgb.g, a.rgb.b) - rgbToBrightness(b.rgb.r, b.rgb.g, b.rgb.b)); break;
-                case 'brightness-rev': sorted.sort((a, b) => rgbToBrightness(b.rgb.r, b.rgb.g, b.rgb.b) - rgbToBrightness(a.rgb.r, a.rgb.g, a.rgb.b)); break;
-                case 'hue': sorted.sort((a, b) => rgbToHue(a.rgb.r, a.rgb.g, a.rgb.b) - rgbToHue(b.rgb.r, b.rgb.g, b.rgb.b)); break;
-                case 'deviation': sorted.sort((a, b) => a.colorDeviation - b.colorDeviation); break;
-                case 'deviation-rev': sorted.sort((a, b) => b.colorDeviation - a.colorDeviation); break;
-                case 'red': sorted.sort((a, b) => a.rgb.r - b.rgb.r); break;
-                case 'green': sorted.sort((a, b) => a.rgb.g - b.rgb.g); break;
-                case 'blue': sorted.sort((a, b) => a.rgb.b - b.rgb.b); break;
-            }
-            return sorted;
-        }
+        // Render
+        grid.style.gridTemplateColumns = `repeat(${gridData.cols}, ${cellSize}px)`;
+        grid.innerHTML = '';
         
-        function updateStats() {
-            const avgR = Math.round(analysisData.reduce((s, d) => s + d.rgb.r, 0) / analysisData.length);
-            const avgG = Math.round(analysisData.reduce((s, d) => s + d.rgb.g, 0) / analysisData.length);
-            const avgB = Math.round(analysisData.reduce((s, d) => s + d.rgb.b, 0) / analysisData.length);
-            const avgDev = (analysisData.reduce((s, d) => s + d.colorDeviation, 0) / analysisData.length).toFixed(2);
-            const totalPx = analysisData.reduce((s, d) => s + d.pixelsSampled, 0);
+        sorted.forEach(tile => {
+            const cell = document.createElement('div');
+            cell.style.cssText = `
+                width: ${cellSize}px; height: ${cellSize}px;
+                background: ${tile.hex}; cursor: pointer;
+            `;
             
-            document.getElementById('stats').innerHTML = 
-                'Average Color: <span style="background:rgb(' + avgR + ',' + avgG + ',' + avgB + ');padding:2px 8px;color:#000;font-weight:bold;">RGB(' + avgR + ', ' + avgG + ', ' + avgB + ')</span> | ' +
-                'Avg Deviation: ' + avgDev + ' | ' +
-                'Total Pixels: ' + totalPx.toLocaleString();
-        }
-        
-        function render() {
-            const sorted = sortData(currentSort);
-            const grid = document.getElementById('grid');
-            grid.style.gridTemplateColumns = 'repeat(' + gridCols + ', ' + currentCellSize + 'px)';
-            grid.innerHTML = '';
-            
-            sorted.forEach(tile => {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.style.width = currentCellSize + 'px';
-                cell.style.height = currentCellSize + 'px';
-                cell.style.background = tile.hex;
-                
-                const info = document.createElement('div');
-                info.className = 'cell-info';
-                info.innerHTML = 
-                    'Tile: ' + tile.index + ' (R' + tile.row + '/C' + tile.col + ')<br>' +
-                    'Sequence: ' + tile.sequenceStr + '<br>' +
-                    'RGB: ' + tile.rgb.r + ', ' + tile.rgb.g + ', ' + tile.rgb.b + '<br>' +
-                    'Hex: ' + tile.hex + '<br>' +
-                    'Deviation: ' + tile.colorDeviation.toFixed(2) + '<br>' +
-                    'Pixels: ' + tile.pixelsSampled.toLocaleString();
-                
-                cell.appendChild(info);
-                grid.appendChild(cell);
+            cell.addEventListener('mouseenter', (e) => {
+                const layers = tile.filamentStack?.map(f => `L${f.layer}: ${f.filamentName}`).join(', ') || tile.sequenceStr;
+                detail.innerHTML = `
+                    <strong>Tile ${tile.index}</strong> (R${tile.row}/C${tile.col})<br>
+                    Sequence: ${tile.sequenceStr}<br>
+                    Layers: ${layers}<br>
+                    RGB: ${tile.rgb.r}, ${tile.rgb.g}, ${tile.rgb.b}<br>
+                    Hex: ${tile.hex}<br>
+                    Deviation: ${tile.colorDeviation.toFixed(2)}<br>
+                    Pixels: ${tile.pixelsSampled.toLocaleString()}
+                `;
+                detail.style.display = 'block';
+                detail.style.left = (e.clientX + 15) + 'px';
+                detail.style.top = (e.clientY + 15) + 'px';
             });
-        }
-        
-        function updateSort() {
-            currentSort = document.getElementById('sortMode').value;
-            render();
-        }
-        
-        function updateCellSize() {
-            currentCellSize = parseInt(document.getElementById('cellSize').value);
-            render();
-        }
-        
-        updateStats();
-        render();
-    </script>
-</body>
-</html>
-        `);
-        
-        toolBase.setValue('scanStatus', '✅ Analysis view opened in new window');
+            
+            cell.addEventListener('mousemove', (e) => {
+                detail.style.left = (e.clientX + 15) + 'px';
+                detail.style.top = (e.clientY + 15) + 'px';
+            });
+            
+            cell.addEventListener('mouseleave', () => {
+                detail.style.display = 'none';
+            });
+            
+            grid.appendChild(cell);
+        });
     }
     
+// Documentation is now handled in MFP-Main.js via the info button
+
     /**
      * Export palette as GPL - COMPLETE
      */

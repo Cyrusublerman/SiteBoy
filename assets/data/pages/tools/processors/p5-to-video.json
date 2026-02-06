@@ -1,0 +1,14 @@
+{
+    "header": "P5 TO VIDEO",
+    "subheader": "Convert P5.js sketches to video/GIF",
+    "url": "/tools/processors/p5-to-video",
+    "blocks": [
+        {
+            "type": "CanvasWidget",
+            "props": {
+                "toolId": "p5-to-video"
+            }
+        }
+    ]
+}
+

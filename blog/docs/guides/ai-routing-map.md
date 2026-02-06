@@ -4,6 +4,7 @@ Always read whole files linked.
 
 1) What is the task / page type?
 - Tool or Generative page → go to 2.
+- p5.js Generator → go to 11.
 - Gallery page → go to 3.
 - Documentation/Blog/TOC page → go to 4.
 - Site chrome / routing / layout change → go to 5.
@@ -48,6 +49,7 @@ Always read whole files linked.
 - `guides/lazy-loading.md`
 - `guides/shared-utilities.md`
 - UI rules: `site/ui-interface-overview.md`
+- p5.js generators: `guides/standards/p5-generator-standards.md`
 
 Catalogs to consult (tools/generative)
 - Components: `components/index.md`, `components/COMPONENT-REFERENCE.md`
@@ -73,4 +75,18 @@ Cross-checks during tool/generative build
 - Routing/exports: `components/routing/component-routing-guide.md`
 - Glossary/refs: `components/index.md`, `components/glossary/component-glossary.md`, `COMPONENT-REFERENCE.md`
 - Checklist to use: `guides/checklists/component-development.md`
+
+11) p5.js Generator (build/verify)
+- Use prompt: `guides/idea-to-implementation-promt-3-ENFORCED.md`.
+- Run phases: P0 → P6 (same as tools).
+- Additional standards: `guides/standards/p5-generator-standards.md`.
+- Checklist: `guides/checklists/p5-generator.md`.
+- Key constraints:
+  - `canvas.context` must be `'p5'`
+  - Use `p5Setup(p, params)` and `p5Draw(p, params, frame)` signatures
+  - Instance mode only (no global setup/draw)
+  - VGA colours only
+  - `p.noLoop()` required for external animation control
+  - No `createCanvas()` (host manages canvas)
+- Cross-checks: all from section 8, plus `p5-generator.md` checklist.
 

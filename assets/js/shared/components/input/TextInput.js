@@ -22,6 +22,7 @@ export class TextInput extends BaseComponent {
         this.maxLength = options.maxLength ?? null;
         this.pattern = options.pattern ?? null;
         this.disabled = options.disabled ?? false;
+        this.inputClassName = options.inputClassName ?? null;
         
         this.onChange = options.onChange ?? (() => {});
         this.onInput = options.onInput ?? null;
@@ -63,6 +64,7 @@ export class TextInput extends BaseComponent {
             font-size: ${F}px;
             box-sizing: border-box;
             resize: ${this.multiline ? 'vertical' : 'none'};
+            ${this.multiline ? `height: calc(${this.rows} * 1.5em);` : ''}
         `;
         
         if (this.multiline) {

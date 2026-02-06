@@ -1,0 +1,319 @@
+# p5.js Generator Standards
+
+Standards for p5.js-based generators in the unified generator system.
+
+---
+
+## 1. Scope
+
+Applies to generators using `context: 'p5'` in the generator page (`#tools/generators`).
+
+Does NOT apply to:
+- Standalone p5 tools (e.g. `p5-to-video`) using IframeSandbox
+- Page-specific p5 sketches using `P5ControlledSketch`
+
+---
+
+## 2. Script Config Structure
+
+### Required Fields
+```javascript
+export const SCRIPT_CONFIG = {
+    id: 'kebab-case-id',
+    title: 'Display Title',
+    category: 'parametric|wave|pattern|other',
+    
+    canvas: {
+        width: 800,
+        height: 800,
+        context: 'p5'  // REQUIRED for p5 generators
+    },
+    
+    parameters: [
+        { group: 'Group Name', params: [...] }
+    ],
+    
+    // p5-specific callbacks (REQUIRED)
+    p5Setup(p, params) { },
+    p5Draw(p, params, frame) { }
+};
+```
+
+### Optional Fields
+```javascript
+{
+    description: 'Description for INFO tab',
+    version: '1.0.0',
+    presets: [...],
+    animation: {
+        type: 'parametric|infinite|sequence',
+        loopFrames: 360,
+        animatableParams: ['param1', 'param2'],
+        defaultFps: 60
+    },
+    export: { png: true, gif: true, webm: false }
+}
+```
+
+---
+
+## 3. p5 Callback Signatures
+
+### p5Setup(p, params)
+Called once when generator loads or script changes.
+
+```javascript
+p5Setup(p, params) {
+    // Canvas created by host - do NOT call createCanvas()
+    p.colorMode(p.HSB, 360, 100, 100);
+    p.noLoop();  // REQUIRED if using external animation control
+    
+    // Pre-compute expensive data
+    this.precomputed = computeExpensiveData(params);
+}
+```
+
+**Rules:**
+- Do NOT call `createCanvas()` - host manages canvas
+- Call `p.noLoop()` if animation controlled externally
+- Use `this` for state (bound to SCRIPT_CONFIG object)
+
+### p5Draw(p, params, frame)
+Called per frame by AnimationFoundation.
+
+```javascript
+p5Draw(p, params, frame) {
+    p.background(0);
+    
+    const { amplitude, frequency, phase } = params;
+    
+    for (let i = 0; i < 100; i++) {
+        const x = p.map(i, 0, 100, 0, p.width);
+        const y = p.height/2 + amplitude * p.sin(frequency * x + phase + frame * 0.01);
+        p.point(x, y);
+    }
+}
+```
+
+**Rules:**
+- Params object contains current UI values
+- Frame is integer counter (0, 1, 2, ...)
+- Do NOT call `loop()` or manage animation internally
+- All drawing per frame - no persistent state between frames unless via `this`
+
+---
+
+## 4. Colour Constraints
+
+### VGA Palette Only
+Use p5 colour functions with VGA hex values:
+
+```javascript
+// ✅ ALLOWED
+p.fill('#000000');      // black
+p.stroke('#00ff00');    // lime
+p.background('#c0c0c0'); // silver
+
+// ✅ Full VGA palette
+const VGA = {
+    black: '#000000', maroon: '#800000', green: '#008000', olive: '#808000',
+    navy: '#000080', purple: '#800080', teal: '#008080', silver: '#c0c0c0',
+    gray: '#808080', red: '#ff0000', lime: '#00ff00', yellow: '#ffff00',
+    blue: '#0000ff', fuchsia: '#ff00ff', aqua: '#00ffff', white: '#ffffff'
+};
+
+// ❌ FORBIDDEN
+p.fill(255, 100, 50);       // Non-VGA RGB
+p.stroke('#ff5500');        // Non-VGA hex
+p.background('coral');      // Named colour
+```
+
+### Dynamic Colours
+For user-selectable colours, use ColorInput component with VGA palette constraint.
+
+---
+
+## 5. Sizing Constraints
+
+### Canvas Dimensions
+- Use fixed dimensions in config (e.g. 800×800)
+- Host handles display scaling (Fit/Fill/Actual)
+- Do NOT resize canvas in sketch
+
+### Element Sizing
+Use F-system via passed helpers:
+
+```javascript
+p5Draw(p, params, frame) {
+    const F = 14;  // Base unit (TODO: inject from host)
+    
+    p.strokeWeight(F * 0.1);    // 1.4px
+    p.textSize(F);              // 14px
+}
+```
+
+---
+
+## 6. Animation Control
+
+### External Control (Default)
+Host manages animation via AnimationFoundation:
+- `p.noLoop()` in setup
+- Host calls `p.redraw()` per frame
+- Frame counter passed to p5Draw
+
+### Internal Control (Not Recommended)
+If sketch MUST manage own loop:
+```javascript
+canvas: {
+    context: 'p5',
+    p5Loop: true  // Signal to host
+}
+```
+Use sparingly - breaks export compatibility.
+
+---
+
+## 7. State Management
+
+### Transient State
+Use `this` for pre-computed or cached data:
+
+```javascript
+p5Setup(p, params) {
+    this.points = computePoints(params);
+}
+
+p5Draw(p, params, frame) {
+    for (const pt of this.points) {
+        p.point(pt.x, pt.y);
+    }
+}
+```
+
+### Param-Dependent Recomputation
+Mark expensive computations:
+
+```javascript
+parameters: [{
+    group: 'Shape',
+    params: [{
+        key: 'complexity',
+        type: 'slider',
+        min: 1, max: 100, default: 10,
+        recomputeOnChange: true  // Triggers p5Setup re-run
+    }]
+}]
+```
+
+---
+
+## 8. Export Compatibility
+
+### PNG Export
+Works automatically via host canvas capture.
+
+### Animation Export (GIF/WebM)
+- Host advances frame, calls p5Draw, captures
+- Sketch must be deterministic (same params + frame = same output)
+- No random() without seeded RNG
+
+### Seeded Randomness
+```javascript
+p5Setup(p, params) {
+    p.randomSeed(params.seed);
+    p.noiseSeed(params.seed);
+}
+
+p5Draw(p, params, frame) {
+    // Reseed per frame for determinism
+    p.randomSeed(params.seed + frame);
+}
+```
+
+---
+
+## 9. Forbidden Patterns
+
+| Pattern | Reason | Alternative |
+|---------|--------|-------------|
+| `createCanvas()` | Host manages | Canvas auto-created |
+| `loop()` / internal animation | Breaks export | Use external control |
+| Non-VGA colours | Aesthetic rule | Use VGA palette |
+| `loadImage()` async | Timing issues | Preload in separate system |
+| DOM manipulation | BaseComponent rule | Use ComponentLibrary |
+| Global mode | Conflicts | Instance mode only |
+
+---
+
+## 10. Example: Minimal p5 Generator
+
+```javascript
+/**
+ * Circles - Simple p5.js generator example
+ */
+
+export const SCRIPT_CONFIG = {
+    id: 'p5-circles',
+    title: 'P5 Circles',
+    category: 'pattern',
+    version: '1.0.0',
+    
+    canvas: {
+        width: 800,
+        height: 800,
+        context: 'p5'
+    },
+    
+    parameters: [{
+        group: 'Pattern',
+        params: [
+            { key: 'count', type: 'slider', label: 'Count', 
+              min: 1, max: 50, default: 10 },
+            { key: 'radius', type: 'slider', label: 'Radius', 
+              min: 10, max: 200, default: 50 },
+            { key: 'speed', type: 'slider', label: 'Speed', 
+              min: 0.001, max: 0.1, step: 0.001, default: 0.02 }
+        ]
+    }],
+    
+    presets: [
+        { name: 'Dense', count: 40, radius: 20, speed: 0.05 },
+        { name: 'Sparse', count: 5, radius: 150, speed: 0.01 }
+    ],
+    
+    animation: {
+        type: 'infinite',
+        defaultFps: 60
+    },
+    
+    p5Setup(p, params) {
+        p.noLoop();
+        p.noFill();
+        p.strokeWeight(2);
+    },
+    
+    p5Draw(p, params, frame) {
+        p.background('#000000');
+        p.stroke('#00ff00');
+        
+        const { count, radius, speed } = params;
+        const t = frame * speed;
+        
+        for (let i = 0; i < count; i++) {
+            const angle = (p.TWO_PI / count) * i + t;
+            const x = p.width/2 + p.cos(angle) * (p.width/3);
+            const y = p.height/2 + p.sin(angle) * (p.height/3);
+            const r = radius * (0.5 + 0.5 * p.sin(t * 2 + i));
+            p.circle(x, y, r);
+        }
+    }
+};
+```
+
+---
+
+## 11. Checklist Reference
+
+See `guides/checklists/p5-generator.md` for implementation checklist.
+

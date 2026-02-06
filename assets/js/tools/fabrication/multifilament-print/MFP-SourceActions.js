@@ -8,7 +8,7 @@
 import { FILAMENT_COLOURS, DEFAULTS } from './MFP-Constants.js';
 import { calculateGridLayout, calculateConstraints } from '../../../shared/algorithms/layout/grid-layout.js';
 import { buildSequenceMap, generateSequences, sortSequences } from '../../../shared/algorithms/combinatorics/sequences.js';
-import { simColour, rgb_to_key } from '../../../shared/algorithms/color/color-utils.js';
+import { simColour, rgb_to_key, rgb2hex } from '../../../shared/algorithms/color/color-utils.js';
 import { exportArtworkSTLs } from '../../../shared/algorithms/geometry/stl-generation.js';
 
 export class MFPSourceActions {
@@ -30,12 +30,39 @@ export class MFPSourceActions {
             const zip = new JSZip();
             const zipData = await zip.loadAsync(file);
             
-            console.log('✅ ZIP loaded, files:', Object.keys(zipData.files).length);
+            // Debug: List all files in ZIP
+            const allFiles = Object.keys(zipData.files);
+            console.log('📂 ZIP contents:');
+            allFiles.forEach(path => {
+                console.log(`  - ${path}`);
+            });
+            console.log('✅ ZIP loaded, files:', allFiles.length);
+            
+            // Helper to find file in nested structure (handles subdirectories)
+            const findFile = (...patterns) => {
+                for (const pattern of patterns) {
+                    // Try exact match first
+                    let file = zipData.file(pattern);
+                    if (file) return file;
+                    
+                    // Try pattern match in nested folders
+                    const match = allFiles.find(path => 
+                        path.endsWith('/' + pattern) || 
+                        path.endsWith('\\' + pattern) ||
+                        path === pattern
+                    );
+                    if (match) {
+                        return zipData.file(match);
+                    }
+                }
+                return null;
+            };
             
             // Try to load grid-layout.json (v1.2 format)
             let layout = null;
-            const layoutFile = zipData.files['grid-layout.json'];
+            const layoutFile = findFile('grid-layout.json', 'data/grid-layout.json', 'layout.json');
             if (layoutFile) {
+                console.log(`📋 Layout file found: ${layoutFile.name}`);
                 const layoutText = await layoutFile.async('text');
                 layout = JSON.parse(layoutText);
                 console.log('✅ Loaded grid-layout.json');
@@ -43,8 +70,9 @@ export class MFPSourceActions {
             
             // Fallback: try grid-config.json
             if (!layout) {
-                const configFile = zipData.files['grid-config.json'];
+                const configFile = findFile('grid-config.json', 'data/grid-config.json', 'config.json');
                 if (configFile) {
+                    console.log(`📋 Config file found: ${configFile.name}`);
                     const configText = await configFile.async('text');
                     const config = JSON.parse(configText);
                     // Convert config to layout format
@@ -68,8 +96,20 @@ export class MFPSourceActions {
                 }
             }
             
+            // Fallback: try CSV reconstruction
             if (!layout) {
-                toolBase.setValue('projectStatus', '❌ No grid-layout.json or grid-config.json found in project');
+                const csvFile = findFile('sequences.csv', 'data/sequences.csv', 'grid.csv', 'data/grid.csv');
+                if (csvFile) {
+                    console.log(`📋 CSV file found: ${csvFile.name}, reconstructing layout...`);
+                    const csvText = await csvFile.async('text');
+                    layout = this._reconstructLayoutFromCSV(csvText, file.name);
+                    console.log('✅ Reconstructed layout from CSV');
+                }
+            }
+            
+            if (!layout) {
+                toolBase.setValue('projectStatus', '❌ No grid-layout.json, grid-config.json, or CSV found in project');
+                console.error('❌ Could not find any layout file. ZIP contents:', allFiles);
                 return;
             }
             
@@ -132,6 +172,9 @@ export class MFPSourceActions {
                 emptyCells: meta.emptyCells || []
             };
             
+            // ALSO set referenceGridData so SCAN tab analysis works
+            this.state.referenceGridData = this.state.gridData;
+            
             this.state.sequences = sequences;
             
             // Rebuild sequence map
@@ -142,6 +185,9 @@ export class MFPSourceActions {
                 const index = FILAMENT_COLOURS.findIndex(fc => fc.n === c.n);
                 return index !== -1 ? index : 0;
             });
+            
+            // CRITICAL: Update sharedState.selectedFilaments so live preview works after import
+            this.state.selectedFilaments = filamentIndices;
             
             toolBase.setValue('filamentPicker', filamentIndices);
             
@@ -185,7 +231,7 @@ export class MFPSourceActions {
                 toolBase.setValue('exportOptions', meta.exportOptions);
             }
             
-            // SCAN tab settings
+            // SCAN tab settings (ALL controls)
             if (meta.scanSettings) {
                 const scan = meta.scanSettings;
                 if (scan.displayMode) toolBase.setValue('scanDisplayMode', scan.displayMode);
@@ -194,18 +240,34 @@ export class MFPSourceActions {
                 if (scan.gridOffsetY !== undefined) toolBase.setValue('gridOffsetY', scan.gridOffsetY);
                 if (scan.gridRotation !== undefined) toolBase.setValue('gridRotation', scan.gridRotation);
                 if (scan.gridOptions) toolBase.setValue('gridOptions', scan.gridOptions);
+                if (scan.expectedOpacity !== undefined) toolBase.setValue('expectedOpacity', scan.expectedOpacity);
                 if (scan.resortGrid) toolBase.setValue('resortGrid', scan.resortGrid);
             }
             
-            // QUANTIZE tab settings
+            // QUANTIZE tab settings (ALL controls)
             if (meta.quantizeSettings) {
                 const quant = meta.quantizeSettings;
                 if (quant.printWidth !== undefined) toolBase.setValue('printWidth', quant.printWidth);
+                if (quant.ditherAlgorithm) toolBase.setValue('ditherAlgorithm', quant.ditherAlgorithm);
                 if (quant.ditherStrength !== undefined) toolBase.setValue('ditherStrength', quant.ditherStrength);
                 if (quant.minDetail !== undefined) toolBase.setValue('minDetail', quant.minDetail);
+                
+                // Restore image adjustment values
+                if (quant.imageAdjustments) {
+                    const adj = quant.imageAdjustments;
+                    const bundle = toolBase.components?.get('imageAdjust');
+                    if (bundle && typeof bundle.setValues === 'function') {
+                        bundle.setValues(adj);
+                        console.log('✅ Image adjustment values restored');
+                    } else if (bundle && bundle.values) {
+                        // Fallback: set values directly
+                        Object.assign(bundle.values, adj);
+                        console.log('✅ Image adjustment values restored (direct)');
+                    }
+                }
             }
             
-            // EXPORT tab settings
+            // EXPORT tab settings (ALL controls)
             if (meta.exportSettings) {
                 const exp = meta.exportSettings;
                 if (exp.layerHeightExport !== undefined) toolBase.setValue('layerHeightExport', exp.layerHeightExport);
@@ -214,20 +276,172 @@ export class MFPSourceActions {
             
             toolBase.setValue('projectStatus', `✅ Loaded ${meta.rows}×${meta.cols} grid (${sequences.length} tiles) - All settings restored`);
             
+            // Update file input to show imported filename
+            toolBase.setValue('importProject_filename', file.name);
+            toolBase.setValue('importProjectScan_filename', file.name);
+            
+            // Set re-sort grid dropdown to match imported sort method
+            if (meta.sortMethod) {
+                toolBase.setValue('resortGrid', meta.sortMethod);
+            }
+            
+            // Update status labels on OTHER tabs to reflect imported project
+            const gridSummary = `${colours.length}c${meta.layerCount}L ${meta.rows}×${meta.cols}`;
+            
+            // SCAN tab
+            toolBase.setValue('gridLoadStatus', `✅ Project loaded: ${gridSummary} grid (${sequences.length} tiles)`);
+            
+            // QUANTIZE tab
+            toolBase.setValue('paletteStatus', `✅ Palette loaded: ${colours.length} colours from imported project`);
+            
+            // EXPORT tab
+            toolBase.setValue('exportProjectStatus', `✅ Project loaded: ${gridSummary} grid ready for export`);
+            
             console.log('✅ All UI controls updated from imported project (ALL tabs)');
             
             // Save to localStorage
             localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
             
-            // Load scan data if present
-            const scanFolder = Object.keys(zipData.files).filter(f => f.startsWith('scans/'));
-            if (scanFolder.length > 0) {
-                console.log(`📁 Project contains ${scanFolder.length} scan files`);
-                // Store for SCAN tab to access
-                this.state.importedScanData = {
-                    zip: zipData,
-                    files: scanFolder
-                };
+            // Load ALL scan-related data (image, alignment, analysis)
+            let scanDataLoaded = false;
+            
+            // 1. Load scan image
+            const scanImageFile = findFile('scans/scan.png', 'scan.png');
+            if (scanImageFile) {
+                try {
+                    const scanBlob = await scanImageFile.async('blob');
+                    const scanImg = new Image();
+                    const loadPromise = new Promise((resolve, reject) => {
+                        scanImg.onload = () => resolve(scanImg);
+                        scanImg.onerror = reject;
+                    });
+                    scanImg.src = URL.createObjectURL(scanBlob);
+                    
+                    const loadedImg = await loadPromise;
+                    this.state.scanImageElement = loadedImg;
+                    scanDataLoaded = true;
+                    console.log(`✅ Scan image loaded: ${loadedImg.width}×${loadedImg.height}px`);
+                    
+                    // Resize canvas if on SCAN tab
+                    const canvasComponent = toolBase.canvasComponent;
+                    if (canvasComponent) {
+                        canvasComponent.resize(loadedImg.width, loadedImg.height);
+                    }
+                    
+                    toolBase.setValue('scanImageStatus', `✅ Scan loaded: ${loadedImg.width}×${loadedImg.height}px`);
+                } catch (imgErr) {
+                    console.warn('⚠️ Could not load scan image:', imgErr);
+                }
+            }
+            
+            // 2. Load grid alignment (corners)
+            const alignmentFile = findFile('scans/grid-alignment.json', 'grid-alignment.json');
+            if (alignmentFile) {
+                try {
+                    const alignmentText = await alignmentFile.async('text');
+                    const alignmentData = JSON.parse(alignmentText);
+                    if (alignmentData.gridCornersPixel && alignmentData.gridCornersPixel.length === 4) {
+                        this.state.gridCornersPixel = alignmentData.gridCornersPixel;
+                        scanDataLoaded = true;
+                        console.log('✅ Grid alignment loaded from grid-alignment.json');
+                    }
+                } catch (alignErr) {
+                    console.warn('⚠️ Could not load grid alignment:', alignErr);
+                }
+            } else if (meta.scanSettings?.gridCornersPixel) {
+                // Fallback to layout.json
+                this.state.gridCornersPixel = meta.scanSettings.gridCornersPixel;
+                scanDataLoaded = true;
+                console.log('✅ Grid alignment restored from layout.json');
+            }
+            
+            // 3. Load analysis data
+            const analysisFile = findFile('scans/analysis.json', 'analysis.json');
+            if (analysisFile) {
+                try {
+                    const analysisText = await analysisFile.async('text');
+                    const analysisData = JSON.parse(analysisText);
+                    this.state.scanAnalysis = Array.isArray(analysisData) ? analysisData : (analysisData.tiles || []);
+                    scanDataLoaded = true;
+                    console.log(`✅ Loaded scan analysis: ${this.state.scanAnalysis.length} tiles`);
+                    toolBase.setValue('exportScanStatus', `✅ Scan analysis loaded: ${this.state.scanAnalysis.length} tiles analysed`);
+                    toolBase.setValue('scanStatus', `✅ Analysis loaded: ${this.state.scanAnalysis.length} tiles (from project)`);
+                } catch (analysisErr) {
+                    console.warn('⚠️ Could not load scan analysis:', analysisErr);
+                }
+            }
+            
+            // 4. Load quantization config OR calibration palette
+            let paletteLoaded = false;
+            const quantConfigFile = findFile('scans/quantization-config.json', 'quantization-config.json');
+            const calibPaletteFile = findFile('scans/calibration-palette.json', 'calibration-palette.json');
+            
+            if (quantConfigFile) {
+                try {
+                    const quantText = await quantConfigFile.async('text');
+                    this.state.quantizationConfig = JSON.parse(quantText);
+                    paletteLoaded = true;
+                    console.log('✅ Loaded quantization config');
+                } catch (quantErr) {
+                    console.warn('⚠️ Could not load quantization config:', quantErr);
+                }
+            } else if (calibPaletteFile) {
+                // Load calibration-palette.json and convert to quantization config format
+                try {
+                    const paletteText = await calibPaletteFile.async('text');
+                    const paletteData = JSON.parse(paletteText);
+                    
+                    // Convert to quantization config format
+                    const colors = paletteData.colors || [];
+                    this.state.quantizationConfig = {
+                        version: paletteData.version || '1.0.0',
+                        type: paletteData.type || 'imported',
+                        generatedAt: paletteData.generatedAt || new Date().toISOString(),
+                        paletteName: paletteData.filaments?.map(f => f.name).join('') || 'Imported',
+                        filaments: paletteData.filaments || this.state.gridData.colours || [],
+                        layerCount: paletteData.layerCount || colors[0]?.sequence?.length || 4,
+                        baseLayers: paletteData.baseLayers || 0,
+                        topLayers: paletteData.topLayers || 0,
+                        colorMap: colors.map(c => ({
+                            name: c.sequenceStr || c.sequence?.join(''),
+                            rgb: Array.isArray(c.rgb) ? { r: c.rgb[0], g: c.rgb[1], b: c.rgb[2] } : c.rgb,
+                            hex: c.hex,
+                            sequence: c.sequence,
+                            filamentStack: null,
+                            tileCount: 1,
+                            deviation: c.deviation || null
+                        })),
+                        tileData: null
+                    };
+                    paletteLoaded = true;
+                    console.log(`✅ Loaded calibration palette: ${colors.length} colours`);
+                } catch (paletteErr) {
+                    console.warn('⚠️ Could not load calibration palette:', paletteErr);
+                }
+            }
+            
+            // If no palette was loaded, generate predicted one from grid data
+            if (!paletteLoaded && this.state.gridData) {
+                this._generatePredictedQuantizationConfig(this.state.gridData);
+                console.log('✅ Generated predicted quantization config from grid data');
+            }
+            
+            // Update QUANTIZE tab status
+            if (this.state.quantizationConfig) {
+                const colorCount = this.state.quantizationConfig.colorMap?.length || 0;
+                const type = this.state.quantizationConfig.type || 'loaded';
+                toolBase.setValue('paletteStatus', `✅ Palette ready: ${colorCount} colours (${type})`);
+            }
+            
+            // Update status based on what was loaded
+            if (scanDataLoaded) {
+                const parts = [];
+                if (this.state.scanImageElement) parts.push('image');
+                if (this.state.gridCornersPixel) parts.push('alignment');
+                if (this.state.scanAnalysis) parts.push('analysis');
+                toolBase.setValue('exportScanStatus', `✅ Scan data loaded: ${parts.join(', ')}`);
+            } else {
+                toolBase.setValue('exportScanStatus', 'ℹ️ No scan data in project (optional)');
             }
             
             toolBase.draw();
@@ -357,16 +571,22 @@ export class MFPSourceActions {
         
         // Sort sequences if needed
         if (values.sortMethod && values.sortMethod !== 'Layer Count') {
-            const sorted = sortSequences(
-                this.state.sequences,
-                values.sortMethod,
-                selectedColors,
-                { simColour }
-            );
-            this.state.sequences = sorted.sequences;
-            this.state.gridData.sequences = sorted.sequences;
+            // Convert dropdown value to sortSequences method name
+            const methodMap = {
+                'Layer Count': 'layercount',
+                'Base Color': 'basecolor',
+                'Top Color': 'topcolor',
+                'Complexity': 'complexity',
+                'Lexicographic': 'lexicographic'
+            };
+            const sortMethod = methodMap[values.sortMethod] || 'layercount';
+            
+            // sortSequences returns sorted array directly
+            const sortedSequences = sortSequences(this.state.sequences, sortMethod);
+            this.state.sequences = sortedSequences;
+            this.state.gridData.sequences = sortedSequences;
             this.state.sequenceMap = buildSequenceMap(
-                sorted.sequences,
+                sortedSequences,
                 selectedColors,
                 this.state.gridData.cols,
                 { simColour, rgb_to_key }
@@ -437,7 +657,20 @@ export class MFPSourceActions {
                 // Save to localStorage
                 localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
                 
-                toolBase.setValue('gridStatus', `✅ Grid finalized: ${this.state.gridData.rows}×${this.state.gridData.cols} = ${this.state.sequences.length} tiles (${this.state.gridData.width.toFixed(1)}×${this.state.gridData.height.toFixed(1)}mm)`);
+                const gridData = this.state.gridData;
+                const gridSummary = `${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols}`;
+                
+                toolBase.setValue('gridStatus', `✅ Grid finalized: ${gridData.rows}×${gridData.cols} = ${this.state.sequences.length} tiles (${gridData.width.toFixed(1)}×${gridData.height.toFixed(1)}mm)`);
+                
+                // Generate PREDICTED palette for QUANTIZE tab (before scan calibration)
+                this._generatePredictedQuantizationConfig(gridData);
+                
+                // Update other tabs
+                toolBase.setValue('gridLoadStatus', `✅ Grid generated: ${gridSummary} (${this.state.sequences.length} tiles)`);
+                toolBase.setValue('paletteStatus', `✅ Predicted palette ready: ${this.state.quantizationConfig?.colorMap?.length || 0} colours`);
+                toolBase.setValue('exportProjectStatus', `✅ Grid ready: ${gridSummary} for export`);
+                toolBase.setValue('exportScanStatus', 'ℹ️ No scan data yet (optional - use SCAN tab)');
+                
                 toolBase.draw();
                 return;
             } else {
@@ -458,7 +691,20 @@ export class MFPSourceActions {
                 // state IS sharedState - already synced
                 
                 localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
-                toolBase.setValue('gridStatus', `✅ Grid: ${this.state.gridData.rows}×${this.state.gridData.cols} = ${this.state.sequences.length} tiles`);
+                
+                const gridData = this.state.gridData;
+                const gridSummary = `${gridData.colours.length}c${gridData.layerCount}L ${gridData.rows}×${gridData.cols}`;
+                
+                toolBase.setValue('gridStatus', `✅ Grid: ${gridData.rows}×${gridData.cols} = ${this.state.sequences.length} tiles`);
+                
+                // Generate PREDICTED palette for QUANTIZE tab (before scan calibration)
+                this._generatePredictedQuantizationConfig(gridData);
+                
+                // Update other tabs
+                toolBase.setValue('gridLoadStatus', `✅ Grid generated: ${gridSummary} (${this.state.sequences.length} tiles)`);
+                toolBase.setValue('paletteStatus', `✅ Predicted palette ready: ${this.state.quantizationConfig?.colorMap?.length || 0} colours`);
+                toolBase.setValue('exportProjectStatus', `✅ Grid ready: ${gridSummary} for export`);
+                toolBase.setValue('exportScanStatus', 'ℹ️ No scan data yet (optional - use SCAN tab)');
             }
         } catch (err) {
             toolBase.setValue('gridStatus', `❌ Generation failed: ${err.message}`);
@@ -619,15 +865,29 @@ export class MFPSourceActions {
                 const gapFillEnabled = values.gapFillOptions && values.gapFillOptions.includes('Fill Gaps');
                 const gapFilamentName = gapFillEnabled ? (values.gapFilament || 'Jade White') : null;
                 
+                // Get base/top filament settings
+                const baseFilamentName = values.baseFilament || grid.colours[0]?.n;
+                const topFilamentName = values.topFilament || grid.colours[0]?.n;
+                
+                // Create layer maps with base/top layers included
+                const layerMaps = this._createGridLayerMaps(grid, {
+                    baseFilamentName,
+                    topFilamentName
+                });
+                
+                // Calculate total layers for STL generation
+                const sequenceLayers = grid.sequences[0]?.length || 1;
+                const totalLayers = (grid.baseLayers || 0) + sequenceLayers + (grid.topLayers || 0);
+                
                 // Export grid STLs using the algorithm (with proper grid spacing)
                 const stls = exportArtworkSTLs(
-                    this._createGridLayerMaps(grid),
+                    layerMaps,
                     grid.colours.map(c => c.n),
                     {
                         imageWidth: grid.cols,
                         imageHeight: grid.rows,
                         printWidth: grid.width,
-                        layerHeight: 0.08,
+                        layerHeight: values.layerHeight || 0.08,
                         // Grid mode: explicit tile/gap/perimeter sizes
                         isGrid: true,
                         tileSize: grid.tileSize,
@@ -636,7 +896,8 @@ export class MFPSourceActions {
                         // Gap fill settings
                         gapFillEnabled: gapFillEnabled,
                         gapFilamentName: gapFilamentName,
-                        baseLayers: grid.baseLayers
+                        baseLayers: grid.baseLayers || 0,
+                        totalLayers: totalLayers
                     }
                 );
                 
@@ -730,12 +991,12 @@ export class MFPSourceActions {
      */
     async exportCompletePackage(values, toolBase) {
         if (!this.state.gridData) {
-            toolBase.setValue('exportProjectZipStatus', '❌ Generate grid first');
+            toolBase.setValue('exportStatus', '❌ Generate grid first');
             return;
         }
         
         try {
-            toolBase.setValue('exportProjectZipStatus', '⏳ Building project ZIP...');
+            toolBase.setValue('exportStatus', '⏳ Building project ZIP...');
             
             const JSZip = (await import('jszip')).default;
             const zip = new JSZip();
@@ -780,25 +1041,31 @@ export class MFPSourceActions {
                 // SOURCE tab settings
                 canvasView: currentValues.canvasView || 'Combined',
                 exportOptions: currentValues.exportOptions || [],
-                // SCAN tab settings
+                // SCAN tab settings (ALL controls)
                 scanSettings: {
                     displayMode: currentValues.scanDisplayMode || 'Fit',
-                    deadzonePercent: currentValues.deadzonePercent || 20,
-                    gridOffsetX: currentValues.gridOffsetX || 0,
-                    gridOffsetY: currentValues.gridOffsetY || 0,
-                    gridRotation: currentValues.gridRotation || 0,
-                    gridOptions: currentValues.gridOptions || [],
-                    resortGrid: currentValues.resortGrid
+                    deadzonePercent: currentValues.deadzonePercent ?? 20,
+                    gridOffsetX: currentValues.gridOffsetX ?? 0,
+                    gridOffsetY: currentValues.gridOffsetY ?? 0,
+                    gridRotation: currentValues.gridRotation ?? 0,
+                    gridOptions: currentValues.gridOptions || ['Show Sample Zones'],
+                    expectedOpacity: currentValues.expectedOpacity ?? 50,
+                    resortGrid: currentValues.resortGrid || 'Layer Count',
+                    // Grid corner positions for perspective-correct alignment
+                    gridCornersPixel: this.state.gridCornersPixel || null
                 },
-                // QUANTIZE tab settings
+                // QUANTIZE tab settings (ALL controls)
                 quantizeSettings: {
-                    printWidth: currentValues.printWidth || 170,
-                    ditherStrength: currentValues.ditherStrength || 1.0,
-                    minDetail: currentValues.minDetail || 0.8
+                    printWidth: currentValues.printWidth ?? 170,
+                    ditherAlgorithm: currentValues.ditherAlgorithm || 'Floyd-Steinberg',
+                    ditherStrength: currentValues.ditherStrength ?? 1.0,
+                    minDetail: currentValues.minDetail ?? 0.8,
+                    // Image adjustment bundle values
+                    imageAdjustments: this._getImageAdjustmentValues(toolBase)
                 },
-                // EXPORT tab settings
+                // EXPORT tab settings (ALL controls)
                 exportSettings: {
-                    layerHeightExport: currentValues.layerHeightExport || 0.08,
+                    layerHeightExport: currentValues.layerHeightExport ?? 0.08,
                     canvasMode: currentValues.canvasMode || 'Grid'
                 },
                 palette: grid.colours.map(c => ({
@@ -831,36 +1098,195 @@ export class MFPSourceActions {
             const readme = this._generateReadme(grid);
             zip.file('README.txt', readme);
             
-            // Add scan data if exists
-            if (this.state.scanAnalysis) {
+            // Check export options
+            const exportOptions = currentValues.exportOptions || ['STL Combined', 'STL Per Layer', 'Layer Visuals'];
+            
+            // Add STL files if requested
+            if (exportOptions.includes('STL Combined') || exportOptions.includes('STL Per Layer')) {
+                const stlFolder = zip.folder('stl');
+                
+                try {
+                    // Get gap fill settings
+                    const gapFillEnabled = currentValues.gapFillOptions && currentValues.gapFillOptions.includes('Fill Gaps');
+                    const gapFilamentName = gapFillEnabled ? (currentValues.gapFilament || 'Jade White') : null;
+                    
+                    // Get base/top filament settings
+                    const baseFilamentName = currentValues.baseFilament || grid.colours[0]?.n;
+                    const topFilamentName = currentValues.topFilament || grid.colours[0]?.n;
+                    
+                    // Create layer maps with base/top layers included
+                    const layerMaps = this._createGridLayerMaps(grid, {
+                        baseFilamentName,
+                        topFilamentName
+                    });
+                    
+                    // Calculate total layers
+                    const sequenceLayers = grid.sequences[0]?.length || 1;
+                    const totalLayers = (grid.baseLayers || 0) + sequenceLayers + (grid.topLayers || 0);
+                    
+                    // Generate STLs
+                    const stls = exportArtworkSTLs(
+                        layerMaps,
+                        grid.colours.map(c => c.n),
+                        {
+                            imageWidth: grid.cols,
+                            imageHeight: grid.rows,
+                            printWidth: grid.width,
+                            layerHeight: currentValues.layerHeight || 0.08,
+                            isGrid: true,
+                            tileSize: grid.tileSize,
+                            gap: grid.gap,
+                            perimeterMargin: grid.perimeterMargin || 0,
+                            gapFillEnabled: gapFillEnabled,
+                            gapFilamentName: gapFilamentName,
+                            baseLayers: grid.baseLayers || 0,
+                            totalLayers: totalLayers
+                        }
+                    );
+                    
+                    // Add each STL to the folder
+                    Object.entries(stls).forEach(([filename, content]) => {
+                        stlFolder.file(filename, content);
+                    });
+                    
+                    console.log(`✅ Added ${Object.keys(stls).length} STL files to ZIP`);
+                } catch (stlErr) {
+                    console.error('STL generation error:', stlErr);
+                    // Continue with other exports even if STL fails
+                }
+            }
+            
+            // Add grid PNG if Layer Visuals requested
+            if (exportOptions.includes('Layer Visuals')) {
+                const imagesFolder = zip.folder('images');
+                
+                try {
+                    // Generate high-res grid PNG
+                    const dpi = 300;
+                    const widthInches = grid.width / 25.4;
+                    const heightInches = grid.height / 25.4;
+                    
+                    const exportCanvas = document.createElement('canvas');
+                    exportCanvas.width = Math.round(widthInches * dpi);
+                    exportCanvas.height = Math.round(heightInches * dpi);
+                    const exportCtx = exportCanvas.getContext('2d');
+                    
+                    // Draw grid at high resolution
+                    await this._drawGridToCanvas(exportCtx, exportCanvas, grid, currentValues);
+                    
+                    // Convert to blob and add to ZIP
+                    const pngBlob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
+                    imagesFolder.file('grid-combined.png', pngBlob);
+                    
+                    // Generate per-layer images if requested
+                    const layerCount = grid.layerCount || grid.sequences[0]?.length || 4;
+                    for (let layer = 0; layer < layerCount; layer++) {
+                        const layerCanvas = document.createElement('canvas');
+                        layerCanvas.width = exportCanvas.width;
+                        layerCanvas.height = exportCanvas.height;
+                        const layerCtx = layerCanvas.getContext('2d');
+                        
+                        await this._drawGridToCanvas(layerCtx, layerCanvas, grid, { ...currentValues, canvasView: `Layer ${layer}` });
+                        
+                        const layerBlob = await new Promise(resolve => layerCanvas.toBlob(resolve, 'image/png'));
+                        imagesFolder.file(`grid-layer-${layer}.png`, layerBlob);
+                    }
+                    
+                    console.log('✅ Added grid images to ZIP');
+                } catch (imgErr) {
+                    console.error('Image generation error:', imgErr);
+                    // Continue with other exports even if image fails
+                }
+            }
+            
+            // ALWAYS save scan data if ANY scan-related state exists
+            // (not just when analysis is complete)
+            const hasScanImage = !!this.state.scanImageElement;
+            const hasGridCorners = this.state.gridCornersPixel && this.state.gridCornersPixel.length === 4;
+            const hasAnalysis = !!this.state.scanAnalysis;
+            const hasQuantConfig = !!this.state.quantizationConfig;
+            
+            if (hasScanImage || hasGridCorners || hasAnalysis) {
                 const scanFolder = zip.folder('scans');
                 
-                // Save scan image
-                if (this.state.scanImageElement) {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = this.state.scanImageElement.width;
-                    canvas.height = this.state.scanImageElement.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(this.state.scanImageElement, 0, 0);
-                    const imageBlob = await new Promise(resolve => canvas.toBlob(resolve));
-                    scanFolder.file('scan.png', imageBlob);
+                // ALWAYS save scan image if it exists
+                if (hasScanImage) {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = this.state.scanImageElement.width;
+                        canvas.height = this.state.scanImageElement.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(this.state.scanImageElement, 0, 0);
+                        const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        scanFolder.file('scan.png', imageBlob);
+                        console.log('✅ Saved scan.png to ZIP');
+                    } catch (imgErr) {
+                        console.error('❌ Failed to save scan image:', imgErr);
+                    }
                 }
                 
-                // Save analysis data
-                scanFolder.file('analysis.json', JSON.stringify(this.state.scanAnalysis, null, 2));
+                // Save grid alignment data separately (for import without re-aligning)
+                if (hasGridCorners) {
+                    const alignmentData = {
+                        gridCornersPixel: this.state.gridCornersPixel,
+                        imageWidth: this.state.scanImageElement?.width || null,
+                        imageHeight: this.state.scanImageElement?.height || null,
+                        savedAt: new Date().toISOString()
+                    };
+                    scanFolder.file('grid-alignment.json', JSON.stringify(alignmentData, null, 2));
+                    console.log('✅ Saved grid-alignment.json to ZIP');
+                }
                 
-                // Save quantization config
-                if (this.state.quantizationConfig) {
+                // Save analysis data if exists
+                if (hasAnalysis) {
+                    scanFolder.file('analysis.json', JSON.stringify(this.state.scanAnalysis, null, 2));
+                    console.log('✅ Saved analysis.json to ZIP');
+                }
+                
+                // Save quantization config if exists
+                if (hasQuantConfig) {
                     scanFolder.file('quantization-config.json', JSON.stringify(this.state.quantizationConfig, null, 2));
+                    console.log('✅ Saved quantization-config.json to ZIP');
                 }
                 
-                // Save calibrated palette GPL
-                const gpl = this._generateCalibratedPaletteGPL(grid);
-                scanFolder.file('calibrated-palette.gpl', gpl);
+                // Generate and save EXPECTED colours grid PNG (predicted from filament stacking)
+                try {
+                    const expectedPng = await this._generateColourGridPNG(grid, 'expected');
+                    if (expectedPng) {
+                        scanFolder.file('expected-colours-grid.png', expectedPng);
+                        console.log('✅ Saved expected-colours-grid.png to ZIP');
+                    }
+                } catch (expErr) {
+                    console.warn('⚠️ Could not generate expected colours grid:', expErr);
+                }
                 
-                // Save comparison CSV
-                const comparisonCSV = this._generateComparisonCSV(grid);
-                scanFolder.file('comparison.csv', comparisonCSV);
+                // Generate and save ANALYSED colours grid PNG (from scan)
+                if (hasAnalysis) {
+                    try {
+                        const analysedPng = await this._generateColourGridPNG(grid, 'analysed', this.state.scanAnalysis);
+                        if (analysedPng) {
+                            scanFolder.file('analysed-colours-grid.png', analysedPng);
+                            console.log('✅ Saved analysed-colours-grid.png to ZIP');
+                        }
+                    } catch (anaErr) {
+                        console.warn('⚠️ Could not generate analysed colours grid:', anaErr);
+                    }
+                }
+                
+                // Generate and save CALIBRATION PALETTE JSON (RGB → sequence mapping)
+                const paletteJson = this._generateCalibrationPaletteJSON(grid, hasAnalysis ? this.state.scanAnalysis : null);
+                scanFolder.file('calibration-palette.json', JSON.stringify(paletteJson, null, 2));
+                console.log('✅ Saved calibration-palette.json to ZIP');
+                
+                // Save calibrated palette GPL if we have analysis
+                if (hasAnalysis) {
+                    const gpl = this._generateCalibratedPaletteGPL(grid);
+                    scanFolder.file('calibrated-palette.gpl', gpl);
+                    
+                    // Save comparison CSV
+                    const comparisonCSV = this._generateComparisonCSV(grid);
+                    scanFolder.file('comparison.csv', comparisonCSV);
+                }
             }
             
             // Generate ZIP
@@ -875,10 +1301,10 @@ export class MFPSourceActions {
             URL.revokeObjectURL(url);
             
             const hasScans = this.state.scanAnalysis ? ' (with scan data)' : '';
-            toolBase.setValue('exportProjectZipStatus', `✅ Exported complete project ZIP${hasScans}`);
+            toolBase.setValue('exportStatus', `✅ Exported complete project ZIP${hasScans}`);
             
         } catch (err) {
-            toolBase.setValue('exportProjectZipStatus', `❌ ZIP export failed: ${err.message}`);
+            toolBase.setValue('exportStatus', `❌ ZIP export failed: ${err.message}`);
             console.error('ZIP export error:', err);
         }
     }
@@ -938,27 +1364,212 @@ export class MFPSourceActions {
         });
     }
     
-    _createGridLayerMaps(grid) {
-        const { sequences, rows, cols, colours } = grid;
-        const numLayers = sequences[0].length;
-        const layerMaps = Array.from({ length: numLayers }, () => 
+    /**
+     * Draw grid to canvas for export (synchronous version)
+     */
+    async _drawGridToCanvas(ctx, canvas, grid, values) {
+        const { sequences, colours, rows, cols, tileSize, gap, width, height, emptyCells, perimeterMargin = 0 } = grid;
+        
+        // Get view mode
+        const viewMode = values.canvasView || 'Combined';
+        const gapFillEnabled = values.gapFillOptions && values.gapFillOptions.includes('Fill Gaps');
+        
+        // Calculate scale to fill canvas
+        const scaleX = canvas.width / width;
+        const scaleY = canvas.height / height;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Clear with black
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.save();
+        ctx.scale(scale, scale);
+        
+        // Draw perimeter margin
+        if (perimeterMargin > 0 && gapFillEnabled) {
+            const gapFilamentName = values.gapFilament || 'Jade White';
+            const gapFilamentColor = colours.find(c => c.n === gapFilamentName);
+            const gapHex = gapFilamentColor ? gapFilamentColor.h : '#FFFFFF';
+            
+            ctx.fillStyle = gapHex;
+            ctx.fillRect(0, 0, width, perimeterMargin);
+            ctx.fillRect(0, height - perimeterMargin, width, perimeterMargin);
+            ctx.fillRect(0, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2));
+            ctx.fillRect(width - perimeterMargin, perimeterMargin, perimeterMargin, height - (perimeterMargin * 2));
+        }
+        
+        ctx.translate(perimeterMargin, perimeterMargin);
+        
+        const innerWidth = width - (perimeterMargin * 2);
+        const innerHeight = height - (perimeterMargin * 2);
+        
+        // Draw gap fill background
+        if (gap > 0 && gapFillEnabled) {
+            const gapFilamentName = values.gapFilament || 'Jade White';
+            const gapFilamentColor = colours.find(c => c.n === gapFilamentName);
+            const gapHex = gapFilamentColor ? gapFilamentColor.h : '#FFFFFF';
+            
+            ctx.fillStyle = gapHex;
+            ctx.fillRect(0, 0, innerWidth, innerHeight);
+        }
+        
+        // Draw each tile
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const index = row * cols + col;
+                const x = col * (tileSize + gap);
+                const y = row * (tileSize + gap);
+                
+                if (emptyCells && emptyCells.includes(index)) {
+                    if (!gapFillEnabled) {
+                        ctx.fillStyle = '#404040';
+                        ctx.fillRect(x, y, tileSize, tileSize);
+                    }
+                    continue;
+                }
+                
+                if (index >= sequences.length) continue;
+                
+                const sequence = sequences[index];
+                let hexColor;
+                
+                if (viewMode === 'Combined' || viewMode === 'combined') {
+                    const color = simColour(sequence, colours);
+                    hexColor = rgb2hex(color);
+                } else if (viewMode.startsWith('Layer ')) {
+                    const layerMatch = viewMode.match(/(\d+)/);
+                    if (layerMatch) {
+                        const layerIndex = parseInt(layerMatch[1]);
+                        const filamentIndex = sequence[layerIndex];
+                        
+                        if (filamentIndex === 0 || filamentIndex === undefined) {
+                            hexColor = '#303030';
+                        } else {
+                            hexColor = colours[filamentIndex - 1].h;
+                        }
+                    } else {
+                        hexColor = '#404040';
+                    }
+                } else {
+                    const color = simColour(sequence, colours);
+                    hexColor = rgb2hex(color);
+                }
+                
+                ctx.fillStyle = hexColor;
+                ctx.fillRect(x, y, tileSize, tileSize);
+            }
+        }
+        
+        ctx.restore();
+    }
+    
+    /**
+     * Create layer maps for STL generation
+     * 
+     * Handles base layers, sequence layers, and top layers:
+     * - Base layers: All tiles filled with base filament
+     * - Sequence layers: Each tile gets its sequence colours
+     * - Top layers: All tiles filled with top filament
+     * 
+     * @param {Object} grid - Grid data
+     * @param {Object} options - Options for base/top layers
+     * @returns {Array<Array<Set<string>>>} [layer][filament] = Set("x,y")
+     */
+    _createGridLayerMaps(grid, options = {}) {
+        const { sequences, rows, cols, colours, baseLayers = 0, topLayers = 0 } = grid;
+        const { baseFilamentName, topFilamentName } = options;
+        
+        const sequenceLayers = sequences[0]?.length || 1;
+        const totalLayers = baseLayers + sequenceLayers + topLayers;
+        
+        // Find filament indices for base/top
+        const baseFilamentIdx = baseFilamentName 
+            ? colours.findIndex(c => c.n === baseFilamentName)
+            : 0;
+        const topFilamentIdx = topFilamentName 
+            ? colours.findIndex(c => c.n === topFilamentName)
+            : 0;
+        
+        // Create empty layer maps
+        const layerMaps = Array.from({ length: totalLayers }, () => 
             Array.from({ length: colours.length }, () => new Set())
         );
         
+        // Get all non-empty tile positions
+        const allTilePositions = [];
+        sequences.forEach((seq, idx) => {
+            if (grid.emptyCells && grid.emptyCells.includes(idx)) return;
+            const row = Math.floor(idx / cols);
+            const col = idx % cols;
+            allTilePositions.push({ row, col, coord: `${col},${row}` });
+        });
+        
+        // Fill base layers (all tiles with base filament)
+        for (let li = 0; li < baseLayers; li++) {
+            if (baseFilamentIdx >= 0) {
+                allTilePositions.forEach(({ coord }) => {
+                    layerMaps[li][baseFilamentIdx].add(coord);
+                });
+            }
+        }
+        
+        // Fill sequence layers
         sequences.forEach((seq, idx) => {
             if (grid.emptyCells && grid.emptyCells.includes(idx)) return;
             
             const row = Math.floor(idx / cols);
             const col = idx % cols;
+            const coord = `${col},${row}`;
             
-            seq.forEach((filamentIdx, layerIdx) => {
+            seq.forEach((filamentIdx, seqLayerIdx) => {
                 if (filamentIdx > 0) {
-                    layerMaps[layerIdx][filamentIdx - 1].add(`${col},${row}`);
+                    const actualLayer = baseLayers + seqLayerIdx;
+                    layerMaps[actualLayer][filamentIdx - 1].add(coord);
                 }
             });
         });
         
+        // Fill top layers (all tiles with top filament)
+        for (let li = 0; li < topLayers; li++) {
+            const actualLayer = baseLayers + sequenceLayers + li;
+            if (topFilamentIdx >= 0) {
+                allTilePositions.forEach(({ coord }) => {
+                    layerMaps[actualLayer][topFilamentIdx].add(coord);
+                });
+            }
+        }
+        
+        console.log(`📐 Created layer maps: ${baseLayers} base + ${sequenceLayers} sequence + ${topLayers} top = ${totalLayers} total`);
+        
         return layerMaps;
+    }
+    
+    /**
+     * Get current image adjustment values from the bundle
+     */
+    _getImageAdjustmentValues(toolBase) {
+        try {
+            const adjustBundle = toolBase?.components?.get('imageAdjust');
+            if (!adjustBundle) return null;
+            
+            // Get values from the adjustment bundle
+            return {
+                brightness: adjustBundle.values?.brightness ?? 0,
+                contrast: adjustBundle.values?.contrast ?? 0,
+                saturation: adjustBundle.values?.saturation ?? 0,
+                exposure: adjustBundle.values?.exposure ?? 0,
+                highlights: adjustBundle.values?.highlights ?? 0,
+                shadows: adjustBundle.values?.shadows ?? 0,
+                temperature: adjustBundle.values?.temperature ?? 0,
+                tint: adjustBundle.values?.tint ?? 0,
+                vibrance: adjustBundle.values?.vibrance ?? 0,
+                gamma: adjustBundle.values?.gamma ?? 1.0
+            };
+        } catch (err) {
+            console.warn('Could not get image adjustment values:', err);
+            return null;
+        }
     }
     
     _generateReadme(grid) {
@@ -986,6 +1597,250 @@ Variable layers: ${grid.layerCount - grid.baseLayers}
 Each tile tests a unique combination of filament layers.
 Print settings are in grid-layout.json.
 `;
+    }
+    
+    /**
+     * Generate PREDICTED quantization config from grid data (no scan needed)
+     * Uses simulated/expected colours based on filament stacking
+     * This allows the QUANTIZE tab to work immediately after grid generation
+     */
+    _generatePredictedQuantizationConfig(gridData) {
+        const { sequences, colours, layerCount, baseLayers, topLayers } = gridData;
+        
+        // Simple colour blending (average of non-empty layers)
+        const simColour = (sequence, colours) => {
+            const nonEmpty = sequence.filter(idx => idx > 0);
+            if (nonEmpty.length === 0) return { r: 255, g: 255, b: 255 };
+            
+            let sumR = 0, sumG = 0, sumB = 0;
+            nonEmpty.forEach(idx => {
+                const c = colours[idx - 1];
+                if (c) {
+                    const hex = c.h.replace('#', '');
+                    sumR += parseInt(hex.substr(0, 2), 16);
+                    sumG += parseInt(hex.substr(2, 2), 16);
+                    sumB += parseInt(hex.substr(4, 2), 16);
+                }
+            });
+            return {
+                r: Math.round(sumR / nonEmpty.length),
+                g: Math.round(sumG / nonEmpty.length),
+                b: Math.round(sumB / nonEmpty.length)
+            };
+        };
+        
+        // Build unique colour palette from sequences
+        const sequenceMap = new Map();
+        
+        sequences.forEach((seq, idx) => {
+            const key = seq.join('');
+            if (!sequenceMap.has(key)) {
+                const rgb = simColour(seq, colours);
+                const hex = `#${rgb.r.toString(16).padStart(2, '0')}${rgb.g.toString(16).padStart(2, '0')}${rgb.b.toString(16).padStart(2, '0')}`;
+                
+                sequenceMap.set(key, {
+                    sequence: seq,
+                    sequenceStr: key,
+                    rgb,
+                    hex,
+                    filamentStack: seq.map((fIdx, layerIdx) => ({
+                        layer: layerIdx,
+                        filamentIndex: fIdx,
+                        filamentName: fIdx > 0 ? colours[fIdx - 1]?.n : 'Empty'
+                    })),
+                    tileCount: 0
+                });
+            }
+            sequenceMap.get(key).tileCount++;
+        });
+        
+        const colorMap = Array.from(sequenceMap.values()).map(entry => ({
+            name: entry.sequenceStr,
+            rgb: entry.rgb,
+            hex: entry.hex,
+            sequence: entry.sequence,
+            filamentStack: entry.filamentStack,
+            tileCount: entry.tileCount,
+            deviation: null  // No deviation for predicted colours
+        }));
+        
+        const filamentNames = colours.map(c => c.n).join('');
+        
+        this.state.quantizationConfig = {
+            version: '1.0.0',
+            type: 'predicted',  // Not from scan
+            generatedAt: new Date().toISOString(),
+            paletteName: filamentNames,
+            filaments: colours,
+            layerCount: layerCount || sequences[0]?.length || 4,
+            baseLayers: baseLayers || 0,
+            topLayers: topLayers || 0,
+            colorMap,
+            tileData: null  // No tile data until scan
+        };
+        
+        console.log(`✅ Predicted quantization config generated: ${colorMap.length} unique colours`);
+    }
+    
+    /**
+     * Generate a colour grid PNG showing expected or analysed colours
+     * @param {Object} grid - Grid data
+     * @param {string} type - 'expected' or 'analysed'
+     * @param {Array} analysisData - Analysis data (required for 'analysed' type)
+     * @returns {Promise<Blob>} PNG blob
+     */
+    async _generateColourGridPNG(grid, type, analysisData = null) {
+        const { rows, cols, sequences, colours } = grid;
+        
+        // Calculate cell size for readable output (min 20px per cell)
+        const cellSize = Math.max(20, Math.min(60, Math.floor(2000 / Math.max(rows, cols))));
+        const width = cols * cellSize;
+        const height = rows * cellSize;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        
+        // Fill background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Import simColour for expected colours
+        const { simColour } = await import('../../../shared/algorithms/color/color-utils.js');
+        
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const idx = row * cols + col;
+                const x = col * cellSize;
+                const y = row * cellSize;
+                
+                let colour = null;
+                
+                if (type === 'analysed' && analysisData) {
+                    // Use analysed colour from scan
+                    const tile = analysisData.find(d => d.index === idx);
+                    if (tile) {
+                        colour = tile.rgb;
+                    }
+                } else if (type === 'expected' && sequences && sequences[idx]) {
+                    // Use simulated colour from filament stack
+                    colour = simColour(sequences[idx], colours);
+                }
+                
+                if (colour && (colour.r !== undefined || colour.r !== 255 || colour.g !== 255 || colour.b !== 255)) {
+                    ctx.fillStyle = `rgb(${colour.r}, ${colour.g}, ${colour.b})`;
+                    ctx.fillRect(x, y, cellSize, cellSize);
+                }
+            }
+        }
+        
+        // Add grid lines
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= cols; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * cellSize, 0);
+            ctx.lineTo(i * cellSize, height);
+            ctx.stroke();
+        }
+        for (let i = 0; i <= rows; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, i * cellSize);
+            ctx.lineTo(width, i * cellSize);
+            ctx.stroke();
+        }
+        
+        return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    }
+    
+    /**
+     * Generate calibration palette JSON with RGB → sequence mapping
+     * This is the key file for quantization - maps colours to filament stacks
+     * @param {Object} grid - Grid data
+     * @param {Array} analysisData - Optional analysis data for scanned colours
+     * @returns {Object} Palette JSON
+     */
+    _generateCalibrationPaletteJSON(grid, analysisData = null) {
+        const { sequences, colours, layerCount, baseLayers, topLayers } = grid;
+        
+        // Import simColour synchronously isn't possible, so we'll compute inline
+        const simColour = (sequence, colours) => {
+            const nonEmpty = sequence.filter(idx => idx > 0);
+            if (nonEmpty.length === 0) return { r: 255, g: 255, b: 255 };
+            
+            let sumR = 0, sumG = 0, sumB = 0;
+            nonEmpty.forEach(idx => {
+                const c = colours[idx - 1];
+                if (c) {
+                    const hex = c.h.replace('#', '');
+                    sumR += parseInt(hex.substr(0, 2), 16);
+                    sumG += parseInt(hex.substr(2, 2), 16);
+                    sumB += parseInt(hex.substr(4, 2), 16);
+                }
+            });
+            return {
+                r: Math.round(sumR / nonEmpty.length),
+                g: Math.round(sumG / nonEmpty.length),
+                b: Math.round(sumB / nonEmpty.length)
+            };
+        };
+        
+        // Build filaments array
+        const filaments = colours.map((c, i) => ({
+            index: i + 1,
+            name: c.n,
+            hex: c.h
+        }));
+        
+        // Build colours array with RGB → sequence mapping
+        const colorsArray = [];
+        const seenHex = new Set();
+        
+        sequences.forEach((seq, idx) => {
+            // Get colour - prefer analysed, fall back to expected
+            let rgb, hex, deviation = null;
+            
+            if (analysisData) {
+                const tile = analysisData.find(d => d.index === idx);
+                if (tile) {
+                    rgb = [tile.rgb.r, tile.rgb.g, tile.rgb.b];
+                    hex = tile.hex;
+                    deviation = tile.colorDeviation;
+                }
+            }
+            
+            if (!rgb) {
+                // Use expected/simulated colour
+                const expected = simColour(seq, colours);
+                rgb = [expected.r, expected.g, expected.b];
+                hex = `#${rgb[0].toString(16).padStart(2, '0')}${rgb[1].toString(16).padStart(2, '0')}${rgb[2].toString(16).padStart(2, '0')}`;
+            }
+            
+            // Only add unique colours
+            if (!seenHex.has(hex)) {
+                seenHex.add(hex);
+                colorsArray.push({
+                    hex,
+                    rgb,
+                    sequence: seq,
+                    sequenceStr: seq.join(''),
+                    ...(deviation !== null && { deviation })
+                });
+            }
+        });
+        
+        return {
+            version: '1.0',
+            type: analysisData ? 'calibration-palette' : 'predicted-palette',
+            generatedAt: new Date().toISOString(),
+            filaments,
+            layerCount: layerCount || sequences[0]?.length || 4,
+            baseLayers: baseLayers || 0,
+            topLayers: topLayers || 0,
+            colorCount: colorsArray.length,
+            colors: colorsArray
+        };
     }
     
     _generateCalibratedPaletteGPL(grid) {
@@ -1063,6 +1918,129 @@ Print settings are in grid-layout.json.
                 tileCount: tiles.length
             });
         });
+        
+        return palette;
+    }
+    
+    /**
+     * Reconstruct layout from CSV file (legacy format support)
+     * 
+     * CSV format:
+     * Index,Row,Col,Sequence,R,G,B,Hex
+     * 0,0,0,"1234",128,128,128,#808080
+     */
+    _reconstructLayoutFromCSV(csvText, filename) {
+        const lines = csvText.split('\n').filter(line => 
+            line.trim() && !line.startsWith('#')
+        );
+        
+        if (lines.length < 2) {
+            console.error('CSV has no data rows');
+            return null;
+        }
+        
+        // Skip header
+        const dataLines = lines.slice(1);
+        
+        // Parse sequences
+        const tiles = [];
+        let maxRow = 0;
+        let maxCol = 0;
+        
+        for (const line of dataLines) {
+            // Parse CSV - handle quoted sequences
+            const match = line.match(/^(\d+),(\d+),(\d+),"([^"]+)"(?:,.*)?$/);
+            if (!match) continue;
+            
+            const [, indexStr, rowStr, colStr, seqStr] = match;
+            const index = parseInt(indexStr);
+            const row = parseInt(rowStr);
+            const col = parseInt(colStr);
+            const sequence = seqStr.split('').map(c => parseInt(c));
+            
+            tiles.push({ index, row, col, sequence });
+            maxRow = Math.max(maxRow, row);
+            maxCol = Math.max(maxCol, col);
+        }
+        
+        if (tiles.length === 0) {
+            console.error('No valid tiles parsed from CSV');
+            return null;
+        }
+        
+        // Sort by index
+        tiles.sort((a, b) => a.index - b.index);
+        
+        // Try to infer palette from filename
+        const filenameData = this._parseFilename(filename);
+        let palette = null;
+        
+        if (filenameData && filenameData.colorCount) {
+            palette = this._inferPaletteFromSequences(tiles, filenameData);
+        }
+        
+        // Default palette if not inferred
+        if (!palette) {
+            const colorCount = Math.max(...tiles.flatMap(t => t.sequence));
+            palette = [];
+            for (let i = 0; i < colorCount; i++) {
+                palette.push({
+                    name: `Color ${i + 1}`,
+                    hex: FILAMENT_COLOURS[i % FILAMENT_COLOURS.length].h
+                });
+            }
+        }
+        
+        const layerCount = tiles[0]?.sequence.length || 4;
+        
+        return {
+            palette,
+            gridSize: {
+                rows: maxRow + 1,
+                cols: maxCol + 1
+            },
+            layerCount,
+            tiles: tiles.map(t => ({
+                index: t.index,
+                row: t.row,
+                col: t.col,
+                sequence: t.sequence
+            }))
+        };
+    }
+    
+    /**
+     * Parse filename for metadata
+     * Format: cal-{colors}c{layers}L-{rows}x{cols}-{tilesize}mm-...
+     */
+    _parseFilename(filename) {
+        // Match pattern like "cal-4c4L-8x8-5mm-..."
+        const match = filename.match(/cal-(\d+)c(\d+)L-(\d+)x(\d+)-(\d+(?:\.\d+)?)mm/);
+        if (!match) return null;
+        
+        return {
+            colorCount: parseInt(match[1]),
+            layerCount: parseInt(match[2]),
+            rows: parseInt(match[3]),
+            cols: parseInt(match[4]),
+            tileSize: parseFloat(match[5])
+        };
+    }
+    
+    /**
+     * Infer palette from sequences and filename data
+     */
+    _inferPaletteFromSequences(tiles, filenameData) {
+        const colorCount = filenameData?.colorCount || 
+            Math.max(...tiles.flatMap(t => t.sequence));
+        
+        const palette = [];
+        for (let i = 0; i < colorCount; i++) {
+            palette.push({
+                name: FILAMENT_COLOURS[i % FILAMENT_COLOURS.length].n,
+                hex: FILAMENT_COLOURS[i % FILAMENT_COLOURS.length].h
+            });
+        }
         
         return palette;
     }

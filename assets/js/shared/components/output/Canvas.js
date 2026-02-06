@@ -40,6 +40,10 @@ export class Canvas extends BaseComponent {
         this.aspectRatio = options.aspectRatio ?? null;
         this.draw = options.draw ?? null;
         
+        // DPR scaling for high-DPI displays
+        this.enableDPR = options.enableDPR ?? true;
+        this.dpr = this.enableDPR ? (window.devicePixelRatio || 1) : 1;
+        
         // === FEATURE FLAGS ===
         this.interactive = options.interactive ?? false;
         this.enableZoom = options.enableZoom ?? false;
@@ -114,16 +118,21 @@ export class Canvas extends BaseComponent {
             overflow: hidden;
         `;
         
-        // Canvas element - always at actual pixel size, CSS transform handles scaling/positioning
+        // Canvas element - scaled by DPR for sharp rendering on high-DPI displays
         this.canvasEl = this.createElement('canvas', 'canvas-element');
-        this.canvasEl.width = this.width;
-        this.canvasEl.height = this.height;
+        
+        // Buffer size = logical size × DPR
+        this.canvasEl.width = this.width * this.dpr;
+        this.canvasEl.height = this.height * this.dpr;
+        
+        // CSS size = logical size (CSS handles the scaling)
         this.canvasEl.style.cssText = `
             position: absolute;
             top: 0;
             left: 0;
+            width: ${this.width}px;
+            height: ${this.height}px;
             transform-origin: 0 0;
-            image-rendering: pixelated;
         `;
         
         // Get context
@@ -131,6 +140,10 @@ export class Canvas extends BaseComponent {
             this.ctx = this.canvasEl.getContext('webgl') || this.canvasEl.getContext('experimental-webgl');
         } else {
             this.ctx = this.canvasEl.getContext('2d');
+            // Scale context so drawing operations use logical coordinates
+            if (this.dpr !== 1) {
+                this.ctx.scale(this.dpr, this.dpr);
+            }
         }
         
         this.viewportEl.appendChild(this.canvasEl);
@@ -193,10 +206,17 @@ export class Canvas extends BaseComponent {
             ? Math.round(width / this.aspectRatio) 
             : width);
         
-        // Update canvas resolution
+        // Update canvas buffer resolution (scaled by DPR)
         if (this.canvasEl) {
-            this.canvasEl.width = this.width;
-            this.canvasEl.height = this.height;
+            this.canvasEl.width = this.width * this.dpr;
+            this.canvasEl.height = this.height * this.dpr;
+            this.canvasEl.style.width = `${this.width}px`;
+            this.canvasEl.style.height = `${this.height}px`;
+            
+            // Re-apply DPR scale to context
+            if (this.contextType === '2d' && this.ctx && this.dpr !== 1) {
+                this.ctx.scale(this.dpr, this.dpr);
+            }
         }
         
         // Update container size
@@ -228,13 +248,9 @@ export class Canvas extends BaseComponent {
         
         const mode = this.displayMode || 'auto';
         
-        // Get ACTUAL canvas dimensions from element (tools may resize directly)
-        const canvasWidth = this.canvasEl.width;
-        const canvasHeight = this.canvasEl.height;
-        
-        // Sync internal state with actual dimensions
-        this.width = canvasWidth;
-        this.height = canvasHeight;
+        // Use LOGICAL dimensions (not buffer dimensions which are DPR-scaled)
+        const canvasWidth = this.width;
+        const canvasHeight = this.height;
         
         // Get viewport dimensions
         const viewportRect = this.viewportEl.getBoundingClientRect();
@@ -315,26 +331,25 @@ export class Canvas extends BaseComponent {
         this._boundHandlers.mousedownPan = (e) => this._handleMousedownPan(e);
         this._boundHandlers.mousemovePan = (e) => this._handleMousemovePan(e);
         this._boundHandlers.mouseupPan = (e) => this._handleMouseupPan(e);
-        this._boundHandlers.dblclick = () => this.resetTransform();
         this._boundHandlers.keydown = (e) => this._handleKeydown(e);
         
-        // Wheel for zoom
-        this.canvasEl.addEventListener('wheel', this._boundHandlers.wheelZoom, { passive: false });
+        // Attach to viewport (container) so events work on empty space too
+        const target = this.viewportEl || this.canvasEl;
         
-        // Pan with drag
-        this.canvasEl.addEventListener('mousedown', this._boundHandlers.mousedownPan);
+        // Wheel for zoom
+        target.addEventListener('wheel', this._boundHandlers.wheelZoom, { passive: false });
+        
+        // Pan with drag - start on viewport, move/up on document
+        target.addEventListener('mousedown', this._boundHandlers.mousedownPan);
         document.addEventListener('mousemove', this._boundHandlers.mousemovePan);
         document.addEventListener('mouseup', this._boundHandlers.mouseupPan);
         
-        // Double-click to reset
-        this.canvasEl.addEventListener('dblclick', this._boundHandlers.dblclick);
-        
-        // Keyboard shortcuts
+        // Keyboard shortcuts (global, checks hover)
         document.addEventListener('keydown', this._boundHandlers.keydown);
         
-        // Set cursor
+        // Set cursor on viewport
         if (this.enablePan) {
-            this.canvasEl.style.cursor = 'grab';
+            target.style.cursor = 'grab';
         }
     }
     
@@ -358,7 +373,8 @@ export class Canvas extends BaseComponent {
         this.transform.isDragging = true;
         this.transform.startX = e.clientX - this.transform.x;
         this.transform.startY = e.clientY - this.transform.y;
-        this.canvasEl.style.cursor = 'grabbing';
+        const target = this.viewportEl || this.canvasEl;
+        target.style.cursor = 'grabbing';
     }
     
     _handleMousemovePan(e) {
@@ -372,12 +388,14 @@ export class Canvas extends BaseComponent {
     _handleMouseupPan() {
         if (this.transform.isDragging) {
             this.transform.isDragging = false;
-            this.canvasEl.style.cursor = this.enablePan ? 'grab' : 'default';
+            const target = this.viewportEl || this.canvasEl;
+            target.style.cursor = this.enablePan ? 'grab' : 'default';
         }
     }
     
     _handleKeydown(e) {
-        if (!this.canvasEl.matches(':hover')) return;
+        const target = this.viewportEl || this.canvasEl;
+        if (!target.matches(':hover')) return;
         
         if (e.key === '+' || e.key === '=') {
             e.preventDefault();
@@ -603,13 +621,17 @@ export class Canvas extends BaseComponent {
     }
     
     /**
-     * Clear canvas - simple since context is always at identity
+     * Clear canvas - uses logical dimensions (context is DPR-scaled)
      */
     clear() {
         if (!this.ctx) return;
         
         if (this.contextType === '2d') {
+            // Save, reset, clear at full buffer size, restore
+            this.ctx.save();
+            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
             this.ctx.clearRect(0, 0, this.canvasEl.width, this.canvasEl.height);
+            this.ctx.restore();
         } else {
             this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
         }

@@ -182,27 +182,18 @@ canvasHeight = round(heightInches × 300)
 ```
 
 ### Grid STL
-3D printable files, one per filament-layer combination.
+3D printable files, one per filament colour (all layers combined).
 
-**Geometry:**
+**Layer Structure:**
 ```
-For each tile at (row, col):
-  x = col × (tileSize + gap) + perimeterMargin
-  y = row × (tileSize + gap) + perimeterMargin
-  z = layerIndex × layerHeight
-  
-  Create rectangular prism:
-    vertices = [
-      (x, y, z),
-      (x+tileSize, y, z),
-      (x+tileSize, y+tileSize, z),
-      (x, y+tileSize, z),
-      (x, y, z+layerHeight),
-      (x+tileSize, y, z+layerHeight),
-      (x+tileSize, y+tileSize, z+layerHeight),
-      (x, y+tileSize, z+layerHeight)
-    ]
+Total layers = baseLayers + sequenceLayers + topLayers
 ```
+
+**Non-clipping Geometry:**
+- Tiles rendered as individual boxes (prevents merge across gaps)
+- Horizontal gaps: Full-width strips between rows
+- Vertical gaps: Segmented to avoid horizontal gap overlap
+- Perimeter: Four border strips
 
 ### Grid CSV
 Sequence reference for scan alignment.
@@ -215,15 +206,13 @@ Sequence,Layer_0,Layer_1,Layer_2,Layer_3
 ```
 
 ### Complete Package (ZIP)
-Contains:
-- `grid-layout.json`: Grid metadata + settings
-- `sequences.json`: Full sequence definitions
-- `sequences.csv`: Human-readable table
-- `README.md`: Usage instructions
-- `config.json`: All tool settings
-- `manifest.json`: File inventory
-- `stl/`: STL files per layer/color
-- `visuals/`: PNG renders
+Contents determined by Export Options toggle:
+- `grid-layout.json`: Grid metadata + settings (always included)
+- `README.txt`: Usage instructions (always included)
+- `stl/`: STL files per filament colour (if STL export enabled)
+- `images/`: PNG renders (if Layer Visuals enabled)
+  - `grid-combined.png`: Combined view at 300 DPI
+  - `grid-layer-N.png`: Per-layer colour views
 
 **Filename format:**
 ```
@@ -264,7 +253,15 @@ Example: `cal-4c4L-10x10-10mm-g1mm-base2top0-layercount-20260114.zip`
 - Reduce total layers
 - Reduce color count
 
+## Known Fixes (v2.1.0)
+
+- Filament selection dropdowns (Base/Top/Gap) update dynamically on picker change
+- Sort methods correctly map dropdown values to algorithm functions
+- Complete Package ZIP includes STLs and images per export options
+- STL geometry uses non-clipping box generation for tiles and gaps
+- Project import correctly restores UI state including filament colours
+
 ---
 
-**Next Step:** Print the grid and move to SCAN tab to analyze actual colors.
+**Next Step:** Print the grid and move to SCAN tab to analyse actual colours.
 

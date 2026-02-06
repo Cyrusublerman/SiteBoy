@@ -140,5 +140,20 @@ export class FileInput extends BaseComponent {
         this.files = null;
         this._updateFilename();
     }
+    
+    /**
+     * Set the displayed filename (for programmatic updates like imports)
+     */
+    setFilename(name) {
+        if (!this.filenameEl) return;
+        
+        if (name) {
+            this.filenameEl.textContent = name;
+            this.filenameEl.style.opacity = '1';
+        } else {
+            this.filenameEl.textContent = 'No file selected';
+            this.filenameEl.style.opacity = '0.7';
+        }
+    }
 }
 

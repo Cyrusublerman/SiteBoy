@@ -18,16 +18,19 @@ const ToolsSection = {
     navigationCallbacks: null,
     
     // Hierarchical page list for navigation with subsections
+    // NOTE: #tools/generators is a SINGLE page with internal script switching via toolbar
     pages: [
         '#tools',
-        // Utilities subsection (no index page, just tools)
+        // Generators - single unified page (script selection via internal dropdown)
+        '#tools/generators',
+        // Utilities subsection
         '#tools/utilities/tool-test',
         '#tools/utilities/algorithms-test-lab',
         '#tools/utilities/font-analysis',
         '#tools/utilities/polygon-calculator',
         '#tools/utilities/about-you',
         '#tools/utilities/media-manager',
-        // Processors subsection (no index page, just tools)
+        // Processors subsection
         '#tools/processors/colour-quantizer',
         '#tools/processors/pixel-tiler',
         '#tools/processors/image23d',
@@ -35,23 +38,8 @@ const ToolsSection = {
         '#tools/processors/smart-halftone',
         '#tools/processors/topographic-dot-halftone',
         '#tools/processors/p5-to-video',
-        // Generators subsection (no index page, just tools)
-        '#tools/generators/clock',
-        '#tools/generators/circles',
-        '#tools/generators/torus',
-        '#tools/generators/harmonics',
-        '#tools/generators/lissajous',
-        '#tools/generators/squares',
-        '#tools/generators/cymatics',
-        '#tools/generators/wave-interference',
-        '#tools/generators/generative-pattern',
-        '#tools/generators/unified-pattern',
-        '#tools/generators/moire-generator',
-        '#tools/generators/interference-figure',
-        '#tools/generators/ribbon-breeze',
-        '#tools/generators/tile-mosaic',
-        '#tools/generators/wave-equation-synth',
-        '#tools/generators/defecated',
+        // Fabrication
+        '#tools/fabrication/multifilament-print',
     ],
     
     /**
@@ -68,8 +56,13 @@ const ToolsSection = {
         this.navigationCallbacks = callbacks;
         this.cleanup();
         
-        // Setup unified navigation (same code for all sections)
-        window.NavigationController.setupNavigation('tools', subsection, this.pages, this.navigationCallbacks);
+        // Setup unified navigation
+        window.NavigationController.setupNavigation(
+            'tools', 
+            subsection, 
+            this.pages, 
+            this.navigationCallbacks
+        );
         
         if (!subsection) {
             this.renderToolsIndex();
@@ -146,6 +139,18 @@ const ToolsSection = {
         return [
             {
                 title: 'GENERATIVE ART',
+                description: 'Unified generative art system',
+                articles: [
+                    { 
+                        id: 'generators',
+                        title: 'Generator Studio', 
+                        slug: 'generators', 
+                        description: 'Unified interface with toolbar for all generative art scripts' 
+                    },
+                ]
+            },
+            {
+                title: 'LEGACY GENERATORS',
                 description: 'generative-art',
                 articles: [
                     {
@@ -563,6 +568,9 @@ const ToolsSection = {
      * Render tool using lazy loading via ES module dynamic imports
      */
     async renderLazyTool(toolId) {
+        // Strip query parameters from toolId (they're parsed from hash)
+        const cleanToolId = toolId.split('?')[0];
+        
         // Map tool IDs to their ES module imports
         const toolImports = {
             // ═══════════════════════════════════════════════════════════════════
@@ -571,7 +579,12 @@ const ToolsSection = {
             'tool-test': () => import('../tools/core/tool-test-ui.js'),
 
             // ═══════════════════════════════════════════════════════════════════
-            // GENERATORS - Generative art tools
+            // GENERATORS - Unified generative art system
+            // ═══════════════════════════════════════════════════════════════════
+            'generators': () => import('../tools/generators/index.js'),
+
+            // ═══════════════════════════════════════════════════════════════════
+            // GENERATORS (LEGACY) - Standalone generator tools
             // ═══════════════════════════════════════════════════════════════════
             'circles': () => import('../tools/generators/circles-tool.js'),
             'torus': () => import('../tools/generators/torus-tool.js'),
@@ -616,20 +629,84 @@ const ToolsSection = {
             'media-manager': () => import('../tools/utilities/media-manager.js')
         };
 
-        const importFn = toolImports[toolId];
+        // Special handling for unified generators system
+        // Generators is a SINGLE page - toolbar handles script selection
+        if (cleanToolId === 'generators') {
+            window.debugLog('TOOLS', '🎨 Loading unified generators system...');
+            
+            // Get initial script ID from URL query parameter (optional)
+            const fullHash = window.location.hash;
+            let scriptId = null;
+            
+            // Check for script in URL query params
+            const urlParams = new URLSearchParams(window.location.search);
+            scriptId = urlParams.get('script');
+            
+            // Also check hash-based query params (e.g., #tools/generators?script=circles)
+            if (!scriptId && fullHash.includes('?')) {
+                const queryString = fullHash.split('?')[1];
+                const hashParams = new URLSearchParams(queryString);
+                scriptId = hashParams.get('script');
+            }
+            
+            // Default to 'harmonics' if no script specified
+            // Toolbar allows switching between generators
+            if (!scriptId) {
+                scriptId = 'harmonics';
+                window.debugLog('TOOLS', '🎨 No script specified, defaulting to harmonics');
+            }
+            
+            window.debugLog('TOOLS', `🎨 Loading generator: ${scriptId}`);
+            
+            // Verify ComponentLibrary is available
+            if (!window.ComponentLibrary) {
+                console.error('❌ ComponentLibrary not available on window');
+                this.currentContainer.innerHTML = '<div style="padding: 20px; color: red;">ComponentLibrary not loaded</div>';
+                return;
+            }
+            
+            // Load GenerativeToolHost
+            const { GenerativeToolHost } = await import('../tools/generators/core/generative-tool-host.js');
+            
+            // Clear loading indicator
+            this.currentContainer.innerHTML = '';
+            
+            // Add tool-viewport class
+            const contentContainer = this.currentContainer.closest('.content-container') || 
+                                     (this.currentContainer.classList?.contains('content-container') ? this.currentContainer : null);
+            if (contentContainer) {
+                contentContainer.classList.add('tool-viewport');
+            }
+            
+            // Create host with initial script
+            // Toolbar allows switching to other generators without navigation
+            const host = new GenerativeToolHost(this.currentContainer, scriptId, {
+                ComponentLibrary: window.ComponentLibrary,
+                MF: LayoutCalculator,
+                Resize: window.ResizeManager
+            });
+            
+            this.currentTool = host;
+            this.componentInstances.push(host);
+            
+            window.debugLog('TOOLS', `✅ GenerativeToolHost loaded for script: ${scriptId}`);
+            return;
+        }
+        
+        const importFn = toolImports[cleanToolId];
         if (!importFn) {
-            throw new Error(`Unknown tool: ${toolId}`);
+            throw new Error(`Unknown tool: ${cleanToolId}`);
         }
 
         // Load the tool module
-        window.debugLog('TOOLS', `🔄 Importing tool module for ${toolId}...`);
+        window.debugLog('TOOLS', `🔄 Importing tool module for ${cleanToolId}...`);
         const module = await importFn();
-        window.debugLog('TOOLS', `✅ Module loaded for ${toolId}, finding class...`);
+        window.debugLog('TOOLS', `✅ Module loaded for ${cleanToolId}, finding class...`);
         const ToolClass = module.default || Object.values(module).find(cls => typeof cls === 'function' && cls.name.endsWith('Tool'));
         window.debugLog('TOOLS', `🎯 Found ToolClass: ${ToolClass?.name || 'none'}`);
 
         if (!ToolClass) {
-            throw new Error(`Could not find tool class in module for ${toolId}`);
+            throw new Error(`Could not find tool class in module for ${cleanToolId}`);
         }
 
         // Clear loading indicator

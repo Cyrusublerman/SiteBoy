@@ -6,5 +6,6 @@ export { ToolTabs } from './ToolTabs.js';
 export { CanvasTabs } from './CanvasTabs.js';
 export { CanvasModeTabs } from './CanvasModeTabs.js';
 export { CategoryTabsBar } from './CategoryTabsBar.js';
+export { GeneratorToolbar } from './GeneratorToolbar.js';
 export { SeedInput } from './SeedInput.js';
 export { NavigationDropdown } from './NavigationDropdown.js';

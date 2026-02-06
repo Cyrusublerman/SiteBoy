@@ -93,6 +93,7 @@ import { MasonryGallery } from './masonry-gallery.js';
 
 // Import output components
 import { AnimationExport } from './components/output/AnimationExport.js';
+import { IframeSandbox } from './components/output/IframeSandbox.js';
 
 // Import tool components
 import {
@@ -103,6 +104,7 @@ import {
     CanvasTabs,
     CanvasModeTabs,
     CategoryTabsBar,
+    GeneratorToolbar,
     SeedInput,
     NavigationDropdown
 } from './components/tool/index.js';
@@ -242,6 +244,7 @@ const ComponentLibrary = {
             'canvas-tabs': CanvasTabs,
             'canvas-mode-tabs': CanvasModeTabs,
             'category-tabs-bar': CategoryTabsBar,
+            'generator-toolbar': GeneratorToolbar,
             'seed-input': SeedInput,
             'navigation-dropdown': NavigationDropdown,
             
@@ -256,6 +259,7 @@ const ComponentLibrary = {
             'canvas': Canvas,
             'imageviewport': ImageViewport,
             'image-viewport': ImageViewport,
+            'iframe-sandbox': IframeSandbox,
             'palettepreview': PalettePreview,
             'palette-preview': PalettePreview,
             'svg': SVG,
@@ -375,6 +379,7 @@ ComponentLibrary.AnimationExport = AnimationExport;
 ComponentLibrary.Text = Text;
 ComponentLibrary.Canvas = Canvas;
 ComponentLibrary.ImageViewport = ImageViewport;
+ComponentLibrary.IframeSandbox = IframeSandbox;
 ComponentLibrary.PalettePreview = PalettePreview;
 ComponentLibrary.SVG = SVG;
 ComponentLibrary.Media = Media;
@@ -396,6 +401,7 @@ ComponentLibrary.ToolTabs = ToolTabs;
 ComponentLibrary.CanvasTabs = CanvasTabs;
 ComponentLibrary.CanvasModeTabs = CanvasModeTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
+ComponentLibrary.GeneratorToolbar = GeneratorToolbar;
 ComponentLibrary.SeedInput = SeedInput;
 ComponentLibrary.NavigationDropdown = NavigationDropdown;
 
@@ -497,6 +503,7 @@ export {
     CanvasTabs,
     CanvasModeTabs,
     CategoryTabsBar,
+    GeneratorToolbar,
     SeedInput,
     NavigationDropdown,
 

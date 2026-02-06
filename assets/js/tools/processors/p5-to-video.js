@@ -10,14 +10,24 @@
  * 
  * Uses CCapture.js for frame-accurate capture (records at exact FPS regardless of render speed)
  * 
- * @version 1.2.0
+ * ARCHITECTURE EXCEPTION (Approved):
+ * - Uses IframeSandbox for security isolation of untrusted user code
+ * - CCapture.js for P5-specific frame hijacking
+ * - Cannot use AnimationExport (incompatible with iframe execution model)
+ * 
+ * @version 2.0.0 - SiteBoy Architecture Compliance
  */
 
+import { BaseComponent } from '../../shared/foundation.js';
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
+import { downloadBlob } from '../../shared/utils/download.js';
+import { P5Canvas } from '../../shared/p5-integration.js';
 
-export class P5ToVideoTool {
+export class P5ToVideoTool extends BaseComponent {
     constructor(container, deps = {}) {
+        super({ componentType: 'p5-to-video' }, deps);
+        
         this.container = container;
         this.deps = {
             ComponentLibrary: ComponentLibrary,
@@ -28,33 +38,32 @@ export class P5ToVideoTool {
         this.p5Code = this.getDefaultCode();
         this.isRecording = false;
         this.isProcessing = false;
-        this.iframe = null;
         this.ccaptureLoaded = false;
+        
+        // Components
+        this.tool = null;
+        this.previewFrame = null;
+        this.recordingFrame = null;
+        this.componentInstances = [];  // Initialize component tracking array
+        
+        // Message handler tracking (for cleanup)
+        this.messageHandler = null;
         
         this.render();
     }
     
     getDefaultCode() {
         return `function setup() {
-  createCanvas(500, 500);
-  frameRate(30);
+  createCanvas(256, 256);
 }
 
 function draw() {
-  background(20);
+  background(220);
   
-  // Animation
-  let t = frameCount * 0.05;
-  translate(width/2, height/2);
-  rotate(t);
-  
-  noStroke();
-  fill(255, 100, 100);
-  rectMode(CENTER);
-  rect(0, 0, 150, 150);
-  
-  fill(255);
-  ellipse(100, 0, 50);
+  fill(0);
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  text('Input your code', width/2, height/2);
 }`;
     }
     
@@ -64,15 +73,25 @@ function draw() {
             sidebar: [
                 ['CODE', [
                     ['Code Editor', [
-                        ['text', 'P5.js Code', '', {
+                        ['text', '', '', {
                             key: 'p5Code',
                             multiline: true,
-                            placeholder: 'Paste your P5.js code here...'
+                            placeholder: 'Paste your P5.js code here...',
+                            rows: 15
                         }]
                     ]],
                     ['Preview Controls', [
                         ['button', '▶ Run Preview', null, { key: 'btnRun' }],
                         ['button', '■ Stop Preview', null, { key: 'btnStop' }]
+                    ]]
+                ]],
+                ['CANVAS', [
+                    ['Display Mode', [
+                        ['dropdown', 'Mode', [
+                            { value: 'fit', label: 'Fit' },
+                            { value: 'fill', label: 'Fill' },
+                            { value: 'actual', label: 'Actual' }
+                        ], { key: 'displayMode', value: 'fit' }]
                     ]]
                 ]],
                 ['EXPORT', [
@@ -96,12 +115,12 @@ function draw() {
                 ]]
             ],
             canvas: {
+                mode: 'none',  // Tool manages canvas area with IframeSandbox
                 width: 500,
                 height: 500
             },
             onInit: (values) => this._onInit(values),
-            onUpdate: (key, value, values) => this._onUpdate(key, value, values),
-            onDraw: (ctx, canvas, values) => this._onDraw(ctx, canvas, values)
+            onUpdate: (key, value, values) => this._onUpdate(key, value, values)
         }, this.deps);
         
         this.tool = tool;
@@ -110,52 +129,21 @@ function draw() {
         // Set default code after initialization
         this.tool.setValue('p5Code', this.p5Code);
         
-        // Style the textarea for code editing
-        this.styleCodeTextarea();
-        
         // Load external libraries
         this.loadExternalLibraries();
-    }
-    
-    styleCodeTextarea() {
-        // Find the textarea and style it for code editing
-        const codeComponent = this.tool.getComponent('p5Code');
-        if (codeComponent && codeComponent.element) {
-            const textarea = codeComponent.element.querySelector('textarea') || codeComponent.element;
-            if (textarea && textarea.tagName === 'TEXTAREA') {
-                textarea.style.fontFamily = 'monospace';
-                textarea.style.fontSize = '12px';
-                textarea.style.minHeight = '300px';
-                textarea.style.resize = 'vertical';
-                textarea.style.tabSize = '2';
-                textarea.style.whiteSpace = 'pre';
-                
-                // Handle tab key for indentation
-                textarea.addEventListener('keydown', (e) => {
-                    if (e.key === 'Tab') {
-                        e.preventDefault();
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        const value = textarea.value;
-                        
-                        textarea.value = value.substring(0, start) + '  ' + value.substring(end);
-                        textarea.selectionStart = textarea.selectionEnd = start + 2;
-                    }
-                });
-            }
-        }
+        
+        return this.element;
     }
     
     async loadExternalLibraries() {
-        // Load P5.js
-        if (!window.p5) {
-            await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js');
-        }
+        // Load P5.js using shared utility
+        await P5Canvas.ensureP5Loaded();
         
-        // Load CCapture.js (includes gif.js, whammy.js, download.js)
+        // Load CCapture.js (P5-specific, not in shared lib)
         if (!window.CCapture) {
             await this.loadScript('https://unpkg.com/ccapture.js@1.1.0/build/CCapture.all.min.js');
             this.ccaptureLoaded = true;
+            window.debugLog('INIT', 'CCapture.js loaded');
         }
     }
     
@@ -170,13 +158,23 @@ function draw() {
     }
     
     _onInit(values) {
+        window.debugLog('TOOLS', 'P5ToVideo: _onInit called');
+        
         // Wire buttons
         const btnRun = this.tool.getComponent('btnRun');
         const btnStop = this.tool.getComponent('btnStop');
         const btnRecord = this.tool.getComponent('btnRecord');
         
+        window.debugLog('TOOLS', 'P5ToVideo: btnRun =', btnRun);
+        window.debugLog('TOOLS', 'P5ToVideo: btnRun.element =', btnRun?.element);
+        
         if (btnRun && btnRun.element) {
-            btnRun.element.addEventListener('click', () => this.runPreview());
+            btnRun.element.addEventListener('click', () => {
+                window.debugLog('TOOLS', 'P5ToVideo: Run button clicked');
+                this.runPreview();
+            });
+        } else {
+            console.error('P5ToVideo: Run button not found or has no element');
         }
         
         if (btnStop && btnStop.element) {
@@ -188,7 +186,10 @@ function draw() {
         }
         
         // Initial preview
-        setTimeout(() => this.runPreview(), 500);
+        setTimeout(() => {
+            window.debugLog('TOOLS', 'P5ToVideo: Running initial preview');
+            this.runPreview();
+        }, 500);
     }
     
     updateStatus(text) {
@@ -204,25 +205,28 @@ function draw() {
     _onUpdate(key, value, values) {
         if (key === 'p5Code') {
             this.p5Code = value;
+        } else if (key === 'displayMode') {
+            // Value is already the mode string from dropdown
+            const displayMode = value || 'fit';
+            
+            // Update preview frame if it exists
+            if (this.previewFrame && this.previewFrame.setDisplayMode) {
+                this.previewFrame.setDisplayMode(displayMode);
+            }
         }
     }
     
-    _onDraw(ctx, canvas, values) {
-        // Canvas is replaced by iframe, so we just show status
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = '14px monospace';
-        ctx.textAlign = 'center';
-        
-        if (this.isProcessing) {
-            ctx.fillText('Processing video...', canvas.width/2, canvas.height/2);
-        } else if (this.isRecording) {
-            ctx.fillText('Recording...', canvas.width/2, canvas.height/2);
-        } else {
-            ctx.fillText('Preview will appear here', canvas.width/2, canvas.height/2);
+    parseCanvasDimensions(code) {
+        // Try to extract canvas dimensions from createCanvas() call
+        const match = code.match(/createCanvas\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
+        if (match) {
+            return {
+                width: parseInt(match[1], 10),
+                height: parseInt(match[2], 10)
+            };
         }
+        // Default to 500x500 if not found
+        return { width: 500, height: 500 };
     }
     
     runPreview() {
@@ -230,59 +234,66 @@ function draw() {
         const code = values.p5Code || this.p5Code;
         const fps = values.fps || 30;
         
+        window.debugLog('TOOLS', 'P5ToVideo: Run preview clicked');
         this.updateStatus('Running preview...');
         
-        // Clear existing iframe
-        if (this.iframe) {
-            this.iframe.remove();
-            this.iframe = null;
+        // Clean up existing preview
+        if (this.previewFrame) {
+            this.previewFrame.destroy();
+            this.previewFrame = null;
         }
         
-        // Create new iframe
+        // Get canvas area
         const canvasArea = this.tool.canvasArea;
-        if (!canvasArea) return;
+        if (!canvasArea) {
+            console.error('P5ToVideo: Canvas area not found');
+            return;
+        }
         
-        // Clear canvas area
-        const canvas = this.tool.canvas;
-        if (canvas) canvas.style.display = 'none';
+        // Create IframeSandbox component
+        const { IframeSandbox } = this.deps.ComponentLibrary;
+        if (!IframeSandbox) {
+            console.error('P5ToVideo: IframeSandbox component not available in ComponentLibrary');
+            console.error('Available components:', Object.keys(this.deps.ComponentLibrary));
+            this.updateStatus('Error: IframeSandbox not loaded');
+            return;
+        }
         
-        // Create iframe
-        this.iframe = document.createElement('iframe');
-        this.iframe.style.cssText = `
-            width: 500px;
-            height: 500px;
-            border: 1px solid var(--c-border);
-            background: #FFFFFF;
-        `;
-        this.iframe.sandbox = 'allow-scripts allow-same-origin';
+        window.debugLog('TOOLS', 'P5ToVideo: Creating IframeSandbox');
         
-        canvasArea.appendChild(this.iframe);
+        // Parse canvas dimensions from user code
+        const dimensions = this.parseCanvasDimensions(code);
+        window.debugLog('TOOLS', `P5ToVideo: Detected canvas size ${dimensions.width}x${dimensions.height}`);
+        
+        this.previewFrame = new IframeSandbox({
+            width: dimensions.width,
+            height: dimensions.height,
+            className: 'iframe-sandbox iframe-sandbox--500',
+            sandbox: 'allow-scripts allow-same-origin',
+            displayMode: 'fit',  // Canvas.js feature: fit to viewport
+            enableZoom: true,    // Canvas.js feature: mouse wheel zoom
+            enablePan: true      // Canvas.js feature: drag to pan
+        }, this.deps);
+        
+        const frameElement = this.previewFrame.render();
+        canvasArea.appendChild(frameElement);
+        this.componentInstances.push(this.previewFrame);
+        
+        window.debugLog('TOOLS', 'P5ToVideo: Writing sketch to iframe');
         
         // Write sketch to iframe
-        const doc = this.iframe.contentWindow.document;
-        doc.open();
-        doc.write(this.generateIframeHTML(code, fps, 0, 'webm', 'preview'));
-        doc.close();
+        this.previewFrame.setContent(this.generateIframeHTML(code, fps, 0, 'webm', 'preview'));
         
         setTimeout(() => this.updateStatus('Preview running'), 500);
     }
     
     stopPreview() {
-        if (this.iframe) {
-            this.iframe.remove();
-            this.iframe = null;
-        }
-        
-        // Show canvas again
-        const canvas = this.tool.canvas;
-        if (canvas) {
-            canvas.style.display = 'block';
+        if (this.previewFrame) {
+            this.previewFrame.destroy();
+            this.previewFrame = null;
         }
         
         this.updateStatus('Preview stopped');
-        
-        // Redraw canvas
-        this.tool.draw();
     }
     
     startRecording() {
@@ -325,51 +336,52 @@ function draw() {
             btnRecord.element.dataset.origText = origText;
         }
         
-        // Clear existing iframe
-        if (this.iframe) {
-            this.iframe.remove();
-            this.iframe = null;
+        // Clean up existing frames
+        if (this.previewFrame) {
+            this.previewFrame.destroy();
+            this.previewFrame = null;
+        }
+        if (this.recordingFrame) {
+            this.recordingFrame.destroy();
+            this.recordingFrame = null;
         }
         
-        // Create new iframe for recording
+        // Get canvas area
         const canvasArea = this.tool.canvasArea;
         if (!canvasArea) return;
         
-        const canvas = this.tool.canvas;
-        if (canvas) canvas.style.display = 'none';
-        
-        this.iframe = document.createElement('iframe');
-        
-        // If silent recording, hide the iframe
-        if (silentRecording) {
-            this.iframe.style.cssText = `
-                width: 500px;
-                height: 500px;
-                position: absolute;
-                left: -9999px;
-                visibility: hidden;
-            `;
-        } else {
-            this.iframe.style.cssText = `
-                width: 500px;
-                height: 500px;
-                border: 1px solid var(--c-border);
-                background: #FFFFFF;
-            `;
+        // Create IframeSandbox for recording
+        const { IframeSandbox } = this.deps.ComponentLibrary;
+        if (!IframeSandbox) {
+            console.error('IframeSandbox component not available');
+            return;
         }
         
-        this.iframe.sandbox = 'allow-scripts allow-same-origin allow-downloads';
+        // Build class name based on silent recording
+        const className = silentRecording 
+            ? 'iframe-sandbox iframe-sandbox--500 iframe-sandbox--hidden'
+            : 'iframe-sandbox iframe-sandbox--500';
         
-        canvasArea.appendChild(this.iframe);
+        // Parse canvas dimensions from user code
+        const dimensions = this.parseCanvasDimensions(code);
         
-        // Listen for completion message
-        window.addEventListener('message', (e) => this.handleMessage(e));
+        this.recordingFrame = new IframeSandbox({
+            width: dimensions.width,
+            height: dimensions.height,
+            className: className,
+            sandbox: 'allow-scripts allow-same-origin allow-downloads',
+            onMessage: (e) => this.handleMessage(e),
+            displayMode: silentRecording ? 'auto' : 'fit',
+            enableZoom: !silentRecording,  // Only enable if visible
+            enablePan: !silentRecording
+        }, this.deps);
+        
+        const frameElement = this.recordingFrame.render();
+        canvasArea.appendChild(frameElement);
+        this.componentInstances.push(this.recordingFrame);
         
         // Write recording sketch to iframe
-        const doc = this.iframe.contentWindow.document;
-        doc.open();
-        doc.write(this.generateIframeHTML(code, fps, frames, format, 'record'));
-        doc.close();
+        this.recordingFrame.setContent(this.generateIframeHTML(code, fps, frames, format, 'record'));
     }
     
     handleMessage(e) {
@@ -381,16 +393,10 @@ function draw() {
             
             this.updateStatus('Recording complete, preparing download...');
             
-            // Clean up iframe
-            if (this.iframe) {
-                this.iframe.remove();
-                this.iframe = null;
-            }
-            
-            // Show canvas again
-            const canvas = this.tool.canvas;
-            if (canvas) {
-                canvas.style.display = 'block';
+            // Clean up recording frame
+            if (this.recordingFrame) {
+                this.recordingFrame.destroy();
+                this.recordingFrame = null;
             }
             
             // Update button states
@@ -408,22 +414,15 @@ function draw() {
                 'png': 'tar'  // CCapture creates tar for frame sequences
             };
             const ext = extensions[format] || 'webm';
-            this.downloadBlob(blob, `animation.${ext}`);
+            
+            // Use shared download utility
+            downloadBlob(blob, `animation.${ext}`);
+            
             this.updateStatus('Download started!');
             setTimeout(() => {
                 this.updateStatus('Ready');
-                this.tool.draw();
             }, 2000);
         }
-    }
-    
-    downloadBlob(blob, filename) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
     }
     
     generateIframeHTML(userCode, fps, limit, format, mode) {
@@ -442,7 +441,7 @@ function draw() {
       justify-content: center; 
       align-items: center; 
       height: 100vh; 
-      background: #EEEEEE; 
+      background: #eeeeee; 
     }
   </style>
 </head>
@@ -517,19 +516,28 @@ function draw() {
     }
     
     destroy() {
-        if (this.iframe) {
-            this.iframe.remove();
-            this.iframe = null;
+        // Clean up preview frame
+        if (this.previewFrame) {
+            this.previewFrame.destroy();
+            this.previewFrame = null;
         }
         
+        // Clean up recording frame
+        if (this.recordingFrame) {
+            this.recordingFrame.destroy();
+            this.recordingFrame = null;
+        }
+        
+        // Clean up tool
         if (this.tool) {
             this.tool.destroy();
             this.tool = null;
         }
+        
+        super.destroy();
     }
 }
 
 export default P5ToVideoTool;
 
-console.log('✅ P5ToVideoTool loaded (ES Module)');
-
+window.debugLog('INIT', '✅ P5ToVideoTool loaded (ES Module)');

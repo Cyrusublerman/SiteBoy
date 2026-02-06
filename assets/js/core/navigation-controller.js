@@ -41,7 +41,23 @@ const NavigationController = {
             // Sub-page - show subheader with dropdown and nav
             if (window.Subheader) {
                 window.Subheader.show();
-                window.Subheader.updateTitle(currentPage.toUpperCase());
+                
+                // Format title for display (handle query parameters)
+                let displayTitle = currentPage.toUpperCase();
+                if (currentPage.includes('?')) {
+                    const [base, query] = currentPage.split('?');
+                    const params = new URLSearchParams(query);
+                    const scriptParam = params.get('script');
+                    if (scriptParam) {
+                        const scriptName = scriptParam
+                            .split('-')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                        displayTitle = `GENERATOR: ${scriptName.toUpperCase()}`;
+                    }
+                }
+                
+                window.Subheader.updateTitle(displayTitle);
                 
                 // Build hierarchical dropdown items from pages array
                 const dropdownItems = this.buildHierarchicalItems(section, pages, currentPath);
@@ -66,8 +82,9 @@ const NavigationController = {
                     .filter(page => {
                         const pathParts = page.replace('#', '').split('/');
                         // Keep only: section index (#tools - 1 part) or tool pages (#tools/utilities/tool-test - 3 parts)
-                        // Remove: subsection index pages (#tools/utilities - 2 parts)
-                        return pathParts.length === 1 || pathParts.length >= 3;
+                        // Also keep: query param pages (#tools/generators?script=x - 2 parts with ?)
+                        // Remove: subsection index pages (#tools/utilities - 2 parts without ?)
+                        return pathParts.length === 1 || pathParts.length >= 3 || page.includes('?');
                     })
                     .map(page => {
                         const pathParts = page.replace('#', '').split('/');
@@ -75,10 +92,26 @@ const NavigationController = {
                         const sectionName = pathParts[0];
                         const subsectionName = pathParts.slice(1).join('/');
                         
+                        // Extract title from query parameters if present
+                        let title = subsectionName.toUpperCase();
+                        if (subsectionName.includes('?')) {
+                            const [base, query] = subsectionName.split('?');
+                            const params = new URLSearchParams(query);
+                            const scriptParam = params.get('script');
+                            if (scriptParam) {
+                                // Convert kebab-case to Title Case
+                                const scriptName = scriptParam
+                                    .split('-')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(' ');
+                                title = `GENERATOR: ${scriptName.toUpperCase()}`;
+                            }
+                        }
+                        
                         return {
                             id: isIndex ? null : subsectionName,
                             path: page,
-                            title: isIndex ? `${sectionName.toUpperCase()} TOC` : subsectionName.toUpperCase(),
+                            title: isIndex ? `${sectionName.toUpperCase()} TOC` : title,
                             isTOC: isIndex
                         };
                     });
