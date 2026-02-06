@@ -291,8 +291,7 @@ export class MFPSourceActions {
             // SCAN tab
             toolBase.setValue('gridLoadStatus', `✅ Project loaded: ${gridSummary} grid (${sequences.length} tiles)`);
             
-            // QUANTIZE tab
-            toolBase.setValue('paletteStatus', `✅ Palette loaded: ${colours.length} colours from imported project`);
+            // NOTE: paletteStatus will be updated after palette is loaded/generated (below)
             
             // EXPORT tab
             toolBase.setValue('exportProjectStatus', `✅ Project loaded: ${gridSummary} grid ready for export`);
@@ -376,6 +375,12 @@ export class MFPSourceActions {
             const quantConfigFile = findFile('scans/quantization-config.json', 'quantization-config.json');
             const calibPaletteFile = findFile('scans/calibration-palette.json', 'calibration-palette.json');
             
+            console.log('📦 Palette file search:', {
+                quantConfigFile: !!quantConfigFile,
+                calibPaletteFile: !!calibPaletteFile,
+                hasGridData: !!this.state.gridData
+            });
+            
             if (quantConfigFile) {
                 try {
                     const quantText = await quantConfigFile.async('text');
@@ -423,14 +428,24 @@ export class MFPSourceActions {
             // If no palette was loaded, generate predicted one from grid data
             if (!paletteLoaded && this.state.gridData) {
                 this._generatePredictedQuantizationConfig(this.state.gridData);
+                paletteLoaded = true;
                 console.log('✅ Generated predicted quantization config from grid data');
             }
             
             // Update QUANTIZE tab status
+            console.log('📊 Palette status update:', {
+                paletteLoaded,
+                hasQuantConfig: !!this.state.quantizationConfig,
+                colorCount: this.state.quantizationConfig?.colorMap?.length
+            });
+            
             if (this.state.quantizationConfig) {
                 const colorCount = this.state.quantizationConfig.colorMap?.length || 0;
                 const type = this.state.quantizationConfig.type || 'loaded';
                 toolBase.setValue('paletteStatus', `✅ Palette ready: ${colorCount} colours (${type})`);
+                console.log(`✅ Set paletteStatus: Palette ready: ${colorCount} colours (${type})`);
+            } else {
+                console.warn('⚠️ No quantizationConfig after import!');
             }
             
             // Update status based on what was loaded
