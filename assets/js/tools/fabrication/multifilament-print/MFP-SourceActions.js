@@ -26,7 +26,10 @@ export class MFPSourceActions {
             toolBase.setValue('projectStatus', '⏳ Loading project...');
             
             // Read ZIP file
-            const JSZip = (await import('jszip')).default;
+            if (!window.AssetLoader || !window.AssetLoader.ensureJSZip) {
+                throw new Error('AssetLoader not available — JSZip cannot be loaded.');
+            }
+            const JSZip = await window.AssetLoader.ensureJSZip();
             const zip = new JSZip();
             const zipData = await zip.loadAsync(file);
             
@@ -251,6 +254,17 @@ export class MFPSourceActions {
                 if (quant.ditherAlgorithm) toolBase.setValue('ditherAlgorithm', quant.ditherAlgorithm);
                 if (quant.ditherStrength !== undefined) toolBase.setValue('ditherStrength', quant.ditherStrength);
                 if (quant.minDetail !== undefined) toolBase.setValue('minDetail', quant.minDetail);
+                // Optimisation controls
+                if (quant.analysisMode) toolBase.setValue('analysisMode', quant.analysisMode);
+                if (quant.colourVariance !== undefined) toolBase.setValue('colourVariance', quant.colourVariance);
+                if (quant.layerPreference) toolBase.setValue('layerPreference', quant.layerPreference);
+                if (quant.groupingWeight !== undefined) toolBase.setValue('groupingWeight', quant.groupingWeight);
+                // Simplification controls
+                if (quant.minimumClusterPx !== undefined)      toolBase.setValue('minimumClusterPx', quant.minimumClusterPx);
+                if (quant.smoothingMethod)                     toolBase.setValue('smoothingMethod', quant.smoothingMethod);
+                if (quant.paletteMergeThreshold !== undefined) toolBase.setValue('paletteMergeThreshold', quant.paletteMergeThreshold);
+                if (quant.perimAreaRatio !== undefined)        toolBase.setValue('perimAreaRatio', quant.perimAreaRatio);
+                if (quant.perimAreaMaxPx !== undefined)        toolBase.setValue('perimAreaMaxPx', quant.perimAreaMaxPx);
                 
                 // Restore image adjustment values
                 if (quant.imageAdjustments) {
@@ -267,11 +281,12 @@ export class MFPSourceActions {
                 }
             }
             
-            // EXPORT tab settings (ALL controls)
-            if (meta.exportSettings) {
-                const exp = meta.exportSettings;
-                if (exp.layerHeightExport !== undefined) toolBase.setValue('layerHeightExport', exp.layerHeightExport);
-                if (exp.canvasMode) toolBase.setValue('canvasMode', exp.canvasMode);
+            // OUTPUTS tab settings (ALL controls)
+            if (meta.outputsSettings) {
+                const out = meta.outputsSettings;
+                if (out.stlPrintWidth !== undefined) toolBase.setValue('stlPrintWidth', out.stlPrintWidth);
+                if (out.stlLayerHeight !== undefined) toolBase.setValue('stlLayerHeight', out.stlLayerHeight);
+                if (out.outputsCanvasView) toolBase.setValue('outputsCanvasView', out.outputsCanvasView);
             }
             
             toolBase.setValue('projectStatus', `✅ Loaded ${meta.rows}×${meta.cols} grid (${sequences.length} tiles) - All settings restored`);
@@ -458,7 +473,56 @@ export class MFPSourceActions {
             } else {
                 toolBase.setValue('exportScanStatus', 'ℹ️ No scan data in project (optional)');
             }
-            
+
+            // Load quantize tab assets: source image, quantized image, sequence map
+            const _loadImage = (blob) => {
+                const img = new Image();
+                return new Promise((res, rej) => {
+                    img.onload = () => res(img);
+                    img.onerror = rej;
+                    img.src = URL.createObjectURL(blob);
+                });
+            };
+
+            const sourceImgFile = findFile('quantize/source-image.png', 'source-image.png');
+            if (sourceImgFile) {
+                try {
+                    const blob = await sourceImgFile.async('blob');
+                    this.state.sourceImageElement = await _loadImage(blob);
+                    console.log(`✅ Source image restored: ${this.state.sourceImageElement.width}×${this.state.sourceImageElement.height}px`);
+                } catch (err) {
+                    console.warn('⚠️ Could not restore source image:', err);
+                }
+            }
+
+            const quantImgFile = findFile('quantize/quantized-image.png', 'quantized-image.png');
+            if (quantImgFile) {
+                try {
+                    const blob = await quantImgFile.async('blob');
+                    this.state.quantizedImageElement = await _loadImage(blob);
+                    toolBase.setValue('quantizeStatus', `✅ Quantised image restored from project (${this.state.quantizedImageElement.width}×${this.state.quantizedImageElement.height}px)`);
+                    console.log(`✅ Quantized image restored: ${this.state.quantizedImageElement.width}×${this.state.quantizedImageElement.height}px`);
+                } catch (err) {
+                    console.warn('⚠️ Could not restore quantized image:', err);
+                }
+            }
+
+            const seqMapFile = findFile('quantize/quantized-sequence-map.json', 'quantized-sequence-map.json');
+            if (seqMapFile) {
+                try {
+                    const data = JSON.parse(await seqMapFile.async('text'));
+                    this.state.quantizedSequenceMap = {
+                        width: data.width,
+                        height: data.height,
+                        map: new Uint16Array(data.map),
+                        palette: data.palette
+                    };
+                    console.log(`✅ Quantized sequence map restored: ${data.width}×${data.height}px, ${data.palette?.length || 0} palette entries`);
+                } catch (err) {
+                    console.warn('⚠️ Could not restore quantized sequence map:', err);
+                }
+            }
+
             toolBase.draw();
             
         } catch (err) {
@@ -1013,7 +1077,10 @@ export class MFPSourceActions {
         try {
             toolBase.setValue('exportStatus', '⏳ Building project ZIP...');
             
-            const JSZip = (await import('jszip')).default;
+            if (!window.AssetLoader || !window.AssetLoader.ensureJSZip) {
+                throw new Error('AssetLoader not available — JSZip cannot be loaded.');
+            }
+            const JSZip = await window.AssetLoader.ensureJSZip();
             const zip = new JSZip();
             const grid = this.state.gridData;
             
@@ -1075,13 +1142,25 @@ export class MFPSourceActions {
                     ditherAlgorithm: currentValues.ditherAlgorithm || 'Floyd-Steinberg',
                     ditherStrength: currentValues.ditherStrength ?? 1.0,
                     minDetail: currentValues.minDetail ?? 0.8,
+                    // Optimisation controls
+                    analysisMode: currentValues.analysisMode || 'Fast',
+                    colourVariance: currentValues.colourVariance ?? 0,
+                    layerPreference: currentValues.layerPreference || 'None',
+                    groupingWeight: currentValues.groupingWeight ?? 0.3,
+                    // Simplification controls
+                    minimumClusterPx: currentValues.minimumClusterPx ?? 0,
+                    smoothingMethod: currentValues.smoothingMethod || 'None',
+                    paletteMergeThreshold: currentValues.paletteMergeThreshold ?? 0,
+                    perimAreaRatio: currentValues.perimAreaRatio ?? 0,
+                    perimAreaMaxPx: currentValues.perimAreaMaxPx ?? 50,
                     // Image adjustment bundle values
                     imageAdjustments: this._getImageAdjustmentValues(toolBase)
                 },
-                // EXPORT tab settings (ALL controls)
-                exportSettings: {
-                    layerHeightExport: currentValues.layerHeightExport ?? 0.08,
-                    canvasMode: currentValues.canvasMode || 'Grid'
+                // OUTPUTS tab settings (ALL controls)
+                outputsSettings: {
+                    stlPrintWidth: currentValues.stlPrintWidth ?? 170,
+                    stlLayerHeight: currentValues.stlLayerHeight ?? 0.08,
+                    outputsCanvasView: currentValues.outputsCanvasView || 'Quantised Image'
                 },
                 palette: grid.colours.map(c => ({
                     name: c.n,
@@ -1304,6 +1383,52 @@ export class MFPSourceActions {
                 }
             }
             
+            // Save quantized image + source image + sequence map if available
+            if (this.state.quantizedImageElement) {
+                try {
+                    const qCanvas = document.createElement('canvas');
+                    qCanvas.width  = this.state.quantizedImageElement.naturalWidth || this.state.quantizedImageElement.width;
+                    qCanvas.height = this.state.quantizedImageElement.naturalHeight || this.state.quantizedImageElement.height;
+                    const qCtx = qCanvas.getContext('2d');
+                    qCtx.drawImage(this.state.quantizedImageElement, 0, 0);
+                    const qBlob = await new Promise(resolve => qCanvas.toBlob(resolve, 'image/png'));
+                    const quantizeFolder = zip.folder('quantize');
+                    quantizeFolder.file('quantized-image.png', qBlob);
+                    if (this.state.sourceImageElement) {
+                        const sCanvas = document.createElement('canvas');
+                        sCanvas.width  = this.state.sourceImageElement.naturalWidth || this.state.sourceImageElement.width;
+                        sCanvas.height = this.state.sourceImageElement.naturalHeight || this.state.sourceImageElement.height;
+                        sCanvas.getContext('2d').drawImage(this.state.sourceImageElement, 0, 0);
+                        const sBlob = await new Promise(resolve => sCanvas.toBlob(resolve, 'image/png'));
+                        quantizeFolder.file('source-image.png', sBlob);
+                    }
+                    // Save quantized sequence map (Uint16Array serialised as plain array)
+                    if (this.state.quantizedSequenceMap) {
+                        const { width, height, map, palette } = this.state.quantizedSequenceMap;
+                        quantizeFolder.file('quantized-sequence-map.json', JSON.stringify({
+                            width, height, map: Array.from(map), palette
+                        }));
+                        console.log('✅ Saved quantized-sequence-map.json to ZIP');
+                    }
+                    console.log('✅ Saved quantized images to ZIP');
+                } catch (qErr) {
+                    console.warn('⚠️ Could not save quantized image:', qErr);
+                }
+            }
+
+            // Save artwork STLs if generated
+            if (this.state.exportSTLData && this.state.exportSTLData.stls) {
+                try {
+                    const artworkFolder = zip.folder('artwork-stl');
+                    Object.entries(this.state.exportSTLData.stls).forEach(([filename, content]) => {
+                        artworkFolder.file(filename, content);
+                    });
+                    console.log(`✅ Saved ${Object.keys(this.state.exportSTLData.stls).length} artwork STL files to ZIP`);
+                } catch (astlErr) {
+                    console.warn('⚠️ Could not save artwork STLs:', astlErr);
+                }
+            }
+
             // Generate ZIP
             const zipBlob = await zip.generateAsync({ type: 'blob' });
             

@@ -33,7 +33,18 @@ const SCRIPT_IMPORTS = {
     // Pattern
     'generative-pattern': () => import('../scripts/pattern/generative-pattern.gen.js'),
     'tile-mosaic': () => import('../scripts/pattern/tile-mosaic.gen.js'),
-    
+    'golden-grid': () => import('../scripts/pattern/golden-grid.gen.js'),
+    'order-disorder': () => import('../scripts/pattern/order-disorder.gen.js'),
+    'animated-lines': () => import('../scripts/pattern/animated-lines.gen.js'),
+    'shape-array': () => import('../scripts/pattern/shape-array.gen.js'),
+
+    // Wave (p5)
+    'p5-wave-interference': () => import('../scripts/wave/p5-wave-interference.gen.js'),
+    'p5-wave-colour': () => import('../scripts/wave/p5-wave-colour.gen.js'),
+
+    // Physics (p5)
+    'fibonacci-balls': () => import('../scripts/physics/fibonacci-balls.gen.js'),
+
     // Other
     'circles': () => import('../scripts/other/circles.gen.js'),
     'squares': () => import('../scripts/other/squares.gen.js'),
@@ -42,6 +53,9 @@ const SCRIPT_IMPORTS = {
     'wave-equation-synth': () => import('../scripts/other/wave-equation-synth.gen.js'),
     'unified-pattern': () => import('../scripts/other/unified-pattern.gen.js'),
     'defecated': () => import('../scripts/other/defecated.gen.js'),
+    'clockwise': () => import('../scripts/other/clockwise.gen.js'),
+    'curtain-morph': () => import('../scripts/other/curtain-morph.gen.js'),
+    'quine': () => import('../scripts/other/quine.gen.js'),
 };
 
 /**
@@ -113,12 +127,20 @@ export const ScriptRegistry = {
     getByCategory() {
         return {
             'parametric': ['lissajous', 'harmonics', 'torus'],
-            'wave': ['wave-interference', 'cymatics', 'moire'],
-            'pattern': ['generative-pattern', 'tile-mosaic'],
+            'wave': [
+                'wave-interference', 'cymatics', 'moire',
+                'p5-wave-interference', 'p5-wave-colour'
+            ],
+            'pattern': [
+                'generative-pattern', 'tile-mosaic', 'golden-grid',
+                'order-disorder', 'animated-lines', 'shape-array'
+            ],
+            'physics': ['fibonacci-balls'],
             'other': [
                 'circles', 'squares', 'solar-system',
-                'interference-figure', 'wave-equation-synth', 
-                'unified-pattern', 'defecated'
+                'interference-figure', 'wave-equation-synth',
+                'unified-pattern', 'defecated',
+                'clockwise', 'curtain-morph', 'quine'
             ]
         };
     },

@@ -50,7 +50,10 @@ export class MFPScanActions {
         try {
             toolBase.setValue('gridLoadStatus', '⏳ Importing project ZIP...');
             
-            const JSZip = (await import('jszip')).default;
+            if (!window.AssetLoader || !window.AssetLoader.ensureJSZip) {
+                throw new Error('AssetLoader not available — JSZip cannot be loaded.');
+            }
+            const JSZip = await window.AssetLoader.ensureJSZip();
             const zip = await JSZip.loadAsync(file);
             
             // Find layout file

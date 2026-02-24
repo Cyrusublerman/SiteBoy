@@ -195,13 +195,27 @@ export class GenerativeToolHost extends BaseComponent {
         // Get default parameter values
         this.params = getDefaultParams(this.scriptConfig.parameters);
         
-        // Initialize phase animation state
+        // Initialize animation state for each animatable param.
+        // Each entry in animatableParams may be either a plain string (key)
+        // or an object: { key, label?, mode?, rate?, min?, max? }
+        //   mode: 'phase'     — linear phase increment, wraps at param range
+        //   mode: 'oscillate' — sinusoidal between min/max, period ~4s at speed=1
+        //   rate: multiplier applied on top of the global speed slider (default 1)
         this.phaseAnimationState = {};
         if (this.scriptConfig.animation?.animatableParams) {
-            for (const key of this.scriptConfig.animation.animatableParams) {
+            for (const entry of this.scriptConfig.animation.animatableParams) {
+                const cfg = typeof entry === 'string' ? { key: entry } : entry;
+                const key = cfg.key;
+                const paramDef = this._findParamDef(key);
                 this.phaseAnimationState[key] = {
-                    enabled: false,
-                    baseValue: this.params[key] || 0
+                    enabled:   false,
+                    baseValue: this.params[key] ?? 0,
+                    label:     cfg.label ?? this._deriveAnimLabel(key),
+                    mode:      cfg.mode  ?? 'phase',
+                    rate:      cfg.rate  ?? 1,
+                    // Explicit min/max wins; fall back to param definition; then ±2π
+                    min: cfg.min ?? paramDef?.min ?? -(Math.PI * 2),
+                    max: cfg.max ?? paramDef?.max ??  (Math.PI * 2),
                 };
             }
         }
@@ -593,26 +607,46 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Handle phase animation toggles
+     * Derive a short display label from a parameter key.
+     * e.g. phi_x1 → φx1,  wx1 → ωx1,  Ax2 → Ax2
+     */
+    _deriveAnimLabel(key) {
+        return key
+            .replace(/^phi_/, 'φ')
+            .replace(/^w([xy])/, 'ω$1')
+            .replace(/_/g, '');
+    }
+
+    /**
+     * Find a parameter's slider definition (carries min/max) by key.
+     * Walks the nested group → params structure in scriptConfig.parameters.
+     */
+    _findParamDef(key) {
+        for (const group of (this.scriptConfig.parameters || [])) {
+            for (const p of (group.params || [])) {
+                if (p.key === key) return p;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Handle phase animation toggles.
+     * selectedLabels is the list of label strings currently toggled on.
      */
     handlePhaseToggles(selectedLabels) {
         if (!this.scriptConfig.animation?.animatableParams) return;
         
-        const animParams = this.scriptConfig.animation.animatableParams;
-        
-        // Update enabled state for each animatable param
-        animParams.forEach((key, index) => {
-            const label = key.replace('phi_', 'φ').replace(/_/g, '');
-            const enabled = selectedLabels.includes(label);
+        for (const key in this.phaseAnimationState) {
+            const state = this.phaseAnimationState[key];
+            const nowEnabled = selectedLabels.includes(state.label);
             
-            if (this.phaseAnimationState[key]) {
-                this.phaseAnimationState[key].enabled = enabled;
-                if (enabled) {
-                    // Store base value when enabling
-                    this.phaseAnimationState[key].baseValue = this.params[key];
-                }
+            if (nowEnabled && !state.enabled) {
+                // Capture the live value as base when first enabling
+                state.baseValue = this.params[key] ?? 0;
             }
-        });
+            state.enabled = nowEnabled;
+        }
         
         window.debugLog('TOOLS', `🎬 Phase animation: ${selectedLabels.length} params enabled`);
     }
@@ -676,10 +710,15 @@ export class GenerativeToolHost extends BaseComponent {
             this.animator.stop();
         }
         
-        // Reset phase values to base
+        // Reset animated params to their rest position
         for (const key in this.phaseAnimationState) {
-            if (this.phaseAnimationState[key].enabled) {
-                this.params[key] = this.phaseAnimationState[key].baseValue;
+            const state = this.phaseAnimationState[key];
+            if (!state.enabled) continue;
+            if (state.mode === 'oscillate') {
+                // Oscillate rests at center of range
+                this.params[key] = (state.min + state.max) / 2;
+            } else {
+                this.params[key] = state.baseValue;
             }
         }
         
@@ -688,7 +727,22 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Update phase animations
+     * Update all enabled param animations each frame.
+     *
+     * Two modes are supported:
+     *
+     *   'phase'     — Continuously increments the value and wraps it within
+     *                 the param's min/max range.  Good for phases (φ) and any
+     *                 parameter where you want perpetual drift.
+     *                 Formula: value = baseValue + frame × globalSpeed × rate × 2π/60
+     *
+     *   'oscillate' — Sinusoidally bounces between the param's min and max.
+     *                 Good for amplitudes, frequencies, and modulation amounts.
+     *                 Formula: value = center + half × sin(frame × globalSpeed × rate × 2π / 240)
+     *                 (240 frames ≈ 4 s per cycle at speed=1, rate=1)
+     *
+     * The global speed slider scales both modes uniformly.
+     * The per-param `rate` field scales an individual param relative to global speed.
      */
     updatePhaseAnimations() {
         const speed = this.tool?.getValue('animSpeed') || 1;
@@ -696,14 +750,22 @@ export class GenerativeToolHost extends BaseComponent {
         
         for (const key in this.phaseAnimationState) {
             const state = this.phaseAnimationState[key];
-            if (state.enabled) {
-                // Animate phase: base + frame * speed * 2π / 60
-                const increment = this.frame * speed * TWO_PI / 60;
-                this.params[key] = state.baseValue + increment;
-                
-                // Wrap to [-π, π]
-                while (this.params[key] > Math.PI) this.params[key] -= TWO_PI;
-                while (this.params[key] < -Math.PI) this.params[key] += TWO_PI;
+            if (!state.enabled) continue;
+            
+            const t = this.frame * speed * (state.rate ?? 1);
+            
+            if (state.mode === 'oscillate') {
+                const center = (state.min + state.max) / 2;
+                const half   = (state.max - state.min) / 2;
+                this.params[key] = center + half * Math.sin(t * TWO_PI / 240);
+            } else {
+                // 'phase' — linear increment with wrapping
+                const range = state.max - state.min;
+                let val = state.baseValue + t * TWO_PI / 60;
+                if (range > 0) {
+                    val = ((val - state.min) % range + range) % range + state.min;
+                }
+                this.params[key] = val;
             }
         }
     }

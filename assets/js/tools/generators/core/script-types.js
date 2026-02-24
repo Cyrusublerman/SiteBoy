@@ -117,7 +117,7 @@
  * @typedef {Object} ScriptConfig
  * @property {string} id - Unique identifier (kebab-case)
  * @property {string} title - Display title (UPPERCASE)
- * @property {string} category - Category for grouping ('parametric'|'wave'|'pattern'|'other')
+ * @property {string} category - Category for grouping ('parametric'|'wave'|'pattern'|'physics'|'other')
  * @property {string} [description] - Optional description for INFO tab
  * @property {string} [version] - Script version
  * @property {CanvasConfig} canvas - Canvas configuration
@@ -227,6 +227,10 @@ export const SCRIPT_CATEGORIES = {
     'pattern': {
         name: 'Pattern Generation',
         description: 'Algorithmic pattern generators'
+    },
+    'physics': {
+        name: 'Physics',
+        description: 'Physical simulations and particle systems'
     },
     'other': {
         name: 'Other',

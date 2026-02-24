@@ -82,12 +82,8 @@ function draw() {
                     ]],
                     ['Preview Controls', [
                         ['button', '▶ Run Preview', null, { key: 'btnRun' }],
-                        ['button', '■ Stop Preview', null, { key: 'btnStop' }]
-                    ]]
-                ]],
-                ['CANVAS', [
-                    ['Display Mode', [
-                        ['dropdown', 'Mode', [
+                        ['button', '■ Stop Preview', null, { key: 'btnStop' }],
+                        ['dropdown', 'Display Mode', [
                             { value: 'fit', label: 'Fit' },
                             { value: 'fill', label: 'Fill' },
                             { value: 'actual', label: 'Actual' }

@@ -36,7 +36,8 @@ export class MultifilamentPrintTool {
             sourceImageElement: null,
             quantizedImage: null,
             importedState: null,
-            showDocs: false  // Documentation viewer toggle
+            showDocs: false,  // Documentation viewer toggle
+            exportSTLData: null  // { stls, layerMaps, filamentNames, palette, config }
         };
         
         console.log('🏗️ MFP sharedState initialized:', this.sharedState);
@@ -180,29 +181,183 @@ export class MultifilamentPrintTool {
      * Refresh status labels based on current state when switching tabs
      */
     _refreshTabStatus(tabName) {
-        if (tabName === 'QUANTIZE') {
-            // Update palette status based on current quantization config
+        if (tabName === 'OUTPUTS') {
+            // Calibration grid status
+            const grid = this.sharedState.gridData;
+            if (grid) {
+                this.toolBase.setValue('outputsGridStatus',
+                    `✅ ${grid.sequences?.length || 0} sequences | ${grid.rows}×${grid.cols} | ${grid.tileSize}mm tiles`);
+            } else {
+                this.toolBase.setValue('outputsGridStatus', '-- not generated (SOURCE tab)');
+            }
+
+            // Scan analysis status
+            const scan = this.sharedState.scanAnalysis;
+            const qConfig = this.sharedState.quantizationConfig;
+            if (scan) {
+                const filCount = qConfig?.filaments?.length || qConfig?.colorMap?.length || 0;
+                this.toolBase.setValue('outputsScanStatus',
+                    `✅ ${scan.length} tiles analysed | ${filCount} colours`);
+            } else {
+                this.toolBase.setValue('outputsScanStatus', '-- no analysis (SCAN tab)');
+            }
+
+            // Quantised image status
+            const qsm = this.sharedState.quantizedSequenceMap;
+            if (qsm) {
+                this.toolBase.setValue('outputsQuantStatus',
+                    `✅ ${qsm.width}×${qsm.height}px | ${qsm.palette?.length || 0} colours`);
+            } else {
+                this.toolBase.setValue('outputsQuantStatus', '-- not quantised (QUANTIZE tab)');
+            }
+
+            // Artwork STL status
+            const stlData = this.sharedState.exportSTLData;
+            if (stlData) {
+                const fileCount = Object.keys(stlData.stls || {}).length;
+                const { layerMaps, config } = stlData;
+                this.toolBase.setValue('outputsArtworkStatus',
+                    `✅ ${fileCount} STL file${fileCount !== 1 ? 's' : ''} | ${layerMaps.length} layer${layerMaps.length !== 1 ? 's' : ''} | ${config.printWidth}mm wide`);
+            } else if (qsm) {
+                this.toolBase.setValue('outputsArtworkStatus', '⚡ Ready — click Generate Artwork STLs');
+            } else {
+                this.toolBase.setValue('outputsArtworkStatus', '-- quantise image first');
+            }
+        } else if (tabName === 'QUANTIZE') {
             if (this.sharedState.quantizationConfig) {
                 const colorCount = this.sharedState.quantizationConfig.colorMap?.length || 0;
                 const type = this.sharedState.quantizationConfig.type || 'loaded';
                 this.toolBase.setValue('paletteStatus', `✅ Palette ready: ${colorCount} colours (${type})`);
             } else if (this.sharedState.gridData) {
-                // Grid exists but no palette - generate it now
-                const gridData = this.sharedState.gridData;
-                this.sourceActions._generatePredictedQuantizationConfig(gridData);
+                this.sourceActions._generatePredictedQuantizationConfig(this.sharedState.gridData);
                 const colorCount = this.sharedState.quantizationConfig?.colorMap?.length || 0;
                 this.toolBase.setValue('paletteStatus', `✅ Palette ready: ${colorCount} colours (predicted)`);
             } else {
                 this.toolBase.setValue('paletteStatus', '⚠️ No palette loaded. Generate or import a grid first.');
             }
+            this._updatePaletteDisplay();
         } else if (tabName === 'SCAN') {
-            // Update SCAN tab status
             if (this.sharedState.scanAnalysis) {
                 this.toolBase.setValue('scanStatus', `✅ Analysis complete: ${this.sharedState.scanAnalysis.length} tiles`);
             } else if (this.sharedState.scanImageElement) {
                 this.toolBase.setValue('scanStatus', 'ℹ️ Scan loaded. Align grid and click "Analyze Scan".');
             }
         }
+    }
+
+    /**
+     * Inject/update palette swatch grid in QUANTIZE sidebar.
+     * Compact swatch grid; click a swatch to show its details below.
+     */
+    _updatePaletteDisplay() {
+        const config = this.sharedState.quantizationConfig;
+
+        const paletteComp = this.toolBase.getComponent('paletteStatus');
+        if (!paletteComp || !paletteComp.element) return;
+
+        const parent = paletteComp.element.parentElement;
+        if (!parent) return;
+
+        let displayEl = parent.querySelector('.mfp-palette-display');
+        if (!displayEl) {
+            displayEl = document.createElement('div');
+            displayEl.className = 'mfp-palette-display';
+            paletteComp.element.insertAdjacentElement('afterend', displayEl);
+        }
+
+        if (!config || !config.colorMap || config.colorMap.length === 0) {
+            displayEl.style.display = 'none';
+            return;
+        }
+
+        const F = this.toolBase.F || 14;
+        const sz = F * 2; // swatch size
+        const gap = Math.round(F * 0.25);
+
+        displayEl.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: ${gap}px;
+        `;
+        displayEl.innerHTML = '';
+
+        // Swatch grid
+        const grid = document.createElement('div');
+        grid.style.cssText = `
+            display: flex;
+            flex-wrap: wrap;
+            gap: ${gap}px;
+        `;
+
+        // Detail row (shown on click)
+        const detail = document.createElement('div');
+        detail.style.cssText = `
+            display: none;
+            align-items: center;
+            gap: ${Math.round(F * 0.5)}px;
+            padding: ${gap}px 0;
+            border-top: 1px solid var(--c-border);
+            font-family: 'Atkinson Hyperlegible', monospace;
+            font-size: ${Math.round(F * 0.857)}px;
+            color: var(--c-text);
+        `;
+
+        let activeEl = null;
+
+        config.colorMap.forEach((entry, i) => {
+            const hex = entry.hex || (entry.rgb ? `#${entry.rgb.r.toString(16).padStart(2,'0')}${entry.rgb.g.toString(16).padStart(2,'0')}${entry.rgb.b.toString(16).padStart(2,'0')}` : '#888');
+            const swatch = document.createElement('div');
+            swatch.title = entry.sequence ? entry.sequence.join('') : (entry.name || String(i));
+            swatch.style.cssText = `
+                width: ${sz}px;
+                height: ${sz}px;
+                background: ${hex};
+                border: 1px solid var(--c-border);
+                cursor: pointer;
+                flex-shrink: 0;
+                box-sizing: border-box;
+            `;
+
+            swatch.addEventListener('click', () => {
+                // Deselect previous
+                if (activeEl && activeEl !== swatch) {
+                    activeEl.style.outline = 'none';
+                }
+                if (activeEl === swatch) {
+                    // Toggle off
+                    swatch.style.outline = 'none';
+                    detail.style.display = 'none';
+                    activeEl = null;
+                    return;
+                }
+                activeEl = swatch;
+                swatch.style.outline = `2px solid var(--c-text)`;
+                swatch.style.outlineOffset = '1px';
+
+                // Populate detail
+                const seq  = entry.sequence ? entry.sequence.join('') : (entry.name || '—');
+                const rgb  = entry.rgb ? `rgb(${entry.rgb.r}, ${entry.rgb.g}, ${entry.rgb.b})` : '—';
+                const devStr = entry.deviation != null ? `  Δ${entry.deviation.toFixed(1)}` : '';
+
+                detail.innerHTML = '';
+
+                const pip = document.createElement('div');
+                pip.style.cssText = `width:${F}px;height:${F}px;background:${hex};border:1px solid var(--c-border);flex-shrink:0;`;
+                detail.appendChild(pip);
+
+                const txt = document.createElement('span');
+                txt.style.cssText = 'white-space:pre;';
+                txt.textContent = `${seq}  ${rgb}${devStr}`;
+                detail.appendChild(txt);
+
+                detail.style.display = 'flex';
+            });
+
+            grid.appendChild(swatch);
+        });
+
+        displayEl.appendChild(grid);
+        displayEl.appendChild(detail);
     }
     
     _getCurrentTab() {
@@ -748,141 +903,88 @@ sharedState.quantizationConfig    // Palette from scan analysis
 ## Files Modified
 - \`MFP-QuantizeActions.js\` — loadSourceImage(), quantize()
 `,
-            'EXPORT': `# EXPORT TAB — File Generation
+            'OUTPUTS': `# OUTPUTS TAB — Unified Output Dashboard
 
 ## Purpose
-Export calibration data, print instructions, and complete project packages.
+View and download every artifact produced by the tool. Status indicators show what is available. Canvas view selector previews any output. Artwork STL generation (quantised image → 3D print files) lives here exclusively.
 
 ---
 
-## Project ZIP Contents
+## Output Sections
 
-File: \`MFP-SourceActions.js\` — exportCompletePackage()
+### CANVAS VIEW
+Dropdown selects which output to preview on the canvas:
+- **Quantised Image** — dithered pixel art from QUANTIZE tab
+- **Grid Combined / Grid Layer N** — calibration grid from SOURCE tab
+- **Scan Overlay** — scan photo with perspective-correct grid overlay from SCAN tab
+- **Artwork Combined / Artwork Layer N** — generated STL geometry as 2D layer view
 
-### filament-config.json
-\`\`\`
-{
-    "filaments": [
-        {"name": "Red PLA", "hex": "#ff0000"},
-        ...
-    ],
-    "selectedIndices": [0, 2, 5, 7]
-}
-\`\`\`
+### CALIBRATION GRID
+Requires: \`gridData\` (generate grid in SOURCE tab)
 
-### grid-layout.json
-\`\`\`
-{
-    "version": "1.2.0",
-    "palette": [...],
-    "tiles": [
-        {"sequence": [1,2,0,0], "row": 0, "col": 0},
-        ...
-    ],
-    "gridSize": {"rows": 18, "cols": 19},
-    "tileSize": 10,
-    "gap": 0.5,
-    "layerCount": 4,
-    "constraints": {...},
-    "scanSettings": {
-        "gridCornersPixel": [{x,y}, ...]
-    }
-}
-\`\`\`
+- **Grid PNG** — high-res 300 DPI raster image of the calibration grid
+- **Grid STLs** — one STL file per filament, grid mode (explicit tile/gap spacing)
+- **Grid CSV** — index, row, col, sequence, RGB, hex per tile
+- **Grid JSON** — complete grid layout with all settings (\`grid-layout.json\` format)
 
-### grid-layout.csv
-Spreadsheet format for external tools:
-\`\`\`
-index,row,col,sequence,hex,r,g,b
-0,0,0,"1200",#ff8080,255,128,128
-...
-\`\`\`
+### SCAN ANALYSIS
+Requires: \`scanAnalysis\` (run Analyze Scan in SCAN tab)
 
-### quantize-settings.json
-\`\`\`
-{
-    "algorithm": "Floyd-Steinberg",
-    "metric": "euclidean",
-    "paletteSize": 340
-}
-\`\`\`
+- **Palette (GPL)** — GIMP/Inkscape palette of scanned tile colours
+- **Quant Config (JSON)** — colour map for quantization: RGB → filament sequence
+- **Comparison CSV** — expected vs measured colour per tile with Delta E
 
-### scans/scan.png
-The uploaded scan image (if present).
+### QUANTISED IMAGE
+Requires: \`quantizedImageElement\` (run Quantize Image in QUANTIZE tab)
 
-### analysis.json
-Colour analysis results:
-\`\`\`
-[
-    {
-        "index": 0,
-        "sequence": [1,2,0,0],
-        "rgb": {"r": 142, "g": 87, "b": 103},
-        "std": {"r": 12.3, "g": 8.7, "b": 9.2},
-        "colorDeviation": 17.6,
-        "pixelsSampled": 847
-    },
-    ...
-]
-\`\`\`
+- **Quantised PNG** — the dithered output image at tile resolution
 
----
+### ARTWORK STLs
+Requires: \`quantizedSequenceMap\` + \`quantizationConfig\`
 
-## GPL Palette Export
-
-GIMP/Inkscape compatible palette file:
+This is the final STL production step. Each pixel in the quantised image maps to a filament sequence; those sequences are expanded into \`layerMaps[layer][filament] = Set("x,y")\` then vectorised into rectangular prisms.
 
 \`\`\`
-GIMP Palette
-Name: RGBY-4L
-Columns: 16
-# Scanned from physical print calibration
-255 128 128 1200
-142  87 103 1213
-...
+quantizedSequenceMap
+  map[pixelIdx] = paletteIdx
+  palette[i].sequence = [1, 0, 3, 2]  // 1-indexed filament per layer
+    ↓
+layerMaps[layer][filament] = Set("x,y")
+    ↓
+exportArtworkSTLs(layerMaps, names, { isGrid: false, printWidth, layerHeight })
+    ↓
+{ "artwork_Red_PLA.stl": "solid ...", ... }
 \`\`\`
 
----
+**Key difference from grid STLs:** image mode uses \`pixelSize = printWidth / imageWidth\` — no gaps, no tile spacing. Adjacent same-filament pixels are merged into rectangles by the vectoriser before generating box geometry.
 
-## Comparison CSV
+Layer view on canvas: **Combined** merges all layers (topmost filament per pixel wins); **Layer N** shows a single layer coloured by filament.
 
-Side-by-side expected vs actual:
+### COMPLETE PROJECT
+Requires: \`gridData\`
 
-\`\`\`
-index,sequence,expected_r,expected_g,expected_b,actual_r,actual_g,actual_b,delta_e
-0,"1200",255,128,128,248,135,122,8.4
-...
-\`\`\`
-
----
-
-## STL Export
-
-3D model files for each layer:
-
-File: \`algorithms/geometry/stl-generation.js\`
-
-For each layer L:
-- Create rectangular prisms at tile positions where sequence[L] > 0
-- Height = layer height (typically 0.08mm)
-- Group by filament index for multi-material printing
+Exports everything into one ZIP: grid layout JSON, STL files, layer PNGs, scan image and alignment, analysis data, quantization config, GPL palette, comparison CSV, quantized image, source image.
 
 ---
 
 ## Key State Variables
 
 \`\`\`
-sharedState.gridData        // Required for all exports
-sharedState.scanAnalysis    // For analysis-related exports
-sharedState.gridCornersPixel // For scan alignment in ZIP
+sharedState.gridData              // Calibration grid
+sharedState.scanAnalysis          // Per-tile measured colours
+sharedState.quantizationConfig    // Palette: colour → sequence
+sharedState.quantizedSequenceMap  // { width, height, map: Uint16Array, palette }
+sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
 \`\`\`
 
 ---
 
-## Files Modified
-- \`MFP-SourceActions.js\` — exportCompletePackage(), exportGridSTL()
-- \`MFP-ExportActions.js\` — exportCompleteProject(), exportJSON()
-- \`MFP-ScanActions.js\` — exportPalette(), exportComparisonCSV()
+## Files
+- \`MFP-ExportActions.js\` — generateArtworkSTL(), downloadAllSTLs(), exportJSON(), exportCompleteProject()
+- \`MFP-SourceActions.js\` — exportGridPNG(), exportGridSTL(), exportGridCSV(), exportCompletePackage()
+- \`MFP-ScanActions.js\` — exportPalette(), exportQuantizationConfig(), exportComparisonCSV()
+- \`MFP-QuantizeActions.js\` — exportQuantizedImage()
+- \`algorithms/geometry/stl-generation.js\` — exportArtworkSTLs()
 `
         };
         
@@ -1153,9 +1255,26 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
                     ['number', 'Dither Strength', 0, 1, 0.1, {key: 'ditherStrength', value: 1.0, withNumber: true}],
                     ['number', 'Min Detail (mm)', 0, 2, 0.1, {key: 'minDetail', value: 0.8, withNumber: true}],
                 ]],
+                ['OPTIMISATION', [
+                    ['label', 'Within variance, prefer entries by print form over pure colour closeness. Deep runs multi-pass region consensus.', {variant: 'caption'}],
+                    ['dropdown', 'Analysis Mode', ['Fast', 'Deep'], {key: 'analysisMode', value: 'Fast'}],
+                    ['number', 'Colour Variance (ΔE)', 0, 30, 1, {key: 'colourVariance', value: 0, withNumber: true}],
+                    ['dropdown', 'Layer Preference', ['None', 'More Layers', 'Fewer Layers'], {key: 'layerPreference', value: 'None'}],
+                    ['number', 'Grouping Weight', 0, 1, 0.05, {key: 'groupingWeight', value: 0.3, withNumber: true}],
+                ]],
+                ['SIMPLIFICATION', [
+                    ['label', 'Post-quantization cleanup. Min Cluster merges small regions. Perimeter:Area targets jagged regions. Palette Merge collapses near-identical sequences. Layer-Aware and Straighten Seams require colourVariance > 0 or operate spatially.', {variant: 'caption'}],
+                    ['number', 'Min Cluster (px)', 0, 200, 1, {key: 'minimumClusterPx', value: 0, withNumber: true}],
+                    ['dropdown', 'Smoothing', ['None', 'Majority Vote 3×3', 'Majority Vote 5×5', 'Straighten Seams', 'Layer-Aware Cleanup'], {key: 'smoothingMethod', value: 'None'}],
+                    ['number', 'Palette Merge (ΔE)', 0, 15, 0.5, {key: 'paletteMergeThreshold', value: 0, withNumber: true}],
+                    ['number', 'Perimeter:Area Max Ratio', 0, 10, 0.25, {key: 'perimAreaRatio', value: 0, withNumber: true}],
+                    ['number', 'Perimeter:Area Max Size (px)', 0, 500, 5, {key: 'perimAreaMaxPx', value: 50, withNumber: true}],
+                ]],
                 ['ACTIONS', [
                     ['button', 'Quantize Image', null, {key: 'quantize', variant: 'primary'}],
                     ['label', '', {key: 'quantizeStatus', variant: 'caption'}],
+                    ['button', 'Generate Artwork STLs', null, {key: 'generateArtworkSTL'}],
+                    ['label', '', {key: 'exportArtworkStatus', variant: 'caption'}],
                 ]],
                 ['SAVE PROJECT', [
                     ['button', 'Export Project ZIP', null, {key: 'exportCompleteProject', variant: 'primary'}],
@@ -1163,25 +1282,49 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
                 ]],
             ]],
             
-            // EXPORT TAB - COMPLETE WITH ALL CONTROLS
-            ['EXPORT', [
-                ['PROJECT STATUS', [
-                    ['label', '⚠️ No project loaded. Generate or import a grid first.', {key: 'exportProjectStatus', variant: 'caption'}],
-                    ['label', '⚠️ No scan analysis (optional)', {key: 'exportScanStatus', variant: 'caption'}],
+            // OUTPUTS TAB — unified view and download dashboard
+            ['OUTPUTS', [
+                ['CANVAS VIEW', [
+                    ['dropdown', 'View', [
+                        'Quantised Image',
+                        'Grid Combined', 'Grid Layer 0', 'Grid Layer 1', 'Grid Layer 2', 'Grid Layer 3',
+                        'Scan Overlay',
+                        'Artwork Combined', 'Artwork All Layers',
+                        'Artwork Layer 0', 'Artwork Layer 1', 'Artwork Layer 2', 'Artwork Layer 3',
+                    ], {key: 'outputsCanvasView', value: 'Quantised Image'}],
+                ]],
+                ['CALIBRATION GRID', [
+                    ['label', '', {key: 'outputsGridStatus', variant: 'caption'}],
+                    ['button', 'Download Grid PNG', null, {key: 'outputGridPNG'}],
+                    ['button', 'Download Grid STLs', null, {key: 'outputGridSTL'}],
+                    ['button', 'Download Grid CSV', null, {key: 'outputGridCSV'}],
+                    ['button', 'Download Grid JSON', null, {key: 'outputGridJSON'}],
+                    ['label', '', {key: 'outputsGridActionStatus', variant: 'caption'}],
+                ]],
+                ['SCAN ANALYSIS', [
+                    ['label', '', {key: 'outputsScanStatus', variant: 'caption'}],
+                    ['button', 'Download Palette (GPL)', null, {key: 'outputPaletteGPL'}],
+                    ['button', 'Download Quant Config (JSON)', null, {key: 'outputQuantConfig'}],
+                    ['button', 'Download Comparison CSV', null, {key: 'outputComparisonCSV'}],
+                    ['label', '', {key: 'outputsScanActionStatus', variant: 'caption'}],
+                ]],
+                ['QUANTISED IMAGE', [
+                    ['label', '', {key: 'outputsQuantStatus', variant: 'caption'}],
+                    ['button', 'Download Quantised PNG', null, {key: 'outputQuantPNG'}],
+                    ['label', '', {key: 'outputsQuantActionStatus', variant: 'caption'}],
+                ]],
+                ['ARTWORK STLs', [
+                    ['label', '', {key: 'outputsArtworkStatus', variant: 'caption'}],
+                    ['number', 'Print Width (mm)', 50, 300, 1, {key: 'stlPrintWidth', value: state.printWidth || 170, withNumber: true}],
+                    ['number', 'Layer Height (mm)', 0.04, 0.4, 0.01, {key: 'stlLayerHeight', value: state.layerHeight || DEFAULTS.layerHeight, withNumber: true}],
+                    ['button', 'Generate Artwork STLs', null, {key: 'generateArtworkSTL', variant: 'primary'}],
+                    ['button', 'Download All STLs (ZIP)', null, {key: 'downloadSTLZip'}],
+                    ['button', 'Download Individual STLs', null, {key: 'downloadSTLIndividual'}],
+                    ['label', '', {key: 'exportArtworkStatus', variant: 'caption'}],
                 ]],
                 ['COMPLETE PROJECT', [
                     ['button', 'Export Complete Project ZIP', null, {key: 'exportCompleteProject', variant: 'primary'}],
-                    ['label', 'Includes grid, STL files, visuals, and scan analysis if available', {variant: 'caption'}],
-                    ['label', '', {key: 'exportProjectZipStatus', variant: 'caption'}],
-                ]],
-                ['STL EXPORT', [
-                    ['number', 'Layer Height (mm)', 0.04, 0.3, 0.01, {key: 'layerHeightExport', value: state.layerHeight || DEFAULTS.layerHeight, withNumber: true}],
-                    ['button', 'Export STL Files Only', null, {key: 'exportSTL'}],
-                    ['button', 'Export JSON Only', null, {key: 'exportJSON'}],
-                    ['label', '', {key: 'exportSTLStatus', variant: 'caption'}],
-                ]],
-                ['CANVAS MODE', [
-                    ['dropdown', 'Mode', ['Source', 'Scan', 'Grid', 'Quantized', 'Layer 0', 'Layer 1', 'Layer 2', 'Layer 3'], {key: 'canvasMode', value: 'Grid'}],
+                    ['label', '', {key: 'exportProjectStatus', variant: 'caption'}],
                 ]],
             ]]
         ];
@@ -1232,28 +1375,8 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
             startCorners: null
         };
         
-        const getCanvasCoords = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const transform = canvasComponent.transform || { x: 0, y: 0, scale: 1 };
-            
-            // Get position relative to canvas container
-            const container = canvas.parentElement.getBoundingClientRect();
-            const relX = e.clientX - container.left;
-            const relY = e.clientY - container.top;
-            
-            // Reverse CSS transform (pan + zoom)
-            const canvasX = (relX - transform.x) / transform.scale;
-            const canvasY = (relY - transform.y) / transform.scale;
-            
-            // Account for DPR scaling (canvas buffer is larger than CSS size)
-            const dpr = canvasComponent.dpr || 1;
-            const cssWidth = canvas.width / dpr;
-            const cssHeight = canvas.height / dpr;
-            
-            // The canvas CSS size matches cssWidth x cssHeight
-            // No additional scaling needed since we're using logical coordinates
-            return { x: canvasX, y: canvasY };
-        };
+        // Delegate to Canvas component's authoritative coordinate converter
+        const getCanvasCoords = (e) => canvasComponent.screenToCanvas(e.clientX, e.clientY);
         
         // Get pixel corners directly (canvas = image at 1:1)
         const getCorners = () => {
@@ -1275,7 +1398,8 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
         const findCornerUnderMouse = (mouseX, mouseY, corners) => {
             if (!corners) return -1;
             
-            const HANDLE_RADIUS = 15;
+            // Keep the screen-space hit target constant regardless of zoom level
+            const HANDLE_RADIUS = 15 / (canvasComponent.transform?.scale || 1);
             for (let i = 0; i < corners.length; i++) {
                 const corner = corners[i];
                 if (!corner) continue;
@@ -1288,27 +1412,17 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
             return -1;
         };
         
-        // Mouse down - PRIORITY: check corners first, before zoom/pan
-        const onMouseDown = (e) => {
+        // Pointer down — intercept grid/corner drag before Canvas pan/zoom
+        const onPointerDown = (e) => {
+            if (e.button === 2) return; // Ignore right-click
             const corners = getCorners();
             const { x, y } = getCanvasCoords(e);
-            
-            console.log(`🖱️ MouseDown at (${x.toFixed(1)}, ${y.toFixed(1)})`, 
-                'hasImage:', !!this.sharedState.scanImageElement,
-                'hasCorners:', !!corners,
-                'corners:', corners);
-            
-            if (!this.sharedState.scanImageElement || !corners) {
-                console.log('❌ No image or corners - skipping grid interaction');
-                return;
-            }
-            
+
+            if (!this.sharedState.scanImageElement || !corners) return;
+
             const cornerIndex = findCornerUnderMouse(x, y, corners);
-            console.log(`🎯 Corner check: found index ${cornerIndex}`);
-            
+
             if (cornerIndex !== -1) {
-                // Corner drag - STOP propagation to prevent zoom/pan
-                console.log(`✅ Starting corner drag: corner ${cornerIndex}`);
                 this.scanDragState.isDragging = true;
                 this.scanDragState.dragType = 'corner';
                 this.scanDragState.dragCornerIndex = cornerIndex;
@@ -1316,60 +1430,55 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
                 this.scanDragState.startY = y;
                 this.scanDragState.startCorners = corners.map(c => ({...c}));
                 canvas.style.cursor = 'grabbing';
+                canvas.setPointerCapture(e.pointerId);
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 return;
             }
-            
+
             if (isPointInQuad(x, y, corners)) {
-                // Body drag - STOP propagation
-                console.log('✅ Starting body drag');
                 this.scanDragState.isDragging = true;
                 this.scanDragState.dragType = 'body';
                 this.scanDragState.startX = x;
                 this.scanDragState.startY = y;
                 this.scanDragState.startCorners = corners.map(c => ({...c}));
                 canvas.style.cursor = 'grabbing';
+                canvas.setPointerCapture(e.pointerId);
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 return;
             }
-            
-            // Not on grid - let zoom/pan handle it
-            console.log('ℹ️ Click outside grid - zoom/pan can handle');
+            // Not on grid — let Canvas pan/zoom handle it
         };
-        
-        // Mouse move
-        const onMouseMove = (e) => {
+
+        // Pointer move
+        const onPointerMove = (e) => {
             const corners = getCorners();
             const { x, y } = getCanvasCoords(e);
-            
+
             if (this.scanDragState.isDragging) {
                 const dx = x - this.scanDragState.startX;
                 const dy = y - this.scanDragState.startY;
-                
+
                 if (this.scanDragState.dragType === 'corner') {
-                    // Only move the dragged corner - pixel coordinates
                     const idx = this.scanDragState.dragCornerIndex;
                     this.sharedState.gridCornersPixel[idx] = {
                         x: this.scanDragState.startCorners[idx].x + dx,
                         y: this.scanDragState.startCorners[idx].y + dy
                     };
                 } else if (this.scanDragState.dragType === 'body') {
-                    // Move all corners together
                     this.sharedState.gridCornersPixel = this.scanDragState.startCorners.map(c => ({
                         x: c.x + dx,
                         y: c.y + dy
                     }));
                 }
-                
+
                 this.toolBase.draw();
                 e.preventDefault();
                 e.stopPropagation();
             } else if (corners) {
-                // Update cursor
                 const cornerIndex = findCornerUnderMouse(x, y, corners);
                 if (cornerIndex !== -1) {
                     canvas.style.cursor = 'crosshair';
@@ -1380,11 +1489,11 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
                 }
             }
         };
-        
-        // Mouse up
-        const onMouseUp = (e) => {
+
+        // Pointer up
+        const onPointerUp = (e) => {
             if (this.scanDragState.isDragging) {
-                this.scanDragState.wasDragging = true; // Flag to skip click handler
+                this.scanDragState.wasDragging = true;
                 this.scanDragState.isDragging = false;
                 this.scanDragState.dragType = null;
                 this.scanDragState.dragCornerIndex = -1;
@@ -1428,79 +1537,12 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
             }
         };
         
-        // Add listeners with CAPTURE phase to intercept before zoom/pan
-        canvas.addEventListener('mousedown', onMouseDown, true);
-        canvas.addEventListener('mousemove', onMouseMove, true);
-        canvas.addEventListener('mouseup', onMouseUp, true);
+        // Capture-phase pointer listeners intercept before Canvas.js pan/zoom handlers
+        canvas.addEventListener('pointerdown', onPointerDown, true);
+        canvas.addEventListener('pointermove', onPointerMove, true);
+        canvas.addEventListener('pointerup',   onPointerUp,   true);
+        canvas.addEventListener('pointercancel', onPointerUp, true);
         canvas.addEventListener('click', onClick, true);
-        
-        // Keyboard controls for pan/zoom (work globally when tool is active)
-        const PAN_STEP = 50;
-        const ZOOM_FACTOR = 1.2;
-        
-        const onKeyDown = (e) => {
-            // Only handle if this tool is active (check if canvas is visible)
-            if (!canvas.offsetParent) return;
-            
-            // Don't capture if user is typing in an input
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            let handled = false;
-            
-            switch(e.key) {
-                case 'ArrowLeft':
-                    canvasComponent.pan(PAN_STEP, 0);
-                    handled = true;
-                    break;
-                case 'ArrowRight':
-                    canvasComponent.pan(-PAN_STEP, 0);
-                    handled = true;
-                    break;
-                case 'ArrowUp':
-                    canvasComponent.pan(0, PAN_STEP);
-                    handled = true;
-                    break;
-                case 'ArrowDown':
-                    canvasComponent.pan(0, -PAN_STEP);
-                    handled = true;
-                    break;
-                case '+':
-                case '=':
-                    // Zoom in towards centre
-                    canvasComponent.zoom(ZOOM_FACTOR);
-                    handled = true;
-                    break;
-                case '-':
-                case '_':
-                    // Zoom out from centre
-                    canvasComponent.zoom(1 / ZOOM_FACTOR);
-                    handled = true;
-                    break;
-                case '0':
-                    // Reset view
-                    canvasComponent.resetViewport(true);
-                    handled = true;
-                    break;
-                case 'Home':
-                    // Fit to view
-                    canvasComponent.resetViewport(true);
-                    handled = true;
-                    break;
-            }
-            
-            if (handled) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        };
-        
-        // Add to document so it works even when canvas is off-screen
-        document.addEventListener('keydown', onKeyDown);
-        
-        // Store for cleanup
-        this._keyboardHandler = onKeyDown;
-        
-        console.log('✅ Scan canvas interaction setup (capture phase for priority, keyboard controls added)');
     }
     
     _handleUpdate(key, value, allValues) {
@@ -1653,23 +1695,30 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
             case 'analyzeScan': 
                 console.log('🔘 Analyze Scan button clicked');
                 this.scanActions.analyzeScan(allValues, this.toolBase).then(() => {
-                    // After successful analysis, automatically enable "Show Analysed Colors"
                     if (this.sharedState.scanAnalysis && this.sharedState.scanAnalysis.length > 0) {
-                        // Get current options and add "Show Analysed Colors" if not present
+                        // Enable "Show Analysed Colors" overlay
                         const currentOptions = allValues.gridOptions || [];
                         if (!currentOptions.includes('Show Analysed Colors')) {
                             const newOptions = [...currentOptions, 'Show Analysed Colors'];
                             this.toolBase.setValue('gridOptions', newOptions);
-                            // Update internal state
                             this.sharedState.gridOverlayOptions = {
                                 showSampleZones: newOptions.includes('Show Sample Zones'),
                                 showExpected: newOptions.includes('Show Expected Colors'),
                                 showAnalysed: true
                             };
                         }
-                        console.log('✅ Analysis complete - showing analysed colors on canvas');
+                        // Invert button: signal analysis is done
+                        const analyseBtn = this.toolBase.getComponent('analyzeScan');
+                        if (analyseBtn && analyseBtn.element) {
+                            analyseBtn.element.textContent = 'Analysed';
+                            analyseBtn.element.style.background = 'var(--c-text)';
+                            analyseBtn.element.style.color = 'var(--c-bg)';
+                        }
+                        // Propagate palette to QUANTIZE tab
+                        this._refreshTabStatus('QUANTIZE');
+                        // Refresh palette display if already on QUANTIZE tab
+                        this._updatePaletteDisplay();
                     }
-                    // Redraw to show analysis results on canvas
                     this.toolBase.draw();
                 });
                 break;
@@ -1679,7 +1728,11 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
             case 'exportComparisonCSV': this.scanActions.exportComparisonCSV(this.toolBase); break;
             
             // QUANTIZE tab
-            case 'uploadPalette': this.quantizeActions.loadPaletteFromJSON(value, this.toolBase); break;
+            case 'uploadPalette':
+                this.quantizeActions.loadPaletteFromJSON(value, this.toolBase).then(() => {
+                    this._refreshTabStatus('QUANTIZE');
+                });
+                break;
             case 'importProjectQuantize': 
                 this._triggerFileUpload('.json,.zip', async (file) => {
                     if (file.name.endsWith('.zip')) {
@@ -1695,10 +1748,56 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
             case 'sourceImage': this.quantizeActions.loadSourceImage(value, this.toolBase); break;
             case 'quantize': this.quantizeActions.quantize(allValues, this.toolBase); break;
             
-            // EXPORT tab
-            case 'exportCompleteProject': this.exportActions.exportCompleteProject(allValues, this.toolBase); break;
-            case 'exportSTL': this.exportActions.exportSTL(allValues, this.toolBase); break;
-            case 'exportJSON': this.exportActions.exportJSON(allValues, this.toolBase); break;
+            // OUTPUTS tab — canvas view
+            case 'outputsCanvasView':
+                // dropdown change — redraw handled by toolBase.draw() at end of switch
+                break;
+
+            // OUTPUTS tab — calibration grid exports
+            case 'outputGridPNG':
+                this.sourceActions.exportGridPNG(allValues, this.toolBase);
+                break;
+            case 'outputGridSTL':
+                this.sourceActions.exportGridSTL(allValues, this.toolBase);
+                break;
+            case 'outputGridCSV':
+                this.sourceActions.exportGridCSV(allValues, this.toolBase);
+                break;
+            case 'outputGridJSON':
+                this.exportActions.exportJSON(allValues, this.toolBase);
+                break;
+
+            // OUTPUTS tab — scan analysis exports
+            case 'outputPaletteGPL':
+                this.scanActions.exportPalette(this.toolBase);
+                break;
+            case 'outputQuantConfig':
+                this.scanActions.exportQuantizationConfig(this.toolBase);
+                break;
+            case 'outputComparisonCSV':
+                this.scanActions.exportComparisonCSV(this.toolBase);
+                break;
+
+            // OUTPUTS tab — quantised image export
+            case 'outputQuantPNG':
+                this.quantizeActions.exportQuantizedImage(this.toolBase);
+                break;
+
+            // OUTPUTS tab — artwork STL generation and download
+            case 'generateArtworkSTL':
+                this.exportActions.generateArtworkSTL(allValues, this.toolBase);
+                break;
+            case 'downloadSTLZip':
+                this.exportActions.downloadAllSTLs(this.toolBase);
+                break;
+            case 'downloadSTLIndividual':
+                this.exportActions.downloadIndividualSTLs(this.toolBase);
+                break;
+
+            // OUTPUTS tab — complete project
+            case 'exportCompleteProject':
+                this.exportActions.exportCompleteProject(allValues, this.toolBase);
+                break;
         }
         
         // Redraw canvas
@@ -1729,12 +1828,63 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
                 }
                 return;
                 
+            case 'OUTPUTS': {
+                const view = values.outputsCanvasView || '';
+                if (view === 'Quantised Image') {
+                    if (this.sharedState.quantizedImageElement) {
+                        this._drawQuantize(ctx, canvas, values);
+                    } else {
+                        this._drawPlaceholder(ctx, canvas, 'No quantised image — run QUANTIZE tab first');
+                    }
+                } else if (view === 'Scan Overlay') {
+                    if (this.sharedState.scanImageElement) {
+                        this._drawScanImage(ctx, canvas, this.sharedState.scanImageElement, values);
+                        if (this.sharedState.gridData || this.sharedState.referenceGridData) {
+                            this._drawGridOverlay(ctx, canvas, values);
+                        }
+                    } else {
+                        this._drawPlaceholder(ctx, canvas, 'No scan image — load scan in SCAN tab first');
+                    }
+                } else if (view.startsWith('Grid')) {
+                    if (this.sharedState.gridData) {
+                        // Map "Grid Combined" -> "Combined", "Grid Layer 2" -> "Layer 2"
+                        const savedView = values.canvasView;
+                        values.canvasView = view.replace('Grid ', '');
+                        this._drawGrid(ctx, canvas, values);
+                        values.canvasView = savedView;
+                    } else {
+                        this._drawPlaceholder(ctx, canvas, 'No grid — generate grid in SOURCE tab first');
+                    }
+                } else if (view.startsWith('Artwork')) {
+                    if (this.sharedState.exportSTLData) {
+                        // Map "Artwork Combined" -> "Combined", "Artwork Layer 2" -> "Layer 2"
+                        const savedView = values.exportLayerView;
+                        values.exportLayerView = view.replace('Artwork ', '');
+                        this._drawExportLayers(ctx, canvas, values);
+                        values.exportLayerView = savedView;
+                    } else {
+                        this._drawPlaceholder(ctx, canvas, 'No artwork STLs — generate them below');
+                    }
+                } else {
+                    // Auto-fallback: best available
+                    if (this.sharedState.exportSTLData) {
+                        this._drawExportLayers(ctx, canvas, values);
+                    } else if (this.sharedState.quantizedImageElement) {
+                        this._drawQuantize(ctx, canvas, values);
+                    } else if (this.sharedState.gridData) {
+                        this._drawGrid(ctx, canvas, values);
+                    } else {
+                        this._drawPlaceholder(ctx, canvas, 'Complete earlier tabs to see outputs here');
+                    }
+                }
+                return;
+            }
+
             case 'SOURCE':
-            case 'EXPORT':
             default:
-        if (this.sharedState.gridData) {
-            this._drawGrid(ctx, canvas, values);
-        } else {
+                if (this.sharedState.gridData) {
+                    this._drawGrid(ctx, canvas, values);
+                } else {
                     this._drawPlaceholder(ctx, canvas, 'Select filaments to generate grid');
                 }
                 return;
@@ -2368,8 +2518,15 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
     _drawQuantize(ctx, canvas, values) {
         // Priority: quantized > adjusted > source > placeholder
         if (this.sharedState.quantizedImageElement) {
-            // Show quantized result
-            ctx.drawImage(this.sharedState.quantizedImageElement, 0, 0, canvas.width, canvas.height);
+            const img = this.sharedState.quantizedImageElement;
+            // Fit to canvas preserving aspect ratio; nearest-neighbour for crisp pixels
+            const scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+            const w = img.naturalWidth * scale;
+            const h = img.naturalHeight * scale;
+            const x = Math.round((canvas.width  - w) / 2);
+            const y = Math.round((canvas.height - h) / 2);
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(img, x, y, Math.round(w), Math.round(h));
         } else if (this.sharedState.sourceImageData) {
             // Show adjusted image (from adjustment bundle)
             // Scale to canvas size while maintaining aspect ratio
@@ -2401,6 +2558,149 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
         }
     }
     
+    /**
+     * Layer-by-layer 2D canvas view for generated artwork STLs.
+     * Mirrors the SOURCE tab's _drawGrid pattern: padding, scale-to-fit, centred.
+     * viewMode "Combined" merges all layers (last non-empty filament wins per pixel).
+     * viewMode "Layer N" shows a single layer coloured by filament.
+     */
+    _drawExportLayers(ctx, canvas, values) {
+        const data = this.sharedState.exportSTLData;
+        if (!data) return;
+
+        const { layerMaps, filamentNames, palette, config } = data;
+        const { imageWidth, imageHeight, printWidth } = config;
+        const viewMode   = values.exportLayerView || 'Combined';
+        const layerCount = layerMaps.length;
+        const filCount   = filamentNames.length;
+        const padding    = 20;
+        const statsBarH  = 20;
+
+        // Filament colour lookup: index → CSS hex
+        // Prefer quantizationConfig.filaments, fall back to first palette entry that uses each filament
+        const filaments  = this.sharedState.quantizationConfig?.filaments || [];
+        const filColours = Array.from({ length: filCount }, (_, fi) => {
+            const fil = filaments[fi];
+            if (fil?.hex || fil?.h) return fil.hex || fil.h;
+            const match = palette.find(e => e.sequence?.some(v => v > 0 && v - 1 === fi));
+            return match?.hex || '#808080';
+        });
+
+        // Stats bar drawn after all views
+        const drawStats = (label) => {
+            ctx.save();
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '11px "Space Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(
+                `${layerCount} layers | ${Object.keys(data.stls).length} STLs | ${imageWidth}×${imageHeight}px → ${printWidth}mm${label ? ' | ' + label : ''}`,
+                canvas.width / 2, canvas.height - 6
+            );
+            ctx.restore();
+        };
+
+        if (viewMode === 'Combined') {
+            // Draw quantised image directly — exact same colours as the QUANTIZE tab view
+            const qImg = this.sharedState.quantizedImageElement;
+            if (qImg) {
+                const scaleX = (canvas.width  - padding * 2) / imageWidth;
+                const scaleY = (canvas.height - padding * 2 - statsBarH) / imageHeight;
+                const scale  = Math.min(scaleX, scaleY);
+                const scaledW = Math.round(imageWidth  * scale);
+                const scaledH = Math.round(imageHeight * scale);
+                const offX   = Math.round((canvas.width  - scaledW) / 2);
+                const offY   = Math.round((canvas.height - statsBarH - scaledH) / 2);
+                ctx.save();
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(qImg, offX, offY, scaledW, scaledH);
+                ctx.restore();
+                drawStats('Combined');
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Quantised image not available — regenerate STLs');
+            }
+
+        } else if (viewMode === 'All Layers') {
+            // Tile every layer in a grid on the canvas
+            const cols   = Math.ceil(Math.sqrt(layerCount));
+            const rows   = Math.ceil(layerCount / cols);
+            const gap    = 6;
+            const labelH = 14;
+            const availW = canvas.width  - padding * 2;
+            const availH = canvas.height - padding * 2 - statsBarH;
+            const cellW  = (availW - gap * (cols - 1)) / cols;
+            const cellH  = (availH - gap * (rows - 1)) / rows;
+            const pixSc  = Math.min(cellW / imageWidth, (cellH - labelH) / imageHeight);
+
+            for (let li = 0; li < layerCount; li++) {
+                const col  = li % cols;
+                const row  = Math.floor(li / cols);
+                const cellX = padding + col * (cellW + gap);
+                const cellY = padding + row * (cellH + gap);
+                const imgW  = imageWidth  * pixSc;
+                const imgH  = imageHeight * pixSc;
+                const imgX  = cellX + (cellW - imgW) / 2;
+                const imgY  = cellY + labelH;
+
+                // Cell border
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(cellX, cellY, cellW, cellH);
+
+                // Layer label
+                ctx.fillStyle = '#00ff00';
+                ctx.font = '10px "Space Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(`L${li}`, cellX + cellW / 2, cellY + 11);
+
+                // Layer pixels
+                const lm = layerMaps[li];
+                for (let fi = 0; fi < filCount; fi++) {
+                    if (!lm[fi] || lm[fi].size === 0) continue;
+                    ctx.fillStyle = filColours[fi];
+                    for (const coord of lm[fi]) {
+                        const [x, y] = coord.split(',').map(Number);
+                        ctx.fillRect(imgX + x * pixSc, imgY + y * pixSc,
+                                     Math.max(1, pixSc), Math.max(1, pixSc));
+                    }
+                }
+            }
+            drawStats('All Layers');
+
+        } else {
+            // Single layer — extract index from viewMode ("Layer 0", "Layer 1", etc.)
+            const layerMatch = viewMode.match(/(\d+)/);
+            const layerIdx   = layerMatch ? parseInt(layerMatch[1]) : 0;
+            const lm         = layerMaps[layerIdx];
+
+            if (!lm) {
+                this._drawPlaceholder(ctx, canvas, `Layer ${layerIdx} does not exist (${layerCount} available)`);
+                drawStats('');
+                return;
+            }
+
+            const scaleX = (canvas.width  - padding * 2) / imageWidth;
+            const scaleY = (canvas.height - padding * 2 - statsBarH) / imageHeight;
+            const scale  = Math.min(scaleX, scaleY);
+            const scaledW = Math.round(imageWidth  * scale);
+            const scaledH = Math.round(imageHeight * scale);
+            const offX   = Math.round((canvas.width  - scaledW) / 2);
+            const offY   = Math.round((canvas.height - statsBarH - scaledH) / 2);
+
+            for (let fi = 0; fi < filCount; fi++) {
+                if (!lm[fi] || lm[fi].size === 0) continue;
+                ctx.fillStyle = filColours[fi];
+                for (const coord of lm[fi]) {
+                    const [x, y] = coord.split(',').map(Number);
+                    ctx.fillRect(offX + x * scale, offY + y * scale,
+                                 Math.max(1, scale), Math.max(1, scale));
+                }
+            }
+
+            const filsOnLayer = filamentNames.filter((_, fi) => lm[fi]?.size > 0).join(', ');
+            drawStats(`Layer ${layerIdx}: ${filsOnLayer}`);
+        }
+    }
+
     _drawExport(ctx, canvas, values) {
         const mode = values.canvasMode || 'Grid';
         
@@ -2425,12 +2725,6 @@ sharedState.gridCornersPixel // For scan alignment in ZIP
     }
     
     destroy() {
-        // Clean up keyboard handler
-        if (this._keyboardHandler) {
-            document.removeEventListener('keydown', this._keyboardHandler);
-            this._keyboardHandler = null;
-        }
-        
         // Clean up markdown component
         if (this.markdownComponent && this.markdownComponent.destroy) {
             this.markdownComponent.destroy();

@@ -182,6 +182,8 @@ export class Text extends BaseComponent {
         this.value = value;
         if (this.valueEl) {
             this.valueEl.textContent = this._formatValue();
+        } else {
+            this.setContent(String(value));
         }
     }
     

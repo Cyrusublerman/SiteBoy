@@ -94,14 +94,18 @@ function buildAnimateTab(scriptConfig) {
         }],
     ]]);
     
-    // Phase animation (if animatable params exist)
+    // Animatable params — each entry may be a string key or an object { key, label, mode, ... }
     if (anim.animatableParams && anim.animatableParams.length > 0) {
-        const labels = anim.animatableParams.map(key => {
-            // Convert camelCase to display format (e.g., phi_x1 -> φx₁)
-            return key.replace('phi_', 'φ').replace(/_/g, '');
-        });
+        const deriveLabel = (key) => key
+            .replace(/^phi_/, 'φ')
+            .replace(/^w([xy])/, 'ω$1')
+            .replace(/_/g, '');
+
+        const labels = anim.animatableParams.map(entry =>
+            typeof entry === 'string' ? deriveLabel(entry) : (entry.label ?? deriveLabel(entry.key))
+        );
         
-        blocks.push(['Phase Animation', [
+        blocks.push(['Animate Params', [
             ['toggle', 'Animate', labels, { 
                 key: 'phaseToggles',
                 selectedValues: []
