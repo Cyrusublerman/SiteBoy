@@ -11,11 +11,6 @@ import { bayer4x4 } from '../../../shared/algorithms/dither/ordered.js';
 import { nearestColorQuantize } from '../../../shared/algorithms/dither/nearest-color.js';
 import { rgbToLab, hexToRgb, deltaE76 } from '../../../shared/algorithms/color/color-space.js';
 
-const COLOR_SPACE = {
-    rgbToLab: (r, g, b) => rgbToLab(r, g, b),
-    hexToRgb: (hex) => hexToRgb(hex),
-};
-
 /**
  * Remove isolated pixels below min detail threshold.
  * Each pass replaces pixels whose current value matches none of their 4 neighbours.
@@ -51,7 +46,10 @@ export class MFPQuantizeActions {
     constructor(sharedState) {
         this.state = sharedState;
     }
-    
+
+    /** Yield to the event loop so the browser can repaint between heavy steps. */
+    _yield() { return new Promise(r => setTimeout(r, 0)); }
+
     /**
      * Load source image for quantization - COMPLETE
      */
@@ -107,7 +105,8 @@ export class MFPQuantizeActions {
         this.state.quantizedImageData    = null;
         this.state.quantizedSequenceMap  = null;
         toolBase.draw();
-        toolBase.setValue('quantizeStatus', '⏳ Quantizing…');
+        toolBase.setValue('quantizeStatus', '⏳ [1/6] Scaling image…');
+        await this._yield();
 
         try {
             const colorMap = this.state.quantizationConfig.colorMap;
@@ -151,8 +150,25 @@ export class MFPQuantizeActions {
             scaledCtx.drawImage(srcCanvas, 0, 0, width, height);
             const sourceData = scaledCtx.getImageData(0, 0, width, height);
 
-            // ── 2. Build palette arrays required by shared dither API ────────
+            // ── 2. Build colour space + palette ──────────────────────────────
+            const { buildColorSpace } = await import('../../../shared/algorithms/color/color-space.js');
+            const spaceName = (values.colourSpace || 'CIELAB').toLowerCase();
+            const spaceKey  = spaceName === 'rgb' ? 'rgb' : spaceName === 'hsl' ? 'hsl' : 'lab';
+            const cs = buildColorSpace(spaceKey, {
+                w1: parseFloat(values.csWeight1) || 1,
+                w2: parseFloat(values.csWeight2) || 1,
+                w3: parseFloat(values.csWeight3) || 1,
+            });
+
             const paletteHex  = colorMap.map(c => c.hex);
+            const paletteConverted = colorMap.map(c => {
+                const { r, g, b } = typeof c.rgb === 'object' && !Array.isArray(c.rgb)
+                    ? c.rgb
+                    : { r: c.rgb[0], g: c.rgb[1], b: c.rgb[2] };
+                return cs.convert(r, g, b);
+            });
+
+            // paletteLabs still needed for form optimisation (always CIELAB)
             const paletteLabs = colorMap.map(c => {
                 const { r, g, b } = typeof c.rgb === 'object' && !Array.isArray(c.rgb)
                     ? c.rgb
@@ -161,15 +177,16 @@ export class MFPQuantizeActions {
             });
 
             // ── 3. Run dither algorithm ──────────────────────────────────────
+            toolBase.setValue('quantizeStatus', `⏳ [2/6] Dithering (${spaceKey.toUpperCase()})…`);
+            await this._yield();
             const algo = (values.ditherAlgorithm || 'None').toLowerCase();
             let dithered;
             if (algo === 'floyd-steinberg') {
-                dithered = floydSteinberg(sourceData, paletteHex, paletteLabs, COLOR_SPACE);
+                dithered = floydSteinberg(sourceData, paletteHex, paletteConverted, cs);
             } else if (algo === 'bayer 4×4' || algo === 'bayer 4x4') {
-                dithered = bayer4x4(sourceData, paletteHex, paletteLabs, COLOR_SPACE);
+                dithered = bayer4x4(sourceData, paletteHex, paletteConverted, cs);
             } else {
-                // 'None' or 'Blue Noise' (no texture available → nearest-color)
-                dithered = nearestColorQuantize(sourceData, paletteHex, paletteLabs, COLOR_SPACE);
+                dithered = nearestColorQuantize(sourceData, paletteHex, paletteConverted, cs);
             }
 
             // ── 4. Map output pixels → palette indices (sequence map) ────────
@@ -193,36 +210,33 @@ export class MFPQuantizeActions {
             }
 
             // ── 4.5 Form preference optimisation ────────────────────────────
-            const reassigned = this._applyFormOptimisation(
+            const mode = values.analysisMode || 'Fast';
+            toolBase.setValue('quantizeStatus', `⏳ [3/6] Optimising (${mode})…`);
+            await this._yield();
+            const reassigned = await this._applyFormOptimisation(
                 sequenceMap, width, height, paletteLabs, colorMap, values
             );
 
-            // ── 4.6 Simplification ───────────────────────────────────────────
+            // ── 4.6 Simplification (topological only — geometry smoothing
+            //        is handled in the STL contour pipeline) ──────────────────
+            toolBase.setValue('quantizeStatus', '⏳ [4/6] Simplifying…');
+            await this._yield();
+
             const minCluster = parseInt(values.minimumClusterPx, 10) || 0;
-            const merged     = this._mergeBelowThreshold(sequenceMap, width, height, minCluster);
+            const merged     = await this._mergeBelowThreshold(sequenceMap, width, height, minCluster);
 
-            const smoothMethod = values.smoothingMethod || 'None';
-            let   smoothed     = 0;
-            if      (smoothMethod === 'Majority Vote 3×3')   smoothed = this._majorityVoteSmooth(sequenceMap, width, height, 3);
-            else if (smoothMethod === 'Majority Vote 5×5')   smoothed = this._majorityVoteSmooth(sequenceMap, width, height, 5);
-            else if (smoothMethod === 'Straighten Seams')    smoothed = this._straightenSeams(sequenceMap, width, height);
-            else if (smoothMethod === 'Layer-Aware Cleanup') smoothed = this._layerAwareCleanup(sequenceMap, width, height, paletteLabs, colorMap, parseFloat(values.colourVariance) || 0);
-
-            // ── 4.7 Perimeter:area filter ────────────────────────────────────
-            const perimRatio  = parseFloat(values.perimAreaRatio)  || 0;
-            const perimMaxPx  = parseInt(values.perimAreaMaxPx, 10) || 50;
-            const perimFiltered = this._applyPerimeterAreaFilter(sequenceMap, width, height, perimRatio, perimMaxPx);
-
-            // ── 4.8 Palette merging ──────────────────────────────────────────
+            // ── 4.7 Palette merging ──────────────────────────────────────────
             const palMergeThreshold = parseFloat(values.paletteMergeThreshold) || 0;
             const palMerged = this._mergePalettePairs(sequenceMap, paletteLabs, colorMap, palMergeThreshold);
 
             // ── 5. Min detail filter ─────────────────────────────────────────
-            // When minDetail > tileSize, isolated pixels smaller than minDetail are removed.
-            // Since tileSize IS minDetail here, this effectively just cleans stray single pixels.
+            toolBase.setValue('quantizeStatus', '⏳ [5/6] Filtering detail…');
+            await this._yield();
             sequenceMap = applyMinDetailFilter(sequenceMap, width, height);
 
             // ── 6. Rebuild visual ImageData from (possibly filtered) map ─────
+            toolBase.setValue('quantizeStatus', '⏳ [6/6] Rendering…');
+            await this._yield();
             const outputCanvas = document.createElement('canvas');
             outputCanvas.width  = width;
             outputCanvas.height = height;
@@ -249,21 +263,38 @@ export class MFPQuantizeActions {
             this.state.quantizedImageData    = outputData;
             this.state.quantizedSequenceMap  = { width, height, map: sequenceMap, palette: colorMap };
 
+            // Palette analysis: count unique RGB colours
+            const uniqueRgb = new Set();
+            colorMap.forEach(c => {
+                const { r, g, b } = typeof c.rgb === 'object' && !Array.isArray(c.rgb)
+                    ? c.rgb : { r: c.rgb[0], g: c.rgb[1], b: c.rgb[2] };
+                uniqueRgb.add(`${r},${g},${b}`);
+            });
+            const duplicateSeqs = colorMap.length - uniqueRgb.size;
+
             this.state.quantizedImageElement = new Image();
             this.state.quantizedImageElement.onload = () => {
                 toolBase.draw();
                 const notes = [];
+                notes.push(`${uniqueRgb.size} unique RGB`);
+                if (duplicateSeqs > 0) notes.push(`${duplicateSeqs} duplicate colours`);
                 if (reassigned    > 0) notes.push(`${reassigned}px optimised`);
                 if (merged        > 0) notes.push(`${merged}px merged`);
-                if (smoothed      > 0) notes.push(`${smoothed}px smoothed`);
-                if (perimFiltered > 0) notes.push(`${perimFiltered}px perim-filtered`);
                 if (palMerged     > 0) notes.push(`${palMerged}px pal-merged`);
                 const noteStr = notes.length ? ` | ${notes.join(' | ')}` : '';
                 toolBase.setValue('quantizeStatus',
-                    `✅ ${width}×${height}px | ${usedSequences.size}/${colorMap.length} sequences | ${tileSize}mm/px | ${algo}${noteStr}`);
-                console.log(`✅ Quantization complete: ${width}×${height}px, ${usedSequences.size} sequences used`);
+                    `✅ ${width}×${height}px | ${usedSequences.size}/${colorMap.length} seq | ${tileSize}mm/px | ${algo}${noteStr}`);
             };
             this.state.quantizedImageElement.src = outputCanvas.toDataURL();
+
+            // Store analysis metadata for the composite view
+            this.state.quantizeAnalysisMeta = {
+                width, height, tileSize, algo, usedCount: usedSequences.size,
+                totalSeqs: colorMap.length, uniqueRgbCount: uniqueRgb.size,
+                duplicateSeqs, reassigned, merged, palMerged,
+                colourSpace: spaceKey.toUpperCase(),
+                weights: { w1: parseFloat(values.csWeight1) || 1, w2: parseFloat(values.csWeight2) || 1, w3: parseFloat(values.csWeight3) || 1 },
+            };
 
         } catch (err) {
             toolBase.setValue('quantizeStatus', `❌ Quantization failed: ${err.message}`);
@@ -324,7 +355,7 @@ export class MFPQuantizeActions {
      * @param {Object}      values         - UI control values
      * @returns {number} Pixels reassigned
      */
-    _applyFormOptimisation(seqMap, width, height, paletteLabs, colorMap, values) {
+    async _applyFormOptimisation(seqMap, width, height, paletteLabs, colorMap, values) {
         const colourVariance  = Math.max(0, parseFloat(values.colourVariance)  || 0);
         const groupingWeight  = Math.min(1, Math.max(0, parseFloat(values.groupingWeight) || 0));
         const layerPreference = values.layerPreference || 'None';
@@ -426,6 +457,7 @@ export class MFPQuantizeActions {
             while (changed && pass < MAX_PASSES) {
                 changed = false;
                 pass++;
+                await this._yield();
 
                 labels.fill(-1);
                 const components = [];
@@ -498,7 +530,7 @@ export class MFPQuantizeActions {
      * Iterates until convergence or MAX_PASSES safety cap.
      * Returns total number of pixels reassigned.
      */
-    _mergeBelowThreshold(seqMap, width, height, minSize) {
+    async _mergeBelowThreshold(seqMap, width, height, minSize) {
         if (minSize <= 0) return 0;
 
         const pixelCount = width * height;
@@ -512,6 +544,7 @@ export class MFPQuantizeActions {
         while (changed && pass < MAX_PASSES) {
             changed = false;
             pass++;
+            await this._yield();
 
             labels.fill(-1);
             const components = [];
@@ -577,243 +610,11 @@ export class MFPQuantizeActions {
         return totalMerged;
     }
 
-    /**
-     * Majority-vote smoothing: each pixel adopts the most common palette index
-     * in its windowSize×windowSize neighbourhood.  Single pass, writes to a
-     * temporary buffer then copies back.
-     * Returns number of pixels changed.
-     */
-    _majorityVoteSmooth(seqMap, width, height, windowSize) {
-        const half     = Math.floor(windowSize / 2);
-        const output   = new Uint16Array(seqMap);
-        const counts   = new Map();
-        let   changed  = 0;
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                counts.clear();
-                let maxCount = 0;
-                let maxIdx   = seqMap[y * width + x];
-
-                for (let dy = -half; dy <= half; dy++) {
-                    const ny = y + dy;
-                    if (ny < 0 || ny >= height) continue;
-                    for (let dx = -half; dx <= half; dx++) {
-                        const nx = x + dx;
-                        if (nx < 0 || nx >= width) continue;
-                        const v = seqMap[ny * width + nx];
-                        const c = (counts.get(v) || 0) + 1;
-                        counts.set(v, c);
-                        if (c > maxCount) { maxCount = c; maxIdx = v; }
-                    }
-                }
-
-                output[y * width + x] = maxIdx;
-                if (maxIdx !== seqMap[y * width + x]) changed++;
-            }
-        }
-
-        seqMap.set(output);
-        return changed;
-    }
-
-    /**
-     * Eliminate checkerboard diagonal connections between regions.
-     * Scans every 2×2 block; when the pattern is [A,B]/[B,A] or [B,A]/[A,B], both
-     * diagonal pixels are resolved to the more common entry (tie-break: left-top wins).
-     * O(W×H), single pass.  Returns number of pixels changed.
-     */
-    _straightenSeams(seqMap, width, height) {
-        let changed = 0;
-        for (let y = 0; y < height - 1; y++) {
-            for (let x = 0; x < width - 1; x++) {
-                const tl = y * width + x;
-                const tr = tl + 1;
-                const bl = tl + width;
-                const br = bl + 1;
-                const a = seqMap[tl], b = seqMap[tr], c = seqMap[bl], d = seqMap[br];
-                // Checkerboard: top-left == bottom-right != top-right == bottom-left
-                if (a === d && b === c && a !== b) {
-                    // Resolve to a (top-left wins)
-                    if (seqMap[tr] !== a) { seqMap[tr] = a; changed++; }
-                    if (seqMap[bl] !== a) { seqMap[bl] = a; changed++; }
-                }
-            }
-        }
-        return changed;
-    }
-
-    /**
-     * Per-pixel, per-layer isolated filament check.
-     * If a pixel's filament on any active layer is completely surrounded on all 4 sides
-     * by a different filament on that layer, search for an alternative palette entry
-     * within colourVariance that improves cross-layer neighbour agreement.
-     * Uses the same crossLayerScore logic as form optimisation.
-     * Returns number of pixels reassigned.
-     */
-    _layerAwareCleanup(seqMap, width, height, paletteLabs, colorMap, colourVariance) {
-        if (colourVariance <= 0) return 0;
-
-        const palSize    = colorMap.length;
-        const pixelCount = width * height;
-        let   changed    = 0;
-
-        for (let p = 0; p < pixelCount; p++) {
-            const ci  = seqMap[p];
-            const seq = colorMap[ci]?.sequence;
-            if (!seq || seq.length === 0) continue;
-
-            const px = p % width, py = Math.floor(p / width);
-            const nbrs = [];
-            if (px > 0)          nbrs.push(p - 1);
-            if (px < width  - 1) nbrs.push(p + 1);
-            if (py > 0)          nbrs.push(p - width);
-            if (py < height - 1) nbrs.push(p + width);
-            if (nbrs.length === 0) continue;
-
-            // Check if isolated on any active layer
-            let isolatedOnAnyLayer = false;
-            for (let L = 0; L < seq.length; L++) {
-                const myF = seq[L];
-                if (!myF) continue;
-                const allDiffer = nbrs.every(n => {
-                    const ns = colorMap[seqMap[n]]?.sequence;
-                    return !ns || ns[L] !== myF;
-                });
-                if (allDiffer) { isolatedOnAnyLayer = true; break; }
-            }
-            if (!isolatedOnAnyLayer) continue;
-
-            // Find best alternative within colourVariance via cross-layer score
-            const refLab   = paletteLabs[ci];
-            const nbrIdxs  = nbrs.map(n => seqMap[n]);
-            let bestAlt    = -1;
-            let bestScore  = 0; // must beat baseline of 0 to switch
-
-            for (let j = 0; j < palSize; j++) {
-                if (j === ci) continue;
-                const dE = deltaE76(refLab, paletteLabs[j]);
-                if (dE > colourVariance) continue;
-
-                const altSeq = colorMap[j]?.sequence;
-                if (!altSeq) continue;
-
-                // Cross-layer score against neighbours
-                let total = 0, active = 0;
-                for (let L = 0; L < altSeq.length; L++) {
-                    const altF = altSeq[L];
-                    if (!altF) continue;
-                    active++;
-                    let hits = 0;
-                    for (const ni of nbrIdxs) {
-                        const ns = colorMap[ni]?.sequence;
-                        if (ns && ns[L] === altF) hits++;
-                    }
-                    total += hits / nbrIdxs.length;
-                }
-                const score = active > 0 ? total / active : 0;
-                if (score > bestScore) { bestScore = score; bestAlt = j; }
-            }
-
-            if (bestAlt >= 0) { seqMap[p] = bestAlt; changed++; }
-        }
-
-        return changed;
-    }
-
-    /**
-     * Merge connected components whose perimeter:area ratio exceeds maxRatio AND whose
-     * area is <= maxAreaPx.  High ratio = jagged/irregular region.
-     * Perimeter of a component: each pixel contributes (4 - same-neighbour-count) edges.
-     * Merge target: most-contacted boundary neighbour (same rule as _mergeBelowThreshold).
-     * Iterates until convergence.  Returns total pixels reassigned.
-     */
-    _applyPerimeterAreaFilter(seqMap, width, height, maxRatio, maxAreaPx) {
-        if (maxRatio <= 0) return 0;
-
-        const pixelCount = width * height;
-        const labels     = new Int32Array(pixelCount);
-        const stack      = [];
-        let totalFiltered = 0;
-        let changed       = true;
-        let pass          = 0;
-        const MAX_PASSES  = 20;
-
-        while (changed && pass < MAX_PASSES) {
-            changed = false;
-            pass++;
-            labels.fill(-1);
-            const components = [];
-
-            for (let start = 0; start < pixelCount; start++) {
-                if (labels[start] !== -1) continue;
-                const assignedIdx = seqMap[start];
-                const compId      = components.length;
-                const pixels      = [];
-                stack.length = 0;
-                stack.push(start);
-                while (stack.length > 0) {
-                    const q = stack.pop();
-                    if (labels[q] !== -1 || seqMap[q] !== assignedIdx) continue;
-                    labels[q] = compId;
-                    pixels.push(q);
-                    const qx = q % width, qy = Math.floor(q / width);
-                    if (qx > 0)          stack.push(q - 1);
-                    if (qx < width  - 1) stack.push(q + 1);
-                    if (qy > 0)          stack.push(q - width);
-                    if (qy < height - 1) stack.push(q + width);
-                }
-                // Compute perimeter: sum of exposed edges per pixel
-                let perimeter = 0;
-                for (const p of pixels) {
-                    const px = p % width, py = Math.floor(p / width);
-                    if (px === 0          || seqMap[p - 1]    !== assignedIdx) perimeter++;
-                    if (px === width  - 1 || seqMap[p + 1]    !== assignedIdx) perimeter++;
-                    if (py === 0          || seqMap[p - width] !== assignedIdx) perimeter++;
-                    if (py === height - 1 || seqMap[p + width] !== assignedIdx) perimeter++;
-                }
-                components.push({ pixels, currentIdx: assignedIdx, perimeter });
-            }
-
-            for (const comp of components) {
-                const area  = comp.pixels.length;
-                const ratio = comp.perimeter / area;
-                if (ratio <= maxRatio || area > maxAreaPx) continue;
-
-                // Count boundary contact per neighbour component
-                const contactCount = new Map();
-                for (const p of comp.pixels) {
-                    const px = p % width, py = Math.floor(p / width);
-                    if (px > 0          && labels[p - 1]     !== labels[p]) contactCount.set(labels[p - 1],     (contactCount.get(labels[p - 1])     || 0) + 1);
-                    if (px < width  - 1 && labels[p + 1]     !== labels[p]) contactCount.set(labels[p + 1],     (contactCount.get(labels[p + 1])     || 0) + 1);
-                    if (py > 0          && labels[p - width]  !== labels[p]) contactCount.set(labels[p - width],  (contactCount.get(labels[p - width])  || 0) + 1);
-                    if (py < height - 1 && labels[p + width]  !== labels[p]) contactCount.set(labels[p + width],  (contactCount.get(labels[p + width])  || 0) + 1);
-                }
-                if (contactCount.size === 0) continue;
-
-                let bestId = -1, bestContact = 0;
-                for (const [cid, count] of contactCount) {
-                    if (cid < 0) continue;
-                    const rival = components[cid];
-                    if (!rival) continue;
-                    if (count > bestContact ||
-                        (count === bestContact && rival.pixels.length > (bestId >= 0 ? components[bestId].pixels.length : 0))) {
-                        bestContact = count;
-                        bestId = cid;
-                    }
-                }
-
-                if (bestId >= 0) {
-                    const targetIdx = components[bestId].currentIdx;
-                    for (const p of comp.pixels) seqMap[p] = targetIdx;
-                    totalFiltered += comp.pixels.length;
-                    changed = true;
-                }
-            }
-        }
-
-        return totalFiltered;
-    }
+    // Pixel-domain smoothing methods (Majority Vote, Straighten Seams,
+    // Layer-Aware Cleanup, Perimeter:Area filter) were removed.
+    // Boundary smoothing is now handled in the STL contour pipeline
+    // (marching squares → Douglas-Peucker → Chaikin) where sub-pixel
+    // geometry is available and the pixel-grid constraint does not apply.
 
     /**
      * Merge visually near-identical palette entries using union-find.
@@ -860,6 +661,371 @@ export class MFPQuantizeActions {
             if (target !== -1 && target !== seqMap[p]) { seqMap[p] = target; reassigned++; }
         }
         return reassigned;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ANALYSIS IMAGE EXPORT
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Build and download a composite PNG showing the source image, quantised image,
+     * palette, per-layer filament maps (holes highlighted in red), and quality stats.
+     */
+    async exportAnalysisImage(values, toolBase) {
+        const qsm = this.state.quantizedSequenceMap;
+        if (!qsm) {
+            toolBase.setValue('quantizeStatus', '❌ Quantise image first');
+            return;
+        }
+        try {
+            toolBase.setValue('quantizeStatus', '⏳ Computing layer maps for analysis…');
+            await this._yield();
+            const { layerData, maxLayers, filamentCount, filamentColours } =
+                this._computeLayerMapsInt(qsm);
+
+            toolBase.setValue('quantizeStatus', '⏳ Analysing layer quality…');
+            await this._yield();
+            const analysis = this._analyseLayerQuality(layerData, maxLayers, qsm.width, qsm.height);
+
+            toolBase.setValue('quantizeStatus', '⏳ Rendering analysis image…');
+            await this._yield();
+            const canvas = this._renderAnalysisCanvas({
+                qsm, layerData, maxLayers, filamentCount, filamentColours, analysis, values,
+                sourceImg:    this.state.sourceImageElement,
+                quantisedImg: this.state.quantizedImageElement,
+                filaments:    this.state.quantizationConfig?.filaments || [],
+            });
+
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a   = document.createElement('a');
+                a.href     = url;
+                a.download = `quantize-analysis-${Date.now()}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+
+            const issues = analysis.reduce((s, l) => s + l.holes + l.thinStrips, 0);
+            toolBase.setValue('quantizeStatus',
+                `✅ Analysis downloaded | ${maxLayers} layers | ${issues > 0 ? issues + ' issues found' : 'no issues'}`);
+
+        } catch (err) {
+            toolBase.setValue('quantizeStatus', `❌ Analysis failed: ${err.message}`);
+            console.error('Analysis error:', err);
+        }
+    }
+
+    /**
+     * Expand the Uint16Array sequence map into per-layer integer pixel maps.
+     * layerData[L] = Uint8Array(width*height): 0 = no filament, 1..N = filament index (1-based).
+     */
+    _computeLayerMapsInt({ width, height, map, palette }) {
+        let maxLayers = 0, maxFilament = 0;
+        for (const entry of palette) {
+            const seq = entry.sequence || [];
+            maxLayers   = Math.max(maxLayers,   seq.filter(v => v > 0).length);
+            for (const v of seq) if (v > maxFilament) maxFilament = v;
+        }
+        if (maxLayers === 0) maxLayers = 1;
+        const filamentCount = maxFilament;
+        const pixelCount    = width * height;
+
+        const layerData = Array.from({ length: maxLayers }, () => new Uint8Array(pixelCount));
+
+        for (let p = 0; p < pixelCount; p++) {
+            const seq = palette[map[p]]?.sequence;
+            if (!seq) continue;
+            let li = 0;
+            for (const filRef of seq) {
+                if (filRef > 0) { layerData[li][p] = filRef; li++; }
+                if (li >= maxLayers) break;
+            }
+        }
+
+        // Derive display colour for each filament (1-based index)
+        const filaments = this.state.quantizationConfig?.filaments || [];
+        const filamentColours = [];
+        for (let fi = 1; fi <= filamentCount; fi++) {
+            const fil = filaments[fi - 1];
+            if (fil?.hex) {
+                filamentColours.push({
+                    r: parseInt(fil.hex.slice(1, 3), 16),
+                    g: parseInt(fil.hex.slice(3, 5), 16),
+                    b: parseInt(fil.hex.slice(5, 7), 16),
+                    name: fil.name || fil.n || `F${fi}`
+                });
+            } else {
+                let rS = 0, gS = 0, bS = 0, n = 0;
+                for (const entry of palette) {
+                    if (!(entry.sequence || []).includes(fi)) continue;
+                    const rgb = Array.isArray(entry.rgb) ? { r: entry.rgb[0], g: entry.rgb[1], b: entry.rgb[2] } : entry.rgb;
+                    rS += rgb.r; gS += rgb.g; bS += rgb.b; n++;
+                }
+                filamentColours.push(n > 0
+                    ? { r: Math.round(rS / n), g: Math.round(gS / n), b: Math.round(bS / n), name: `F${fi}` }
+                    : { r: 128, g: 128, b: 128, name: `F${fi}` });
+            }
+        }
+
+        return { layerData, maxLayers, filamentCount, filamentColours };
+    }
+
+    /**
+     * Per-layer quality analysis.
+     * Returns an array of stats objects, one per layer:
+     *   { holes, components, minSize, maxSize, avgSize, thinStrips, coveredPx }
+     * "holes"      = uncovered pixels fully surrounded by covered pixels (print voids)
+     * "thinStrips" = components with perimeter/area > 3.5 (filament-wasting thin geometry)
+     */
+    _analyseLayerQuality(layerData, maxLayers, width, height) {
+        const pixelCount = width * height;
+        const stack      = [];
+
+        return layerData.map(lm => {
+            // Holes: uncovered pixel whose all 4 axis neighbours are covered
+            let holes = 0;
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const p = y * width + x;
+                    if (lm[p] !== 0) continue;
+                    if (lm[p - 1] && lm[p + 1] && lm[p - width] && lm[p + width]) holes++;
+                }
+            }
+
+            // Connected-component analysis (each component groups same-filament adjacent pixels)
+            const visited = new Uint8Array(pixelCount);
+            let components = 0, coveredPx = 0, minSize = Infinity, maxSize = 0, thinStrips = 0;
+
+            for (let start = 0; start < pixelCount; start++) {
+                if (!lm[start] || visited[start]) continue;
+                const fi = lm[start];
+                stack.length = 0;
+                stack.push(start);
+                visited[start] = 1;
+                let size = 0, perimeter = 0;
+
+                while (stack.length > 0) {
+                    const p   = stack.pop();
+                    const px  = p % width, py = Math.floor(p / width);
+                    size++;
+                    if (px > 0)          { const n = p - 1;     if (lm[n] === fi && !visited[n]) { visited[n] = 1; stack.push(n); } else if (lm[n] !== fi) perimeter++; }
+                    if (px < width  - 1) { const n = p + 1;     if (lm[n] === fi && !visited[n]) { visited[n] = 1; stack.push(n); } else if (lm[n] !== fi) perimeter++; }
+                    if (py > 0)          { const n = p - width;  if (lm[n] === fi && !visited[n]) { visited[n] = 1; stack.push(n); } else if (lm[n] !== fi) perimeter++; }
+                    if (py < height - 1) { const n = p + width;  if (lm[n] === fi && !visited[n]) { visited[n] = 1; stack.push(n); } else if (lm[n] !== fi) perimeter++; }
+                }
+
+                components++;
+                coveredPx += size;
+                if (size < minSize) minSize = size;
+                if (size > maxSize) maxSize = size;
+                if (perimeter / size > 3.5) thinStrips++;
+            }
+
+            return {
+                holes, components,
+                minSize:   minSize === Infinity ? 0 : minSize,
+                maxSize,
+                avgSize:   components > 0 ? +(coveredPx / components).toFixed(1) : 0,
+                thinStrips,
+                coveredPx,
+            };
+        });
+    }
+
+    /**
+     * Render the composite analysis PNG.
+     * Layout (top to bottom):
+     *   Header — title + all settings
+     *   Row 1  — source image | quantised image | palette swatches
+     *   Rows   — one panel per layer: pixel map (holes in red) + stats
+     */
+    _renderAnalysisCanvas({ qsm, layerData, maxLayers, filamentCount, filamentColours,
+                            analysis, values, sourceImg, quantisedImg, filaments }) {
+        const { width, height, palette: colorMap } = qsm;
+        const meta = this.state.quantizeAnalysisMeta || {};
+
+        const PAD   = 24;
+        const FS    = 16;
+        const FS_SM = 13;
+        const FS_LG = 20;
+        const FONT     = `${FS}px "Space Mono", monospace`;
+        const FONT_SM  = `${FS_SM}px "Space Mono", monospace`;
+        const FONT_LG  = `${FS_LG}px "Space Mono", monospace`;
+        const FONT_XL  = `bold 24px "Space Mono", monospace`;
+        const BG    = '#080808';
+        const FG    = '#d0d0d0';
+        const DIM   = '#666666';
+        const WHITE = '#ffffff';
+        const WARN  = '#ff5555';
+        const OK    = '#55ff55';
+        const LINE_H  = FS + 6;
+        const LINE_SM = FS_SM + 5;
+
+        // Palette analysis: group sequences by rendered RGB
+        const rgbGroups = new Map();
+        (colorMap || []).forEach((c, i) => {
+            const { r, g, b } = typeof c.rgb === 'object' && !Array.isArray(c.rgb)
+                ? c.rgb : { r: c.rgb[0], g: c.rgb[1], b: c.rgb[2] };
+            const key = `${r},${g},${b}`;
+            if (!rgbGroups.has(key)) rgbGroups.set(key, { r, g, b, hex: c.hex, entries: [] });
+            rgbGroups.get(key).entries.push({ index: i, name: c.name || '', sequence: c.sequence || [] });
+        });
+        const uniqueColours = [...rgbGroups.values()];
+
+        // Uniform image sizing — all images (source, quantised, layer maps) use the same dimensions
+        const IMG_SIZE = 280;
+        const imgAspect = width / height;
+        const imgW = imgAspect >= 1 ? IMG_SIZE : Math.round(IMG_SIZE * imgAspect);
+        const imgH = imgAspect >= 1 ? Math.round(IMG_SIZE / imgAspect) : IMG_SIZE;
+        const LPR     = Math.min(maxLayers, 4);
+        const STAT_H  = LINE_H * 4;
+
+        // Palette swatch layout
+        const SW_SIZE  = 20;
+        const SW_COL_W = 340;
+        const SW_COLS  = Math.max(1, Math.min(4, Math.floor(1200 / SW_COL_W)));
+        const SW_ROWS  = Math.ceil(uniqueColours.length / SW_COLS);
+        const SW_ROW_H = SW_SIZE + 6;
+        const palSectionH = SW_ROWS * SW_ROW_H + LINE_H + PAD;
+
+        // Total canvas size — uses imgW/imgH for all image slots
+        const HDR_H = LINE_H * 8 + PAD * 2;
+        const IMG_H = imgH + LINE_H + PAD * 2;
+        const LAY_H = Math.ceil(maxLayers / LPR) * (imgH + STAT_H + PAD * 2) + LINE_H + PAD;
+        const CW = Math.max(LPR * (imgW + PAD) + PAD, imgW * 2 + PAD * 3, SW_COLS * SW_COL_W + PAD * 2, 800);
+        const CH = HDR_H + IMG_H + palSectionH + LAY_H + PAD;
+
+        const cv  = document.createElement('canvas');
+        cv.width  = CW;
+        cv.height = CH;
+        const ctx = cv.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, CW, CH);
+
+        let cy = PAD;
+
+        // Header
+        ctx.fillStyle = WHITE; ctx.font = FONT_XL;
+        ctx.fillText('QUANTISATION ANALYSIS', PAD, cy + 22);
+        cy += 30;
+        ctx.fillStyle = DIM; ctx.font = FONT_SM;
+        ctx.fillText(new Date().toISOString().slice(0, 19).replace('T', ' '), PAD, cy + FS_SM);
+        cy += LINE_SM + 4;
+
+        // Palette stats
+        ctx.fillStyle = FG; ctx.font = FONT;
+        ctx.fillText(`Palette: ${colorMap?.length || 0} sequences  ->  ${uniqueColours.length} unique RGB colours`, PAD, cy + FS);
+        cy += LINE_H;
+        if ((meta.duplicateSeqs || 0) > 0) {
+            ctx.fillStyle = WARN; ctx.font = FONT;
+            ctx.fillText(`${meta.duplicateSeqs} sequences share colours with other sequences (identical RGB output)`, PAD, cy + FS);
+            cy += LINE_H;
+        }
+        ctx.fillStyle = FG; ctx.font = FONT;
+        ctx.fillText(`Used: ${meta.usedCount || '?'}/${meta.totalSeqs || '?'} sequences  |  Space: ${meta.colourSpace || 'CIELAB'} [${meta.weights?.w1 ?? 1}, ${meta.weights?.w2 ?? 1}, ${meta.weights?.w3 ?? 1}]`, PAD, cy + FS);
+        cy += LINE_H;
+
+        ctx.fillStyle = DIM; ctx.font = FONT_SM;
+        ctx.fillText(`${width}x${height}px  |  print: ${values.printWidth || 170}mm  |  tile: ${meta.tileSize || '?'}mm  |  dither: ${values.ditherAlgorithm || 'None'}`, PAD, cy + FS_SM);
+        cy += LINE_SM;
+        ctx.fillText(`form-opt: ${values.analysisMode || 'Fast'}  |  variance: ${values.colourVariance || 0}  |  grouping: ${values.groupingWeight || 0}  |  cluster: ${values.minimumClusterPx || 0}px  |  pal-merge: ${values.paletteMergeThreshold || 0}`, PAD, cy + FS_SM);
+        cy += LINE_SM + PAD;
+
+        // Images row
+        ctx.fillStyle = FG; ctx.font = FONT;
+        ctx.fillText('SOURCE', PAD, cy + FS);
+        ctx.fillText('QUANTISED', PAD * 2 + imgW, cy + FS);
+        cy += LINE_H;
+
+        if (sourceImg) ctx.drawImage(sourceImg, PAD, cy, imgW, imgH);
+        else { ctx.fillStyle = '#1a1a1a'; ctx.fillRect(PAD, cy, imgW, imgH); }
+        if (quantisedImg) ctx.drawImage(quantisedImg, PAD * 2 + imgW, cy, imgW, imgH);
+        cy += imgH + PAD;
+
+        // Palette section
+        ctx.fillStyle = WHITE; ctx.font = FONT_LG;
+        ctx.fillText(`PALETTE  (${uniqueColours.length} unique colours from ${colorMap?.length || 0} sequences)`, PAD, cy + FS_LG);
+        cy += LINE_H + 4;
+
+        uniqueColours.forEach((uc, idx) => {
+            const col = idx % SW_COLS;
+            const row = Math.floor(idx / SW_COLS);
+            const sx = PAD + col * SW_COL_W;
+            const sy = cy + row * SW_ROW_H;
+
+            ctx.fillStyle = `rgb(${uc.r},${uc.g},${uc.b})`;
+            ctx.fillRect(sx, sy, SW_SIZE, SW_SIZE);
+            ctx.strokeStyle = '#333'; ctx.strokeRect(sx, sy, SW_SIZE, SW_SIZE);
+
+            const dupLabel = uc.entries.length > 1 ? ` (x${uc.entries.length})` : '';
+            const seqStr = uc.entries[0].name || uc.entries[0].sequence.join('');
+            ctx.fillStyle = uc.entries.length > 1 ? WARN : FG;
+            ctx.font = FONT_SM;
+            ctx.fillText(`${uc.hex} ${seqStr}${dupLabel}`, sx + SW_SIZE + 6, sy + FS_SM + 2);
+        });
+        cy += SW_ROWS * SW_ROW_H + PAD;
+
+        // Layer maps
+        ctx.fillStyle = WHITE; ctx.font = FONT_LG;
+        ctx.fillText('LAYER MAPS  (red = holes | yellow = thin strips)', PAD, cy + FS_LG);
+        cy += LINE_H + 8;
+
+        const tmp = document.createElement('canvas');
+        tmp.width  = width;
+        tmp.height = height;
+        const tctx = tmp.getContext('2d');
+
+        for (let rowStart = 0; rowStart < maxLayers; rowStart += LPR) {
+            let lx = PAD;
+            for (let L = rowStart; L < Math.min(rowStart + LPR, maxLayers); L++) {
+                const lm    = layerData[L];
+                const stats = analysis[L];
+
+                const imd = tctx.createImageData(width, height);
+                for (let p = 0; p < width * height; p++) {
+                    const fi = lm[p];
+                    const i4 = p * 4;
+                    if (fi > 0 && fi <= filamentColours.length) {
+                        const { r, g, b } = filamentColours[fi - 1];
+                        imd.data[i4] = r; imd.data[i4+1] = g; imd.data[i4+2] = b; imd.data[i4+3] = 255;
+                    } else {
+                        imd.data[i4] = 14; imd.data[i4+1] = 14; imd.data[i4+2] = 14; imd.data[i4+3] = 255;
+                    }
+                }
+                if (stats.holes > 0) {
+                    for (let y = 1; y < height - 1; y++) {
+                        for (let x = 1; x < width - 1; x++) {
+                            const p = y * width + x;
+                            if (lm[p] !== 0) continue;
+                            if (lm[p-1] && lm[p+1] && lm[p-width] && lm[p+width]) {
+                                const i4 = p * 4;
+                                imd.data[i4] = 255; imd.data[i4+1] = 0; imd.data[i4+2] = 0; imd.data[i4+3] = 255;
+                            }
+                        }
+                    }
+                }
+                tctx.putImageData(imd, 0, 0);
+
+                ctx.fillStyle = FG; ctx.font = FONT;
+                ctx.fillText(`LAYER ${L}`, lx, cy + FS);
+                ctx.drawImage(tmp, lx, cy + LINE_H, imgW, imgH);
+
+                const sy  = cy + LINE_H + imgH + 6;
+                const bad = stats.holes > 0 || stats.thinStrips > 0 || stats.minSize === 1;
+                ctx.fillStyle = bad ? WARN : OK; ctx.font = FONT_SM;
+                ctx.fillText(`coverage: ${stats.coveredPx}px  components: ${stats.components}`, lx, sy + FS_SM);
+                ctx.fillStyle = stats.holes > 0 ? WARN : DIM; ctx.font = FONT_SM;
+                ctx.fillText(`holes: ${stats.holes}`, lx, sy + FS_SM + LINE_SM);
+                ctx.fillStyle = (stats.thinStrips > 0 || stats.minSize < 3) ? WARN : DIM;
+                ctx.fillText(`thin: ${stats.thinStrips}  min: ${stats.minSize}px  avg: ${stats.avgSize}px`, lx, sy + FS_SM + LINE_SM * 2);
+
+                lx += imgW + PAD;
+            }
+            cy += imgH + STAT_H + PAD * 2;
+        }
+
+        return cv;
     }
 
     /**

@@ -35,6 +35,8 @@ import { deltaE76 } from '../color/color-space.js';
 export function nearestColorQuantize(imageData, palette, paletteLabs, colorSpace) {
     const { width, height, data } = imageData;
     const output = new Uint8ClampedArray(data.length);
+    const convert  = colorSpace.convert || colorSpace.rgbToLab;
+    const distFn   = colorSpace.distance || deltaE76;
 
     for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
@@ -42,10 +44,8 @@ export function nearestColorQuantize(imageData, palette, paletteLabs, colorSpace
         const b = data[i + 2];
         const a = data[i + 3];
 
-        // Convert to LAB
-        const labPix = colorSpace.rgbToLab(r, g, b);
+        const converted = convert(r, g, b);
 
-        // Find nearest palette color
         let bestDist = Infinity;
         let bestIdx = 0;
 
@@ -53,11 +53,11 @@ export function nearestColorQuantize(imageData, palette, paletteLabs, colorSpace
             const labP = paletteLabs[j];
             if (!labP) continue;
 
-            const d = deltaE76(labPix, labP);
+            const d = distFn(converted, labP);
             if (d < bestDist) {
                 bestDist = d;
                 bestIdx = j;
-                if (d < 0.001) break; // Perfect match
+                if (d < 0.001) break;
             }
         }
 

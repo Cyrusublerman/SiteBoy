@@ -3005,8 +3005,31 @@ body.full-mode .page-header {
 }
 
 body.full-mode #footer,
-body.full-mode .page-footer {
+body.full-mode .page-footer,
+body.tools-section #footer,
+body.tools-section .page-footer {
     display: none !important;
+}
+
+body.tools-section .content-container {
+    min-height: calc(var(--content-min-h-no-sub) + var(--header-height));
+    max-height: calc(var(--content-height-no-sub) + var(--header-height));
+    border-bottom: 1px solid var(--c-border);
+}
+
+body.tools-section.with-subheader .content-container {
+    min-height: calc(var(--content-min-h-with-sub) + var(--header-height));
+    max-height: calc(var(--content-height-with-sub) + var(--header-height));
+}
+
+body.tools-section .content-container.tool-viewport {
+    height: calc(var(--content-min-h-no-sub) + var(--header-height));
+    max-height: calc(var(--content-min-h-no-sub) + var(--header-height));
+}
+
+body.tools-section.with-subheader .content-container.tool-viewport {
+    height: calc(var(--content-min-h-with-sub) + var(--header-height));
+    max-height: calc(var(--content-min-h-with-sub) + var(--header-height));
 }
 
 body.full-mode #subheader,

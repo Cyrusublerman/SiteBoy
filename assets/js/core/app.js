@@ -490,11 +490,22 @@ const SiteBoyApp = {
                 const subheader = document.getElementById('subheader');
                 
                 if (header) header.style.display = '';
-                if (footer) footer.style.display = '';
+                if (footer) footer.style.display = section === 'tools' ? 'none' : '';
                 if (subheader) subheader.style.display = '';
             });
             
             console.log(`🔍 Full mode disabled, body classes: "${document.body.className}"`);
+        }
+
+        // Hide footer for tools section (regardless of full-mode)
+        if (section === 'tools') {
+            document.body.classList.add('tools-section');
+            requestAnimationFrame(() => {
+                const footer = document.getElementById('footer');
+                if (footer) footer.style.display = 'none';
+            });
+        } else {
+            document.body.classList.remove('tools-section');
         }
 
         // Update app state

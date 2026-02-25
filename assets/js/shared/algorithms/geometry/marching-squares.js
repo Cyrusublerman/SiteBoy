@@ -142,63 +142,72 @@ export function marchingSquares(field, width, height, threshold, options = {}) {
  */
 export function extractContours(field, width, height, threshold, options = {}) {
     const segments = marchingSquares(field, width, height, threshold, options);
-    
+
     if (segments.length === 0) return [];
-    
-    // Connect segments into polylines
-    const epsilon = 0.001;
-    const used = new Array(segments.length).fill(false);
+
+    // Hash-based O(n) contour stitching — replaces the old O(n²) linear scan.
+    // Quantise coordinates to avoid floating-point mismatch (marching squares
+    // produces values on a grid so rounding to 4 decimals is safe).
+    const Q = 1e4;
+    const pkey = (p) => `${Math.round(p.x * Q)},${Math.round(p.y * Q)}`;
+
+    // Build adjacency: point-key → list of {idx, end} where end=0 means seg[0], end=1 means seg[1]
+    const adj = new Map();
+    const addAdj = (key, idx, end) => {
+        let list = adj.get(key);
+        if (!list) { list = []; adj.set(key, list); }
+        list.push({ idx, end });
+    };
+    for (let i = 0; i < segments.length; i++) {
+        addAdj(pkey(segments[i][0]), i, 0);
+        addAdj(pkey(segments[i][1]), i, 1);
+    }
+
+    const used = new Uint8Array(segments.length);
     const polylines = [];
-    
-    function pointsEqual(a, b) {
-        return Math.abs(a.x - b.x) < epsilon && Math.abs(a.y - b.y) < epsilon;
-    }
-    
-    function findConnected(point, excludeIdx) {
-        for (let i = 0; i < segments.length; i++) {
-            if (used[i] || i === excludeIdx) continue;
-            const seg = segments[i];
-            if (pointsEqual(point, seg[0])) return { idx: i, reverse: false };
-            if (pointsEqual(point, seg[1])) return { idx: i, reverse: true };
-        }
-        return null;
-    }
-    
+
     for (let i = 0; i < segments.length; i++) {
         if (used[i]) continue;
-        
-        used[i] = true;
-        const polyline = [...segments[i]];
-        
-        // Extend forward
-        let found = findConnected(polyline[polyline.length - 1], i);
-        while (found) {
-            used[found.idx] = true;
-            const seg = segments[found.idx];
-            if (found.reverse) {
-                polyline.push(seg[0]);
-            } else {
-                polyline.push(seg[1]);
+        used[i] = 1;
+        const polyline = [segments[i][0], segments[i][1]];
+
+        // Extend forward from last point
+        let searching = true;
+        while (searching) {
+            searching = false;
+            const key = pkey(polyline[polyline.length - 1]);
+            const list = adj.get(key);
+            if (!list) break;
+            for (const entry of list) {
+                if (used[entry.idx]) continue;
+                used[entry.idx] = 1;
+                const seg = segments[entry.idx];
+                polyline.push(entry.end === 0 ? seg[1] : seg[0]);
+                searching = true;
+                break;
             }
-            found = findConnected(polyline[polyline.length - 1], found.idx);
         }
-        
-        // Extend backward
-        found = findConnected(polyline[0], -1);
-        while (found) {
-            used[found.idx] = true;
-            const seg = segments[found.idx];
-            if (found.reverse) {
-                polyline.unshift(seg[1]);
-            } else {
-                polyline.unshift(seg[0]);
+
+        // Extend backward from first point
+        searching = true;
+        while (searching) {
+            searching = false;
+            const key = pkey(polyline[0]);
+            const list = adj.get(key);
+            if (!list) break;
+            for (const entry of list) {
+                if (used[entry.idx]) continue;
+                used[entry.idx] = 1;
+                const seg = segments[entry.idx];
+                polyline.unshift(entry.end === 0 ? seg[1] : seg[0]);
+                searching = true;
+                break;
             }
-            found = findConnected(polyline[0], found.idx);
         }
-        
+
         polylines.push(polyline);
     }
-    
+
     return polylines;
 }
 

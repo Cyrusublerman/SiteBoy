@@ -252,8 +252,12 @@ export class MFPSourceActions {
                 const quant = meta.quantizeSettings;
                 if (quant.printWidth !== undefined) toolBase.setValue('printWidth', quant.printWidth);
                 if (quant.ditherAlgorithm) toolBase.setValue('ditherAlgorithm', quant.ditherAlgorithm);
-                if (quant.ditherStrength !== undefined) toolBase.setValue('ditherStrength', quant.ditherStrength);
                 if (quant.minDetail !== undefined) toolBase.setValue('minDetail', quant.minDetail);
+                // Colour space controls
+                if (quant.colourSpace)              toolBase.setValue('colourSpace', quant.colourSpace);
+                if (quant.csWeight1 !== undefined)   toolBase.setValue('csWeight1', quant.csWeight1);
+                if (quant.csWeight2 !== undefined)   toolBase.setValue('csWeight2', quant.csWeight2);
+                if (quant.csWeight3 !== undefined)   toolBase.setValue('csWeight3', quant.csWeight3);
                 // Optimisation controls
                 if (quant.analysisMode) toolBase.setValue('analysisMode', quant.analysisMode);
                 if (quant.colourVariance !== undefined) toolBase.setValue('colourVariance', quant.colourVariance);
@@ -261,10 +265,11 @@ export class MFPSourceActions {
                 if (quant.groupingWeight !== undefined) toolBase.setValue('groupingWeight', quant.groupingWeight);
                 // Simplification controls
                 if (quant.minimumClusterPx !== undefined)      toolBase.setValue('minimumClusterPx', quant.minimumClusterPx);
-                if (quant.smoothingMethod)                     toolBase.setValue('smoothingMethod', quant.smoothingMethod);
                 if (quant.paletteMergeThreshold !== undefined) toolBase.setValue('paletteMergeThreshold', quant.paletteMergeThreshold);
-                if (quant.perimAreaRatio !== undefined)        toolBase.setValue('perimAreaRatio', quant.perimAreaRatio);
-                if (quant.perimAreaMaxPx !== undefined)        toolBase.setValue('perimAreaMaxPx', quant.perimAreaMaxPx);
+                // STL smoothing controls
+                if (quant.stlSmoothIterations !== undefined)   toolBase.setValue('stlSmoothIterations', quant.stlSmoothIterations);
+                if (quant.stlSimplifyTolerance !== undefined)  toolBase.setValue('stlSimplifyTolerance', quant.stlSimplifyTolerance);
+                if (quant.stlMinContourArea !== undefined)     toolBase.setValue('stlMinContourArea', quant.stlMinContourArea);
                 
                 // Restore image adjustment values
                 if (quant.imageAdjustments) {
@@ -1140,8 +1145,12 @@ export class MFPSourceActions {
                 quantizeSettings: {
                     printWidth: currentValues.printWidth ?? 170,
                     ditherAlgorithm: currentValues.ditherAlgorithm || 'Floyd-Steinberg',
-                    ditherStrength: currentValues.ditherStrength ?? 1.0,
                     minDetail: currentValues.minDetail ?? 0.8,
+                    // Colour space controls
+                    colourSpace: currentValues.colourSpace || 'CIELAB',
+                    csWeight1: currentValues.csWeight1 ?? 1,
+                    csWeight2: currentValues.csWeight2 ?? 1,
+                    csWeight3: currentValues.csWeight3 ?? 1,
                     // Optimisation controls
                     analysisMode: currentValues.analysisMode || 'Fast',
                     colourVariance: currentValues.colourVariance ?? 0,
@@ -1149,10 +1158,11 @@ export class MFPSourceActions {
                     groupingWeight: currentValues.groupingWeight ?? 0.3,
                     // Simplification controls
                     minimumClusterPx: currentValues.minimumClusterPx ?? 0,
-                    smoothingMethod: currentValues.smoothingMethod || 'None',
                     paletteMergeThreshold: currentValues.paletteMergeThreshold ?? 0,
-                    perimAreaRatio: currentValues.perimAreaRatio ?? 0,
-                    perimAreaMaxPx: currentValues.perimAreaMaxPx ?? 50,
+                    // STL smoothing controls
+                    stlSmoothIterations: currentValues.stlSmoothIterations ?? 2,
+                    stlSimplifyTolerance: currentValues.stlSimplifyTolerance ?? 0.3,
+                    stlMinContourArea: currentValues.stlMinContourArea ?? 2,
                     // Image adjustment bundle values
                     imageAdjustments: this._getImageAdjustmentValues(toolBase)
                 },

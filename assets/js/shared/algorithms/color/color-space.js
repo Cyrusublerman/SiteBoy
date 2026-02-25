@@ -221,6 +221,135 @@ export function vecMagSq(vA) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// HSL CONVERSION
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * sRGB (0-255) → HSL  {h: 0-360, s: 0-1, l: 0-1}
+ *
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @returns {{h: number, s: number, l: number}}
+ */
+export function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return { h: 0, s: 0, l };
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if (max === r)      h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else                h = ((r - g) / d + 4) / 6;
+    return { h: h * 360, s, l };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WEIGHTED / MULTI-SPACE DISTANCE FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Weighted CIELAB distance.
+ * Standard ΔE76 with per-axis weights.
+ *
+ * @param {{L,a,b}} lab1
+ * @param {{L,a,b}} lab2
+ * @param {number} wL - Lightness weight (default 1)
+ * @param {number} wA - a* (green-red) weight (default 1)
+ * @param {number} wB - b* (blue-yellow) weight (default 1)
+ * @returns {number}
+ */
+export function weightedLabDistance(lab1, lab2, wL = 1, wA = 1, wB = 1) {
+    if (!lab1 || !lab2) return Infinity;
+    const dL = lab1.L - lab2.L;
+    const da = lab1.a - lab2.a;
+    const db = lab1.b - lab2.b;
+    return Math.sqrt(wL * dL * dL + wA * da * da + wB * db * db);
+}
+
+/**
+ * Euclidean RGB distance (0-255 scale).
+ *
+ * @param {{r,g,b}} a
+ * @param {{r,g,b}} b
+ * @returns {number}
+ */
+export function rgbDistance(a, b) {
+    if (!a || !b) return Infinity;
+    const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+/**
+ * Weighted HSL distance with circular hue handling.
+ * Hue difference wraps at 360°. All three axes are normalised to
+ * roughly comparable scales before weighting:
+ *   ΔH_norm = min(|Δh|, 360-|Δh|) / 180   → [0, 1]
+ *   ΔS_norm = |Δs|                          → [0, 1]
+ *   ΔL_norm = |Δl|                          → [0, 1]
+ *
+ * @param {{h,s,l}} hsl1
+ * @param {{h,s,l}} hsl2
+ * @param {number} wH - Hue weight (default 1)
+ * @param {number} wS - Saturation weight (default 1)
+ * @param {number} wL - Lightness weight (default 1)
+ * @returns {number}
+ */
+export function weightedHslDistance(hsl1, hsl2, wH = 1, wS = 1, wL = 1) {
+    if (!hsl1 || !hsl2) return Infinity;
+    const rawDh = Math.abs(hsl1.h - hsl2.h);
+    const dh = Math.min(rawDh, 360 - rawDh) / 180;
+    const ds = Math.abs(hsl1.s - hsl2.s);
+    const dl = Math.abs(hsl1.l - hsl2.l);
+    return Math.sqrt(wH * dh * dh + wS * ds * ds + wL * dl * dl);
+}
+
+/**
+ * Build a colour-space adapter for use with the dither algorithms.
+ * Returns an object with `convert(r,g,b)`, `distance(a,b)`, and `hexToRgb(hex)`.
+ *
+ * @param {'lab'|'rgb'|'hsl'} space
+ * @param {{w1?: number, w2?: number, w3?: number}} [weights]
+ * @returns {{convert: Function, distance: Function, hexToRgb: Function, rgbToLab: Function}}
+ */
+export function buildColorSpace(space = 'lab', weights = {}) {
+    const w1 = weights.w1 ?? 1;
+    const w2 = weights.w2 ?? 1;
+    const w3 = weights.w3 ?? 1;
+
+    if (space === 'rgb') {
+        return {
+            convert: (r, g, b) => ({ r, g, b }),
+            distance: (a, b) => rgbDistance(a, b),
+            hexToRgb: (hex) => hexToRgb(hex),
+            rgbToLab: (r, g, b) => ({ r, g, b }),
+        };
+    }
+
+    if (space === 'hsl') {
+        return {
+            convert: (r, g, b) => rgbToHsl(r, g, b),
+            distance: (a, b) => weightedHslDistance(a, b, w1, w2, w3),
+            hexToRgb: (hex) => hexToRgb(hex),
+            rgbToLab: (r, g, b) => rgbToHsl(r, g, b),
+        };
+    }
+
+    // Default: CIELAB
+    const isWeighted = w1 !== 1 || w2 !== 1 || w3 !== 1;
+    return {
+        convert: (r, g, b) => rgbToLab(r, g, b),
+        distance: isWeighted
+            ? (a, b) => weightedLabDistance(a, b, w1, w2, w3)
+            : (a, b) => deltaE76(a, b),
+        hexToRgb: (hex) => hexToRgb(hex),
+        rgbToLab: (r, g, b) => rgbToLab(r, g, b),
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // PRIVATE HELPERS
 // ═══════════════════════════════════════════════════════════════════
 

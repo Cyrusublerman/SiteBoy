@@ -213,8 +213,9 @@ function applyErrorDiffusion(
 ) {
     const { width, height, data } = imageData;
     const output = new Uint8ClampedArray(data.length);
+    const convert = colorSpace.convert || colorSpace.rgbToLab;
+    const distFn  = colorSpace.distance || deltaE76;
 
-    // Create error buffers for R, G, B channels
     const errorR = createErrorMatrix(width, errorPropModel.numRows, errorPropModel.lengthOffset);
     const errorG = createErrorMatrix(width, errorPropModel.numRows, errorPropModel.lengthOffset);
     const errorB = createErrorMatrix(width, errorPropModel.numRows, errorPropModel.lengthOffset);
@@ -225,24 +226,21 @@ function applyErrorDiffusion(
         for (let x = 0; x < width; x++) {
             const i4 = (y * width + x) * 4;
 
-            // Get original color + accumulated error
             let r = data[i4] + errorR[0][errorMatrixIndex];
             let g = data[i4 + 1] + errorG[0][errorMatrixIndex];
             let b = data[i4 + 2] + errorB[0][errorMatrixIndex];
             const a = data[i4 + 3];
 
-            // Clamp to valid range
             r = Math.max(0, Math.min(255, r));
             g = Math.max(0, Math.min(255, g));
             b = Math.max(0, Math.min(255, b));
 
-            // Convert to LAB and find nearest palette color
-            const labPix = colorSpace.rgbToLab(r, g, b);
+            const converted = convert(r, g, b);
             let bestDist = Infinity;
             let bestIdx = 0;
 
             for (let j = 0; j < paletteLabs.length; j++) {
-                const d = deltaE76(labPix, paletteLabs[j]);
+                const d = distFn(converted, paletteLabs[j]);
                 if (d < bestDist) {
                     bestDist = d;
                     bestIdx = j;

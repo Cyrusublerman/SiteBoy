@@ -356,6 +356,95 @@ function normalize(v) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POLYGON TRIANGULATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Ear-clipping triangulation for simple (non-self-intersecting) polygons.
+ *
+ * Handles concave polygons. Input is assumed CCW winding; if CW the
+ * function reverses internally. Does NOT handle holes — for polygons
+ * with holes, bridge them first.
+ *
+ * @source https://en.wikipedia.org/wiki/Polygon_triangulation#Ear_clipping_method
+ * @formula n-gon → (n - 2) triangles
+ *
+ * @param {Array<{x: number, y: number}>} polygon - Simple polygon vertices
+ * @returns {Array<[{x,y},{x,y},{x,y}]>} Array of triangle vertex triples
+ */
+export function earClipTriangulate(polygon) {
+    if (polygon.length < 3) return [];
+
+    let verts = polygon.map(p => ({ x: p.x, y: p.y }));
+    if (polygonArea(verts) < 0) verts = verts.reverse();
+
+    const triangles = [];
+    const indices = verts.map((_, i) => i);
+
+    let safety = indices.length * indices.length;
+    while (indices.length > 3 && safety-- > 0) {
+        let earFound = false;
+        const n = indices.length;
+
+        for (let i = 0; i < n; i++) {
+            const iPrev = (i - 1 + n) % n;
+            const iNext = (i + 1) % n;
+            const a = verts[indices[iPrev]];
+            const b = verts[indices[i]];
+            const c = verts[indices[iNext]];
+
+            const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if (cross <= 0) continue;
+
+            let containsPoint = false;
+            for (let j = 0; j < n; j++) {
+                if (j === iPrev || j === i || j === iNext) continue;
+                if (pointInTriangle(verts[indices[j]], a, b, c)) {
+                    containsPoint = true;
+                    break;
+                }
+            }
+            if (containsPoint) continue;
+
+            triangles.push([a, b, c]);
+            indices.splice(i, 1);
+            earFound = true;
+            break;
+        }
+        if (!earFound) break;
+    }
+
+    if (indices.length === 3) {
+        triangles.push([
+            verts[indices[0]],
+            verts[indices[1]],
+            verts[indices[2]]
+        ]);
+    }
+
+    return triangles;
+}
+
+/**
+ * Point-in-triangle test using barycentric coordinates.
+ * @private
+ */
+function pointInTriangle(p, a, b, c) {
+    const v0x = c.x - a.x, v0y = c.y - a.y;
+    const v1x = b.x - a.x, v1y = b.y - a.y;
+    const v2x = p.x - a.x, v2y = p.y - a.y;
+    const dot00 = v0x * v0x + v0y * v0y;
+    const dot01 = v0x * v1x + v0y * v1y;
+    const dot02 = v0x * v2x + v0y * v2y;
+    const dot11 = v1x * v1x + v1y * v1y;
+    const dot12 = v1x * v2x + v1y * v2y;
+    const inv = 1 / (dot00 * dot11 - dot01 * dot01);
+    const u = (dot11 * dot02 - dot01 * dot12) * inv;
+    const v = (dot00 * dot12 - dot01 * dot02) * inv;
+    return u >= 0 && v >= 0 && (u + v) <= 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SQUARE PACKING
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -481,6 +570,7 @@ export default {
     ensureCCW,
     ensureCW,
     offsetPolygon,
+    earClipTriangulate,
     packSquaresInPolygon
 };
 

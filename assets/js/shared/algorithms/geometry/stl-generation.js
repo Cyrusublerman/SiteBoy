@@ -1,8 +1,12 @@
 /**
  * @fileoverview STL Generation — 3D geometry export for multifilament printing
  * 
- * Generates ASCII STL files from pixel data for 3D printing. Includes vectorization
- * (rectangle merging) to optimize file size and printing performance.
+ * Two pipelines:
+ *  1. Rectangle-based (vectorizePixels + generateBox) — pixel-aligned boxes,
+ *     used for calibration grids where exact tile geometry matters.
+ *  2. Contour-based (contourSTL) — marching squares → Douglas-Peucker →
+ *     Chaikin smoothing → ear-clip triangulation + side walls.
+ *     Used for artwork STLs where smooth region boundaries matter.
  * 
  * @source blog/ideas/reference documentation/Experiments-main/lib/stl/index.js
  */
@@ -194,6 +198,171 @@ facet normal 1 0 0
   endloop
 endfacet
 `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTOUR-BASED STL PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build a binary scalar field from a pixel Set, padded by 1 cell so that
+ * marching squares can produce closed contours at image boundaries.
+ *
+ * @param {Set<string>} pixelSet - "x,y" coordinate strings
+ * @param {number} width
+ * @param {number} height
+ * @returns {{field: Float32Array, fieldW: number, fieldH: number}}
+ */
+function buildBinaryField(pixelSet, width, height) {
+    const fieldW = width + 2;
+    const fieldH = height + 2;
+    const field = new Float32Array(fieldW * fieldH);
+    for (const coord of pixelSet) {
+        const [x, y] = coord.split(',').map(Number);
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+            field[(y + 1) * fieldW + (x + 1)] = 1.0;
+        }
+    }
+    return { field, fieldW, fieldH };
+}
+
+/**
+ * Generate STL facets from a pixel region using contour extraction
+ * and optional smoothing.
+ *
+ * Pipeline: pixels → binary field → marching squares → simplify →
+ *           Chaikin smooth → ear-clip top/bottom caps → side walls.
+ *
+ * @param {Set<string>} pixelSet - "x,y" pixel coordinates
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels
+ * @param {number} z0 - Bottom Z (mm)
+ * @param {number} z1 - Top Z (mm)
+ * @param {number} pixelSize - Physical size of one pixel (mm)
+ * @param {Object} [smoothing] - Smoothing parameters
+ * @param {number} [smoothing.simplifyTolerance=0.3] - Douglas-Peucker ε in pixels
+ * @param {number} [smoothing.chaikinIterations=2] - Chaikin passes (0 = none)
+ * @param {number} [smoothing.minContourArea=2] - Drop contours smaller than this (px²)
+ * @returns {string} ASCII STL facet data
+ */
+export async function contourSTL(pixelSet, width, height, z0, z1, pixelSize, smoothing = {}) {
+    const {
+        simplifyTolerance = 0.3,
+        chaikinIterations = 2,
+        minContourArea = 2
+    } = smoothing;
+
+    if (pixelSet.size === 0) return '';
+
+    const [
+        { extractContours, simplifyContour },
+        { chaikinSmooth },
+        { earClipTriangulate: earClip, polygonArea: polyArea, ensureCCW }
+    ] = await Promise.all([
+        import('./marching-squares.js'),
+        import('./curve-geometry.js'),
+        import('./polygon-operations.js')
+    ]);
+
+    const { field, fieldW, fieldH } = buildBinaryField(pixelSet, width, height);
+
+    const rawContours = extractContours(field, fieldW, fieldH, 0.5, { cellSize: 1 });
+    if (rawContours.length === 0) return '';
+
+    let facets = '';
+
+    for (let contour of rawContours) {
+        contour = contour.map(p => ({ x: p.x - 1, y: p.y - 1 }));
+
+        if (Math.abs(polyArea(contour)) < minContourArea) continue;
+
+        if (simplifyTolerance > 0 && contour.length > 4) {
+            contour = simplifyContour(contour, simplifyTolerance);
+        }
+
+        if (chaikinIterations > 0 && contour.length >= 3) {
+            contour = chaikinSmooth(contour, chaikinIterations, true);
+        }
+
+        if (contour.length < 3) continue;
+
+        contour = ensureCCW(contour);
+
+        const scaled = contour.map(p => ({ x: p.x * pixelSize, y: p.y * pixelSize }));
+
+        facets += extrudeContourToSTL(scaled, z0, z1, earClip);
+    }
+
+    return facets;
+}
+
+/**
+ * Extrude a single closed 2D contour into a 3D slab and emit STL facets.
+ * Produces: top cap + bottom cap + side walls.
+ *
+ * @param {Array<{x: number, y: number}>} contour - CCW polygon in mm
+ * @param {number} z0 - Bottom Z
+ * @param {number} z1 - Top Z
+ * @returns {string} STL facet string
+ */
+function extrudeContourToSTL(contour, z0, z1, earClipTriangulate) {
+    let facets = '';
+    const n = contour.length;
+
+    // ── Top cap (z1, CCW = normal +Z) ────────────────────────────
+    const topTris = earClipTriangulate(contour);
+    for (const [a, b, c] of topTris) {
+        facets += `facet normal 0 0 1
+  outer loop
+    vertex ${a.x} ${a.y} ${z1}
+    vertex ${b.x} ${b.y} ${z1}
+    vertex ${c.x} ${c.y} ${z1}
+  endloop
+endfacet
+`;
+    }
+
+    // ── Bottom cap (z0, CW when viewed from -Z = reverse winding) ─
+    for (const [a, b, c] of topTris) {
+        facets += `facet normal 0 0 -1
+  outer loop
+    vertex ${a.x} ${a.y} ${z0}
+    vertex ${c.x} ${c.y} ${z0}
+    vertex ${b.x} ${b.y} ${z0}
+  endloop
+endfacet
+`;
+    }
+
+    // ── Side walls ───────────────────────────────────────────────
+    for (let i = 0; i < n; i++) {
+        const a = contour[i];
+        const b = contour[(i + 1) % n];
+
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const nx = len > 1e-8 ? dy / len : 0;
+        const ny = len > 1e-8 ? -dx / len : 0;
+
+        facets += `facet normal ${nx} ${ny} 0
+  outer loop
+    vertex ${a.x} ${a.y} ${z0}
+    vertex ${b.x} ${b.y} ${z0}
+    vertex ${b.x} ${b.y} ${z1}
+  endloop
+endfacet
+facet normal ${nx} ${ny} 0
+  outer loop
+    vertex ${a.x} ${a.y} ${z0}
+    vertex ${b.x} ${b.y} ${z1}
+    vertex ${a.x} ${a.y} ${z1}
+  endloop
+endfacet
+`;
+    }
+
+    return facets;
 }
 
 /**

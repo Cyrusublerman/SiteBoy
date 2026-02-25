@@ -6,12 +6,15 @@
  * NO DOM manipulation; pure logic only.
  */
 
-import { exportArtworkSTLs } from '../../../shared/algorithms/geometry/stl-generation.js';
+import { exportArtworkSTLs, vectorizePixels, generateBox } from '../../../shared/algorithms/geometry/stl-generation.js';
 
 export class MFPExportActions {
     constructor(sharedState) {
         this.state = sharedState;
     }
+
+    /** Yield to the event loop so the browser can repaint between heavy steps. */
+    _yield() { return new Promise(r => setTimeout(r, 0)); }
 
     // ─────────────────────────────────────────────────────────────────────────
     // ARTWORK STL PIPELINE
@@ -21,51 +24,77 @@ export class MFPExportActions {
      * Main entry: quantised image → layerMaps → STL files + preview data.
      * Stores results in state.exportSTLData for canvas preview and download.
      */
-    generateArtworkSTL(values, toolBase) {
+    async generateArtworkSTL(values, toolBase) {
         const qsm = this.state.quantizedSequenceMap;
         if (!qsm) {
             toolBase.setValue('exportArtworkStatus', '❌ Quantise image first (QUANTIZE tab)');
             return;
         }
 
-        const config = this.state.quantizationConfig;
-        if (!config) {
-            toolBase.setValue('exportArtworkStatus', '❌ No palette — generate grid or scan first');
-            return;
-        }
-
         try {
-            toolBase.setValue('exportArtworkStatus', '⏳ Building STL geometry…');
+            toolBase.setValue('exportArtworkStatus', '⏳ [1/2] Building layer maps…');
+            await this._yield();
 
             const { width, height, map, palette } = qsm;
             const printWidth  = parseFloat(values.stlPrintWidth)  || 170;
             const layerHeight = parseFloat(values.stlLayerHeight) || 0.08;
+            const pixelSize   = printWidth / width;
 
             const filamentNames = this._deriveFilamentNames(palette);
             const filamentCount = filamentNames.length;
+            const layerMaps     = this._expandQuantizedToLayers(map, width, height, palette, filamentCount);
 
-            const layerMaps = this._expandQuantizedToLayers(map, width, height, palette, filamentCount);
-
-            const stls = exportArtworkSTLs(layerMaps, filamentNames, {
-                imageWidth:  width,
-                imageHeight: height,
-                printWidth,
-                layerHeight,
-                isGrid: false
-            });
-
+            // Set layer maps immediately so artwork layer views work
+            // while contour STL geometry is processed
             this.state.exportSTLData = {
-                stls,
+                stls: {},
                 layerMaps,
                 filamentNames,
                 palette,
                 config: { imageWidth: width, imageHeight: height, printWidth, layerHeight }
             };
+            toolBase.draw();
+
+            const smoothingConfig = {
+                simplifyTolerance: parseFloat(values.stlSimplifyTolerance) || 0.3,
+                chaikinIterations: parseInt(values.stlSmoothIterations, 10) ?? 2,
+                minContourArea:    parseFloat(values.stlMinContourArea) || 2
+            };
+
+            const { contourSTL } = await import('../../../shared/algorithms/geometry/stl-generation.js');
+
+            const stls = {};
+            for (let fi = 0; fi < filamentCount; fi++) {
+                toolBase.setValue('exportArtworkStatus',
+                    `⏳ [2/3] Contouring filament ${fi + 1}/${filamentCount}…`);
+                await this._yield();
+
+                let facets = '';
+                for (let li = 0; li < layerMaps.length; li++) {
+                    const pixels = layerMaps[li][fi];
+                    if (pixels.size === 0) continue;
+
+                    const z0 = li * layerHeight;
+                    const z1 = z0 + layerHeight;
+                    facets += await contourSTL(pixels, width, height, z0, z1, pixelSize, smoothingConfig);
+                }
+
+                if (facets.length > 0) {
+                    const name     = filamentNames[fi];
+                    const fileName = `artwork_${name.replace(/[^a-zA-Z0-9]/g, '_')}.stl`;
+                    stls[fileName] = `solid Artwork_${name}\n${facets}endsolid Artwork_${name}\n`;
+                }
+            }
+
+            this.state.exportSTLData.stls = stls;
 
             const fileCount  = Object.keys(stls).length;
             const layerCount = layerMaps.length;
+            const smoothLabel = smoothingConfig.chaikinIterations > 0
+                ? ` | smooth: ${smoothingConfig.chaikinIterations}× Chaikin`
+                : ' | no smoothing';
             toolBase.setValue('exportArtworkStatus',
-                `✅ ${fileCount} STL file${fileCount !== 1 ? 's' : ''} | ${layerCount} layer${layerCount !== 1 ? 's' : ''} | ${width}×${height}px → ${printWidth}mm wide`);
+                `✅ ${fileCount} STL file${fileCount !== 1 ? 's' : ''} | ${layerCount} layer${layerCount !== 1 ? 's' : ''} | ${width}×${height}px → ${printWidth}mm wide${smoothLabel}`);
 
             toolBase.draw();
 

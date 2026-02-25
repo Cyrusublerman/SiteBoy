@@ -74,6 +74,9 @@ export class MultifilamentPrintTool {
         
         // Add info button to canvas area
         this._addInfoButton();
+        
+        // Add canvas toolbar (view dropdown + save/load) to canvas area
+        this._addCanvasToolbar();
     }
     
     _addInfoButton() {
@@ -149,6 +152,233 @@ export class MultifilamentPrintTool {
         this._setupTabChangeListener();
     }
     
+    _addCanvasToolbar() {
+        const canvasArea = this.container.querySelector('.tool-canvas-area');
+        if (!canvasArea) return;
+
+        const F = this.toolBase?.F || 14;
+
+        const bar = document.createElement('div');
+        bar.className = 'mfp-canvas-toolbar';
+        bar.style.cssText = `
+            position: absolute;
+            top: 0; left: 0; right: ${F * 2}px;
+            height: ${F * 2}px;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            z-index: 190;
+            box-sizing: border-box;
+            pointer-events: none;
+        `;
+
+        const mkBtn = (text, isLast) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = text;
+            btn.style.cssText = `
+                width: 25%;
+                height: ${F * 2}px;
+                padding: 0 ${F}px;
+                border: none;
+                border-bottom: 1px solid var(--c-border);
+                ${isLast ? '' : 'border-right: 1px solid var(--c-border);'}
+                background: var(--c-bg);
+                color: var(--c-text);
+                font-family: 'Atkinson Hyperlegible', monospace;
+                font-size: ${F}px;
+                text-transform: uppercase;
+                cursor: pointer;
+                white-space: nowrap;
+                box-sizing: border-box;
+                pointer-events: auto;
+            `;
+            btn.addEventListener('mouseenter', () => {
+                btn.style.background = 'var(--c-text)';
+                btn.style.color = 'var(--c-bg)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.background = 'var(--c-bg)';
+                btn.style.color = 'var(--c-text)';
+            });
+            return btn;
+        };
+
+        // View dropdown — custom trigger + menu to match tab styling
+        const viewCell = document.createElement('div');
+        viewCell.style.cssText = `
+            width: 50%;
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+            box-sizing: border-box;
+            pointer-events: auto;
+        `;
+
+        const viewTrigger = document.createElement('button');
+        viewTrigger.type = 'button';
+        viewTrigger.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: ${F * 2}px;
+            padding: 0 ${F}px;
+            border: none;
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Atkinson Hyperlegible', monospace;
+            font-size: ${F}px;
+            text-transform: uppercase;
+            cursor: pointer;
+        `;
+
+        const viewLabel = document.createElement('span');
+        viewLabel.textContent = 'AUTO';
+        const viewArrow = document.createElement('span');
+        viewArrow.textContent = '+';
+        viewArrow.style.marginLeft = `${F / 2}px`;
+
+        viewTrigger.appendChild(viewLabel);
+        viewTrigger.appendChild(viewArrow);
+        viewCell.appendChild(viewTrigger);
+
+        const viewMenu = document.createElement('div');
+        viewMenu.style.cssText = `
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0; right: 0;
+            background: var(--c-bg);
+            border: 1px solid var(--c-border);
+            border-top: none;
+            z-index: 200;
+        `;
+        viewCell.appendChild(viewMenu);
+
+        let menuOpen = false;
+        const openMenu = () => {
+            viewMenu.style.display = 'block';
+            viewArrow.textContent = '-';
+            menuOpen = true;
+        };
+        const closeMenu = () => {
+            viewMenu.style.display = 'none';
+            viewArrow.textContent = '+';
+            menuOpen = false;
+        };
+        viewTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuOpen ? closeMenu() : openMenu();
+        });
+        document.addEventListener('click', (e) => {
+            if (!viewCell.contains(e.target)) closeMenu();
+        });
+
+        this._canvasToolbarViewLabel = viewLabel;
+        this._canvasToolbarViewMenu = viewMenu;
+        this._canvasToolbarCloseMenu = closeMenu;
+
+        // Load button
+        const loadBtn = mkBtn('LOAD', false);
+        loadBtn.addEventListener('click', () => {
+            this._triggerFileUpload('.json,.zip', async (file) => {
+                if (file.name.endsWith('.zip')) {
+                    await this.sourceActions.importProject(file, this.toolBase);
+                } else {
+                    await this.quantizeActions.loadPaletteFromJSON(file, this.toolBase);
+                }
+                this._refreshTabStatus(this._getCurrentTab());
+                this.toolBase.draw();
+            });
+        });
+
+        // Save button
+        const saveBtn = mkBtn('SAVE', true);
+        saveBtn.addEventListener('click', () => {
+            const allValues = this.toolBase.getValues();
+            this.exportActions.exportCompleteProject(allValues, this.toolBase);
+        });
+
+        bar.appendChild(viewCell);
+        bar.appendChild(loadBtn);
+        bar.appendChild(saveBtn);
+        canvasArea.appendChild(bar);
+
+        this._canvasToolbar = bar;
+        this.sharedState.canvasToolbarView = 'auto';
+
+        // Populate initial view options for default tab
+        this._updateToolbarViewOptions();
+    }
+
+    _updateToolbarViewOptions() {
+        const menu = this._canvasToolbarViewMenu;
+        const label = this._canvasToolbarViewLabel;
+        if (!menu || !label) return;
+
+        const F = this.toolBase?.F || 14;
+        const tab = this._getCurrentTab();
+
+        menu.innerHTML = '';
+
+        const viewsForTab = {
+            'SOURCE':   [['auto', 'AUTO'], ['grid', 'GRID']],
+            'SCAN':     [['auto', 'AUTO'], ['scan', 'SCAN IMAGE'], ['overlay', 'SCAN + GRID']],
+            'QUANTIZE': [['auto', 'AUTO'], ['source', 'SOURCE IMAGE'], ['adjusted', 'ADJUSTED IMAGE'], ['quantised', 'QUANTISED IMAGE'],
+                         ['analysis', 'ANALYSIS COMPOSITE'],
+                         ['artCombined', 'ARTWORK COMBINED'], ['artAll', 'ARTWORK ALL LAYERS'],
+                         ['artL0', 'ARTWORK LAYER 0'], ['artL1', 'ARTWORK LAYER 1'], ['artL2', 'ARTWORK LAYER 2'], ['artL3', 'ARTWORK LAYER 3']],
+            'OUTPUTS':  [['auto', 'AUTO'], ['quantised', 'QUANTISED IMAGE'],
+                         ['gridCombined', 'GRID COMBINED'], ['gridL0', 'GRID LAYER 0'], ['gridL1', 'GRID LAYER 1'], ['gridL2', 'GRID LAYER 2'], ['gridL3', 'GRID LAYER 3'],
+                         ['artCombined', 'ARTWORK COMBINED'], ['artAll', 'ARTWORK ALL LAYERS'],
+                         ['artL0', 'ARTWORK LAYER 0'], ['artL1', 'ARTWORK LAYER 1'], ['artL2', 'ARTWORK LAYER 2'], ['artL3', 'ARTWORK LAYER 3']],
+        };
+
+        const views = viewsForTab[tab] || [['auto', 'AUTO']];
+        const current = this.sharedState.canvasToolbarView || 'auto';
+        const validIds = views.map(v => v[0]);
+        if (!validIds.includes(current)) {
+            this.sharedState.canvasToolbarView = 'auto';
+        }
+        label.textContent = (views.find(v => v[0] === (this.sharedState.canvasToolbarView || 'auto')) || views[0])[1];
+
+        views.forEach(([id, text]) => {
+            const item = document.createElement('div');
+            const isActive = id === (this.sharedState.canvasToolbarView || 'auto');
+            item.textContent = text;
+            item.style.cssText = `
+                padding: ${F / 2}px ${F}px;
+                background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
+                color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
+                font-family: 'Atkinson Hyperlegible', monospace;
+                font-size: ${F}px;
+                cursor: pointer;
+                border-bottom: 1px solid var(--c-border);
+                text-transform: uppercase;
+            `;
+            item.addEventListener('mouseenter', () => {
+                if (id !== (this.sharedState.canvasToolbarView || 'auto')) {
+                    item.style.background = 'var(--vga-gray, #555)';
+                }
+            });
+            item.addEventListener('mouseleave', () => {
+                const active = id === (this.sharedState.canvasToolbarView || 'auto');
+                item.style.background = active ? 'var(--c-text)' : 'var(--c-bg)';
+                item.style.color = active ? 'var(--c-bg)' : 'var(--c-text)';
+            });
+            item.addEventListener('click', () => {
+                this.sharedState.canvasToolbarView = id;
+                this._updateToolbarViewOptions();
+                this._canvasToolbarCloseMenu();
+                this.toolBase.draw();
+            });
+            menu.appendChild(item);
+        });
+    }
+
     _setupTabChangeListener() {
         // Find sidebar tab buttons and listen for clicks
         const tabBar = this.container.querySelector('.tool-tab-bar');
@@ -158,6 +388,10 @@ export class MultifilamentPrintTool {
             tabButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     this.currentTabName = btn.textContent.trim();
+                    
+                    // Reset toolbar view to auto and rebuild options for new tab
+                    this.sharedState.canvasToolbarView = 'auto';
+                    this._updateToolbarViewOptions();
                     
                     // Update status labels based on current state
                     this._refreshTabStatus(this.currentTabName);
@@ -942,7 +1176,7 @@ Requires: \`quantizedImageElement\` (run Quantize Image in QUANTIZE tab)
 ### ARTWORK STLs
 Requires: \`quantizedSequenceMap\` + \`quantizationConfig\`
 
-This is the final STL production step. Each pixel in the quantised image maps to a filament sequence; those sequences are expanded into \`layerMaps[layer][filament] = Set("x,y")\` then vectorised into rectangular prisms.
+Contour-based pipeline: pixel map → binary field → marching squares (sub-pixel contours) → Douglas-Peucker simplification → Chaikin smoothing → ear-clip triangulation + side walls → STL. Boundary smoothing happens here in geometry space, not in the pixel domain.
 
 \`\`\`
 quantizedSequenceMap
@@ -951,7 +1185,7 @@ quantizedSequenceMap
     ↓
 layerMaps[layer][filament] = Set("x,y")
     ↓
-exportArtworkSTLs(layerMaps, names, { isGrid: false, printWidth, layerHeight })
+contourSTL(pixelSet, w, h, z0, z1, pixelSize, { chaikinIterations, simplifyTolerance })
     ↓
 { "artwork_Red_PLA.stl": "solid ...", ... }
 \`\`\`
@@ -1252,8 +1486,14 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 ['PROCESSING', [
                     ['number', 'Print Width (mm)', 50, 300, 1, {key: 'printWidth', value: 170, withNumber: true}],
                     ['dropdown', 'Dither Algorithm', ['None', 'Floyd-Steinberg', 'Bayer 4×4', 'Blue Noise'], {key: 'ditherAlgorithm', value: 'Floyd-Steinberg'}],
-                    ['number', 'Dither Strength', 0, 1, 0.1, {key: 'ditherStrength', value: 1.0, withNumber: true}],
                     ['number', 'Min Detail (mm)', 0, 2, 0.1, {key: 'minDetail', value: 0.8, withNumber: true}],
+                ]],
+                ['COLOUR SPACE', [
+                    ['label', 'Distance metric for palette matching. CIELAB is perceptually uniform. RGB is direct. HSL separates hue/saturation/lightness. Weights scale each axis independently.', {variant: 'caption'}],
+                    ['dropdown', 'Space', ['CIELAB', 'RGB', 'HSL'], {key: 'colourSpace', value: 'CIELAB'}],
+                    ['number', 'Weight 1 (L / R / H)', 0, 5, 0.1, {key: 'csWeight1', value: 1, withNumber: true}],
+                    ['number', 'Weight 2 (a* / G / S)', 0, 5, 0.1, {key: 'csWeight2', value: 1, withNumber: true}],
+                    ['number', 'Weight 3 (b* / B / L)', 0, 5, 0.1, {key: 'csWeight3', value: 1, withNumber: true}],
                 ]],
                 ['OPTIMISATION', [
                     ['label', 'Within variance, prefer entries by print form over pure colour closeness. Deep runs multi-pass region consensus.', {variant: 'caption'}],
@@ -1263,18 +1503,22 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                     ['number', 'Grouping Weight', 0, 1, 0.05, {key: 'groupingWeight', value: 0.3, withNumber: true}],
                 ]],
                 ['SIMPLIFICATION', [
-                    ['label', 'Post-quantization cleanup. Min Cluster merges small regions. Perimeter:Area targets jagged regions. Palette Merge collapses near-identical sequences. Layer-Aware and Straighten Seams require colourVariance > 0 or operate spatially.', {variant: 'caption'}],
+                    ['label', 'Topological cleanup. Min Cluster merges small regions. Palette Merge collapses near-identical sequences.', {variant: 'caption'}],
                     ['number', 'Min Cluster (px)', 0, 200, 1, {key: 'minimumClusterPx', value: 0, withNumber: true}],
-                    ['dropdown', 'Smoothing', ['None', 'Majority Vote 3×3', 'Majority Vote 5×5', 'Straighten Seams', 'Layer-Aware Cleanup'], {key: 'smoothingMethod', value: 'None'}],
                     ['number', 'Palette Merge (ΔE)', 0, 15, 0.5, {key: 'paletteMergeThreshold', value: 0, withNumber: true}],
-                    ['number', 'Perimeter:Area Max Ratio', 0, 10, 0.25, {key: 'perimAreaRatio', value: 0, withNumber: true}],
-                    ['number', 'Perimeter:Area Max Size (px)', 0, 500, 5, {key: 'perimAreaMaxPx', value: 50, withNumber: true}],
                 ]],
                 ['ACTIONS', [
                     ['button', 'Quantize Image', null, {key: 'quantize', variant: 'primary'}],
                     ['label', '', {key: 'quantizeStatus', variant: 'caption'}],
-                    ['button', 'Generate Artwork STLs', null, {key: 'generateArtworkSTL'}],
+                ]],
+                ['STL GENERATION', [
+                    ['label', 'Contour-based: marching squares extract sub-pixel boundaries, Douglas-Peucker simplifies, Chaikin smooths. Operates on geometry, not pixels.', {variant: 'caption'}],
+                    ['number', 'Smooth Iterations', 0, 6, 1, {key: 'stlSmoothIterations', value: 2, withNumber: true}],
+                    ['number', 'Simplify Tolerance (px)', 0, 2, 0.05, {key: 'stlSimplifyTolerance', value: 0.3, withNumber: true}],
+                    ['number', 'Min Contour Area (px²)', 0, 20, 1, {key: 'stlMinContourArea', value: 2, withNumber: true}],
+                    ['button', 'Generate Artwork STLs', null, {key: 'generateArtworkSTL', variant: 'primary'}],
                     ['label', '', {key: 'exportArtworkStatus', variant: 'caption'}],
+                    ['button', 'Export Analysis Image', null, {key: 'exportAnalysisImage'}],
                 ]],
                 ['SAVE PROJECT', [
                     ['button', 'Export Project ZIP', null, {key: 'exportCompleteProject', variant: 'primary'}],
@@ -1284,15 +1528,6 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             
             // OUTPUTS TAB — unified view and download dashboard
             ['OUTPUTS', [
-                ['CANVAS VIEW', [
-                    ['dropdown', 'View', [
-                        'Quantised Image',
-                        'Grid Combined', 'Grid Layer 0', 'Grid Layer 1', 'Grid Layer 2', 'Grid Layer 3',
-                        'Scan Overlay',
-                        'Artwork Combined', 'Artwork All Layers',
-                        'Artwork Layer 0', 'Artwork Layer 1', 'Artwork Layer 2', 'Artwork Layer 3',
-                    ], {key: 'outputsCanvasView', value: 'Quantised Image'}],
-                ]],
                 ['CALIBRATION GRID', [
                     ['label', '', {key: 'outputsGridStatus', variant: 'caption'}],
                     ['button', 'Download Grid PNG', null, {key: 'outputGridPNG'}],
@@ -1599,8 +1834,6 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             case 'gapFilament':
             case 'baseFilament':
             case 'topFilament':
-                // View mode changes just redraw (don't regenerate)
-                this.toolBase.draw();
                 break;
             
             // Tab change detection - clear docs so it reloads for new tab
@@ -1648,17 +1881,12 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             
             case 'flipH':
                 this._flipGridHorizontal();
-                this.toolBase.draw();
                 break;
-            
             case 'flipV':
                 this._flipGridVertical();
-                this.toolBase.draw();
                 break;
-            
             case 'rotate90':
                 this._rotateGrid90();
-                this.toolBase.draw();
                 break;
             
             case 'resetView':
@@ -1689,7 +1917,6 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                     rotation: allValues.gridRotation || 0,
                     ...this.sharedState.gridOverlayOptions
                 };
-                this.toolBase.draw();
                 break;
             
             case 'analyzeScan': 
@@ -1783,6 +2010,10 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 this.quantizeActions.exportQuantizedImage(this.toolBase);
                 break;
 
+            case 'exportAnalysisImage':
+                this.quantizeActions.exportAnalysisImage(allValues, this.toolBase);
+                break;
+
             // OUTPUTS tab — artwork STL generation and download
             case 'generateArtworkSTL':
                 this.exportActions.generateArtworkSTL(allValues, this.toolBase);
@@ -1799,95 +2030,106 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 this.exportActions.exportCompleteProject(allValues, this.toolBase);
                 break;
         }
-        
-        // Redraw canvas
-        this.toolBase.draw();
     }
     
     _handleDraw(ctx, canvas, values) {
-        // Clear
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Route drawing based on current tab
+
         const currentTab = this._getCurrentTab();
-        
+        const view = this.sharedState.canvasToolbarView || 'auto';
+
         switch (currentTab) {
+            case 'SOURCE':
+                this._drawSourceTab(ctx, canvas, values, view);
+                return;
+            case 'SCAN':
+                this._drawScanTab(ctx, canvas, values, view);
+                return;
             case 'QUANTIZE':
                 this._drawQuantize(ctx, canvas, values);
                 return;
-                
-            case 'SCAN':
-                if (this.sharedState.scanImageElement) {
-                    this._drawScanImage(ctx, canvas, this.sharedState.scanImageElement, values);
-                    if (this.sharedState.gridData || this.sharedState.referenceGridData) {
-                        this._drawGridOverlay(ctx, canvas, values);
-                    }
-                } else {
-                    this._drawPlaceholder(ctx, canvas, 'Upload Scan Image');
-                }
+            case 'OUTPUTS':
+                this._drawOutputsTab(ctx, canvas, values, view);
                 return;
-                
-            case 'OUTPUTS': {
-                const view = values.outputsCanvasView || '';
-                if (view === 'Quantised Image') {
-                    if (this.sharedState.quantizedImageElement) {
-                        this._drawQuantize(ctx, canvas, values);
-                    } else {
-                        this._drawPlaceholder(ctx, canvas, 'No quantised image — run QUANTIZE tab first');
-                    }
-                } else if (view === 'Scan Overlay') {
-                    if (this.sharedState.scanImageElement) {
-                        this._drawScanImage(ctx, canvas, this.sharedState.scanImageElement, values);
-                        if (this.sharedState.gridData || this.sharedState.referenceGridData) {
-                            this._drawGridOverlay(ctx, canvas, values);
-                        }
-                    } else {
-                        this._drawPlaceholder(ctx, canvas, 'No scan image — load scan in SCAN tab first');
-                    }
-                } else if (view.startsWith('Grid')) {
-                    if (this.sharedState.gridData) {
-                        // Map "Grid Combined" -> "Combined", "Grid Layer 2" -> "Layer 2"
-                        const savedView = values.canvasView;
-                        values.canvasView = view.replace('Grid ', '');
-                        this._drawGrid(ctx, canvas, values);
-                        values.canvasView = savedView;
-                    } else {
-                        this._drawPlaceholder(ctx, canvas, 'No grid — generate grid in SOURCE tab first');
-                    }
-                } else if (view.startsWith('Artwork')) {
-                    if (this.sharedState.exportSTLData) {
-                        // Map "Artwork Combined" -> "Combined", "Artwork Layer 2" -> "Layer 2"
-                        const savedView = values.exportLayerView;
-                        values.exportLayerView = view.replace('Artwork ', '');
-                        this._drawExportLayers(ctx, canvas, values);
-                        values.exportLayerView = savedView;
-                    } else {
-                        this._drawPlaceholder(ctx, canvas, 'No artwork STLs — generate them below');
-                    }
-                } else {
-                    // Auto-fallback: best available
-                    if (this.sharedState.exportSTLData) {
-                        this._drawExportLayers(ctx, canvas, values);
-                    } else if (this.sharedState.quantizedImageElement) {
-                        this._drawQuantize(ctx, canvas, values);
-                    } else if (this.sharedState.gridData) {
-                        this._drawGrid(ctx, canvas, values);
-                    } else {
-                        this._drawPlaceholder(ctx, canvas, 'Complete earlier tabs to see outputs here');
-                    }
-                }
-                return;
-            }
-
-            case 'SOURCE':
             default:
-                if (this.sharedState.gridData) {
-                    this._drawGrid(ctx, canvas, values);
-                } else {
-                    this._drawPlaceholder(ctx, canvas, 'Select filaments to generate grid');
-                }
+                this._drawPlaceholder(ctx, canvas, 'Unknown tab');
                 return;
+        }
+    }
+
+    _drawSourceTab(ctx, canvas, values, view) {
+        if (view === 'auto' || view === 'grid') {
+            if (this.sharedState.gridData) {
+                this._drawGrid(ctx, canvas, values);
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Select filaments to generate grid');
+            }
+        }
+    }
+
+    _drawScanTab(ctx, canvas, values, view) {
+        if (view === 'scan') {
+            if (this.sharedState.scanImageElement) {
+                this._drawScanImage(ctx, canvas, this.sharedState.scanImageElement, values);
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Upload Scan Image');
+            }
+            return;
+        }
+        // auto / overlay
+        if (this.sharedState.scanImageElement) {
+            this._drawScanImage(ctx, canvas, this.sharedState.scanImageElement, values);
+            if (this.sharedState.gridData || this.sharedState.referenceGridData) {
+                this._drawGridOverlay(ctx, canvas, values);
+            }
+        } else {
+            this._drawPlaceholder(ctx, canvas, 'Upload Scan Image');
+        }
+    }
+
+    _drawOutputsTab(ctx, canvas, values, view) {
+        if (view === 'quantised') {
+            if (this.sharedState.quantizedImageElement) {
+                this._drawQuantize(ctx, canvas, values);
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'No quantised image — run QUANTIZE first');
+            }
+            return;
+        }
+        if (view.startsWith('grid')) {
+            if (this.sharedState.gridData) {
+                const map = { gridCombined: 'Combined', gridL0: 'Layer 0', gridL1: 'Layer 1', gridL2: 'Layer 2', gridL3: 'Layer 3' };
+                const saved = values.canvasView;
+                values.canvasView = map[view] || 'Combined';
+                this._drawGrid(ctx, canvas, values);
+                values.canvasView = saved;
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'No grid — generate in SOURCE tab');
+            }
+            return;
+        }
+        if (view.startsWith('art')) {
+            if (this.sharedState.exportSTLData) {
+                const map = { artCombined: 'Combined', artAll: 'All Layers', artL0: 'Layer 0', artL1: 'Layer 1', artL2: 'Layer 2', artL3: 'Layer 3' };
+                const saved = values.exportLayerView;
+                values.exportLayerView = map[view] || 'Combined';
+                this._drawExportLayers(ctx, canvas, values);
+                values.exportLayerView = saved;
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'No artwork STLs — generate them below');
+            }
+            return;
+        }
+        // auto — best available
+        if (this.sharedState.exportSTLData) {
+            this._drawExportLayers(ctx, canvas, values);
+        } else if (this.sharedState.quantizedImageElement) {
+            this._drawQuantize(ctx, canvas, values);
+        } else if (this.sharedState.gridData) {
+            this._drawGrid(ctx, canvas, values);
+        } else {
+            this._drawPlaceholder(ctx, canvas, 'Complete earlier tabs to see outputs here');
         }
     }
     
@@ -2516,51 +2758,131 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
     }
     
     _drawQuantize(ctx, canvas, values) {
-        // Priority: quantized > adjusted > source > placeholder
+        const view = this.sharedState.canvasToolbarView || 'auto';
+
+        if (view === 'source') {
+            if (this.sharedState.sourceImageElement) {
+                this._drawImageFit(ctx, canvas, this.sharedState.sourceImageElement);
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Load Source Image');
+            }
+            return;
+        }
+
+        if (view === 'adjusted') {
+            if (this.sharedState.sourceImageData) {
+                this._drawImageDataFit(ctx, canvas, this.sharedState.sourceImageData);
+            } else if (this.sharedState.sourceImageElement) {
+                this._drawImageFit(ctx, canvas, this.sharedState.sourceImageElement);
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Load Source Image');
+            }
+            return;
+        }
+
+        if (view === 'quantised') {
+            if (this.sharedState.quantizedImageElement) {
+                this._drawImageFit(ctx, canvas, this.sharedState.quantizedImageElement, true);
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Run Quantize first');
+            }
+            return;
+        }
+
+        if (view === 'analysis') {
+            this._drawAnalysisComposite(ctx, canvas, values);
+            return;
+        }
+
+        if (view.startsWith('art')) {
+            if (this.sharedState.exportSTLData) {
+                const map = { artCombined: 'Combined', artAll: 'All Layers', artL0: 'Layer 0', artL1: 'Layer 1', artL2: 'Layer 2', artL3: 'Layer 3' };
+                const saved = values.exportLayerView;
+                values.exportLayerView = map[view] || 'Combined';
+                this._drawExportLayers(ctx, canvas, values);
+                values.exportLayerView = saved;
+            } else {
+                this._drawPlaceholder(ctx, canvas, 'Generate Artwork STLs first');
+            }
+            return;
+        }
+
+        // 'auto' — cascade: quantised > adjusted > source > placeholder
         if (this.sharedState.quantizedImageElement) {
-            const img = this.sharedState.quantizedImageElement;
-            // Fit to canvas preserving aspect ratio; nearest-neighbour for crisp pixels
-            const scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-            const w = img.naturalWidth * scale;
-            const h = img.naturalHeight * scale;
-            const x = Math.round((canvas.width  - w) / 2);
-            const y = Math.round((canvas.height - h) / 2);
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(img, x, y, Math.round(w), Math.round(h));
+            this._drawImageFit(ctx, canvas, this.sharedState.quantizedImageElement, true);
         } else if (this.sharedState.sourceImageData) {
-            // Show adjusted image (from adjustment bundle)
-            // Scale to canvas size while maintaining aspect ratio
-            const imgData = this.sharedState.sourceImageData;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = imgData.width;
-            tempCanvas.height = imgData.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.putImageData(imgData, 0, 0);
-            
-            // Draw scaled to fit
-            const scale = Math.min(canvas.width / imgData.width, canvas.height / imgData.height);
-            const w = imgData.width * scale;
-            const h = imgData.height * scale;
-            const x = (canvas.width - w) / 2;
-            const y = (canvas.height - h) / 2;
-            ctx.drawImage(tempCanvas, x, y, w, h);
+            this._drawImageDataFit(ctx, canvas, this.sharedState.sourceImageData);
         } else if (this.sharedState.sourceImageElement) {
-            // Show original source image
-            const img = this.sharedState.sourceImageElement;
-            const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-            const w = img.width * scale;
-            const h = img.height * scale;
-            const x = (canvas.width - w) / 2;
-            const y = (canvas.height - h) / 2;
-            ctx.drawImage(img, x, y, w, h);
+            this._drawImageFit(ctx, canvas, this.sharedState.sourceImageElement);
         } else {
             this._drawPlaceholder(ctx, canvas, 'Load Source Image');
         }
     }
+
+    _drawImageFit(ctx, canvas, img, nearestNeighbour = false) {
+        const w0 = img.naturalWidth || img.width;
+        const h0 = img.naturalHeight || img.height;
+        const scale = Math.min(canvas.width / w0, canvas.height / h0);
+        const w = w0 * scale;
+        const h = h0 * scale;
+        const x = Math.round((canvas.width  - w) / 2);
+        const y = Math.round((canvas.height - h) / 2);
+        ctx.imageSmoothingEnabled = !nearestNeighbour;
+        ctx.drawImage(img, x, y, Math.round(w), Math.round(h));
+    }
+
+    _drawImageDataFit(ctx, canvas, imgData) {
+        if (!this._imgDataCache
+            || this._imgDataCache.data !== imgData.data
+            || this._imgDataCache.w !== imgData.width
+            || this._imgDataCache.h !== imgData.height) {
+            const tmp = document.createElement('canvas');
+            tmp.width = imgData.width;
+            tmp.height = imgData.height;
+            tmp.getContext('2d').putImageData(imgData, 0, 0);
+            this._imgDataCache = { canvas: tmp, data: imgData.data, w: imgData.width, h: imgData.height };
+        }
+        const scale = Math.min(canvas.width / imgData.width, canvas.height / imgData.height);
+        const w = imgData.width * scale;
+        const h = imgData.height * scale;
+        const x = Math.round((canvas.width - w) / 2);
+        const y = Math.round((canvas.height - h) / 2);
+        ctx.drawImage(this._imgDataCache.canvas, x, y, Math.round(w), Math.round(h));
+    }
     
+    _drawAnalysisComposite(ctx, canvas, values) {
+        const qsm = this.sharedState.quantizedSequenceMap;
+        if (!qsm) {
+            this._drawPlaceholder(ctx, canvas, 'Run Quantize first');
+            return;
+        }
+
+        // Cache: only regenerate when quantise data changes
+        if (!this._analysisCache || this._analysisCache.qsm !== qsm) {
+            const { layerData, maxLayers, filamentCount, filamentColours } =
+                this.quantizeActions._computeLayerMapsInt(qsm);
+            const analysis = this.quantizeActions._analyseLayerQuality(layerData, maxLayers, qsm.width, qsm.height);
+
+            const compositeCanvas = this.quantizeActions._renderAnalysisCanvas({
+                qsm, layerData, maxLayers, filamentCount, filamentColours, analysis, values,
+                sourceImg:    this.sharedState.sourceImageElement,
+                quantisedImg: this.sharedState.quantizedImageElement,
+                filaments:    this.sharedState.quantizationConfig?.filaments || [],
+            });
+            this._analysisCache = { qsm, canvas: compositeCanvas };
+        }
+
+        const src = this._analysisCache.canvas;
+        const scale = Math.min(canvas.width / src.width, canvas.height / src.height);
+        const w = src.width * scale;
+        const h = src.height * scale;
+        const x = Math.round((canvas.width - w) / 2);
+        const y = Math.round((canvas.height - h) / 2);
+        ctx.drawImage(src, x, y, Math.round(w), Math.round(h));
+    }
+
     /**
      * Layer-by-layer 2D canvas view for generated artwork STLs.
-     * Mirrors the SOURCE tab's _drawGrid pattern: padding, scale-to-fit, centred.
      * viewMode "Combined" merges all layers (last non-empty filament wins per pixel).
      * viewMode "Layer N" shows a single layer coloured by filament.
      */
@@ -2620,50 +2942,87 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             }
 
         } else if (viewMode === 'All Layers') {
-            // Tile every layer in a grid on the canvas
-            const cols   = Math.ceil(Math.sqrt(layerCount));
-            const rows   = Math.ceil(layerCount / cols);
-            const gap    = 6;
-            const labelH = 14;
-            const availW = canvas.width  - padding * 2;
-            const availH = canvas.height - padding * 2 - statsBarH;
-            const cellW  = (availW - gap * (cols - 1)) / cols;
-            const cellH  = (availH - gap * (rows - 1)) / rows;
-            const pixSc  = Math.min(cellW / imageWidth, (cellH - labelH) / imageHeight);
+            // Build cached composite of all layers as a single offscreen canvas
+            const cacheKey = `${layerCount}_${imageWidth}_${imageHeight}_${filColours.join(',')}`;
+            if (!this._allLayersCache || this._allLayersCacheKey !== cacheKey) {
+                this._allLayersCacheKey = cacheKey;
 
-            for (let li = 0; li < layerCount; li++) {
-                const col  = li % cols;
-                const row  = Math.floor(li / cols);
-                const cellX = padding + col * (cellW + gap);
-                const cellY = padding + row * (cellH + gap);
-                const imgW  = imageWidth  * pixSc;
-                const imgH  = imageHeight * pixSc;
-                const imgX  = cellX + (cellW - imgW) / 2;
-                const imgY  = cellY + labelH;
+                // Parse filament hex to RGB once
+                const filRGB = filColours.map(hex => {
+                    const h = hex.replace('#', '');
+                    return { r: parseInt(h.substring(0, 2), 16), g: parseInt(h.substring(2, 4), 16), b: parseInt(h.substring(4, 6), 16) };
+                });
 
-                // Cell border
-                ctx.strokeStyle = '#333333';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(cellX, cellY, cellW, cellH);
+                // Render each layer into an ImageData, then draw onto composite
+                const cols   = Math.ceil(Math.sqrt(layerCount));
+                const rows   = Math.ceil(layerCount / cols);
+                const gap    = 4;
+                const labelH = 14;
+                const cellW  = imageWidth + gap;
+                const cellH  = imageHeight + labelH + gap;
+                const compW  = cols * cellW + gap;
+                const compH  = rows * cellH + gap;
 
-                // Layer label
-                ctx.fillStyle = '#00ff00';
-                ctx.font = '10px "Space Mono", monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText(`L${li}`, cellX + cellW / 2, cellY + 11);
+                const comp = document.createElement('canvas');
+                comp.width  = compW;
+                comp.height = compH;
+                const cctx  = comp.getContext('2d');
+                cctx.imageSmoothingEnabled = false;
+                cctx.fillStyle = '#0e0e0e';
+                cctx.fillRect(0, 0, compW, compH);
 
-                // Layer pixels
-                const lm = layerMaps[li];
-                for (let fi = 0; fi < filCount; fi++) {
-                    if (!lm[fi] || lm[fi].size === 0) continue;
-                    ctx.fillStyle = filColours[fi];
-                    for (const coord of lm[fi]) {
-                        const [x, y] = coord.split(',').map(Number);
-                        ctx.fillRect(imgX + x * pixSc, imgY + y * pixSc,
-                                     Math.max(1, pixSc), Math.max(1, pixSc));
+                const tmp = document.createElement('canvas');
+                tmp.width = imageWidth;
+                tmp.height = imageHeight;
+                const tctx = tmp.getContext('2d');
+
+                for (let li = 0; li < layerCount; li++) {
+                    const col = li % cols;
+                    const row = Math.floor(li / cols);
+                    const cx  = gap + col * cellW;
+                    const cy  = gap + row * cellH + labelH;
+
+                    const imd = tctx.createImageData(imageWidth, imageHeight);
+                    const lm  = layerMaps[li];
+                    // Background
+                    for (let p = 0; p < imageWidth * imageHeight; p++) {
+                        const i4 = p * 4;
+                        imd.data[i4] = 14; imd.data[i4+1] = 14; imd.data[i4+2] = 14; imd.data[i4+3] = 255;
                     }
+                    for (let fi = 0; fi < filCount; fi++) {
+                        if (!lm[fi] || lm[fi].size === 0) continue;
+                        const c = filRGB[fi];
+                        for (const coord of lm[fi]) {
+                            const [x, y] = coord.split(',').map(Number);
+                            const i4 = (y * imageWidth + x) * 4;
+                            imd.data[i4] = c.r; imd.data[i4+1] = c.g; imd.data[i4+2] = c.b; imd.data[i4+3] = 255;
+                        }
+                    }
+                    tctx.putImageData(imd, 0, 0);
+                    cctx.drawImage(tmp, cx, cy);
+
+                    // Label
+                    cctx.fillStyle = '#00ff00';
+                    cctx.font = '10px "Space Mono", monospace';
+                    cctx.textAlign = 'center';
+                    cctx.fillText(`L${li}`, cx + imageWidth / 2, cy - 3);
                 }
+                this._allLayersCache = comp;
             }
+
+            // Draw cached composite scaled to fit the viewport
+            const comp = this._allLayersCache;
+            const scaleX = (canvas.width  - padding * 2) / comp.width;
+            const scaleY = (canvas.height - padding * 2 - statsBarH) / comp.height;
+            const scale  = Math.min(scaleX, scaleY);
+            const dw = Math.round(comp.width  * scale);
+            const dh = Math.round(comp.height * scale);
+            const ox = Math.round((canvas.width  - dw) / 2);
+            const oy = Math.round((canvas.height - statsBarH - dh) / 2);
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(comp, ox, oy, dw, dh);
+            ctx.restore();
             drawStats('All Layers');
 
         } else {

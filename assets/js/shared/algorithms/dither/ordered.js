@@ -170,7 +170,8 @@ export function orderedDither(
 ) {
     const { width, height, data } = imageData;
     const output = new Uint8ClampedArray(data.length);
-    
+    const convert = colorSpace.convert || colorSpace.rgbToLab;
+    const distFn  = colorSpace.distance || deltaE76;
     const matrixMax = dimensions * dimensions - 1;
 
     for (let y = 0; y < height; y++) {
@@ -181,25 +182,22 @@ export function orderedDither(
             const b = data[i4 + 2];
             const a = data[i4 + 3];
 
-            // Get threshold from matrix (tiled)
             const matrixX = x % dimensions;
             const matrixY = y % dimensions;
             const matrixIndex = matrixY * dimensions + matrixX;
-            const threshold = (matrix[matrixIndex] / matrixMax) - 0.5; // Normalize to [-0.5, 0.5]
+            const threshold = (matrix[matrixIndex] / matrixMax) - 0.5;
 
-            // Apply threshold to pixel
             const thresholdValue = threshold * 255;
             const adjR = Math.max(0, Math.min(255, r + thresholdValue));
             const adjG = Math.max(0, Math.min(255, g + thresholdValue));
             const adjB = Math.max(0, Math.min(255, b + thresholdValue));
 
-            // Convert to LAB and find nearest palette color
-            const labPix = colorSpace.rgbToLab(adjR, adjG, adjB);
+            const converted = convert(adjR, adjG, adjB);
             let bestDist = Infinity;
             let bestIdx = 0;
 
             for (let j = 0; j < paletteLabs.length; j++) {
-                const d = deltaE76(labPix, paletteLabs[j]);
+                const d = distFn(converted, paletteLabs[j]);
                 if (d < bestDist) {
                     bestDist = d;
                     bestIdx = j;

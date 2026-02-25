@@ -282,6 +282,52 @@ export function sortRibbonTriangles(triangles, sortKey = 'y') {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// CURVE SMOOTHING
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Chaikin corner-cutting subdivision
+ *
+ * Each iteration replaces every edge AB with two points at 25% and 75%
+ * along the edge, converging towards a quadratic B-spline.
+ *
+ * @source https://en.wikipedia.org/wiki/Chaikin%27s_algorithm
+ * @formula P_new = [0.75·A + 0.25·B, 0.25·A + 0.75·B]
+ *
+ * @param {Array<{x: number, y: number}>} points - Input polyline/polygon
+ * @param {number} [iterations=2] - Subdivision passes (1–4 typical)
+ * @param {boolean} [closed=true] - Treat as closed polygon
+ * @returns {Array<{x: number, y: number}>} Smoothed curve
+ */
+export function chaikinSmooth(points, iterations = 2, closed = true) {
+    if (points.length < 3 || iterations <= 0) return [...points];
+
+    let pts = points;
+
+    for (let iter = 0; iter < iterations; iter++) {
+        const n = pts.length;
+        const out = [];
+        const limit = closed ? n : n - 1;
+
+        for (let i = 0; i < limit; i++) {
+            const a = pts[i];
+            const b = pts[(i + 1) % n];
+            out.push({ x: 0.75 * a.x + 0.25 * b.x, y: 0.75 * a.y + 0.25 * b.y });
+            out.push({ x: 0.25 * a.x + 0.75 * b.x, y: 0.25 * a.y + 0.75 * b.y });
+        }
+
+        if (!closed) {
+            out.unshift(pts[0]);
+            out.push(pts[n - 1]);
+        }
+
+        pts = out;
+    }
+
+    return pts;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // OFFSET CURVES
 // ═══════════════════════════════════════════════════════════════════════════
 
