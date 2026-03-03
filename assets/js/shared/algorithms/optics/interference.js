@@ -298,3 +298,37 @@ export function retardationToMichelLevy(retardation) {
     return wavelengthToRGB(effectiveWavelength);
 }
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+
+/**
+ * Apply thin-film interference iridescence to an RGBA buffer.
+ * Luminance of each pixel modulates the effective film thickness.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} filmThickness  - Base film thickness in nm [100, 800]
+ * @param {number} viewAngle      - Observer angle in degrees [0, 60]
+ * @param {number} iridescence    - Luminance-driven thickness variation [0, 2]
+ * @param {number} blendAmt       - Mix between source and interference colours [0, 1]
+ * @returns {Uint8ClampedArray}
+ */
+export function thinFilmInterferenceRGBA(src, w, h, filmThickness, viewAngle, iridescence, blendAmt) {
+  const cosAngle = Math.cos(viewAngle * Math.PI / 180);
+  const n = w * h, inv = 1 - blendAmt;
+  const dst = new Uint8ClampedArray(src.length);
+  const PI2 = Math.PI * 2;
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    const lum = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255;
+    const thickness = filmThickness + lum * 200 * iridescence;
+    const opd = 2 * 1.33 * thickness * cosAngle;
+    const rI = 0.5 + 0.5 * Math.cos(PI2 * opd / 650);
+    const gI = 0.5 + 0.5 * Math.cos(PI2 * opd / 550);
+    const bI = 0.5 + 0.5 * Math.cos(PI2 * opd / 450);
+    dst[j]     = Math.round(src[j]     * inv + rI * 255 * blendAmt);
+    dst[j + 1] = Math.round(src[j + 1] * inv + gI * 255 * blendAmt);
+    dst[j + 2] = Math.round(src[j + 2] * inv + bI * 255 * blendAmt);
+    dst[j + 3] = src[j + 3];
+  }
+  return dst;
+}

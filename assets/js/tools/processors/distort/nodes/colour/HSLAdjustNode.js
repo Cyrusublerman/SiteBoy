@@ -1,0 +1,14 @@
+import { createEffectModule } from '../../core/EffectModule.js';
+import { hslAdjust } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+
+export const HSLAdjustNode = createEffectModule({
+  type: 'hsladjust', name: 'HSL ADJUST', category: 'COLOUR / TONE',
+  params: {
+    hue:        { value: 0,   min: -180, max: 180, step: 1,    label: 'HUE',        tier: 3, unit: 'deg' },
+    saturation: { value: 1,   min: 0,    max: 3,   step: 0.01, label: 'SATURATION', tier: 3 },
+    lightness:  { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'LIGHTNESS',  tier: 4 }
+  },
+  apply(src, dst, w, h, p) {
+    dst.set(hslAdjust(src, w, h, p.hue, p.saturation, p.lightness));
+  }
+});

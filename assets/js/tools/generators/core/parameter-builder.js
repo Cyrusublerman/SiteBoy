@@ -26,9 +26,9 @@ export function buildSidebarConfig(scriptConfig) {
         tabs.push(['ANIMATE', buildAnimateTab(scriptConfig)]);
     }
     
-    // NOTE: EXPORT functionality moved to GeneratorToolbar
-    // Sidebar no longer includes EXPORT tab to avoid redundancy
-    
+    // EXPORT tab - static and/or animation export controls
+    tabs.push(['EXPORT', buildExportTab(scriptConfig)]);
+
     // INFO tab - if description present
     if (scriptConfig.description) {
         tabs.push(['INFO', buildInfoTab(scriptConfig)]);
@@ -123,7 +123,7 @@ function buildAnimateTab(scriptConfig) {
             }],
         ]]);
     }
-    
+
     return blocks;
 }
 
@@ -135,46 +135,24 @@ function buildAnimateTab(scriptConfig) {
 function buildExportTab(scriptConfig) {
     const blocks = [];
     const exp = scriptConfig.export || { png: true };
-    
-    // Static export
+
+    // Static export — quick PNG/SVG from toolbar
     const staticFormats = [];
     if (exp.png !== false) staticFormats.push('PNG');
     if (exp.svg) staticFormats.push('SVG');
-    
+
     if (staticFormats.length > 0) {
-        const components = [
+        blocks.push(['Static Export', [
             ['label', 'Format: ' + staticFormats.join(', '), { variant: 'caption' }],
             ['button', 'Export Image', null, { key: 'exportImage' }],
-        ];
-        blocks.push(['Static Export', components]);
-    }
-    
-    // Animation export (if animation exists and formats available)
-    if (scriptConfig.animation && (exp.gif || exp.webm || exp.sequence)) {
-        const animFormats = [];
-        if (exp.gif) animFormats.push('GIF');
-        if (exp.webm) animFormats.push('WebM');
-        if (exp.sequence) animFormats.push('Sequence');
-        
-        blocks.push(['Animation Export', [
-            ['dropdown', 'Format', animFormats, { 
-                key: 'exportFormat',
-                value: animFormats[0]
-            }],
-            ['slider', 'FPS', 1, 120, 1, { 
-                key: 'exportFps', 
-                value: scriptConfig.animation.defaultFps || 60,
-                withNumber: true
-            }],
-            ['slider', 'Frames', 1, 10000, 1, { 
-                key: 'exportFrames',
-                value: scriptConfig.animation.loopFrames || 300,
-                withNumber: true
-            }],
-            ['button', 'Export Animation', null, { key: 'exportAnimation' }],
         ]]);
     }
-    
+
+    // Placeholder block; AnimationExport UI is injected here at runtime
+    if (scriptConfig.animation) {
+        blocks.push(['Animation Export', []]);
+    }
+
     return blocks;
 }
 

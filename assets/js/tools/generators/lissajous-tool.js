@@ -62,19 +62,8 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     var historyStack = [];
     var MAX_HISTORY = 50;
     
-    // Sequencer state - using ComponentLibrary.Sequencer
-    var sequencerComponent = null;
-    var currentToolInstance = null;
-    var sequenceState = {
-        playing: false,
-        loop: true,
-        currentIndex: 0,
-        frameInSegment: 0,
-        inTransition: false,
-        fromParams: null,
-        toParams: null,
-        data: null  // Will hold sequencer data during playback
-    };
+    // SequencerV2 instance (replaces old Sequencer + sequenceState)
+    var sequencerV2 = null;
     
     // ═══════════════════════════════════════════════════════════════════
     // COMPLETE LANDMARKS FROM SOURCE (all parameters specified)
@@ -357,147 +346,59 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     }
     
     // ═══════════════════════════════════════════════════════════════════
-    // SEQUENCER (using ComponentLibrary.Sequencer)
+    // SEQUENCER V2
     // ═══════════════════════════════════════════════════════════════════
-    
-    function createSequencer(toolInstance) {
-        currentToolInstance = toolInstance;
-        
-        // Find the SEQUENCE sub-tab content area
+
+    function createSequencerV2(toolInstance) {
         var seqBtn = toolInstance.getComponent('playSequence');
         if (!seqBtn || !seqBtn.element) {
-            setTimeout(function() { createSequencer(toolInstance); }, 100);
+            setTimeout(function() { createSequencerV2(toolInstance); }, 100);
             return;
         }
-        
-        // Find parent block
+
+        // Find block-content ancestor to mount the panel into
         var parent = seqBtn.element.parentElement;
-        while (parent && !parent.classList.contains('sidebar-block-content')) {
+        while (parent && !parent.classList.contains('tool-block-content')) {
             parent = parent.parentElement;
         }
         if (!parent) parent = seqBtn.element.parentElement;
-        
-        // Clear the manual buttons - Sequencer has its own
         parent.innerHTML = '';
-        
-        if (window.ComponentLibrary && window.ComponentLibrary.Sequencer) {
-            sequencerComponent = new window.ComponentLibrary.Sequencer({
-                defaultHoldFrames: 60,
-                defaultTransitionFrames: 60,
-                loop: true,
-                onSave: function() {
-                    // Return current params for checkpoint
-                    return JSON.parse(JSON.stringify(params));
-                },
-                onLoad: function(index, cpParams) {
-                    pushHistory();
-                    Object.assign(params, cpParams);
-                    syncUIFromParams(toolInstance);
-                    toolInstance.draw();
-                },
-                onPlay: function(data) {
-                    sequenceState.data = data;
-                    sequenceState.playing = true;
-                    sequenceState.currentIndex = 0;
-                    sequenceState.frameInSegment = 0;
-                    sequenceState.inTransition = false;
-                    sequenceState.loop = data.loop;
-                    if (data.checkpoints.length > 0) {
-                        Object.assign(params, data.checkpoints[0].params);
-                    }
-                    if (!isPlaying) {
-                        isPlaying = true;
-                        startAnimator(toolInstance);
-                    }
-                },
-                onStop: function() {
-                    sequenceState.playing = false;
-                    sequencerComponent.setPlaying(false);
-                },
-                onTotalFramesChange: function(totalFrames) {
-                    // Update export frames default
-                    toolInstance.setValue('exportFrames', totalFrames);
-                }
-            });
-            parent.appendChild(sequencerComponent.render());
-            console.log('✅ Lissajous Sequencer created');
-        } else {
-            console.error('❌ ComponentLibrary.Sequencer not available');
+
+        if (!window.ComponentLibrary || !window.ComponentLibrary.SequencerV2) {
+            console.error('❌ ComponentLibrary.SequencerV2 not available');
+            return;
         }
-    }
-    
-    function lerpParams(from, to, t, mode, type) {
-        var result = {};
-        
-        if (type === 'step') {
-            // Step mode: use 'from' until t >= 1, then jump to 'to'
-            return t >= 1 ? JSON.parse(JSON.stringify(to)) : JSON.parse(JSON.stringify(from));
-        }
-        
-        // Blend mode: linear interpolation
-        for (var key in from) {
-            if (typeof from[key] === 'number' && typeof to[key] === 'number') {
-                result[key] = lerp(from[key], to[key], t);
-            } else {
-                result[key] = to[key];
-            }
-        }
-        return result;
-    }
-    
-    function updateSequence() {
-        if (!sequenceState.playing || !sequenceState.data) return;
-        
-        var data = sequenceState.data;
-        var checkpoints = data.checkpoints;
-        var transitions = data.transitions;
-        
-        if (checkpoints.length < 2) return;
-        
-        sequenceState.frameInSegment++;
-        var cp = checkpoints[sequenceState.currentIndex];
-        var tr = transitions[sequenceState.currentIndex] || { frames: 60, mode: 'all', type: 'blend' };
-        
-        if (!sequenceState.inTransition) {
-            // In hold phase
-            if (sequenceState.frameInSegment >= (cp.holdFrames || 60)) {
-                // Start transition
-                sequenceState.inTransition = true;
-                sequenceState.frameInSegment = 0;
-                sequenceState.fromParams = cp.params;
-                var nextIdx = (sequenceState.currentIndex + 1) % checkpoints.length;
-                sequenceState.toParams = checkpoints[nextIdx].params;
-                sequenceState.transitionMode = tr.mode;
-                sequenceState.transitionType = tr.type;
-                sequenceState.transitionFrames = tr.frames || 60;
-            }
-        } else {
-            // In transition phase
-            var t = sequenceState.frameInSegment / sequenceState.transitionFrames;
-            if (t >= 1) {
-                // Transition complete
-                sequenceState.currentIndex = (sequenceState.currentIndex + 1) % checkpoints.length;
-                sequenceState.inTransition = false;
-                sequenceState.frameInSegment = 0;
-                Object.assign(params, checkpoints[sequenceState.currentIndex].params);
-                
-                // Check if sequence complete (non-looping)
-                if (sequenceState.currentIndex === 0 && !sequenceState.loop) {
-                    sequenceState.playing = false;
-                    if (sequencerComponent) sequencerComponent.setPlaying(false);
-                }
-            } else {
-                // Interpolate
-                var interpolated = lerpParams(
-                    sequenceState.fromParams, 
-                    sequenceState.toParams, 
-                    t,
-                    sequenceState.transitionMode,
-                    sequenceState.transitionType
-                );
+
+        sequencerV2 = new window.ComponentLibrary.SequencerV2({
+            fps: 60,
+            loop: true,
+            defaultHold: 2,
+            defaultSegmentDuration: 1.5,
+            defaultEasing: 'easeInOutCubic',
+            onSave: function() {
+                return JSON.parse(JSON.stringify(params));
+            },
+            onLoad: function(cpParams) {
+                pushHistory();
+                Object.assign(params, cpParams);
+                syncUIFromParams(toolInstance);
+                toolInstance.draw();
+            },
+            onFrame: function(interpolated) {
                 Object.assign(params, interpolated);
+                toolInstance.draw();
             }
+        }, {});
+
+        parent.appendChild(sequencerV2.render());
+
+        // Mount horizontal strip below canvas
+        var stripEl = sequencerV2.getStripElement();
+        if (stripEl && toolInstance.canvasArea) {
+            toolInstance.canvasArea.appendChild(stripEl);
         }
+
+        console.log('✅ Lissajous SequencerV2 created');
     }
     
     // ═══════════════════════════════════════════════════════════════════
@@ -547,7 +448,6 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                 onFrame: function() {
                     if (!isPlaying) return;
                     frameCount++;
-                    if (sequenceState.playing) updateSequence();
                     updatePhaseAnimations(tool);
                     tool.draw();
                 }
@@ -566,7 +466,6 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             animator = null;
         }
         isPlaying = false;
-        sequenceState.playing = false;
     }
     
     function updatePhaseAnimations(tool) {
@@ -777,8 +676,8 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
                 self.draw();
             });
             
-            // Create sequencer component
-            setTimeout(function() { createSequencer(self); }, 0);
+            // Create SequencerV2 component
+            setTimeout(function() { createSequencerV2(self); }, 0);
             
             updateAnalysisDisplay(self);
         },
@@ -836,8 +735,6 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             if (key === 'loop_phi_y1') phaseAnim.phi_y1.loopFrames = parseInt(value) || 60;
             if (key === 'loop_phi_y2') phaseAnim.phi_y2.loopFrames = parseInt(value) || 60;
             
-            // Sequence loop
-            if (key === 'loopSequence') sequenceState.loop = (value || []).indexOf('On') >= 0;
             
             // Delta mode toggle - convert Y values when mode changes
             if (key === 'deltaMode') {
@@ -910,7 +807,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             }
             
             // Frame counter (top right)
-            if (isPlaying || sequenceState.playing) {
+            if (isPlaying) {
                 ctx.fillStyle = '#808080';
                 ctx.font = '12px "Atkinson Hyperlegible", monospace';
                 ctx.textAlign = 'right';
@@ -950,21 +847,18 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     
     LissajousTool.prototype.destroy = function() {
         stopAnimator();
-        if (sequencerComponent) {
-            sequencerComponent.destroy();
-            sequencerComponent = null;
+        if (sequencerV2) {
+            sequencerV2.destroy();
+            sequencerV2 = null;
         }
         if (this.tool) {
             this.tool.destroy();
             this.tool = null;
         }
         toolRef = null;
-        currentToolInstance = null;
         frameCount = 0;
         isPlaying = false;
         historyStack = [];
-        sequenceState.playing = false;
-        sequenceState.data = null;
     };
     
     // ES Module export

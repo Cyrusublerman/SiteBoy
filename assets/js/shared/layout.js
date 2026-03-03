@@ -656,16 +656,16 @@ export class PageContainer extends BaseComponent {
                     const layout = this.deps.MF?.computeLayout() || {};
                     const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
                     const headerHeight = layout.headerHeight || 28;
+                    const isToolsSection = document.body.classList.contains('tools-section');
                     const contentTop = margin + (2 * headerHeight) - 1; // Account for border overlap
-                    const bottomOffset = headerHeight + margin;
+                    const bottomOffset = isToolsSection ? margin : headerHeight + margin;
 
                     this.contentBody.style.top = `${contentTop}px`;
                     this.contentBody.style.bottom = `${bottomOffset}px`;
                     this.contentBody.style.height = 'auto';
                     
-                    // Remove borders for normal mode
                     this.contentBody.style.borderTop = 'none';
-                    this.contentBody.style.borderBottom = 'none';
+                    this.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
                 }
             }
         } else {
@@ -693,16 +693,16 @@ export class PageContainer extends BaseComponent {
                     const layout = this.deps.MF?.computeLayout() || {};
                     const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
                     const headerHeight = layout.headerHeight || 28;
+                    const isToolsSection = document.body.classList.contains('tools-section');
                     const contentTop = margin + headerHeight;
-                    const bottomOffset = headerHeight + margin;
+                    const bottomOffset = isToolsSection ? margin : headerHeight + margin;
 
                     this.contentBody.style.top = `${contentTop}px`;
                     this.contentBody.style.bottom = `${bottomOffset}px`;
                     this.contentBody.style.height = 'auto';
                     
-                    // Remove borders for normal mode
                     this.contentBody.style.borderTop = 'none';
-                    this.contentBody.style.borderBottom = 'none';
+                    this.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
                 }
             }
         }
@@ -777,7 +777,8 @@ export class PageContainer extends BaseComponent {
                 this.contentBody.style.borderBottom = '1px solid var(--c-border)';
             } else {
                 // Normal mode positioning (with header/footer)
-                const bottomOffset = headerHeight + margin;
+                const isToolsSection = document.body.classList.contains('tools-section');
+                const bottomOffset = isToolsSection ? margin : headerHeight + margin;
                 if (hasSubheader) {
                     const contentTop = margin + (2 * headerHeight) - 1; // Account for border overlap
                     this.contentBody.style.top = `${contentTop}px`;
@@ -790,9 +791,8 @@ export class PageContainer extends BaseComponent {
                     this.contentBody.style.height = 'auto';
                 }
                 
-                // Remove borders for normal mode
                 this.contentBody.style.borderTop = 'none';
-                this.contentBody.style.borderBottom = 'none';
+                this.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
             }
         }
 
@@ -1764,10 +1764,12 @@ export class Subheader extends BaseComponent {
                     const layout = pc.deps.MF.computeLayout() || {};
                     const margin = pc.deps.MF.Config?.margin || layout.marginLeft || 14;
                     const headerHeight = layout.headerHeight || 28;
+                    const isToolsSection = document.body.classList.contains('tools-section');
                     const contentTop = margin + headerHeight;
-                    const bottomOffset = headerHeight + margin;
+                    const bottomOffset = isToolsSection ? margin : headerHeight + margin;
                     pc.contentBody.style.top = `${contentTop}px`;
                     pc.contentBody.style.bottom = `${bottomOffset}px`;
+                    pc.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
                 }
                 this._hiding = false;
             }

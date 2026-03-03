@@ -986,12 +986,10 @@ export class MFPSourceActions {
                 );
                 
                 // Download each STL with systematic filename
-                Object.entries(stls).forEach(([originalFilename, content]) => {
-                    // Extract color name from original filename (format: "artwork_ColorName.stl")
+                Object.entries(stls).forEach(([originalFilename, parts]) => {
                     const colorMatch = originalFilename.match(/artwork_(.+)\.stl$/);
                     const colorName = colorMatch ? colorMatch[1] : 'unknown';
                     
-                    // Generate base filename
                     const baseFilename = this._generateGridFilename(
                         grid,
                         toolBase.values || {},
@@ -1000,10 +998,9 @@ export class MFPSourceActions {
                         'stl'
                     );
                     
-                    // Insert color name before extension
                     const filename = baseFilename.replace('.stl', `-${colorName}.stl`);
                     
-                    const blob = new Blob([content], { type: 'text/plain' });
+                    const blob = new Blob(parts, { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -1248,9 +1245,8 @@ export class MFPSourceActions {
                         }
                     );
                     
-                    // Add each STL to the folder
-                    Object.entries(stls).forEach(([filename, content]) => {
-                        stlFolder.file(filename, content);
+                    Object.entries(stls).forEach(([filename, parts]) => {
+                        stlFolder.file(filename, new Blob(parts, { type: 'text/plain' }));
                     });
                     
                     console.log(`✅ Added ${Object.keys(stls).length} STL files to ZIP`);
@@ -1430,8 +1426,8 @@ export class MFPSourceActions {
             if (this.state.exportSTLData && this.state.exportSTLData.stls) {
                 try {
                     const artworkFolder = zip.folder('artwork-stl');
-                    Object.entries(this.state.exportSTLData.stls).forEach(([filename, content]) => {
-                        artworkFolder.file(filename, content);
+                    Object.entries(this.state.exportSTLData.stls).forEach(([filename, parts]) => {
+                        artworkFolder.file(filename, new Blob(parts, { type: 'text/plain' }));
                     });
                     console.log(`✅ Saved ${Object.keys(this.state.exportSTLData.stls).length} artwork STL files to ZIP`);
                 } catch (astlErr) {

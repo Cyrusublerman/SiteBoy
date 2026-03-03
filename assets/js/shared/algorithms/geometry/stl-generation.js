@@ -267,12 +267,12 @@ export async function contourSTL(pixelSet, width, height, z0, z1, pixelSize, smo
     const { field, fieldW, fieldH } = buildBinaryField(pixelSet, width, height);
 
     const rawContours = extractContours(field, fieldW, fieldH, 0.5, { cellSize: 1 });
-    if (rawContours.length === 0) return '';
+    if (rawContours.length === 0) return [];
 
-    let facets = '';
+    const allParts = [];
 
     for (let contour of rawContours) {
-        contour = contour.map(p => ({ x: p.x - 1, y: p.y - 1 }));
+        contour = contour.map(p => ({ x: p.x - 1, y: height - (p.y - 1) }));
 
         if (Math.abs(polyArea(contour)) < minContourArea) continue;
 
@@ -290,10 +290,11 @@ export async function contourSTL(pixelSet, width, height, z0, z1, pixelSize, smo
 
         const scaled = contour.map(p => ({ x: p.x * pixelSize, y: p.y * pixelSize }));
 
-        facets += extrudeContourToSTL(scaled, z0, z1, earClip);
+        const parts = extrudeContourToSTL(scaled, z0, z1, earClip);
+        for (let i = 0; i < parts.length; i++) allParts.push(parts[i]);
     }
 
-    return facets;
+    return allParts;
 }
 
 /**
@@ -306,32 +307,32 @@ export async function contourSTL(pixelSet, width, height, z0, z1, pixelSize, smo
  * @returns {string} STL facet string
  */
 function extrudeContourToSTL(contour, z0, z1, earClipTriangulate) {
-    let facets = '';
+    const parts = [];
     const n = contour.length;
 
     // ── Top cap (z1, CCW = normal +Z) ────────────────────────────
     const topTris = earClipTriangulate(contour);
     for (const [a, b, c] of topTris) {
-        facets += `facet normal 0 0 1
+        parts.push(`facet normal 0 0 1
   outer loop
     vertex ${a.x} ${a.y} ${z1}
     vertex ${b.x} ${b.y} ${z1}
     vertex ${c.x} ${c.y} ${z1}
   endloop
 endfacet
-`;
+`);
     }
 
     // ── Bottom cap (z0, CW when viewed from -Z = reverse winding) ─
     for (const [a, b, c] of topTris) {
-        facets += `facet normal 0 0 -1
+        parts.push(`facet normal 0 0 -1
   outer loop
     vertex ${a.x} ${a.y} ${z0}
     vertex ${c.x} ${c.y} ${z0}
     vertex ${b.x} ${b.y} ${z0}
   endloop
 endfacet
-`;
+`);
     }
 
     // ── Side walls ───────────────────────────────────────────────
@@ -345,7 +346,7 @@ endfacet
         const nx = len > 1e-8 ? dy / len : 0;
         const ny = len > 1e-8 ? -dx / len : 0;
 
-        facets += `facet normal ${nx} ${ny} 0
+        parts.push(`facet normal ${nx} ${ny} 0
   outer loop
     vertex ${a.x} ${a.y} ${z0}
     vertex ${b.x} ${b.y} ${z0}
@@ -359,10 +360,10 @@ facet normal ${nx} ${ny} 0
     vertex ${a.x} ${a.y} ${z1}
   endloop
 endfacet
-`;
+`);
     }
 
-    return facets;
+    return parts;
 }
 
 /**
@@ -430,7 +431,7 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
 
     // Generate one STL per filament (all layers combined)
     for (let fi = 0; fi < filamentCount; fi++) {
-        let filamentFacets = '';
+        const facetParts = [];
         let totalRects = 0;
 
         // Combine all layers for this filament
@@ -438,18 +439,14 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
             const pixels = layerMaps[li][fi];
             if (pixels.size === 0) continue;
 
-            // Vectorize pixels to rectangles
             const rectangles = vectorizePixels(pixels, imageWidth, imageHeight);
             totalRects += rectangles.length;
 
-            // Generate geometry for this layer
             const z0 = li * layerHeight;
             const z1 = z0 + layerHeight;
 
             for (let rect of rectangles) {
                 if (isGrid) {
-                    // Grid mode: generate individual tile boxes to avoid spanning gaps
-                    // Each tile in the merged rectangle gets its own box
                     for (let dy = 0; dy < rect.h; dy++) {
                         for (let dx = 0; dx < rect.w; dx++) {
                             const tileCol = rect.x + dx;
@@ -460,34 +457,32 @@ export function exportArtworkSTLs(layerMaps, filamentNames, config) {
                             const x1 = x0 + tileSize;
                             const y1 = y0 + tileSize;
                             
-                            filamentFacets += generateBox(x0, y0, z0, x1, y1, z1);
+                            facetParts.push(generateBox(x0, y0, z0, x1, y1, z1));
                         }
                     }
                 } else {
-                    // Image mode: uniform pixel scaling (can merge)
                     const pixelSize = printWidth / imageWidth;
                     const x0 = rect.x * pixelSize;
                     const y0 = rect.y * pixelSize;
                     const x1 = (rect.x + rect.w) * pixelSize;
                     const y1 = (rect.y + rect.h) * pixelSize;
                     
-                    filamentFacets += generateBox(x0, y0, z0, x1, y1, z1);
+                    facetParts.push(generateBox(x0, y0, z0, x1, y1, z1));
                 }
             }
         }
         
-        // Add gap/perimeter fill geometry if enabled (grid mode only)
         if (isGrid && gapFillEnabled && gapFilamentName && filamentNames[fi] === gapFilamentName) {
-            filamentFacets += generateGapAndPerimeterGeometry(
+            facetParts.push(generateGapAndPerimeterGeometry(
                 imageWidth, imageHeight, tileSize, gap, perimeterMargin,
                 layerHeight, baseLayers, actualTotalLayers
-            );
+            ));
         }
 
-        // Only create STL if this filament has geometry
-        if (filamentFacets.length > 0) {
+        if (facetParts.length > 0) {
+            const name = `Artwork_${filamentNames[fi]}`;
             const fileName = `artwork_${filamentNames[fi].replace(/[^a-zA-Z0-9]/g, '_')}.stl`;
-            stls[fileName] = wrapSTL(filamentFacets, `Artwork_${filamentNames[fi]}`);
+            stls[fileName] = [`solid ${name}\n`, ...facetParts, `endsolid ${name}\n`];
         }
     }
 

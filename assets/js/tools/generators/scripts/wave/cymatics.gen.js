@@ -354,7 +354,15 @@ export const SCRIPT_CONFIG = {
     category: 'wave',
     description: 'Wave interference patterns with musical frequencies. Simulates Chladni plate vibration patterns using multiple wave sources with harmonic frequency relationships.',
     version: '1.0.0',
-    
+
+    // ComputeScheduler hints — Tier 2 only (canvas-draw mode; not worker-eligible).
+    // Reduces pixel count by 75% during slider interaction.
+    compute: {
+        cost: 'per-pixel',
+        interactionScale: 0.5,
+        idleDelay: 200,
+    },
+
     canvas: {
         width: 512,
         height: 512,

@@ -391,3 +391,80 @@ export function perlin2D(x, y) {
     return lerp(x1, x2, v);
 }
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+
+function _bilinearDst(src, w, h, fx, fy, dst, i) {
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const dx = fx - x0, dy = fy - y0;
+  const cx0 = x0 < 0 ? 0 : x0 >= w ? w - 1 : x0;
+  const cx1 = x0 + 1 >= w ? w - 1 : x0 + 1 < 0 ? 0 : x0 + 1;
+  const cy0 = y0 < 0 ? 0 : y0 >= h ? h - 1 : y0;
+  const cy1 = y0 + 1 >= h ? h - 1 : y0 + 1 < 0 ? 0 : y0 + 1;
+  const i00 = (cy0 * w + cx0) * 4, i10 = (cy0 * w + cx1) * 4;
+  const i01 = (cy1 * w + cx0) * 4, i11 = (cy1 * w + cx1) * 4;
+  const idx = 1 - dx, idy = 1 - dy;
+  const w00 = idx * idy, w10 = dx * idy, w01 = idx * dy, w11 = dx * dy;
+  dst[i]     = src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11;
+  dst[i + 1] = src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11;
+  dst[i + 2] = src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11;
+  dst[i + 3] = src[i00 + 3] * w00 + src[i10 + 3] * w10 + src[i01 + 3] * w01 + src[i11 + 3] * w11;
+}
+
+/**
+ * Overlay fBm Perlin noise onto an RGBA buffer using a blend mode.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} scale     - Noise frequency [0.1, 20]
+ * @param {number} octaves   - fBm octave count [1, 8]
+ * @param {number} strength  - Blend strength [0, 1]
+ * @param {'add'|'multiply'|'screen'|'overlay'} blendMode
+ * @param {object} noise     - Object with .fbm(u, v, octaves) → scalar [-1, 1]
+ * @returns {Uint8ClampedArray}
+ */
+export function perlinOverlayRGBA(src, w, h, scale, octaves, strength, blendMode, noise) {
+  const dst = new Uint8ClampedArray(src.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const n = (noise.fbm(x / w * scale, y / h * scale, octaves) + 1) * 0.5;
+    const oi = (y * w + x) * 4;
+    for (let c = 0; c < 3; c++) {
+      const sv = src[oi + c] / 255;
+      let out;
+      if (blendMode === 'add') out = sv + (n - 0.5) * strength * 2;
+      else if (blendMode === 'multiply') out = sv * (1 - strength + n * strength);
+      else if (blendMode === 'screen') out = 1 - (1 - sv) * (1 - n * strength);
+      else out = sv < 0.5 ? 2 * sv * (0.5 + (n - 0.5) * strength) : 1 - 2 * (1 - sv) * (0.5 + (0.5 - n) * strength);
+      dst[oi + c] = Math.max(0, Math.min(255, Math.round(out * 255)));
+    }
+    dst[oi + 3] = src[oi + 3];
+  }
+  return dst;
+}
+
+/**
+ * Domain warp — iteratively warp spatial coordinates using fBm noise, then sample.
+ * Each additional layer doubles frequency and halves strength.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} strength  - Base warp magnitude in pixels [0, 200]
+ * @param {number} scale     - Base noise frequency [0.1, 20]
+ * @param {number} octaves   - fBm octave count [1, 8]
+ * @param {number} layers    - Warp recursion depth [1, 3]
+ * @param {object} noise     - Object with .fbm(u, v, octaves) → scalar
+ * @returns {Uint8ClampedArray}
+ */
+export function domainWarpRGBA(src, w, h, strength, scale, octaves, layers, noise) {
+  const dst = new Uint8ClampedArray(src.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let wx = x, wy = y;
+    for (let l = 0; l < layers; l++) {
+      const sc = scale * Math.pow(2, l), str = strength / Math.pow(2, l);
+      wx += noise.fbm(wx / w * sc, wy / h * sc, octaves) * str;
+      wy += noise.fbm(wx / w * sc + 5.2, wy / h * sc + 1.3, octaves) * str;
+    }
+    _bilinearDst(src, w, h, wx, wy, dst, (y * w + x) * 4);
+  }
+  return dst;
+}
+

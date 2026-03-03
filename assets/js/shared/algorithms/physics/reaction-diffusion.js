@@ -344,3 +344,80 @@ export function initCellularAutomaton(width, height, density = 0.3, rng = Math.r
     return grid;
 }
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+
+/**
+ * Run Gray-Scott reaction-diffusion and render V concentration to RGBA greyscale.
+ * @param {Uint8ClampedArray} src    - Source image (used to seed V field)
+ * @param {number} w
+ * @param {number} h
+ * @param {string} preset            - Key from GRAY_SCOTT_PRESETS
+ * @param {number} steps             - Simulation steps [10, 5000]
+ * @param {number} seedSize          - Seed region size in pixels [5, 100]
+ * @returns {Uint8ClampedArray}
+ */
+export function reactionDiffusionRGBA(src, w, h, preset, steps, seedSize) {
+  const p = GRAY_SCOTT_PRESETS[preset] ?? GRAY_SCOTT_PRESETS.coral;
+  const half = Math.floor(seedSize / 2), cx = w >> 1, cy = h >> 1, n = w * h;
+  let u = new Float32Array(n).fill(1), v = new Float32Array(n).fill(0);
+  for (let y = cy - half; y < cy + half && y < h; y++) for (let x = cx - half; x < cx + half && x < w; x++) {
+    if (x >= 0 && y >= 0) {
+      const i = y * w + x, j = i * 4;
+      u[i] = 0.5;
+      v[i] = 0.25 + ((src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255) * 0.1;
+    }
+  }
+  const { Du, Dv, feed, kill } = p;
+  let uN = new Float32Array(n), vN = new Float32Array(n);
+  for (let step = 0; step < steps; step++) {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      const l = x > 0 ? i - 1 : i, r = x < w - 1 ? i + 1 : i;
+      const t = y > 0 ? i - w : i, b = y < h - 1 ? i + w : i;
+      const lapU = u[l] + u[r] + u[t] + u[b] - 4 * u[i];
+      const lapV = v[l] + v[r] + v[t] + v[b] - 4 * v[i];
+      const uv2 = u[i] * v[i] * v[i];
+      uN[i] = Math.max(0, Math.min(1, u[i] + Du * lapU - uv2 + feed * (1 - u[i])));
+      vN[i] = Math.max(0, Math.min(1, v[i] + Dv * lapV + uv2 - (feed + kill) * v[i]));
+    }
+    [u, uN] = [uN, u]; [v, vN] = [vN, v];
+  }
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < n; i++) {
+    const val = Math.round(v[i] * 255), j = i * 4;
+    dst[j] = val; dst[j + 1] = val; dst[j + 2] = val; dst[j + 3] = src[j + 3];
+  }
+  return dst;
+}
+
+/**
+ * Run cellular automaton (B/S rules) and blend result with source RGBA.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {string} ruleName   - Key from CA_RULES
+ * @param {number} steps      - Simulation steps [1, 500]
+ * @param {number} threshold  - Luminance threshold for initial grid [0, 255]
+ * @param {number} blendAmt   - Alpha blend CA output over src [0, 1]
+ * @returns {Uint8ClampedArray}
+ */
+export function cellularAutomataRGBA(src, w, h, ruleName, steps, threshold, blendAmt) {
+  const rule = CA_RULES[ruleName] ?? CA_RULES.life;
+  const n = w * h;
+  let grid = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    grid[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) > threshold ? 1 : 0;
+  }
+  for (let s = 0; s < steps; s++) grid = stepCellularAutomaton(grid, w, h, rule);
+  const dst = new Uint8ClampedArray(src.length);
+  const inv = 1 - blendAmt;
+  for (let i = 0; i < n; i++) {
+    const j = i * 4, ca = grid[i] * 255;
+    dst[j]     = Math.round(src[j]     * inv + ca * blendAmt);
+    dst[j + 1] = Math.round(src[j + 1] * inv + ca * blendAmt);
+    dst[j + 2] = Math.round(src[j + 2] * inv + ca * blendAmt);
+    dst[j + 3] = src[j + 3];
+  }
+  return dst;
+}

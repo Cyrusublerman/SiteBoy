@@ -41,6 +41,9 @@ export class Canvas extends BaseComponent {
         this.contextType = options.context ?? '2d';
         this.width = options.width ?? 400;
         this.height = options.height ?? 400;
+        // Full-resolution logical dimensions — preserved so setBufferScale() can restore.
+        this._logicalWidth = this.width;
+        this._logicalHeight = this.height;
         this.aspectRatio = options.aspectRatio ?? null;
         this.draw = options.draw ?? null;
 
@@ -208,6 +211,12 @@ export class Canvas extends BaseComponent {
         this.height = height ?? (this.aspectRatio
             ? Math.round(width / this.aspectRatio)
             : width);
+
+        // Track full-resolution dimensions unless this is a scale-only resize.
+        if (!options._scaleOnly) {
+            this._logicalWidth = this.width;
+            this._logicalHeight = this.height;
+        }
 
         if (this.canvasEl) {
             this.canvasEl.width = this.width * this.dpr;
@@ -897,6 +906,25 @@ export class Canvas extends BaseComponent {
         link.download = filename;
         link.href = url;
         link.click();
+    }
+
+    /**
+     * Tier 2 adaptive resolution — temporarily resize the pixel buffer without
+     * changing the CSS display size. The canvas visually stretches to fill the
+     * same viewport, giving a cheap low-res preview during interaction.
+     *
+     * scale=1   → full resolution (restores _logicalWidth × _logicalHeight)
+     * scale=0.5 → half resolution (quarter pixel count)
+     *
+     * Called by ComputeScheduler; do not call directly from tools.
+     * onResize is intentionally NOT fired (display size is unchanged).
+     */
+    setBufferScale(scale) {
+        const w = Math.max(1, Math.round(this._logicalWidth * scale));
+        const h = Math.max(1, Math.round(this._logicalHeight * scale));
+        if (w === this.width && h === this.height) return;
+        // _scaleOnly prevents _logicalWidth/_logicalHeight being overwritten.
+        this.resize(w, h, { resetTransform: false, _scaleOnly: scale !== 1 });
     }
 
     // =========================================================================

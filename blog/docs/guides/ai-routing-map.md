@@ -11,6 +11,7 @@ Always read whole files linked.
 - Algorithm/library change → go to 6.
 - Quick audit of an existing build → go to 9.
 - Component work → go to 10.
+- Project portfolio page (`#projects/<id>`) → go to 12.
 
 2) Tool / Generative page (build/verify)
 - Use prompt: `guides/idea-to-implementation-promt-3-ENFORCED.md`.
@@ -75,6 +76,11 @@ Cross-checks during tool/generative build
 - Routing/exports: `components/routing/component-routing-guide.md`
 - Glossary/refs: `components/index.md`, `components/glossary/component-glossary.md`, `COMPONENT-REFERENCE.md`
 - Checklist to use: `guides/checklists/component-development.md`
+
+12) Project portfolio page (`#projects/<id>`)
+- Guide: `guides/project-page-build-guide.md` (IIFE module, registration, common failure modes).
+- Components used: `CollapsibleSection`, `Carousel`, `MarkdownBody`, `Paragraph`.
+- Checklist: use the checklist in `project-page-build-guide.md` §7.
 
 11) p5.js Generator (build/verify)
 - Use prompt: `guides/idea-to-implementation-promt-3-ENFORCED.md`.

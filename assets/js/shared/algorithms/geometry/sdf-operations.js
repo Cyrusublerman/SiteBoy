@@ -338,3 +338,41 @@ export function sdfAlpha(d, smoothing = 1.0) {
     return 1 - Math.max(0, Math.min(1, d / smoothing + 0.5));
 }
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+
+/**
+ * Render a single SDF primitive over an RGBA buffer using smooth alpha blending.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {'circle'|'box'|'ring'} shape
+ * @param {number} centreX    - Normalised X centre [0, 1]
+ * @param {number} centreY    - Normalised Y centre [0, 1]
+ * @param {number} size       - Normalised size (fraction of min(w,h)) [0.01, 1]
+ * @param {number} softness   - Smoothing width (normalised) [0, 0.2]
+ * @param {boolean} invert    - Invert the shape mask
+ * @param {number} fillR      - Fill colour red [0, 255]
+ * @param {number} fillG      - Fill colour green [0, 255]
+ * @param {number} fillB      - Fill colour blue [0, 255]
+ * @returns {Uint8ClampedArray}
+ */
+export function sdfShapeRGBA(src, w, h, shape, centreX, centreY, size, softness, invert, fillR, fillG, fillB) {
+  const cx = centreX * w, cy = centreY * h, sz = size * Math.min(w, h);
+  const softPx = softness * Math.min(w, h);
+  const dst = new Uint8ClampedArray(src.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = x - cx, dy = y - cy;
+    let dist;
+    if (shape === 'circle') dist = Math.sqrt(dx * dx + dy * dy) - sz;
+    else if (shape === 'box') { const ax = Math.abs(dx) - sz, ay = Math.abs(dy) - sz; dist = Math.sqrt(Math.max(ax, 0) ** 2 + Math.max(ay, 0) ** 2) + Math.min(Math.max(ax, ay), 0); }
+    else dist = Math.abs(Math.sqrt(dx * dx + dy * dy) - sz) - sz * 0.15;
+    let alpha = softPx > 0 ? Math.max(0, Math.min(1, 0.5 - dist / softPx)) : (dist < 0 ? 1 : 0);
+    if (invert) alpha = 1 - alpha;
+    const i = (y * w + x) * 4;
+    dst[i]     = Math.round(src[i]     * (1 - alpha) + fillR * alpha);
+    dst[i + 1] = Math.round(src[i + 1] * (1 - alpha) + fillG * alpha);
+    dst[i + 2] = Math.round(src[i + 2] * (1 - alpha) + fillB * alpha);
+    dst[i + 3] = src[i + 3];
+  }
+  return dst;
+}

@@ -133,12 +133,12 @@ export class ToolBase extends BaseComponent {
         // Auto-inject ANIMATION tab if animation config present
         // Animation export controls go in sidebar, NOT in canvas area
         if (this.animationConfig) {
-            this.sidebarConfig.push(['ANIMATION', [
-                ['Export Settings', [
-                    // AnimationExport component will be rendered here
-                    // Component is injected during sidebar build phase
-                ]],
-            ]]);
+            const animBlocks = [];
+            if (this.animationConfig.type === 'sequence') {
+                animBlocks.push(['Sequence', []]);
+            }
+            animBlocks.push(['Export Settings', []]);
+            this.sidebarConfig.push(['ANIMATION', animBlocks]);
         }
 
         // Callbacks
@@ -329,6 +329,11 @@ export class ToolBase extends BaseComponent {
         // Inject AnimationExport into ANIMATION tab if animation config present
         if (this.animationConfig && this.canvas) {
             this._injectAnimationExportIntoSidebar();
+        }
+
+        // Inject SequencerV2 if animation type is sequence
+        if (this.animationConfig && this.animationConfig.type === 'sequence') {
+            this._injectSequencerV2();
         }
 
         // Initialize values and trigger onInit
@@ -1135,6 +1140,8 @@ export class ToolBase extends BaseComponent {
                 background: var(--c-bg);
                 flex: 1;
                 min-height: 200px;
+                min-width: 0;
+                overflow-x: hidden;
             `;
         } else {
             // Landscape: fill available space, allow Canvas component to manage overflow
@@ -1145,6 +1152,8 @@ export class ToolBase extends BaseComponent {
                 justify-content: stretch;
                 height: 100%;
                 min-height: 0;
+                min-width: 0;
+                overflow-x: hidden;
                 background: var(--c-bg);
             `;
         }
@@ -1443,6 +1452,81 @@ export class ToolBase extends BaseComponent {
             blockContent.appendChild(exportElement);
             window.debugLog('INIT', `✅ AnimationExport injected into ANIMATION tab for ${this.title}`);
         }
+    }
+
+    _injectSequencerV2() {
+        const { SequencerV2 } = this.deps.ComponentLibrary;
+        if (!SequencerV2) {
+            console.warn('⚠️ SequencerV2 not available in ComponentLibrary');
+            return;
+        }
+
+        // Find ANIMATION tab panel
+        const animationTabIndex = this.sidebarConfig.findIndex(([name]) => name === 'ANIMATION');
+        if (animationTabIndex === -1) return;
+
+        const panelsContainer = this.sidebar.querySelector('.tool-panels');
+        if (!panelsContainer) return;
+
+        const panels = panelsContainer.querySelectorAll('.tool-panel');
+        const animationPanel = panels[animationTabIndex];
+        if (!animationPanel) return;
+
+        // Find the Sequence block content (first block in ANIMATION tab)
+        const blockContents = animationPanel.querySelectorAll('.tool-block-content');
+        const seqBlockContent = blockContents[0]; // Sequence block is first
+        if (!seqBlockContent) return;
+
+        const animCfg = this.animationConfig;
+
+        const seq = new SequencerV2({
+            fps: animCfg.defaultFps || 60,
+            loop: animCfg.loop !== false,
+            defaultHold: animCfg.defaultHold || 2,
+            defaultSegmentDuration: animCfg.defaultSegmentDuration || 1.5,
+            defaultEasing: animCfg.defaultEasing || 'easeInOutCubic',
+            onSave: () => {
+                if (animCfg.onSave) return animCfg.onSave(this);
+                return { ...this.values };
+            },
+            onLoad: (params) => {
+                if (animCfg.onLoad) {
+                    animCfg.onLoad(params, this);
+                } else {
+                    Object.assign(this.values, params);
+                    this.draw();
+                }
+            },
+            onFrame: (params) => {
+                if (animCfg.onFrame) {
+                    animCfg.onFrame(params, this);
+                } else {
+                    Object.assign(this.values, params);
+                    this.draw();
+                }
+            },
+            renderToBuffer: animCfg.renderToBuffer || null,
+            onTotalDurationChange: (duration) => {
+                // Keep AnimationExport in sync with sequence duration if present
+                if (animCfg.onTotalDurationChange) animCfg.onTotalDurationChange(duration, this);
+            }
+        }, this.deps);
+
+        this.addChild(seq);
+        this.componentInstances.push(seq);
+
+        // Mount panel into sidebar Sequence block
+        const panelEl = seq.render();
+        if (panelEl) seqBlockContent.appendChild(panelEl);
+
+        // Mount strip below canvas area
+        const stripEl = seq.getStripElement();
+        if (stripEl && this.canvasArea) this.canvasArea.appendChild(stripEl);
+
+        // Expose for tool scripts that want direct access
+        this.sequencerV2 = seq;
+
+        window.debugLog('INIT', `✅ SequencerV2 injected for ${this.title}`);
     }
 
     _wireAutoControls() {

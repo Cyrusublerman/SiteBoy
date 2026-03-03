@@ -196,6 +196,16 @@ export const SCRIPT_CONFIG = {
     category: 'wave',
     description: 'Spatial wave equation visualizer. Full equation: I = R(r) + X(x) + Y(y). Each component supports two terms and modulation for complex interference patterns.',
     version: '2.0.0',
+
+    // ComputeScheduler hints (see blog/docs/guides/standards/compute-scheduler.md)
+    // Tier 2: renders at 50% resolution (~25% pixel count) while dragging sliders.
+    // Tier 3: worker flag enables off-main-thread pixel computation via computePixels.
+    compute: {
+        cost: 'per-pixel',
+        interactionScale: 0.5,
+        idleDelay: 200,
+        worker: true,
+    },
     
     canvas: {
         width: 512,
@@ -313,7 +323,117 @@ export const SCRIPT_CONFIG = {
         }
     ],
     
-    draw: draw
+    draw,
+
+    /**
+     * Tier 3 worker function — pure, transferable-safe.
+     * Receives an empty ImageData whose buffer has been transferred to the
+     * worker.  Must return the same ImageData (or a new one of identical size)
+     * after filling the pixel data.
+     *
+     * All helper functions used here (safePow, waveFunc, computeR/X/Y) are
+     * defined in the module scope and are serialised along with this function
+     * string by ComputeScheduler.
+     *
+     * IMPORTANT: No DOM, no canvas context, no closures over module state.
+     */
+    computePixels(imageData, params, frame) {
+        const W = imageData.width;
+        const H = imageData.height;
+        const data = imageData.data;
+
+        const cx = W / 2;
+        const cy = H / 2;
+        const scale = params.scale || 300;
+        const rotation = (params.rotation || 0) * Math.PI / 180;
+        const blendMode = params.blendMode || 'sum';
+        const TWO_PI = Math.PI * 2;
+
+        const cosR = Math.cos(rotation);
+        const sinR = Math.sin(rotation);
+
+        const intensities = new Float32Array(W * H);
+        let minI = Infinity, maxI = -Infinity;
+
+        function _safePow(base, exp) {
+            if (Math.abs(base) < 1e-9 && exp < 0) return 0;
+            return Math.sign(base) * Math.pow(Math.abs(base), exp);
+        }
+
+        function _wave(t, useCos) {
+            return useCos ? Math.cos(t) : Math.sin(t);
+        }
+
+        function _R(r, p) {
+            const r1 = r - (p.Or1 || 0);
+            let v = (p.Ar1 || 0) * _safePow(r1, p.pr1 || 1) * _wave(TWO_PI * (p.fr1 || 0) * r + (p.phi_r1 || 0), p.wave_r1 === 'cos');
+            const r2 = r - (p.Or2 || 0);
+            v += (p.Ar2 || 0) * _safePow(r2, p.pr2 || 1) * _wave(TWO_PI * (p.fr2 || 0) * r + (p.phi_r2 || 0), p.wave_r2 === 'cos');
+            if (Math.abs(p.Mr || 0) > 0.001) {
+                const m1 = _wave(TWO_PI * (p.frm1 || 0) * r + (p.phi_rm1 || 0), false);
+                const m2 = _wave(TWO_PI * (p.frm2 || 0) * r + (p.phi_rm2 || 0), false);
+                v *= (1 + (p.Mr || 0) * (_safePow(m1, p.prm1 || 1) + _safePow(m2, p.prm2 || 1)));
+            }
+            return v;
+        }
+
+        function _X(x, p) {
+            const x1 = x - (p.Ox1 || 0);
+            let v = (p.Ax1 || 0) * _safePow(x1, p.px1 || 1) * _wave(TWO_PI * (p.fx1 || 0) * x + (p.phi_x1 || 0), p.wave_x1 === 'cos');
+            const x2 = x - (p.Ox2 || 0);
+            v += (p.Ax2 || 0) * _safePow(x2, p.px2 || 1) * _wave(TWO_PI * (p.fx2 || 0) * x + (p.phi_x2 || 0), p.wave_x2 === 'cos');
+            if (Math.abs(p.Mx || 0) > 0.001) {
+                const m1 = _wave(TWO_PI * (p.fxm1 || 0) * x + (p.phi_xm1 || 0), false);
+                const m2 = _wave(TWO_PI * (p.fxm2 || 0) * x + (p.phi_xm2 || 0), false);
+                v *= (1 + (p.Mx || 0) * (_safePow(m1, p.pxm1 || 1) + _safePow(m2, p.pxm2 || 1)));
+            }
+            return v;
+        }
+
+        function _Y(y, p) {
+            const y1 = y - (p.Oy1 || 0);
+            let v = (p.Ay1 || 0) * _safePow(y1, p.py1 || 1) * _wave(TWO_PI * (p.fy1 || 0) * y + (p.phi_y1 || 0), p.wave_y1 === 'cos');
+            const y2 = y - (p.Oy2 || 0);
+            v += (p.Ay2 || 0) * _safePow(y2, p.py2 || 1) * _wave(TWO_PI * (p.fy2 || 0) * y + (p.phi_y2 || 0), p.wave_y2 === 'cos');
+            if (Math.abs(p.My || 0) > 0.001) {
+                const m1 = _wave(TWO_PI * (p.fym1 || 0) * y + (p.phi_ym1 || 0), false);
+                const m2 = _wave(TWO_PI * (p.fym2 || 0) * y + (p.phi_ym2 || 0), false);
+                v *= (1 + (p.My || 0) * (_safePow(m1, p.pym1 || 1) + _safePow(m2, p.pym2 || 1)));
+            }
+            return v;
+        }
+
+        let idx = 0;
+        for (let py = 0; py < H; py++) {
+            for (let px = 0; px < W; px++) {
+                let x = (px - cx) / scale;
+                let y = (py - cy) / scale;
+                const xr = x * cosR - y * sinR;
+                const yr = x * sinR + y * cosR;
+                x = xr; y = yr;
+                const r = Math.sqrt(x * x + y * y);
+                let intensity;
+                if (blendMode === 'multiply') {
+                    intensity = (1 + _R(r, params)) * (1 + _X(x, params)) * (1 + _Y(y, params));
+                } else {
+                    intensity = _R(r, params) + _X(x, params) + _Y(y, params);
+                }
+                intensities[idx] = intensity;
+                if (intensity < minI) minI = intensity;
+                if (intensity > maxI) maxI = intensity;
+                idx++;
+            }
+        }
+
+        const range = maxI - minI || 1;
+        for (let i = 0; i < intensities.length; i++) {
+            const grey = Math.floor(((intensities[i] - minI) / range) * 255);
+            const p = i * 4;
+            data[p] = grey; data[p + 1] = grey; data[p + 2] = grey; data[p + 3] = 255;
+        }
+
+        return imageData;
+    }
 };
 
 console.log('✅ Wave Interference script loaded');

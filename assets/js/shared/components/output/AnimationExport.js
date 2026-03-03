@@ -68,9 +68,11 @@ export class AnimationExport extends BaseComponent {
             resolution: 'canvas',   // 'canvas' | '720p' | '1080p' | '4k' | 'custom'
             customWidth: 1920,
             customHeight: 1080,
-            quality: 0.92,          // For video/image compression
-            bitrate: 8000000,       // For video (8 Mbps)
-            
+            quality: 0.92,
+            bitrate: 8000000,
+            filename: '',
+            preview: false,
+
             // Runtime state
             isExporting: false,
             progress: 0,
@@ -163,6 +165,8 @@ export class AnimationExport extends BaseComponent {
         this._renderTimingControls();
         this._renderResolutionControls();
         this._renderQualityControls();
+        this._renderFilenameControl();
+        this._renderPreviewControl();
         this._renderExportButtons();
         this._renderProgress();
         
@@ -458,7 +462,48 @@ export class AnimationExport extends BaseComponent {
         
         this.element.appendChild(container);
     }
-    
+
+    _renderFilenameControl() {
+        const row = this.createElement('div', 'export-row');
+
+        const label = this.createElement('label', 'export-label');
+        label.textContent = 'Filename';
+
+        const input = this.createElement('input', 'export-input export-filename-input');
+        input.type = 'text';
+        input.placeholder = 'animation (auto)';
+        input.value = this.state.filename;
+        input.addEventListener('input', (e) => {
+            this.state.filename = e.target.value;
+        });
+
+        row.appendChild(label);
+        row.appendChild(input);
+        this.element.appendChild(row);
+    }
+
+    _renderPreviewControl() {
+        const row = this.createElement('div', 'export-row');
+
+        const label = this.createElement('label', 'export-label');
+        label.textContent = 'Preview';
+
+        const btn = this.createElement('button', 'export-toggle-btn');
+        const update = () => {
+            btn.textContent = this.state.preview ? 'ON' : 'OFF';
+            btn.style.color = this.state.preview ? 'var(--vga-aqua)' : 'var(--vga-white)';
+        };
+        update();
+        btn.addEventListener('click', () => {
+            this.state.preview = !this.state.preview;
+            update();
+        });
+
+        row.appendChild(label);
+        row.appendChild(btn);
+        this.element.appendChild(row);
+    }
+
     _renderExportButtons() {
         const row = this.createElement('div', 'export-buttons');
         
@@ -637,8 +682,10 @@ export class AnimationExport extends BaseComponent {
             
             this._updateProgress(i + 1, totalFrames, `Rendering frame ${i + 1}/${totalFrames}`);
             
-            // Yield to UI
-            await new Promise(resolve => setTimeout(resolve, 0));
+            // Yield to UI — skipped in silent mode for faster export
+            if (this.state.preview) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
         }
         
         // Restore original state
@@ -692,7 +739,7 @@ export class AnimationExport extends BaseComponent {
         }, null, 2));
         
         const blob = await zip.generateAsync({ type: 'blob' });
-        this._downloadBlob(blob, `animation-frames-${Date.now()}.zip`);
+        this._downloadBlob(blob, this._buildFilename('zip'));
         
         this.frameBuffer = [];
         this.onExportComplete('frames', blob);
@@ -755,7 +802,7 @@ export class AnimationExport extends BaseComponent {
         return new Promise((resolve) => {
             this.recorder.stopRecording(() => {
                 const blob = this.recorder.getBlob();
-                this._downloadBlob(blob, `animation-${Date.now()}.gif`);
+                this._downloadBlob(blob, this._buildFilename('gif'));
                 this.recorder = null;
                 this.onExportComplete('gif', blob);
                 resolve();
@@ -802,7 +849,7 @@ export class AnimationExport extends BaseComponent {
         return new Promise((resolve, reject) => {
             recorder.onstop = () => {
                 const blob = new Blob(chunks, { type: mimeType });
-                this._downloadBlob(blob, `animation-${Date.now()}.${format}`);
+                this._downloadBlob(blob, this._buildFilename(format));
                 this.onExportComplete(format, blob);
                 resolve();
             };
@@ -898,7 +945,7 @@ export class AnimationExport extends BaseComponent {
         return new Promise((resolve) => {
             this.recorder.stopRecording(() => {
                 const blob = this.recorder.getBlob();
-                this._downloadBlob(blob, `animation-${Date.now()}.webm`);
+                this._downloadBlob(blob, this._buildFilename('webm'));
                 this.recorder = null;
                 this.onExportComplete('webm', blob);
                 resolve();
@@ -910,6 +957,11 @@ export class AnimationExport extends BaseComponent {
     // UTILITIES
     // ═══════════════════════════════════════════════════════════════════
     
+    _buildFilename(ext) {
+        const base = this.state.filename.trim() || `animation-${Date.now()}`;
+        return `${base}.${ext}`;
+    }
+
     _downloadBlob(blob, filename) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

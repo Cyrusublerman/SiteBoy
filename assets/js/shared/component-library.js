@@ -61,7 +61,8 @@ import {
     Lightbox,
     Carousel,
     CheckpointList,
-    Sequencer
+    Sequencer,
+    SequencerV2
 } from './interactive.js';
 
 // Import correct Dropdown component for ToolBase
@@ -216,6 +217,7 @@ const ComponentLibrary = {
             'carousel': Carousel,
             'checkpoint-list': CheckpointList,
             'sequencer': Sequencer,
+            'sequencer-v2': SequencerV2,
 
             // Graphs
             'bar-graph': BarGraph,
@@ -345,6 +347,7 @@ ComponentLibrary.Lightbox = Lightbox;
 ComponentLibrary.Carousel = Carousel;
 ComponentLibrary.CheckpointList = CheckpointList;
 ComponentLibrary.Sequencer = Sequencer;
+ComponentLibrary.SequencerV2 = SequencerV2;
 
 // Assign input components to ComponentLibrary immediately
 ComponentLibrary.ToggleGroup = ToggleGroup;

@@ -23,6 +23,7 @@ import '../assets/js/sections/art_section.js';
 import '../assets/js/sections/tools_section.js';
 import '../assets/js/sections/projects_section.js';
 import '../assets/js/sections/contact_section.js';
+import '../projects/Synthetic Biophilia/synthetic-biophilia.js';
 
 import { SiteBoyApp } from '../assets/js/core/app.js';
 

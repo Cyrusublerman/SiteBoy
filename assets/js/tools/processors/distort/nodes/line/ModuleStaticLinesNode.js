@@ -1,0 +1,32 @@
+import { createEffectModule } from '../../core/EffectModule.js';
+import { buildStaticLines } from '../../../../../shared/algorithms/line/static-line-engine.js';
+import { vectorToRaster } from '../bridge/node-adapters.js';
+
+export const ModuleStaticLinesNode = createEffectModule({
+  type: 'modulestaticlines',
+  name: 'MODULE STATIC LINES',
+  category: 'LINE',
+  isVector: true,
+  params: {
+    spacing:     { label: 'SPACING',    min: 2, max: 40,  step: 1,    value: 8,   tier: 3, unit: 'px', driveable: true },
+    horizontal:  { label: 'HORIZONTAL', type: 'toggle',              value: true,  tier: 3 },
+    zigzag:      { label: 'ZIGZAG',     type: 'toggle',              value: false, tier: 4 },
+    strokeW:     { label: 'STROKE W',   min: 0.25, max: 4, step: 0.25, value: 1,  tier: 3, unit: 'px' },
+    bgColor:     { label: 'BG LEVEL',   min: 0, max: 255, step: 1,  value: 255,  tier: 4 },
+    strokeColor: { label: 'STROKE LVL', min: 0, max: 255, step: 1,  value: 0,    tier: 4, driveable: true }
+  },
+  applyVector(_src, w, h, p) {
+    const set = buildStaticLines({ width: w, height: h, spacing: p.spacing, horizontal: p.horizontal, zigzag: p.zigzag });
+    return { lines: set.lines, strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255], strokeWidth: p.strokeW, clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255] };
+  },
+  apply(src, dst, w, h, p) {
+    const set = buildStaticLines({ width: w, height: h, spacing: p.spacing, horizontal: p.horizontal, zigzag: p.zigzag });
+    dst.set(vectorToRaster({
+      basePixels: src, width: w, height: h, lines: set.lines,
+      strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255],
+      strokeWidth: p.strokeW,
+      clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255],
+      opacity: 1
+    }));
+  }
+});

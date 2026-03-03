@@ -348,3 +348,61 @@ export function waveEnergy(current, previous, c) {
     return kinetic + potential;
 }
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+
+function _bilinearWave(src, w, h, fx, fy, dst, i) {
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const dx = fx - x0, dy = fy - y0;
+  const cx0 = x0 < 0 ? 0 : x0 >= w ? w - 1 : x0;
+  const cx1 = x0 + 1 >= w ? w - 1 : x0 + 1 < 0 ? 0 : x0 + 1;
+  const cy0 = y0 < 0 ? 0 : y0 >= h ? h - 1 : y0;
+  const cy1 = y0 + 1 >= h ? h - 1 : y0 + 1 < 0 ? 0 : y0 + 1;
+  const i00 = (cy0 * w + cx0) * 4, i10 = (cy0 * w + cx1) * 4;
+  const i01 = (cy1 * w + cx0) * 4, i11 = (cy1 * w + cx1) * 4;
+  const idx = 1 - dx, idy = 1 - dy;
+  const w00 = idx * idy, w10 = dx * idy, w01 = idx * dy, w11 = dx * dy;
+  dst[i]     = src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11;
+  dst[i + 1] = src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11;
+  dst[i + 2] = src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11;
+  dst[i + 3] = src[i00 + 3] * w00 + src[i10 + 3] * w10 + src[i01 + 3] * w01 + src[i11 + 3] * w11;
+}
+
+/**
+ * Simulate 2D wave equation and use displacement field to warp src RGBA buffer.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} speed      - Wave propagation speed [0.01, 2]
+ * @param {number} damping    - Amplitude damping per step [0.9, 1]
+ * @param {number} steps      - Simulation steps [10, 500]
+ * @param {number} strength   - Displacement magnitude in pixels [0, 50]
+ * @param {'gaussian'|'ripple'} initType - Initial wave shape
+ * @param {number} radius     - Initial perturbation radius as fraction of image [0.01, 0.5]
+ * @returns {Uint8ClampedArray}
+ */
+export function waveDistortionRGBA(src, w, h, speed, damping, steps, strength, initType, radius) {
+  const n = w * h, c2 = speed * speed, cx = w / 2, cy = h / 2;
+  const rPx = radius * Math.min(w, h);
+  let cur = new Float32Array(n), prev = new Float32Array(n);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = x - cx, dy = y - cy, dist = Math.sqrt(dx * dx + dy * dy);
+    const v = initType === 'ripple'
+      ? Math.cos(dist / rPx * Math.PI) * Math.exp(-dist / (2 * rPx))
+      : Math.exp(-(dist * dist) / (2 * rPx * rPx));
+    cur[y * w + x] = prev[y * w + x] = v;
+  }
+  let next = new Float32Array(n);
+  for (let s = 0; s < steps; s++) {
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      next[i] = damping * (2 * cur[i] - prev[i] + c2 * (cur[i - 1] + cur[i + 1] + cur[i - w] + cur[i + w] - 4 * cur[i]));
+    }
+    [prev, cur, next] = [cur, next, prev];
+  }
+  const dst = new Uint8ClampedArray(src.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const disp = cur[y * w + x] * strength;
+    _bilinearWave(src, w, h, x + disp, y + disp, dst, (y * w + x) * 4);
+  }
+  return dst;
+}

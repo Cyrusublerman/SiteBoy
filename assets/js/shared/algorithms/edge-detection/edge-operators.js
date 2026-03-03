@@ -528,3 +528,158 @@ export default {
     dominantOrientation
 };
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+// These functions operate on Uint8ClampedArray RGBA buffers directly,
+// matching the DISTORT node pipeline contract.
+
+function _luma(src, n) {
+  const lum = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const j = i * 4; lum[i] = src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114; }
+  return lum;
+}
+
+function _gaussBlur1D(src, n, w, h, sigma) {
+  const rad = Math.ceil(sigma * 3);
+  const k = new Float32Array(rad * 2 + 1); let ks = 0;
+  for (let i = -rad; i <= rad; i++) { k[i + rad] = Math.exp(-(i * i) / (2 * sigma * sigma)); ks += k[i + rad]; }
+  for (let i = 0; i < k.length; i++) k[i] /= ks;
+  const tmp = new Float32Array(n), out = new Float32Array(n);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let v = 0; for (let j = -rad; j <= rad; j++) v += src[y * w + Math.max(0, Math.min(w - 1, x + j))] * k[j + rad]; tmp[y * w + x] = v;
+  }
+  for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) {
+    let v = 0; for (let j = -rad; j <= rad; j++) v += tmp[Math.max(0, Math.min(h - 1, y + j)) * w + x] * k[j + rad]; out[y * w + x] = v;
+  }
+  return out;
+}
+
+/**
+ * Sobel edge detection on an RGBA buffer.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [threshold=0]   - Edges below this magnitude are zeroed [0, 255]
+ * @param {boolean} [normalize=true] - Stretch magnitude to full 0–255 range
+ * @returns {Uint8ClampedArray}
+ */
+export function sobelEdge(src, w, h, threshold = 0, normalize = true) {
+  const n = w * h, lum = _luma(src, n);
+  const mag = new Float32Array(n); let maxMag = 0;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    const gx = -lum[i - w - 1] + lum[i - w + 1] - 2 * lum[i - 1] + 2 * lum[i + 1] - lum[i + w - 1] + lum[i + w + 1];
+    const gy = -lum[i - w - 1] - 2 * lum[i - w] - lum[i - w + 1] + lum[i + w - 1] + 2 * lum[i + w] + lum[i + w + 1];
+    mag[i] = Math.sqrt(gx * gx + gy * gy); if (mag[i] > maxMag) maxMag = mag[i];
+  }
+  const scale = normalize && maxMag > 0 ? 255 / maxMag : 1;
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < n; i++) {
+    const v = Math.min(255, mag[i] * scale), j = i * 4;
+    dst[j] = dst[j + 1] = dst[j + 2] = v > threshold ? v : 0; dst[j + 3] = src[j + 3];
+  }
+  return dst;
+}
+
+/**
+ * Laplacian edge detection on an RGBA buffer.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {'4-conn'|'8-conn'} [mode='4-conn'] - Connectivity kernel
+ * @param {boolean} [normalize=true]
+ * @returns {Uint8ClampedArray}
+ */
+export function laplacianEdge(src, w, h, mode = '4-conn', normalize = true) {
+  const n = w * h, lum = _luma(src, n);
+  const use8 = mode === '8-conn';
+  const out = new Float32Array(n); let maxV = 0;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    const v = use8
+      ? lum[i - w - 1] + lum[i - w] + lum[i - w + 1] + lum[i - 1] - 8 * lum[i] + lum[i + 1] + lum[i + w - 1] + lum[i + w] + lum[i + w + 1]
+      : lum[i - w] + lum[i - 1] - 4 * lum[i] + lum[i + 1] + lum[i + w];
+    out[i] = Math.abs(v); if (out[i] > maxV) maxV = out[i];
+  }
+  const scale = normalize && maxV > 0 ? 255 / maxV : 1;
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < n; i++) { const v = Math.min(255, out[i] * scale), j = i * 4; dst[j] = dst[j + 1] = dst[j + 2] = v; dst[j + 3] = src[j + 3]; }
+  return dst;
+}
+
+/**
+ * Difference of Gaussians — approximates LoG edge detection.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [sigma1=1]      - Fine scale sigma
+ * @param {number} [sigma2=1.6]    - Coarse scale sigma (must be > sigma1)
+ * @param {number} [threshold=5]   - Minimum abs(G1-G2) to register as edge [0, 50]
+ * @returns {Uint8ClampedArray}
+ */
+export function differenceOfGaussiansRGBA(src, w, h, sigma1 = 1, sigma2 = 1.6, threshold = 5) {
+  const n = w * h, lum = _luma(src, n);
+  const g1 = _gaussBlur1D(lum, n, w, h, sigma1);
+  const g2 = _gaussBlur1D(lum, n, w, h, sigma2);
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < n; i++) {
+    const v = Math.abs(g1[i] - g2[i]);
+    const val = v > threshold ? Math.min(255, v) : 0;
+    const j = i * 4; dst[j] = dst[j + 1] = dst[j + 2] = val; dst[j + 3] = src[j + 3];
+  }
+  return dst;
+}
+
+/**
+ * Canny edge detection — Gaussian smooth → Sobel gradient → NMS → hysteresis.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [sigma=1.4]          - Gaussian pre-blur sigma [0.5, 5]
+ * @param {number} [lowThreshold=0.1]   - Hysteresis low threshold (fraction of max) [0.01, 0.5]
+ * @param {number} [highThreshold=0.3]  - Hysteresis high threshold (fraction of max) [0.05, 1]
+ * @returns {Uint8ClampedArray}
+ */
+export function cannyEdge(src, w, h, sigma = 1.4, lowThreshold = 0.1, highThreshold = 0.3) {
+  const n = w * h, grey = _luma(src, n);
+  const smooth = _gaussBlur1D(grey, n, w, h, sigma);
+
+  const mag = new Float32Array(n), dir = new Float32Array(n); let maxM = 0;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    const gx = -smooth[i - w - 1] + smooth[i - w + 1] - 2 * smooth[i - 1] + 2 * smooth[i + 1] - smooth[i + w - 1] + smooth[i + w + 1];
+    const gy = -smooth[i - w - 1] - 2 * smooth[i - w] - smooth[i - w + 1] + smooth[i + w - 1] + 2 * smooth[i + w] + smooth[i + w + 1];
+    mag[i] = Math.sqrt(gx * gx + gy * gy); dir[i] = Math.atan2(gy, gx); if (mag[i] > maxM) maxM = mag[i];
+  }
+
+  const nms = new Float32Array(n);
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x, a = (dir[i] + Math.PI) % Math.PI; let m1, m2;
+    if (a < Math.PI / 8 || a >= 7 * Math.PI / 8) { m1 = mag[i - 1]; m2 = mag[i + 1]; }
+    else if (a < 3 * Math.PI / 8) { m1 = mag[i - w + 1]; m2 = mag[i + w - 1]; }
+    else if (a < 5 * Math.PI / 8) { m1 = mag[i - w]; m2 = mag[i + w]; }
+    else { m1 = mag[i - w - 1]; m2 = mag[i + w + 1]; }
+    nms[i] = (mag[i] >= m1 && mag[i] >= m2) ? mag[i] : 0;
+  }
+
+  const lo = lowThreshold * maxM, hi = highThreshold * maxM;
+  const edges = new Uint8Array(n);
+  for (let i = 0; i < n; i++) edges[i] = nms[i] >= hi ? 255 : nms[i] >= lo ? 128 : 0;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      if (edges[i] === 128) {
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (edges[(y + dy) * w + x + dx] === 255) { edges[i] = 255; changed = true; break; }
+        }
+      }
+    }
+  }
+  for (let i = 0; i < n; i++) if (edges[i] === 128) edges[i] = 0;
+
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < n; i++) { const j = i * 4; dst[j] = dst[j + 1] = dst[j + 2] = edges[i]; dst[j + 3] = src[j + 3]; }
+  return dst;
+}
+

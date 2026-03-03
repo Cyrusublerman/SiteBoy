@@ -834,6 +834,417 @@ blockquote {
     border-top: 1px solid var(--c-border);
 }
 
+/* =================================================================
+   SEQUENCER V2 (seq2-*)
+   ================================================================= */
+
+/* Utility */
+.seq2-hidden { display: none !important; }
+
+/* ── Sidebar Panel ─────────────────────────────────────────────── */
+
+.seq2-panel {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.seq2-panel-controls {
+    display: flex;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.seq2-panel-list {
+    max-height: calc(var(--f) * 22);
+    overflow-y: auto;
+}
+
+.seq2-empty {
+    padding: var(--f);
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.85);
+    text-align: center;
+}
+
+.seq2-panel-total {
+    padding: calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    color: var(--vga-aqua);
+    text-align: center;
+    border-top: 1px solid var(--c-border);
+}
+
+/* Checkpoint row */
+.seq2-cp-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 2);
+    height: calc(var(--f) * 2);
+    border-bottom: 1px solid var(--c-border);
+    cursor: pointer;
+}
+
+.seq2-cp-row:hover {
+    background: var(--vga-navy);
+}
+
+.seq2-cp-row.seq2-selected {
+    background: var(--vga-navy);
+    border-left: 2px solid var(--vga-aqua);
+}
+
+.seq2-cp-row.seq2-dragging {
+    opacity: 0.4;
+}
+
+/* Segment row */
+.seq2-seg-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    height: calc(var(--f) * 2);
+    border-bottom: 1px solid var(--c-border);
+    cursor: pointer;
+}
+
+.seq2-seg-row:hover {
+    background: var(--vga-navy);
+}
+
+.seq2-seg-row.seq2-selected {
+    background: var(--vga-navy);
+    border-left: 2px solid var(--vga-lime);
+}
+
+/* Shared field styles */
+.seq2-handle {
+    color: var(--vga-gray);
+    cursor: grab;
+    user-select: none;
+    padding: 0 calc(var(--f) / 4);
+    flex-shrink: 0;
+}
+
+.seq2-arrow {
+    color: var(--vga-gray);
+    padding: 0 calc(var(--f) / 4);
+    flex-shrink: 0;
+}
+
+.seq2-label {
+    color: var(--vga-gray);
+    font-size: calc(var(--f) * 0.75);
+    flex-shrink: 0;
+}
+
+.seq2-cp-name {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--c-text);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.85);
+}
+
+.seq2-cp-name:focus {
+    outline: 1px solid var(--c-border);
+    background: var(--c-bg);
+}
+
+.seq2-num-input {
+    width: calc(var(--f) * 3.5);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.75);
+    padding: 0 calc(var(--f) / 4);
+    height: calc(var(--f) * 1.5);
+}
+
+.seq2-order-input {
+    width: calc(var(--f) * 2.5);
+}
+
+.seq2-badge {
+    padding: 0 calc(var(--f) / 3);
+    font-size: calc(var(--f) * 0.7);
+    border: 1px solid var(--c-border);
+    cursor: pointer;
+    user-select: none;
+    color: var(--c-text);
+    flex-shrink: 0;
+}
+
+.seq2-badge:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.seq2-badge-mode {
+    color: var(--vga-aqua);
+    border-color: var(--vga-aqua);
+}
+
+/* Buttons */
+.seq2-btn {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+}
+
+.seq2-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.seq2-btn-save {
+    color: var(--vga-lime);
+    border-color: var(--vga-lime);
+}
+
+.seq2-btn-save:hover {
+    background: var(--vga-lime);
+    color: var(--vga-black);
+}
+
+.seq2-btn-clear {
+    color: var(--vga-red);
+}
+
+.seq2-btn-clear:hover {
+    background: var(--vga-red);
+    color: var(--vga-white);
+}
+
+.seq2-btn-sm {
+    padding: calc(var(--f) / 6) calc(var(--f) / 3);
+    font-size: calc(var(--f) * 0.75);
+    cursor: pointer;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+    flex-shrink: 0;
+}
+
+.seq2-btn-sm:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.seq2-btn-del {
+    color: var(--vga-red);
+}
+
+.seq2-btn-del:hover {
+    background: var(--vga-red);
+    color: var(--vga-white);
+    border-color: var(--vga-red);
+}
+
+.seq2-loop-label {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 4);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+}
+
+/* Segment detail panel */
+.seq2-panel-detail {
+    border-top: 1px solid var(--c-border);
+    padding: calc(var(--f) / 2);
+    background: var(--c-bg);
+}
+
+.seq2-detail-header {
+    font-size: calc(var(--f) * 0.85);
+    color: var(--vga-aqua);
+    margin-bottom: calc(var(--f) / 2);
+    text-transform: uppercase;
+}
+
+.seq2-detail-row {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 2);
+    margin-bottom: calc(var(--f) / 4);
+    min-height: calc(var(--f) * 2);
+}
+
+.seq2-detail-row .seq2-label {
+    min-width: calc(var(--f) * 5);
+}
+
+.seq2-select {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.75);
+    height: calc(var(--f) * 1.5);
+    padding: 0 calc(var(--f) / 4);
+}
+
+.seq2-select-sm {
+    max-width: calc(var(--f) * 9);
+}
+
+.seq2-easing-preview {
+    width: calc(var(--f) * 4);
+    height: calc(var(--f) * 2);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    flex-shrink: 0;
+}
+
+.seq2-radio-label {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) / 4);
+    font-size: calc(var(--f) * 0.85);
+    cursor: pointer;
+}
+
+.seq2-detail-toggle {
+    font-size: calc(var(--f) * 0.85);
+    color: var(--vga-gray);
+    cursor: pointer;
+    padding: calc(var(--f) / 4) 0;
+    user-select: none;
+}
+
+.seq2-detail-toggle:hover {
+    color: var(--c-text);
+}
+
+.seq2-detail-overrides {
+    border-top: 1px solid var(--c-border);
+    padding-top: calc(var(--f) / 4);
+}
+
+/* ── Horizontal Strip ──────────────────────────────────────────── */
+
+.seq2-strip {
+    display: flex;
+    flex-direction: column;
+    height: calc(var(--f) * 4);
+    border-top: 1px solid var(--c-border);
+    background: var(--c-bg);
+    flex-shrink: 0;
+    user-select: none;
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.75);
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Row 1: uniform control buttons */
+.seq2-strip-controls {
+    display: flex;
+    height: calc(var(--f) * 2);
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+    overflow: auto;
+    min-width: 0;
+    scrollbar-width: none;
+}
+
+.seq2-strip-controls::-webkit-scrollbar { display: none; }
+
+.seq2-ctrl-btn {
+    flex: 0 0 calc(var(--f) * 5.5);
+    height: 100%;
+    background: var(--c-bg);
+    border: none;
+    border-right: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.7);
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.seq2-ctrl-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+/* Row 2: checkpoint track */
+.seq2-strip-track {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: auto;
+    min-height: 0;
+    min-width: 0;
+    scrollbar-width: none;
+}
+
+.seq2-strip-track::-webkit-scrollbar { display: none; }
+
+/* Checkpoint block */
+.seq2-cp-block {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    border-right: 1px solid var(--c-border);
+    flex-shrink: 0;
+    background: var(--c-bg);
+}
+
+.seq2-cp-block.seq2-drag-over {
+    outline: 1px solid var(--vga-aqua);
+    outline-offset: -1px;
+}
+
+/* Cell within a checkpoint block */
+.seq2-cp-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    border-right: 1px solid var(--c-border);
+    font-size: calc(var(--f) * 0.7);
+    flex-shrink: 0;
+    padding: 0;
+}
+
+/* Duration number input */
+.seq2-cp-dur {
+    width: calc(var(--f) * 3);
+    height: 100%;
+    background: var(--c-bg);
+    border: none;
+    border-right: 1px solid var(--c-border);
+    color: var(--c-text);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.7);
+    text-align: center;
+    padding: 0;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.seq2-cp-dur:disabled {
+    color: var(--vga-gray);
+}
+
 .group-button {
     flex: 1;
 }
@@ -2913,6 +3324,23 @@ select.component {
     margin-top: calc(var(--f) / 4);
 }
 
+.animation-export .export-input[type="text"] {
+    flex: 1;
+}
+
+.animation-export .export-toggle-btn {
+    height: calc(var(--f) * 1.75);
+    padding: 0 calc(var(--f) * 0.75);
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--vga-white);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.79);
+    cursor: pointer;
+    min-width: calc(var(--f) * 3.5);
+    text-align: center;
+}
+
 /* Cursor utility classes */
 .cursor-pointer {
     cursor: pointer;
@@ -3009,27 +3437,6 @@ body.full-mode .page-footer,
 body.tools-section #footer,
 body.tools-section .page-footer {
     display: none !important;
-}
-
-body.tools-section .content-container {
-    min-height: calc(var(--content-min-h-no-sub) + var(--header-height));
-    max-height: calc(var(--content-height-no-sub) + var(--header-height));
-    border-bottom: 1px solid var(--c-border);
-}
-
-body.tools-section.with-subheader .content-container {
-    min-height: calc(var(--content-min-h-with-sub) + var(--header-height));
-    max-height: calc(var(--content-height-with-sub) + var(--header-height));
-}
-
-body.tools-section .content-container.tool-viewport {
-    height: calc(var(--content-min-h-no-sub) + var(--header-height));
-    max-height: calc(var(--content-min-h-no-sub) + var(--header-height));
-}
-
-body.tools-section.with-subheader .content-container.tool-viewport {
-    height: calc(var(--content-min-h-with-sub) + var(--header-height));
-    max-height: calc(var(--content-min-h-with-sub) + var(--header-height));
 }
 
 body.full-mode #subheader,

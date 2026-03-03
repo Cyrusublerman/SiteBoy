@@ -45,6 +45,22 @@
  * - audio/dsp-evaluator: DSP equation parsing and evaluation
  * - animation/animation-utils: LFO, perfect loops, easing, morphing
  * - rendering/rendering-utils: Sprite caching, pseudo-3D, jittered sampling
+ * - line/flow-line-engine: Wavefront flow lines, streamline tracing
+ * - line/serpentine-line-engine: Luminance-responsive serpentine path
+ * - line/static-line-engine: Parallel grid lines with displacement
+ * - line/line-engine-common: Shared clipping, bounds, seeded RNG, path length
+ * - line/front-propagation-core: Generic iterative front propagation
+ * - field/vector-field: 2-D vector field creation, normalisation, sampling
+ * - field/base-gradient: Sobel gradient VectorField from RGBA pixels
+ * - image/morphology: Binary and greyscale erosion/dilation/open/close
+ * - painter/brush-engine: Circular brush stamp and polyline painting
+ * - painter/layer-tracker: RGBA layer accumulation and alpha-over flattening
+ * - image/colour-adjustments: Histogram EQ, CLAHE, channel mixer, vibrance, temp/tint, gradient map
+ * - image/blur-filters: Bilateral filter, motion blur, radial blur (zoom/spin)
+ * - image/spatial-filters: Unsharp mask, high pass
+ * - image/texture-overlays: Film grain, vignette, scanlines
+ * - image/compositing: Luminance-weighted stipple, tile blend
+ * - geometry/distortion: Band shift, spherize, twirl, chromatic aberration, lens bubbles
  * 
  * @example
  * import { EdgeDetection, Sampling, SpaceFilling, TSP, Noise, Patterns, SDF } from './shared/algorithms/index.js';
@@ -582,3 +598,58 @@ export {
 // ═══════════════════════════════════════════════════════════════════════════
 // MathUtils.hashInt, hashToFloat, hash2D, quickRandom are now available
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LINE ENGINES — wavefront, serpentine, static, flow-line generation
+// ═══════════════════════════════════════════════════════════════════════════
+export * as LineEngineCommon from './line/line-engine-common.js';
+export * as FrontPropagation from './line/front-propagation-core.js';
+export * as FlowLineEngine from './line/flow-line-engine.js';
+export * as SerpentineLineEngine from './line/serpentine-line-engine.js';
+export * as StaticLineEngine from './line/static-line-engine.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VECTOR FIELDS — creation, normalisation, gradient extraction, sampling
+// ═══════════════════════════════════════════════════════════════════════════
+export * as VectorField from './field/vector-field.js';
+export * as BaseGradient from './field/base-gradient.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MORPHOLOGY — binary and greyscale erosion/dilation/open/close
+// ═══════════════════════════════════════════════════════════════════════════
+export * as Morphology from './image/morphology.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PAINTER — circular brush stamp and layer compositing
+// ═══════════════════════════════════════════════════════════════════════════
+export * as BrushEngine from './painter/brush-engine.js';
+export { LayerTracker } from './painter/layer-tracker.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COLOUR ADJUSTMENTS — histogram EQ, CLAHE, channel mixer, vibrance, temp/tint
+// ═══════════════════════════════════════════════════════════════════════════
+export * as ColourAdjustments from './image/colour-adjustments.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BLUR FILTERS — bilateral, motion blur, radial blur
+// ═══════════════════════════════════════════════════════════════════════════
+export * as BlurFilters from './image/blur-filters.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPATIAL FILTERS — unsharp mask, high pass
+// ═══════════════════════════════════════════════════════════════════════════
+export * as SpatialFilters from './image/spatial-filters.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEXTURE OVERLAYS — film grain, vignette, scanlines
+// ═══════════════════════════════════════════════════════════════════════════
+export * as TextureOverlays from './image/texture-overlays.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IMAGE COMPOSITING — stipple placement, tile blend
+// ═══════════════════════════════════════════════════════════════════════════
+export * as ImageCompositing from './image/compositing.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GEOMETRIC DISTORTION — band shift, spherize, twirl, chromatic aberration, lens bubbles
+// ═══════════════════════════════════════════════════════════════════════════
+export * as GeometricDistortion from './geometry/distortion.js';

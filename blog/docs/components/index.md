@@ -123,6 +123,13 @@ Use this as the entry point for all component docs.
 ## How to add/modify
 - Follow process guide: search/reuse → implement → export chain → doc page → checklist.
 
+## DISTORT Effect Modules
+
+Per-module documentation for all 69 DISTORT pipeline nodes.
+
+- Index: `distort/index.md`
+- Modules: `distort/modules/*.md` (one file per type string)
+
 ## See Also
 - `guides/tools/tool-build-guide.md` — ToolBase usage with components
 - `guides/ai-routing-map.md` — where to start

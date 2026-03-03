@@ -25,18 +25,13 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
     var frame = 0;
     var webglRenderer = null;
     
-    // Checkpoint system
-    var checkpoints = [];
-    var checkpointListComponent = null;  // ComponentLibrary.CheckpointList instance
-    var checkpointListContainer = null;  // Fallback container
-    var currentToolInstance = null;
+    // SequencerV2 instance
+    var sequencerV2Wave = null;
+
     var animationState = {
         playing: false,
-        mode: 'none', // 'none', 'phase', 'sequence'
+        mode: 'none', // 'none', 'phase'
         startTime: 0,
-        sequenceIndex: 0,
-        sequenceStartTime: 0,
-        sequenceLoop: true,
         phaseAnimations: {
             phi_r1: { enabled: false, speed: 1, direction: 1 },
             phi_r2: { enabled: false, speed: 1, direction: 1 },
@@ -273,15 +268,9 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
                 self.draw();
             });
             
-            // Wire checkpoint buttons
-            wireButton(self, 'saveCheckpoint', function() {
-                saveCheckpoint(self);
-                updateCheckpointList();
-            });
-            
-            // Create checkpoint list container after a tick (to ensure sidebar is rendered)
+            // Create SequencerV2 into Checkpoints block
             setTimeout(function() {
-                createCheckpointListContainer(self);
+                createSequencerV2Wave(self);
             }, 0);
             
             // Wire animation buttons
@@ -324,8 +313,6 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
                 animationState.phaseAnimations.phi_r2.speed = speed;
                 animationState.phaseAnimations.phi_x1.speed = speed;
                 animationState.phaseAnimations.phi_y1.speed = speed;
-            } else if (key === 'sequenceLoop') {
-                animationState.sequenceLoop = value && value.length > 0;
             }
         },
         
@@ -701,132 +688,64 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // CHECKPOINT SYSTEM
+    // SEQUENCER V2
     // ═══════════════════════════════════════════════════════════════════
 
-    function saveCheckpoint(toolInstance) {
-        var values = toolInstance.getValues();
-        var params = {};
-        
-        // Copy only equation parameters
-        var paramKeys = Object.keys(getDefaultParams());
-        paramKeys.forEach(function(k) {
-            params[k] = values[k];
-        });
-        
-        checkpoints.push({
-            name: 'State ' + (checkpoints.length + 1),
-            params: params,
-            duration: 3,
-            timestamp: Date.now()
-        });
-        
-        console.log('✅ Saved checkpoint ' + checkpoints.length);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // CHECKPOINT LIST (using ComponentLibrary.CheckpointList)
-    // ═══════════════════════════════════════════════════════════════════
-    
-    function createCheckpointListContainer(toolInstance) {
-        currentToolInstance = toolInstance;
-        
-        // Find the Save State button to inject list after
+    function createSequencerV2Wave(toolInstance) {
         var saveBtn = toolInstance.getComponent('saveCheckpoint');
         if (!saveBtn || !saveBtn.element) {
-            console.log('⚠️ Save button not found, retrying...');
-            setTimeout(function() { createCheckpointListContainer(toolInstance); }, 100);
+            setTimeout(function() { createSequencerV2Wave(toolInstance); }, 100);
             return;
         }
-        
-        // Find parent block
+
         var parent = saveBtn.element.parentElement;
-        while (parent && !parent.classList.contains('sidebar-block-content') && !parent.classList.contains('sidebar-group-content')) {
+        while (parent && !parent.classList.contains('tool-block-content')) {
             parent = parent.parentElement;
         }
         if (!parent) parent = saveBtn.element.parentElement;
-        
-        // Create CheckpointList using ComponentLibrary
-        if (window.ComponentLibrary && window.ComponentLibrary.CheckpointList) {
-            checkpointListComponent = new window.ComponentLibrary.CheckpointList({
-                items: checkpoints,
-                emptyMessage: 'No checkpoints saved',
-                onLoad: function(index) { loadCheckpoint(toolInstance, index); },
-                onDelete: function(index) { deleteCheckpoint(toolInstance, index); },
-                onReorder: function(from, to) { moveCheckpoint(from, to); updateCheckpointList(); },
-                onRename: function(index, name) { checkpoints[index].name = name; },
-                onDurationChange: function(index, dur) { checkpoints[index].duration = dur; }
-            });
-            parent.appendChild(checkpointListComponent.render());
-            console.log('✅ CheckpointList component created');
-        } else {
-            // Fallback: simple container
-            checkpointListContainer = saveBtn.element.ownerDocument.createElement('div');
-            checkpointListContainer.className = 'checkpoint-list';
-            parent.appendChild(checkpointListContainer);
-            renderCheckpointListFallback(toolInstance);
-            console.log('⚠️ Using fallback checkpoint list');
+        parent.innerHTML = '';
+
+        if (!window.ComponentLibrary || !window.ComponentLibrary.SequencerV2) {
+            console.error('❌ ComponentLibrary.SequencerV2 not available');
+            return;
         }
-    }
-    
-    function updateCheckpointList() {
-        if (checkpointListComponent) {
-            checkpointListComponent.setItems(checkpoints);
-        } else if (checkpointListContainer) {
-            renderCheckpointListFallback(currentToolInstance);
-        }
-    }
-    
-    function renderCheckpointListFallback(toolInstance) {
-        if (!checkpointListContainer) return;
-        checkpointListContainer.innerHTML = checkpoints.length === 0 
-            ? '<div class="checkpoint-empty">No checkpoints saved</div>'
-            : checkpoints.map(function(cp, i) {
-                return '<div class="checkpoint-item">' + cp.name + '</div>';
-            }).join('');
-    }
 
-    function loadCheckpoint(toolInstance, index) {
-        if (index < 0 || index >= checkpoints.length) return;
-        var params = checkpoints[index].params;
-        Object.keys(params).forEach(function(key) {
-            toolInstance.setValue(key, params[key]);
-        });
-        toolInstance.draw();
-        console.log('✅ Loaded checkpoint: ' + checkpoints[index].name);
-    }
+        var paramKeys = Object.keys(getDefaultParams());
 
-    function deleteCheckpoint(toolInstance, index) {
-        if (index < 0 || index >= checkpoints.length) return;
-        var name = checkpoints[index].name;
-        checkpoints.splice(index, 1);
-        updateCheckpointList();
-        console.log('🗑️ Deleted checkpoint: ' + name);
-    }
-
-    function moveCheckpoint(fromIndex, toIndex) {
-        if (fromIndex === toIndex) return;
-        var item = checkpoints.splice(fromIndex, 1)[0];
-        checkpoints.splice(toIndex, 0, item);
-    }
-
-    function interpolateParams(paramsA, paramsB, t) {
-        var result = {};
-        var keys = Object.keys(paramsA);
-        
-        keys.forEach(function(key) {
-            var a = paramsA[key];
-            var b = paramsB[key];
-            
-            // Handle string values (wave type, blend mode)
-            if (typeof a === 'string' || typeof b === 'string') {
-                result[key] = t < 0.5 ? a : b;
-            } else {
-                result[key] = a + (b - a) * t;
+        sequencerV2Wave = new window.ComponentLibrary.SequencerV2({
+            fps: 60,
+            loop: true,
+            defaultHold: 2,
+            defaultSegmentDuration: 1.5,
+            defaultEasing: 'easeInOutCubic',
+            onSave: function() {
+                var values = toolInstance.getValues();
+                var snap = {};
+                paramKeys.forEach(function(k) { snap[k] = values[k]; });
+                return snap;
+            },
+            onLoad: function(cpParams) {
+                Object.keys(cpParams).forEach(function(k) {
+                    toolInstance.setValue(k, cpParams[k]);
+                });
+                toolInstance.draw();
+            },
+            onFrame: function(interpolated) {
+                Object.keys(interpolated).forEach(function(k) {
+                    toolInstance.setValue(k, interpolated[k]);
+                });
+                toolInstance.draw();
             }
-        });
-        
-        return result;
+        }, {});
+
+        parent.appendChild(sequencerV2Wave.render());
+
+        var stripEl = sequencerV2Wave.getStripElement();
+        if (stripEl && toolInstance.canvasArea) {
+            toolInstance.canvasArea.appendChild(stripEl);
+        }
+
+        console.log('✅ WaveInterference SequencerV2 created');
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -836,19 +755,15 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
     function startAnimation(toolInstance) {
         if (animationState.playing) return;
         
-        // Check if we have any animation enabled
         var hasPhaseEnabled = Object.values(animationState.phaseAnimations).some(function(p) { return p.enabled; });
-        var hasSequence = checkpoints.length >= 2;
         
-        if (!hasPhaseEnabled && !hasSequence) {
-            console.log('Enable phase animation or save at least 2 checkpoints');
+        if (!hasPhaseEnabled) {
+            console.log('Enable phase animation to use the phase animator');
             return;
         }
         
         animationState.playing = true;
         animationState.startTime = performance.now();
-        animationState.sequenceIndex = 0;
-        animationState.sequenceStartTime = performance.now();
         
         // Store base phase values
         var values = toolInstance.getValues();
@@ -893,56 +808,16 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
         var values = toolInstance.getValues();
         var phaseSpeed = values.phaseSpeed || 1;
         
-        // Apply phase animations
         Object.keys(animationState.phaseAnimations).forEach(function(key) {
             var phaseAnim = animationState.phaseAnimations[key];
             if (phaseAnim.enabled) {
                 var baseValue = animationState.phaseBaseValues[key];
                 var phaseIncrement = elapsed * phaseSpeed * phaseAnim.direction * Math.PI * 2;
                 var newPhase = baseValue + phaseIncrement;
-                
-                // Wrap to [-2π, 2π]
                 var wrappedPhase = ((newPhase + Math.PI * 2) % (Math.PI * 4)) - Math.PI * 2;
                 toolInstance.setValue(key, wrappedPhase);
             }
         });
-        
-        // Apply sequence animation
-        if (checkpoints.length >= 2) {
-            var currentIndex = animationState.sequenceIndex;
-            var nextIndex = (currentIndex + 1) % checkpoints.length;
-            // Use the NEXT checkpoint's duration (time to reach it)
-            var duration = checkpoints[nextIndex].duration || 3;
-            var segmentElapsed = (performance.now() - animationState.sequenceStartTime) / 1000;
-            
-            if (segmentElapsed >= duration) {
-                // Move to next checkpoint
-                animationState.sequenceIndex = nextIndex;
-                animationState.sequenceStartTime = performance.now();
-                
-                // If not looping and back at start, stop
-                if (animationState.sequenceIndex === 0 && !animationState.sequenceLoop) {
-                    stopAnimation();
-                    return;
-                }
-            } else {
-                // Interpolate between checkpoints
-                var t = segmentElapsed / duration;
-                // Smoothstep easing
-                t = t * t * (3 - 2 * t);
-                
-                var fromParams = checkpoints[currentIndex].params;
-                var toParams = checkpoints[nextIndex].params;
-                var interpolated = interpolateParams(fromParams, toParams, t);
-                
-                // Apply interpolated values (except phases if animating)
-                Object.keys(interpolated).forEach(function(key) {
-                    if (!animationState.phaseAnimations.hasOwnProperty(key) || !animationState.phaseAnimations[key].enabled) {
-                        toolInstance.setValue(key, interpolated[key]);
-                    }
-                });
-            }
-        }
         
         toolInstance.draw();
     }
@@ -1038,13 +913,16 @@ export class WaveInterferenceTool {
     
     destroy() {
         stopAnimation();
+        if (sequencerV2Wave) {
+            sequencerV2Wave.destroy();
+            sequencerV2Wave = null;
+        }
         webglRenderer = null;
-        checkpoints = [];
         if (this.tool) { 
             this.tool.destroy(); 
             this.tool = null; 
         }
-    };
+    }
 }
 
 // Export as default for tools_section.js

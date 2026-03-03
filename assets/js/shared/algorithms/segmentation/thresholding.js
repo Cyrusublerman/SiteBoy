@@ -485,3 +485,31 @@ export default {
     floodFill
 };
 
+// ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
+
+/**
+ * Apply Otsu auto-threshold to an RGBA buffer.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {'binary'|'mask'} mode   - binary: greyscale 0/255; mask: multiply source by bit
+ * @param {boolean} invert
+ * @returns {Uint8ClampedArray}
+ */
+export function otsuThresholdRGBA(src, w, h, mode, invert) {
+  const n = w * h;
+  const luma = new Uint8Array(n);
+  for (let i = 0; i < n; i++) { const j = i * 4; luma[i] = Math.round(src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114); }
+  const bestT = otsuThreshold(luma);
+  const isMask = mode === 'mask';
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    let bit = luma[i] > bestT ? 1 : 0;
+    if (invert) bit = 1 - bit;
+    if (isMask) { dst[j] = src[j] * bit; dst[j + 1] = src[j + 1] * bit; dst[j + 2] = src[j + 2] * bit; }
+    else { const v = bit * 255; dst[j] = v; dst[j + 1] = v; dst[j + 2] = v; }
+    dst[j + 3] = src[j + 3];
+  }
+  return dst;
+}

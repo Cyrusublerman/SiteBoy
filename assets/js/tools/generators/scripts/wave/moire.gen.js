@@ -211,7 +211,15 @@ export const SCRIPT_CONFIG = {
     category: 'wave',
     description: 'Generates moiré patterns using radial, angular, and multi-centre gratings. Supports multiple combination modes and mask shapes.',
     version: '2.0.0',
-    
+
+    // ComputeScheduler hints — Tier 2 only (per-pixel imageData draw mode).
+    // Reduces pixel count by 75% during slider interaction.
+    compute: {
+        cost: 'per-pixel',
+        interactionScale: 0.5,
+        idleDelay: 200,
+    },
+
     canvas: {
         width: 420,
         height: 420,

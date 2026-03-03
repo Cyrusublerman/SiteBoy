@@ -2886,29 +2886,82 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
      * viewMode "Combined" merges all layers (last non-empty filament wins per pixel).
      * viewMode "Layer N" shows a single layer coloured by filament.
      */
-    _drawExportLayers(ctx, canvas, values) {
-        const data = this.sharedState.exportSTLData;
-        if (!data) return;
+    /**
+     * Rasterise a single layer's pixel Sets into a cached offscreen canvas.
+     * Returns the cached canvas, keyed on the data identity + layer index.
+     */
+    _getLayerCanvas(data, layerIdx) {
+        if (!this._layerCanvasCache) this._layerCanvasCache = {};
+        const key = `${layerIdx}`;
+        if (this._layerCanvasCache[key] && this._layerCanvasSrc === data) {
+            return this._layerCanvasCache[key];
+        }
 
-        const { layerMaps, filamentNames, palette, config } = data;
-        const { imageWidth, imageHeight, printWidth } = config;
-        const viewMode   = values.exportLayerView || 'Combined';
-        const layerCount = layerMaps.length;
-        const filCount   = filamentNames.length;
-        const padding    = 20;
-        const statsBarH  = 20;
+        const { layerMaps, filamentNames, config } = data;
+        const { imageWidth, imageHeight } = config;
+        const filCount = filamentNames.length;
+        const lm = layerMaps[layerIdx];
+        if (!lm) return null;
 
-        // Filament colour lookup: index → CSS hex
-        // Prefer quantizationConfig.filaments, fall back to first palette entry that uses each filament
-        const filaments  = this.sharedState.quantizationConfig?.filaments || [];
-        const filColours = Array.from({ length: filCount }, (_, fi) => {
+        const filRGB = this._getFilamentRGB(data);
+        const cv  = document.createElement('canvas');
+        cv.width  = imageWidth;
+        cv.height = imageHeight;
+        const tctx = cv.getContext('2d');
+        const imd  = tctx.createImageData(imageWidth, imageHeight);
+
+        for (let p = 0; p < imageWidth * imageHeight; p++) {
+            const i4 = p * 4;
+            imd.data[i4] = 14; imd.data[i4+1] = 14; imd.data[i4+2] = 14; imd.data[i4+3] = 255;
+        }
+        for (let fi = 0; fi < filCount; fi++) {
+            if (!lm[fi] || lm[fi].size === 0) continue;
+            const c = filRGB[fi];
+            for (const coord of lm[fi]) {
+                const [x, y] = coord.split(',').map(Number);
+                const i4 = (y * imageWidth + x) * 4;
+                imd.data[i4] = c.r; imd.data[i4+1] = c.g; imd.data[i4+2] = c.b; imd.data[i4+3] = 255;
+            }
+        }
+        tctx.putImageData(imd, 0, 0);
+
+        this._layerCanvasSrc = data;
+        this._layerCanvasCache[key] = cv;
+        return cv;
+    }
+
+    /**
+     * Parse filament hex colours to RGB, cached per exportSTLData identity.
+     */
+    _getFilamentRGB(data) {
+        if (this._filRGBSrc === data) return this._filRGB;
+        const { filamentNames, palette } = data;
+        const filaments = this.sharedState.quantizationConfig?.filaments || [];
+        const filColours = Array.from({ length: filamentNames.length }, (_, fi) => {
             const fil = filaments[fi];
             if (fil?.hex || fil?.h) return fil.hex || fil.h;
             const match = palette.find(e => e.sequence?.some(v => v > 0 && v - 1 === fi));
             return match?.hex || '#808080';
         });
+        this._filRGB = filColours.map(hex => {
+            const h = hex.replace('#', '');
+            return { r: parseInt(h.substring(0, 2), 16), g: parseInt(h.substring(2, 4), 16), b: parseInt(h.substring(4, 6), 16) };
+        });
+        this._filRGBSrc = data;
+        return this._filRGB;
+    }
 
-        // Stats bar drawn after all views
+    _drawExportLayers(ctx, canvas, values) {
+        const data = this.sharedState.exportSTLData;
+        if (!data) return;
+
+        const { layerMaps, filamentNames, config } = data;
+        const { imageWidth, imageHeight, printWidth } = config;
+        const viewMode   = values.exportLayerView || 'Combined';
+        const layerCount = layerMaps.length;
+        const padding    = 20;
+        const statsBarH  = 20;
+
         const drawStats = (label) => {
             ctx.save();
             ctx.fillStyle = '#00ff00';
@@ -2921,39 +2974,35 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             ctx.restore();
         };
 
+        const drawCachedFit = (src, label) => {
+            const scaleX = (canvas.width  - padding * 2) / src.width;
+            const scaleY = (canvas.height - padding * 2 - statsBarH) / src.height;
+            const scale  = Math.min(scaleX, scaleY);
+            const dw = Math.round(src.width  * scale);
+            const dh = Math.round(src.height * scale);
+            const ox = Math.round((canvas.width  - dw) / 2);
+            const oy = Math.round((canvas.height - statsBarH - dh) / 2);
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(src, ox, oy, dw, dh);
+            ctx.restore();
+            drawStats(label);
+        };
+
         if (viewMode === 'Combined') {
-            // Draw quantised image directly — exact same colours as the QUANTIZE tab view
             const qImg = this.sharedState.quantizedImageElement;
             if (qImg) {
-                const scaleX = (canvas.width  - padding * 2) / imageWidth;
-                const scaleY = (canvas.height - padding * 2 - statsBarH) / imageHeight;
-                const scale  = Math.min(scaleX, scaleY);
-                const scaledW = Math.round(imageWidth  * scale);
-                const scaledH = Math.round(imageHeight * scale);
-                const offX   = Math.round((canvas.width  - scaledW) / 2);
-                const offY   = Math.round((canvas.height - statsBarH - scaledH) / 2);
-                ctx.save();
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(qImg, offX, offY, scaledW, scaledH);
-                ctx.restore();
-                drawStats('Combined');
+                drawCachedFit(qImg, 'Combined');
             } else {
                 this._drawPlaceholder(ctx, canvas, 'Quantised image not available — regenerate STLs');
             }
 
         } else if (viewMode === 'All Layers') {
-            // Build cached composite of all layers as a single offscreen canvas
-            const cacheKey = `${layerCount}_${imageWidth}_${imageHeight}_${filColours.join(',')}`;
-            if (!this._allLayersCache || this._allLayersCacheKey !== cacheKey) {
-                this._allLayersCacheKey = cacheKey;
+            if (!this._allLayersCache || this._allLayersSrc !== data) {
+                this._allLayersSrc = data;
+                const filRGB = this._getFilamentRGB(data);
+                const filCount = filamentNames.length;
 
-                // Parse filament hex to RGB once
-                const filRGB = filColours.map(hex => {
-                    const h = hex.replace('#', '');
-                    return { r: parseInt(h.substring(0, 2), 16), g: parseInt(h.substring(2, 4), 16), b: parseInt(h.substring(4, 6), 16) };
-                });
-
-                // Render each layer into an ImageData, then draw onto composite
                 const cols   = Math.ceil(Math.sqrt(layerCount));
                 const rows   = Math.ceil(layerCount / cols);
                 const gap    = 4;
@@ -2971,37 +3020,15 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 cctx.fillStyle = '#0e0e0e';
                 cctx.fillRect(0, 0, compW, compH);
 
-                const tmp = document.createElement('canvas');
-                tmp.width = imageWidth;
-                tmp.height = imageHeight;
-                const tctx = tmp.getContext('2d');
-
                 for (let li = 0; li < layerCount; li++) {
+                    const layerCv = this._getLayerCanvas(data, li);
+                    if (!layerCv) continue;
                     const col = li % cols;
                     const row = Math.floor(li / cols);
                     const cx  = gap + col * cellW;
                     const cy  = gap + row * cellH + labelH;
+                    cctx.drawImage(layerCv, cx, cy);
 
-                    const imd = tctx.createImageData(imageWidth, imageHeight);
-                    const lm  = layerMaps[li];
-                    // Background
-                    for (let p = 0; p < imageWidth * imageHeight; p++) {
-                        const i4 = p * 4;
-                        imd.data[i4] = 14; imd.data[i4+1] = 14; imd.data[i4+2] = 14; imd.data[i4+3] = 255;
-                    }
-                    for (let fi = 0; fi < filCount; fi++) {
-                        if (!lm[fi] || lm[fi].size === 0) continue;
-                        const c = filRGB[fi];
-                        for (const coord of lm[fi]) {
-                            const [x, y] = coord.split(',').map(Number);
-                            const i4 = (y * imageWidth + x) * 4;
-                            imd.data[i4] = c.r; imd.data[i4+1] = c.g; imd.data[i4+2] = c.b; imd.data[i4+3] = 255;
-                        }
-                    }
-                    tctx.putImageData(imd, 0, 0);
-                    cctx.drawImage(tmp, cx, cy);
-
-                    // Label
                     cctx.fillStyle = '#00ff00';
                     cctx.font = '10px "Space Mono", monospace';
                     cctx.textAlign = 'center';
@@ -3010,53 +3037,20 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 this._allLayersCache = comp;
             }
 
-            // Draw cached composite scaled to fit the viewport
-            const comp = this._allLayersCache;
-            const scaleX = (canvas.width  - padding * 2) / comp.width;
-            const scaleY = (canvas.height - padding * 2 - statsBarH) / comp.height;
-            const scale  = Math.min(scaleX, scaleY);
-            const dw = Math.round(comp.width  * scale);
-            const dh = Math.round(comp.height * scale);
-            const ox = Math.round((canvas.width  - dw) / 2);
-            const oy = Math.round((canvas.height - statsBarH - dh) / 2);
-            ctx.save();
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(comp, ox, oy, dw, dh);
-            ctx.restore();
-            drawStats('All Layers');
+            drawCachedFit(this._allLayersCache, 'All Layers');
 
         } else {
-            // Single layer — extract index from viewMode ("Layer 0", "Layer 1", etc.)
             const layerMatch = viewMode.match(/(\d+)/);
             const layerIdx   = layerMatch ? parseInt(layerMatch[1]) : 0;
-            const lm         = layerMaps[layerIdx];
+            const layerCv    = this._getLayerCanvas(data, layerIdx);
 
-            if (!lm) {
+            if (!layerCv) {
                 this._drawPlaceholder(ctx, canvas, `Layer ${layerIdx} does not exist (${layerCount} available)`);
                 drawStats('');
                 return;
             }
 
-            const scaleX = (canvas.width  - padding * 2) / imageWidth;
-            const scaleY = (canvas.height - padding * 2 - statsBarH) / imageHeight;
-            const scale  = Math.min(scaleX, scaleY);
-            const scaledW = Math.round(imageWidth  * scale);
-            const scaledH = Math.round(imageHeight * scale);
-            const offX   = Math.round((canvas.width  - scaledW) / 2);
-            const offY   = Math.round((canvas.height - statsBarH - scaledH) / 2);
-
-            for (let fi = 0; fi < filCount; fi++) {
-                if (!lm[fi] || lm[fi].size === 0) continue;
-                ctx.fillStyle = filColours[fi];
-                for (const coord of lm[fi]) {
-                    const [x, y] = coord.split(',').map(Number);
-                    ctx.fillRect(offX + x * scale, offY + y * scale,
-                                 Math.max(1, scale), Math.max(1, scale));
-                }
-            }
-
-            const filsOnLayer = filamentNames.filter((_, fi) => lm[fi]?.size > 0).join(', ');
-            drawStats(`Layer ${layerIdx}: ${filsOnLayer}`);
+            drawCachedFit(layerCv, `Layer ${layerIdx}: ${filamentNames.filter((_, fi) => layerMaps[layerIdx][fi]?.size > 0).join(', ')}`);
         }
     }
 

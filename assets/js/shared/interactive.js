@@ -26,6 +26,8 @@
  */
 
 import { BaseComponent } from './foundation.js';
+import { AnimationLoop } from '../core/animation-foundation.js';
+import { Easing } from './algorithms/animation/animation-utils.js';
 
 /**
  * CollapsibleBase - Shared foundation for expand/collapse UI patterns
@@ -1194,6 +1196,9 @@ export class Carousel extends BaseComponent {
 
 /**
  * CheckpointList - Draggable, reorderable list of saved states/checkpoints
+ *
+ * @deprecated Use SequencerV2 instead. Retained for tools not yet migrated.
+ *
  * Used by: wave-interference, lissajous, any tool with state saving
  * 
  * Features:
@@ -1373,7 +1378,9 @@ export class CheckpointList extends BaseComponent {
 
 /**
  * Sequencer - Site-wide animation sequencer component
- * 
+ *
+ * @deprecated Use SequencerV2 instead. Retained for tools not yet migrated.
+ *
  * Creates a timeline of checkpoints with configurable transitions.
  * Checkpoints hold parameter states; transitions interpolate between them.
  * 
@@ -1938,6 +1945,1189 @@ export class Sequencer extends BaseComponent {
         this._controlsEl = null;
         this._totalEl = null;
         this._playBtn = null;
+        super.destroy();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EASING KEYS - ordered for UI display
+// ═══════════════════════════════════════════════════════════════════════════
+const EASING_KEYS = [
+    'linear',
+    'easeInOutCubic', 'easeInCubic', 'easeOutCubic',
+    'easeInOutQuad', 'easeInQuad', 'easeOutQuad',
+    'easeInOutQuart', 'easeInQuart', 'easeOutQuart',
+    'easeInOutSine', 'easeInSine', 'easeOutSine',
+    'easeInOutExpo', 'easeInExpo', 'easeOutExpo',
+    'easeOutElastic', 'easeOutBounce'
+];
+
+/**
+ * SequencerV2 - Dual-view animation sequencer
+ *
+ * Creates a timeline of checkpoints with configurable tween segments.
+ * Provides two synchronised views:
+ *   1. Sidebar panel (vertical) — lives in the ANIMATION tab.
+ *   2. Horizontal strip — appended below the canvas in .tool-canvas-area.
+ *
+ * Data model:
+ *   checkpoints[i] → segments[i] → checkpoints[i+1]
+ *
+ * Each Checkpoint: { id, name, params, hold (seconds) }
+ * Each Segment:    { duration, strategy, easing, paramMode, paramOverrides }
+ *
+ * Callbacks:
+ *   onSave()              → return current tool params object
+ *   onLoad(params)        → apply params to tool
+ *   onFrame(params)       → called each playback frame with interpolated params
+ *   renderToBuffer(params)→ optional; return canvas for output tween
+ *
+ * Public API:
+ *   render()              → sidebar panel element
+ *   getStripElement()     → horizontal strip element (mount to canvasArea)
+ *   getTimelineData()     → serialisable Timeline object
+ *   setTimelineData(data) → restore from saved data
+ *   destroy()             → cleans up animator, strip, all listeners
+ */
+export class SequencerV2 extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'sequencer-v2' }, deps);
+
+        // Callbacks
+        this.onSave = options.onSave || null;
+        this.onLoad = options.onLoad || null;
+        this.onFrame = options.onFrame || null;
+        this.renderToBuffer = options.renderToBuffer || null;
+        this.onTotalDurationChange = options.onTotalDurationChange || null;
+
+        // Config
+        this.fps = options.fps || 60;
+        this.loop = options.loop !== false;
+        this.defaultHold = options.defaultHold || 2;
+        this.defaultSegmentDuration = options.defaultSegmentDuration || 1.5;
+        this.defaultEasing = options.defaultEasing || 'easeInOutCubic';
+
+        // Timeline state
+        this.checkpoints = [];
+        this.segments = [];
+
+        // Selection state (synced between panel and strip)
+        this._selectedCheckpointIdx = -1;
+        this._selectedSegmentIdx = -1;
+
+        // Playback state
+        this._isPlaying = false;
+        this._currentTime = 0;
+        this._animator = null;
+
+        // Drag state (panel)
+        this._panelDragIdx = null;
+
+        // Drag state (strip marker)
+        this._stripDragIdx = null;
+        this._stripDragStartX = 0;
+
+        // Scrubber drag state
+        this._scrubbing = false;
+
+        // DOM refs — panel
+        this._panelListEl = null;
+        this._panelDetailEl = null;
+        this._panelTotalEl = null;
+        this._panelPlayBtn = null;
+
+        // DOM refs — strip
+        this._stripEl = null;
+        this._stripTrackEl = null;
+        this._stripPlayBtn = null;
+        this._stripStopBtn = null;
+        this._stripLoopBtn = null;
+        this._stripTotalEl = null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PUBLIC API
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Render sidebar panel element.
+     */
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'seq2-panel');
+            this._panelListEl = this.createElement('div', 'seq2-panel-list');
+            this._panelDetailEl = this.createElement('div', 'seq2-panel-detail seq2-hidden');
+            this._panelTotalEl = this.createElement('div', 'seq2-panel-total');
+
+            const controls = this._buildPanelControls();
+            this.element.appendChild(controls);
+            this.element.appendChild(this._panelListEl);
+            this.element.appendChild(this._panelTotalEl);
+            this.element.appendChild(this._panelDetailEl);
+
+            this._renderPanelSequence();
+            this._updateTotal();
+        }
+        return this.element;
+    }
+
+    /**
+     * Get the horizontal strip element to mount below the canvas.
+     */
+    getStripElement() {
+        if (!this._stripEl) {
+            this._stripEl = this._buildStrip();
+            this._updateStripVisibility();
+        }
+        return this._stripEl;
+    }
+
+    /**
+     * Serialise the full timeline.
+     */
+    getTimelineData() {
+        return {
+            checkpoints: this.checkpoints.map(cp => ({ ...cp, params: JSON.parse(JSON.stringify(cp.params)) })),
+            segments: this.segments.map(s => ({ ...s, paramOverrides: s.paramOverrides ? { ...s.paramOverrides } : null })),
+            loop: this.loop,
+            fps: this.fps
+        };
+    }
+
+    /**
+     * Restore from serialised timeline.
+     */
+    setTimelineData(data) {
+        this.checkpoints = (data.checkpoints || []).map(cp => ({ ...cp, params: JSON.parse(JSON.stringify(cp.params)) }));
+        this.segments = (data.segments || []).map(s => ({ ...s }));
+        this.loop = data.loop !== false;
+        this.fps = data.fps || this.fps;
+        this._ensureSegments();
+        this._renderPanelSequence();
+        this._updateTotal();
+        this._renderTrack();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // DATA HELPERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _makeId() {
+        return Math.random().toString(36).slice(2, 9);
+    }
+
+    _makeCheckpoint(params, name) {
+        return {
+            id: this._makeId(),
+            name: name || `State ${this.checkpoints.length + 1}`,
+            params: JSON.parse(JSON.stringify(params)),
+            hold: this.defaultHold
+        };
+    }
+
+    _makeSegment() {
+        return {
+            duration: this.defaultSegmentDuration,
+            strategy: 'parameter',
+            easing: this.defaultEasing,
+            paramMode: 'simultaneous',
+            paramOverrides: null
+        };
+    }
+
+    _ensureSegments() {
+        const needed = Math.max(0, this.checkpoints.length - 1);
+        while (this.segments.length < needed) this.segments.push(this._makeSegment());
+        if (this.segments.length > needed) this.segments.length = needed;
+    }
+
+    _totalDuration() {
+        let t = 0;
+        this.checkpoints.forEach(cp => { t += cp.hold || 0; });
+        this.segments.forEach(s => { t += s.duration || 0; });
+        return t;
+    }
+
+    _updateTotal() {
+        const total = this._totalDuration();
+        if (this._panelTotalEl) this._panelTotalEl.textContent = `Total: ${total.toFixed(1)}s`;
+        this._updateCurrentTime();
+    }
+
+    _updateCurrentTime() {
+        if (!this._stripTotalEl) return;
+        const total = this._totalDuration();
+        if (this._isPlaying && total > 0) {
+            this._stripTotalEl.textContent = `${this._currentTime.toFixed(1)}/${total.toFixed(1)}s`;
+        } else {
+            this._stripTotalEl.textContent = `${total.toFixed(1)}s`;
+        }
+        if (this.onTotalDurationChange) this.onTotalDurationChange(total);
+    }
+
+    _updateLoopBtn() {
+        if (!this._stripLoopBtn) return;
+        this._stripLoopBtn.textContent = `LOOP: ${this.loop ? 'ON' : 'OFF'}`;
+        this._stripLoopBtn.style.color = this.loop ? 'var(--vga-aqua)' : 'var(--vga-gray)';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // INTERPOLATION
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _easingFn(key) {
+        return Easing[key] || Easing.linear;
+    }
+
+    /**
+     * Interpolate between two param objects.
+     */
+    _lerpParams(fromParams, toParams, rawT, segment) {
+        if (segment.strategy === 'cut') return { ...fromParams };
+
+        const ef = this._easingFn(segment.easing || this.defaultEasing);
+        const t = Math.max(0, Math.min(1, rawT));
+
+        if (segment.strategy === 'output') {
+            // Output tween handled in playback engine using renderToBuffer
+            // Fall back to parameter blend here for param delivery
+            return this._blendParamsLinear(fromParams, toParams, ef(t));
+        }
+
+        if (segment.paramMode === 'sequential') {
+            return this._lerpParamsSequential(fromParams, toParams, t, segment);
+        }
+
+        // Default: simultaneous
+        const result = {};
+        for (const key in fromParams) {
+            const a = fromParams[key];
+            const b = toParams[key] !== undefined ? toParams[key] : a;
+            const overrideEf = segment.paramOverrides?.[key]?.easing
+                ? this._easingFn(segment.paramOverrides[key].easing)
+                : ef;
+            result[key] = this._lerpValue(a, b, overrideEf(t));
+        }
+        return result;
+    }
+
+    _lerpValue(a, b, et) {
+        if (typeof a === 'number' && typeof b === 'number') return a + (b - a) * et;
+        // String/boolean: step at midpoint
+        return et >= 0.5 ? b : a;
+    }
+
+    _blendParamsLinear(fromParams, toParams, et) {
+        const result = {};
+        for (const key in fromParams) {
+            const a = fromParams[key];
+            const b = toParams[key] !== undefined ? toParams[key] : a;
+            result[key] = this._lerpValue(a, b, et);
+        }
+        return result;
+    }
+
+    _lerpParamsSequential(fromParams, toParams, rawT, segment) {
+        const keys = Object.keys(fromParams).filter(k => typeof fromParams[k] === 'number' || typeof toParams[k] === 'number');
+        if (keys.length === 0) return { ...fromParams };
+
+        // Sort by override order, then alphabetical
+        const overrides = segment.paramOverrides || {};
+        keys.sort((a, b) => {
+            const oa = overrides[a]?.order ?? 999;
+            const ob = overrides[b]?.order ?? 999;
+            return oa !== ob ? oa - ob : a.localeCompare(b);
+        });
+
+        const n = keys.length;
+        const result = { ...fromParams };
+
+        keys.forEach((key, k) => {
+            const subStart = k / n;
+            const subEnd = (k + 1) / n;
+            const localT = rawT <= subStart ? 0 : rawT >= subEnd ? 1 : (rawT - subStart) / (subEnd - subStart);
+            const ef = overrides[key]?.easing
+                ? this._easingFn(overrides[key].easing)
+                : this._easingFn(segment.easing || this.defaultEasing);
+            const a = fromParams[key];
+            const b = toParams[key] !== undefined ? toParams[key] : a;
+            result[key] = this._lerpValue(a, b, ef(localT));
+        });
+
+        // Non-numeric keys: step at 0.5
+        for (const key in fromParams) {
+            if (!keys.includes(key)) {
+                const a = fromParams[key];
+                const b = toParams[key] !== undefined ? toParams[key] : a;
+                result[key] = rawT >= 0.5 ? b : a;
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Compute interpolated params for a given time (seconds).
+     * Returns params object or null if no checkpoints.
+     */
+    _paramsAtTime(time) {
+        const cps = this.checkpoints;
+        const segs = this.segments;
+        if (cps.length === 0) return null;
+        if (cps.length === 1) return { ...cps[0].params };
+
+        let cursor = 0;
+        for (let i = 0; i < cps.length; i++) {
+            const holdEnd = cursor + (cps[i].hold || 0);
+            if (time <= holdEnd || i === cps.length - 1) {
+                // In hold phase of checkpoint i
+                return { ...cps[i].params };
+            }
+            cursor = holdEnd;
+
+            if (i < segs.length) {
+                const segEnd = cursor + (segs[i].duration || 0);
+                if (time <= segEnd) {
+                    const segT = (time - cursor) / (segs[i].duration || 1);
+                    return this._lerpParams(cps[i].params, cps[i + 1].params, segT, segs[i]);
+                }
+                cursor = segEnd;
+            }
+        }
+        return { ...cps[cps.length - 1].params };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLAYBACK ENGINE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _startPlayback() {
+        if (this._isPlaying) return;
+        if (this.checkpoints.length < 2) return;
+
+        this._isPlaying = true;
+        this._updatePlayButtons();
+
+        if (!this._animator) {
+            this._animator = new AnimationLoop({
+                fps: this.fps,
+                onFrame: (delta) => {
+                    const dt = delta / 1000; // ms → seconds
+                    const total = this._totalDuration();
+                    if (total <= 0) return;
+
+                    this._currentTime += dt;
+
+                    if (this._currentTime >= total) {
+                        if (this.loop) {
+                            this._currentTime = this._currentTime % total;
+                        } else {
+                            this._currentTime = total;
+                            this._stopPlayback();
+                            return;
+                        }
+                    }
+
+                    const params = this._paramsAtTime(this._currentTime);
+                    if (params && this.onFrame) this.onFrame(params);
+
+                    this._updateCurrentTime();
+                }
+            });
+        }
+        this._animator.start();
+    }
+
+    _stopPlayback() {
+        this._isPlaying = false;
+        if (this._animator) {
+            this._animator.stop();
+        }
+        this._updatePlayButtons();
+    }
+
+    _togglePlayback() {
+        if (this._isPlaying) {
+            this._stopPlayback();
+        } else {
+            this._startPlayback();
+        }
+    }
+
+    _updatePlayButtons() {
+        if (this._panelPlayBtn) this._panelPlayBtn.textContent = this._isPlaying ? '■ STOP' : '▶ PLAY';
+        if (this._stripPlayBtn) this._stripPlayBtn.textContent = this._isPlaying ? '⏸ PAUSE' : '▶ PLAY';
+    }
+
+    _stopAndReset() {
+        this._stopPlayback();
+        this._currentTime = 0;
+        this._updateCurrentTime();
+    }
+
+    /**
+     * Seek to a specific time without affecting playback state.
+     */
+    seekTo(time) {
+        const total = this._totalDuration();
+        this._currentTime = Math.max(0, Math.min(total, time));
+        const params = this._paramsAtTime(this._currentTime);
+        if (params && this.onFrame) this.onFrame(params);
+        this._updateScrubberPosition();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PANEL — CONTROLS ROW
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _buildPanelControls() {
+        const row = this.createElement('div', 'seq2-panel-controls');
+
+        const saveBtn = this.createElement('button', 'seq2-btn seq2-btn-save', '+ SAVE STATE');
+        saveBtn.title = 'Save current parameters as checkpoint';
+        saveBtn.addEventListener('click', () => this._handleSave());
+
+        this._panelPlayBtn = this.createElement('button', 'seq2-btn', '▶ PLAY');
+        this._panelPlayBtn.addEventListener('click', () => this._togglePlayback());
+
+        const loopLabel = this.createElement('label', 'seq2-loop-label');
+        const loopCheck = this.createElement('input');
+        loopCheck.type = 'checkbox';
+        loopCheck.checked = this.loop;
+        loopCheck.className = 'seq2-loop-check';
+        loopCheck.addEventListener('change', () => { this.loop = loopCheck.checked; });
+        loopLabel.appendChild(loopCheck);
+        loopLabel.appendChild(document.createTextNode(' Loop'));
+
+        const clearBtn = this.createElement('button', 'seq2-btn seq2-btn-clear', 'CLEAR');
+        clearBtn.addEventListener('click', () => this._handleClearAll());
+
+        row.appendChild(saveBtn);
+        row.appendChild(this._panelPlayBtn);
+        row.appendChild(loopLabel);
+        row.appendChild(clearBtn);
+        return row;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PANEL — SEQUENCE LIST
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _renderPanelSequence() {
+        if (!this._panelListEl) return;
+        this._panelListEl.innerHTML = '';
+
+        if (this.checkpoints.length === 0) {
+            const empty = this.createElement('div', 'seq2-empty', 'No checkpoints. Click "+ SAVE STATE" to begin.');
+            this._panelListEl.appendChild(empty);
+            return;
+        }
+
+        this.checkpoints.forEach((cp, i) => {
+            this._panelListEl.appendChild(this._buildCheckpointRow(cp, i));
+            if (i < this.segments.length) {
+                this._panelListEl.appendChild(this._buildSegmentRow(this.segments[i], i));
+            }
+        });
+    }
+
+    _buildCheckpointRow(cp, idx) {
+        const row = this.createElement('div', 'seq2-cp-row');
+        row.draggable = true;
+        row.dataset.idx = idx;
+        if (idx === this._selectedCheckpointIdx) row.classList.add('seq2-selected');
+
+        const handle = this.createElement('span', 'seq2-handle', '⋮⋮');
+        handle.title = 'Drag to reorder';
+
+        const nameInput = this.createElement('input', 'seq2-cp-name');
+        nameInput.type = 'text';
+        nameInput.value = cp.name;
+        nameInput.addEventListener('change', () => { cp.name = nameInput.value; this._layoutStrip(); });
+        nameInput.addEventListener('click', e => e.stopPropagation());
+
+        const holdLabel = this.createElement('span', 'seq2-label', 'Hold:');
+
+        const holdInput = this.createElement('input', 'seq2-num-input');
+        holdInput.type = 'number';
+        holdInput.value = cp.hold.toFixed(1);
+        holdInput.min = 0;
+        holdInput.max = 60;
+        holdInput.step = 0.5;
+        holdInput.title = 'Hold duration (seconds)';
+        holdInput.addEventListener('change', () => {
+            cp.hold = parseFloat(holdInput.value) || 0;
+            this._updateTotal();
+            this._layoutStrip();
+        });
+        holdInput.addEventListener('click', e => e.stopPropagation());
+
+        const loadBtn = this.createElement('button', 'seq2-btn-sm', '▶');
+        loadBtn.title = 'Load checkpoint';
+        loadBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (this.onLoad) this.onLoad(JSON.parse(JSON.stringify(cp.params)));
+        });
+
+        const dupBtn = this.createElement('button', 'seq2-btn-sm', '⎘');
+        dupBtn.title = 'Duplicate';
+        dupBtn.addEventListener('click', e => { e.stopPropagation(); this._handleDuplicate(idx); });
+
+        const delBtn = this.createElement('button', 'seq2-btn-sm seq2-btn-del', '×');
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', e => { e.stopPropagation(); this._handleDelete(idx); });
+
+        row.appendChild(handle);
+        row.appendChild(nameInput);
+        row.appendChild(holdLabel);
+        row.appendChild(holdInput);
+        row.appendChild(loadBtn);
+        row.appendChild(dupBtn);
+        row.appendChild(delBtn);
+
+        // Click to select
+        row.addEventListener('click', () => this._selectCheckpoint(idx));
+
+        // Drag events
+        row.addEventListener('dragstart', e => {
+            this._panelDragIdx = idx;
+            e.dataTransfer.effectAllowed = 'move';
+            row.classList.add('seq2-dragging');
+        });
+        row.addEventListener('dragend', () => {
+            this._panelDragIdx = null;
+            row.classList.remove('seq2-dragging');
+        });
+        row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+        row.addEventListener('drop', e => {
+            e.preventDefault();
+            if (this._panelDragIdx !== null && this._panelDragIdx !== idx) {
+                this._reorderCheckpoints(this._panelDragIdx, idx);
+            }
+        });
+
+        return row;
+    }
+
+    _buildSegmentRow(seg, idx) {
+        const row = this.createElement('div', 'seq2-seg-row');
+        if (idx === this._selectedSegmentIdx) row.classList.add('seq2-selected');
+
+        const arrow = this.createElement('span', 'seq2-arrow', '↓');
+
+        const durInput = this.createElement('input', 'seq2-num-input');
+        durInput.type = 'number';
+        durInput.value = seg.duration.toFixed(1);
+        durInput.min = 0.1;
+        durInput.max = 60;
+        durInput.step = 0.5;
+        durInput.title = 'Transition duration (seconds)';
+        durInput.addEventListener('change', () => {
+            seg.duration = parseFloat(durInput.value) || 0.5;
+            this._updateTotal();
+            this._layoutStrip();
+        });
+        durInput.addEventListener('click', e => e.stopPropagation());
+
+        const stratBadge = this.createElement('span', 'seq2-badge', seg.strategy === 'output' ? 'OUTPUT' : 'PARAM');
+        stratBadge.title = 'Click to toggle strategy';
+        stratBadge.addEventListener('click', () => {
+            seg.strategy = seg.strategy === 'output' ? 'parameter' : 'output';
+            stratBadge.textContent = seg.strategy === 'output' ? 'OUTPUT' : 'PARAM';
+            if (this._selectedSegmentIdx === idx) this._renderSegmentDetail(idx);
+        });
+
+        const modeBadge = this.createElement('span', 'seq2-badge seq2-badge-mode',
+            seg.paramMode === 'sequential' ? 'SEQ' : 'SIMUL');
+        modeBadge.title = 'Click to toggle param mode';
+        modeBadge.addEventListener('click', () => {
+            seg.paramMode = seg.paramMode === 'sequential' ? 'simultaneous' : 'sequential';
+            modeBadge.textContent = seg.paramMode === 'sequential' ? 'SEQ' : 'SIMUL';
+            if (this._selectedSegmentIdx === idx) this._renderSegmentDetail(idx);
+        });
+
+        row.appendChild(arrow);
+        row.appendChild(durInput);
+        row.appendChild(stratBadge);
+        row.appendChild(modeBadge);
+
+        row.addEventListener('click', () => this._selectSegment(idx));
+
+        return row;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PANEL — SEGMENT DETAIL
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _selectCheckpoint(idx) {
+        this._selectedCheckpointIdx = idx;
+        this._selectedSegmentIdx = -1;
+        this._renderPanelSequence();
+        if (this._panelDetailEl) this._panelDetailEl.classList.add('seq2-hidden');
+        this._highlightStripMarker(idx);
+    }
+
+    _selectSegment(idx) {
+        this._selectedSegmentIdx = idx;
+        this._selectedCheckpointIdx = -1;
+        this._renderPanelSequence();
+        this._renderSegmentDetail(idx);
+        this._highlightStripSegment(idx);
+    }
+
+    _renderSegmentDetail(idx) {
+        if (!this._panelDetailEl) return;
+        const seg = this.segments[idx];
+        if (!seg) {
+            this._panelDetailEl.classList.add('seq2-hidden');
+            return;
+        }
+
+        this._panelDetailEl.innerHTML = '';
+        this._panelDetailEl.classList.remove('seq2-hidden');
+
+        const header = this.createElement('div', 'seq2-detail-header', `Segment ${idx + 1} → ${idx + 2}`);
+        this._panelDetailEl.appendChild(header);
+
+        // Strategy
+        const stratRow = this._buildDetailRow('Strategy');
+        const stratSel = this.createElement('select', 'seq2-select');
+        ['parameter', 'output'].forEach(v => {
+            const opt = this.createElement('option', '', v === 'parameter' ? 'Parameter' : 'Output blend');
+            opt.value = v;
+            if (seg.strategy === v) opt.selected = true;
+            stratSel.appendChild(opt);
+        });
+        stratSel.addEventListener('change', () => {
+            seg.strategy = stratSel.value;
+            this._renderPanelSequence();
+            this._renderSegmentDetail(idx);
+        });
+        stratRow.appendChild(stratSel);
+        this._panelDetailEl.appendChild(stratRow);
+
+        // Easing
+        const easingRow = this._buildDetailRow('Easing');
+        const easingSel = this.createElement('select', 'seq2-select');
+        EASING_KEYS.forEach(k => {
+            const opt = this.createElement('option', '', k);
+            opt.value = k;
+            if (seg.easing === k) opt.selected = true;
+            easingSel.appendChild(opt);
+        });
+
+        // Mini easing preview canvas
+        const previewCanvas = this.createElement('canvas', 'seq2-easing-preview');
+        previewCanvas.width = 56;
+        previewCanvas.height = 28;
+        previewCanvas.title = 'Easing curve preview';
+        const drawPreview = (key) => {
+            const ctx = previewCanvas.getContext('2d');
+            const w = 56, h = 28;
+            ctx.clearRect(0, 0, w, h);
+            const bg = getComputedStyle(document.documentElement).getPropertyValue('--c-bg').trim() || '#000';
+            const fg = getComputedStyle(document.documentElement).getPropertyValue('--c-text').trim() || '#c0c0c0';
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = fg;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            const ef = this._easingFn(key);
+            for (let i = 0; i <= 56; i++) {
+                const t = i / 56;
+                const y = 1 - ef(t);
+                const px = i, py = y * h;
+                i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        };
+        drawPreview(seg.easing || this.defaultEasing);
+
+        easingSel.addEventListener('change', () => {
+            seg.easing = easingSel.value;
+            drawPreview(seg.easing);
+        });
+
+        easingRow.appendChild(easingSel);
+        easingRow.appendChild(previewCanvas);
+        this._panelDetailEl.appendChild(easingRow);
+
+        // Param mode (only for parameter strategy)
+        if (seg.strategy !== 'output') {
+            const modeRow = this._buildDetailRow('Mode');
+
+            const makeRadio = (value, label) => {
+                const lbl = this.createElement('label', 'seq2-radio-label');
+                const inp = this.createElement('input');
+                inp.type = 'radio';
+                inp.name = `seq2-parammode-${idx}`;
+                inp.value = value;
+                if (seg.paramMode === value) inp.checked = true;
+                inp.addEventListener('change', () => {
+                    if (inp.checked) {
+                        seg.paramMode = value;
+                        this._renderPanelSequence();
+                        this._renderSegmentDetail(idx);
+                    }
+                });
+                lbl.appendChild(inp);
+                lbl.appendChild(document.createTextNode(' ' + label));
+                return lbl;
+            };
+
+            modeRow.appendChild(makeRadio('simultaneous', 'Simultaneous'));
+            modeRow.appendChild(makeRadio('sequential', 'Sequential'));
+            this._panelDetailEl.appendChild(modeRow);
+
+            // Per-param overrides
+            const overridesToggle = this.createElement('div', 'seq2-detail-toggle', '▸ Per-Parameter Overrides');
+            const overridesBody = this.createElement('div', 'seq2-detail-overrides seq2-hidden');
+
+            // Collect numeric param keys from adjacent checkpoints
+            const cpA = this.checkpoints[idx];
+            const cpB = this.checkpoints[idx + 1];
+            const paramKeys = cpA && cpB ? Object.keys(cpA.params).filter(k =>
+                typeof cpA.params[k] === 'number' || typeof cpB.params[k] === 'number'
+            ) : [];
+
+            if (paramKeys.length === 0) {
+                overridesBody.appendChild(this.createElement('div', 'seq2-label', 'No numeric parameters.'));
+            } else {
+                seg.paramOverrides = seg.paramOverrides || {};
+                paramKeys.forEach((key, ki) => {
+                    const override = seg.paramOverrides[key] || {};
+                    const pr = this._buildDetailRow(key);
+
+                    const oEasingSel = this.createElement('select', 'seq2-select seq2-select-sm');
+                    const defOpt = this.createElement('option', '', '— default —');
+                    defOpt.value = '';
+                    if (!override.easing) defOpt.selected = true;
+                    oEasingSel.appendChild(defOpt);
+                    EASING_KEYS.forEach(k => {
+                        const opt = this.createElement('option', '', k);
+                        opt.value = k;
+                        if (override.easing === k) opt.selected = true;
+                        oEasingSel.appendChild(opt);
+                    });
+                    oEasingSel.addEventListener('change', () => {
+                        seg.paramOverrides[key] = seg.paramOverrides[key] || {};
+                        seg.paramOverrides[key].easing = oEasingSel.value || undefined;
+                    });
+
+                    const orderInput = this.createElement('input', 'seq2-num-input seq2-order-input');
+                    orderInput.type = 'number';
+                    orderInput.value = override.order !== undefined ? override.order : ki;
+                    orderInput.min = 0;
+                    orderInput.step = 1;
+                    orderInput.title = 'Sequential order';
+                    orderInput.addEventListener('change', () => {
+                        seg.paramOverrides[key] = seg.paramOverrides[key] || {};
+                        seg.paramOverrides[key].order = parseInt(orderInput.value) || 0;
+                    });
+
+                    pr.appendChild(oEasingSel);
+                    pr.appendChild(this.createElement('span', 'seq2-label', ' ord:'));
+                    pr.appendChild(orderInput);
+                    overridesBody.appendChild(pr);
+                });
+            }
+
+            let overridesOpen = false;
+            overridesToggle.addEventListener('click', () => {
+                overridesOpen = !overridesOpen;
+                overridesToggle.textContent = (overridesOpen ? '▾' : '▸') + ' Per-Parameter Overrides';
+                overridesBody.classList.toggle('seq2-hidden', !overridesOpen);
+            });
+
+            this._panelDetailEl.appendChild(overridesToggle);
+            this._panelDetailEl.appendChild(overridesBody);
+        }
+    }
+
+    _buildDetailRow(label) {
+        const row = this.createElement('div', 'seq2-detail-row');
+        const lbl = this.createElement('span', 'seq2-label', label + ':');
+        row.appendChild(lbl);
+        return row;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PANEL — EVENT HANDLERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _handleSave() {
+        if (!this.onSave) return;
+        const params = this.onSave();
+        if (!params) return;
+        const cp = this._makeCheckpoint(params);
+        if (this.checkpoints.length > 0) this.segments.push(this._makeSegment());
+        this.checkpoints.push(cp);
+        this._renderPanelSequence();
+        this._updateTotal();
+        this._renderTrack();
+    }
+
+    _handleDelete(idx) {
+        this.checkpoints.splice(idx, 1);
+        if (idx > 0) {
+            this.segments.splice(idx - 1, 1);
+        } else if (this.segments.length > 0) {
+            this.segments.splice(0, 1);
+        }
+        if (this._selectedCheckpointIdx === idx) this._selectedCheckpointIdx = -1;
+        if (this._selectedSegmentIdx >= this.segments.length) this._selectedSegmentIdx = -1;
+        this._renderPanelSequence();
+        this._updateTotal();
+        this._layoutStrip();
+        this._updateStripVisibility();
+    }
+
+    _handleDuplicate(idx) {
+        const original = this.checkpoints[idx];
+        const copy = this._makeCheckpoint(original.params, original.name + ' (copy)');
+        copy.hold = original.hold;
+        this.checkpoints.splice(idx + 1, 0, copy);
+        this.segments.splice(idx, 0, this._makeSegment());
+        this._renderPanelSequence();
+        this._updateTotal();
+        this._layoutStrip();
+    }
+
+    _handleClearAll() {
+        this._stopPlayback();
+        this.checkpoints = [];
+        this.segments = [];
+        this._selectedCheckpointIdx = -1;
+        this._selectedSegmentIdx = -1;
+        this._currentTime = 0;
+        this._renderPanelSequence();
+        this._updateTotal();
+        this._renderTrack();
+        if (this._panelDetailEl) this._panelDetailEl.classList.add('seq2-hidden');
+    }
+
+    _reorderCheckpoints(fromIdx, toIdx) {
+        const [moved] = this.checkpoints.splice(fromIdx, 1);
+        this.checkpoints.splice(toIdx, 0, moved);
+        const segCount = Math.max(0, this.checkpoints.length - 1);
+        while (this.segments.length < segCount) this.segments.push(this._makeSegment());
+        if (this.segments.length > segCount) this.segments.length = segCount;
+        this._selectedCheckpointIdx = -1;
+        this._selectedSegmentIdx = -1;
+        this._renderPanelSequence();
+        this._renderTrack();
+        if (this._panelDetailEl) this._panelDetailEl.classList.add('seq2-hidden');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HORIZONTAL STRIP
+    // ═══════════════════════════════════════════════════════════════════════
+
+    _buildStrip() {
+        const strip = this.createElement('div', 'seq2-strip');
+        strip.style.cssText = 'display:flex;flex-direction:column;height:calc(var(--f)*4);border-top:1px solid var(--c-border);background:var(--c-bg);flex-shrink:0;user-select:none;font-family:inherit;min-width:0;overflow:hidden;';
+
+        // ── Row 1: Controls (7 equal-flex buttons) ────────────────────────────
+        const controls = this.createElement('div', 'seq2-strip-controls');
+        controls.style.cssText = 'display:flex;height:calc(var(--f)*2);border-bottom:1px solid var(--c-border);flex-shrink:0;overflow:auto;min-width:0;';
+
+        const mkCtrl = (text, title, color = '') => {
+            const b = this.createElement('button', 'seq2-ctrl-btn');
+            b.textContent = text;
+            b.title = title;
+            b.style.cssText = `flex:0 0 calc(var(--f)*5.5);height:100%;background:var(--c-bg);border:none;border-right:1px solid var(--c-border);color:${color || 'var(--c-text)'};font-family:inherit;font-size:calc(var(--f)*0.7);cursor:pointer;padding:0;white-space:nowrap;display:flex;align-items:center;justify-content:center;`;
+            b.addEventListener('mouseenter', () => { b.style.background = 'var(--c-text)'; b.style.color = 'var(--c-bg)'; });
+            b.addEventListener('mouseleave', () => { b.style.background = 'var(--c-bg)'; b.style.color = color || 'var(--c-text)'; });
+            return b;
+        };
+
+        this._stripPlayBtn = mkCtrl('▶ PLAY', 'Play / Pause');
+        this._stripPlayBtn.addEventListener('click', () => this._togglePlayback());
+
+        this._stripStopBtn = mkCtrl('■ STOP', 'Stop and reset to start');
+        this._stripStopBtn.addEventListener('click', () => this._stopAndReset());
+
+        this._stripLoopBtn = mkCtrl('LOOP: OFF', 'Toggle loop', 'var(--vga-gray)');
+        this._stripLoopBtn.addEventListener('click', () => { this.loop = !this.loop; this._updateLoopBtn(); });
+        // Override hover for loop button to not invert color
+        this._stripLoopBtn.addEventListener('mouseenter', () => { this._stripLoopBtn.style.background = 'var(--c-text)'; this._stripLoopBtn.style.color = 'var(--c-bg)'; });
+        this._stripLoopBtn.addEventListener('mouseleave', () => { this._stripLoopBtn.style.background = 'var(--c-bg)'; this._updateLoopBtn(); });
+
+        this._stripTotalEl = mkCtrl('0.0s', 'Total sequence duration', 'var(--vga-aqua)');
+        this._stripTotalEl.style.cursor = 'default';
+        this._stripTotalEl.addEventListener('mouseenter', () => {});
+        this._stripTotalEl.addEventListener('mouseleave', () => {});
+
+        const addBtn = mkCtrl('+ ADD', 'Save current state as checkpoint', 'var(--vga-lime)');
+        addBtn.addEventListener('click', () => this._handleSave());
+
+        const holdBtn = mkCtrl('+ HOLD', 'Add hold state (no tween to next)', '');
+        holdBtn.addEventListener('click', () => this._handleAddHold());
+
+        const clearBtn = mkCtrl('CLR ALL', 'Clear all checkpoints', 'var(--vga-red)');
+        clearBtn.style.borderRight = 'none';
+        clearBtn.addEventListener('click', () => this._handleClearAll());
+
+        controls.appendChild(this._stripPlayBtn);
+        controls.appendChild(this._stripStopBtn);
+        controls.appendChild(this._stripLoopBtn);
+        controls.appendChild(this._stripTotalEl);
+        controls.appendChild(addBtn);
+        controls.appendChild(holdBtn);
+        controls.appendChild(clearBtn);
+
+        // ── Row 2: Checkpoint blocks (scrollable) ─────────────────────────────
+        this._stripTrackEl = this.createElement('div', 'seq2-strip-track');
+        this._stripTrackEl.style.cssText = 'flex:1;display:flex;flex-direction:row;overflow:auto;min-height:0;min-width:0;';
+
+        // Wheel → horizontal scroll on both rows
+        const wheelScroll = (el) => {
+            el.addEventListener('wheel', (e) => {
+                if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // let native horiz wheel work
+                e.preventDefault();
+                el.scrollLeft += e.deltaY * 0.8;
+            }, { passive: false });
+        };
+        wheelScroll(controls);
+        wheelScroll(this._stripTrackEl);
+
+        strip.appendChild(controls);
+        strip.appendChild(this._stripTrackEl);
+
+        return strip;
+    }
+
+    _buildCpBlock(cp, i) {
+        const block = this.createElement('div', 'seq2-cp-block');
+        block.dataset.idx = i;
+        block.draggable = true;
+        block.style.cssText = 'display:flex;align-items:center;height:100%;border-right:1px solid var(--c-border);flex-shrink:0;background:var(--c-bg);cursor:grab;';
+
+        const seg = this.segments[i];
+
+        const mkCell = (w, text, title = '') => {
+            const el = this.createElement('div', 'seq2-cp-cell');
+            el.style.cssText = `display:flex;align-items:center;justify-content:center;height:100%;width:${w};border-right:1px solid var(--c-border);font-size:calc(var(--f)*0.7);flex-shrink:0;padding:0;`;
+            el.textContent = text;
+            el.title = title;
+            return el;
+        };
+
+        // # index
+        const numEl = mkCell('calc(var(--f)*1.5)', `${i + 1}`, `Checkpoint ${i + 1}`);
+        numEl.style.color = 'var(--vga-gray)';
+        numEl.style.fontSize = 'calc(var(--f)*0.65)';
+
+        // LOAD button
+        const loadEl = mkCell('calc(var(--f)*2.5)', 'LOAD', 'Load this checkpoint state');
+        loadEl.style.cursor = 'pointer';
+        loadEl.addEventListener('click', e => { e.stopPropagation(); this._loadCheckpoint(i); });
+        loadEl.addEventListener('mouseenter', () => { loadEl.style.background = 'var(--c-text)'; loadEl.style.color = 'var(--c-bg)'; });
+        loadEl.addEventListener('mouseleave', () => { loadEl.style.background = ''; loadEl.style.color = ''; });
+
+        // TWEEN TYPE — cycles PARAM → SEQ → MIX → CUT
+        const tweenEl = mkCell('calc(var(--f)*3.5)', '', 'Click to cycle tween type');
+        const durInput = this.createElement('input', 'seq2-cp-dur');
+        durInput.type = 'number';
+        durInput.min = 0; durInput.max = 9999; durInput.step = 1;
+        durInput.style.cssText = 'width:calc(var(--f)*3.5);height:100%;background:var(--c-bg);border:none;border-right:1px solid var(--c-border);color:var(--c-text);font-family:inherit;font-size:calc(var(--f)*0.7);text-align:center;padding:0;flex-shrink:0;box-sizing:border-box;';
+
+        if (seg) {
+            const labels = ['PARAM', 'SEQ', 'MIX', 'CUT'];
+            const getIdx = (s) => {
+                if (s.strategy === 'cut') return 3;
+                if (s.strategy === 'output') return 2;
+                if (s.paramMode === 'sequential') return 1;
+                return 0;
+            };
+            let tweenIdx = getIdx(seg);
+            tweenEl.textContent = labels[tweenIdx];
+            tweenEl.style.cursor = 'pointer';
+            tweenEl.style.color = 'var(--vga-aqua)';
+            tweenEl.addEventListener('click', e => {
+                e.stopPropagation();
+                tweenIdx = (tweenIdx + 1) % labels.length;
+                tweenEl.textContent = labels[tweenIdx];
+                if (tweenIdx === 3) {
+                    seg.strategy = 'cut'; seg.paramMode = 'simultaneous'; seg.duration = 0;
+                    durInput.value = '0'; durInput.disabled = true;
+                } else if (tweenIdx === 2) {
+                    seg.strategy = 'output'; seg.paramMode = 'simultaneous'; durInput.disabled = false;
+                } else if (tweenIdx === 1) {
+                    seg.strategy = 'parameter'; seg.paramMode = 'sequential'; durInput.disabled = false;
+                } else {
+                    seg.strategy = 'parameter'; seg.paramMode = 'simultaneous'; durInput.disabled = false;
+                }
+                this._updateCurrentTime();
+            });
+            tweenEl.addEventListener('mouseenter', () => { tweenEl.style.background = 'var(--vga-navy)'; });
+            tweenEl.addEventListener('mouseleave', () => { tweenEl.style.background = ''; });
+
+            durInput.value = Math.round(seg.duration * this.fps);
+            durInput.disabled = seg.strategy === 'cut';
+            durInput.title = 'Tween duration (frames)';
+            durInput.addEventListener('change', e => {
+                e.stopPropagation();
+                seg.duration = Math.max(0, (parseInt(durInput.value, 10) || 0)) / this.fps;
+                this._updateCurrentTime();
+            });
+            durInput.addEventListener('click', e => e.stopPropagation());
+            durInput.addEventListener('mousedown', e => e.stopPropagation());
+        } else {
+            tweenEl.textContent = 'END';
+            tweenEl.style.color = 'var(--vga-gray)';
+            tweenEl.style.borderRight = 'none';
+            durInput.value = '';
+            durInput.disabled = true;
+            durInput.style.color = 'var(--vga-gray)';
+            durInput.style.borderRight = 'none';
+        }
+
+        // DELETE button
+        const delEl = mkCell('calc(var(--f)*2)', '✕', 'Delete this checkpoint');
+        delEl.style.cursor = 'pointer';
+        delEl.style.color = 'var(--vga-red)';
+        delEl.style.borderRight = 'none';
+        delEl.addEventListener('click', e => { e.stopPropagation(); this._deleteCheckpoint(i); });
+        delEl.addEventListener('mouseenter', () => { delEl.style.background = 'var(--vga-red)'; delEl.style.color = 'var(--vga-white)'; });
+        delEl.addEventListener('mouseleave', () => { delEl.style.background = ''; delEl.style.color = 'var(--vga-red)'; });
+
+        block.appendChild(numEl);
+        block.appendChild(loadEl);
+        block.appendChild(tweenEl);
+        block.appendChild(durInput);
+        block.appendChild(delEl);
+
+        this._wireBlockDrag(block, i);
+        return block;
+    }
+
+    _renderTrack() {
+        if (!this._stripTrackEl) return;
+        while (this._stripTrackEl.firstChild) {
+            this._stripTrackEl.removeChild(this._stripTrackEl.firstChild);
+        }
+        if (this.checkpoints.length === 0) {
+            const empty = this.createElement('div', '');
+            empty.style.cssText = 'display:flex;align-items:center;padding:0 calc(var(--f));color:var(--vga-gray);font-size:calc(var(--f)*0.75);flex-shrink:0;height:100%;white-space:nowrap;';
+            empty.textContent = 'No checkpoints — use + ADD to save a state.';
+            this._stripTrackEl.appendChild(empty);
+            return;
+        }
+        this.checkpoints.forEach((cp, i) => {
+            this._stripTrackEl.appendChild(this._buildCpBlock(cp, i));
+        });
+    }
+
+    _wireBlockDrag(block, idx) {
+        let currentIdx = idx;
+        block.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', String(currentIdx));
+            block.style.opacity = '0.4';
+        });
+        block.addEventListener('dragend', () => {
+            block.style.opacity = '';
+            if (this._stripTrackEl) {
+                this._stripTrackEl.querySelectorAll('.seq2-drag-over').forEach(el => el.classList.remove('seq2-drag-over'));
+            }
+        });
+        block.addEventListener('dragover', e => {
+            e.preventDefault();
+            if (this._stripTrackEl) {
+                this._stripTrackEl.querySelectorAll('.seq2-drag-over').forEach(el => el.classList.remove('seq2-drag-over'));
+            }
+            block.classList.add('seq2-drag-over');
+        });
+        block.addEventListener('drop', e => {
+            e.preventDefault();
+            block.classList.remove('seq2-drag-over');
+            const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+            if (!isNaN(fromIdx) && fromIdx !== currentIdx) {
+                this._reorderCheckpoints(fromIdx, currentIdx);
+            }
+        });
+    }
+
+    _updateStripVisibility() {
+        // Strip is always visible
+    }
+
+    // Compat shims for panel code that still calls the old API
+    _layoutStrip() { this._renderTrack(); this._updateCurrentTime(); }
+    _updateScrubberPosition() { this._updateCurrentTime(); }
+    _highlightStripMarker() {}
+    _highlightStripSegment() {}
+
+    _handleAddHold() {
+        if (!this.onSave) return;
+        const params = this.onSave();
+        if (!params) return;
+        const cp = this._makeCheckpoint(params);
+        cp.type = 'hold';
+        if (this.checkpoints.length > 0) {
+            const seg = this._makeSegment();
+            seg.strategy = 'cut';
+            seg.duration = 0;
+            this.segments.push(seg);
+        }
+        this.checkpoints.push(cp);
+        this._updateCurrentTime();
+        this._renderTrack();
+    }
+
+    _deleteCheckpoint(i) {
+        this.checkpoints.splice(i, 1);
+        if (i > 0) {
+            this.segments.splice(i - 1, 1);
+        } else if (this.segments.length > 0) {
+            this.segments.splice(0, 1);
+        }
+        if (this._selectedCheckpointIdx === i) this._selectedCheckpointIdx = -1;
+        if (this._selectedSegmentIdx >= this.segments.length) this._selectedSegmentIdx = -1;
+        this._updateCurrentTime();
+        this._renderTrack();
+    }
+
+    _loadCheckpoint(i) {
+        const cp = this.checkpoints[i];
+        if (!cp || !this.onLoad) return;
+        this.onLoad(cp.params);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // DESTROY
+    // ═══════════════════════════════════════════════════════════════════════
+
+    destroy() {
+        this._stopPlayback();
+
+        if (this._animator) {
+            this._animator.destroy();
+            this._animator = null;
+        }
+
+        // Remove strip from DOM if mounted
+        if (this._stripEl && this._stripEl.parentNode) {
+            this._stripEl.parentNode.removeChild(this._stripEl);
+        }
+        this._stripEl = null;
+        this._stripTrackEl = null;
+        this._stripPlayBtn = null;
+        this._stripStopBtn = null;
+        this._stripLoopBtn = null;
+        this._stripTotalEl = null;
+
+        this._panelListEl = null;
+        this._panelDetailEl = null;
+        this._panelTotalEl = null;
+        this._panelPlayBtn = null;
+
+        this.onSave = null;
+        this.onLoad = null;
+        this.onFrame = null;
+        this.renderToBuffer = null;
+
         super.destroy();
     }
 }

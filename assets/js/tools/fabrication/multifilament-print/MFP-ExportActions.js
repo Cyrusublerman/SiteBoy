@@ -69,20 +69,21 @@ export class MFPExportActions {
                     `⏳ [2/3] Contouring filament ${fi + 1}/${filamentCount}…`);
                 await this._yield();
 
-                let facets = '';
+                const facetParts = [];
                 for (let li = 0; li < layerMaps.length; li++) {
                     const pixels = layerMaps[li][fi];
                     if (pixels.size === 0) continue;
 
                     const z0 = li * layerHeight;
                     const z1 = z0 + layerHeight;
-                    facets += await contourSTL(pixels, width, height, z0, z1, pixelSize, smoothingConfig);
+                    const parts = await contourSTL(pixels, width, height, z0, z1, pixelSize, smoothingConfig);
+                    for (let i = 0; i < parts.length; i++) facetParts.push(parts[i]);
                 }
 
-                if (facets.length > 0) {
+                if (facetParts.length > 0) {
                     const name     = filamentNames[fi];
                     const fileName = `artwork_${name.replace(/[^a-zA-Z0-9]/g, '_')}.stl`;
-                    stls[fileName] = `solid Artwork_${name}\n${facets}endsolid Artwork_${name}\n`;
+                    stls[fileName] = [`solid Artwork_${name}\n`, ...facetParts, `endsolid Artwork_${name}\n`];
                 }
             }
 
@@ -186,8 +187,8 @@ export class MFPExportActions {
             const JSZip = await window.AssetLoader.ensureJSZip();
             const zip   = new JSZip();
 
-            for (const [filename, content] of Object.entries(data.stls)) {
-                zip.file(filename, content);
+            for (const [filename, parts] of Object.entries(data.stls)) {
+                zip.file(filename, new Blob(parts, { type: 'text/plain' }));
             }
 
             const blob = await zip.generateAsync({ type: 'blob' });
@@ -216,8 +217,8 @@ export class MFPExportActions {
 
         try {
             let count = 0;
-            for (const [filename, content] of Object.entries(data.stls)) {
-                const blob = new Blob([content], { type: 'text/plain' });
+            for (const [filename, parts] of Object.entries(data.stls)) {
+                const blob = new Blob(parts, { type: 'text/plain' });
                 const url  = URL.createObjectURL(blob);
                 const a    = document.createElement('a');
                 a.href     = url;

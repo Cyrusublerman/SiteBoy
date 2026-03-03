@@ -1,0 +1,19 @@
+import { createEffectModule } from '../../core/EffectModule.js';
+import { halftonePatternRGBA } from '../../../../../shared/algorithms/patterns/pattern-generators.js';
+
+export const HalftonePatternNode = createEffectModule({
+  type: 'halftonepattern',
+  name: 'HALFTONE DOT',
+  category: 'PATTERN',
+  params: {
+    spacing:  { label: 'SPACING',   min: 2, max: 40,  step: 1,   value: 8,   tier: 3, previewMax: 20, unit: 'px', driveable: true },
+    angle:    { label: 'ANGLE',     min: 0, max: 180, step: 1,   value: 45,  tier: 3, unit: 'deg', driveable: true },
+    minDot:   { label: 'MIN DOT',   min: 0, max: 5,   step: 0.1, value: 0.5, tier: 4, previewMax: 3, unit: 'px' },
+    maxDot:   { label: 'MAX DOT',   min: 1, max: 15,  step: 0.5, value: 4,   tier: 4, previewMax: 8, unit: 'px', driveable: true },
+    bgLevel:  { label: 'BG LEVEL',  min: 0, max: 255, step: 1,   value: 255, tier: 4 },
+    dotLevel: { label: 'DOT LEVEL', min: 0, max: 255, step: 1,   value: 0,   tier: 4, driveable: true }
+  },
+  apply(src, dst, w, h, p) {
+    dst.set(halftonePatternRGBA(src, w, h, p.spacing, p.angle, p.minDot, p.maxDot, p.bgLevel, p.dotLevel));
+  }
+});

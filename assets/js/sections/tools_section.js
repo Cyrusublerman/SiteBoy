@@ -38,6 +38,7 @@ const ToolsSection = {
         '#tools/processors/smart-halftone',
         '#tools/processors/topographic-dot-halftone',
         '#tools/processors/p5-to-video',
+        '#tools/processors/distort',
         // Fabrication
         '#tools/fabrication/multifilament-print',
     ],
@@ -296,6 +297,12 @@ const ToolsSection = {
                         title: 'P5.js to Video',
                         description: 'Convert P5.js sketches to video with configurable FPS and frame count',
                         slug: 'p5-to-video'
+                    },
+                    {
+                        id: 'distort',
+                        title: 'DISTORT',
+                        description: 'Sequential image processing pipeline with 69 effect nodes, modulation maps, and variation grid',
+                        slug: 'distort'
                     }
                 ]
             },
@@ -398,6 +405,7 @@ const ToolsSection = {
             { label: 'ASCII ART', path: '#tools/ascii-art-generator' },
             { label: 'SMART HALFTONE', path: '#tools/smart-halftone' },
             { label: 'TOPO HALFTONE', path: '#tools/topographic-dot-halftone' },
+            { label: 'DISTORT', path: '#tools/processors/distort' },
             // Generators
             { label: 'CLOCK', path: '#tools/clock' },
             { label: 'NESTED CIRCLES', path: '#tools/circles' },
@@ -613,6 +621,7 @@ const ToolsSection = {
             'pixel-tiler': () => import('../tools/processors/pixel-tiler.js'),
             'image23d': () => import('../tools/processors/image23d.js'),
             'p5-to-video': () => import('../tools/processors/p5-to-video.js'),
+            'distort': () => import('../tools/processors/distort/distort-main.js'),
 
             // ═══════════════════════════════════════════════════════════════════
             // FABRICATION - Physical making tools

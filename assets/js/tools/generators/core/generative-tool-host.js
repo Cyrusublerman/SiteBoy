@@ -28,6 +28,8 @@ import { getDefaultParams, applyPreset, randomizeParams } from '../shared/preset
 import { AnimationLoop } from '../../../core/animation-foundation.js';
 import { GeneratorToolbar } from '../../../shared/components/tool/GeneratorToolbar.js';
 import { P5Canvas } from '../../../shared/p5-integration.js';
+import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
+import { ComputeScheduler } from './compute-scheduler.js';
 
 export class GenerativeToolHost extends BaseComponent {
     constructor(container, initialScriptId = null, deps = {}) {
@@ -63,6 +65,10 @@ export class GenerativeToolHost extends BaseComponent {
         this.displayMode = 'fit';
         this.p5Instance = null;  // p5.js instance for context: 'p5'
         this.isP5Context = false; // Flag for p5 mode
+        
+        // ComputeScheduler (Tier 2+3 — initialised after script load)
+        this._scheduler = null;
+        this._redrawScheduled = false; // Tier 1 coalesce flag
         
         // Get all available generators from registry
         this.generators = this._buildGeneratorList();
@@ -172,6 +178,12 @@ export class GenerativeToolHost extends BaseComponent {
         
         // Stop any running animation
         this.stop();
+
+        // Destroy existing scheduler before tearing down the tool
+        if (this._scheduler) {
+            this._scheduler.destroy();
+            this._scheduler = null;
+        }
         
         // Cleanup existing p5 instance
         if (this.p5Instance) {
@@ -227,6 +239,12 @@ export class GenerativeToolHost extends BaseComponent {
         const toolConfig = this._buildToolConfig();
         
         // Create ToolBase instance
+        // Destroy any existing SequencerV2 from previous script
+        if (this.sequencerV2) {
+            this.sequencerV2.destroy();
+            this.sequencerV2 = null;
+        }
+
         this.tool = new ToolBase(toolConfig, {
             ComponentLibrary: this.deps.ComponentLibrary,
             MF: this.deps.MF,
@@ -236,6 +254,14 @@ export class GenerativeToolHost extends BaseComponent {
         
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
+
+        // Inject SequencerV2 + AnimationExport UI if animation config present
+        if (this.scriptConfig.animation) {
+            setTimeout(() => {
+                this._injectSequencer();
+                this._injectExportUI();
+            }, 0);
+        }
         
         // Initialize p5.js if p5 context
         if (this.isP5Context) {
@@ -244,7 +270,22 @@ export class GenerativeToolHost extends BaseComponent {
         
         // Draw initial frame
         this.draw();
-        
+
+        // Initialise ComputeScheduler (Tiers 2 & 3) when the script declares
+        // a compute config.  p5 scripts are excluded (p5 manages its own canvas).
+        if (this.scriptConfig.compute && !this.isP5Context) {
+            this._scheduler = new ComputeScheduler({
+                computeConfig:     this.scriptConfig.compute,
+                draw:              () => this.draw(),
+                getCanvasComponent: () => this.tool?.canvasComponent ?? null,
+                getCtx:            () => this.tool?.ctx ?? null,
+                getCanvas:         () => this.tool?.canvas ?? null,
+                getParams:         () => this.params,
+                getFrame:          () => this.frame,
+                computePixels:     this.scriptConfig.computePixels ?? null,
+            });
+        }
+
         // Update URL query parameter without triggering navigation
         this._updateUrlQueryParam(scriptId);
         
@@ -269,6 +310,7 @@ export class GenerativeToolHost extends BaseComponent {
     _buildToolConfig() {
         // Build sidebar from script parameters
         const sidebar = buildSidebarConfig(this.scriptConfig);
+        this._sidebarTabs = sidebar; // store for tab index lookup
         
         // For p5 context, ToolBase creates canvas but we'll overlay p5's canvas
         const canvasContext = this.isP5Context ? '2d' : (this.scriptConfig.canvas.context || '2d');
@@ -379,100 +421,82 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Handle export from toolbar
+     * Export current frame as PNG (toolbar quick export)
      */
     _handleExport(frameCount) {
-        window.debugLog('TOOLS', `🎬 Export requested: ${frameCount} frames`);
-        
-        const canvas = this._getActiveCanvas();
-        if (!canvas) {
-            console.warn('⚠️ No canvas available for export');
-            return;
-        }
-        
-        // For now, export current frame as PNG
-        // TODO: Implement frame sequence export
-        if (frameCount === 1 || !this.scriptConfig.animation) {
-            this._exportCurrentFrame();
-        } else {
-            this._exportFrameSequence(frameCount);
-        }
+        this._exportCurrentFrame();
     }
-    
-    /**
-     * Export current frame as PNG
-     */
+
     _exportCurrentFrame() {
         const canvas = this._getActiveCanvas();
         if (!canvas) return;
-        
         canvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
+            const a = this.createElement('a');
             a.href = url;
             a.download = `${this.scriptId}-${Date.now()}.png`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
     }
-    
+
     /**
-     * Export frame sequence
+     * Inject AnimationExport UI into the EXPORT tab's "Animation Export" block.
      */
-    async _exportFrameSequence(frameCount) {
-        window.debugLog('TOOLS', `📦 Exporting ${frameCount} frames...`);
-        
-        const canvas = this._getActiveCanvas();
-        if (!canvas) return;
-        
-        const wasPlaying = this.isPlaying;
-        if (wasPlaying) this.pause();
-        
-        const originalFrame = this.frame;
-        const frames = [];
-        
-        for (let i = 0; i < frameCount; i++) {
-            this.frame = i;
-            this.updatePhaseAnimations();
-            this.draw();
-            
-            // Capture frame
-            const blob = await new Promise(resolve => {
-                canvas.toBlob(resolve, 'image/png');
-            });
-            frames.push({ index: i, blob });
-            
-            // Progress update every 10 frames
-            if (i % 10 === 0) {
-                window.debugLog('TOOLS', `  Frame ${i}/${frameCount}`);
-            }
-        }
-        
-        // Restore state
-        this.frame = originalFrame;
-        if (wasPlaying) this.play();
-        else this.draw();
-        
-        // Download frames as ZIP (or individual files)
-        this._downloadFrames(frames);
-    }
-    
-    /**
-     * Download captured frames
-     */
-    _downloadFrames(frames) {
-        // For now, download first frame only as demo
-        // TODO: Implement ZIP packaging
-        if (frames.length > 0) {
-            const url = URL.createObjectURL(frames[0].blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${this.scriptId}-frame-000.png`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            window.debugLog('TOOLS', `✅ Downloaded frame 0 (ZIP export coming soon)`);
-        }
+    _injectExportUI() {
+        if (!this.scriptConfig.animation) return;
+
+        const exportTabIndex = this._sidebarTabs?.findIndex(([name]) => name === 'EXPORT');
+        if (exportTabIndex == null || exportTabIndex < 0) return;
+
+        const panelsContainer = this.tool.element?.querySelector('.tool-panels');
+        if (!panelsContainer) return;
+
+        const panels = panelsContainer.querySelectorAll(':scope > .tool-panel');
+        const exportPanel = panels[exportTabIndex];
+        if (!exportPanel) return;
+
+        const blockContents = exportPanel.querySelectorAll('.tool-block-content');
+        const animBlock = blockContents[blockContents.length - 1];
+        if (!animBlock) return;
+
+        let savedFrame = 0;
+        let savedParams = {};
+
+        this.animationExporter = new AnimationExport({
+            type: 'loop',
+            loopFrames: this.scriptConfig.animation.loopFrames || 300,
+            defaultFps: this.scriptConfig.animation.defaultFps || 60,
+            canPrerender: true,
+            getCanvas: () => this._getActiveCanvas(),
+            renderFrame: (i) => {
+                this.frame = i;
+                this.updatePhaseAnimations();
+                this.draw();
+            },
+            getState: () => ({ frame: this.frame, params: JSON.parse(JSON.stringify(this.params)) }),
+            setState: (s) => {
+                this.frame = s.frame ?? 0;
+                Object.assign(this.params, s.params);
+                this.draw();
+            },
+            onExportStart: () => {
+                savedFrame = this.frame;
+                savedParams = JSON.parse(JSON.stringify(this.params));
+                if (this.isPlaying) this.pause();
+            },
+            onExportComplete: () => {
+                this.frame = savedFrame;
+                Object.assign(this.params, savedParams);
+                this.draw();
+                window.debugLog('TOOLS', '✅ Export complete');
+            },
+        }, {});
+
+        animBlock.appendChild(this.animationExporter.render());
+        window.debugLog('TOOLS', `✅ AnimationExport UI injected for "${this.scriptId}"`);
     }
     
     // === TOOLBASE HANDLERS ===
@@ -533,14 +557,9 @@ export class GenerativeToolHost extends BaseComponent {
             return;
         }
         
-        if (key === 'exportAnimation') {
-            this._handleExport(allValues.exportFrames || 60);
-            return;
-        }
-        
         // Regular parameter update
         this.params[key] = value;
-        this.draw();
+        this.scheduleRedraw();
     }
     
     /**
@@ -669,6 +688,7 @@ export class GenerativeToolHost extends BaseComponent {
         if (this.isPlaying) return;
         
         this.isPlaying = true;
+        this._scheduler?.setAnimating(true);
         window.debugLog('TOOLS', '▶️ Animation started');
         
         if (!this.animator) {
@@ -676,6 +696,8 @@ export class GenerativeToolHost extends BaseComponent {
                 fps: this.scriptConfig.animation?.defaultFps || 60,
                 onFrame: () => {
                     if (!this.isPlaying) return;
+                    // Yield to sequencer when it is playing — it drives the frame
+                    if (this.sequencerV2?._isPlaying) return;
                     this.frame++;
                     this.updatePhaseAnimations();
                     this.draw();
@@ -693,6 +715,7 @@ export class GenerativeToolHost extends BaseComponent {
         if (!this.isPlaying) return;
         
         this.isPlaying = false;
+        this._scheduler?.setAnimating(false);
         if (this.animator) {
             this.animator.pause();
         }
@@ -704,6 +727,7 @@ export class GenerativeToolHost extends BaseComponent {
      */
     stop() {
         this.isPlaying = false;
+        this._scheduler?.setAnimating(false);
         this.frame = 0;
         
         if (this.animator) {
@@ -776,6 +800,26 @@ export class GenerativeToolHost extends BaseComponent {
     handleDraw(ctx, canvas, values) {
         this.draw();
     }
+
+    /**
+     * Tier 1 — RAF coalesce.
+     * Coalesces rapid parameter changes (e.g. slider drag) into a single draw
+     * per animation frame. Multiple calls within the same frame are no-ops.
+     * Animation playback and discrete actions (preset, reset) bypass this and
+     * call draw() directly so they are never delayed.
+     */
+    scheduleRedraw() {
+        if (this._scheduler) {
+            this._scheduler.scheduleRedraw();
+            return;
+        }
+        if (this._redrawScheduled) return;
+        this._redrawScheduled = true;
+        requestAnimationFrame(() => {
+            this._redrawScheduled = false;
+            this.draw();
+        });
+    }
     
     /**
      * Main draw function
@@ -823,6 +867,63 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
+     * Inject SequencerV2 into the Sequence block of the ANIMATE tab.
+     */
+    _injectSequencer() {
+        const SequencerV2 = this.deps.ComponentLibrary?.SequencerV2 || window.ComponentLibrary?.SequencerV2;
+        if (!SequencerV2) {
+            console.warn('⚠️ SequencerV2 not available, skipping sequencer injection');
+            return;
+        }
+
+        this.sequencerV2 = new SequencerV2({
+            fps: this.scriptConfig.animation?.defaultFps || 60,
+            loop: true,
+            defaultHold: 2,
+            defaultSegmentDuration: 1.5,
+            defaultEasing: 'easeInOutCubic',
+            onSave: () => JSON.parse(JSON.stringify(this.params)),
+            onLoad: (cpParams) => {
+                Object.assign(this.params, cpParams);
+                for (const key in cpParams) {
+                    this.tool.setValue(key, cpParams[key]);
+                }
+                // Align phase baseValues so animation resumes relative to loaded state
+                for (const key in this.phaseAnimationState) {
+                    if (cpParams[key] !== undefined) {
+                        this.phaseAnimationState[key].baseValue = cpParams[key];
+                    }
+                }
+                this.draw();
+            },
+            onFrame: (interpolated) => {
+                // Set checkpoint-interpolated base values
+                Object.assign(this.params, interpolated);
+                // Track phase baseValue to the sequencer position so offsets stay relative
+                for (const key in this.phaseAnimationState) {
+                    if (key in interpolated && this.phaseAnimationState[key].mode === 'phase') {
+                        this.phaseAnimationState[key].baseValue = interpolated[key];
+                    }
+                }
+                // Apply phase animation on top if it is active
+                const phaseActive = Object.values(this.phaseAnimationState).some(s => s.enabled);
+                if (phaseActive && this.isPlaying) {
+                    this.frame++;
+                    this.updatePhaseAnimations();
+                }
+                this.draw();
+            }
+        }, {});
+
+        const stripEl = this.sequencerV2.getStripElement();
+        if (stripEl && this.tool.canvasArea) {
+            this.tool.canvasArea.appendChild(stripEl);
+        }
+
+        window.debugLog('TOOLS', `✅ SequencerV2 injected for "${this.scriptId}"`);
+    }
+
+    /**
      * Cleanup
      */
     destroy() {
@@ -833,10 +934,25 @@ export class GenerativeToolHost extends BaseComponent {
             this.p5Instance.remove();
             this.p5Instance = null;
         }
+
+        if (this._scheduler) {
+            this._scheduler.destroy();
+            this._scheduler = null;
+        }
         
         if (this.animator) {
             this.animator.destroy();
             this.animator = null;
+        }
+
+        if (this.sequencerV2) {
+            this.sequencerV2.destroy();
+            this.sequencerV2 = null;
+        }
+
+        if (this.animationExporter) {
+            this.animationExporter.destroy();
+            this.animationExporter = null;
         }
         
         if (this.toolbar) {
@@ -858,4 +974,4 @@ export class GenerativeToolHost extends BaseComponent {
  */
 export default GenerativeToolHost;
 
-console.log('✅ GenerativeToolHost v2.0.0 loaded (toolbar-based)');
+console.log('✅ GenerativeToolHost v2.1.0 loaded (with SequencerV2)');
