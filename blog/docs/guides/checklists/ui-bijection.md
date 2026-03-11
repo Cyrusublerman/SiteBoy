@@ -6,3 +6,20 @@
 - Each control binds to state var? Y/N
 - Each state var affects render? Y/N
 
+## Distort Aesthetic Gate (Pass/Fail)
+
+- All interactive rows exactly 2F height? Y/N
+- All spacing from F or F/2 only? Y/N
+- Shared-boundary model preserved (no double borders)? Y/N
+- No floating panels / card chrome / detached UI objects? Y/N
+- Typography family is Space Mono only? Y/N
+- Case roles valid (UPPERCASE structural, Title Case blocks, Sentence case prose)? Y/N
+- No tool-isolated UI component where shared ComponentLibrary equivalent exists? Y/N
+- New UI components exported through `assets/js/shared/component-library.js`? Y/N
+
+## Distort Simultaneity Gate (Pass/Fail)
+
+- Pipeline editing and transport simultaneously accessible? Y/N
+- Export actions accessible without leaving pipeline context? Y/N
+- Quality and display mode accessible without tab switching? Y/N
+

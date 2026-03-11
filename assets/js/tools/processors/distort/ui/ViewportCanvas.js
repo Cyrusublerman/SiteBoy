@@ -1,4 +1,6 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
+import { AnimationLoop } from '../../../../core/animation-foundation.js';
+import { drawVariationGrid } from './VariationGrid.js';
 
 /**
  * ViewportCanvas — renders DISTORT pipeline output with zoom/pan.
@@ -26,7 +28,8 @@ export class ViewportCanvas extends BaseComponent {
     this._splitX        = 0.5;   // normalised split position for 'split' mode
     this._canvas        = null;
     this._ctx           = null;
-    this._rafId         = null;
+    this._drawQueued    = false;
+    this._drawLoop      = null;   // one-shot AnimationLoop for debounced redraw
     this._oc            = null;   // OffscreenCanvas for processed result
     this._ocCtx         = null;
     this._ocW           = 0; this._ocH = 0;
@@ -47,7 +50,7 @@ export class ViewportCanvas extends BaseComponent {
     super.render();
     this.element.style.cssText = [
       'position:relative', 'width:100%', 'height:100%',
-      'background:var(--vga-black,#1a1a1a)',
+      'background:var(--c-bg)',
       'overflow:hidden', 'cursor:grab'
     ].join(';');
 
@@ -60,11 +63,11 @@ export class ViewportCanvas extends BaseComponent {
     this._loadingOverlay = this.createElement('div', 'viewport-loading');
     this._loadingOverlay.style.cssText = [
       'position:absolute', 'inset:0',
-      'background:rgba(0,0,0,0.45)',
+      'background:var(--c-bg)',
       'display:none',
       'align-items:center', 'justify-content:center',
-      'font-family:Space Mono,monospace', 'font-size:11px',
-      'color:var(--vga-white,#eee)', 'letter-spacing:2px',
+      `font-family:Space Mono,monospace`, `font-size:${this.getF().F}px`,
+      'color:var(--c-text)', `letter-spacing:${Math.max(1, Math.round(this.getF().F / 7))}px`,
       'pointer-events:none'
     ].join(';');
     this._loadingOverlay.textContent = 'RENDERING...';
@@ -78,7 +81,7 @@ export class ViewportCanvas extends BaseComponent {
     window.addEventListener('resize', this._boundResize);
 
     this._scheduleRedraw();
-    return this;
+    return this.element;
   }
 
   // ── Public setters ────────────────────────────────────────────────────────
@@ -94,7 +97,7 @@ export class ViewportCanvas extends BaseComponent {
   }
 
   setVariations(variations) {
-    this._variations = variations;
+    this._variations = Array.isArray(variations) && variations.length ? variations : null;
     this._scheduleRedraw();
   }
 
@@ -127,8 +130,18 @@ export class ViewportCanvas extends BaseComponent {
   // ── Draw pipeline ─────────────────────────────────────────────────────────
 
   _scheduleRedraw() {
-    if (this._rafId) return;
-    this._rafId = requestAnimationFrame(() => { this._rafId = null; this._draw(); });
+    if (this._drawQueued) return;
+    this._drawQueued = true;
+    if (!this._drawLoop) {
+      this._drawLoop = new AnimationLoop({
+        onFrame: () => {
+          this._drawQueued = false;
+          this._drawLoop.stop();
+          this._draw();
+        }
+      });
+    }
+    this._drawLoop.start();
   }
 
   _draw() {
@@ -138,7 +151,7 @@ export class ViewportCanvas extends BaseComponent {
       this._canvas.width = cw; this._canvas.height = ch;
     }
     const ctx = this._ctx;
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, cw, ch);
 
     if (this._variations?.length) {
@@ -165,7 +178,6 @@ export class ViewportCanvas extends BaseComponent {
       const { dw, dh, ox, oy } = this._layout(cw, ch, this._result.width, this._result.height);
       ctx.imageSmoothingEnabled = this._zoomLevel < 2;
       ctx.drawImage(this._oc, ox, oy, dw, dh);
-      this._drawBorder(ctx, ox, oy, dw, dh);
     }
   }
 
@@ -175,7 +187,6 @@ export class ViewportCanvas extends BaseComponent {
     const { dw, dh, ox, oy } = this._layout(cw, ch, source.width, source.height);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(useOc, ox, oy, dw, dh);
-    this._drawBorder(ctx, ox, oy, dw, dh);
   }
 
   _drawSplit(ctx, cw, ch) {
@@ -195,18 +206,20 @@ export class ViewportCanvas extends BaseComponent {
     ctx.restore();
 
     // Divider line
-    ctx.strokeStyle = 'var(--vga-white,#eee)';
+    ctx.strokeStyle = '#c0c0c0';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(sx, oy); ctx.lineTo(sx, oy + dh); ctx.stroke();
 
-    this._drawBorder(ctx, ox, oy, dw, dh);
   }
 
   _drawDiff(ctx, cw, ch) {
     if (!this._source) return;
     const rw = this._result.width, rh = this._result.height;
     const sw = this._source.width, sh = this._source.height;
-    if (rw !== sw || rh !== sh) { this._drawNormal(ctx, cw, ch); return; }
+    if (rw !== sw || rh !== sh) {
+      this._drawSingle(ctx, cw, ch, this._result, this._oc, '_oc');
+      return;
+    }
 
     const diff = new Uint8ClampedArray(rw * rh * 4);
     const r = this._result.pixels, s = this._source.pixels;
@@ -219,7 +232,6 @@ export class ViewportCanvas extends BaseComponent {
     this._ensureOffscreenFor('_ocDiff', diff, rw, rh);
     const { dw, dh, ox, oy } = this._layout(cw, ch, rw, rh);
     ctx.drawImage(this._ocDiff, ox, oy, dw, dh);
-    this._drawBorder(ctx, ox, oy, dw, dh);
   }
 
   _drawOverlay(ctx, cw, ch) {
@@ -230,35 +242,10 @@ export class ViewportCanvas extends BaseComponent {
     ctx.globalAlpha = 0.5;
     ctx.drawImage(this._oc, ox, oy, dw, dh);
     ctx.globalAlpha = 1;
-    this._drawBorder(ctx, ox, oy, dw, dh);
   }
 
   _drawVariations(ctx, cw, ch) {
-    const cols   = this._variations.length <= 4 ? 2 : 3;
-    const rows   = Math.ceil(this._variations.length / cols);
-    const cellW  = Math.floor(cw / cols);
-    const cellH  = Math.floor(ch / rows);
-    this._variations.forEach((v, i) => {
-      const col = i % cols, row = Math.floor(i / cols);
-      const x = col * cellW, y = row * cellH;
-      // Scale result to cell
-      const tmpOc = new OffscreenCanvas(v.width, v.height);
-      const tmpCtx = tmpOc.getContext('2d');
-      const imgd = tmpCtx.createImageData(v.width, v.height);
-      imgd.data.set(v.pixels);
-      tmpCtx.putImageData(imgd, 0, 0);
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(tmpOc, x + 1, y + 1, cellW - 2, cellH - 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x + 0.5, y + 0.5, cellW - 1, cellH - 1);
-    });
-  }
-
-  _drawBorder(ctx, ox, oy, dw, dh) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox + 0.5, oy + 0.5, dw - 1, dh - 1);
+    drawVariationGrid(ctx, cw, ch, this._variations, this.getF().F);
   }
 
   // ── OffscreenCanvas management ────────────────────────────────────────────
@@ -357,7 +344,8 @@ export class ViewportCanvas extends BaseComponent {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   destroy() {
-    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+    this._drawLoop?.destroy();
+    this._drawLoop = null;
     if (this._canvas) {
       this._canvas.removeEventListener('pointerdown', this._boundPointerDown);
       this._canvas.removeEventListener('pointermove', this._boundPointerMove);

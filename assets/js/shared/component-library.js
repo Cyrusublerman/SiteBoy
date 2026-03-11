@@ -107,7 +107,14 @@ import {
     CategoryTabsBar,
     GeneratorToolbar,
     SeedInput,
-    NavigationDropdown
+    NavigationDropdown,
+    DistortToolbar,
+    TransportStrip,
+    EffectStack,
+    NodePanel,
+    DriverPicker,
+    CategoryPicker,
+    ViewportCanvas
 } from './components/tool/index.js';
 
 // Import navigation components
@@ -249,6 +256,13 @@ const ComponentLibrary = {
             'generator-toolbar': GeneratorToolbar,
             'seed-input': SeedInput,
             'navigation-dropdown': NavigationDropdown,
+            'distort-toolbar': DistortToolbar,
+            'transport-strip': TransportStrip,
+            'effect-stack': EffectStack,
+            'node-panel': NodePanel,
+            'driver-picker': DriverPicker,
+            'category-picker': CategoryPicker,
+            'viewport-canvas': ViewportCanvas,
             
             // Navigation
             'scrollbar': Scrollbar,
@@ -407,6 +421,13 @@ ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.GeneratorToolbar = GeneratorToolbar;
 ComponentLibrary.SeedInput = SeedInput;
 ComponentLibrary.NavigationDropdown = NavigationDropdown;
+ComponentLibrary.DistortToolbar = DistortToolbar;
+ComponentLibrary.TransportStrip = TransportStrip;
+ComponentLibrary.EffectStack = EffectStack;
+ComponentLibrary.NodePanel = NodePanel;
+ComponentLibrary.DriverPicker = DriverPicker;
+ComponentLibrary.CategoryPicker = CategoryPicker;
+ComponentLibrary.ViewportCanvas = ViewportCanvas;
 
 // Assign navigation components to ComponentLibrary immediately
 ComponentLibrary.Scrollbar = Scrollbar;
@@ -509,6 +530,13 @@ export {
     GeneratorToolbar,
     SeedInput,
     NavigationDropdown,
+    DistortToolbar,
+    TransportStrip,
+    EffectStack,
+    NodePanel,
+    DriverPicker,
+    CategoryPicker,
+    ViewportCanvas,
 
     // Additional Components
     Text,

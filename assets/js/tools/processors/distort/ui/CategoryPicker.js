@@ -1,111 +1,191 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
 import { REGISTRY } from '../nodes/registry.js';
 
-/**
- * CategoryPicker — inline searchable category/module browser.
- *
- * Displays all categories and their modules from REGISTRY.
- * Supports text search filter.
- * Emits onSelect(entry) when a module is clicked.
- */
 export class CategoryPicker extends BaseComponent {
   constructor(options = {}, deps = {}) {
     super({ componentType: 'category-picker', ...options }, deps);
-    this._onSelect     = options.onSelect     ?? null;
-    this._searchInput  = null;
-    this._listEl       = null;
-    this._query        = '';
+    this._onSelect = options.onSelect ?? null;
+    this._onClose = options.onClose ?? null;
+    this._query = '';
+    this._listEl = null;
+    this._searchInput = null;
+    this._collapsed = {};
   }
 
   render() {
     super.render();
-    this.element.style.cssText = [
-      'display:flex', 'flex-direction:column',
-      'background:var(--vga-darkgrey,#222)',
-      'border:1px solid var(--vga-grey,#555)',
-      'max-height:320px', 'overflow:hidden'
-    ].join(';');
+    const { F } = this.getF();
 
-    this._buildSearch();
+    this.element.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      background: var(--c-bg);
+      border-top: 1px solid var(--c-border);
+    `;
+
+    this._buildHeader(F);
     this._buildList();
-    this._renderList('');
-
-    return this;
+    this._renderList();
+    return this.element;
   }
 
-  _buildSearch() {
-    const wrap = this.createElement('div', 'picker-search-wrap');
-    wrap.style.cssText = 'padding:4px 6px;border-bottom:1px solid var(--vga-grey,#555);flex-shrink:0';
+  _buildHeader(F) {
+    const row = this.createElement('div', 'distort-picker-header');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      height: ${F * 2}px;
+      border-bottom: 1px solid var(--c-border);
+      flex-shrink: 0;
+    `;
 
-    this._searchInput = this.createElement('input');
+    const close = this.createElement('button', 'distort-picker-close', '× CLOSE');
+    close.type = 'button';
+    close.style.cssText = `
+      width: ${F * 7}px;
+      height: 100%;
+      border: none;
+      border-right: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-sizing: border-box;
+    `;
+    close.addEventListener('mouseenter', () => {
+      close.style.background = 'var(--c-text)';
+      close.style.color = 'var(--c-bg)';
+    });
+    close.addEventListener('mouseleave', () => {
+      close.style.background = 'var(--c-bg)';
+      close.style.color = 'var(--c-text)';
+    });
+    close.addEventListener('click', () => this._onClose?.());
+
+    this._searchInput = this.createElement('input', 'distort-picker-search');
     this._searchInput.type = 'text';
-    this._searchInput.placeholder = 'SEARCH...';
-    this._searchInput.style.cssText = [
-      'width:100%', 'background:var(--vga-black,#111)',
-      'color:var(--vga-white,#eee)', 'border:1px solid var(--vga-grey,#555)',
-      'font-family:Space Mono,monospace', 'font-size:9px',
-      'padding:2px 5px', 'box-sizing:border-box'
-    ].join(';');
+    this._searchInput.placeholder = 'FILTER MODULES';
+    this._searchInput.style.cssText = `
+      flex: 1;
+      height: 100%;
+      padding: 0 ${F}px;
+      border: none;
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      box-sizing: border-box;
+      text-transform: uppercase;
+    `;
     this._searchInput.addEventListener('input', () => {
       this._query = this._searchInput.value.trim().toLowerCase();
-      this._renderList(this._query);
+      this._renderList();
     });
 
-    wrap.appendChild(this._searchInput);
-    this.element.appendChild(wrap);
+    row.append(close, this._searchInput);
+    this.element.appendChild(row);
   }
 
   _buildList() {
-    this._listEl = this.createElement('div', 'picker-list');
-    this._listEl.style.cssText = 'flex:1;overflow-y:auto';
+    this._listEl = this.createElement('div', 'distort-picker-list');
+    this._listEl.style.cssText = `
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    `;
     this.element.appendChild(this._listEl);
   }
 
-  _renderList(query) {
-    this._listEl.innerHTML = '';
+  _renderList() {
+    while (this._listEl.firstChild) this._listEl.removeChild(this._listEl.firstChild);
+    const { F } = this.getF();
+    const query = this._query;
+    const categories = Object.entries(REGISTRY);
 
-    for (const [category, entries] of Object.entries(REGISTRY)) {
-      const filtered = query
-        ? entries.filter(e => e.label.toLowerCase().includes(query) || category.toLowerCase().includes(query))
+    for (const [category, entries] of categories) {
+      const matches = query
+        ? entries.filter(entry =>
+            entry.label.toLowerCase().includes(query) ||
+            category.toLowerCase().includes(query))
         : entries;
-      if (!filtered.length) continue;
+      if (!matches.length) continue;
 
-      const catEl = this.createElement('div', 'picker-category', category.toUpperCase());
-      catEl.style.cssText = [
-        'padding:3px 8px',
-        'font-family:Space Mono,monospace', 'font-size:9px',
-        'color:var(--vga-grey,#888)',
-        'border-top:1px solid var(--vga-grey,#555)',
-        'letter-spacing:1px'
-      ].join(';');
-      this._listEl.appendChild(catEl);
+      const collapsed = query ? false : !!this._collapsed[category];
+      const header = this.createElement('button', 'distort-picker-category');
+      header.type = 'button';
+      header.textContent = `${collapsed ? '▸' : '▾'} ${category.toUpperCase()}`;
+      header.style.cssText = `
+        width: 100%;
+        height: ${F * 2}px;
+        padding: 0 ${F}px;
+        border: none;
+        border-top: 1px solid var(--c-border);
+        background: var(--c-bg);
+        color: var(--c-border);
+        text-align: left;
+        font-family: 'Space Mono', monospace;
+        font-size: ${F * 0.75}px;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-sizing: border-box;
+      `;
+      header.addEventListener('click', () => {
+        this._collapsed[category] = !this._collapsed[category];
+        this._renderList();
+      });
+      this._listEl.appendChild(header);
 
-      for (const entry of filtered) {
-        const item = this.createElement('div', 'picker-item', entry.label);
-        item.style.cssText = [
-          'padding:3px 16px',
-          'font-family:Space Mono,monospace', 'font-size:10px',
-          'color:var(--vga-white,#eee)', 'cursor:pointer'
-        ].join(';');
-        item.addEventListener('mouseover', () => { item.style.background = 'var(--vga-grey,#555)'; });
-        item.addEventListener('mouseout',  () => { item.style.background = ''; });
+      if (collapsed) continue;
+
+      for (const entry of matches) {
+        const item = this.createElement('button', 'distort-picker-item', entry.label.toUpperCase());
+        item.type = 'button';
+        item.style.cssText = `
+          width: 100%;
+          height: ${F * 2}px;
+          padding: 0 ${F * 2}px;
+          border: none;
+          border-top: 1px solid var(--c-border);
+          background: var(--c-bg);
+          color: var(--c-text);
+          text-align: left;
+          font-family: 'Space Mono', monospace;
+          font-size: ${F * 0.85}px;
+          text-transform: uppercase;
+          cursor: pointer;
+          box-sizing: border-box;
+        `;
+        item.addEventListener('mouseenter', () => {
+          item.style.background = 'var(--c-text)';
+          item.style.color = 'var(--c-bg)';
+        });
+        item.addEventListener('mouseleave', () => {
+          item.style.background = 'var(--c-bg)';
+          item.style.color = 'var(--c-text)';
+        });
         item.addEventListener('click', () => this._onSelect?.(entry));
         this._listEl.appendChild(item);
       }
     }
 
-    if (!this._listEl.children.length) {
-      const empty = this.createElement('div', '', 'NO MATCH');
-      empty.style.cssText = 'text-align:center;color:var(--vga-grey,#888);font-family:Space Mono,monospace;font-size:9px;padding:12px';
+    if (!this._listEl.firstChild) {
+      const empty = this.createElement('div', 'distort-picker-empty', 'NO MATCH');
+      empty.style.cssText = `
+        padding: ${F * 2}px ${F}px;
+        color: var(--c-border);
+        font-family: 'Space Mono', monospace;
+        font-size: ${F * 0.75}px;
+        text-align: center;
+      `;
       this._listEl.appendChild(empty);
     }
   }
 
   focus() {
-    this._searchInput?.focus();
-  }
-
-  destroy() {
-    super.destroy();
+    this._searchInput?.focus?.();
   }
 }

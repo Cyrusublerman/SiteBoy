@@ -66,7 +66,7 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
-    animation: { type: 'infinite', defaultFps: 60 },
+    animation: { type: 'infinite', defaultFps: 30 },
 
     // State
     _squares: null,
@@ -86,12 +86,13 @@ export const SCRIPT_CONFIG = {
         const angleStep   = p.TWO_PI / numSquares;
         const chordLen    = 2 * orbitRadius * Math.sin(angleStep / 2);
         const sideLength  = Math.round((2 * Math.sqrt(2) * chordLen) / 3);
+        const resolution  = Math.max(48, Math.min(180, Math.round(sideLength / 3)));
+        const cellSize    = sideLength / resolution;
 
         const squares = [];
         for (let i = 0; i < numSquares; i++) {
             const angle      = i * angleStep;
             const bias       = i / numSquares;
-            const resolution = Math.max(sideLength, 1);
             const offset     = resolution / 2;
             const matrix     = [];
             const grid1 = [], next1 = [];
@@ -100,14 +101,16 @@ export const SCRIPT_CONFIG = {
             for (let x = 0; x < resolution; x++) {
                 const rowM = [], g1r = [], n1r = [], g2r = [], n2r = [];
                 for (let y = 0; y < resolution; y++) {
-                    const lx = x - offset + 0.5, ly = y - offset + 0.5;
+                    const lx = (x - offset + 0.5) * cellSize;
+                    const ly = (y - offset + 0.5) * cellSize;
                     rowM.push({
                         polar:     { r: Math.sqrt(lx * lx + ly * ly), theta: Math.atan2(ly, lx) },
                         gridX: x, gridY: y,
                         cartesian: { x: 0, y: 0 },
                         centroid:  { x: 0, y: 0 },
                         color:     { h: 0, s: 0, b: 0 },
-                        lastSwap:  -1000
+                        lastSwap:  -1000,
+                        drawSize:  Math.max(1.25, cellSize * 1.15)
                     });
                     g1r.push(0); n1r.push(0);
                     g2r.push(bias); n2r.push(bias);
@@ -180,6 +183,7 @@ export const SCRIPT_CONFIG = {
     p5Setup(p, params) {
         p.colorMode(p.HSB, 360, 100, 100);
         p.noStroke();
+        p.noSmooth();
         p.noLoop();
         this._squares = this._buildSquares(p, params);
         this._collisionMap = new Array(1080 * 1080).fill(null);
@@ -262,7 +266,12 @@ export const SCRIPT_CONFIG = {
                     const H = hue * 360;
                     const B = p.map(pulse, 0, 1, 100, 50);
                     p.fill(H, 90, B);
-                    p.rect(ent.cartesian.x, ent.cartesian.y, 1.5, 1.5);
+                    p.rect(
+                        ent.cartesian.x - ent.drawSize * 0.5,
+                        ent.cartesian.y - ent.drawSize * 0.5,
+                        ent.drawSize,
+                        ent.drawSize
+                    );
                 }
             }
         }

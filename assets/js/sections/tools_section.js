@@ -82,21 +82,9 @@ const ToolsSection = {
         this.currentContainer.innerHTML = '';
         this.currentContainer.classList.add('toc-container');
         
-        // Apply proper body sizing for tools index (no subheader)
         const contentContainer = this.currentContainer.closest('.content-container');
         if (contentContainer) {
-            // Add toc-container class for styling
             contentContainer.classList.add('toc-container');
-            
-            // Reposition content container for no-subheader layout
-            if (window.MathematicalFoundation) {
-                const layout = window.MathematicalFoundation.computeLayout() || {};
-                const margin = window.MathematicalFoundation.Config?.margin || layout.marginLeft || 14;
-                const headerHeight = layout.headerHeight || 28;
-                const contentTop = margin + headerHeight;
-                contentContainer.style.top = `${contentTop}px`;
-                console.log(`✅ Applied no-subheader layout for tools index: top=${contentTop}px`);
-            }
         }
         
         // Create tools title

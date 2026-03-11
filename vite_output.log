@@ -1,0 +1,387 @@
+
+> siteboy-framework@4.0.0 dev
+> vite
+
+Failed to resolve dependency: marked, present in 'optimizeDeps.include'
+Failed to resolve dependency: prismjs, present in 'optimizeDeps.include'
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+Port 3002 is in use, trying another one...
+Port 3003 is in use, trying another one...
+Port 3004 is in use, trying another one...
+Port 3005 is in use, trying another one...
+Port 3006 is in use, trying another one...
+Port 3007 is in use, trying another one...
+Port 3008 is in use, trying another one...
+Port 3009 is in use, trying another one...
+
+  VITE v5.4.21  ready in 1071 ms
+
+  ➜  Local:   http://localhost:3010/
+  ➜  Network: http://10.5.0.2:3010/
+  ➜  Network: http://192.168.1.233:3010/
+Error:   Failed to scan for dependencies from entries:
+  C:/Users/Einod/Documents/GitHub/SiteBoy/404.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/generate-thumbnails.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/process-thumbnails.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/experiment guide/experiment-demo.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/app-modular.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/app.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/codepen.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Image2Print.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Imageto3D Gem.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Imageto3D-Fixed.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Multifilament-Image-Print-Bundle.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/quantise-test.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/perfect-grid/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/phyllotaxis/ngon-mapper.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/phyllotaxis/spiral-generator.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/tile-animation-enhanced.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/svg-to-stl-reference/SVGtoSTL.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/test/Image2Print-cdn.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/test/Image2Print-github.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/app-modular.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/app.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/codepen.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Image2Print.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Imageto3D Gem.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Imageto3D-Fixed.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Multifilament-Image-Print-Bundle.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/quantise-test.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/phyllo_2_plane_copy_2025_09_12_01_26_14/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Phyllo_Spiral_2025_09_12_01_22_59/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/spinning_phyllo_ball_2025_09_12_01_28_06/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/SpinSpiral_2025_09_12_01_27_53/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Spiral_equation_2025_09_12_01_23_20/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/spiral_eq_2_2025_09_12_01_23_43/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Spiral_Ngon_3d_copy_2025_09_12_01_24_38/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Spiral_Ngon_3d_2025_09_12_01_24_11/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/docs/overrides/main.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/circles/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/cymatics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/harmonics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/las3/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/lassajous-2/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/torus/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/svg-to-stl-reference/SVGtoSTL.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/test/Image2Print-cdn.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/test/Image2Print-github.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/phyllo_2_plane_copy_2025_09_12_01_26_14/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Phyllo_Spiral_2025_09_12_01_22_59/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/spinning_phyllo_ball_2025_09_12_01_28_06/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/SpinSpiral_2025_09_12_01_27_53/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Spiral_equation_2025_09_12_01_23_20/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/spiral_eq_2_2025_09_12_01_23_43/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Spiral_Ngon_3d_2025_09_12_01_24_11/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Spiral_Ngon_3d_copy_2025_09_12_01_24_38/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/chord.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/drum.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/keysnmodes.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/notes2hertz.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/site/plan.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/site/refined_logic.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/site/type.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/clock/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/coloursquare/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/circles/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/cymatics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/squares/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/torus/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/wave-interferance-2/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Reference/alpine-js-masonry-gallery-lazy-loading/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Reference/gsap-infinite-draggable-image-gallery/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Reference/ripped-animations/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/colourquantiser/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/pixel-tiler/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/polygon-calculator/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/New folder/colour3/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_02.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_03.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_04.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_05.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_06.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_07.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_08.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/formatting.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/html_code_snippets.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/html_rich_table_cells.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_02.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_03.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_04.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_05.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_02.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_03.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_04.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_05.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_06.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_with_heading.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/unit_test_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/wiki_duck.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/squares/squares/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/coloursquare/colourarray/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/Lassajous/lassajous-2/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/Lassajous/harmonics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/Lassajous/lassajous-animation/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/Font/font-comparison-tool/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/Font/font-dimension-finder/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/Font/font-size-comparison-tool/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/font-dimension-finder/font-dimension-finder/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/font-size-comparison-tool/font-size-comparison-tool/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/pixel-tiler (1)/pixel-tiler/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/polygon-calculator (1)/polygon-calculator/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/groundtruth/docling_v2/word_tables.docx.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/New folder/dithermark-master/dithermark-master/server/templates/index.html
+
+  [31mX [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "toggleScanOverlay" has already been declared[0m
+
+    blog/ideas/reference documentation/Experiments-main/app.js:1530:9:
+[37m      1530 │ function [32mtoggleScanOverlay[37m() {
+           ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "toggleScanOverlay" was originally declared here:
+
+    blog/ideas/reference documentation/Experiments-main/app.js:363:9:
+[37m      363 │ function [32mtoggleScanOverlay[37m() {
+          ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  Duplicate top-level function declarations are not allowed in an ECMAScript module. This file is considered to be an ECMAScript module because of the "import" keyword here:
+
+    blog/ideas/reference documentation/Experiments-main/app.js:7:0:
+[37m      7 │ [32mimport[37m { COLOURS } from './js/constants.js';
+        ╵ [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "toggleScanOverlay" has already been declared[0m
+
+    reference/Experiments-main/app.js:1530:9:
+[37m      1530 │ function [32mtoggleScanOverlay[37m() {
+           ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "toggleScanOverlay" was originally declared here:
+
+    reference/Experiments-main/app.js:363:9:
+[37m      363 │ function [32mtoggleScanOverlay[37m() {
+          ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  Duplicate top-level function declarations are not allowed in an ECMAScript module. This file is considered to be an ECMAScript module because of the "import" keyword here:
+
+    reference/Experiments-main/app.js:7:0:
+[37m      7 │ [32mimport[37m { COLOURS } from './js/constants.js';
+        ╵ [32m~~~~~~[0m
+
+
+    at failureErrorWithLog (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:1472:15)
+    at C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:945:25
+    at runOnEndCallbacks (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:1315:45)
+    at buildResponseToResult (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:943:7)
+    at C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:955:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:954:54)
+    at handleRequest (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:647:17)
+    at handleIncomingPacket (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:672:7)
+    at Socket.readFromStdout (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:600:7)
+12:23:47 am [vite] page reload test-import.html
+12:23:47 am [vite] page reload test-import.html
+12:23:54 am [vite] page reload assets/test-import.html
+12:23:54 am [vite] page reload test-import.html
+12:24:35 am [vite] page reload test-import.html
+6:47:47 pm [vite] page reload test-import.html
+12:25:39 pm [vite] vite.config.js changed, restarting server...
+12:25:40 pm [vite] vite.config.js changed, restarting server...
+12:25:40 pm [vite] page reload index.html
+Failed to resolve dependency: marked, present in 'optimizeDeps.include'
+Failed to resolve dependency: prismjs, present in 'optimizeDeps.include'
+12:25:45 pm [vite] server restarted.
+Error:   Failed to scan for dependencies from entries:
+  C:/Users/Einod/Documents/GitHub/SiteBoy/404.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/test-import.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/assets/test-import.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/generate-thumbnails.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/process-thumbnails.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/phyllotaxis/ngon-mapper.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/phyllotaxis/spiral-generator.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/app-modular.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/app.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/codepen.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Image2Print.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Imageto3D Gem.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Imageto3D-Fixed.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/Multifilament-Image-Print-Bundle.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/quantise-test.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/experiment guide/experiment-demo.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/perfect-grid/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/tile-animation-enhanced.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/test/Image2Print-cdn.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/test/Image2Print-github.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/Experiments-main/svg-to-stl-reference/SVGtoSTL.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/app-modular.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/app.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/codepen.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Image2Print.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Imageto3D Gem.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Imageto3D-Fixed.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/Multifilament-Image-Print-Bundle.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/quantise-test.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/docs/overrides/main.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/phyllo_2_plane_copy_2025_09_12_01_26_14/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Phyllo_Spiral_2025_09_12_01_22_59/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/spinning_phyllo_ball_2025_09_12_01_28_06/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/SpinSpiral_2025_09_12_01_27_53/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Spiral_equation_2025_09_12_01_23_20/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/spiral_eq_2_2025_09_12_01_23_43/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Spiral_Ngon_3d_2025_09_12_01_24_11/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/p5.js/Spiral_Ngon_3d_copy_2025_09_12_01_24_38/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/circles/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/cymatics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/harmonics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/las3/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/lassajous-2/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/torus/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/svg-to-stl-reference/SVGtoSTL.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/test/Image2Print-cdn.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/blog/ideas/reference documentation/Experiments-main/test/Image2Print-github.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/phyllo_2_plane_copy_2025_09_12_01_26_14/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Phyllo_Spiral_2025_09_12_01_22_59/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/spinning_phyllo_ball_2025_09_12_01_28_06/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/SpinSpiral_2025_09_12_01_27_53/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Spiral_equation_2025_09_12_01_23_20/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/spiral_eq_2_2025_09_12_01_23_43/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Spiral_Ngon_3d_2025_09_12_01_24_11/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/projects/Synthetic Biophilia/reference/p5.js/Spiral_Ngon_3d_copy_2025_09_12_01_24_38/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_02.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_03.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_04.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_05.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_06.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_07.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/example_08.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/formatting.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/html_code_snippets.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/html_rich_table_cells.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_02.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_03.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_04.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/hyperlink_05.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_02.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_03.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_04.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_05.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_06.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/table_with_heading.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/unit_test_01.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/html/wiki_duck.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/clock/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/circles/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/coloursquare/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/cymatics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/squares/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/torus/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/wave-interferance-2/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Reference/gsap-infinite-draggable-image-gallery/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Reference/alpine-js-masonry-gallery-lazy-loading/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Reference/ripped-animations/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/colourquantiser/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/pixel-tiler/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/polygon-calculator/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/chord.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/drum.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/keysnmodes.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/music/notes2hertz.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/site/plan.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/site/refined_logic.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/old-assets/assets/blog/site/type.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/New folder/colour3/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/art/Generative/to process/squares/squares/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/tools/docling-main/tests/data/groundtruth/docling_v2/word_tables.docx.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/coloursquare/colourarray/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/Lassajous/harmonics/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/Lassajous/lassajous-2/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Generative Art/Lassajous/lassajous-animation/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/Font/font-comparison-tool/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/Font/font-dimension-finder/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/QuickToolRebuildReference/Tools/Font/font-size-comparison-tool/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/pixel-tiler (1)/pixel-tiler/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/font-dimension-finder/font-dimension-finder/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/font-size-comparison-tool/font-size-comparison-tool/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/codepen/polygon-calculator (1)/polygon-calculator/src/index.html
+C:/Users/Einod/Documents/GitHub/SiteBoy/reference/tools/New folder/dithermark-master/dithermark-master/server/templates/index.html
+
+  [31mX [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "toggleScanOverlay" has already been declared[0m
+
+    blog/ideas/reference documentation/Experiments-main/app.js:1530:9:
+[37m      1530 │ function [32mtoggleScanOverlay[37m() {
+           ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "toggleScanOverlay" was originally declared here:
+
+    blog/ideas/reference documentation/Experiments-main/app.js:363:9:
+[37m      363 │ function [32mtoggleScanOverlay[37m() {
+          ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  Duplicate top-level function declarations are not allowed in an ECMAScript module. This file is considered to be an ECMAScript module because of the "import" keyword here:
+
+    blog/ideas/reference documentation/Experiments-main/app.js:7:0:
+[37m      7 │ [32mimport[37m { COLOURS } from './js/constants.js';
+        ╵ [32m~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mThe symbol "toggleScanOverlay" has already been declared[0m
+
+    reference/Experiments-main/app.js:1530:9:
+[37m      1530 │ function [32mtoggleScanOverlay[37m() {
+           ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  The symbol "toggleScanOverlay" was originally declared here:
+
+    reference/Experiments-main/app.js:363:9:
+[37m      363 │ function [32mtoggleScanOverlay[37m() {
+          ╵          [32m~~~~~~~~~~~~~~~~~[0m
+
+  Duplicate top-level function declarations are not allowed in an ECMAScript module. This file is considered to be an ECMAScript module because of the "import" keyword here:
+
+    reference/Experiments-main/app.js:7:0:
+[37m      7 │ [32mimport[37m { COLOURS } from './js/constants.js';
+        ╵ [32m~~~~~~[0m
+
+
+    at failureErrorWithLog (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:1472:15)
+    at C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:945:25
+    at runOnEndCallbacks (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:1315:45)
+    at buildResponseToResult (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:943:7)
+    at C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:955:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:954:54)
+    at handleRequest (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:647:17)
+    at handleIncomingPacket (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:672:7)
+    at Socket.readFromStdout (C:\Users\Einod\Documents\GitHub\SiteBoy\node_modules\vite\node_modules\esbuild\lib\main.js:600:7)
+12:39:18 pm [vite] vite.config.js changed, restarting server...
+12:39:19 pm [vite] vite.config.js changed, restarting server...
+X [ERROR] Expected "}" but found ")"
+
+    vite.config.js:126:1:
+      126 │ }))
+          │  ^
+          ╵  }
+
+failed to load config from C:\Users\Einod\Documents\GitHub\SiteBoy\vite.config.js
+12:39:19 pm [vite] Build failed with 1 error:
+vite.config.js:126:1: ERROR: Expected "}" but found ")"
+12:39:19 pm [vite] server restart failed
+12:39:24 pm [vite] vite.config.js changed, restarting server...
+12:39:24 pm [vite] vite.config.js changed, restarting server...
+Failed to resolve dependency: marked, present in 'optimizeDeps.include'
+Failed to resolve dependency: prismjs, present in 'optimizeDeps.include'
+12:39:26 pm [vite] server restarted.
+12:40:15 pm [vite] vite.config.js changed, restarting server...

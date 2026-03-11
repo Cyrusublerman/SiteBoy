@@ -587,8 +587,9 @@ const SiteBoyApp = {
         
         try {
             const isToolDetailPage = sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc';
+            const isToolsTOC = sectionName === 'tools' && !isToolDetailPage;
             const NO_SUBHEADER_SECTIONS = ['home', 'projects'];
-            const hasSubheader = isToolDetailPage || !NO_SUBHEADER_SECTIONS.includes(sectionName);
+            const hasSubheader = isToolDetailPage || (!NO_SUBHEADER_SECTIONS.includes(sectionName) && !isToolsTOC);
             
             // Normalise body class + subheader visibility before layout math
             this.setSubheaderState(hasSubheader);

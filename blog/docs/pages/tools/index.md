@@ -4,6 +4,9 @@ Reference documentation for all interactive tool pages.
 
 ## Tool Categories
 
+### Generator Host
+- **[Generators](./generators/index.md)** - Unified host for registered generator scripts, host rules, and per-generator packs
+
 ### Image Processing
 - **[Colour Quantizer](./colour-quantizer.md)** - Image quantization with dithering using LAB color space
 - **[Pixel Tiler](./pixel-tiler.md)** - 2×2 pixel mosaic combinations from 4 source images
@@ -16,7 +19,6 @@ Reference documentation for all interactive tool pages.
 - **[Font Analysis](./font-analysis.md)** - Multi-font comparison with metrics visualization
 
 ### Astronomy
-- **[Solar System](./solar-system.md)** - Real-time planetary positions using NASA JPL data
 - **[Asteroid Belt](./asteroid-belt.md)** - Procedural asteroid belt visualization
 
 ### Privacy & Analytics

@@ -53,7 +53,14 @@ export {
     NavigationDropdown,
     CanvasTabs,
     CategoryTabsBar,
-    SeedInput
+    SeedInput,
+    DistortToolbar,
+    TransportStrip,
+    EffectStack,
+    NodePanel,
+    DriverPicker,
+    CategoryPicker,
+    ViewportCanvas
 } from './tool/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -96,6 +103,13 @@ export const Components = {
     CanvasTabs: Tool.CanvasTabs,
     CategoryTabsBar: Tool.CategoryTabsBar,
     SeedInput: Tool.SeedInput,
+    DistortToolbar: Tool.DistortToolbar,
+    TransportStrip: Tool.TransportStrip,
+    EffectStack: Tool.EffectStack,
+    NodePanel: Tool.NodePanel,
+    DriverPicker: Tool.DriverPicker,
+    CategoryPicker: Tool.CategoryPicker,
+    ViewportCanvas: Tool.ViewportCanvas,
     
     // Factory method
     create(type, options, deps) {

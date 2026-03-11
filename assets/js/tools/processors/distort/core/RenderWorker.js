@@ -25,6 +25,15 @@ function _buildStack(msgStack) {
     node.opacity   = nd.opacity;
     node.blendMode = nd.blendMode ?? 'normal';
     for (const k in nd.params) if (k in node.params) node.params[k] = nd.params[k];
+    if (nd.mask) {
+      node.mask.enabled = !!nd.mask.enabled;
+      node.mask.source = nd.mask.source ?? 'none';
+      node.mask.invert = !!nd.mask.invert;
+      node.mask.feather = nd.mask.feather ?? 0;
+    }
+    if (nd.modulation) {
+      node.modulation = { ...nd.modulation };
+    }
     stack.push(node);
   }
   return stack;
@@ -37,7 +46,7 @@ function _applyMsg(msg) {
   state.previewScale = msg.previewScale;
   state.globalSeed   = msg.globalSeed;
   state.soloNodeId   = msg.soloNodeId ?? null;
-  state.frame        = msg.frame ?? 0;
+  state.currentFrame = msg.frame ?? 0;
   state.frameCount   = msg.frameCount ?? 1;
   state.needsRender  = true;
   state.rendering    = false;
@@ -79,7 +88,7 @@ self.onmessage = function (e) {
     const results = [];
     for (let fi = 0; fi < frames.length; fi++) {
       state.sourcePixels = frames[fi];
-      state.frame        = fi;
+      state.currentFrame = fi;
       for (const n of state.stack) { n._cacheValid = false; }
       state.needsRender = true;
       state.rendering   = false;

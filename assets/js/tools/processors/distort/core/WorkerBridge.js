@@ -93,7 +93,15 @@ export class WorkerBridge {
     const s = this.state;
     const stackData = s.stack.map(n => ({
       type: n.type, enabled: n.enabled, opacity: n.opacity, blendMode: n.blendMode ?? 'normal',
-      params: { ...n.params }, frame: s.frame ?? 0
+      params: { ...n.params },
+      mask: n.mask ? {
+        enabled: !!n.mask.enabled,
+        source: n.mask.source ?? 'none',
+        invert: !!n.mask.invert,
+        feather: n.mask.feather ?? 0
+      } : null,
+      modulation: { ...(n.modulation ?? {}) },
+      frame: s.frame ?? 0
     }));
     const pixelsCopy = new Uint8ClampedArray(s.sourcePixels);
 

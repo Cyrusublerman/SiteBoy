@@ -6,14 +6,15 @@ Canonical layout, interaction, and aesthetic compliance reference for the DISTOR
 
 | Document | Authority | Scope |
 |----------|-----------|-------|
-| `blog/docs/site/ui-interface-overview.md` | Absolute | Site ideology, F-system, colour rules, component rules |
+| `blog/docs/guides/standards/design-law.md` | Absolute | Site design law: ideology, partition logic, scale, typography, colour |
+| `blog/docs/site/ui-interface-overview.md` | High | Operational layout patterns, PCS application, standard tool organisation |
 | `blog/docs/guides/effect-module-style-guide.md` | High | Module param presentation, tier order, modulation UI |
 | `blog/docs/guides/effect-module-standards.md` | High | NodePanel contract, mask system, driver eligibility |
 | `blog/docs/components/distort/driver-system.md` | High | Expression driver, image driver, variable reference |
 | `blog/docs/guides/tools/tool-build-guide.md` | Medium | ToolBase wiring pattern |
 | `blog/docs/guides/tool-standards.md` | Medium | Tool minimum functionality |
 
-Any conflict between this document and `ui-interface-overview.md` — the site ideology wins.
+Any conflict between this document and `design-law.md` — the site law wins.
 
 ---
 
@@ -503,19 +504,19 @@ LINE RENDER modules have additional Tier 2 params between the universal base and
 
 **No hardcoded hex, rgb, or hsl in any DISTORT UI code.**
 
-### 9.3 Typography (non-negotiable)
+### 9.3 Typography application (inherits design law)
 
-| Element | Case | Font | Enforced by |
-|---------|------|------|-------------|
-| Top bar source cell | UPPERCASE | Space Mono | DistortToolbar |
-| Top bar action cells | UPPERCASE | Space Mono | DistortToolbar |
-| Tab names | UPPERCASE | Space Mono | ToolBase |
-| Block titles | Title Case | Space Mono | ToolBase |
-| Node display name | UPPERCASE | Space Mono | NodePanel |
-| paramDef labels | UPPERCASE | Space Mono | ToolBase |
-| Select option strings | UPPERCASE | Space Mono | ToolBase |
-| Transport frame readout | digits only | Space Mono | TransportStrip |
-| Status strip (if used) | lowercase | Space Mono | ToolBase setStatus() |
+| Element | Case | Source of rule |
+|---------|------|----------------|
+| Top bar source cell | UPPERCASE | `design-law.md` |
+| Top bar action cells | UPPERCASE | `design-law.md` |
+| Tab names | UPPERCASE | `design-law.md` |
+| Block titles | Title Case | `design-law.md` |
+| Node display name | UPPERCASE | `design-law.md` |
+| paramDef labels | UPPERCASE | `design-law.md` |
+| Select option strings | UPPERCASE | `design-law.md` |
+| Transport frame readout | digits only | `design-law.md` |
+| Status strip (if used) | lowercase when intentionally quiet | `design-law.md` |
 
 ### 9.4 Single-Sheet Reality checklist
 
@@ -839,3 +840,44 @@ These extend the site-wide prohibited patterns from `ui-interface-overview.md §
 | ToolBase config syntax | `tool-build-guide.md` |
 | Module pre-submission checklist | `effect-module-standards.md — Pre-submission Checklist` |
 | Style compliance checklist | `effect-module-style-guide.md §12` |
+
+---
+
+## 16. Implementation Matrix (Authoritative)
+
+This matrix is a compliance contract for implementation work. Each row must resolve to exactly one owner component and exactly one data owner.
+
+| Element | Owner component | Data owner | Mandatory constraints |
+|---------|------------------|------------|-----------------------|
+| Top source cell | `DistortToolbar` | `AppState.source*` | UPPERCASE, 2F row, shared boundaries only |
+| Undo/redo cells | `DistortToolbar` | `History` | Disabled state must be deterministic; no duplicate controls in sidebar |
+| Fit/fill/actual | `DistortToolbar` | `ViewportCanvas` | Active state by inversion only |
+| Quality cell | `DistortToolbar` | `AppState.quality` | `PREVIEW/FULL` only; top bar only |
+| Export dropdown | `DistortToolbar` | `DistortTool` actions | Inline list, no modal/floating panel |
+| Source block readout | ToolBase block (`PIPELINE/SOURCE`) | `AppState.source*` | Read-only mirror of top bar |
+| Stack add flow | `EffectStack` + `CategoryPicker` | `AppState.stack` | Inline substitution, no popup |
+| Node row header | `NodePanel` | `EffectNode` + `AppState.soloNodeId` | 2F row, drag/enable/solo/remove |
+| Node params tiers | `NodePanel` | `EffectNode.params` | Tier order fixed; UPPERCASE labels |
+| Driver editor | `DriverPicker` | `EffectNode.modulation` + `AppState.modulationMaps` | `none|image|expr`; inline only |
+| Mask block | `NodePanel` | `EffectNode.mask` | Always last; source/upload/invert/feather |
+| Canvas output | `ViewportCanvas` | render result buffer | No control overlays |
+| Transport strip | `TransportStrip` | `AppState.frame*` | Visible iff `frameCount > 1`; AnimationFoundation loop |
+| Variations view | `ViewportCanvas` + `VariationGrid` | rendered seed outputs | Rendered in canvas surface, not side panel |
+
+### Authority precedence for conflicts
+
+1. `design-law.md` (absolute)
+2. `ui-interface-overview.md`, `component-rules.md`
+3. `type.md`, `tool-standards.md`, `COMPONENT-REFERENCE.md`
+4. This file (`distort/ui-ux.md`)
+
+### Design-law gate (must pass per changed element)
+
+For each changed element, implementer must prove:
+
+1. Parent partition is explicit
+2. Shared boundary logic is explicit
+3. Sizing is F-derived
+4. Analogous site element is named
+5. Non-floating behaviour is preserved
+6. State signalling is consistent with site law

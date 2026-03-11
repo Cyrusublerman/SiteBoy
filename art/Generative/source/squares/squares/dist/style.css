@@ -1,0 +1,98 @@
+:root { 
+  --vga-black: #000; 
+  --vga-white: #fff; 
+  --vga-silver: #c0c0c0; 
+  --vga-gray: #808080; 
+  --f: 12px; 
+}
+
+* { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+}
+
+body { 
+  font-family: 'Atkinson Hyperlegible', monospace; 
+  font-size: var(--f); 
+  background: var(--vga-black); 
+  color: var(--vga-silver); 
+  overflow: hidden; 
+  height: 100vh; 
+}
+
+canvas { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+}
+
+.info { 
+  position: fixed; 
+  top: calc(var(--f) * 2); 
+  left: calc(var(--f) * 2); 
+  background: rgba(0,0,0,0.85); 
+  border: 1px solid var(--vga-gray); 
+  padding: var(--f); 
+  max-width: 550px; 
+  z-index: 10; 
+}
+
+.info h1 { 
+  font-size: calc(var(--f) * 1.5); 
+  margin-bottom: calc(var(--f) * 0.5); 
+  text-transform: uppercase; 
+  color: var(--vga-white); 
+}
+
+.phase-name { 
+  font-size: calc(var(--f) * 1.2); 
+  color: var(--vga-white); 
+  margin-bottom: calc(var(--f) * 0.25); 
+}
+
+.sub-phase { 
+  font-size: calc(var(--f) * 0.85); 
+  color: var(--vga-silver); 
+  margin-bottom: calc(var(--f) * 0.5); 
+  font-style: italic; 
+}
+
+.timer { 
+  font-size: calc(var(--f) * 0.8); 
+  color: var(--vga-gray); 
+  font-family: monospace; 
+}
+
+.controls { 
+  position: fixed; 
+  bottom: calc(var(--f) * 2); 
+  left: calc(var(--f) * 2); 
+  display: flex; 
+  gap: 1px; 
+  z-index: 10; 
+}
+
+button { 
+  font-family: 'Atkinson Hyperlegible', monospace; 
+  font-size: var(--f); 
+  background: var(--vga-black); 
+  color: var(--vga-silver); 
+  border: 1px solid var(--vga-gray); 
+  padding: calc(var(--f) / 2) var(--f); 
+  height: calc(var(--f) * 2); 
+  cursor: pointer; 
+  text-transform: uppercase; 
+  transition: 0.1s; 
+}
+
+button:hover { 
+  background: var(--vga-white); 
+  color: var(--vga-black); 
+}
+
+.hide-info .info { 
+  display: none; 
+}

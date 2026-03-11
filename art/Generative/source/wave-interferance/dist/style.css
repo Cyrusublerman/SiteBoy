@@ -1,0 +1,752 @@
+:root {
+  --bg-color: #000000;
+  --text-color: #ffffff;
+  --border-color: #333333;
+  --text-muted: #999999;
+  --color-r: #ff6b6b;
+  --color-x: #4dabf7;
+  --color-y: #51cf66;
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", "Monaco", "Inconsolata", "Fira Mono",
+    "Droid Sans Mono", "Source Code Pro", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-main);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* Two-Column Fixed Layout */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.canvas-column {
+  position: relative;
+  flex-shrink: 0;
+  width: 800px;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-color);
+  border-right: 1px solid var(--border-color);
+}
+
+#canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.controls-column {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 30px;
+  background: var(--bg-color);
+}
+
+.controls-column::-webkit-scrollbar {
+  width: 8px;
+}
+
+.controls-column::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+.controls-column::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.controls-column::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+/* Canvas HUD Overlay */
+#canvas-hud {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-color);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 12px;
+  border-radius: 4px;
+  line-height: 1.6;
+  pointer-events: none;
+  max-width: 300px;
+}
+
+/* Interactive Equation Display */
+.equation-interactive {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.8;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #0a0a0a;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.equation-interactive .eq-line {
+  margin: 3px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.equation-interactive .eq-variable {
+  color: var(--text-muted);
+  min-width: 30px;
+}
+
+.equation-interactive .eq-r {
+  color: var(--color-r);
+}
+.equation-interactive .eq-x {
+  color: var(--color-x);
+}
+.equation-interactive .eq-y {
+  color: var(--color-y);
+}
+
+.equation-interactive .eq-number {
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 2px;
+  transition: background 0.1s;
+  position: relative;
+}
+
+.equation-interactive .eq-number:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.equation-interactive .eq-number.editing {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.equation-interactive .eq-number input {
+  width: 60px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  color: var(--text-color);
+  padding: 2px 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-radius: 2px;
+}
+
+.equation-interactive .eq-threshold {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 8px;
+}
+
+/* Parameter Preset Toolbar */
+.preset-toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.preset-btn {
+  background: #1a1a1a;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.preset-btn:hover {
+  background: #2a2a2a;
+  border-color: #555;
+}
+
+.preset-btn:active {
+  background: #333;
+}
+
+/* Parameter Tabs */
+.param-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  color: var(--text-color);
+  border-bottom-color: var(--text-color);
+}
+
+/* Smart Visibility Toggle */
+.visibility-toggle {
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.visibility-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+/* Parameter Editor Grid */
+#editor-grid {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px 12px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.param-row {
+  display: contents;
+}
+
+.param-row.hidden {
+  display: none;
+}
+
+.param-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.param-label.param-r {
+  color: var(--color-r);
+}
+.param-label.param-x {
+  color: var(--color-x);
+}
+.param-label.param-y {
+  color: var(--color-y);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: var(--border-color);
+  flex: 1;
+  cursor: pointer;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: var(--text-color);
+  border: 2px solid var(--bg-color);
+  outline: 1px solid var(--text-color);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  height: 16px;
+  width: 16px;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  outline: 2px solid var(--text-color);
+  outline-offset: 2px;
+}
+
+input[type="number"],
+select {
+  background: #0a0a0a;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 4px 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border-radius: 3px;
+  width: 70px;
+}
+
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: #555;
+}
+
+select {
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Global Controls */
+#global-controls {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px 12px;
+  padding-top: 15px;
+  margin-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Action Controls */
+.action-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 15px;
+  margin-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+button {
+  background: #0a0a0a;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 7px 14px;
+  font-family: var(--font-main);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+button:hover {
+  background: #1a1a1a;
+  border-color: #555;
+}
+
+button:active {
+  background: #2a2a2a;
+}
+
+button:disabled {
+  background: #0a0a0a;
+  color: var(--border-color);
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+/* Checkpoint and Animation Sections */
+.checkpoint-section,
+.animation-section {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
+}
+
+.section-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+#checkpoint-list {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #0a0a0a;
+}
+
+.checkpoint-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #1a1a1a;
+  background: #0a0a0a;
+  cursor: move;
+  transition: background 0.15s;
+}
+
+.checkpoint-item:hover {
+  background: #111;
+}
+
+.checkpoint-item.dragging {
+  opacity: 0.5;
+  background: #1a1a1a;
+}
+
+.checkpoint-drag-handle {
+  color: #555;
+  font-size: 14px;
+  cursor: grab;
+  user-select: none;
+}
+
+.checkpoint-drag-handle:active {
+  cursor: grabbing;
+}
+
+.checkpoint-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkpoint-name {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.checkpoint-duration {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.checkpoint-duration label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.checkpoint-duration input[type="number"] {
+  width: 50px;
+  padding: 2px 4px;
+  font-size: 11px;
+}
+
+.checkpoint-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.tool-btn {
+  background: #1a1a1a;
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.anim-mode-select {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.anim-mode-select label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+#phase-controls,
+#sequence-controls {
+  margin: 10px 0;
+  padding: 12px;
+  background: #0a0a0a;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+#phase-controls label,
+#sequence-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#phase-speed {
+  flex: 1;
+}
+
+#save-checkpoint-btn,
+#animate-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Status Bar */
+#status-bar {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Keyboard Shortcuts Help */
+.shortcuts-help {
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+.shortcuts-help summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.shortcuts-help summary:hover {
+  color: var(--text-color);
+}
+
+.shortcuts-list {
+  padding: 10px 0;
+  display: grid;
+  gap: 6px;
+}
+
+.shortcuts-list div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+kbd {
+  background: #1a1a1a;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  box-shadow: 0 1px 0 var(--border-color);
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .canvas-column {
+    width: 600px;
+  }
+
+  #canvas {
+    width: 600px;
+    height: 600px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .app-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .canvas-column {
+    width: 100%;
+    height: auto;
+    min-height: 400px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  #canvas {
+    width: 400px;
+    height: 400px;
+  }
+
+  .controls-column {
+    height: auto;
+    overflow-y: visible;
+  }
+}
+
+/* Phase Animation Controls */
+.phase-animation-controls {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: #0a0a0a;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.subsection-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+}
+
+.phase-param-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.phase-param-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 45px 35px;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.phase-param-row label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+
+.phase-param-row input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.phase-param-row input[type="range"] {
+  flex: 1;
+}
+
+.phase-param-row input[type="range"]:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.phase-speed-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.phase-direction {
+  padding: 4px 8px;
+  font-size: 12px;
+  min-width: 35px;
+}
+
+.phase-direction:disabled {
+  opacity: 0.3;
+}
+
+.phase-direction[data-direction="-1"] {
+  background: #2a1a1a;
+}
+
+/* Checkpoint name input */
+.checkpoint-name-input {
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 4px;
+  width: 100%;
+  border-radius: 2px;
+}
+
+.checkpoint-name-input:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checkpoint-name-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+/* Power display in equations */
+.equation-interactive sup {
+  font-size: 10px;
+  vertical-align: super;
+  line-height: 0;
+}
+
+.equation-interactive sup .eq-number {
+  padding: 1px 3px;
+}
+
+/* Toggle controls */
+.toggle-control {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.toggle-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: #1a1a1a;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.toggle-btn:hover {
+  background: #252525;
+  border-color: #444;
+}
+
+.toggle-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}

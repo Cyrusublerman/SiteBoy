@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>wave interferance 2</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spatial Ring Distortion</title>
+  <link rel="stylesheet" href="rings.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Left Column: Canvas (Fixed) -->
+    <div class="canvas-column">
+      <canvas id="canvas"></canvas>
+      <div id="canvas-hud"></div>
+    </div>
+
+    <!-- Right Column: Controls (Scrollable) -->
+    <div class="controls-column">
+      <h1>Spatial Ring Distortion</h1>
+
+      <!-- Interactive Equation Display -->
+      <div id="equation-display-interactive" class="equation-interactive"></div>
+
+      <!-- Parameter Preset Toolbar -->
+      <div class="preset-toolbar">
+        <button class="preset-btn" onclick="window.adjustFrequency(5)">+5 Rings</button>
+        <button class="preset-btn" onclick="window.adjustFrequency(-5)">-5 Rings</button>
+        <button class="preset-btn" onclick="window.invertAmplitude()">Invert</button>
+        <button class="preset-btn" onclick="window.doubleFrequency()">2× Freq</button>
+        <button class="preset-btn" onclick="window.halveFrequency()">½ Freq</button>
+        <button class="preset-btn" onclick="window.clearAll()">Clear All</button>
+      </div>
+
+      <!-- Parameter Tabs -->
+      <div class="param-tabs">
+        <button class="tab-btn active" data-tab="r">R Equation</button>
+        <button class="tab-btn" data-tab="x">X Equation</button>
+        <button class="tab-btn" data-tab="y">Y Equation</button>
+        <button class="tab-btn" data-tab="global">Global</button>
+      </div>
+
+      <!-- Smart Visibility Toggle -->
+      <div class="visibility-toggle">
+        <label>
+          <input type="checkbox" id="show-all-params" checked> Show all parameters
+        </label>
+      </div>
+
+      <!-- Parameter Editor Grid -->
+      <div id="editor-grid"></div>
+
+      <!-- Global Controls -->
+      <div id="global-controls"></div>
+
+      <!-- Template Selection -->
+      <div style="margin-top: 20px;">
+        <label>Landmark: <select id="template-select"></select></label>
+      </div>
+
+      <!-- Action Controls -->
+      <div class="action-controls">
+        <button id="undo-btn" disabled>Undo</button>
+        <button id="reset-y-btn">Clear Y Equation</button>
+        <button id="export-svg-btn">Export SVG</button>
+      </div>
+
+      <!-- Checkpoint Section -->
+      <div class="checkpoint-section">
+        <div class="section-title">Checkpoints</div>
+        <button id="save-checkpoint-btn">Save Checkpoint</button>
+        <div id="checkpoint-list"></div>
+      </div>
+
+      <!-- Animation Section -->
+      <div class="animation-section">
+        <div class="section-title">Animation</div>
+
+        <!-- Phase Animation Controls -->
+        <div class="phase-animation-controls">
+          <div class="subsection-title">Phase Animation (Independent)</div>
+
+          <div class="phase-param-grid">
+            <!-- R phases -->
+            <div class="phase-param-row">
+              <label><input type="checkbox" class="phase-enable" data-param="phi_r1"> φr₁</label>
+              <input type="range" class="phase-speed" data-param="phi_r1" min="0.1" max="5" step="0.1" value="1" disabled>
+              <span class="phase-speed-val">1.0×</span>
+              <button class="phase-direction" data-param="phi_r1" data-direction="1" disabled>→</button>
+            </div>
+            <div class="phase-param-row">
+              <label><input type="checkbox" class="phase-enable" data-param="phi_r2"> φr₂</label>
+              <input type="range" class="phase-speed" data-param="phi_r2" min="0.1" max="5" step="0.1" value="1" disabled>
+              <span class="phase-speed-val">1.0×</span>
+              <button class="phase-direction" data-param="phi_r2" data-direction="1" disabled>→</button>
+            </div>
+
+            <!-- X phases -->
+            <div class="phase-param-row">
+              <label><input type="checkbox" class="phase-enable" data-param="phi_x1"> φx₁</label>
+              <input type="range" class="phase-speed" data-param="phi_x1" min="0.1" max="5" step="0.1" value="1" disabled>
+              <span class="phase-speed-val">1.0×</span>
+              <button class="phase-direction" data-param="phi_x1" data-direction="1" disabled>→</button>
+            </div>
+            <div class="phase-param-row">
+              <label><input type="checkbox" class="phase-enable" data-param="phi_x2"> φx₂</label>
+              <input type="range" class="phase-speed" data-param="phi_x2" min="0.1" max="5" step="0.1" value="1" disabled>
+              <span class="phase-speed-val">1.0×</span>
+              <button class="phase-direction" data-param="phi_x2" data-direction="1" disabled>→</button>
+            </div>
+
+            <!-- Y phases -->
+            <div class="phase-param-row">
+              <label><input type="checkbox" class="phase-enable" data-param="phi_y1"> φy₁</label>
+              <input type="range" class="phase-speed" data-param="phi_y1" min="0.1" max="5" step="0.1" value="1" disabled>
+              <span class="phase-speed-val">1.0×</span>
+              <button class="phase-direction" data-param="phi_y1" data-direction="1" disabled>→</button>
+            </div>
+            <div class="phase-param-row">
+              <label><input type="checkbox" class="phase-enable" data-param="phi_y2"> φy₂</label>
+              <input type="range" class="phase-speed" data-param="phi_y2" min="0.1" max="5" step="0.1" value="1" disabled>
+              <span class="phase-speed-val">1.0×</span>
+              <button class="phase-direction" data-param="phi_y2" data-direction="1" disabled>→</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sequence Animation Mode -->
+        <div class="subsection-title" style="margin-top: 15px;">Sequence Mode (Optional)</div>
+        <div class="anim-mode-select">
+          <label><input type="radio" name="anim-mode" value="none" checked> None</label>
+          <label><input type="radio" name="anim-mode" value="sequence"> Sequence</label>
+        </div>
+
+        <div id="sequence-controls" style="display: none;">
+          <label>
+            <input type="checkbox" id="sequence-loop" checked> Loop
+          </label>
+          <div style="font-size: 11px; opacity: 0.7; margin: 5px 0;">
+            Plays through checkpoints in order. Set duration per checkpoint above.
+          </div>
+        </div>
+
+        <button id="animate-btn">Start</button>
+
+        <div style="font-size: 11px; opacity: 0.7; margin-top: 10px;">
+          Phase animations run independently and can combine with sequence mode.
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div id="status-bar"></div>
+
+      <!-- Keyboard Shortcuts Help -->
+      <div class="shortcuts-help">
+        <details>
+          <summary>Keyboard Shortcuts</summary>
+          <div class="shortcuts-list">
+            <div><kbd>↑</kbd><kbd>↓</kbd> Adjust focused parameter</div>
+            <div><kbd>Shift</kbd>+<kbd>↑↓</kbd> Adjust ×10</div>
+            <div><kbd>Ctrl</kbd>+<kbd>↑↓</kbd> Adjust ×0.1</div>
+            <div><kbd>Tab</kbd> Next parameter</div>
+            <div><kbd>Space</kbd> Play/Pause animation</div>
+            <div><kbd>Ctrl</kbd>+<kbd>Z</kbd> Undo</div>
+            <div><kbd>Ctrl</kbd>+<kbd>S</kbd> Save checkpoint</div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <script src="rings.js"></script>
+</body>
+
+</html>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>

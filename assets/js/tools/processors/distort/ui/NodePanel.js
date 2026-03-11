@@ -1,250 +1,193 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
 import { DriverPicker } from './DriverPicker.js';
 
-const BLEND_MODES = ['normal','multiply','screen','overlay','add','difference','softlight','hardlight','colordodge','colorburn'];
+const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'difference', 'darken', 'lighten'];
+const MASK_MODES = ['none', 'upload', 'luminance', 'gradient'];
 
-const TIER_LABELS = { 3: 'PRIMARY', 4: 'SECONDARY', 5: 'ADVANCED' };
-
-/**
- * NodePanel — renders a single EffectNode's controls.
- *
- * Header row:  [drag] [enable] [NAME] [SOLO] [blend] [▲/▼] [✕]
- * Universal:   opacity slider, blend mode dropdown, mask selector
- * Params:      grouped by tier (3 PRIMARY, 4 SECONDARY, 5 ADVANCED),
- *              each driveable param has a [DRV] button opening DriverPicker
- *
- * Emits onChange({ nodeIdx }) on any change.
- * Emits onRemove({ nodeIdx }) on remove click.
- * Emits onSolo({ nodeIdx }) on solo click.
- * Emits onDragStart / onDragEnd for reorder.
- */
 export class NodePanel extends BaseComponent {
   constructor(options = {}, deps = {}) {
     super({ componentType: 'node-panel', ...options }, deps);
-    this._node           = options.node;
-    this._nodeIdx        = options.nodeIdx        ?? 0;
-    this._modMapNames    = options.modMapNames    ?? [];
-    this._onChange       = options.onChange       ?? null;
-    this._onRemove       = options.onRemove       ?? null;
-    this._onSelect       = options.onSelect       ?? null;
-    this._onSolo         = options.onSolo         ?? null;
-    this._onDragStart    = options.onDragStart    ?? null;
-    this._onDragEnd      = options.onDragEnd      ?? null;
-    this._expanded       = options.expanded       ?? true;
-    this._isSolo         = options.isSolo         ?? false;
-    this._paramEls       = {};
-    this._driverPickers  = {};   // paramKey → DriverPicker instance
-    this._openDriverKey  = null;
-    this._body           = null;
+    this._node = options.node;
+    this._nodeIdx = options.nodeIdx ?? 0;
+    this._onChange = options.onChange ?? null;
+    this._onRemove = options.onRemove ?? null;
+    this._onSelect = options.onSelect ?? null;
+    this._onSolo = options.onSolo ?? null;
+    this._expanded = options.expanded ?? false;
+    this._isSolo = options.isSolo ?? false;
+
+    this._body = null;
+    this._headerEl = null;
+    this._nameEl = null;
+    this._enableBtn = null;
+    this._soloBtn = null;
+    this._openDriverKey = null;
+    this._driverPickers = {};
+    this._maskExpanded = false;
   }
 
   render() {
     super.render();
-    const node = this._node;
-    this.element.style.cssText = [
-      'border:1px solid var(--vga-grey,#555)',
-      'margin-bottom:2px',
-      'user-select:none'
-    ].join(';');
+    this.element.style.cssText = `
+      border-bottom: 1px solid var(--c-border);
+      user-select: none;
+    `;
 
-    this.element.appendChild(this._buildHeader(node));
-
-    this._body = this.createElement('div', 'node-panel-body');
-    this._body.style.cssText = `display:${this._expanded ? 'block' : 'none'};padding:4px 8px 8px`;
-
-    this._body.appendChild(this._buildUniversal(node));
-    this._body.appendChild(this._buildParams(node));
+    this.element.appendChild(this._buildHeader());
+    this._body = this.createElement('div', 'distort-node-body');
+    this._body.style.cssText = `
+      display: ${this._expanded ? 'flex' : 'none'};
+      flex-direction: column;
+      background: var(--c-bg);
+    `;
     this.element.appendChild(this._body);
-
-    return this;
+    this._rebuildBody();
+    this._syncHeaderState();
+    return this.element;
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
+  _buildHeader() {
+    const { F } = this.getF();
+    const header = this.createElement('div', 'distort-node-header');
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      height: ${F * 2}px;
+      background: var(--c-bg);
+      cursor: pointer;
+      box-sizing: border-box;
+      border-bottom: ${this._expanded ? '1px solid var(--c-border)' : 'none'};
+    `;
+    this._headerEl = header;
 
-  _buildHeader(node) {
-    const h = this.createElement('div', 'node-panel-header');
-    h.style.cssText = [
-      'display:flex', 'align-items:center', 'gap:5px',
-      'padding:3px 6px',
-      'background:var(--vga-darkgrey,#222)',
-      'cursor:pointer'
-    ].join(';');
-
-    // Drag handle
-    const drag = this.createElement('span', 'node-drag', '⠿');
-    drag.style.cssText = 'color:var(--vga-grey,#888);cursor:grab;font-size:12px;padding:0 2px;flex-shrink:0';
+    const drag = this._buildHeaderCell('⠿', 'var(--c-border)');
+    drag.style.cursor = 'grab';
     drag.draggable = true;
-    drag.addEventListener('dragstart', e => {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(this._nodeIdx));
-      this._onDragStart?.(this._nodeIdx);
+    drag.addEventListener('dragstart', event => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(this._nodeIdx));
     });
-    drag.addEventListener('dragend', () => this._onDragEnd?.(this._nodeIdx));
 
-    // Enable toggle
-    const toggle = this.createElement('input');
-    toggle.type = 'checkbox';
-    toggle.checked = node.enabled !== false;
-    toggle.title = 'Enable/disable node';
-    toggle.addEventListener('change', e => { e.stopPropagation(); node.enabled = toggle.checked; this._emit(); });
+    this._enableBtn = this._buildHeaderCell('', 'var(--c-text)');
+    this._enableBtn.addEventListener('click', event => {
+      event.stopPropagation();
+      this._node.enabled = this._node.enabled === false;
+      this._syncHeaderState();
+      this._emit();
+    });
 
-    // Name
-    const label = this.createElement('span', 'node-name', node.displayName || node.type.toUpperCase());
-    label.style.cssText = [
-      'flex:1', 'font-family:Space Mono,monospace', 'font-size:11px',
-      'letter-spacing:1px', 'color:var(--vga-white,#eee)',
-      'overflow:hidden', 'text-overflow:ellipsis', 'white-space:nowrap'
-    ].join(';');
+    this._nameEl = this.createElement('span', 'distort-node-name', (this._node.displayName || this._node.type || '').toUpperCase());
+    this._nameEl.style.cssText = `
+      flex: 1;
+      padding: 0 ${F / 2}px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.85}px;
+      text-transform: uppercase;
+    `;
 
-    // Solo
-    const soloBtn = this.createElement('span', 'node-solo', this._isSolo ? 'S•' : 'S');
-    soloBtn.title = 'Solo this node';
-    soloBtn.style.cssText = [
-      'font-family:Space Mono,monospace', 'font-size:9px',
-      'color:var(--vga-grey,#888)', 'cursor:pointer', 'padding:0 2px', 'flex-shrink:0'
-    ].join(';');
-    soloBtn.addEventListener('click', e => {
-      e.stopPropagation();
+    this._soloBtn = this._buildHeaderCell('S', 'var(--c-border)');
+    this._soloBtn.addEventListener('click', event => {
+      event.stopPropagation();
       this._onSolo?.({ nodeIdx: this._nodeIdx });
     });
-    this._soloBtn = soloBtn;
 
-    // Collapse
-    const collapseBtn = this.createElement('span', '', this._expanded ? '▲' : '▼');
-    collapseBtn.style.cssText = 'font-size:10px;color:var(--vga-grey,#888);user-select:none;flex-shrink:0';
-
-    // Remove
-    const removeBtn = this.createElement('span', '', '✕');
-    removeBtn.style.cssText = 'font-size:11px;color:var(--vga-red,#c00);cursor:pointer;padding:0 2px;user-select:none;flex-shrink:0';
-    removeBtn.addEventListener('click', e => { e.stopPropagation(); this._onRemove?.({ nodeIdx: this._nodeIdx }); });
-
-    h.append(drag, toggle, label, soloBtn, collapseBtn, removeBtn);
-    h.addEventListener('click', e => {
-      if ([removeBtn, toggle, soloBtn].includes(e.target)) return;
-      this._expanded = !this._expanded;
-      collapseBtn.textContent = this._expanded ? '▲' : '▼';
-      this._body.style.display = this._expanded ? 'block' : 'none';
-      this._onSelect?.({ nodeIdx: this._nodeIdx });
+    const removeBtn = this._buildHeaderCell('×', 'var(--c-border)');
+    removeBtn.addEventListener('click', event => {
+      event.stopPropagation();
+      this._onRemove?.({ nodeIdx: this._nodeIdx });
     });
 
-    // Drop target for drag-reorder
-    h.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; h.style.borderTop = '2px solid var(--vga-white,#eee)'; });
-    h.addEventListener('dragleave', () => { h.style.borderTop = ''; });
-    h.addEventListener('drop', e => {
-      e.preventDefault();
-      h.style.borderTop = '';
-      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
-      if (!isNaN(fromIdx) && fromIdx !== this._nodeIdx) {
+    header.append(drag, this._enableBtn, this._nameEl, this._soloBtn, removeBtn);
+
+    header.addEventListener('click', () => this._onSelect?.({ nodeIdx: this._nodeIdx }));
+    header.addEventListener('dragover', event => {
+      event.preventDefault();
+      header.style.borderTop = '2px solid var(--c-text)';
+    });
+    header.addEventListener('dragleave', () => {
+      header.style.borderTop = '';
+    });
+    header.addEventListener('drop', event => {
+      event.preventDefault();
+      header.style.borderTop = '';
+      const fromIdx = Number.parseInt(event.dataTransfer.getData('text/plain'), 10);
+      if (!Number.isNaN(fromIdx) && fromIdx !== this._nodeIdx) {
         this._onChange?.({ nodeIdx: this._nodeIdx, dragFrom: fromIdx, dragTo: this._nodeIdx });
       }
     });
 
-    return h;
+    return header;
   }
 
-  // ── Universal controls ────────────────────────────────────────────────────
-
-  _buildUniversal(node) {
-    const wrap = this.createElement('div', 'node-universal');
-    wrap.style.cssText = 'display:flex;flex-direction:column;gap:3px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--vga-grey,#555)';
-
-    // Opacity
-    wrap.appendChild(this._buildSliderRow('OPACITY', 0, 1, 0.01,
-      node.opacity ?? 1,
-      v => { node.opacity = v; this._emit(); },
-      v => `${Math.round(v * 100)}%`
-    ));
-
-    // Blend mode
-    wrap.appendChild(this._buildBlendRow(node));
-
-    // Mask
-    wrap.appendChild(this._buildMaskRow(node));
-
-    return wrap;
+  _buildHeaderCell(text, color) {
+    const { F } = this.getF();
+    const cell = this.createElement('button', 'distort-node-header-cell', text);
+    cell.type = 'button';
+    cell.style.cssText = `
+      width: ${F * 2}px;
+      height: ${F * 2}px;
+      border: none;
+      border-right: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: ${color};
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      cursor: pointer;
+    `;
+    return cell;
   }
 
-  _buildSliderRow(labelText, min, max, step, initial, onChange, fmt) {
-    const row = this.createElement('div', 'node-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
+  _syncHeaderState() {
+    const enabled = this._node.enabled !== false;
+    if (this._enableBtn) this._enableBtn.textContent = enabled ? '✓' : '○';
+    if (this._nameEl) this._nameEl.style.color = enabled ? 'var(--c-text)' : 'var(--c-border)';
+    if (this._nameEl) this._nameEl.style.opacity = enabled ? '1' : '0.55';
+    if (this._soloBtn) {
+      this._soloBtn.style.background = this._isSolo ? 'var(--c-text)' : 'var(--c-bg)';
+      this._soloBtn.style.color = this._isSolo ? 'var(--c-bg)' : 'var(--c-border)';
+    }
+    if (this._headerEl) {
+      this._headerEl.style.borderBottom = this._expanded ? '1px solid var(--c-border)' : 'none';
+    }
+    if (this._body) {
+      this._body.style.display = this._expanded ? 'flex' : 'none';
+    }
+  }
 
-    const lbl = this.createElement('span', '', labelText);
-    lbl.style.cssText = 'font-size:10px;color:var(--vga-grey,#888);width:64px;font-family:Space Mono,monospace;flex-shrink:0';
+  _rebuildBody() {
+    if (!this._body) return;
+    while (this._body.firstChild) this._body.removeChild(this._body.firstChild);
+    this._closeDriverPicker();
 
-    const slider = this.createElement('input');
-    slider.type = 'range'; slider.min = min; slider.max = max; slider.step = step;
-    slider.value = initial;
-    slider.style.cssText = 'flex:1';
-
-    const valEl = this.createElement('span', '', fmt ? fmt(initial) : initial);
-    valEl.style.cssText = 'font-size:10px;color:var(--vga-white,#eee);width:40px;text-align:right;font-family:Space Mono,monospace;flex-shrink:0';
-
-    slider.addEventListener('input', () => {
-      const v = parseFloat(slider.value);
-      valEl.textContent = fmt ? fmt(v) : v;
-      onChange(v);
+    this._buildRangeRow({
+      key: '__opacity__',
+      label: 'OPACITY',
+      value: this._node.opacity ?? 1,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      onChange: value => {
+        this._node.opacity = value;
+        this._emit();
+      }
     });
 
-    row.append(lbl, slider, valEl);
-    return row;
-  }
-
-  _buildBlendRow(node) {
-    const row = this.createElement('div', 'node-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
-
-    const lbl = this.createElement('span', '', 'BLEND');
-    lbl.style.cssText = 'font-size:10px;color:var(--vga-grey,#888);width:64px;font-family:Space Mono,monospace;flex-shrink:0';
-
-    const sel = this.createElement('select');
-    BLEND_MODES.forEach(m => {
-      const opt = this.createElement('option', '', m.toUpperCase());
-      opt.value = m;
-      if ((node.blendMode ?? 'normal') === m) opt.selected = true;
-      sel.appendChild(opt);
+    this._buildSelectRow({
+      label: 'BLEND MODE',
+      value: this._node.blendMode ?? 'normal',
+      options: BLEND_MODES,
+      onChange: value => {
+        this._node.blendMode = value;
+        this._emit();
+      }
     });
-    sel.style.cssText = [
-      'flex:1', 'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-      'border:1px solid var(--vga-grey,#555)',
-      'font-family:Space Mono,monospace', 'font-size:9px', 'padding:1px 3px'
-    ].join(';');
-    sel.addEventListener('change', () => { node.blendMode = sel.value; this._emit(); });
 
-    row.append(lbl, sel);
-    return row;
-  }
-
-  _buildMaskRow(node) {
-    const row = this.createElement('div', 'node-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
-
-    const lbl = this.createElement('span', '', 'MASK');
-    lbl.style.cssText = 'font-size:10px;color:var(--vga-grey,#888);width:64px;font-family:Space Mono,monospace;flex-shrink:0';
-
-    const sel = this.createElement('select');
-    ['none', 'upload', 'luminance', 'gradient'].forEach(m => {
-      const opt = this.createElement('option', '', m.toUpperCase());
-      opt.value = m;
-      if ((node.maskMode ?? 'none') === m) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    sel.style.cssText = [
-      'flex:1', 'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-      'border:1px solid var(--vga-grey,#555)',
-      'font-family:Space Mono,monospace', 'font-size:9px', 'padding:1px 3px'
-    ].join(';');
-    sel.addEventListener('change', () => { node.maskMode = sel.value; this._emit(); });
-
-    row.append(lbl, sel);
-    return row;
-  }
-
-  // ── Params grouped by tier ────────────────────────────────────────────────
-
-  _buildParams(node) {
-    const wrap = this.createElement('div', 'node-params');
-
-    const paramDefs = node.getParamDefs ? node.getParamDefs() : {};
+    const paramDefs = this._node.getParamDefs ? this._node.getParamDefs() : {};
     const byTier = {};
     for (const [key, def] of Object.entries(paramDefs)) {
       const tier = def.tier ?? 3;
@@ -254,186 +197,465 @@ export class NodePanel extends BaseComponent {
 
     for (const tier of [3, 4, 5]) {
       if (!byTier[tier]?.length) continue;
-
-      const tierLabel = this.createElement('div', 'tier-label', TIER_LABELS[tier] ?? `TIER ${tier}`);
-      tierLabel.style.cssText = [
-        'font-family:Space Mono,monospace', 'font-size:8px',
-        'color:var(--vga-grey,#555)', 'letter-spacing:1px',
-        'margin-top:6px', 'margin-bottom:2px'
-      ].join(';');
-      wrap.appendChild(tierLabel);
-
+      this._appendDivider();
       for (const [key, def] of byTier[tier]) {
-        wrap.appendChild(this._buildParamRow(key, def, node));
+        this._buildParamRow(key, def);
       }
     }
 
-    return wrap;
+    this._appendDivider();
+    this._buildMaskBlock();
   }
 
-  _buildParamRow(key, def, node) {
-    const row = this.createElement('div', 'param-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-top:3px';
-
-    const label = def.label || key;
-    const lbl = this.createElement('span', '', label.toUpperCase());
-    lbl.style.cssText = [
-      'font-size:9px', 'color:var(--vga-grey,#888)',
-      'width:64px', 'flex-shrink:0', 'overflow:hidden',
-      'text-overflow:ellipsis', 'white-space:nowrap',
-      'font-family:Space Mono,monospace'
-    ].join(';');
-
-    let control;
-
+  _buildParamRow(key, def) {
     if (def.type === 'select') {
-      control = this.createElement('select');
-      (def.options || []).forEach(opt => {
-        const o = this.createElement('option', '', opt.toString().toUpperCase());
-        o.value = opt;
-        if (String(node.params[key]) === String(opt)) o.selected = true;
-        control.appendChild(o);
+      this._buildSelectRow({
+        label: (def.label || key).toUpperCase(),
+        value: String(this._node.params[key]),
+        options: (def.options || []).map(option => String(option)),
+        onChange: value => {
+          this._node.params[key] = value;
+          this._emit();
+        }
       });
-      control.style.cssText = [
-        'flex:1', 'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-        'border:1px solid var(--vga-grey,#555)',
-        'font-family:Space Mono,monospace', 'font-size:9px', 'padding:1px 3px'
-      ].join(';');
-      control.addEventListener('change', () => { node.params[key] = control.value; this._emit(); });
-
-    } else if (def.type === 'toggle') {
-      control = this.createElement('input');
-      control.type = 'checkbox';
-      control.checked = !!node.params[key];
-      control.addEventListener('change', () => { node.params[key] = control.checked; this._emit(); });
-
-    } else {
-      // Numeric slider + value display
-      control = this.createElement('input');
-      control.type = 'range';
-      control.min  = def.min  ?? 0;
-      control.max  = def.max  ?? 1;
-      control.step = def.step ?? 0.01;
-      control.value = node.params[key];
-      control.style.cssText = 'flex:1';
-
-      const unit    = def.unit ?? '';
-      const valEl   = this.createElement('span', '', this._fmt(node.params[key], def) + unit);
-      valEl.style.cssText = 'font-size:9px;color:var(--vga-white,#eee);width:44px;text-align:right;font-family:Space Mono,monospace;flex-shrink:0';
-
-      control.addEventListener('input', () => {
-        node.params[key] = parseFloat(control.value);
-        valEl.textContent = this._fmt(node.params[key], def) + unit;
-        this._emit();
-      });
-
-      this._paramEls[key] = { control, valEl };
-      row.append(lbl, control, valEl);
-
-      // Driver button for driveable params
-      if (def.driveable) {
-        const drvBtn = this._driverBtn(key, def, node);
-        row.appendChild(drvBtn);
-      }
-
-      return row;
-    }
-
-    this._paramEls[key] = { control };
-    row.append(lbl, control);
-
-    if (def.driveable && def.type !== 'toggle') {
-      row.appendChild(this._driverBtn(key, def, node));
-    }
-    return row;
-  }
-
-  _driverBtn(key, def, node) {
-    if (!node.drivers) node.drivers = {};
-    const btn = this.createElement('button', 'drv-btn', 'DRV');
-    btn.title = `Set expression/image driver for ${key}`;
-    const hasDriver = node.drivers[key]?.mode && node.drivers[key].mode !== 'none';
-    btn.style.cssText = [
-      'background:var(--vga-darkgrey,#222)',
-      `color:${hasDriver ? 'var(--vga-white,#eee)' : 'var(--vga-grey,#555)'}`,
-      `border:1px solid ${hasDriver ? 'var(--vga-white,#eee)' : 'var(--vga-grey,#555)'}`,
-      'font-family:Space Mono,monospace', 'font-size:8px', 'padding:1px 4px',
-      'cursor:pointer', 'flex-shrink:0'
-    ].join(';');
-
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      this._toggleDriverPicker(key, def, node, btn);
-    });
-    return btn;
-  }
-
-  _toggleDriverPicker(key, def, node, btn) {
-    // Close any open picker
-    if (this._openDriverKey && this._openDriverKey !== key) {
-      this._closeDriverPicker();
-    }
-
-    if (this._openDriverKey === key) {
-      this._closeDriverPicker();
       return;
     }
 
-    this._openDriverKey = key;
-    if (!node.drivers) node.drivers = {};
+    if (def.type === 'toggle') {
+      this._buildToggleRow({
+        label: (def.label || key).toUpperCase(),
+        value: !!this._node.params[key],
+        onChange: value => {
+          this._node.params[key] = value;
+          this._emit();
+        }
+      });
+      return;
+    }
 
+    this._buildRangeRow({
+      key,
+      label: (def.label || key).toUpperCase(),
+      value: this._node.params[key],
+      min: def.min ?? 0,
+      max: def.max ?? 1,
+      step: def.step ?? 0.01,
+      driveable: !!def.driveable,
+      onChange: value => {
+        this._node.params[key] = value;
+        this._emit();
+      }
+    });
+  }
+
+  _buildRangeRow(config) {
+    const { F } = this.getF();
+    const wrap = this.createElement('div', 'distort-param-wrap');
+    wrap.style.cssText = 'display:flex; flex-direction:column;';
+
+    const row = this.createElement('div', 'distort-param-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: ${F / 2}px;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+
+    const label = this._rowLabel(config.label);
+    const slider = this.createElement('input', 'distort-param-slider');
+    slider.type = 'range';
+    slider.min = String(config.min);
+    slider.max = String(config.max);
+    slider.step = String(config.step);
+    slider.value = String(config.value ?? config.min);
+    slider.style.cssText = `
+      flex: 1;
+      margin: 0;
+      accent-color: var(--c-text);
+      cursor: pointer;
+      opacity: 1;
+    `;
+
+    const precision = this._precisionFor(config.step);
+    const valueEl = this.createElement('span', 'distort-param-value', this._formatValue(config.value, precision));
+    valueEl.style.cssText = `
+      width: ${F * 4}px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      color: var(--c-text);
+      flex-shrink: 0;
+    `;
+
+    slider.addEventListener('input', () => {
+      valueEl.textContent = this._formatValue(Number(slider.value), precision);
+    });
+    slider.addEventListener('change', () => {
+      config.onChange(Number(slider.value));
+    });
+
+    row.append(label, slider, valueEl);
+
+    if (config.driveable) {
+      const driverBtn = this.createElement('button', 'distort-driver-button', '+D');
+      driverBtn.type = 'button';
+      driverBtn.style.cssText = `
+        width: ${F * 2}px;
+        height: ${F * 2}px;
+        border: 1px solid var(--c-border);
+        background: var(--c-bg);
+        color: var(--c-text);
+        font-family: 'Space Mono', monospace;
+        font-size: ${F * 0.7}px;
+        box-sizing: border-box;
+        cursor: pointer;
+        flex-shrink: 0;
+        opacity: 0;
+        transition: opacity 120ms ease;
+      `;
+      const syncDriverState = () => {
+        const driver = this._node.modulation?.[config.key];
+        const active = !!driver && driver.mode && driver.mode !== 'none';
+        slider.disabled = active;
+        slider.style.opacity = active ? '0.35' : '1';
+        driverBtn.style.opacity = active || row.matches(':hover') ? '1' : '0';
+        driverBtn.style.background = active ? 'var(--c-accent)' : 'var(--c-bg)';
+        driverBtn.style.color = active ? 'var(--c-bg)' : 'var(--c-text)';
+      };
+      row.addEventListener('mouseenter', syncDriverState);
+      row.addEventListener('mouseleave', syncDriverState);
+      driverBtn.addEventListener('click', event => {
+        event.stopPropagation();
+        this._toggleDriverPicker(config.key, config.label, wrap, driverBtn, slider, syncDriverState);
+      });
+      row.appendChild(driverBtn);
+      syncDriverState();
+    }
+
+    wrap.appendChild(row);
+    this._body.appendChild(wrap);
+  }
+
+  _buildSelectRow(config) {
+    const { F } = this.getF();
+    const row = this.createElement('div', 'distort-select-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: ${F / 2}px;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+
+    const label = this._rowLabel(config.label);
+    const select = this.createElement('select', 'distort-select-input');
+    select.style.cssText = `
+      flex: 1;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      box-sizing: border-box;
+    `;
+    for (const optionValue of config.options) {
+      const option = this.createElement('option');
+      option.value = optionValue;
+      option.textContent = String(optionValue).toUpperCase();
+      if (String(optionValue) === String(config.value)) option.selected = true;
+      select.appendChild(option);
+    }
+    select.addEventListener('change', () => config.onChange(select.value));
+    row.append(label, select);
+    this._body.appendChild(row);
+  }
+
+  _buildToggleRow(config) {
+    const { F } = this.getF();
+    const row = this.createElement('div', 'distort-toggle-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: ${F / 2}px;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+
+    const label = this._rowLabel(config.label);
+    const button = this.createElement('button', 'distort-toggle-button', config.value ? 'ON' : 'OFF');
+    button.type = 'button';
+    button.style.cssText = `
+      width: ${F * 4}px;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: ${config.value ? 'var(--c-text)' : 'var(--c-bg)'};
+      color: ${config.value ? 'var(--c-bg)' : 'var(--c-text)'};
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      cursor: pointer;
+      box-sizing: border-box;
+    `;
+    button.addEventListener('click', () => {
+      const next = button.textContent !== 'ON';
+      button.textContent = next ? 'ON' : 'OFF';
+      button.style.background = next ? 'var(--c-text)' : 'var(--c-bg)';
+      button.style.color = next ? 'var(--c-bg)' : 'var(--c-text)';
+      config.onChange(next);
+    });
+    row.append(label, button);
+    this._body.appendChild(row);
+  }
+
+  _buildMaskBlock() {
+    const { F } = this.getF();
+    if (!this._node.mask) {
+      this._node.mask = { enabled: false, source: 'none', invert: false, feather: 0, data: null };
+    }
+
+    const header = this.createElement('button', 'distort-mask-header');
+    header.type = 'button';
+    header.textContent = `${this._maskExpanded ? '▾' : '▸'} MASK`;
+    header.style.cssText = `
+      width: 100%;
+      height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border: none;
+      border-top: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-border);
+      text-align: left;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-sizing: border-box;
+    `;
+    header.addEventListener('click', () => {
+      this._maskExpanded = !this._maskExpanded;
+      this._rebuildBody();
+    });
+    this._body.appendChild(header);
+
+    if (!this._maskExpanded) return;
+
+    this._buildSelectRow({
+      label: 'SOURCE',
+      value: this._node.mask.source ?? 'none',
+      options: MASK_MODES,
+      onChange: value => {
+        this._node.mask.source = value;
+        this._node.mask.enabled = value !== 'none';
+        if (value !== 'upload') {
+          this._node.mask._sourcePixels = null;
+          this._node.mask._sourceW = 0;
+          this._node.mask._sourceH = 0;
+        }
+        this._emit();
+        this._rebuildBody();
+      }
+    });
+
+    if (this._node.mask.source === 'upload') {
+      this._buildFileRow('UPLOAD', this._node.mask._fileName || 'NO MASK', file => this._loadMaskFile(file));
+    }
+
+    if ((this._node.mask.source ?? 'none') !== 'none') {
+      this._buildToggleRow({
+        label: 'INVERT',
+        value: !!this._node.mask.invert,
+        onChange: value => {
+          this._node.mask.invert = value;
+          this._emit();
+        }
+      });
+
+      this._buildRangeRow({
+        key: '__mask_feather__',
+        label: 'FEATHER',
+        value: this._node.mask.feather ?? 0,
+        min: 0,
+        max: 20,
+        step: 1,
+        onChange: value => {
+          this._node.mask.feather = value;
+          this._emit();
+        }
+      });
+    }
+  }
+
+  _buildFileRow(labelText, fileName, onSelectFile) {
+    const { F } = this.getF();
+    const row = this.createElement('div', 'distort-file-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: ${F / 2}px;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+
+    const label = this._rowLabel(labelText);
+    const button = this.createElement('button', 'distort-file-button', 'CHOOSE');
+    button.type = 'button';
+    button.style.cssText = `
+      width: ${F * 4}px;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      cursor: pointer;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    `;
+
+    const name = this.createElement('span', 'distort-file-name', fileName.toUpperCase());
+    name.style.cssText = `
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      color: var(--c-text);
+    `;
+
+    const input = this.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    input.addEventListener('change', () => onSelectFile(input.files?.[0] ?? null));
+    button.addEventListener('click', () => input.click());
+
+    row.append(label, button, name, input);
+    this._body.appendChild(row);
+  }
+
+  _toggleDriverPicker(key, label, wrap, button, slider, syncDriverState) {
+    if (this._openDriverKey && this._openDriverKey !== key) {
+      this._closeDriverPicker();
+    }
+    if (this._openDriverKey === key) {
+      this._closeDriverPicker();
+      syncDriverState();
+      return;
+    }
+
+    if (!this._node.modulation) this._node.modulation = {};
+    this._openDriverKey = key;
     const picker = new DriverPicker({
       paramKey: key,
-      label: def.label || key,
-      driver: node.drivers[key] ?? { mode: 'none', expr: '' },
-      onDriverChange: ({ mode, expr, imageAsset }) => {
-        node.drivers[key] = { mode, expr, imageAsset };
-        // Update button highlight
-        const active = mode !== 'none';
-        btn.style.color  = active ? 'var(--vga-white,#eee)' : 'var(--vga-grey,#555)';
-        btn.style.borderColor = active ? 'var(--vga-white,#eee)' : 'var(--vga-grey,#555)';
+      label,
+      driver: this._node.modulation[key] ?? { mode: 'none', expr: '' },
+      onClose: () => {
+        this._closeDriverPicker();
+        syncDriverState();
+      },
+      onDriverChange: driver => {
+        if (driver.mode === 'none') {
+          delete this._node.modulation[key];
+        } else {
+          this._node.modulation[key] = driver;
+        }
+        slider.disabled = driver.mode !== 'none';
+        syncDriverState();
         this._emit();
       }
     }, this.deps);
-    picker.render();
-
-    // Insert directly after the param row
-    btn.closest('.param-row')?.after(picker.element);
+    wrap.appendChild(picker.render());
     this._driverPickers[key] = picker;
+    syncDriverState();
   }
 
   _closeDriverPicker() {
     const key = this._openDriverKey;
     if (!key) return;
     const picker = this._driverPickers[key];
-    if (picker) {
-      picker.element.remove();
-      picker.destroy();
-      delete this._driverPickers[key];
-    }
+    picker?.element?.remove?.();
+    picker?.destroy?.();
+    delete this._driverPickers[key];
     this._openDriverKey = null;
   }
 
-  // ── Misc ─────────────────────────────────────────────────────────────────
+  _loadMaskFile(file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = new OffscreenCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, img.width, img.height);
+      URL.revokeObjectURL(url);
+      this._node.mask._sourcePixels = data.data;
+      this._node.mask._sourceW = img.width;
+      this._node.mask._sourceH = img.height;
+      this._node.mask._fileName = file.name;
+      this._node.mask.enabled = true;
+      this._node.mask.source = 'upload';
+      this._emit();
+      this._rebuildBody();
+    };
+    img.src = url;
+  }
+
+  _appendDivider() {
+    const divider = this.createElement('div');
+    divider.style.cssText = 'height: 1px; background: var(--c-border);';
+    this._body.appendChild(divider);
+  }
+
+  _rowLabel(text) {
+    const { F } = this.getF();
+    const label = this.createElement('span', 'distort-row-label', text);
+    label.style.cssText = `
+      width: ${F * 7}px;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      color: var(--c-text);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    `;
+    return label;
+  }
+
+  _precisionFor(step) {
+    const text = String(step ?? 1);
+    const idx = text.indexOf('.');
+    return idx === -1 ? 0 : text.length - idx - 1;
+  }
+
+  _formatValue(value, precision) {
+    const numeric = Number(value ?? 0);
+    return Number.isFinite(numeric) ? numeric.toFixed(precision) : String(value ?? 0);
+  }
 
   setSolo(isSolo) {
     this._isSolo = isSolo;
-    if (this._soloBtn) this._soloBtn.textContent = isSolo ? 'S•' : 'S';
-    this.element.style.opacity = isSolo ? '1' : '0.5';
+    this._syncHeaderState();
   }
 
-  updateModMapNames(names) { this._modMapNames = names; }
-
-  _fmt(v, def) {
-    if (def.step >= 1) return Math.round(v).toString();
-    return parseFloat(v.toFixed(3)).toString();
+  _emit() {
+    this._onChange?.({ nodeIdx: this._nodeIdx });
   }
-
-  _emit() { this._onChange?.({ nodeIdx: this._nodeIdx }); }
 
   destroy() {
     this._closeDriverPicker();
-    Object.values(this._driverPickers).forEach(p => p.destroy());
+    Object.values(this._driverPickers).forEach(picker => picker.destroy?.());
+    this._driverPickers = {};
     super.destroy();
   }
 }

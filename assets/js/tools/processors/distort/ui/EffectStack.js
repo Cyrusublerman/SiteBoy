@@ -1,207 +1,202 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
 import { NodePanel } from './NodePanel.js';
 import { CategoryPicker } from './CategoryPicker.js';
-import { REGISTRY } from '../nodes/registry.js';
 
-/**
- * EffectStack — ordered list of EffectNodes with UI controls.
- *
- * Undo/redo is NOT managed here; it lives in DistortToolbar / History held by
- * the parent host.  EffectStack emits onStackChange(stack) and onSnapshot()
- * to request a history snapshot.
- *
- * Drag-to-reorder via HTML5 drag events on NodePanel headers.
- */
 export class EffectStack extends BaseComponent {
   constructor(options = {}, deps = {}) {
     super({ componentType: 'effect-stack', ...options }, deps);
-    this._stack          = options.stack          ?? [];
-    this._appState       = options.appState       ?? null;
-    this._onStackChange  = options.onStackChange  ?? null;
-    this._onSnapshot     = options.onSnapshot     ?? null;  // request history snapshot
-    this._panels         = [];
-    this._soloIdx        = -1;
-    this._listEl         = null;
-    this._pickerEl       = null;
-    this._pickerOpen     = false;
-    this._picker         = null;
+    this._nodes = options.nodes ?? [];
+    this._onChange = options.onChange ?? null;
+
+    this._soloNodeId = null;
+    this._expandedNodeId = null;
+    this._pickerOpen = false;
+
+    this._addButton = null;
+    this._contentEl = null;
+    this._picker = null;
+    this._panels = [];
   }
 
   render() {
     super.render();
-    this.element.style.cssText = 'display:flex;flex-direction:column;height:100%;overflow:hidden;';
+    const { F } = this.getF();
 
-    this._buildToolbar();
-    this._listEl = this.createElement('div', 'effect-list');
-    this._listEl.style.cssText = 'flex:1;overflow-y:auto;padding:4px;';
-    this.element.appendChild(this._listEl);
+    this.element.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    `;
 
-    this._rebuildPanels();
-    return this;
+    this._addButton = this.createElement('button', 'distort-stack-add', '+ ADD EFFECT');
+    this._addButton.type = 'button';
+    this._addButton.style.cssText = `
+      width: 100%;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.85}px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    `;
+    this._addButton.addEventListener('mouseenter', () => {
+      this._addButton.style.background = 'var(--c-text)';
+      this._addButton.style.color = 'var(--c-bg)';
+    });
+    this._addButton.addEventListener('mouseleave', () => {
+      this._addButton.style.background = 'var(--c-bg)';
+      this._addButton.style.color = 'var(--c-text)';
+    });
+    this._addButton.addEventListener('click', () => {
+      this._pickerOpen = !this._pickerOpen;
+      this._renderContent();
+    });
+    this.element.appendChild(this._addButton);
+
+    this._contentEl = this.createElement('div', 'distort-stack-content');
+    this._contentEl.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      border-top: 1px solid var(--c-border);
+    `;
+    this.element.appendChild(this._contentEl);
+
+    this._renderContent();
+    return this.element;
   }
 
-  // ── Toolbar ──────────────────────────────────────────────────────────────
-
-  _buildToolbar() {
-    const bar = this.createElement('div', 'stack-toolbar');
-    bar.style.cssText = [
-      'display:flex', 'gap:4px', 'padding:4px 6px',
-      'background:var(--vga-darkgrey,#222)',
-      'border-bottom:1px solid var(--vga-grey,#555)',
-      'flex-wrap:wrap', 'flex-shrink:0'
-    ].join(';');
-
-    const addBtn   = this._btn('+ ADD',   () => this._togglePicker());
-    const clearBtn = this._btn('CLEAR',   () => this._clearAll());
-    const soloBtn  = this._btn('SOLO OFF', () => this._clearSolo());
-    soloBtn.title  = 'Clear solo mode';
-
-    bar.append(addBtn, clearBtn, soloBtn);
-    this.element.appendChild(bar);
-
-    // CategoryPicker panel (hidden until toggled)
-    this._picker = new CategoryPicker({
-      onSelect: entry => { this._addNode(entry); this._togglePicker(); }
-    }, this.deps);
-    this._picker.render();
-    this._picker.element.style.display = 'none';
-    this.element.appendChild(this._picker.element);
-  }
-
-  _togglePicker() {
-    this._pickerOpen = !this._pickerOpen;
-    this._picker.element.style.display = this._pickerOpen ? 'block' : 'none';
-    if (this._pickerOpen) this._picker.focus();
-  }
-
-  // ── Stack mutation ────────────────────────────────────────────────────────
-
-  _addNode(entry) {
-    this._onSnapshot?.();
-    const node = entry.factory();
-    node.enabled   = true;
-    node.opacity   = 1;
-    node.blendMode = 'normal';
-    node.maskMode  = 'none';
-    node.modulation = {};
-    node.drivers    = {};
-    this._stack.push(node);
-    this._rebuildPanels();
-    this._emit();
-  }
-
-  _removeNode(idx) {
-    this._onSnapshot?.();
-    this._stack.splice(idx, 1);
-    if (this._soloIdx >= this._stack.length) this._soloIdx = -1;
-    this._rebuildPanels();
-    this._emit();
-  }
-
-  _clearAll() {
-    this._onSnapshot?.();
-    this._stack.length = 0;
-    this._soloIdx = -1;
-    this._rebuildPanels();
-    this._emit();
-  }
-
-  _clearSolo() {
-    this._soloIdx = -1;
-    this._panels.forEach((p, i) => p.setSolo(false));
-    this._emit();
-  }
-
-  _setSolo(idx) {
-    this._soloIdx = (this._soloIdx === idx) ? -1 : idx;
-    this._panels.forEach((p, i) => p.setSolo(i === this._soloIdx));
-    if (this._appState) this._appState.soloNodeId = this._soloIdx >= 0 ? this._stack[this._soloIdx]?.id : null;
-    this._emit();
-  }
-
-  _moveNode(fromIdx, toIdx) {
-    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
-    if (fromIdx >= this._stack.length || toIdx >= this._stack.length) return;
-    this._onSnapshot?.();
-    const [node] = this._stack.splice(fromIdx, 1);
-    this._stack.splice(toIdx, 0, node);
-    this._rebuildPanels();
-    this._emit();
-  }
-
-  // ── Panels ────────────────────────────────────────────────────────────────
-
-  _rebuildPanels() {
-    this._panels.forEach(p => p.destroy());
+  _renderContent() {
+    if (this._addButton) {
+      this._addButton.textContent = this._pickerOpen ? '× CLOSE' : '+ ADD EFFECT';
+    }
+    while (this._contentEl.firstChild) this._contentEl.removeChild(this._contentEl.firstChild);
+    this._panels.forEach(panel => panel.destroy());
     this._panels = [];
-    if (this._listEl) this._listEl.innerHTML = '';
+    this._picker?.destroy?.();
+    this._picker = null;
 
-    if (!this._stack.length) {
-      const empty = this.createElement('div', '', 'NO EFFECTS — click + ADD');
-      empty.style.cssText = 'text-align:center;color:var(--vga-grey,#888);font-family:Space Mono,monospace;font-size:10px;margin-top:20px';
-      this._listEl.appendChild(empty);
+    if (this._pickerOpen) {
+      this._picker = new CategoryPicker({
+        onClose: () => {
+          this._pickerOpen = false;
+          this._renderContent();
+        },
+        onSelect: entry => {
+          const node = entry?.factory?.();
+          if (!node) return;
+          this._nodes.push(node);
+          this._expandedNodeId = node.id;
+          this._pickerOpen = false;
+          this._renderContent();
+          this._emitChange({ type: 'add', nodeId: node.id, soloNodeId: this._soloNodeId });
+        }
+      }, this.deps);
+      this._contentEl.appendChild(this._picker.render());
+      this._picker.focus?.();
       return;
     }
 
-    this._stack.forEach((node, idx) => {
+    if (!this._nodes.length) {
+      const { F } = this.getF();
+      const empty = this.createElement('div', 'distort-stack-empty', 'ADD AN EFFECT TO BUILD THE PIPELINE');
+      empty.style.cssText = `
+        padding: ${F * 2}px ${F}px;
+        color: var(--c-border);
+        font-family: 'Space Mono', monospace;
+        font-size: ${F * 0.75}px;
+        text-align: center;
+      `;
+      this._contentEl.appendChild(empty);
+      return;
+    }
+
+    this._nodes.forEach((node, index) => {
       const panel = new NodePanel({
-        node, nodeIdx: idx,
-        modMapNames: this._appState ? (this._appState.getModMapNames?.() ?? []) : [],
-        isSolo: idx === this._soloIdx,
-        onChange: ({ nodeIdx, dragFrom, dragTo }) => {
-          if (dragFrom !== undefined) {
-            this._moveNode(dragFrom, dragTo);
-          } else {
-            this._emit();
-          }
-        },
-        onRemove: ({ nodeIdx }) => this._removeNode(nodeIdx),
-        onSolo:   ({ nodeIdx }) => this._setSolo(nodeIdx),
+        node,
+        nodeIdx: index,
+        expanded: node.id === this._expandedNodeId,
+        isSolo: node.id === this._soloNodeId,
         onSelect: ({ nodeIdx }) => {
-          if (this._appState) this._appState.selectedNodeIdx = nodeIdx;
-        }
+          const current = this._nodes[nodeIdx];
+          if (!current) return;
+          this._expandedNodeId = this._expandedNodeId === current.id ? null : current.id;
+          this._renderContent();
+        },
+        onChange: event => {
+          if ('dragFrom' in event && 'dragTo' in event) {
+            this._reorder(event.dragFrom, event.dragTo);
+            return;
+          }
+          this._emitChange({ type: 'nodeChange', nodeId: node.id, soloNodeId: this._soloNodeId });
+        },
+        onRemove: ({ nodeIdx }) => this._remove(nodeIdx),
+        onSolo: ({ nodeIdx }) => this._toggleSolo(nodeIdx),
       }, this.deps);
-      panel.render();
-      this._listEl.appendChild(panel.element);
       this._panels.push(panel);
+      this._contentEl.appendChild(panel.render());
     });
   }
 
-  // ── Public API ────────────────────────────────────────────────────────────
-
-  setStack(stack) {
-    this._stack = stack;
-    this._soloIdx = -1;
-    this._rebuildPanels();
+  _reorder(fromIdx, toIdx) {
+    const [node] = this._nodes.splice(fromIdx, 1);
+    this._nodes.splice(toIdx, 0, node);
+    this._renderContent();
+    this._emitChange({ type: 'reorder', nodeId: node?.id ?? null, soloNodeId: this._soloNodeId });
   }
 
-  getStack() { return this._stack; }
+  _remove(idx) {
+    const [removed] = this._nodes.splice(idx, 1);
+    if (removed?.id === this._soloNodeId) this._soloNodeId = null;
+    if (removed?.id === this._expandedNodeId) this._expandedNodeId = null;
+    this._renderContent();
+    this._emitChange({ type: 'remove', nodeId: removed?.id ?? null, soloNodeId: this._soloNodeId });
+  }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  _toggleSolo(idx) {
+    const node = this._nodes[idx];
+    if (!node) return;
+    this._soloNodeId = this._soloNodeId === node.id ? null : node.id;
+    this._renderContent();
+    this._emitChange({ type: 'solo', nodeId: node.id, soloNodeId: this._soloNodeId });
+  }
 
-  _emit() {
-    if (this._appState) {
-      this._appState.stack       = this._stack;
-      this._appState.needsRender = true;
+  _emitChange(payload) {
+    this._onChange?.(payload);
+  }
+
+  getNodes() {
+    return this._nodes;
+  }
+
+  setNodes(nodes) {
+    this._nodes = nodes ?? [];
+    if (this._soloNodeId && !this._nodes.some(node => node.id === this._soloNodeId)) {
+      this._soloNodeId = null;
     }
-    this._onStackChange?.(this._stack);
+    if (this._expandedNodeId && !this._nodes.some(node => node.id === this._expandedNodeId)) {
+      this._expandedNodeId = null;
+    }
+    if (this.element) this._renderContent();
   }
 
-  _btn(text, cb) {
-    const b = this.createElement('button', 'stack-btn', text);
-    b.style.cssText = [
-      'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-      'border:1px solid var(--vga-grey,#555)', 'font-family:Space Mono,monospace',
-      'font-size:9px', 'padding:2px 6px', 'cursor:pointer', 'letter-spacing:0.5px'
-    ].join(';');
-    b.addEventListener('click', cb);
-    return b;
+  setSoloNodeId(nodeId) {
+    this._soloNodeId = nodeId ?? null;
+    if (this.element) this._renderContent();
   }
 
   destroy() {
-    this._panels.forEach(p => p.destroy());
-    this._picker?.destroy();
+    this._panels.forEach(panel => panel.destroy());
     this._panels = [];
+    this._picker?.destroy?.();
+    this._picker = null;
     super.destroy();
   }
 }

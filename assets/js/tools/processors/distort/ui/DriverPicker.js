@@ -1,184 +1,247 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
+import { ExpressionEval } from '../core/ExpressionEval.js';
 
-/**
- * DriverPicker — per-parameter modulation driver editor.
- *
- * Modes:
- *   'none'       — no driver, slider is authoritative
- *   'expression' — math expression string; ExpressionEval evaluates at runtime
- *   'image'      — grayscale image map uploaded by user
- *
- * Emits onDriverChange({ paramKey, mode, expr, imageAsset }) on any change.
- */
+const MODES = ['none', 'expr', 'image'];
+
 export class DriverPicker extends BaseComponent {
   constructor(options = {}, deps = {}) {
     super({ componentType: 'driver-picker', ...options }, deps);
-    this._paramKey      = options.paramKey      ?? '';
-    this._label         = options.label         ?? options.paramKey ?? '';
-    this._driver        = options.driver        ?? { mode: 'none', expr: '', imageAsset: null };
+    this._paramKey = options.paramKey ?? '';
+    this._label = options.label ?? options.paramKey ?? '';
+    this._driver = {
+      mode: 'none',
+      expr: '',
+      mapId: null,
+      amount: 1,
+      invert: false,
+      imageAsset: null,
+      ...(options.driver ?? {})
+    };
     this._onDriverChange = options.onDriverChange ?? null;
-    this._modeSelect    = null;
-    this._exprInput     = null;
-    this._imgInput      = null;
-    this._previewEl     = null;
+    this._onClose = options.onClose ?? null;
+    this._previewDebounce = null;
+    this._previewEl = null;
   }
 
   render() {
     super.render();
-    this.element.style.cssText = [
-      'background:var(--vga-black,#111)',
-      'border:1px solid var(--vga-grey,#555)',
-      'padding:6px 8px', 'display:flex', 'flex-direction:column', 'gap:4px'
-    ].join(';');
+    const { F } = this.getF();
 
-    this._buildTitle();
-    this._buildModeRow();
-    this._buildExprRow();
-    this._buildImgRow();
-    this._buildPreviewRow();
-    this._refreshVisibility();
+    this.element.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      background: var(--c-bg);
+      border-top: 1px solid var(--c-border);
+    `;
 
-    return this;
+    this._buildModeRow(F);
+    this._renderModeRows();
+    return this.element;
   }
 
-  _buildTitle() {
-    const t = this.createElement('span', 'driver-title', `DRIVER — ${this._label.toUpperCase()}`);
-    t.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);letter-spacing:1px';
-    this.element.appendChild(t);
+  _buildModeRow(F) {
+    const row = this._row(F, true);
+    row.appendChild(this._labelEl(F, 'DRIVER'));
+
+    const modeSelect = this.createElement('select', 'distort-driver-mode');
+    modeSelect.style.cssText = this._fieldStyle(F);
+    MODES.forEach(mode => {
+      const option = this.createElement('option');
+      option.value = mode;
+      option.textContent = mode.toUpperCase();
+      if (mode === (this._driver.mode ?? 'none')) option.selected = true;
+      modeSelect.appendChild(option);
+    });
+    modeSelect.addEventListener('change', () => {
+      this._driver.mode = modeSelect.value;
+      if (this._driver.mode !== 'image') {
+        this._driver.imageAsset = null;
+        this._driver.mapId = null;
+      }
+      this._renderModeRows();
+      this._emit();
+    });
+
+    const close = this.createElement('button', 'distort-driver-close', '×');
+    close.type = 'button';
+    close.style.cssText = `
+      width: ${F * 2}px;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      cursor: pointer;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    `;
+    close.addEventListener('click', () => this._onClose?.());
+
+    row.append(modeSelect, close);
+    this.element.appendChild(row);
   }
 
-  _buildModeRow() {
-    const row = this.createElement('div', 'driver-mode-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
-
-    const label = this.createElement('span', '', 'MODE');
-    label.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);width:44px';
-
-    this._modeSelect = this.createElement('select');
-    for (const m of ['none', 'expression', 'image']) {
-      const opt = this.createElement('option', '', m.toUpperCase());
-      opt.value = m;
-      if (this._driver.mode === m) opt.selected = true;
-      this._modeSelect.appendChild(opt);
+  _renderModeRows() {
+    while (this.element.children.length > 1) {
+      this.element.removeChild(this.element.lastChild);
     }
-    this._modeSelect.style.cssText = [
-      'flex:1', 'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-      'border:1px solid var(--vga-grey,#555)',
-      'font-family:Space Mono,monospace', 'font-size:9px', 'padding:1px 3px'
-    ].join(';');
-    this._modeSelect.addEventListener('change', () => {
-      this._driver.mode = this._modeSelect.value;
-      this._refreshVisibility();
+
+    const { F } = this.getF();
+    const mode = this._driver.mode ?? 'none';
+    if (mode === 'expr') {
+      this._buildExprRows(F);
+    } else if (mode === 'image') {
+      this._buildImageRows(F);
+    }
+  }
+
+  _buildExprRows(F) {
+    const exprRow = this._row(F);
+    exprRow.appendChild(this._labelEl(F, 'EXPR'));
+
+    const input = this.createElement('input', 'distort-driver-expr');
+    input.type = 'text';
+    input.value = this._driver.expr ?? '';
+    input.placeholder = '= sin(t)';
+    input.style.cssText = this._fieldStyle(F);
+    input.addEventListener('input', () => {
+      this._driver.expr = input.value;
+      if (this._previewDebounce) clearTimeout(this._previewDebounce);
+      this._previewDebounce = setTimeout(() => {
+        this._updatePreview();
+        this._emit();
+      }, 300);
+    });
+    exprRow.appendChild(input);
+    this.element.appendChild(exprRow);
+
+    const previewRow = this._row(F);
+    previewRow.appendChild(this._labelEl(F, 'LIVE'));
+    this._previewEl = this.createElement('span', 'distort-driver-preview', '—');
+    this._previewEl.style.cssText = `
+      flex: 1;
+      color: var(--c-border);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+    `;
+    previewRow.appendChild(this._previewEl);
+    this.element.appendChild(previewRow);
+    this._updatePreview();
+  }
+
+  _buildImageRows(F) {
+    const fileRow = this._row(F);
+    fileRow.appendChild(this._labelEl(F, 'MAP'));
+
+    const fileButton = this.createElement('button', 'distort-driver-file-button', 'CHOOSE');
+    fileButton.type = 'button';
+    fileButton.style.cssText = `
+      width: ${F * 4}px;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      cursor: pointer;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    `;
+
+    const fileName = this.createElement('span', 'distort-driver-file-name', this._driver.imageAsset?.name?.toUpperCase?.() || 'NONE');
+    fileName.style.cssText = `
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      color: var(--c-text);
+    `;
+
+    const input = this.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    input.addEventListener('change', () => this._handleImageFile(input.files?.[0] ?? null));
+    fileButton.addEventListener('click', () => input.click());
+
+    fileRow.append(fileButton, fileName, input);
+    this.element.appendChild(fileRow);
+
+    const amountRow = this._row(F);
+    amountRow.appendChild(this._labelEl(F, 'AMOUNT'));
+    const amount = this.createElement('input', 'distort-driver-amount');
+    amount.type = 'range';
+    amount.min = '0';
+    amount.max = '1';
+    amount.step = '0.01';
+    amount.value = String(this._driver.amount ?? 1);
+    amount.style.cssText = `
+      flex: 1;
+      accent-color: var(--c-text);
+      margin: 0;
+    `;
+    const amountValue = this.createElement('span', 'distort-driver-amount-value', Number(this._driver.amount ?? 1).toFixed(2));
+    amountValue.style.cssText = `
+      width: ${F * 4}px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      color: var(--c-text);
+      flex-shrink: 0;
+    `;
+    amount.addEventListener('input', () => {
+      amountValue.textContent = Number(amount.value).toFixed(2);
+    });
+    amount.addEventListener('change', () => {
+      this._driver.amount = Number(amount.value);
       this._emit();
     });
+    amountRow.append(amount, amountValue);
+    this.element.appendChild(amountRow);
 
-    row.append(label, this._modeSelect);
-    this.element.appendChild(row);
-  }
-
-  _buildExprRow() {
-    const row = this.createElement('div', 'driver-expr-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
-
-    const label = this.createElement('span', '', 'EXPR');
-    label.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);width:44px';
-
-    this._exprInput = this.createElement('input');
-    this._exprInput.type = 'text';
-    this._exprInput.placeholder = 'e.g. sin(t)*0.5+0.5';
-    this._exprInput.value = this._driver.expr ?? '';
-    this._exprInput.style.cssText = [
-      'flex:1', 'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-      'border:1px solid var(--vga-grey,#555)',
-      'font-family:Space Mono,monospace', 'font-size:9px', 'padding:1px 4px'
-    ].join(';');
-    this._exprInput.addEventListener('input', () => {
-      this._driver.expr = this._exprInput.value;
-      this._updatePreview();
+    const invertRow = this._row(F);
+    invertRow.appendChild(this._labelEl(F, 'INVERT'));
+    const invertButton = this.createElement('button', 'distort-driver-invert', this._driver.invert ? 'ON' : 'OFF');
+    invertButton.type = 'button';
+    invertButton.style.cssText = `
+      width: ${F * 4}px;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: ${this._driver.invert ? 'var(--c-text)' : 'var(--c-bg)'};
+      color: ${this._driver.invert ? 'var(--c-bg)' : 'var(--c-text)'};
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      cursor: pointer;
+      box-sizing: border-box;
+    `;
+    invertButton.addEventListener('click', () => {
+      this._driver.invert = !this._driver.invert;
+      invertButton.textContent = this._driver.invert ? 'ON' : 'OFF';
+      invertButton.style.background = this._driver.invert ? 'var(--c-text)' : 'var(--c-bg)';
+      invertButton.style.color = this._driver.invert ? 'var(--c-bg)' : 'var(--c-text)';
       this._emit();
     });
-
-    const hint = this.createElement('span', 'expr-hint', '?');
-    hint.title = [
-      'Variables: t (0-1 normalised frame), frame, frameCount,',
-      'x, y (pixel, 0-1), lum, r, g, b, a',
-      'Functions: sin cos tan abs floor ceil fract clamp lerp',
-      'map smoothstep tri saw pulse noise(x,y)'
-    ].join('\n');
-    hint.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);cursor:help';
-
-    row.append(label, this._exprInput, hint);
-    this._exprRow = row;
-    this.element.appendChild(row);
-  }
-
-  _buildImgRow() {
-    const row = this.createElement('div', 'driver-img-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
-
-    const label = this.createElement('span', '', 'IMAGE');
-    label.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);width:44px';
-
-    const fileInput = this.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.style.display = 'none';
-    fileInput.addEventListener('change', () => this._handleImageFile(fileInput.files[0]));
-
-    const btn = this.createElement('button', 'driver-img-btn', 'LOAD IMAGE');
-    btn.style.cssText = [
-      'background:var(--vga-darkgrey,#222)', 'color:var(--vga-white,#eee)',
-      'border:1px solid var(--vga-grey,#555)', 'font-family:Space Mono,monospace',
-      'font-size:9px', 'padding:2px 6px', 'cursor:pointer'
-    ].join(';');
-    btn.addEventListener('click', () => fileInput.click());
-
-    this._imgNameEl = this.createElement('span', 'driver-img-name', '—');
-    this._imgNameEl.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1';
-
-    row.append(label, btn, fileInput, this._imgNameEl);
-    this._imgRow = row;
-    this.element.appendChild(row);
-  }
-
-  _buildPreviewRow() {
-    const row = this.createElement('div', 'driver-preview-row');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px';
-
-    const label = this.createElement('span', '', 'VALUE');
-    label.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-grey,#888);width:44px';
-
-    this._previewEl = this.createElement('span', 'driver-preview', '—');
-    this._previewEl.style.cssText = 'font-family:Space Mono,monospace;font-size:9px;color:var(--vga-white,#eee)';
-
-    row.append(label, this._previewEl);
-    this._previewRow = row;
-    this.element.appendChild(row);
-  }
-
-  _refreshVisibility() {
-    const mode = this._driver.mode;
-    this._exprRow.style.display = mode === 'expression' ? 'flex' : 'none';
-    this._imgRow.style.display  = mode === 'image'      ? 'flex' : 'none';
-    this._previewRow.style.display = mode === 'none'    ? 'none' : 'flex';
-    if (mode === 'expression') this._updatePreview();
+    invertRow.appendChild(invertButton);
+    this.element.appendChild(invertRow);
   }
 
   _updatePreview() {
-    if (this._driver.mode !== 'expression' || !this._previewEl) return;
+    if (!this._previewEl) return;
+    if (!this._driver.expr?.trim()) {
+      this._previewEl.textContent = '—';
+      return;
+    }
     try {
-      // Lightweight safe eval for t=0 preview
-      const expr = this._driver.expr;
-      if (!expr) { this._previewEl.textContent = '—'; return; }
-      const fn = new Function('t', 'frame', 'frameCount', 'sin', 'cos', 'abs', 'fract', 'clamp',
-        `"use strict"; return (${expr});`);
-      const v = fn(0, 0, 24, Math.sin, Math.cos, Math.abs, x => x - Math.floor(x),
-        (x, lo, hi) => Math.max(lo, Math.min(hi, x)));
-      this._previewEl.textContent = isNaN(v) ? 'NaN' : v.toFixed(4);
-      this._exprInput.style.borderColor = 'var(--vga-grey,#555)';
-    } catch {
-      this._previewEl.textContent = 'ERR';
-      this._exprInput.style.borderColor = 'var(--vga-red,#c00)';
+      const body = this._driver.expr.startsWith('=') ? this._driver.expr.slice(1) : this._driver.expr;
+      const value = ExpressionEval.evaluate(body, { frame: 0, frameCount: 24, time: 0, seed: 0 });
+      this._previewEl.textContent = Number.isFinite(value) ? value.toFixed(4) : 'NaN';
+      this._previewEl.style.color = 'var(--c-text)';
+    } catch (error) {
+      this._previewEl.textContent = `SYNTAX ERROR: ${error?.message ?? 'INVALID EXPRESSION'}`;
+      this._previewEl.style.color = 'var(--c-border)';
     }
   }
 
@@ -187,37 +250,79 @@ export class DriverPicker extends BaseComponent {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const cvs = new OffscreenCanvas(img.width, img.height);
-      const ctx = cvs.getContext('2d');
+      const canvas = new OffscreenCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, img.width, img.height);
       URL.revokeObjectURL(url);
-      this._driver.imageAsset = { pixels: data.data, width: img.width, height: img.height, name: file.name };
-      if (this._imgNameEl) this._imgNameEl.textContent = file.name;
+      this._driver.imageAsset = {
+        pixels: data.data,
+        width: img.width,
+        height: img.height,
+        name: file.name
+      };
+      this._driver.mapId = `${this._paramKey}-${Date.now()}`;
       this._emit();
+      this._renderModeRows();
     };
     img.src = url;
   }
 
+  _row(F, isFirst = false) {
+    const row = this.createElement('div', 'distort-driver-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: ${F / 2}px;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: ${isFirst ? 'none' : '1px solid var(--c-border)'};
+      box-sizing: border-box;
+    `;
+    return row;
+  }
+
+  _labelEl(F, text) {
+    const label = this.createElement('span', 'distort-driver-label', text);
+    label.style.cssText = `
+      width: ${F * 7}px;
+      color: var(--c-border);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    `;
+    return label;
+  }
+
+  _fieldStyle(F) {
+    return `
+      flex: 1;
+      height: ${F * 2}px;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Space Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      box-sizing: border-box;
+    `;
+  }
+
   _emit() {
     this._onDriverChange?.({
-      paramKey: this._paramKey,
-      mode: this._driver.mode,
+      mode: this._driver.mode ?? 'none',
       expr: this._driver.expr ?? '',
-      imageAsset: this._driver.imageAsset ?? null
+      mapId: this._driver.mapId ?? null,
+      amount: this._driver.amount ?? 1,
+      invert: !!this._driver.invert,
+      imageAsset: this._driver.imageAsset ?? null,
     });
   }
 
-  /** Update driver from external state (e.g. on undo/redo). */
-  setDriver(driver) {
-    this._driver = { ...driver };
-    if (this._modeSelect) this._modeSelect.value = driver.mode ?? 'none';
-    if (this._exprInput)  this._exprInput.value  = driver.expr  ?? '';
-    if (this._imgNameEl)  this._imgNameEl.textContent = driver.imageAsset?.name ?? '—';
-    this._refreshVisibility();
-  }
-
   destroy() {
+    if (this._previewDebounce) clearTimeout(this._previewDebounce);
+    this._previewDebounce = null;
     super.destroy();
   }
 }

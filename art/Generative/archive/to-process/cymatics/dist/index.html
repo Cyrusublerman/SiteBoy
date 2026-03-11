@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>cymatics</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cymatics</title>
+  <link rel="stylesheet" href="cymatics.css">
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  
+  <div class="controls">
+    <div class="section">
+      <div class="title">Visualization</div>
+      <div class="viz-grid">
+        <button class="viz-mode active" data-mode="particle">Particle</button>
+        <button class="viz-mode" data-mode="density">Density</button>
+        <button class="viz-mode" data-mode="radial">Radial</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="title">Base Note (Auto-updates)</div>
+      <select id="base-note">
+        <option value="261.63">C4</option>
+        <option value="277.18">C#4</option>
+        <option value="293.66">D4</option>
+        <option value="311.13">D#4</option>
+        <option value="329.63">E4</option>
+        <option value="349.23">F4</option>
+        <option value="369.99">F#4</option>
+        <option value="392.00">G4</option>
+        <option value="415.30">G#4</option>
+        <option value="440.00" selected>A4</option>
+        <option value="466.16">A#4</option>
+        <option value="493.88">B4</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <div class="title">Select frequency for next click</div>
+      <div style="font-size: 10px; margin-bottom: 6px; color: #fff;">
+        Next click: <span id="next-freq">440 Hz</span>
+      </div>
+      <div class="note-grid">
+        <button class="note active" data-semi="0">Root</button>
+        <button class="note" data-semi="1">+1</button>
+        <button class="note" data-semi="2">+2</button>
+        <button class="note" data-semi="3">+3</button>
+        <button class="note" data-semi="4">+4</button>
+        <button class="note" data-semi="5">+5</button>
+        <button class="note" data-semi="6">+6</button>
+        <button class="note" data-semi="7">+7</button>
+        <button class="note" data-semi="8">+8</button>
+        <button class="note" data-semi="9">+9</button>
+        <button class="note" data-semi="10">+10</button>
+        <button class="note" data-semi="11">+11</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="title">Chord Presets (relative to base)</div>
+      <div style="font-size: 10px; margin-bottom: 6px; color: #808080;">
+        Sets frequencies, then pick template for positions
+      </div>
+      <div class="chord-grid">
+        <button class="chord" data-chord="maj">Major</button>
+        <button class="chord" data-chord="min">Minor</button>
+        <button class="chord" data-chord="dim">Dim</button>
+        <button class="chord" data-chord="aug">Aug</button>
+        <button class="chord" data-chord="maj7">Maj7</button>
+        <button class="chord" data-chord="min7">Min7</button>
+        <button class="chord" data-chord="dom7">Dom7</button>
+        <button class="chord" data-chord="sus4">Sus4</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="title">Templates</div>
+      <div style="font-size: 10px; margin-bottom: 6px; color: #808080;">
+        Changes positions, keeps frequencies
+      </div>
+      <div class="template-grid">
+        <button class="template" data-template="circle6">Circle 6</button>
+        <button class="template" data-template="circle12">Circle 12</button>
+        <button class="template" data-template="grid3">Grid 3x3</button>
+        <button class="template" data-template="grid4">Grid 4x4</button>
+        <button class="template" data-template="star5">Star 5</button>
+        <button class="template" data-template="star8">Star 8</button>
+        <button class="template" data-template="corners">Corners</button>
+        <button class="template" data-template="cross">Cross</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="title">Parameters</div>
+      <label>Amp <input type="number" id="amp" value="3" step="0.5"></label>
+      <label>Speed <input type="number" id="speed" value="0.08" step="0.01"></label>
+      <label>Boost <input type="number" id="boost" value="3" step="0.1" min="0.1" max="10"></label>
+      <label>Radial Res <input type="number" id="radial-res" value="1" step="1" min="1" max="10"></label>
+    </div>
+
+    <div class="section">
+      <div class="title">Sources (<span id="source-count">0</span>)</div>
+      <div class="source-list" id="source-list">No sources</div>
+    </div>
+
+    <div class="section">
+      <div class="title">Actions</div>
+      <button id="play">Play</button>
+      <button id="stop" disabled>Stop</button>
+      <button id="clear">Clear</button>
+    </div>
+  </div>
+
+  <script src="cymatics.js"></script>
+</body>
+</html>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>

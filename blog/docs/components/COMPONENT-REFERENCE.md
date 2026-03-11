@@ -4,6 +4,7 @@ For quick per-component summaries and paths, see `components/index.md` and linke
 
 This is the definitive reference for all Tool UI components.  
 Each component has exact options, types, and examples.  
+Visual law is governed by `blog/docs/guides/standards/design-law.md`.  
 **NO INTERPRETATION REQUIRED** — follow this specification literally.
 
 ---
@@ -120,7 +121,7 @@ const numeric = new NumericInput({
     step: 1,
     display: 'both',
     unit: '%',
-    onChange: (val) => console.log(val)
+    onChange: (val) => window.debugLog('TOOLS', 'Scale changed', val)
 }, deps);
 container.appendChild(numeric.render());
 ```
@@ -316,11 +317,13 @@ Checkboxes or radio buttons.
 
 Color picker with optional hex input and swatches.
 
+Use for rendered output values, not UI chrome. UI chrome still uses `var(--c-*)` tokens.
+
 ### Options
 
 ```javascript
 {
-    value: '#000000',       // string — hex color (REQUIRED)
+    value: '#000000',       // string — hex color (REQUIRED; prefer VGA palette values)
     label: 'Color',         // string
     showHex: true,          // boolean — show hex text input
     swatches: null,         // array of hex strings — preset swatches
@@ -332,11 +335,11 @@ Color picker with optional hex input and swatches.
 ### ToolBase Usage
 
 ```javascript
-['color', 'Wave Color', '#FF0000', { showHex: true }]
+['color', 'Wave Color', '#ff0000', { showHex: true }]
 
 // With swatches
-['color', 'Palette', '#000000', { 
-    swatches: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'] 
+['color', 'Palette', '#000000', {
+    swatches: ['#ff0000', '#00ff00', '#0000ff', '#ffff00']
 }]
 ```
 
@@ -777,7 +780,7 @@ List, grid, or carousel of items.
 ```javascript
 {
     items: [                // array — item data (REQUIRED)
-        { id: 1, label: 'Item 1', color: '#FF0000' },
+        { id: 1, label: 'Item 1', color: '#ff0000' },
         { id: 2, label: 'Item 2', thumbnail: 'url.jpg' }
     ],
     
@@ -831,7 +834,7 @@ const TOOL_CONFIG = {
                 ['slider', 'Amplitude', 0, 100, 1, { value: 50, unit: '%' }],
                 ['slider', 'Frequency', 0.1, 10, 0.1, { value: 2, precision: 1, withNumber: true }],
                 ['dropdown', 'Wave Type', ['Sine', 'Square', 'Triangle'], { value: 'Sine' }],
-                ['color', 'Wave Color', '#FF5500'],
+                ['color', 'Wave Color', '#ff0000'],
             ]],
             ['Display', [
                 ['toggle', 'Show', ['Grid', 'Axes', 'Labels']],
@@ -848,15 +851,15 @@ const TOOL_CONFIG = {
     canvas: { size: 420 },
     
     onInit: function(values) {
-        console.log('Initialized:', values);
+        window.debugLog('TOOLS', 'Initialized tool config', values);
     },
     
     onUpdate: function(key, value, all) {
-        console.log(`${key} = ${value}`);
+        window.debugLog('TOOLS', `Updated ${key}`, value, all);
     },
     
     onDraw: function(ctx, canvas, values) {
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         // ... draw wave ...
     }

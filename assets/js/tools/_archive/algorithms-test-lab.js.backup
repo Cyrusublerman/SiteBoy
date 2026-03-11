@@ -1,0 +1,2506 @@
+/**
+ * Algorithm Test Lab
+ *
+ * ToolBase page for exercising shared algorithms with a navigation dropdown
+ * and dual canvas views [OUTPUT | ABOUT].
+ */
+(function() {
+    'use strict';
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // CONSTANTS & STATE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const A = window.Algorithms || {};
+    const VGA = [
+        '#000000', '#800000', '#008000', '#808000',
+        '#000080', '#800080', '#008080', '#c0c0c0',
+        '#808080', '#ff0000', '#00ff00', '#ffff00',
+        '#0000ff', '#ff00ff', '#00ffff', '#ffffff'
+    ];
+
+    const DEFAULT_ALGO = 'page1.noise.simplex2D';
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PAGE STRUCTURE: 6 Pages (Dropdown) × Domains (Tabs) × Algorithms
+    // Based on Test-Pages.md + processing/ available implementations
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const PAGES = [
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 1: NOISE, SAMPLING, PATTERNS
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'page1',
+            title: 'Noise, Sampling, Patterns',
+            domains: [
+                {
+                    id: 'noise',
+                    title: 'Noise Functions',
+                    docsPath: '17_Noise_Functions',
+                    algorithms: [
+                        { id: 'simplex2D', title: 'Simplex 2D', impl: true },
+                        { id: 'fbm2D', title: 'fBm 2D', impl: true },
+                        { id: 'domainWarp2D', title: 'Domain Warp', impl: true },
+                        { id: 'multiWarp2D', title: 'Multi Warp', impl: true }
+                    ]
+                },
+                {
+                    id: 'sampling',
+                    title: 'Sampling & Distributions',
+                    docsPath: '04_Sampling_Point_Distribution',
+                    algorithms: [
+                        { id: 'poissonDisk', title: 'Poisson Disk', impl: true },
+                        { id: 'haltonSequence', title: 'Halton Sequence', impl: true },
+                        { id: 'lloydRelaxation', title: 'Lloyd Relaxation', impl: true },
+                        { id: 'importanceSampling', title: 'Importance Sampling', impl: true }
+                    ]
+                },
+                {
+                    id: 'patterns',
+                    title: 'Patterns & Tiles',
+                    docsPath: '18_Pattern_Generation',
+                    algorithms: [
+                        { id: 'truchet', title: 'Truchet Grid', impl: true },
+                        { id: 'linearGrating', title: 'Linear Grating', impl: true },
+                        { id: 'radialGrating', title: 'Radial Grating', impl: true },
+                        { id: 'moire', title: 'Moiré Patterns', impl: true },
+                        { id: 'halftone', title: 'Halftone', impl: true }
+                    ]
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 2: EDGES, FILTERING, SEGMENTATION
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'page2',
+            title: 'Edges, Filtering, Segmentation',
+            domains: [
+                {
+                    id: 'edges',
+                    title: 'Edge Detection',
+                    docsPath: '01_Edge_Gradient_Differential_Operators',
+                    algorithms: [
+                        { id: 'sobel', title: 'Sobel', impl: true },
+                        { id: 'canny', title: 'Canny', impl: true },
+                        { id: 'laplacian', title: 'Laplacian', impl: true },
+                        { id: 'laplacianOfGaussian', title: 'LoG', impl: true },
+                        { id: 'differenceOfGaussians', title: 'DoG', impl: true },
+                        { id: 'structureTensor', title: 'Structure Tensor', impl: true }
+                    ]
+                },
+                {
+                    id: 'filtering',
+                    title: 'Filtering',
+                    docsPath: '14_Signal_Processing_Filtering',
+                    algorithms: [
+                        { id: 'gaussian', title: 'Gaussian Blur', impl: false },
+                        { id: 'bilateral', title: 'Bilateral Filter', impl: false },
+                        { id: 'median', title: 'Median Filter', impl: false }
+                    ]
+                },
+                {
+                    id: 'segmentation',
+                    title: 'Segmentation',
+                    docsPath: '02_Image_Segmentation_Region_Extraction',
+                    algorithms: [
+                        { id: 'otsu', title: 'Otsu Threshold', impl: true },
+                        { id: 'connectedComponents', title: 'Connected Components', impl: true },
+                        { id: 'floodFill', title: 'Flood Fill', impl: true }
+                    ]
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 3: CURVES, DISTANCE, TOPOLOGY
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'page3',
+            title: 'Curves, Distance, Topology',
+            domains: [
+                {
+                    id: 'curves',
+                    title: 'Curve Geometry',
+                    docsPath: '10_Curve_Theory_Stroke_Geometry',
+                    algorithms: [
+                        { id: 'tangents', title: 'Tangents', impl: true },
+                        { id: 'normals', title: 'Normals', impl: true },
+                        { id: 'curvature', title: 'Curvature', impl: true },
+                        { id: 'offset', title: 'Offset Curves', impl: true }
+                    ]
+                },
+                {
+                    id: 'distance',
+                    title: 'Distance Fields',
+                    docsPath: '13_Distance_Morphology_Topology',
+                    algorithms: [
+                        { id: 'jfa', title: 'Jump Flood', impl: true },
+                        { id: 'sdfPrimitives', title: 'SDF Primitives', impl: true },
+                        { id: 'sdfBoolean', title: 'SDF Boolean Ops', impl: true },
+                        { id: 'geodesic', title: 'Geodesic Distance', impl: true }
+                    ]
+                },
+                {
+                    id: 'vectorization',
+                    title: 'Vectorization',
+                    docsPath: '03_Raster_Vector_Conversion',
+                    algorithms: [
+                        { id: 'marchingSquares', title: 'Marching Squares', impl: true },
+                        { id: 'extractContours', title: 'Extract Contours', impl: true },
+                        { id: 'simplifyContour', title: 'Simplify Contour', impl: true }
+                    ]
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 4: SPACE-FILLING, TSP, GRAPHS
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'page4',
+            title: 'Space-Filling, TSP, Graphs',
+            domains: [
+                {
+                    id: 'spaceFilling',
+                    title: 'Space-Filling Curves',
+                    docsPath: '05_Space_Filling_Curves',
+                    algorithms: [
+                        { id: 'hilbert', title: 'Hilbert', impl: true },
+                        { id: 'peano', title: 'Peano', impl: true },
+                        { id: 'moore', title: 'Moore', impl: true },
+                        { id: 'zOrder', title: 'Z-Order', impl: true },
+                        { id: 'lSystem', title: 'L-System', impl: true }
+                    ]
+                },
+                {
+                    id: 'tsp',
+                    title: 'TSP Path Optimization',
+                    docsPath: '07_TSP_Based_Space_Filling',
+                    algorithms: [
+                        { id: 'nearestNeighbor', title: 'Nearest Neighbor', impl: true },
+                        { id: 'twoOpt', title: '2-Opt', impl: true },
+                        { id: 'christofides', title: 'Christofides', impl: true }
+                    ]
+                },
+                {
+                    id: 'graphs',
+                    title: 'Graphs & Pathfinding',
+                    docsPath: '16_Graphs_Connectivity_Pathfinding',
+                    algorithms: [
+                        { id: 'kdTree', title: 'K-d Tree', impl: true },
+                        { id: 'spatialHash', title: 'Spatial Hash', impl: true }
+                    ]
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 5: OPTICS, PHYSICS, PDE
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'page5',
+            title: 'Optics, Physics, PDE',
+            domains: [
+                {
+                    id: 'optics',
+                    title: 'Interference & Optics',
+                    docsPath: '19_Interference_Optics',
+                    algorithms: [
+                        { id: 'thinFilm', title: 'Thin Film', impl: true },
+                        { id: 'twoBeam', title: 'Two-Beam Interference', impl: true },
+                        { id: 'birefringence', title: 'Birefringence', impl: true },
+                        { id: 'conoscopy', title: 'Conoscopy', impl: true }
+                    ]
+                },
+                {
+                    id: 'physics',
+                    title: 'Physics Simulation',
+                    docsPath: '20_Physics_Simulation',
+                    algorithms: [
+                        { id: 'wave1D', title: 'Wave 1D', impl: true },
+                        { id: 'wave2D', title: 'Wave 2D', impl: true },
+                        { id: 'advection', title: 'Advection', impl: true },
+                        { id: 'streamline', title: 'Streamline Tracing', impl: true }
+                    ]
+                },
+                {
+                    id: 'reactionDiffusion',
+                    title: 'Reaction-Diffusion',
+                    docsPath: '08_Reaction_Diffusion_PDE',
+                    algorithms: [
+                        { id: 'grayScott', title: 'Gray-Scott', impl: true },
+                        { id: 'turing', title: 'Turing Patterns', impl: true },
+                        { id: 'gameOfLife', title: 'Game of Life', impl: true },
+                        { id: 'cellularAutomaton', title: 'Cellular Automaton', impl: true }
+                    ]
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 6: COLOUR AND PERCEPTION
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'page6',
+            title: 'Colour and Perception',
+            domains: [
+                {
+                    id: 'quantization',
+                    title: 'Quantization',
+                    docsPath: '15_Colour_Perceptual_Models',
+                    algorithms: [
+                        { id: 'posterize', title: 'Posterize', impl: true },
+                        { id: 'posterizeGamma', title: 'Posterize Gamma', impl: true },
+                        { id: 'dither', title: 'Dither', impl: true },
+                        { id: 'bayerDither', title: 'Bayer Dither', impl: true }
+                    ]
+                }
+            ]
+        }
+    ];
+
+    // Build flat algorithm map from hierarchical structure
+    const ALGORITHM_MAP = {};
+    PAGES.forEach(page => {
+        page.domains.forEach(domain => {
+            domain.algorithms.forEach(algo => {
+                const fullId = `${page.id}.${domain.id}.${algo.id}`;
+                ALGORITHM_MAP[fullId] = {
+                    ...algo,
+                    domainId: domain.id,
+                    domainTitle: domain.title,
+                    pageId: page.id,
+                    pageTitle: page.title,
+                    docsPath: domain.docsPath
+                };
+            });
+        });
+    });
+
+    // Flatten for backwards compatibility with current code
+    const ALGORITHM_GROUPS = PAGES.flatMap(page => 
+        page.domains.map(domain => ({
+            id: `${page.id}.${domain.id}`,
+            title: domain.title,
+            pageId: page.id,
+            pageTitle: page.title,
+            docsPath: domain.docsPath,
+            items: domain.algorithms.map(algo => ({
+                id: `${page.id}.${domain.id}.${algo.id}`,
+                title: algo.title,
+                impl: algo.impl,
+                renderer: domain.id
+            }))
+        }))
+    );
+
+    const state = {
+        selectedId: DEFAULT_ALGO,
+        selectedPageId: 'page1',
+        selectedDomainId: 'noise',
+        selectedAlgorithmId: DEFAULT_ALGO, // Currently active algorithm for rendering
+        viewMode: 'output',
+        aboutPanel: null,
+        blockRegistry: new Map(),
+        algoTabsComponent: null
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HELPER: Build Algorithm Map for lookup
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    const OLD_ALGORITHM_MAP = {};
+    ALGORITHM_GROUPS.forEach(group => {
+        if (group.items) {
+            group.items.forEach(item => {
+                OLD_ALGORITHM_MAP[item.id] = { ...item, groupId: group.id, groupTitle: group.title };
+            });
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ORIGINAL IMPLEMENTATIONS (keep for now)
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    const ORIGINAL_GROUPS_BACKUP = [
+        {
+            id: 'noise',
+            title: 'Noise Functions',
+            description: 'Gradient/value noise families for texture and modulation.',
+            items: [
+                {
+                    id: 'sampling.poissonDisk',
+                    title: 'Poisson Disk',
+                    renderer: 'sampling',
+                    detail: 'Blue-noise disk sampling via Bridson.',
+                    methodology: [
+                        'Target radius r, verify min-distance constraint by pairwise check.',
+                        'Estimate coverage uniformity with Voronoi cell variance.',
+                        'Stress-test with high radii to ensure termination.'
+                    ]
+                },
+                {
+                    id: 'sampling.haltonSequence',
+                    title: 'Halton',
+                    renderer: 'sampling',
+                    detail: 'Low-discrepancy quasi-random sequence.',
+                    methodology: [
+                        'Generate first N points; compute discrepancy vs. uniform grid.',
+                        'Check base pair (2,3) correlation; rotate bases if needed.',
+                        'Plot prefix lengths to confirm stratification.'
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'space',
+            title: 'Space-Filling Curves',
+            description: 'Curve traversal for locality-preserving indexing.',
+            items: [
+                {
+                    id: 'space.hilbert',
+                    title: 'Hilbert Curve',
+                    renderer: 'space',
+                    detail: 'Order-n Hilbert traversal over unit square.',
+                    methodology: [
+                        'Generate order 5–7; verify path visits 4^n cells without crossings.',
+                        'Compute neighbor distance histogram for locality.',
+                        'Check morton vs. hilbert index difference for jumps.'
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'tsp',
+            title: 'Path Optimisation',
+            description: 'Nearest-neighbor and 2-opt heuristics over point sets.',
+            items: [
+                {
+                    id: 'tsp.nearestNeighbor',
+                    title: 'Nearest Neighbor',
+                    renderer: 'tsp',
+                    detail: 'Greedy tour construction baseline.',
+                    methodology: [
+                        'Run on Poisson points; measure tour length vs. MST lower bound.',
+                        'Check for self-crossings and duplicate vertices.',
+                        'Use different seeds to compare stability.'
+                    ]
+                },
+                {
+                    id: 'tsp.twoOpt',
+                    title: '2-Opt Refinement',
+                    renderer: 'tsp',
+                    detail: 'Edge swap optimisation over an initial tour.',
+                    methodology: [
+                        'Start from nearest-neighbor path; iterate until no improvement.',
+                        'Track improvement ratio and iteration count.',
+                        'Confirm path stays simple (no duplicates).'
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'patterns',
+            title: 'Patterns & Tiles',
+            description: 'Procedural tiling with Truchet motifs.',
+            items: [
+                {
+                    id: 'patterns.truchet',
+                    title: 'Truchet Grid',
+                    renderer: 'pattern',
+                    detail: 'Tile grid with deterministic arc states.',
+                    methodology: [
+                        'Generate grid; verify tile orientations deterministic per seed.',
+                        'Check seam continuity by ensuring arcs meet neighbors.',
+                        'Render binary mask and contour overlay for QA.'
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'pde',
+            title: 'Reaction–Diffusion',
+            description: 'Gray-Scott solver over small grids.',
+            items: [
+                {
+                    id: 'pde.grayScott',
+                    title: 'Gray-Scott',
+                    renderer: 'reaction',
+                    detail: 'U/V concentration integration with periodic boundary.',
+                    methodology: [
+                        'Seed center block; run 100–300 steps; track conservation bounds.',
+                        'Validate stability by clamping to [0,1] and checking NaNs.',
+                        'Inspect pattern regimes when varying feed/kill.'
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'distance',
+            title: 'Distance Fields',
+            description: 'Jump Flood Algorithm distance transform.',
+            items: [
+                {
+                    id: 'distance.jfa',
+                    title: 'Jump Flood',
+                    renderer: 'distance',
+                    detail: 'Voronoi/distance propagation on discrete grid.',
+                    methodology: [
+                        'Seed random sites; run log2(N) passes; verify monotone decrease.',
+                        'Compare against exact BFS for a 32×32 sanity grid.',
+                        'Visualise contours at fixed thresholds.'
+                    ]
+                }
+            ]
+        }
+    ];
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // MARKDOWN DOCUMENTATION LOADER
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Create a markdown loader function for a specific file path
+     * Returns a function that fetches and renders markdown using ComponentLibrary
+     */
+    const createMarkdownLoader = (path, deps) => {
+        return async () => {
+            try {
+                const response = await fetch(path, { cache: 'no-cache' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${path}`);
+                const markdownText = await response.text();
+                
+                // Use ComponentLibrary.MarkdownBody to render the markdown
+                if (!window.ComponentLibrary || !window.ComponentLibrary.MarkdownBody) {
+                    throw new Error('MarkdownBody component not available');
+                }
+                
+                const markdownComponent = new window.ComponentLibrary.MarkdownBody({ markdownText }, deps);
+                return await markdownComponent.render();
+            } catch (error) {
+                console.error(`Error loading markdown from ${path}:`, error);
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'padding: 14px; color: var(--vga-red); font-family: "Atkinson Hyperlegible", monospace;';
+                errorDiv.textContent = `Failed to load documentation: ${error.message}`;
+                return errorDiv;
+            }
+        };
+    };
+
+    /**
+     * Map algorithm IDs to markdown filenames
+     */
+    const ALGORITHM_DOCS_MAP = {
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 1: NOISE, SAMPLING, PATTERNS
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Noise Functions (17_Noise_Functions)
+        'page1.noise.simplex2D': 'blog/ideas/reference documentation/17_Noise_Functions/Simplex_noise.md',
+        'page1.noise.fbm2D': 'blog/ideas/reference documentation/17_Noise_Functions/Simplex_noise.md',
+        'page1.noise.domainWarp2D': 'blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md',
+        'page1.noise.multiWarp2D': 'blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md',
+        
+        // Sampling & Distributions (04_Sampling_Point_Distribution)
+        'page1.sampling.poissonDisk': 'blog/ideas/reference documentation/04_Sampling_Point_Distribution/Poisson_disk_sampling.md',
+        'page1.sampling.haltonSequence': 'blog/ideas/reference documentation/04_Sampling_Point_Distribution/Halton_sequence.md',
+        'page1.sampling.lloydRelaxation': 'blog/ideas/reference documentation/04_Sampling_Point_Distribution/Lloyd\'s_algorithm.md',
+        'page1.sampling.importanceSampling': 'blog/ideas/reference documentation/04_Sampling_Point_Distribution/Importance_sampling.md',
+        
+        // Patterns & Tiles (18_Pattern_Generation)
+        'page1.patterns.truchet': 'blog/ideas/reference documentation/18_Pattern_Generation/Truchet_tiles.md',
+        'page1.patterns.linearGrating': 'blog/ideas/reference documentation/18_Pattern_Generation/Truchet_tiles.md',
+        'page1.patterns.radialGrating': 'blog/ideas/reference documentation/18_Pattern_Generation/Truchet_tiles.md',
+        'page1.patterns.moire': 'blog/ideas/reference documentation/19_Interference_Optics/Moire_pattern.md',
+        'page1.patterns.halftone': 'blog/ideas/reference documentation/14_Signal_Processing_Filtering/Posterization.md',
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 2: EDGES, FILTERING, SEGMENTATION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Edge Detection (01_Edge_Gradient_Differential_Operators)
+        'page2.edges.sobel': 'blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Sobel_operator.md',
+        'page2.edges.canny': 'blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Canny_edge_detector.md',
+        'page2.edges.laplacian': 'blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Laplacian.md',
+        'page2.edges.laplacianOfGaussian': 'blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Laplacian_of_Gaussian.md',
+        'page2.edges.differenceOfGaussians': 'blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Difference_of_Gaussians.md',
+        'page2.edges.structureTensor': 'blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Structure_tensor.md',
+        
+        // Filtering (14_Signal_Processing_Filtering)
+        'page2.filtering.gaussian': 'blog/ideas/reference documentation/14_Signal_Processing_Filtering/Gaussian_blur.md',
+        'page2.filtering.bilateral': 'blog/ideas/reference documentation/14_Signal_Processing_Filtering/Bilateral_filter.md',
+        'page2.filtering.median': 'blog/ideas/reference documentation/14_Signal_Processing_Filtering/Gaussian_blur.md',
+        
+        // Segmentation (02_Image_Segmentation_Region_Extraction)
+        'page2.segmentation.otsu': 'blog/ideas/reference documentation/02_Image_Segmentation_Region_Extraction/Otsu\'s_method.md',
+        'page2.segmentation.connectedComponents': 'blog/ideas/reference documentation/02_Image_Segmentation_Region_Extraction/Connected-component_labeling.md',
+        'page2.segmentation.floodFill': 'blog/ideas/reference documentation/05_Space_Filling_Curves/Flood_fill.md',
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 3: CURVES, DISTANCE, TOPOLOGY
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Curve Geometry (10_Curve_Theory_Stroke_Geometry)
+        'page3.curves.tangents': 'blog/ideas/reference documentation/10_Curve_Theory_Stroke_Geometry/Frenet-Serret_formulas.md',
+        'page3.curves.normals': 'blog/ideas/reference documentation/10_Curve_Theory_Stroke_Geometry/Frenet-Serret_formulas.md',
+        'page3.curves.curvature': 'blog/ideas/reference documentation/10_Curve_Theory_Stroke_Geometry/Curvature.md',
+        'page3.curves.offset': 'blog/ideas/reference documentation/10_Curve_Theory_Stroke_Geometry/Offset_curve.md',
+        
+        // Distance Fields (13_Distance_Morphology_Topology)
+        'page3.distance.jfa': 'blog/ideas/reference documentation/13_Distance_Morphology_Topology/Jump_flooding_algorithm.md',
+        'page3.distance.sdfPrimitives': 'blog/ideas/reference documentation/13_Distance_Morphology_Topology/Signed_distance_function.md',
+        'page3.distance.sdfBoolean': 'blog/ideas/reference documentation/13_Distance_Morphology_Topology/Signed_distance_function.md',
+        'page3.distance.geodesic': 'blog/ideas/reference documentation/13_Distance_Morphology_Topology/Geodesic.md',
+        
+        // Vectorization (03_Raster_Vector_Conversion)
+        'page3.vectorization.marchingSquares': 'blog/ideas/reference documentation/03_Raster_Vector_Conversion/Marching_squares.md',
+        'page3.vectorization.extractContours': 'blog/ideas/reference documentation/03_Raster_Vector_Conversion/Boundary_tracing.md',
+        'page3.vectorization.simplifyContour': 'blog/ideas/reference documentation/03_Raster_Vector_Conversion/Ramer-Douglas-Peucker_algorithm.md',
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 4: SPACE-FILLING, TSP, GRAPHS
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Space-Filling Curves (05_Space_Filling_Curves)
+        'page4.spaceFilling.hilbert': 'blog/ideas/reference documentation/05_Space_Filling_Curves/Hilbert_curve.md',
+        'page4.spaceFilling.peano': 'blog/ideas/reference documentation/05_Space_Filling_Curves/Peano_curve.md',
+        'page4.spaceFilling.moore': 'blog/ideas/reference documentation/05_Space_Filling_Curves/Moore_curve.md',
+        'page4.spaceFilling.zOrder': 'blog/ideas/reference documentation/05_Space_Filling_Curves/Z-order_curve.md',
+        'page4.spaceFilling.lSystem': 'blog/ideas/reference documentation/05_Space_Filling_Curves/L-system.md',
+        
+        // TSP Path Optimization (07_TSP_Based_Space_Filling)
+        'page4.tsp.nearestNeighbor': 'blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Nearest_neighbour_algorithm.md',
+        'page4.tsp.twoOpt': 'blog/ideas/reference documentation/07_TSP_Based_Space_Filling/2-opt.md',
+        'page4.tsp.christofides': 'blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Christofides_algorithm.md',
+        
+        // Graphs & Pathfinding (16_Graphs_Connectivity_Pathfinding)
+        'page4.graphs.kdTree': 'blog/ideas/reference documentation/16_Graphs_Connectivity_Pathfinding/A_search_algorithm.md',
+        'page4.graphs.spatialHash': 'blog/ideas/reference documentation/16_Graphs_Connectivity_Pathfinding/Breadth-first_search.md',
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 5: OPTICS, PHYSICS, PDE
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Interference & Optics (19_Interference_Optics)
+        'page5.optics.thinFilm': 'blog/ideas/reference documentation/19_Interference_Optics/Thin-film_interference.md',
+        'page5.optics.twoBeam': 'blog/ideas/reference documentation/19_Interference_Optics/Thin-film_interference.md',
+        'page5.optics.birefringence': 'blog/ideas/reference documentation/19_Interference_Optics/Polarization.md',
+        'page5.optics.conoscopy': 'blog/ideas/reference documentation/19_Interference_Optics/Conoscopy.md',
+        
+        // Physics Simulation (20_Physics_Simulation)
+        'page5.physics.wave1D': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Wave_equation.md',
+        'page5.physics.wave2D': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Wave_equation.md',
+        'page5.physics.advection': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Advection.md',
+        'page5.physics.streamline': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Advection.md',
+        
+        // Reaction-Diffusion (08_Reaction_Diffusion_PDE)
+        'page5.reactionDiffusion.grayScott': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Gray-Scott_model.md',
+        'page5.reactionDiffusion.turing': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Turing_pattern.md',
+        'page5.reactionDiffusion.gameOfLife': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Cellular_automaton.md',
+        'page5.reactionDiffusion.cellularAutomaton': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Cellular_automaton.md',
+        
+        // ═══════════════════════════════════════════════════════════════════
+        // PAGE 6: COLOUR AND PERCEPTION
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // Quantization (15_Colour_Perceptual_Models)
+        'page6.quantization.posterize': 'blog/ideas/reference documentation/14_Signal_Processing_Filtering/Posterization.md',
+        'page6.quantization.posterizeGamma': 'blog/ideas/reference documentation/14_Signal_Processing_Filtering/Posterization.md',
+        'page6.quantization.dither': 'blog/ideas/reference documentation/15_Colour_Perceptual_Models/Color_quantization.md',
+        'page6.quantization.bayerDither': 'blog/ideas/reference documentation/15_Colour_Perceptual_Models/Median_cut.md'
+    };
+
+    /**
+     * Load documentation for a specific algorithm
+     */
+    async function loadAlgorithmDocs(pageId, domainId, algoId, deps) {
+        const page = PAGES.find(p => p.id === pageId);
+        if (!page) return null;
+        
+        const domain = page.domains.find(d => d.id === domainId);
+        if (!domain || !domain.docsPath) return null;
+        
+        const filename = ALGORITHM_DOCS_MAP[algoId];
+        if (!filename) {
+            // No specific file mapped, show placeholder
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 14px; font-family: "Atkinson Hyperlegible", monospace; line-height: 1.6;';
+            div.innerHTML = `
+                <h2 style="font-size: 21px; margin-bottom: 14px;">${domain.title}</h2>
+                <p style="margin-bottom: 14px;">Documentation for this algorithm is being compiled.</p>
+                <p style="font-size: 12px; opacity: 0.7;">Reference path: blog/ideas/reference documentation/${domain.docsPath}/</p>
+            `;
+            return div;
+        }
+        
+        const filePath = `blog/ideas/reference documentation/${domain.docsPath}/${filename}`;
+        const loader = createMarkdownLoader(filePath, deps);
+        return await loader();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HELPERS — NAVIGATION DROPDOWN
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function buildNavItems() {
+        const items = [];
+        ALGORITHM_GROUPS.forEach(group => {
+            items.push({
+                type: 'subsection',
+                title: group.title,
+                id: group.id,
+                items: group.items.map(child => ({
+                    title: child.title,
+                    value: child.id,
+                    isActive: child.id === state.selectedId
+                }))
+            });
+        });
+        return items;
+    }
+
+    function getNavLabel(id) {
+        const meta = ALGORITHM_MAP[id];
+        if (!meta) return 'SELECT ALGORITHM';
+        return `${meta.group} / ${meta.title}`;
+    }
+
+    function selectAlgorithm(id, tool, triggerButton, dropdown) {
+        if (!ALGORITHM_MAP[id]) return;
+        state.selectedId = id;
+        if (triggerButton) triggerButton.setText(getNavLabel(id));
+        if (dropdown) {
+            dropdown.populateDropdown(buildNavItems());
+            dropdown.close();
+        }
+        if (tool) {
+            // Click the corresponding sub-tab
+            const algo = ALGORITHM_MAP[id];
+            if (algo && tool.element) {
+                const subTabs = tool.element.querySelectorAll('.tool-subtab');
+                subTabs.forEach(tab => {
+                    if (tab.textContent.trim() === algo.title) {
+                        tab.click();
+                    }
+                });
+            }
+            updateAboutPanel(tool);
+            tool.draw();
+        }
+    }
+
+    function filterDomainTabs(tool, pageId) {
+        if (!tool || !tool.element) return;
+        
+        const page = PAGES.find(p => p.id === pageId);
+        if (!page) return;
+        
+        // Collect all domain titles for this page
+        const domainTitles = page.domains.map(d => d.title);
+        const subTabs = tool.element.querySelectorAll('.tool-subtab');
+        
+        let firstVisibleTab = null;
+        subTabs.forEach(tab => {
+            const tabTitle = tab.textContent.trim();
+            const shouldShow = domainTitles.includes(tabTitle);
+            tab.style.display = shouldShow ? '' : 'none';
+            
+            if (shouldShow && !firstVisibleTab) {
+                firstVisibleTab = tab;
+            }
+        });
+        
+        // Auto-click first visible domain tab
+        if (firstVisibleTab) {
+            setTimeout(() => firstVisibleTab.click(), 0);
+        }
+    }
+
+    function getControlsForAlgorithm(algoId) {
+        const algo = ALGORITHM_MAP[algoId];
+        if (!algo) return [];
+        
+        switch(algo.groupId) {
+            case 'noise':
+                return [
+                    ['slider', 'Scale', 0.25, 4, 0.05, { key: 'scale', value: 1, withNumber: true }]
+                ];
+            case 'sampling':
+                if (algoId === 'sampling.poissonDisk') {
+                    return [
+                        ['slider', 'Sample Count', 12, 240, 1, { key: 'sampleCount', value: 120, withNumber: true }],
+                        ['slider', 'Radius', 4, 32, 1, { key: 'radius', value: 18, withNumber: true }]
+                    ];
+                }
+                return [
+                    ['slider', 'Sample Count', 12, 240, 1, { key: 'sampleCount', value: 120, withNumber: true }]
+                ];
+            case 'space':
+                return [
+                    ['slider', 'Hilbert Order', 3, 8, 1, { key: 'hilbertOrder', value: 6, withNumber: true }]
+                ];
+            case 'tsp':
+                return [
+                    ['slider', 'Sample Count', 12, 240, 1, { key: 'tspSamples', value: 80, withNumber: true }]
+                ];
+            case 'patterns':
+                return [
+                    ['slider', 'Truchet Seed', 1, 99, 1, { key: 'truchetSeed', value: 7, withNumber: true }]
+                ];
+            case 'pde':
+                return [
+                    ['slider', 'RD Steps', 10, 240, 1, { key: 'steps', value: 120, withNumber: true }],
+                    ['slider', 'Feed', 0.01, 0.09, 0.001, { key: 'feed', value: 0.055, withNumber: true, precision: 3 }],
+                    ['slider', 'Kill', 0.01, 0.09, 0.001, { key: 'kill', value: 0.062, withNumber: true, precision: 3 }]
+                ];
+            case 'distance':
+                return [
+                    ['slider', 'Seed Count', 4, 64, 1, { key: 'seedCount', value: 12, withNumber: true }]
+                ];
+            default:
+                return [];
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ALGORITHM CONTROLS MAPPING
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Get controls for a specific algorithm based on its full ID
+     * @param {string} fullId - Full algorithm ID (e.g., "page1.noise.simplex2D")
+     * @param {object} algo - Algorithm metadata
+     * @returns {array} Array of control definitions
+     */
+    function getControlsForAlgorithm(fullId, algo) {
+        // Extract domain and algorithm ID from full ID
+        const parts = fullId.split('.');
+        const domainId = parts[1];
+        const algoId = parts[2];
+
+        // Common controls for all algorithms (empty - no need for implementation labels)
+        const common = [];
+
+        // Domain-specific controls
+        switch (domainId) {
+            case 'noise':
+                switch (algoId) {
+                    case 'simplex2D':
+                        return [
+                            ['slider', 'Scale', 0.1, 5.0, 0.1, { key: `${fullId}_scale`, value: 1.0, withNumber: true }],
+                            ['number', 'Seed', 0, 999, 1, { key: `${fullId}_seed`, value: 0 }],
+                            ['button', 'Randomise', { key: `${fullId}_randomise`, label: 'Randomise' }],
+                            ...common
+                        ];
+                    case 'fbm2D':
+                        return [
+                            ['slider', 'Scale', 0.1, 5.0, 0.1, { key: `${fullId}_scale`, value: 1.0, withNumber: true }],
+                            ['slider', 'Octaves', 1, 8, 1, { key: `${fullId}_octaves`, value: 4, withNumber: true }],
+                            ['slider', 'Persistence', 0.1, 1.0, 0.1, { key: `${fullId}_persistence`, value: 0.5, withNumber: true }],
+                            ['number', 'Seed', 0, 999, 1, { key: `${fullId}_seed`, value: 0 }],
+                            ['button', 'Randomise', { key: `${fullId}_randomise`, label: 'Randomise' }],
+                            ...common
+                        ];
+                    case 'domainWarp2D':
+                    case 'multiWarp2D':
+                        return [
+                            ['slider', 'Scale', 0.1, 5.0, 0.1, { key: `${fullId}_scale`, value: 1.0, withNumber: true }],
+                            ['slider', 'Strength', 1, 100, 1, { key: `${fullId}_strength`, value: 25, withNumber: true }],
+                            ['number', 'Seed', 0, 999, 1, { key: `${fullId}_seed`, value: 0 }],
+                            ['button', 'Randomise', { key: `${fullId}_randomise`, label: 'Randomise' }],
+                            ...common
+                        ];
+                    default:
+                        return common;
+                }
+
+            case 'sampling':
+                switch (algoId) {
+                    case 'poissonDisk':
+                        return [
+                            ['slider', 'Radius', 5, 50, 1, { key: `${fullId}_radius`, value: 18, withNumber: true }],
+                            ['number', 'Seed', 0, 999, 1, { key: `${fullId}_seed`, value: 0 }],
+                            ...common
+                        ];
+                    case 'haltonSequence':
+                        return [
+                            ['slider', 'Count', 10, 500, 10, { key: `${fullId}_count`, value: 120, withNumber: true }],
+                            ...common
+                        ];
+                    case 'lloydRelaxation':
+                        return [
+                            ['slider', 'Count', 10, 200, 10, { key: `${fullId}_count`, value: 80, withNumber: true }],
+                            ['slider', 'Iterations', 1, 10, 1, { key: `${fullId}_iterations`, value: 3, withNumber: true }],
+                            ...common
+                        ];
+                    case 'importanceSampling':
+                        return [
+                            ['slider', 'Count', 10, 500, 10, { key: `${fullId}_count`, value: 120, withNumber: true }],
+                            ...common
+                        ];
+                    default:
+                        return common;
+                }
+
+            case 'patterns':
+                switch (algoId) {
+                    case 'truchet':
+                        return [
+                            ['slider', 'Grid Size', 4, 24, 1, { key: `${fullId}_gridSize`, value: 12, withNumber: true }],
+                            ['number', 'Seed', 1, 99, 1, { key: `${fullId}_seed`, value: 7 }],
+                            ...common
+                        ];
+                    case 'linearGrating':
+                    case 'radialGrating':
+                        return [
+                            ['slider', 'Frequency', 1, 50, 1, { key: `${fullId}_frequency`, value: 10, withNumber: true }],
+                            ['slider', 'Rotation', 0, 360, 1, { key: `${fullId}_rotation`, value: 0, withNumber: true }],
+                            ...common
+                        ];
+                    case 'moire':
+                        return [
+                            ['slider', 'Frequency 1', 5, 50, 1, { key: `${fullId}_freq1`, value: 10, withNumber: true }],
+                            ['slider', 'Frequency 2', 5, 50, 1, { key: `${fullId}_freq2`, value: 12, withNumber: true }],
+                            ['slider', 'Angle', 0, 90, 1, { key: `${fullId}_angle`, value: 15, withNumber: true }],
+                            ...common
+                        ];
+                    case 'halftone':
+                        return [
+                            ['slider', 'Dot Size', 2, 20, 1, { key: `${fullId}_dotSize`, value: 8, withNumber: true }],
+                            ['slider', 'Angle', 0, 90, 1, { key: `${fullId}_angle`, value: 45, withNumber: true }],
+                            ...common
+                        ];
+                    default:
+                        return common;
+                }
+
+            case 'spaceFilling':
+                return [
+                    ['slider', 'Order', 1, 7, 1, { key: `${fullId}_order`, value: 5, withNumber: true }],
+                    ...common
+                ];
+
+            case 'tsp':
+                return [
+                    ['slider', 'Points', 12, 240, 12, { key: `${fullId}_points`, value: 80, withNumber: true }],
+                    ['number', 'Seed', 0, 999, 1, { key: `${fullId}_seed`, value: 0 }],
+                    ...common
+                ];
+
+            case 'reactionDiffusion':
+                return [
+                    ['slider', 'Steps', 10, 500, 10, { key: `${fullId}_steps`, value: 120, withNumber: true }],
+                    ['slider', 'Feed', 0.01, 0.09, 0.001, { key: `${fullId}_feed`, value: 0.055, withNumber: true, precision: 3 }],
+                    ['slider', 'Kill', 0.01, 0.09, 0.001, { key: `${fullId}_kill`, value: 0.062, withNumber: true, precision: 3 }],
+                    ...common
+                ];
+
+            case 'distance':
+                return [
+                    ['slider', 'Seeds', 4, 64, 4, { key: `${fullId}_seeds`, value: 12, withNumber: true }],
+                    ...common
+                ];
+
+            // Add more domains as needed
+            default:
+                return common;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HELPERS — CANVAS VIEW TABS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    async function setMode(tool, mode) {
+        state.viewMode = mode;
+        const isOutput = mode === 'output';
+        toggleAboutPanel(tool, !isOutput);
+        
+        // Update ABOUT panel content when switching to it
+        if (!isOutput) {
+            await updateAboutPanel(tool);
+        }
+        
+        tool.draw();
+        if (tool.components.has('modeTabs')) {
+            const comp = tool.components.get('modeTabs');
+            const target = isOutput ? 'output' : 'about';
+            if (comp && comp.setActive) comp.setActive(target);
+            if (comp && comp.setActiveTab) comp.setActiveTab(target);
+        }
+    }
+
+    function toggleAboutPanel(tool, show) {
+        if (!tool || !tool.canvasWrapper) return;
+        tool.canvasWrapper.style.display = show ? 'none' : 'flex';
+        if (tool.statusEl) {
+            tool.statusEl.style.display = show ? 'none' : 'block';
+        }
+        if (state.aboutPanel) {
+            state.aboutPanel.style.display = show ? 'flex' : 'none';
+        }
+    }
+
+    async function updateAboutPanel(tool) {
+        if (!tool || !tool.canvasArea) return;
+        const F = tool.F || 14;
+        
+        // Create panel if it doesn't exist
+        if (!state.aboutPanel) {
+            const panel = document.createElement('div');
+            panel.style.cssText = `
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                height: 100%;
+                box-sizing: border-box;
+                background: var(--c-bg);
+                color: var(--c-text);
+                overflow-y: auto;
+            `;
+            tool.canvasArea.appendChild(panel);
+            state.aboutPanel = panel;
+        }
+
+        // Show loading state
+        state.aboutPanel.innerHTML = '<div style="padding: 28px; font-family: \'Atkinson Hyperlegible\', monospace;">Loading documentation...</div>';
+
+        // Use the currently selected algorithm from state
+        const currentAlgoId = state.selectedAlgorithmId || state.selectedId;
+        
+        if (!currentAlgoId) {
+            state.aboutPanel.innerHTML = '<div style="padding: 28px; font-family: \'Atkinson Hyperlegible\', monospace;">Select an algorithm to view documentation.</div>';
+            return;
+        }
+
+        // Try to load documentation if available
+        if (ALGORITHM_DOCS_MAP[currentAlgoId]) {
+            const docPath = ALGORITHM_DOCS_MAP[currentAlgoId];
+            try {
+                const response = await fetch(docPath, { cache: 'no-cache' });
+                if (!response.ok) throw new Error(`Failed to fetch: ${docPath}`);
+                const markdownText = await response.text();
+
+                state.aboutPanel.innerHTML = '';
+                const markdownComponent = new window.ComponentLibrary.MarkdownBody({ markdownText });
+                const renderedElement = markdownComponent.render();
+                state.aboutPanel.appendChild(renderedElement);
+            } catch (error) {
+                console.error(`Error loading markdown from ${docPath}:`, error);
+                state.aboutPanel.innerHTML = `<div style="padding: 28px; font-family: 'Atkinson Hyperlegible', monospace; color: var(--vga-red);">Failed to load documentation.</div>`;
+            }
+        } else {
+            const meta = ALGORITHM_MAP[currentAlgoId];
+            const algoTitle = meta ? meta.title : 'this algorithm';
+            state.aboutPanel.innerHTML = `<div style="padding: 28px; font-family: 'Atkinson Hyperlegible', monospace;">
+                <p>Documentation for ${algoTitle} is not yet available.</p>
+                <p style="opacity: 0.7; margin-top: 14px;">Algorithm ID: ${currentAlgoId}</p>
+            </div>`;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RENDERERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Main render function - uses state.selectedAlgorithmId to determine what to render
+     */
+    function renderAlgorithm(ctx, canvas, values) {
+        // Use the selected algorithm from state
+        let activeAlgoId = state.selectedAlgorithmId;
+        
+        if (!activeAlgoId) {
+            // Default to first algorithm in current page
+            const page = PAGES.find(p => p.id === state.selectedPageId);
+            if (page && page.domains[0] && page.domains[0].algorithms[0]) {
+                const domain = page.domains[0];
+                const algo = domain.algorithms[0];
+                activeAlgoId = `${page.id}.${domain.id}.${algo.id}`;
+                state.selectedAlgorithmId = activeAlgoId;
+            } else {
+                renderFallback(ctx, canvas, 'No algorithm selected');
+                return;
+            }
+        }
+        
+        // CENTRALIZED CHECK: If algorithm doesn't exist, show N/A
+        if (!algorithmExists(activeAlgoId)) {
+            const meta = ALGORITHM_MAP[activeAlgoId];
+            const displayName = meta ? meta.title : activeAlgoId;
+            renderNA(ctx, canvas, displayName);
+            return;
+        }
+        
+        // Collect parameter values for the selected algorithm
+        const activeValues = {};
+        const prefix = `${activeAlgoId}_`;
+        for (const key in values) {
+            if (key.startsWith(prefix)) {
+                const paramName = key.replace(prefix, '');
+                activeValues[paramName] = values[key];
+            }
+        }
+        
+        // Parse algorithm ID
+        const parts = activeAlgoId.split('.');
+        const [pageId, domainId, algoId] = parts;
+        
+        // Route to appropriate renderer based on domain
+        // Renderers now assume algorithm exists - no checks needed
+        switch (domainId) {
+            case 'noise':
+                renderNoise(algoId, ctx, canvas, activeValues);
+                break;
+            case 'sampling':
+                renderSampling(algoId, ctx, canvas, activeValues);
+                break;
+            case 'patterns':
+                renderPatterns(algoId, ctx, canvas, activeValues);
+                break;
+            case 'spaceFilling':
+                renderSpaceFilling(algoId, ctx, canvas, activeValues);
+                break;
+            case 'tsp':
+                renderTSP(algoId, ctx, canvas, activeValues);
+                break;
+            case 'distance':
+                renderDistance(algoId, ctx, canvas, activeValues);
+                break;
+            default:
+                // All other domains not implemented - already caught by algorithmExists()
+                renderNA(ctx, canvas, `${domainId}.${algoId}`);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        
+        switch (algoId) {
+            case 'grayScott':
+            case 'turing':
+                // Reaction-diffusion pattern simulation
+                const scale = values.scale || 10;
+                for (let y = 0; y < h; y += 2) {
+                    for (let x = 0; x < w; x += 2) {
+                        const u = Math.sin(x * 0.1 + time) * Math.cos(y * 0.1 - time);
+                        const v = Math.cos(x * 0.15 - time) * Math.sin(y * 0.12 + time);
+                        const pattern = (u * v + 1) * 0.5;
+                        const idx = paletteIndex(pattern);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, 2, 2);
+                    }
+                }
+                break;
+            
+            case 'gameOfLife':
+            case 'cellularAutomaton':
+                // Cellular automaton grid
+                const cellSize = 8;
+                const cols = Math.floor(w / cellSize);
+                const rows = Math.floor(h / cellSize);
+                
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        // Pseudo-random pattern based on position
+                        const alive = ((x * 7 + y * 13 + Math.floor(time * 10)) % 3) === 0;
+                        ctx.fillStyle = alive ? '#ffffff' : '#000000';
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize - 1, cellSize - 1);
+                    }
+                }
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Reaction-Diffusion: ${algoId} - unknown`);
+        }
+    }
+
+    function renderQuantization(algoId, ctx, canvas, values) {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        // Generate gradient test image
+        const imageData = ctx.createImageData(w, h);
+        const data = imageData.data;
+        
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const idx = (y * w + x) * 4;
+                const gradientX = x / w;
+                const gradientY = y / h;
+                const value = (gradientX + gradientY) * 0.5;
+                
+                let quantized = value;
+                
+                switch (algoId) {
+                    case 'posterize':
+                        const levels = values.levels || 4;
+                        quantized = Math.floor(value * levels) / levels;
+                        break;
+                    
+                    case 'posterizeGamma':
+                        const gamma = values.gamma || 2.2;
+                        quantized = Math.pow(value, 1 / gamma);
+                        const levelsGamma = values.levels || 4;
+                        quantized = Math.floor(quantized * levelsGamma) / levelsGamma;
+                        break;
+                    
+                    case 'dither':
+                    case 'bayerDither':
+                        // Simple threshold dither
+                        const threshold = ((x % 4) + (y % 4) * 4) / 16;
+                        quantized = value > threshold ? 1 : 0;
+                        break;
+                }
+                
+                const finalValue = quantized * 255;
+                data[idx] = data[idx + 1] = data[idx + 2] = finalValue;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function renderGraphs(algoId, ctx, canvas, values) {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        
+        // Generate random points for graph
+        const points = [];
+        const count = 20;
+        for (let i = 0; i < count; i++) {
+            points.push({
+                x: Math.random() * w,
+                y: Math.random() * h
+            });
+        }
+        
+        switch (algoId) {
+            case 'kdTree':
+                // Visualize spatial partitioning
+                ctx.strokeStyle = '#808080';
+                ctx.lineWidth = 1;
+                
+                // Draw partitioning lines
+                for (let i = 1; i < 5; i++) {
+                    const xLine = (w / 5) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(xLine, 0);
+                    ctx.lineTo(xLine, h);
+                    ctx.stroke();
+                    
+                    const yLine = (h / 5) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yLine);
+                    ctx.lineTo(w, yLine);
+                    ctx.stroke();
+                }
+                
+                // Draw points
+                ctx.fillStyle = '#00ffff';
+                points.forEach(p => {
+                    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+                });
+                break;
+            
+            case 'spatialHash':
+                // Visualize spatial hash grid
+                const gridSize = 50;
+                ctx.strokeStyle = '#404040';
+                ctx.lineWidth = 1;
+                
+                for (let x = 0; x < w; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < h; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+                
+                // Draw points with hash cell highlight
+                points.forEach(p => {
+                    const cellX = Math.floor(p.x / gridSize) * gridSize;
+                    const cellY = Math.floor(p.y / gridSize) * gridSize;
+                    
+                    ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+                    ctx.fillRect(cellX, cellY, gridSize, gridSize);
+                    
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+                });
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Graphs: ${algoId} - unknown`);
+        }
+    }
+
+    function renderEdges(algoId, ctx, canvas, values) {
+        // Create a test image with some shapes for edge detection
+        const w = canvas.width;
+        const h = canvas.height;
+        const imageData = ctx.createImageData(w, h);
+        const data = imageData.data;
+        
+        // Generate test pattern: circle, rectangle, line
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const idx = (y * w + x) * 4;
+                let value = 0;
+                
+                // Circle
+                const dx = x - w * 0.3;
+                const dy = y - h * 0.3;
+                if (dx * dx + dy * dy < 3000) value = 255;
+                
+                // Rectangle
+                if (x > w * 0.5 && x < w * 0.8 && y > h * 0.5 && y < h * 0.8) value = 255;
+                
+                // Diagonal line
+                if (Math.abs(x - y) < 5) value = 255;
+                
+                data[idx] = data[idx + 1] = data[idx + 2] = value;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        
+        switch (algoId) {
+            case 'sobel':
+            case 'canny':
+            case 'laplacian':
+            case 'laplacianOfGaussian':
+            case 'differenceOfGaussians':
+            case 'structureTensor':
+                // Apply edge detection (simplified visualization)
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const idx = (y * w + x) * 4;
+                        const c = data[idx];
+                        const l = data[(y * w + (x - 1)) * 4];
+                        const r = data[(y * w + (x + 1)) * 4];
+                        const t = data[((y - 1) * w + x) * 4];
+                        const b = data[((y + 1) * w + x) * 4];
+                        
+                        // Sobel approximation
+                        const gx = Math.abs(r - l) / 2;
+                        const gy = Math.abs(b - t) / 2;
+                        const mag = Math.sqrt(gx * gx + gy * gy);
+                        
+                        const paletteIdx = paletteIndex(mag / 255);
+                        ctx.fillStyle = VGA[paletteIdx];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Edges: ${algoId} - unknown`);
+        }
+    }
+
+    function renderFiltering(algoId, ctx, canvas, values) {
+        // Generate test image
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        
+        // Add noise to the image
+        const imageData = ctx.createImageData(w, h);
+        const data = imageData.data;
+        
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const idx = (y * w + x) * 4;
+                const base = Math.sin(x * 0.05) * Math.cos(y * 0.05) * 127 + 128;
+                const noise = (Math.random() - 0.5) * 100;
+                const value = Math.max(0, Math.min(255, base + noise));
+                data[idx] = data[idx + 1] = data[idx + 2] = value;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Apply filter visualization (simplified)
+        switch (algoId) {
+            case 'gaussian':
+            case 'bilateral':
+            case 'median':
+                // Show that filtering is applied
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+                ctx.fillRect(10, 10, 100, 30);
+                ctx.fillStyle = '#00ffff';
+                ctx.font = '12px "Atkinson Hyperlegible"';
+                ctx.fillText(`${algoId} filter`, 15, 30);
+                break;
+            default:
+                renderFallback(ctx, canvas, `Filtering: ${algoId} - unknown`);
+        }
+    }
+
+    function renderSegmentation(algoId, ctx, canvas, values) {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        switch (algoId) {
+            case 'otsu':
+            case 'connectedComponents':
+            case 'floodFill':
+                // Generate grayscale image
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, w, h);
+                
+                // Draw regions
+                const regions = [
+                    { x: w * 0.2, y: h * 0.2, r: 60, color: '#808080' },
+                    { x: w * 0.6, y: h * 0.4, r: 70, color: '#c0c0c0' },
+                    { x: w * 0.4, y: h * 0.7, r: 50, color: '#ffffff' }
+                ];
+                
+                regions.forEach(({ x, y, r, color }) => {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Add segmentation visualization overlay
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                regions.forEach(({ x, y, r }) => {
+                    ctx.beginPath();
+                    ctx.arc(x, y, r + 2, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Segmentation: ${algoId} - unknown`);
+        }
+    }
+
+    function renderCurves(algoId, ctx, canvas, values) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw a test curve
+        const pts = [
+            { x: 50, y: 200 },
+            { x: 150, y: 100 },
+            { x: 250, y: 150 },
+            { x: 350, y: 50 },
+            { x: 450, y: 180 }
+        ];
+        
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        pts.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+        
+        switch (algoId) {
+            case 'tangents':
+            case 'normals':
+                // Draw tangent/normal vectors
+                ctx.strokeStyle = '#ff00ff';
+                pts.slice(1, -1).forEach((p, i) => {
+                    const prev = pts[i];
+                    const next = pts[i + 2];
+                    const dx = next.x - prev.x;
+                    const dy = next.y - prev.y;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    const tx = dx / len * 30;
+                    const ty = dy / len * 30;
+                    
+                    if (algoId === 'tangents') {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p.x + tx, p.y + ty);
+                        ctx.stroke();
+                    } else {
+                        // Normal is perpendicular to tangent
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p.x - ty, p.y + tx);
+                        ctx.stroke();
+                    }
+                });
+                break;
+            
+            case 'curvature':
+                // Visualize curvature with varying thickness
+                ctx.strokeStyle = '#ffff00';
+                for (let i = 1; i < pts.length - 1; i++) {
+                    ctx.lineWidth = 2 + Math.abs(Math.sin(i * 0.5)) * 4;
+                    ctx.beginPath();
+                    ctx.moveTo(pts[i - 1].x, pts[i - 1].y);
+                    ctx.lineTo(pts[i].x, pts[i].y);
+                    ctx.stroke();
+                }
+                break;
+            
+            case 'offset':
+                // Draw offset curve
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                pts.forEach((p, i) => {
+                    const offsetX = p.x + 20;
+                    const offsetY = p.y - 20;
+                    if (i === 0) ctx.moveTo(offsetX, offsetY);
+                    else ctx.lineTo(offsetX, offsetY);
+                });
+                ctx.stroke();
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Curves: ${algoId} - unknown`);
+        }
+    }
+
+    function renderVectorization(algoId, ctx, canvas, values) {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        switch (algoId) {
+            case 'marchingSquares':
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, w, h);
+                
+                // Draw contour lines
+                const cx = w / 2;
+                const cy = h / 2;
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                
+                for (let r = 50; r < 200; r += 30) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                break;
+            
+            case 'extractContours':
+            case 'simplifyContour':
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, w, h);
+                
+                // Draw raster shape
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(w * 0.2, h * 0.2, w * 0.6, h * 0.6);
+                
+                // Draw extracted contour
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(w * 0.2, h * 0.2, w * 0.6, h * 0.6);
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Vectorization: ${algoId} - unknown`);
+        }
+    }
+
+    function renderOptics(algoId, ctx, canvas, values) {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        
+        switch (algoId) {
+            case 'thinFilm':
+            case 'twoBeam':
+                // Interference pattern
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const wave1 = Math.sin((x + y) * 0.1);
+                        const wave2 = Math.sin((x - y) * 0.1 + Math.PI / 4);
+                        const interference = (wave1 + wave2 + 2) * 0.25;
+                        const idx = paletteIndex(interference);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+                break;
+            
+            case 'birefringence':
+            case 'conoscopy':
+                // Polarized light patterns
+                const cx = w / 2;
+                const cy = h / 2;
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const dx = x - cx;
+                        const dy = y - cy;
+                        const angle = Math.atan2(dy, dx);
+                        const r = Math.sqrt(dx * dx + dy * dy);
+                        const pattern = (Math.cos(angle * 4) + Math.sin(r * 0.05) + 2) * 0.25;
+                        const idx = paletteIndex(pattern);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Optics: ${algoId} - unknown`);
+        }
+    }
+
+    function renderPhysics(algoId, ctx, canvas, values) {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        
+        const time = Date.now() * 0.001;
+        
+        switch (algoId) {
+            case 'wave1D':
+                // 1D wave displayed as horizontal strips
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let x = 0; x < w; x++) {
+                    const y = h / 2 + Math.sin(x * 0.05 + time) * 50;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                break;
+            
+            case 'wave2D':
+                // 2D wave field
+                const cx = w / 2;
+                const cy = h / 2;
+                for (let y = 0; y < h; y += 2) {
+                    for (let x = 0; x < w; x += 2) {
+                        const dx = x - cx;
+                        const dy = y - cy;
+                        const r = Math.sqrt(dx * dx + dy * dy);
+                        const wave = (Math.sin(r * 0.1 - time * 2) + 1) * 0.5;
+                        const idx = paletteIndex(wave);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, 2, 2);
+                    }
+                }
+                break;
+            
+            case 'advection':
+            case 'streamline':
+                // Flow field visualization
+                for (let y = 0; y < h; y += 10) {
+                    for (let x = 0; x < w; x += 10) {
+                        const angle = Math.atan2(y - h / 2, x - w / 2) + time * 0.5;
+                        const len = 8;
+                        const ex = x + Math.cos(angle) * len;
+                        const ey = y + Math.sin(angle) * len;
+                        
+                        ctx.strokeStyle = '#00ff00';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(ex, ey);
+                        ctx.stroke();
+                    }
+                }
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Physics: ${algoId} - unknown`);
+        }
+    }
+
+    function renderFallback(ctx, canvas, text) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px "Atkinson Hyperlegible", monospace';
+        ctx.fillText(text, 16, 32);
+    }
+    
+    /**
+     * Render N/A message for unimplemented algorithms
+     */
+    function renderNA(ctx, canvas, algorithmName) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#808080';
+        ctx.font = '24px "Atkinson Hyperlegible", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('N/A', canvas.width / 2, canvas.height / 2);
+        ctx.font = '12px "Atkinson Hyperlegible", monospace';
+        ctx.fillText(`${algorithmName} not implemented`, canvas.width / 2, canvas.height / 2 + 30);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+    }
+    
+    /**
+     * Check if an algorithm is implemented in the algorithms library
+     * @param {string} fullAlgoId - Full algorithm ID (e.g., "page1.noise.simplex2D")
+     * @returns {boolean} True if algorithm exists in library
+     */
+    function algorithmExists(fullAlgoId) {
+        if (!fullAlgoId || !window.Algorithms) return false;
+        
+        const parts = fullAlgoId.split('.');
+        if (parts.length < 3) return false;
+        
+        const domainId = parts[1];
+        const algoId = parts[2];
+        
+        // Map domain IDs to Algorithms library namespaces
+        const domainMap = {
+            'noise': 'Noise',
+            'sampling': 'Sampling',
+            'patterns': 'Patterns',
+            'spaceFilling': 'SpaceFilling',
+            'tsp': 'TSP',
+            'edges': 'EdgeDetection',
+            'filtering': 'Filtering',
+            'segmentation': 'Segmentation',
+            'curves': 'Curves',
+            'distance': 'Distance',
+            'vectorization': 'Vectorization',
+            'optics': 'Optics',
+            'physics': 'Physics',
+            'reactionDiffusion': 'ReactionDiffusion',
+            'quantization': 'Quantization',
+            'graphs': 'Graphs'
+        };
+        
+        const libraryDomain = domainMap[domainId];
+        if (!libraryDomain) return false;
+        
+        const A = window.Algorithms;
+        
+        // Check if algorithm function exists
+        // Try both direct function and nested object patterns
+        return !!(A[libraryDomain]?.[algoId] || A[libraryDomain]?.[algoId.replace(/([A-Z])/g, '_$1').toLowerCase()]);
+    }
+
+    function paletteIndex(v) {
+        const clamped = Math.max(0, Math.min(1, v));
+        return Math.min(VGA.length - 1, Math.floor(clamped * (VGA.length - 1)));
+    }
+
+    /**
+     * Render noise algorithms
+     * @param {string} algoId - Algorithm ID (e.g., 'simplex2D', 'fbm2D')
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {HTMLCanvasElement} canvas
+     * @param {object} values - Parameter values (scale, seed, etc.)
+     */
+    function renderNoise(algoId, ctx, canvas, values) {
+        const scale = values.scale || 1.0;
+        const seed = values.seed || 0;
+        const step = 4;
+        
+        // Seed the noise if available
+        if (seed && A.Noise?.seedNoise) {
+            A.Noise.seedNoise(seed);
+        }
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let y = 0; y < canvas.height; y += step) {
+            for (let x = 0; x < canvas.width; x += step) {
+                let n = 0;
+                
+                switch (algoId) {
+                    case 'simplex2D':
+                        if (A.Noise?.simplex2D) {
+                            n = A.Noise.simplex2D(x * 0.01 * scale, y * 0.01 * scale);
+                        }
+                        break;
+                    
+                    case 'fbm2D':
+                        if (A.Noise?.fbm2D) {
+                            const octaves = values.octaves || 4;
+                            const persistence = values.persistence || 0.5;
+                            n = A.Noise.fbm2D(x * 0.005 * scale, y * 0.005 * scale, { octaves, persistence });
+                        }
+                        break;
+                    
+                    case 'domainWarp2D':
+                        if (A.Noise?.domainWarp2D && A.Noise?.simplex2D) {
+                            const strength = values.strength || 25;
+                            const warped = A.Noise.domainWarp2D(x, y, { strength: strength * scale, scale: 0.01 });
+                            n = A.Noise.simplex2D(warped.x * 0.02, warped.y * 0.02);
+                        }
+                        break;
+                    
+                    case 'multiWarp2D':
+                        if (A.Noise?.multiWarp2D && A.Noise?.simplex2D) {
+                            const strength = values.strength || 25;
+                            const warped = A.Noise.multiWarp2D(x, y, { strength: strength * scale, scale: 0.01 });
+                            n = A.Noise.simplex2D(warped.x * 0.02, warped.y * 0.02);
+                        }
+                        break;
+                }
+                
+                const idx = paletteIndex((n + 1) * 0.5);
+                ctx.fillStyle = VGA[idx];
+                ctx.fillRect(x, y, step, step);
+            }
+        }
+    }
+
+    /**
+     * Render sampling algorithms
+     */
+    function renderSampling(algoId, ctx, canvas, values) {
+        const count = values.count || 120;
+        const seed = values.seed || 0;
+        const points = [];
+        
+        switch (algoId) {
+            case 'poissonDisk':
+                if (A.Sampling?.poissonDisk) {
+                    const radius = values.radius || 18;
+                    const res = A.Sampling.poissonDisk(canvas.width, canvas.height, radius, seed);
+                    res.forEach(p => points.push({ x: p[0], y: p[1] }));
+                }
+                break;
+            
+            case 'haltonSequence':
+                if (A.Sampling?.haltonSequence) {
+                    const seq = A.Sampling.haltonSequence(count, [2, 3]);
+                    seq.forEach(([u, v]) => points.push({ x: u * canvas.width, y: v * canvas.height }));
+                }
+                break;
+            
+            case 'lloydRelaxation':
+                if (A.Sampling?.lloydRelaxation) {
+                    const iterations = values.iterations || 3;
+                    // Start with random points, then relax
+                    const initial = [];
+                    for (let i = 0; i < count; i++) {
+                        initial.push([Math.random() * canvas.width, Math.random() * canvas.height]);
+                    }
+                    const relaxed = A.Sampling.lloydRelaxation(initial, canvas.width, canvas.height, iterations);
+                    relaxed.forEach(p => points.push({ x: p[0], y: p[1] }));
+                }
+                break;
+            
+            case 'importanceSampling':
+                if (A.Sampling?.importanceSampling) {
+                    // Use simple importance function (center-weighted)
+                    const importanceFn = (x, y) => {
+                        const dx = x - canvas.width / 2;
+                        const dy = y - canvas.height / 2;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        return Math.max(0, 1 - dist / (canvas.width / 2));
+                    };
+                    const sampled = A.Sampling.importanceSampling(count, canvas.width, canvas.height, importanceFn);
+                    sampled.forEach(p => points.push({ x: p[0], y: p[1] }));
+                }
+                break;
+        }
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        points.forEach(p => {
+            ctx.fillRect(Math.floor(p.x) - 1, Math.floor(p.y) - 1, 3, 3);
+        });
+    }
+
+    /**
+     * Render space-filling curve algorithms
+     */
+    function renderSpaceFilling(algoId, ctx, canvas, values) {
+        const order = values.order || 5;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        let pts = [];
+        switch (algoId) {
+            case 'hilbert':
+                pts = A.SpaceFilling?.HilbertCurve?.generate ? A.SpaceFilling.HilbertCurve.generate(order) : [];
+                break;
+            case 'peano':
+                pts = A.SpaceFilling?.PeanoCurve?.generate ? A.SpaceFilling.PeanoCurve.generate(order) : [];
+                break;
+            case 'moore':
+                pts = A.SpaceFilling?.MooreCurve?.generate ? A.SpaceFilling.MooreCurve.generate(order) : [];
+                break;
+            case 'zOrder':
+                pts = A.SpaceFilling?.ZOrderCurve?.generate ? A.SpaceFilling.ZOrderCurve.generate(order) : [];
+                break;
+            case 'lSystem':
+                // Simple L-System dragon curve as fallback
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                
+                // Simple fractal tree as L-System visualization
+                const drawTree = (x, y, angle, length, depth) => {
+                    if (depth === 0) return;
+                    const x2 = x + Math.cos(angle) * length;
+                    const y2 = y + Math.sin(angle) * length;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                    drawTree(x2, y2, angle - 0.4, length * 0.7, depth - 1);
+                    drawTree(x2, y2, angle + 0.4, length * 0.7, depth - 1);
+                };
+                drawTree(canvas.width / 2, canvas.height - 20, -Math.PI / 2, 80, order);
+                return; // Early return since we drew directly
+            default:
+                renderFallback(ctx, canvas, `Space-filling: ${algoId} - pending`);
+                return;
+        }
+        
+        if (!pts.length) return;
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        pts.forEach((p, i) => {
+            const x = p.x * canvas.width;
+            const y = p.y * canvas.height;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    /**
+     * Render TSP algorithms
+     */
+    function renderTSP(algoId, ctx, canvas, values) {
+        const points = values.points || 80;
+        const seed = values.seed || 0;
+        
+        // Generate random points (seeded if available)
+        const pts = [];
+        for (let i = 0; i < points; i++) {
+            // Simple seeded random using sine
+            const x = (Math.sin(seed + i * 12.9898) * 43758.5453) % 1;
+            const y = (Math.sin(seed + i * 78.233) * 43758.5453) % 1;
+            pts.push({ x: Math.abs(x) * canvas.width, y: Math.abs(y) * canvas.height });
+        }
+        
+        let order = pts.map((_, i) => i);
+        
+        switch (algoId) {
+            case 'nearestNeighbor':
+                if (A.TSP?.nearestNeighbor) {
+                    order = A.TSP.nearestNeighbor(pts);
+                }
+                break;
+            
+            case 'twoOpt':
+                if (A.TSP?.twoOpt && A.TSP?.nearestNeighbor) {
+                    const base = A.TSP.nearestNeighbor(pts);
+                    order = A.TSP.twoOpt(pts, base);
+                }
+                break;
+            
+            case 'christofides':
+                if (A.TSP?.christofides) {
+                    order = A.TSP.christofides(pts);
+                } else {
+                    // Fallback to nearest neighbor if christofides not available
+                    if (A.TSP?.nearestNeighbor) {
+                        order = A.TSP.nearestNeighbor(pts);
+                    }
+                }
+                break;
+        }
+        
+        // Clear canvas
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw path
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        order.forEach((idx, i) => {
+            const p = pts[idx];
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        if (order.length) {
+            const first = pts[order[0]];
+            ctx.lineTo(first.x, first.y);
+        }
+        ctx.stroke();
+        
+        // Draw points
+        ctx.fillStyle = '#ff0000';
+        order.forEach(idx => {
+            const p = pts[idx];
+            ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        });
+    }
+
+    /**
+     * Render pattern algorithms
+     */
+    function renderPatterns(algoId, ctx, canvas, values) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        switch (algoId) {
+            case 'truchet':
+                if (!A.Patterns?.generateTruchetGrid || !A.Patterns?.getTruchetArcs) {
+                    renderFallback(ctx, canvas, 'Truchet generator missing');
+                    return;
+                }
+                const gridSize = values.gridSize || 12;
+                const seed = values.seed || 7;
+                const tiles = A.Patterns.generateTruchetGrid(gridSize, gridSize, seed);
+                const tileSize = Math.min(canvas.width / gridSize, canvas.height / gridSize);
+
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = Math.max(1, tileSize * 0.2);
+
+                for (let j = 0; j < gridSize; j++) {
+                    for (let i = 0; i < gridSize; i++) {
+                        const state = tiles[j * gridSize + i];
+                        const arcs = A.Patterns.getTruchetArcs(i, j, state, tileSize);
+                        arcs.forEach(arc => {
+                            ctx.beginPath();
+                            ctx.arc(arc.cx, arc.cy, arc.r, arc.startAngle, arc.endAngle);
+                            ctx.stroke();
+                        });
+                    }
+                }
+                break;
+            
+            case 'linearGrating':
+                if (A.Patterns?.linearGrating) {
+                    const frequency = values.frequency || 10;
+                    const rotation = values.rotation || 0;
+                    const angleRad = (rotation * Math.PI) / 180;
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    for (let y = 0; y < canvas.height; y++) {
+                        for (let x = 0; x < canvas.width; x++) {
+                            const xRot = x * Math.cos(angleRad) - y * Math.sin(angleRad);
+                            const value = Math.sin(xRot * frequency * 0.1);
+                            const idx = paletteIndex((value + 1) * 0.5);
+                            ctx.fillStyle = VGA[idx];
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                } else {
+                    renderFallback(ctx, canvas, 'linearGrating - algorithm pending');
+                }
+                break;
+            
+            case 'radialGrating':
+                if (A.Patterns?.radialGrating) {
+                    const frequency = values.frequency || 10;
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    
+                    for (let y = 0; y < canvas.height; y++) {
+                        for (let x = 0; x < canvas.width; x++) {
+                            const dx = x - cx;
+                            const dy = y - cy;
+                            const r = Math.sqrt(dx * dx + dy * dy);
+                            const value = Math.sin(r * frequency * 0.1);
+                            const idx = paletteIndex((value + 1) * 0.5);
+                            ctx.fillStyle = VGA[idx];
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                } else {
+                    renderFallback(ctx, canvas, 'radialGrating - algorithm pending');
+                }
+                break;
+            
+            case 'moire':
+                const freq1 = values.freq1 || 10;
+                const freq2 = values.freq2 || 12;
+                const angle = (values.angle || 15) * Math.PI / 180;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                for (let y = 0; y < canvas.height; y++) {
+                    for (let x = 0; x < canvas.width; x++) {
+                        const v1 = Math.sin(x * freq1 * 0.1);
+                        const xRot = x * Math.cos(angle) - y * Math.sin(angle);
+                        const v2 = Math.sin(xRot * freq2 * 0.1);
+                        const value = (v1 + v2) * 0.5;
+                        const idx = paletteIndex((value + 1) * 0.5);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+                break;
+            
+            case 'halftone':
+                const dotSize = values.dotSize || 8;
+                const halftoneAngle = (values.angle || 45) * Math.PI / 180;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const spacing = dotSize * 1.5;
+                for (let y = 0; y < canvas.height; y += spacing) {
+                    for (let x = 0; x < canvas.width; x += spacing) {
+                        const xRot = x * Math.cos(halftoneAngle) + y * Math.sin(halftoneAngle);
+                        const yRot = -x * Math.sin(halftoneAngle) + y * Math.cos(halftoneAngle);
+                        const pattern = (Math.sin(xRot * 0.05) + Math.sin(yRot * 0.05) + 2) * 0.25;
+                        const radius = dotSize * pattern * 0.5;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                break;
+            
+            default:
+                renderFallback(ctx, canvas, `Pattern: ${algoId} - unknown`);
+        }
+    }
+
+
+    /**
+     * Render distance field algorithms
+     */
+    function renderDistance(algoId, ctx, canvas, values) {
+        const seeds = values.seeds || 12;
+        
+        switch (algoId) {
+            case 'jfa':
+                if (!A.Distance?.jumpFloodAlgorithm || !A.Distance?.jfaToDistanceField) {
+                    renderFallback(ctx, canvas, 'JFA algorithm not available');
+                    return;
+                }
+                
+                const size = 96;
+                const mask = new Uint8Array(size * size);
+                
+                // Place random seed points
+                for (let i = 0; i < seeds; i++) {
+                    const sx = Math.floor(Math.random() * size);
+                    const sy = Math.floor(Math.random() * size);
+                    mask[sy * size + sx] = 255;
+                }
+                
+                const seedMap = A.Distance.jumpFloodAlgorithm(mask, size, size);
+                const dist = A.Distance.jfaToDistanceField(seedMap, size, size);
+
+                const maxDist = Math.max(...dist);
+                const cellW = canvas.width / size;
+                const cellH = canvas.height / size;
+
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const d = dist[y * size + x] / maxDist;
+                        const idx = paletteIndex(d);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x * cellW, y * cellH, cellW + 1, cellH + 1);
+                    }
+                }
+
+                // Draw seed points
+                ctx.fillStyle = '#ff0000';
+                for (let i = 0; i < mask.length; i++) {
+                    if (mask[i] > 0) {
+                        const sx = (i % size) * cellW;
+                        const sy = Math.floor(i / size) * cellH;
+                        ctx.fillRect(sx - 1, sy - 1, 3, 3);
+                    }
+                }
+                break;
+            
+            case 'sdfPrimitives':
+                // Render SDF primitives (circle, box, etc.)
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const stepSize = 2;
+                
+                for (let y = 0; y < canvas.height; y += stepSize) {
+                    for (let x = 0; x < canvas.width; x += stepSize) {
+                        const dx = x - cx;
+                        const dy = y - cy;
+                        const dist = Math.sqrt(dx * dx + dy * dy) - 150;
+                        const d = Math.max(0, Math.min(1, (dist + 50) / 100));
+                        const idx = paletteIndex(d);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, stepSize, stepSize);
+                    }
+                }
+                break;
+            
+            case 'sdfBoolean':
+                // Render SDF boolean operations (union, intersection, subtraction)
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const cx1 = canvas.width * 0.4;
+                const cy1 = canvas.height / 2;
+                const cx2 = canvas.width * 0.6;
+                const cy2 = canvas.height / 2;
+                const stepSize2 = 2;
+                
+                for (let y = 0; y < canvas.height; y += stepSize2) {
+                    for (let x = 0; x < canvas.width; x += stepSize2) {
+                        const dx1 = x - cx1;
+                        const dy1 = y - cy1;
+                        const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1) - 100;
+                        
+                        const dx2 = x - cx2;
+                        const dy2 = y - cy2;
+                        const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) - 100;
+                        
+                        // Union (min of both distances)
+                        const distUnion = Math.min(dist1, dist2);
+                        const d = Math.max(0, Math.min(1, (distUnion + 50) / 100));
+                        const idx = paletteIndex(d);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, stepSize2, stepSize2);
+                    }
+                }
+                break;
+            
+            case 'geodesic':
+                // Geodesic distance on a surface
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const sourcex = canvas.width / 2;
+                const sourcey = canvas.height / 2;
+                
+                for (let y = 0; y < canvas.height; y += 2) {
+                    for (let x = 0; x < canvas.width; x += 2) {
+                        const dx = x - sourcex;
+                        const dy = y - sourcey;
+                        // Manhattan distance as approximation of geodesic
+                        const geodist = (Math.abs(dx) + Math.abs(dy)) / (canvas.width / 2);
+                        const d = Math.max(0, Math.min(1, geodist));
+                        const idx = paletteIndex(d);
+                        ctx.fillStyle = VGA[idx];
+                        ctx.fillRect(x, y, 2, 2);
+                    }
+                }
+                break;
+                
+            default:
+                renderFallback(ctx, canvas, `Distance: ${algoId} - unknown`);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TOOL CONFIG
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const DOC_PATHS = {
+        'noise.simplex2D': 'blog/ideas/reference documentation/17_Noise_Functions/Simplex_noise.md',
+        'noise.fbm2D': 'blog/ideas/reference documentation/17_Noise_Functions/Fractional_Brownian_Motion.md',
+        'noise.domainWarp2D': 'blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md',
+        'sampling.poissonDisk': 'blog/ideas/reference documentation/04_Sampling_Point_Distribution/Poisson_disk_sampling.md',
+        'sampling.haltonSequence': 'blog/ideas/reference documentation/04_Sampling_Point_Distribution/Halton_sequence.md',
+        'space.hilbert': 'blog/ideas/reference documentation/05_Space_Filling_Curves/Hilbert_curve.md',
+        'tsp.nearestNeighbor': 'blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Nearest_neighbor.md',
+        'tsp.twoOpt': 'blog/ideas/reference documentation/07_TSP_Based_Space_Filling/2_opt.md',
+        'patterns.truchet': 'blog/ideas/reference documentation/18_Pattern_Generation/Truchet_tiles.md',
+        'pde.grayScott': 'blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Gray-Scott_model.md',
+        'distance.jfa': 'blog/ideas/reference documentation/13_Distance_Morphology_Topology/Jump_Flooding_Algorithm.md'
+    };
+
+    const TOOL_CONFIG = {
+        title: 'ALGORITHM TEST LAB',
+        useTabs: true,
+        canvas: { width: 720, height: 720, displayMode: 'fit', showControls: false },
+        canvasTabs: null,  // Canvas tabs are now in sub-sub-header, not managed by ToolBase
+        sidebar: [
+            ['', [  // Empty top-level tab (will be hidden)
+                // Sub-tabs for all domains across all pages
+                ...PAGES.flatMap(page => 
+                    page.                        domains.map(domain => [
+                        domain.title,  // Domain as tab name
+                        [
+                            // One block per algorithm in this domain
+                            ...domain.algorithms.map(algo => {
+                                const fullId = `${page.id}.${domain.id}.${algo.id}`;
+                                return [
+                                    algo.title,  // Algorithm name as block title
+                                    getControlsForAlgorithm(fullId, algo)
+                                ];
+                            })
+                        ]
+                    ])
+                )
+            ]]
+        ],
+        onInit: async function() {
+            // Hide the top-level tab bar (empty tab)
+            if (this.element) {
+                const topTabBar = this.element.querySelector('.tool-tab-bar');
+                if (topTabBar) {
+                    topTabBar.style.display = 'none';
+                }
+            }
+            
+            // Setup algorithm selection (must happen after DOM is ready)
+            if (this._algorithmTestLabInstance) {
+                this._algorithmTestLabInstance.setupAlgorithmSelection();
+            }
+            
+            await updateAboutPanel(this);
+            setMode(this, state.viewMode);
+        },
+        onUpdate: function(key, value) {
+            if (key === 'modeTabs') {
+                setMode(this, value);
+            }
+            
+            // Handle randomise button clicks
+            if (key.endsWith('_randomise')) {
+                const baseKey = key.replace('_randomise', '_seed');
+                const randomSeed = Math.floor(Math.random() * 1000);
+                // Update the seed value
+                if (this.values && typeof this.values === 'object') {
+                    this.values[baseKey] = randomSeed;
+                }
+                // Update the input element if it exists
+                const seedInput = this.element.querySelector(`input[data-key="${baseKey}"]`);
+                if (seedInput) {
+                    seedInput.value = randomSeed;
+                    // Trigger change event to update internal state
+                    seedInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            
+            if (state.viewMode === 'output') {
+                this.draw();
+            } else {
+                updateAboutPanel(this);
+            }
+        },
+        onDraw: function(ctx, canvas, values) {
+            if (state.viewMode !== 'output') return;
+            renderAlgorithm(ctx, canvas, values);
+        }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TOOL CLASS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function AlgorithmsTestLab(container, deps) {
+        this.container = container;
+        this.deps = deps || {};
+        this.tool = null;
+    }
+
+    AlgorithmsTestLab.prototype.render = function() {
+        if (!window.ToolBase) {
+            throw new Error('ToolBase not loaded');
+        }
+        if (!window.ComponentLibrary?.CategoryTabsBar) {
+            throw new Error('CategoryTabsBar component not loaded');
+        }
+        
+        const F = this.deps.MF?.F || 14;
+        
+        // Create wrapper
+        this.wrapper = document.createElement('div');
+        this.wrapper.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column;';
+        
+        // Create CategoryTabsBar component using PAGES structure
+        const defaultPage = PAGES.find(p => p.id === state.selectedPageId) || PAGES[0];
+        
+        this.categoryBar = new window.ComponentLibrary.CategoryTabsBar({
+            categories: PAGES.map(p => ({id: p.id, title: p.title})),
+            tabs: [{id: 'output', label: 'OUTPUT'}, {id: 'about', label: 'ABOUT'}],
+            activeCategory: defaultPage.id,
+            activeTab: 'output',
+            onCategoryChange: (pageId) => {
+                state.selectedPageId = pageId;
+                filterDomainTabs(this.tool, pageId);
+            },
+            onTabChange: async (tabId) => {
+                await setMode(this.tool, tabId);
+            }
+        }, this.deps);
+        
+        const barElement = this.categoryBar.render();
+        this.wrapper.appendChild(barElement);
+        
+        // Content area for ToolBase
+        this.contentArea = document.createElement('div');
+        this.contentArea.style.cssText = 'flex: 1; min-height: 0; overflow: hidden;';
+        this.wrapper.appendChild(this.contentArea);
+        
+        this.container.appendChild(this.wrapper);
+        
+        // Build ToolBase in content area
+        this.tool = new window.ToolBase(TOOL_CONFIG, this.deps);
+        
+        // Store reference so onInit can access this instance
+        this.tool._algorithmTestLabInstance = this;
+        
+        this.tool.mount(this.contentArea);
+        this.tool.draw();
+        
+        // Filter tabs to default page
+        filterDomainTabs(this.tool, defaultPage.id);
+        
+        return this;
+    };
+
+    /**
+     * Setup algorithm selection by making block headers clickable
+     */
+    AlgorithmsTestLab.prototype.setupAlgorithmSelection = function() {
+        if (!this.tool || !this.tool.element) {
+            console.warn('setupAlgorithmSelection: tool or tool.element not available');
+            return;
+        }
+        
+        const F = this.deps.MF?.F || 14;
+        
+        // Find all block headers and make them selectable
+        const blockHeaders = this.tool.element.querySelectorAll('.tool-block-header');
+        console.log(`setupAlgorithmSelection: Found ${blockHeaders.length} block headers`);
+        
+        blockHeaders.forEach((header, index) => {
+            const blockTitle = header.textContent.trim();
+            
+            // Try to find the algorithm ID from the current page/domain structure
+            // For now, use the block title to identify the algorithm
+            const algorithmId = this.findAlgorithmIdByTitle(blockTitle);
+            
+            if (algorithmId) {
+                // Store algorithm ID on header
+                header.dataset.algorithmId = algorithmId;
+                
+                // Make clickable
+                header.style.cursor = 'pointer';
+                header.style.transition = 'background-color 0.2s, border-color 0.2s';
+                
+                // Add hover effect
+                header.addEventListener('mouseenter', () => {
+                    if (state.selectedAlgorithmId !== algorithmId) {
+                        header.style.backgroundColor = 'var(--vga-gray)';
+                        header.style.color = 'var(--vga-white)';
+                    }
+                });
+                
+                header.addEventListener('mouseleave', () => {
+                    if (state.selectedAlgorithmId !== algorithmId) {
+                        header.style.backgroundColor = 'var(--vga-black)';
+                        header.style.color = 'var(--vga-white)';
+                    }
+                });
+                
+                // Add click handler
+                header.addEventListener('click', () => {
+                    console.log(`Block header clicked: ${algorithmId}`);
+                    this.selectAlgorithm(algorithmId);
+                });
+                
+                // Select first algorithm by default
+                if (index === 0 && !state.selectedAlgorithmId) {
+                    this.selectAlgorithm(algorithmId);
+                }
+            }
+        });
+    };
+
+    /**
+     * Find algorithm ID by block title
+     */
+    AlgorithmsTestLab.prototype.findAlgorithmIdByTitle = function(title) {
+        const page = PAGES.find(p => p.id === state.selectedPageId);
+        if (!page) return null;
+        
+        // Search through all domains in the page
+        for (const domain of page.domains) {
+            const algo = domain.algorithms.find(a => a.title === title);
+            if (algo) {
+                return `${page.id}.${domain.id}.${algo.id}`;
+            }
+        }
+        
+        return null;
+    };
+
+    /**
+     * Select an algorithm and update UI
+     */
+    AlgorithmsTestLab.prototype.selectAlgorithm = function(algorithmId) {
+        if (!algorithmId || !this.tool || !this.tool.element) return;
+        
+        const F = this.deps.MF?.F || 14;
+        
+        // Update state
+        state.selectedAlgorithmId = algorithmId;
+        state.selectedId = algorithmId; // Also update selectedId for compatibility
+        
+        // Parse algorithm ID
+        const parts = algorithmId.split('.');
+        if (parts.length >= 3) {
+            state.selectedPageId = parts[0];
+            state.selectedDomainId = parts[1];
+        }
+        
+        // Update visual feedback for all headers - TRUE INVERSION
+        const blockHeaders = this.tool.element.querySelectorAll('.tool-block-header');
+        blockHeaders.forEach(header => {
+            const headerId = header.dataset.algorithmId;
+            if (headerId === algorithmId) {
+                // Active: INVERTED - Light background, dark text
+                header.style.backgroundColor = 'var(--vga-white)';
+                header.style.color = 'var(--vga-black)';
+                header.style.borderColor = 'var(--vga-white)';
+            } else {
+                // Inactive: Normal - Dark background, light text
+                header.style.backgroundColor = 'var(--vga-black)';
+                header.style.color = 'var(--vga-white)';
+                header.style.borderColor = 'var(--c-border)';
+            }
+        });
+        
+        // Trigger canvas re-render if in OUTPUT mode
+        if (state.viewMode === 'output' && this.tool) {
+            this.tool.draw();
+        }
+        
+        // ALWAYS update ABOUT panel when algorithm changes (not just when in ABOUT mode)
+        updateAboutPanel(this.tool);
+    };
+    
+
+    AlgorithmsTestLab.prototype.destroy = function() {
+        if (this.tool) {
+            this.tool.destroy();
+            this.tool = null;
+        }
+    };
+
+    window.AlgorithmsTestLab = AlgorithmsTestLab;
+})();
+

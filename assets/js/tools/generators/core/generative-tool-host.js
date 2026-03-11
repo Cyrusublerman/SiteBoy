@@ -65,6 +65,9 @@ export class GenerativeToolHost extends BaseComponent {
         this.displayMode = 'fit';
         this.p5Instance = null;  // p5.js instance for context: 'p5'
         this.isP5Context = false; // Flag for p5 mode
+        this._p5CanvasEl = null;
+        this._p5ViewportEl = null;
+        this._p5ViewportState = null;
         
         // ComputeScheduler (Tier 2+3 — initialised after script load)
         this._scheduler = null;
@@ -190,6 +193,7 @@ export class GenerativeToolHost extends BaseComponent {
             this.p5Instance.remove();
             this.p5Instance = null;
         }
+        this._destroyP5Viewport();
         
         // Destroy existing tool
         if (this.tool) {
@@ -367,9 +371,11 @@ export class GenerativeToolHost extends BaseComponent {
                     scriptConfig.canvas.width,
                     scriptConfig.canvas.height
                 );
+                p.pixelDensity(1);
                 
                 // Style to match ToolBase canvas positioning
                 canvas.style('display', 'block');
+                host._attachP5Canvas(canvas.elt, canvasContainer);
                 
                 // Disable p5's internal loop - we control animation
                 p.noLoop();
@@ -398,6 +404,220 @@ export class GenerativeToolHost extends BaseComponent {
             };
         }, canvasContainer);
     }
+
+    _attachP5Canvas(canvasEl, viewportEl) {
+        if (!canvasEl || !viewportEl) return;
+
+        this._destroyP5Viewport();
+
+        this._p5CanvasEl = canvasEl;
+        this._p5ViewportEl = viewportEl;
+        this._p5ViewportState = {
+            x: 0,
+            y: 0,
+            scale: 1,
+            isDragging: false,
+            startX: 0,
+            startY: 0,
+            activePointers: new Map(),
+            pinchStartDistance: 0,
+            pinchStartScale: 1,
+            handlers: null
+        };
+
+        canvasEl.style.position = 'absolute';
+        canvasEl.style.top = '0';
+        canvasEl.style.left = '0';
+        canvasEl.style.transformOrigin = '0 0';
+        canvasEl.style.touchAction = 'none';
+
+        const onWheel = (e) => {
+            e.preventDefault();
+            const state = this._p5ViewportState;
+            if (!state) return;
+            const rect = viewportEl.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const rawDelta = -e.deltaY;
+            const normDelta = e.deltaMode === 1 ? rawDelta * 16 :
+                e.deltaMode === 2 ? rawDelta * 400 : rawDelta;
+            const factor = Math.max(0.5, Math.min(2.0, Math.pow(1.002, normDelta)));
+            this._zoomP5ToPoint(x, y, factor);
+        };
+
+        const onPointerDown = (e) => {
+            if (e.button === 2) return;
+            const state = this._p5ViewportState;
+            if (!state) return;
+            state.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (state.activePointers.size === 1) {
+                viewportEl.setPointerCapture(e.pointerId);
+                state.isDragging = true;
+                state.startX = e.clientX - state.x;
+                state.startY = e.clientY - state.y;
+            } else if (state.activePointers.size === 2) {
+                const pts = [...state.activePointers.values()];
+                state.pinchStartDistance = this._getPointerDistance(pts[0], pts[1]);
+                state.pinchStartScale = state.scale;
+            }
+        };
+
+        const onPointerMove = (e) => {
+            const state = this._p5ViewportState;
+            if (!state || !state.activePointers.has(e.pointerId)) return;
+            state.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (state.activePointers.size >= 2) {
+                const pts = [...state.activePointers.values()];
+                const currentDistance = this._getPointerDistance(pts[0], pts[1]);
+                if (state.pinchStartDistance < 1) return;
+                const newScale = Math.max(0.1, Math.min(10, state.pinchStartScale * (currentDistance / state.pinchStartDistance)));
+                const midpoint = this._getPointerMidpoint(pts[0], pts[1]);
+                const rect = viewportEl.getBoundingClientRect();
+                const midX = midpoint.x - rect.left;
+                const midY = midpoint.y - rect.top;
+                const oldScale = state.scale;
+                state.x = midX - (midX - state.x) * (newScale / oldScale);
+                state.y = midY - (midY - state.y) * (newScale / oldScale);
+                state.scale = newScale;
+                this._clampP5PanBounds();
+                this._applyP5ViewportTransform();
+            } else if (state.isDragging) {
+                state.x = e.clientX - state.startX;
+                state.y = e.clientY - state.startY;
+                this._clampP5PanBounds();
+                this._applyP5ViewportTransform();
+            }
+        };
+
+        const onPointerUp = (e) => {
+            const state = this._p5ViewportState;
+            if (!state) return;
+            state.activePointers.delete(e.pointerId);
+
+            if (state.activePointers.size === 1 && state.isDragging) {
+                const [remaining] = state.activePointers.values();
+                state.startX = remaining.x - state.x;
+                state.startY = remaining.y - state.y;
+            } else if (state.activePointers.size === 0) {
+                state.isDragging = false;
+            }
+        };
+
+        const onDoubleClick = () => this._applyP5DisplayMode();
+
+        this._p5ViewportState.handlers = {
+            wheel: onWheel,
+            pointerdown: onPointerDown,
+            pointermove: onPointerMove,
+            pointerup: onPointerUp,
+            pointercancel: onPointerUp,
+            dblclick: onDoubleClick
+        };
+
+        viewportEl.addEventListener('wheel', onWheel, { passive: false });
+        viewportEl.addEventListener('pointerdown', onPointerDown);
+        viewportEl.addEventListener('pointermove', onPointerMove);
+        viewportEl.addEventListener('pointerup', onPointerUp);
+        viewportEl.addEventListener('pointercancel', onPointerUp);
+        viewportEl.addEventListener('dblclick', onDoubleClick);
+
+        this._applyP5DisplayMode();
+    }
+
+    _applyP5DisplayMode() {
+        if (!this._p5CanvasEl || !this._p5ViewportEl || !this._p5ViewportState || !this.scriptConfig?.canvas) {
+            return;
+        }
+
+        const state = this._p5ViewportState;
+        const rect = this._p5ViewportEl.getBoundingClientRect();
+        const canvasWidth = this.scriptConfig.canvas.width;
+        const canvasHeight = this.scriptConfig.canvas.height;
+        const viewportWidth = rect.width || canvasWidth;
+        const viewportHeight = rect.height || canvasHeight;
+
+        let scale = 1;
+        let x = 0;
+        let y = 0;
+
+        if (this.displayMode === 'fit') {
+            scale = Math.min(viewportWidth / canvasWidth, viewportHeight / canvasHeight);
+            x = (viewportWidth - canvasWidth * scale) / 2;
+            y = (viewportHeight - canvasHeight * scale) / 2;
+        } else if (this.displayMode === 'fill') {
+            scale = Math.max(viewportWidth / canvasWidth, viewportHeight / canvasHeight);
+            x = (viewportWidth - canvasWidth * scale) / 2;
+            y = (viewportHeight - canvasHeight * scale) / 2;
+        } else {
+            x = (viewportWidth - canvasWidth) / 2;
+            y = (viewportHeight - canvasHeight) / 2;
+        }
+
+        state.x = x;
+        state.y = y;
+        state.scale = scale;
+        this._applyP5ViewportTransform();
+    }
+
+    _applyP5ViewportTransform() {
+        if (!this._p5CanvasEl || !this._p5ViewportState) return;
+        const { x, y, scale } = this._p5ViewportState;
+        this._p5CanvasEl.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+    }
+
+    _zoomP5ToPoint(x, y, factor) {
+        const state = this._p5ViewportState;
+        if (!state) return;
+        const oldScale = state.scale;
+        const newScale = Math.max(0.1, Math.min(10, oldScale * factor));
+        if (newScale === oldScale) return;
+
+        state.x = x - (x - state.x) * (newScale / oldScale);
+        state.y = y - (y - state.y) * (newScale / oldScale);
+        state.scale = newScale;
+        this._clampP5PanBounds();
+        this._applyP5ViewportTransform();
+    }
+
+    _clampP5PanBounds() {
+        if (!this._p5ViewportEl || !this._p5ViewportState || !this.scriptConfig?.canvas) return;
+        const rect = this._p5ViewportEl.getBoundingClientRect();
+        const state = this._p5ViewportState;
+        const width = this.scriptConfig.canvas.width * state.scale;
+        const height = this.scriptConfig.canvas.height * state.scale;
+        const margin = 0.25;
+
+        state.x = Math.max(-(width * (1 - margin)), Math.min(rect.width * (1 - margin), state.x));
+        state.y = Math.max(-(height * (1 - margin)), Math.min(rect.height * (1 - margin), state.y));
+    }
+
+    _destroyP5Viewport() {
+        if (this._p5ViewportEl && this._p5ViewportState?.handlers) {
+            const handlers = this._p5ViewportState.handlers;
+            this._p5ViewportEl.removeEventListener('wheel', handlers.wheel);
+            this._p5ViewportEl.removeEventListener('pointerdown', handlers.pointerdown);
+            this._p5ViewportEl.removeEventListener('pointermove', handlers.pointermove);
+            this._p5ViewportEl.removeEventListener('pointerup', handlers.pointerup);
+            this._p5ViewportEl.removeEventListener('pointercancel', handlers.pointercancel);
+            this._p5ViewportEl.removeEventListener('dblclick', handlers.dblclick);
+        }
+
+        this._p5CanvasEl = null;
+        this._p5ViewportEl = null;
+        this._p5ViewportState = null;
+    }
+
+    _getPointerDistance(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    _getPointerMidpoint(a, b) {
+        return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    }
     
     // === TOOLBAR HANDLERS ===
     
@@ -415,7 +635,9 @@ export class GenerativeToolHost extends BaseComponent {
     _handleDisplayModeChange(mode) {
         window.debugLog('TOOLS', `📐 Display mode: ${mode}`);
         this.displayMode = mode;
-        if (this.tool) {
+        if (this.isP5Context) {
+            this._applyP5DisplayMode();
+        } else if (this.tool) {
             this.tool.setCanvasDisplayMode(mode);
         }
     }
@@ -700,7 +922,11 @@ export class GenerativeToolHost extends BaseComponent {
                     if (this.sequencerV2?._isPlaying) return;
                     this.frame++;
                     this.updatePhaseAnimations();
-                    this.draw();
+                    if (this._scheduler && !this.isP5Context) {
+                        this._scheduler.animationFrame();
+                    } else {
+                        this.draw();
+                    }
                 }
             });
         }
@@ -934,6 +1160,7 @@ export class GenerativeToolHost extends BaseComponent {
             this.p5Instance.remove();
             this.p5Instance = null;
         }
+        this._destroyP5Viewport();
 
         if (this._scheduler) {
             this._scheduler.destroy();

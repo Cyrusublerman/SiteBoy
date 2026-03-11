@@ -18,6 +18,7 @@ import { Sampler } from './Sampler.js';
 import { hashSeed } from './SeededRNG.js';
 import { pool } from './BufferPool.js';
 import { vectorToRaster } from '../nodes/bridge/node-adapters.js';
+import { ExpressionEval } from './ExpressionEval.js';
 
 const N_CACHE_MAX = 12;
 
@@ -92,6 +93,7 @@ export class Pipeline {
 
     // ── Modulation maps ──
     const modMaps = this._buildModMaps(w, h);
+    const pixelVars = this._buildPixelVars(src, w, h, active);
 
     // ── Find first dirty node ──
     let startIdx = active.length;
@@ -142,6 +144,7 @@ export class Pipeline {
         previewScale: sc,
         nodeIndex: ni,
         modMaps: hasMod ? modMaps : null,
+        pixelVars,
         frame, frameCount, time
       };
 
@@ -149,6 +152,7 @@ export class Pipeline {
 
       const tNode = performance.now();
       const needsBlend = node.opacity < 1 || hasMask || mode !== 'normal';
+      const restoreParams = this._applyNodeModulation(node, ctx, w, h);
 
       if (needsBlend) {
         const tmp = pool.acquire(bufSize);
@@ -168,6 +172,7 @@ export class Pipeline {
 
       node._lastMs = performance.now() - tNode;
       this._nodeTimings.set(node.id, node._lastMs);
+      restoreParams?.();
 
       if (!node._cache || node._cache.length !== bufSize) node._cache = new Uint8ClampedArray(bufSize);
       node._cache.set(bufB);
@@ -212,6 +217,71 @@ export class Pipeline {
       maps[name] = dst;
     }
     return maps;
+  }
+
+  _buildPixelVars(srcPixels, w, h, nodes) {
+    let needsPixel = false;
+    for (const node of nodes) {
+      if (!node?.modulation) continue;
+      for (const mod of Object.values(node.modulation)) {
+        if (!mod) continue;
+        const mode = mod.mode || mod.type;
+        if (mode === 'expr') {
+          const expr = (mod.expr || '').replace(/^=/, '');
+          if (ExpressionEval.classify(expr) === 'pixel') {
+            needsPixel = true;
+            break;
+          }
+        }
+      }
+      if (needsPixel) break;
+    }
+    if (!needsPixel) return null;
+
+    const arr = new Array(w * h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const j = i * 4;
+        const r = srcPixels[j] / 255;
+        const g = srcPixels[j + 1] / 255;
+        const b = srcPixels[j + 2] / 255;
+        const a = srcPixels[j + 3] / 255;
+        arr[i] = {
+          x, y,
+          nx: x / Math.max(1, w - 1),
+          ny: y / Math.max(1, h - 1),
+          lum: r * 0.299 + g * 0.587 + b * 0.114,
+          r, g, b, a
+        };
+      }
+    }
+    return arr;
+  }
+
+  _applyNodeModulation(node, ctx, w, h) {
+    if (!node?.modulation) return null;
+    const keys = Object.keys(node.modulation);
+    if (!keys.length) return null;
+
+    const prev = {};
+    const centreIdx = Math.floor(h / 2) * w + Math.floor(w / 2);
+    let changed = false;
+
+    for (const key of keys) {
+      if (!(key in node.params)) continue;
+      prev[key] = node.params[key];
+      const v = node.getModulated(key, centreIdx, ctx);
+      if (typeof v === 'number' && isFinite(v)) {
+        node.params[key] = v;
+        changed = true;
+      }
+    }
+
+    if (!changed) return null;
+    return () => {
+      for (const [k, v] of Object.entries(prev)) node.params[k] = v;
+    };
   }
 
   _downsample(src, sw, sh, dw, dh, dst) {

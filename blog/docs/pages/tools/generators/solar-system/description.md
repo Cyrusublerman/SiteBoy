@@ -1,0 +1,15 @@
+# Solar System — Description
+
+Solar System models real-time heliocentric planetary positions for all eight solar system planets (Mercury through Neptune) using NASA JPL Keplerian orbital elements. The mathematical basis is full Keplerian orbital mechanics: each planet is characterised by six time-varying orbital elements (semi-major axis a, eccentricity e, inclination I, mean longitude L, longitude of perihelion ω̄, longitude of ascending node Ω). Each element evolves linearly with time measured in Julian centuries past the J2000 epoch (1 January 2000 12:00 TT). The generator solves Kepler's transcendental equation M = E − e·sin(E) numerically via Newton-Raphson iteration (maximum 30 iterations, tolerance 10⁻⁶ degrees) to obtain the eccentric anomaly E, from which heliocentric ecliptic Cartesian coordinates are derived via orbital plane transformation.
+
+Because the outer planets (Jupiter through Neptune) have semi-major axes of 5–30 AU, a direct linear scale would render the inner planets invisible. The generator compresses distances logarithmically: `scaledDist = log(AU × 10 + 1)`. This preserves inner-planet separation while fitting all eight orbits within the canvas.
+
+An asteroid belt of configurable particle count is randomly positioned between 2.2 and 3.2 AU (the approximate Mars–Jupiter belt), with screen positions cached until regeneration. An optional viewer marker shows the user's position on Earth's surface based on local solar time, derived from IP geolocation (ipapi.co). A FOV cone of configurable angle indicates the viewer's facing direction. An optional info panel displays hours elapsed since the Great Emu War (2 November 1932) and the current Earth-to-Pluto distance in giraffe small intestines.
+
+Visually, the output is a black canvas centred at the Sun (white circle), with eight coloured planet circles at their computed orbital positions, an optional asteroid belt speckle band, and an optional viewer dot on Earth with a FOV indicator. At the default 1fps update rate, planet positions are effectively real-time.
+
+What makes it distinct: the generator uses actual NASA JPL ephemeris data (valid 1800–2050) rather than simplified circular orbits, making it an astronomically accurate position display rather than an artistic approximation.
+
+Algorithm origin: Keplerian orbital elements method with Newton-Raphson Kepler equation solver, as published in the NASA JPL Approximate Positions of the Planets technical note. Logarithmic distance scaling is a standard technique in planetary visualisation.
+
+Scope boundary: Solar System does not model the Moon, dwarf planets (Pluto is approximated for the info text only), comets, spacecraft, orbital ellipse paths, gravitational interactions between planets, relativistic corrections, or any time-travel/custom-date functionality. The viewer position is approximate (IP-based geolocation, not GPS). The animation does not respond to the `frame` argument — it reads `Date.now()` directly, making each frame's position depend on real-world clock time, not frame count.

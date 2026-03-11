@@ -17,6 +17,8 @@ export class AppState {
     this.sourcePixels = null;
     this.sourceW      = 0;
     this.sourceH      = 0;
+    this.outputWidth  = 1024;
+    this.outputHeight = 1024;
     this.previewScale = QUALITY_DEFAULTS.preview.previewScale;
     this.quality      = 'preview';
     this.globalSeed   = 42;
@@ -79,9 +81,17 @@ export class AppState {
     this.sourcePixels = pixels;
     this.sourceW = w;
     this.sourceH = h;
+    this.outputWidth = w;
+    this.outputHeight = h;
     this.frames = [pixels];
     this.frameCount = 1;
     this.currentFrame = 0;
+  }
+
+  setStack(stack) {
+    this.stack = Array.isArray(stack) ? stack : [];
+    this.invalidateAllCaches();
+    this.needsRender = true;
   }
 
   setFrames(framesArray, w, h) {

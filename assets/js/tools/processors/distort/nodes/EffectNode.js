@@ -4,6 +4,8 @@
  * Provides: parameter management, per-node mask (4 sources), parameter modulation,
  * dirty-node cache invalidation, JSON serialisation, and destroy().
  */
+import { ExpressionEval } from '../core/ExpressionEval.js';
+
 export class EffectNode {
   static _id = 0;
 
@@ -56,11 +58,43 @@ export class EffectNode {
   getModulated(key, pixelIdx, ctx) {
     const base = this.params[key];
     const mod = this.modulation[key];
-    if (!mod || !mod.mapId || mod.amount === 0 || !ctx?.modMaps) return base;
-    const map = ctx.modMaps[mod.mapId];
-    if (!map) return base;
-    const mv = map[pixelIdx] / 255;
-    return base * (1 - mod.amount + mv * mod.amount);
+    if (!mod || !ctx) return base;
+
+    const mode = mod.mode || mod.type || 'none';
+    if (mode === 'none') return base;
+
+    const def = this.paramDefs?.[key];
+    const lo = typeof def?.min === 'number' ? def.min : -Infinity;
+    const hi = typeof def?.max === 'number' ? def.max : Infinity;
+
+    if (mode === 'image' && mod.mapId && ctx.modMaps?.[mod.mapId]) {
+      const map = ctx.modMaps[mod.mapId];
+      const idx = Math.max(0, Math.min(map.length - 1, pixelIdx | 0));
+      let mv = map[idx] / 255;
+      if (mod.invert) mv = 1 - mv;
+      const amount = typeof mod.amount === 'number' ? mod.amount : 1;
+      const driven = lo + mv * (hi - lo);
+      const out = base * (1 - amount) + driven * amount;
+      return Math.max(lo, Math.min(hi, out));
+    }
+
+    if (mode === 'expr' && typeof mod.expr === 'string' && mod.expr.trim()) {
+      const expr = mod.expr.startsWith('=') ? mod.expr.slice(1) : mod.expr;
+      const frameVars = {
+        seed: ctx.nodeSeed ?? 0,
+        frame: ctx.frame ?? 0,
+        frameCount: ctx.frameCount ?? 1,
+        time: ctx.time ?? 0,
+      };
+      const px = ctx.pixelVars?.[pixelIdx];
+      const out = px
+        ? ExpressionEval.evaluatePixel(expr, { ...frameVars, ...px })
+        : ExpressionEval.evaluate(expr, frameVars);
+      if (typeof out !== 'number' || !isFinite(out)) return base;
+      return Math.max(lo, Math.min(hi, out));
+    }
+
+    return base;
   }
 
   /**

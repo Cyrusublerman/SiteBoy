@@ -317,9 +317,30 @@ export class NumericInput extends BaseComponent {
     }
     
     setValue(val, triggerChange = true) {
-        this._updateValue(this._clamp(val), false);
-        if (!triggerChange) {
-            // Already synced UI, just don't fire onChange
+        const next = this._clamp(val);
+        if (triggerChange) {
+            this._updateValue(next, false);
+        } else {
+            this.value = next;
+            if (this.sliderEl) this.sliderEl.value = next;
+            if (this.fieldEl) this.fieldEl.value = this._formatValue(next);
+            if (this.valueDisplay) this.valueDisplay.textContent = this._formatValue(next);
+        }
+    }
+
+    setRange(min, max) {
+        this.min = min;
+        this.max = max;
+        this.value = this._clamp(this.value);
+        if (this.sliderEl) {
+            this.sliderEl.min = min;
+            this.sliderEl.max = max;
+            this.sliderEl.value = this.value;
+        }
+        if (this.fieldEl) {
+            this.fieldEl.min = min;
+            this.fieldEl.max = max;
+            this.fieldEl.value = this._formatValue(this.value);
         }
     }
     

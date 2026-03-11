@@ -213,6 +213,7 @@ export class AnimationLoop extends BaseAnimator {
         
         this.fps = options.fps || null; // null = unlimited (browser native ~60fps)
         this.maxDelta = options.maxDelta || 100; // Maximum deltaTime in ms (prevents huge jumps)
+        this.maxCatchUpFrames = options.maxCatchUpFrames ?? 1; // Drop excess backlog to avoid freeze spirals
         this.frameInterval = this.fps ? (1000 / this.fps) : 0;
         
         this.animationFrameId = null;
@@ -258,14 +259,23 @@ export class AnimationLoop extends BaseAnimator {
         // If FPS limiting is enabled
         if (this.frameInterval > 0) {
             this.accumulator += deltaTime;
-            
-            // Only run frame if enough time has accumulated
-            while (this.accumulator >= this.frameInterval) {
+
+            // Process at most N overdue frames, then drop the remaining backlog.
+            // This prevents heavy simulations from entering a catch-up spiral that
+            // monopolises the main thread and freezes unrelated UI.
+            const framesDue = Math.floor(this.accumulator / this.frameInterval);
+            const framesToProcess = Math.min(framesDue, this.maxCatchUpFrames);
+
+            for (let i = 0; i < framesToProcess; i++) {
                 if (this.onFrame) {
                     this.onFrame(this.frameInterval, this.frameCount, this.getElapsedTime());
                 }
                 this.frameCount++;
                 this.accumulator -= this.frameInterval;
+            }
+
+            if (framesDue > framesToProcess) {
+                this.accumulator = 0;
             }
         } else {
             // Unlimited FPS - run every frame
