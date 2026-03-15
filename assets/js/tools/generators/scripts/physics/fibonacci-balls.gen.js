@@ -156,7 +156,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Algorithm origins: circle packing via front-chain tangent-to-two placement — Apollonius tangency problem (classical geometry); impulse-based rigid-body collision response — Baraff, D. (1997) "An Introduction to Physically Based Modeling". Original sketch: "Fib_balls" (no published URL). Live source: assets/js/tools/generators/scripts/physics/fibonacci-balls.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Version 1.1.0: gif export corrected to false (infinite non-deterministic type); animatableParams moved inside animation block; sequencer: false and animationExport: false declared; compute block added; maxSpeed cap (canvasSize × 0.3) added to outer and inner ball velocity update; _fibSeq: null dead property removed; infoSections added.'
+            body: 'Algorithm origins: circle packing via front-chain tangent-to-two placement — Apollonius tangency problem (classical geometry); impulse-based rigid-body collision response — Baraff, D. (1997) "An Introduction to Physically Based Modeling". Original sketch: "Fib_balls" (no published URL).'
         }
     ],
 

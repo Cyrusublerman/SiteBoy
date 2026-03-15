@@ -1,6 +1,5 @@
 # Moiré — Feature Parity
 
-Legacy source: `moire-generator-spec.md` (mixed bundle), `moire-generator-audit.md` (audit only).
 
 ## Core Computation
 
@@ -23,7 +22,7 @@ Legacy source: `moire-generator-spec.md` (mixed bundle), `moire-generator-audit.
 | Grating count | `gratingCount` | `gratingCount` | PASS |
 | Base wavelength | `baseWavelength` | `wavelength` | PASS (renamed) |
 | Angular frequency | `angularFrequency` | `angularFreq` | PASS (renamed) |
-| Angular mod amplitude | `angularModAmplitude` | absent | FAIL |
+| Angular mod amplitude | `angularModAmplitude` | absent | DROP — angular grating amplitude fixed at 1; adding slider deferred |
 | Phase offset | `phaseOffset` | `phaseOffset` | PASS |
 | Grating combination | `gratingCombination` | `combineMode` | PASS (renamed) |
 | Centre offset | `centreOffset` | `centreOffset` | PASS |
@@ -31,8 +30,8 @@ Legacy source: `moire-generator-spec.md` (mixed bundle), `moire-generator-audit.
 | Centre weight B | `centreWeightB` | `weightB` | PASS (renamed) |
 | Mask type | `maskType` | `maskType` | PASS |
 | Mask size | `maskSize` | `maskSize` | PASS |
-| Mask rotation | `maskRotation` | absent | FAIL |
-| Animate toggle | `animate` | absent | FAIL (implicit via frame) |
+| Mask rotation | `maskRotation` | absent | DROP — mask rotation not implemented; axis-aligned masks by design |
+| Animate toggle | `animate` | absent | DROP — animation driven implicitly by frame counter; explicit toggle redundant |
 | Phase speed | `phaseSpeed` | `phaseSpeed` | PASS |
 | Line threshold | `lineThreshold` | `threshold` | PASS (renamed) |
 | Foreground color | `foreground` | `fgColor` | PASS (renamed) |
@@ -47,14 +46,14 @@ Legacy source: `moire-generator-spec.md` (mixed bundle), `moire-generator-audit.
 | None | ✓ | ✓ | PASS |
 | Circle | ✓ | ✓ | PASS |
 | Triangle | ✓ | ✓ | PASS — resolved; syntax error and formula corrected |
-| Polygon | ✓ | ✗ (replaced by 'square') | FAIL |
+| Polygon | ✓ | ✗ (replaced by 'square') | DROP — configurable-side polygon SDF deferred; square is the implemented substitute |
 | Square | not in spec | ✓ | NEW |
 
 ## WebGL Rendering
 
 | Feature | Spec | Live | Status |
 |---|---|---|---|
-| WebGL fragment shader (primary) | ✓ | ✗ | FAIL |
+| WebGL fragment shader (primary) | ✓ | ✗ | DROP — CPU ImageData with worker offload meets interactive performance target; WebGL port deferred |
 | CPU ImageData (fallback) | ✓ | ✓ (only path) | PASS |
 
 ## Export

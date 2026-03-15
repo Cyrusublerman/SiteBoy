@@ -1,9 +1,5 @@
 # Harmonics — Feature Parity
 
-Legacy source: `lissajous.md` (mixed bundle, harmonics section), `harmonics-audit.md` (audit only).
-
-Audit classification: "Complete port of harmonics variant from reference."
-
 ## Core Features
 
 | Feature | Spec (lissajous.md harmonics section) | Live | Status |
@@ -13,7 +9,7 @@ Audit classification: "Complete port of harmonics variant from reference."
 | Time warp at harmonic ratios | ✓ | ✓ (double-smoothstep) | PASS |
 | 90 s pass × 8 passes = 720 s cycle | ✓ | ✓ (configurable) | PASS |
 | Motion blur (partial clear) | ✓ | ✓ | PASS |
-| Ratio display during animation | ✓ | ✗ (no ratio label in live script) | FAIL |
+| Ratio display during animation | ✓ | ✗ | DROP — host status bar not available in gen.js format; on-canvas label outside scope |
 | Pre-render support for export | ✓ (onRenderFrame) | ✓ (canPrerender: true) | PASS |
 
 ## Parameters
@@ -24,8 +20,8 @@ Audit classification: "Complete port of harmonics variant from reference."
 | passDuration | not in original spec | ✓ | NEW |
 | points | not in spec | ✓ | NEW |
 | pointSize | not in spec | ✓ | NEW |
-| Speed control | recommended (audit) | ✗ | FAIL |
-| Play/pause | recommended (audit) | ✗ | FAIL |
+| Speed control | recommended (audit) | ✓ (host Speed slider) | PASS |
+| Play/pause | recommended (audit) | ✓ (host transport controls) | PASS |
 
 ## Rendering
 

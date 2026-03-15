@@ -1,6 +1,5 @@
 # Wave Equation Synth — Feature Parity
 
-Legacy source: `wave-equation-synth-spec.md` (mixed bundle), `wave-equation-synth-audit.md` (audit only).
 
 ## Core Algorithm
 

@@ -46,7 +46,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Algorithm origin: discrete two-field cellular diffusion with identity restoration — related to Turing / Gray-Scott reaction-diffusion class; neighbourhood averaging + weighted difference amplification is a simplified discrete Laplacian diffusion operator. Orbital placement: standard polar-to-Cartesian coordinate composition. Live script: assets/js/tools/generators/scripts/other/clockwise.gen.js. Archive: reference/generators/clockwise/source/clockwise.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Version 1.1.0: rendering lag bug fixed (render reads post-physics buffer grid1/grid2 instead of pre-physics next1/next2); pulse clamp added to physics step; sparse Map collision map; infoSections added; animatableParams declared in animation block; GIF export corrected to false.'
+            body: 'Algorithm origin: discrete two-field cellular diffusion with identity restoration — related to Turing / Gray-Scott reaction-diffusion class; neighbourhood averaging + weighted difference amplification is a simplified discrete Laplacian diffusion operator. Orbital placement: standard polar-to-Cartesian coordinate composition. Version 1.1.0: rendering lag bug fixed (render reads post-physics buffer grid1/grid2 instead of pre-physics next1/next2); pulse clamp added to physics step; sparse Map collision map; infoSections added; animatableParams declared in animation block; GIF export corrected to false.'
         }
     ],
 
@@ -108,7 +108,8 @@ export const SCRIPT_CONFIG = {
     animation: {
         type: 'infinite',
         defaultFps: 30,
-        animatableParams: ['orbitSpeed', 'spinSpeed', 'growthFactor', 'damping', 'waveDecay', 'identityForce']
+        animatableParams: ['orbitSpeed', 'spinSpeed', 'growthFactor', 'damping', 'waveDecay', 'identityForce'],
+        sequencer: true,
     },
 
     export: { png: true, gif: false, webm: false },

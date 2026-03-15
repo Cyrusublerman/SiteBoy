@@ -104,7 +104,7 @@ export const SCRIPT_CONFIG = {
     // discontinuity at any wrap point and are therefore disabled.
     export: { png: true, gif: false, webm: false },
 
-    animation: { type: 'infinite', defaultFps: 60, animatableParams: [] },
+    animation: { type: 'infinite', defaultFps: 60, animatableParams: ['noiseMaxOffset', 'noiseSpatialScale', 'noiseTimeScale', 'jiggleAmount', 'pointSize'], sequencer: true },
 
     infoSections: [
         {
@@ -137,7 +137,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Live script: assets/js/tools/generators/scripts/pattern/order-disorder.gen.js v1.1.0. Origin: port of order_and_disorder sketch. No legacy specification; Phase 3 source-only analysis. Documentation: blog/docs/pages/tools/generators/order-disorder/. Alpha field: combined radial and angular normalised distance in a 2D constraint space (curvedR, curvedTheta); analogous to a polar SDF with asymmetric angular falloff and an ellipsoidal core threshold. Perlin noise: p5.js built-in p.noise(), 3D gradient noise. Lerp-toward-grid displacement: standard particle anchor technique weighted by the alpha field.'
+            body: 'Origin: port of order_and_disorder sketch. No legacy specification; Phase 3 source-only analysis. Alpha field: combined radial and angular normalised distance in a 2D constraint space (curvedR, curvedTheta); analogous to a polar SDF with asymmetric angular falloff and an ellipsoidal core threshold. Perlin noise: p5.js built-in p.noise(), 3D gradient noise. Lerp-toward-grid displacement: standard particle anchor technique weighted by the alpha field.'
         }
     ],
 

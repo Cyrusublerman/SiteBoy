@@ -31,7 +31,7 @@ export const SCRIPT_CONFIG = {
     animation: {
         type: 'infinite',
         defaultFps: 60,
-        sequencer: false,
+        sequencer: true,
         animationExport: false
     },
 
@@ -147,35 +147,35 @@ export const SCRIPT_CONFIG = {
 
     infoSections: [
         {
-            heading: 'Description',
+            heading: 'DESCRIPTION',
             body: 'Tile Mosaic generates dynamic tile-based mosaics on an 800×800 canvas. Three phases: (1) layout — compute tile geometry via one of three packing algorithms; (2) sprite generation — render each tile type once to an OffscreenCanvas for caching; (3) blit — composite sprites with optional noise overlay. Four animation modes drive Breathing (sinusoidal scale), Morph Layouts (position interpolation between two seeded layouts), Texture Drift (scrolling UV coordinates), and All (combined). Canvas size is 800×800; the spec value of 900×900 was not adopted.'
         },
         {
-            heading: 'Algorithm',
+            heading: 'ALGORITHM',
             body: 'Phase 1 — rectPacker (GEO-016): Uniform Grid divides the canvas into gridColumns×gridRows equal cells. Packed Rects A applies a shelf-first heuristic seeded by randomSeed — tiles are placed left to right, a new shelf opens when the current shelf has insufficient width. Packed Rects B applies the same shelf heuristic with candidates sorted by descending height before packing, yielding a different fill density. Phase 2 — sprite generation (CANVAS-008): each unique (type, w, h, colourIdx) tuple is rendered once. Pseudo-3D lighting (PAT-008) applies a linear-gradient highlight toward globalLightAngle and shadow in the opposing direction, scaled by highlightIntensity and depthStrength. Phase 3 — blit (CANVAS-009): sprites composited via drawImage. When overlayMode ≠ None, a cached fBm noise OffscreenCanvas is blended with globalCompositeOperation multiply (PAT-009).'
         },
         {
-            heading: 'Tile Types',
+            heading: 'TILE TYPES',
             body: 'Concentric (CANVAS-008): concentric arc rings at decreasing radii drawn from tile edge to centre; ring count is ⌊min(w,h)/16⌋ + 3, alternating primary and secondary palette colours. Wedge: pie-sector arcs dividing the tile into 6 equal sectors, alternating two palette variants. Stripe: 5 evenly-spaced filled bands — horizontal when tile width ≥ height, otherwise vertical. Solid: single fillRect in the tile colour. Texture: fillRect with colour, then a grayscale fBm noise OffscreenCanvas composited with multiply blend, producing a tinted noise surface. Micro: 10 fine bands, giving a high-frequency repeat. Enabled types are selected per tile by seeded RNG; when no types are selected, Solid is used as fallback.'
         },
         {
-            heading: 'Lighting Model',
+            heading: 'LIGHTING MODEL',
             body: 'Pseudo-3D lighting (PAT-008) is applied as the last step of each sprite. Two linear gradients are drawn over the tile: a shadow gradient (rgba(0,0,0,depthStrength×0.7)) runs from the lit side to transparent across the tile diagonal; a highlight gradient (rgba(255,255,255,highlightIntensity×0.7)) runs from the opposite side. Both gradients use the full diagonal length as extent, spanning corner to corner. globalLightAngle (0–360°) sets the light-source direction. At depthStrength=0 and highlightIntensity=0, tiles are flat. At maximum values, tiles read as strongly bevelled.'
         },
         {
-            heading: 'Noise Overlay',
+            heading: 'NOISE OVERLAY',
             body: 'When overlayMode = Noise, a full-canvas fBm noise texture is composited with globalCompositeOperation multiply at textureStrength opacity. When overlayMode = Noise+Light, the same noise canvas is drawn first, then a secondary directional gradient (modulated by globalLightAngle) is multiplied over it at 0.4 alpha, producing a surface-relief effect. The fBm noise uses 4 octaves of bilinear-interpolated value noise with quintic smoothstep, at base scale 128 px. The noise OffscreenCanvas (800×800) is computed once per randomSeed change and cached; all subsequent frames blit it via drawImage. When useDrift is active, the noise canvas is drawn twice at a phase-offset x position to simulate seamless horizontal scrolling.'
         },
         {
-            heading: 'Animation',
+            heading: 'ANIMATION',
             body: 'Static: no frame-driven changes; composition is fully determined by params. Breathing (ANIM-009): each tile scales by breathScale = 1 + 0.1·sin(2π·speed·frame/120), drawn via translate/scale/drawImage transform. Period ≈ 120/speed frames (≈2 s at speed=1, 60 fps). Morph Layouts (ANIM-008): two tile sets are generated from randomSeed and randomSeed+1; tile i position is lerp(posA[i], posB[i], t) where t = 0.5+0.5·sin(2π·speed·frame/240). The oscillation period is 240/speed frames (≈4 s at speed=1). Texture Drift (ANIM-010): driftOffset accumulates speed×0.3 px per frame; the noise overlay canvas is translated by driftOffset, producing horizontal scroll. All: all three modes run simultaneously. Animation type is infinite; GIF export is suppressed; sequencer is disabled.'
         },
         {
-            heading: 'Parameters',
+            heading: 'PARAMETERS',
             body: 'gridColumns (4–40, step 1, default 10): column count for Uniform Grid; approximate for packed modes. gridRows (4–40, step 1, default 10): row count. tileSize (10–80, step 2, default 40): base tile dimension for packed-rect packing; also controls variance (±40%). layoutMode (Uniform Grid | Packed Rects A | Packed Rects B, default Uniform Grid): packing algorithm selection. tileTypes (multi-select toggle, default Concentric/Wedge/Stripe/Solid): enabled tile types drawn by seeded RNG. randomSeed (0–999999, default 42): seeds layout RNG and all colour jitter RNGs. animationMode (Static | Morph Layouts | Breathing | Texture Drift | All, default Static): animation behaviour. animationSpeed (0.1–5, step 0.1, default 1): scales all animation rates. paletteSelection (Warm | Cool | Mixed | Earth | Pastel | High-Contrast, default Warm): HSL colour family. paletteVariance (0–1, step 0.05, default 0.3): per-tile colour jitter in H, S, L. depthStrength (0–1, default 0.5): shadow gradient opacity. highlightIntensity (0–1, default 0.4): highlight gradient opacity. globalLightAngle (0–360, default 45): light-source bearing in degrees. textureStrength (0–1, default 0.3): noise overlay blend opacity. overlayMode (None | Noise | Noise+Light, default None): noise overlay composite mode.'
         },
         {
-            heading: 'Performance',
+            heading: 'PERFORMANCE',
             body: 'Sprite caching (CANVAS-008): each unique (type, ⌊w⌋, ⌊h⌋, colourIdx) renders once to OffscreenCanvas. At gridColumns=gridRows=40 with 6 types × 8 palette slots, up to 1920 unique sprite keys are possible but in practice far fewer exist given uniform-grid tile sizes. Cache invalidation occurs on paletteSelection, paletteVariance, depthStrength, highlightIntensity, or globalLightAngle changes. Layout rebuild occurs on gridColumns, gridRows, tileSize, layoutMode, randomSeed, or tileTypes changes. Noise OffscreenCanvas (O(W×H) at build time, ~640K ops at 800×800) is rebuilt only when randomSeed changes; all subsequent frames use drawImage blit. Main-thread blit cost is O(N_tiles) drawImage calls per frame — GPU-accelerated; at 1600 tiles (40×40 grid), negligible. No Tier 2 (adaptive resolution) is used: resolution change invalidates sprite dimensions and causes double cache rebuild. Tier 1 RAF coalescing is always active via host and sufficient given the sprite-cache architecture.'
         }
     ],

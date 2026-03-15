@@ -241,7 +241,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Legacy implementation: assets/js/tools/generators/defecated-tool.js (complete ToolBase + GLSL shader source). Google Fonts API: fonts.googleapis.com. P5.js WEBGL shader API: createShader, shader, setUniform, resetShader — p5js.org/reference.'
+            body: 'Google Fonts API: fonts.googleapis.com. P5.js WEBGL shader API: createShader, shader, setUniform, resetShader — p5js.org/reference.'
         },
     ],
 

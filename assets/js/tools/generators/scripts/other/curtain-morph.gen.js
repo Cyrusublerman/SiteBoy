@@ -420,7 +420,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Live script: assets/js/tools/generators/scripts/other/curtain-morph.gen.js v1.1.0. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Origin: port of ring_polygon sketch. No archived legacy source. Algorithm: concentric polygon morphology via per-vertex linear interpolation with cosine-eased timeline; normal displacement via three-frequency sine waves with tanh(1.35x)/tanh(1.35) soft-limiting; vanishing-point or parallel extrusion; Lambert-like front/back face classification by dot product of surface normal against light direction vector.'
+            body: 'Origin: port of ring_polygon sketch. No archived legacy source. Algorithm: concentric polygon morphology via per-vertex linear interpolation with cosine-eased timeline; normal displacement via three-frequency sine waves with tanh(1.35x)/tanh(1.35) soft-limiting; vanishing-point or parallel extrusion; Lambert-like front/back face classification by dot product of surface normal against light direction vector.'
         }
     ],
 
@@ -516,7 +516,8 @@ export const SCRIPT_CONFIG = {
         animatableParams: [
             'waveAmplitude', 'ampVariation', 'weightVariation', 'phaseVariation',
             'vpX', 'vpY', 'lightX', 'lightY', 'extrusionFactor', 'extrusionDist'
-        ]
+        ],
+        sequencer: true,
     },
 
     export: { png: true, gif: true, webm: false },

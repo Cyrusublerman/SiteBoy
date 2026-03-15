@@ -51,7 +51,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Live script: assets/js/tools/generators/scripts/pattern/animated-lines.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Archive: none (source-only analysis; original lines.js and line_2_shape.js were identical sketches, merged into this file). Algorithm origin: custom morphology system — no named published algorithm. Rotation normalisation via internalAngle summation is standard polygon geometry. Version 1.1.0: gif export corrected to false (infinite type, no loopFrames); fps param renamed to speed (0.5–2.0 multiplier); shape array cache added (_shapesKey); centroid cache added (_centroidKey); _buildArcs guard added; infoSections added; compute block added.'
+            body: 'Algorithm origin: custom morphology system — no named published algorithm. Rotation normalisation via internalAngle summation is standard polygon geometry. Version 1.1.0: gif export corrected to false (infinite type, no loopFrames); fps param renamed to speed (0.5–2.0 multiplier); shape array cache added (_shapesKey); centroid cache added (_centroidKey); _buildArcs guard added; infoSections added; compute block added.'
         }
     ],
 
@@ -114,7 +114,7 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
-    animation: { type: 'infinite', defaultFps: 60, animatableParams: [] },
+    animation: { type: 'infinite', defaultFps: 60, animatableParams: ['strokeWeight', 'outerRadius', 'polySpacing'], sequencer: true },
 
     export: {
         png: true,

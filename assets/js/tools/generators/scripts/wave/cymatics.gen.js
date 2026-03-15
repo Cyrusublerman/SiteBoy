@@ -357,7 +357,8 @@ export const SCRIPT_CONFIG = {
         type:            'infinite',
         defaultFps:      60,
         canPrerender:    true,   // t = frame × speed: fully deterministic, no Date.now() dependency.
-        animatableParams: []
+        animatableParams: ['amplitude', 'speed', 'boost'],
+        sequencer: true,
     },
 
     export: {
@@ -398,7 +399,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Chladni figure simulation: Ernst Chladni, 1787. Equal-temperament frequency mapping: 12-tone equal temperament, standard since 1917. Wave superposition: classical physics. Visualisation techniques (alpha-bucket batching, ImageData greyscale, radial arc rendering) are bespoke. Live script: assets/js/tools/generators/scripts/wave/cymatics.gen.js. Version 1.0.1. Legacy documentation: reference/generators/cymatics/legacy-docs/cymatics.md (mixed bundle), reference/generators/cymatics/legacy-docs/cymatics-audit.md (audit only).'
+            body: 'Chladni figure simulation: Ernst Chladni, 1787. Equal-temperament frequency mapping: 12-tone equal temperament, standard since 1917. Wave superposition: classical physics. Visualisation techniques (alpha-bucket batching, ImageData greyscale, radial arc rendering) are bespoke.'
         }
     ],
 

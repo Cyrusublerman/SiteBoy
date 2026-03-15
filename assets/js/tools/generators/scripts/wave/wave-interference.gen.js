@@ -271,7 +271,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Live source: assets/js/tools/generators/scripts/wave/wave-interference.gen.js. Archive: reference/generators/wave-interference/source/wave-interference.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Algorithm origin: the component structure (superposition of separable and radial wave functions with power distortion) is a bespoke multi-axis generalisation of the standard Lissajous/interference pattern approach, not a named published algorithm. The safePow function matches the implementation in lissajous.gen.js. Version 2.0.0: functional rewrite from legacy vanilla JS class to gen.js module format. Version 2.1.0: camelCase parameter keys; 28 missing UI parameters added; presets expanded to full maps; buffer pooling; infoSections.'
+            body: 'Algorithm origin: the component structure (superposition of separable and radial wave functions with power distortion) is a bespoke multi-axis generalisation of the standard Lissajous/interference pattern approach, not a named published algorithm. The safePow function is the same signed-power-exponentiation technique used in the Lissajous generator. Version 2.0.0: functional rewrite from legacy vanilla JS class to gen.js module format. Version 2.1.0: camelCase parameter keys; 28 missing UI parameters added; presets expanded to full maps; buffer pooling; infoSections.'
         }
     ],
 

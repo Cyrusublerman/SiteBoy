@@ -179,7 +179,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Live script: assets/js/tools/generators/scripts/parametric/torus.gen.js v2.0.0. Archive: reference/generators/torus/source/torus.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Algorithm: standard torus surface parameterisation x=(R+r·cos(φ))·cos(θ), y=(R+r·cos(φ))·sin(θ), z=r·sin(φ). Projection: standard Ry×Rx orthographic matrix. Legacy docs: torus.md (mixed bundle), torus-audit.md (audit only). v2.0.0: module-level mutable state removed; project3D rewritten to standard Ry×Rx matrix; per-frame trig pre-computation; showTorusMesh type changed toggle→radio; inert canvas parameters removed; infoSections and compute block added.'
+            body: 'Algorithm: standard torus surface parameterisation x=(R+r·cos(φ))·cos(θ), y=(R+r·cos(φ))·sin(θ), z=r·sin(φ). Projection: standard Ry×Rx orthographic matrix. v2.0.0: module-level mutable state removed; project3D rewritten to standard Ry×Rx matrix; per-frame trig pre-computation; showTorusMesh type changed toggle→radio; inert canvas parameters removed; infoSections and compute block added.'
         }
     ],
 
@@ -197,7 +197,8 @@ export const SCRIPT_CONFIG = {
         loopFrames: 3600,
         defaultFps: 60,
         canPrerender: true,
-        animatableParams: []
+        animatableParams: ['viewX', 'viewY'],
+        sequencer: true,
     },
 
     export: {

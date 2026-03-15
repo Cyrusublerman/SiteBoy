@@ -242,7 +242,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Algorithm: standard moiré / interference pattern technique using superposition of circular sinusoidal gratings. No named published algorithm beyond textbook wave interference. Live script: assets/js/tools/generators/scripts/wave/moire.gen.js v2.0.0. Legacy docs archived at reference/generators/moire/legacy-docs/ (moire-generator-spec.md: mixed bundle; moire-generator-audit.md: audit only).'
+            body: 'Algorithm: standard moiré / interference pattern technique using superposition of circular sinusoidal gratings. No named published algorithm beyond textbook wave interference.'
         }
     ],
 
@@ -265,7 +265,8 @@ export const SCRIPT_CONFIG = {
         type: 'infinite',
         defaultFps: 30,
         canPrerender: true,
-        animatableParams: ['phaseOffset']
+        animatableParams: ['phaseOffset', 'threshold', 'centreOffset', 'wavelength'],
+        sequencer: true,
     },
     
     export: {

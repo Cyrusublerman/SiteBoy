@@ -1,6 +1,5 @@
 # Tile Mosaic — Feature Parity
 
-Legacy source: `tile-mosaic-spec.md` (mixed bundle), `tile-mosaic-audit.md` (audit only).
 
 ## Core Algorithm
 

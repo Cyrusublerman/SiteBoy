@@ -45,12 +45,12 @@ export class GeneratorToolbar extends BaseComponent {
             flex-shrink: 0;
         `;
         
-        // === LEFT HALF: GENERATOR DROPDOWN (4/8 = 50%) ===
+        // === LEFT: GENERATOR DROPDOWN (flex: 1 — absorbs remaining space) ===
         const dropdownCell = this.createElement('div', 'generator-toolbar-dropdown');
         dropdownCell.style.cssText = `
             display: flex;
             align-items: center;
-            width: 50%;
+            flex: 1;
             height: 100%;
             position: relative;
             border-right: 1px solid var(--c-border);
@@ -60,10 +60,11 @@ export class GeneratorToolbar extends BaseComponent {
         this._buildGeneratorDropdown(dropdownCell, F);
         this.element.appendChild(dropdownCell);
         
-        // === RIGHT HALF: 4 BUTTONS (each 1/8 = 12.5%) ===
-        // FIT button (1/8)
+        // === RIGHT: 4 ACTION CELLS (each 6F wide — design-law §17.1) ===
+        // FIT button
         const fitBtn = this._createTabButton('FIT', this.displayMode === 'fit', F);
-        fitBtn.style.width = '12.5%';
+        fitBtn.style.width = `${F * 6}px`;
+        fitBtn.style.flexShrink = '0';
         fitBtn.style.borderRight = '1px solid var(--c-border)';
         fitBtn.style.borderBottom = '1px solid var(--c-border)';
         fitBtn.style.boxSizing = 'border-box';
@@ -75,9 +76,10 @@ export class GeneratorToolbar extends BaseComponent {
         this.displayModeButtons.push(fitBtn);
         this.element.appendChild(fitBtn);
         
-        // FILL button (1/8)
+        // FILL button
         const fillBtn = this._createTabButton('FILL', this.displayMode === 'fill', F);
-        fillBtn.style.width = '12.5%';
+        fillBtn.style.width = `${F * 6}px`;
+        fillBtn.style.flexShrink = '0';
         fillBtn.style.borderRight = '1px solid var(--c-border)';
         fillBtn.style.borderBottom = '1px solid var(--c-border)';
         fillBtn.style.boxSizing = 'border-box';
@@ -89,9 +91,10 @@ export class GeneratorToolbar extends BaseComponent {
         this.displayModeButtons.push(fillBtn);
         this.element.appendChild(fillBtn);
         
-        // ACTUAL button (1/8)
+        // ACTUAL button
         const actualBtn = this._createTabButton('ACTUAL', this.displayMode === 'actual', F);
-        actualBtn.style.width = '12.5%';
+        actualBtn.style.width = `${F * 6}px`;
+        actualBtn.style.flexShrink = '0';
         actualBtn.style.borderRight = '1px solid var(--c-border)';
         actualBtn.style.borderBottom = '1px solid var(--c-border)';
         actualBtn.style.boxSizing = 'border-box';
@@ -103,11 +106,12 @@ export class GeneratorToolbar extends BaseComponent {
         this.displayModeButtons.push(actualBtn);
         this.element.appendChild(actualBtn);
         
-        // EXPORT button (1/8) with dropdown panel
+        // EXPORT button (6F wide) with dropdown panel
         const exportCell = this.createElement('div', 'generator-toolbar-export');
         exportCell.style.cssText = `
             display: flex;
-            width: 12.5%;
+            width: ${F * 6}px;
+            flex-shrink: 0;
             height: 100%;
             position: relative;
             border-bottom: 1px solid var(--c-border);
@@ -133,7 +137,7 @@ export class GeneratorToolbar extends BaseComponent {
             background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
             color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
             font-family: 'Atkinson Hyperlegible', sans-serif;
-            font-size: ${F}px;
+            font-size: ${F * 0.75}px;
             text-transform: uppercase;
             cursor: pointer;
         `;
@@ -158,7 +162,7 @@ export class GeneratorToolbar extends BaseComponent {
             background: var(--c-bg);
             color: var(--c-text);
             font-family: 'Atkinson Hyperlegible', sans-serif;
-            font-size: ${F}px;
+            font-size: ${F * 0.75}px;
             text-transform: uppercase;
             cursor: pointer;
         `;
@@ -168,7 +172,7 @@ export class GeneratorToolbar extends BaseComponent {
         this.generatorLabel = label;
         
         const menuSymbol = this.createElement('span');
-        menuSymbol.textContent = '+';
+        menuSymbol.textContent = '▸';
         menuSymbol.style.marginLeft = `${F / 2}px`;
         this.menuSymbol = menuSymbol;
         
@@ -224,7 +228,7 @@ export class GeneratorToolbar extends BaseComponent {
                 background: var(--c-border);
                 color: var(--c-text);
                 font-family: 'Atkinson Hyperlegible', sans-serif;
-                font-size: ${F * 0.85}px;
+                font-size: ${F * 0.75}px;
                 text-transform: uppercase;
             `;
             menu.appendChild(header);
@@ -239,7 +243,7 @@ export class GeneratorToolbar extends BaseComponent {
                     background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
                     color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
                     font-family: 'Atkinson Hyperlegible', sans-serif;
-                    font-size: ${F}px;
+                    font-size: ${F * 0.75}px;
                     cursor: pointer;
                     border-bottom: 1px solid var(--c-border);
                 `;
@@ -269,7 +273,7 @@ export class GeneratorToolbar extends BaseComponent {
         this.dropdownOpen = !this.dropdownOpen;
         if (this.dropdownOpen) {
             this.dropdownMenu.style.display = 'block';
-            this.menuSymbol.textContent = '-';
+            this.menuSymbol.textContent = '▾';
         } else {
             this._closeDropdown();
         }
@@ -278,7 +282,7 @@ export class GeneratorToolbar extends BaseComponent {
     _closeDropdown() {
         this.dropdownOpen = false;
         if (this.dropdownMenu) this.dropdownMenu.style.display = 'none';
-        if (this.menuSymbol) this.menuSymbol.textContent = '+';
+        if (this.menuSymbol) this.menuSymbol.textContent = '▸';
     }
     
     _groupByCategory() {
@@ -297,74 +301,40 @@ export class GeneratorToolbar extends BaseComponent {
     }
     
     _buildExportButton(container, F) {
-        const exportBtn = this._createTabButton('EXPORT', false, F);
+        const exportBtn = this._createTabButton('EXPORT ▾', false, F);
         exportBtn.style.width = '100%';
         exportBtn.style.flex = '1';
         this.exportBtn = exportBtn;
         
-        // Export dropdown panel
+        // Export dropdown panel — min-width matches cell (100%)
         const exportPanel = this.createElement('div', 'export-panel');
         exportPanel.style.cssText = `
             display: none;
             position: absolute;
             top: 100%;
             right: 0;
+            min-width: 100%;
             background: var(--c-bg);
-            border: 1px solid var(--c-border);
-            border-top: none;
-            padding: ${F}px;
+            border-left: 1px solid var(--c-border);
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
             z-index: 200;
-            min-width: 180px;
+            box-sizing: border-box;
         `;
         
-        // Frame input row
-        const frameRow = this.createElement('div');
-        frameRow.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: ${F / 2}px;
-            margin-bottom: ${F / 2}px;
-        `;
-        
-        const frameLabel = this.createElement('span');
-        frameLabel.textContent = 'Frames:';
-        frameLabel.style.cssText = `
-            font-family: 'Atkinson Hyperlegible', sans-serif;
-            font-size: ${F}px;
-            color: var(--c-text);
-        `;
-        
-        const frameInput = this.createElement('input');
-        frameInput.type = 'number';
-        frameInput.min = '1';
-        frameInput.max = '9999';
-        frameInput.value = '60';
-        frameInput.style.cssText = `
-            width: 60px;
-            height: ${F * 1.5}px;
-            padding: 0 ${F / 2}px;
-            border: 1px solid var(--c-border);
-            background: var(--c-bg);
-            color: var(--c-text);
-            font-family: 'Atkinson Hyperlegible', sans-serif;
-            font-size: ${F}px;
-        `;
-        this.frameInput = frameInput;
-        
-        frameRow.appendChild(frameLabel);
-        frameRow.appendChild(frameInput);
-        exportPanel.appendChild(frameRow);
-        
-        // Execute button
-        const executeBtn = this._createTabButton('EXPORT FRAMES', false, F);
-        executeBtn.style.width = '100%';
-        executeBtn.style.border = '1px solid var(--c-border)';
-        executeBtn.addEventListener('click', () => {
-            const frameCount = parseInt(this.frameInput.value, 10) || 60;
-            this.onExport(frameCount);
+        // Static PNG export button (always present)
+        const pngBtn = this._createTabButton('SAVE PNG', false, F);
+        pngBtn.style.width = '100%';
+        pngBtn.style.borderBottom = `1px solid var(--c-border)`;
+        pngBtn.addEventListener('click', () => {
+            this.onExport('png');
             this._closeExportPanel();
         });
-        exportPanel.appendChild(executeBtn);
+        exportPanel.appendChild(pngBtn);
+
+        // Mount point for AnimationExport UI (injected by host when script is animated)
+        this._animExportMount = this.createElement('div', 'export-anim-mount');
+        exportPanel.appendChild(this._animExportMount);
         
         this.exportPanel = exportPanel;
         
@@ -382,6 +352,15 @@ export class GeneratorToolbar extends BaseComponent {
         
         container.appendChild(exportBtn);
         container.appendChild(exportPanel);
+    }
+
+    /**
+     * Returns the mount point div inside the export dropdown where
+     * AnimationExport UI should be injected by the host.
+     * @returns {HTMLElement}
+     */
+    getAnimExportMount() {
+        return this._animExportMount ?? null;
     }
     
     _setActiveDisplayMode(mode) {

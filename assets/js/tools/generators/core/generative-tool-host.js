@@ -266,7 +266,7 @@ export class GenerativeToolHost extends BaseComponent {
         const animType = this.scriptConfig.animation?.type;
         if (this.scriptConfig.animation && animType !== 'none') {
             setTimeout(() => {
-                if (this.scriptConfig.animation.sequencer !== false) {
+                if (this.scriptConfig.animation.sequencer === true) {
                     this._injectSequencer();
                 }
                 if (this.scriptConfig.animation.animationExport !== false) {
@@ -663,9 +663,9 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Export current frame as PNG (toolbar quick export)
+     * Export current frame as PNG (toolbar SAVE PNG button)
      */
-    _handleExport(frameCount) {
+    _handleExport(format) {
         this._exportCurrentFrame();
     }
 
@@ -685,24 +685,17 @@ export class GenerativeToolHost extends BaseComponent {
     }
 
     /**
-     * Inject AnimationExport UI into the EXPORT tab's "Animation Export" block.
+     * Inject AnimationExport UI into the toolbar EXPORT dropdown's animation mount point.
+     * The toolbar owns export (component-patterns §4, §6.6); sidebar EXPORT tab is removed.
      */
     _injectExportUI() {
         if (!this.scriptConfig.animation) return;
 
-        const exportTabIndex = this._sidebarTabs?.findIndex(([name]) => name === 'EXPORT');
-        if (exportTabIndex == null || exportTabIndex < 0) return;
+        const mountEl = this.toolbar?.getAnimExportMount?.();
+        if (!mountEl) return;
 
-        const panelsContainer = this.tool.element?.querySelector('.tool-panels');
-        if (!panelsContainer) return;
-
-        const panels = panelsContainer.querySelectorAll(':scope > .tool-panel');
-        const exportPanel = panels[exportTabIndex];
-        if (!exportPanel) return;
-
-        const blockContents = exportPanel.querySelectorAll('.tool-block-content');
-        const animBlock = blockContents[blockContents.length - 1];
-        if (!animBlock) return;
+        // Clear any previously injected UI (script switch)
+        mountEl.innerHTML = '';
 
         let savedFrame = 0;
         let savedParams = {};
@@ -711,7 +704,7 @@ export class GenerativeToolHost extends BaseComponent {
             type: 'loop',
             loopFrames: this.scriptConfig.animation.loopFrames || 300,
             defaultFps: this.scriptConfig.animation.defaultFps || 60,
-            canPrerender: true,
+            canPrerender: this.scriptConfig.animation.canPrerender ?? true,
             getCanvas: () => this._getActiveCanvas(),
             renderFrame: (i) => {
                 this.frame = i;
@@ -737,8 +730,8 @@ export class GenerativeToolHost extends BaseComponent {
             },
         }, {});
 
-        animBlock.appendChild(this.animationExporter.render());
-        window.debugLog('TOOLS', `✅ AnimationExport UI injected for "${this.scriptId}"`);
+        mountEl.appendChild(this.animationExporter.render());
+        window.debugLog('TOOLS', `✅ AnimationExport UI injected into toolbar for "${this.scriptId}"`);
     }
     
     // === TOOLBASE HANDLERS ===

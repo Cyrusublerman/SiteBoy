@@ -21,9 +21,9 @@ Audit verdict: "Complete — all patterns, transitions, effects, and timeline fr
 | `speed` slider | PASS | 0.5–3 |
 | `seek` scrubber | PASS | Wired in v2.1.0: `t = (frame/60)*speed + seek` |
 | Play/Pause control | PASS | Host transport |
-| Keyboard controls (Space, R, H) | FAIL | Not implemented |
+| Keyboard controls (Space, R, H) | DROP | Not implemented; host transport covers play/pause intent |
 | Info/phase display overlay | PARTIAL | Host may surface phase name via status |
-| Info hide toggle | FAIL | No toggle implemented |
+| Info hide toggle | DROP | Not implemented; showInfo parameter covers the intent |
 | Export (PNG, GIF, WebM, sequence) | PASS | All four enabled in `export` block |
 | Pre-render support (`canPrerender`) | PASS | Flag set; `frame` parameter correct |
 

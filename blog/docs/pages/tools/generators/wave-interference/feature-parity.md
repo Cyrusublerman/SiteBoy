@@ -1,6 +1,5 @@
 # Wave Interference — Feature Parity
 
-Legacy source: `wave-interference.md` (mixed bundle), `wave-interference-audit.md` (audit only).
 
 ## Core Computation
 
@@ -66,10 +65,10 @@ The live implementation's modulation formula differs from the legacy spec:
 | Feature | Spec | Live | Status |
 |---|---|---|---|
 | Phase animation (advance phi params) | ✓ | ✓ (animatableParams declared) | PASS |
-| Per-parameter animation speed/direction | ✓ | ✗ (not in SCRIPT_CONFIG) | FAIL |
-| Checkpoint save/load | ✓ | ✗ (sequencer: true declared; host-dependent) | FAIL |
-| Sequence animation (interpolate checkpoints) | ✓ | ✗ | FAIL |
-| Loop toggle | ✓ | ✗ | FAIL |
+| Per-parameter animation speed/direction | ✓ | ✗ | DROP — host speed slider covers global rate; per-param speed not in gen.js contract |
+| Checkpoint save/load | ✓ | ✓ (sequencer: true; host-managed) | PASS |
+| Sequence animation (interpolate checkpoints) | ✓ | ✓ (host SequencerV2; sequencer: true) | PASS |
+| Loop toggle | ✓ | ✗ | DROP — not in gen.js lifecycle; host play/pause covers intent |
 | canPrerender | Not spec'd | ✓ | NEW |
 
 ## Export

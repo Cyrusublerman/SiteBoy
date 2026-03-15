@@ -1,6 +1,5 @@
 # Interference Figure — Feature Parity
 
-Legacy source: `interference-figure-spec.md` (mixed bundle), `interference-figure-audit.md` (audit only).
 
 ## Core Algorithm
 

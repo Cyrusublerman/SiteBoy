@@ -59,40 +59,41 @@ export const SCRIPT_CONFIG = {
         get loopFrames() { return SCRIPT_CONFIG._liveLoopFrames ?? 360; },
         defaultFps: 60,
         canPrerender: true,
-        animatableParams: ['hueSpeed', 'satSpeed', 'lumSpeed']
+        animatableParams: ['hueSpeed', 'satSpeed', 'lumSpeed'],
+        sequencer: true,
     },
 
     infoSections: [
         {
-            heading: 'Description',
+            heading: 'DESCRIPTION',
             body: 'Golden Grid recursively subdivides an 800×800 canvas using golden-ratio proportions. At each depth the split alternates vertical and horizontal. The split ratio oscillates sinusoidally between the two golden proportions (≈0.382 and ≈0.618), causing the grid to breathe. Each terminal cell is coloured from its accumulated width, height, and area proportions via HSL, producing a continuously shifting chromatic mosaic.'
         },
         {
-            heading: 'Algorithm',
+            heading: 'ALGORITHM',
             body: 'Constants: φ = 1.618…, P_BIG = φ/(1+φ) ≈ 0.618, P_SMALL = 1−P_BIG ≈ 0.382. Time: t = (frame % loopFrames) / loopFrames ∈ [0,1). Ratio (per frame, computed once): r = φ^sin(2πt), split = r/(1+r) ∈ [P_SMALL, P_BIG]. Subdivision (_subdivide): binary tree to maxDepth; even depth = vertical split, odd = horizontal; flipped alternates the larger-cell side; wProp/hProp accumulate the product of all split ratios to the node. Log-norm (_logNorm): logNorm(v, mn, mx) = (ln v − ln mn)/(ln mx − ln mn), mapping golden-ratio products to linear [0,1]. Bounds: wMax = P_BIG^⌈d/2⌉, wMin = P_SMALL^⌈d/2⌉ (symmetric for height), cached until maxDepth changes. Colour at terminal cell: H = (wNorm + t×hueSpeed) % 1 (sawtooth); S = 1 − |(hNorm + t×satSpeed)×2 % 2 − 1| (triangle wave); L = 1 − |(aNorm + t×lumSpeed)×2 % 2 − 1| (triangle wave on area proportion).'
         },
         {
-            heading: 'Parameters',
+            heading: 'PARAMETERS',
             body: 'maxDepth (4–16, step 1, default 13): recursion depth; terminal cells = 2^maxDepth. Depth 13 → 8,192 cells; depth 16 → 65,536 cells (likely drops frames). loopFrames (60–720, step 60, default 360): loop period in frames at 60 fps; controls both the animation cycle length and export frame count. hueSpeed (0–10, step 0.5, default 3): speed of sawtooth hue cycle driven by cell width. satSpeed (0–10, step 0.5, default 2): speed of triangle-wave saturation cycle driven by cell height. lumSpeed (0–5, step 0.5, default 1): speed of triangle-wave lightness cycle driven by cell area.'
         },
         {
-            heading: 'Presets',
+            heading: 'PRESETS',
             body: 'Classic (depth 13, 360 frames, hue 3, sat 2, lum 1): balanced default. Deep (depth 16, 720 frames, slower speeds): dense fine-grained grid at the performance limit. Shallow (depth 8, 180 frames, faster speeds): coarse grid with rapid colour cycling. Static (depth 13, 360 frames, all speeds 0): frozen grid with no colour motion.'
         },
         {
-            heading: 'Performance',
+            heading: 'PERFORMANCE',
             body: 'Cost is O(2^maxDepth) rect calls per frame. Depth 13 (default): 8,192 calls ≈ 8–12 ms/frame. Depth 16: 65,536 calls — likely exceeds 16 ms. The split ratio is computed once per frame and passed into the tree, eliminating 65,534 redundant sin/pow calls at depth 16. Normalisation bounds are cached and recomputed only when maxDepth changes. Worker offload is not feasible (uses p5 canvas API directly).'
         },
         {
-            heading: 'Animation',
+            heading: 'ANIMATION',
             body: 'Type: loop. Period: loopFrames frames (default 360 at 60 fps = 6 s). Fully deterministic: same frame + params → same output. Eligible for GIF export. The animation.loopFrames property dynamically tracks params.loopFrames, so export frame count always matches the current slider value. Colour-speed params (hueSpeed, satSpeed, lumSpeed) are registered as animatable — the ANIMATE tab can interpolate them between sequencer checkpoints.'
         },
         {
-            heading: 'Known Limitations',
+            heading: 'KNOWN LIMITATIONS',
             body: 'At maxDepth 16 frame drops are expected on most hardware. loopFrames doubles as both the colour-cycle driver and the export frame count; changing it alters both simultaneously. Canvas is fixed at 800×800; no user resize control is exposed.'
         },
         {
-            heading: 'References',
+            heading: 'REFERENCES',
             body: 'Golden ratio: φ = (1+√5)/2 ≈ 1.618. Colour model: HSL via p.colorMode(HSL, 1, 1, 1). Log-normalisation maps geometrically-distributed proportion products to a perceptually linear scale. Based on pulsing_recursive_grid sketch.'
         }
     ],

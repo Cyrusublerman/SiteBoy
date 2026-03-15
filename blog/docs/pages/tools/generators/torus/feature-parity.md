@@ -1,6 +1,5 @@
 # Torus — Feature Parity
 
-Legacy source: `torus.md` (mixed bundle), `torus-audit.md` (audit only).
 
 The live script is a full port with enhancements. Audit classification: "Enhanced — implementation has more controls than original reference."
 
@@ -19,8 +18,8 @@ The live script is a full port with enhancements. Audit classification: "Enhance
 | Adjustable torus size | ✓ (recommended) | ✓ | PASS |
 | Adjustable view angles | ✓ (recommended) | ✓ | PASS |
 | Adjustable cycle speed | ✓ (recommended) | ✓ | PASS |
-| Play/pause | ✓ (recommended) | ✗ | FAIL |
-| Separate major/minor radius sliders | ✓ (recommended) | ✗ (locked equal) | FAIL |
+| Play/pause | ✓ (recommended) | ✓ (host transport controls) | PASS |
+| Separate major/minor radius sliders | ✓ (recommended) | ✗ (locked equal, R=r by design) | DROP — separate sliders not implemented; architectural constraint documented |
 | Wind count slider | ✓ (recommended, hardcoded) | ✓ | PASS |
 | PNG export | ✓ | ✓ | PASS |
 | GIF/WebM export | not in spec | ✓ | NEW |

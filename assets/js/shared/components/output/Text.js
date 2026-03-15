@@ -4,6 +4,7 @@
  * Variants:
  * - 'heading' — h1-h6
  * - 'body' — paragraph
+ * - 'markdown' — author-controlled markdown rendered as HTML
  * - 'status' — status message with type
  * - 'value' — label + value + unit display
  * 
@@ -43,6 +44,8 @@ export class Text extends BaseComponent {
         switch (this.variant) {
             case 'heading':
                 return this._renderHeading(F, F2);
+            case 'markdown':
+                return this._renderMarkdown(F);
             case 'status':
                 return this._renderStatus(F, F2);
             case 'value':
@@ -80,6 +83,75 @@ export class Text extends BaseComponent {
         return this.element;
     }
     
+    _parseMarkdown(str) {
+        // Process line-by-line, building HTML. Author-controlled content only.
+        const escape = (s) => s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        const inlineFormat = (line) => {
+            // Order matters: code before bold/italic to avoid double-processing
+            return escape(line)
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        };
+
+        const lines = str.split('\n');
+        const parts = [];
+        let i = 0;
+
+        while (i < lines.length) {
+            const line = lines[i];
+
+            // Headings
+            if (/^## /.test(line)) {
+                parts.push(`<h4 style="margin:0.75em 0 0.25em;font-size:inherit;font-weight:bold;">${inlineFormat(line.slice(3))}</h4>`);
+                i++; continue;
+            }
+            if (/^# /.test(line)) {
+                parts.push(`<h3 style="margin:0.75em 0 0.25em;font-size:inherit;font-weight:bold;">${inlineFormat(line.slice(2))}</h3>`);
+                i++; continue;
+            }
+
+            // List block (contiguous `- ` lines)
+            if (/^- /.test(line)) {
+                const items = [];
+                while (i < lines.length && /^- /.test(lines[i])) {
+                    items.push(`<li>${inlineFormat(lines[i].slice(2))}</li>`);
+                    i++;
+                }
+                parts.push(`<ul style="margin:0.25em 0;padding-left:1.25em;">${items.join('')}</ul>`);
+                continue;
+            }
+
+            // Blank line — paragraph separator
+            if (line.trim() === '') {
+                parts.push('<br>');
+                i++; continue;
+            }
+
+            // Normal paragraph line
+            parts.push(`<p style="margin:0.25em 0;">${inlineFormat(line)}</p>`);
+            i++;
+        }
+
+        return parts.join('');
+    }
+
+    _renderMarkdown(F) {
+        this.element = this.createElement('div', 'text text-markdown component');
+        this.element.style.cssText = `
+            font-family: 'Atkinson Hyperlegible', monospace;
+            font-size: ${F}px;
+            color: var(--c-text);
+            line-height: 1.5;
+        `;
+        this.element.innerHTML = this._parseMarkdown(this.content);
+        return this.element;
+    }
+
     _renderBody(F, F2) {
         this.element = this.createElement('p', 'text text-body component');
         this.element.style.cssText = `

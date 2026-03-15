@@ -1,6 +1,5 @@
 # Generative Pattern — Feature Parity
 
-Legacy source: `generative-pattern-algorithm-spec.md` (mixed bundle), `generative-pattern-algorithm-audit.md` (audit only).
 
 ## Core Algorithm
 

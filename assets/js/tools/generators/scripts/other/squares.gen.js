@@ -427,7 +427,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Café wall illusion: Gregory & Heard (1979). Tile-flip choreography: no named published algorithm. Live script: assets/js/tools/generators/scripts/other/squares.gen.js v2.1.0. Legacy docs archived at reference/generators/squares/legacy-docs/ (squares.md: mixed bundle; squares-audit.md: audit only).'
+            body: 'Café wall illusion: Gregory & Heard (1979). Tile-flip choreography: no named published algorithm.'
         }
     ],
 
@@ -455,7 +455,8 @@ export const SCRIPT_CONFIG = {
         defaultFps:    60,
         defaultSpeed:  1,
         canPrerender:  true,
-        animatableParams: []
+        animatableParams: ['speed'],
+        sequencer: true,
     },
 
     export: {

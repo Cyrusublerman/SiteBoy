@@ -1,6 +1,5 @@
 # Unified Pattern — Feature Parity
 
-Legacy source: `unified-pattern-generator-spec.md` (mixed bundle), `unified-pattern-generator-audit.md` (audit only).
 
 ## Core Algorithm
 

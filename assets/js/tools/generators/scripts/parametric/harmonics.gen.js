@@ -65,7 +65,7 @@ export const SCRIPT_CONFIG = {
         defaultSpeed: 1,
         canPrerender: true,
         animatableParams: [],
-        sequencer: false,
+        sequencer: true,
         animationExport: true
     },
 
@@ -108,7 +108,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Adapted from the harmonics variant of the Lissajous reference implementation. Legacy source: reference/generators/harmonics/source/harmonics.gen.js. Reference documentation: lissajous.md (mixed bundle, harmonics section) and harmonics-audit.md (audit only). Version: 2.0.0. Mathematical basis: just-intonation frequency ratios from standard Western music theory. Double-smoothstep time warp is an original animation device producing natural pauses at pure harmonic ratios.'
+            body: 'Adapted from the harmonics variant of the Lissajous reference implementation. Version 2.0.0. Mathematical basis: just-intonation frequency ratios from standard Western music theory. Double-smoothstep time warp is an original animation device producing natural pauses at pure harmonic ratios.'
         }
     ],
 

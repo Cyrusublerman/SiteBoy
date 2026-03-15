@@ -3,7 +3,7 @@
  * 
  * Responsibilities:
  * - Convert parameter definitions to ToolBase component arrays
- * - Generate PARAMS, ANIMATE, EXPORT, INFO tabs
+ * - Generate PARAMS, ANIMATE, INFO tabs
  * - Handle parameter groups as collapsible blocks
  * - Create preset/randomise/reset controls
  * 
@@ -26,12 +26,6 @@ export function buildSidebarConfig(scriptConfig) {
         tabs.push(['ANIMATE', buildAnimateTab(scriptConfig)]);
     }
     
-    // EXPORT tab — only if there is animation export content to show
-    const exportBlocks = buildExportTab(scriptConfig);
-    if (exportBlocks.length > 0) {
-        tabs.push(['EXPORT', exportBlocks]);
-    }
-
     // INFO tab — if description or infoSections present
     if (scriptConfig.description || (scriptConfig.infoSections && scriptConfig.infoSections.length > 0)) {
         tabs.push(['INFO', buildInfoTab(scriptConfig)]);
@@ -131,25 +125,6 @@ function buildAnimateTab(scriptConfig) {
 }
 
 /**
- * Build EXPORT tab content
- * @param {ScriptConfig} scriptConfig - Script configuration
- * @returns {Array} Blocks for EXPORT tab
- */
-function buildExportTab(scriptConfig) {
-    const blocks = [];
-
-    // PNG export is handled by the toolbar EXPORT button — not duplicated here.
-    // Animation export placeholder: injected at runtime by _injectExportUI.
-    // Suppressed when type is 'none' (no animation to export) or animationExport === false.
-    const animType = scriptConfig.animation?.type;
-    if (scriptConfig.animation && animType !== 'none' && scriptConfig.animation.animationExport !== false) {
-        blocks.push(['Animation Export', []]);
-    }
-
-    return blocks;
-}
-
-/**
  * Build INFO tab content.
  *
  * If scriptConfig.infoSections is present (array of { heading, body }), each section
@@ -168,7 +143,7 @@ function buildInfoTab(scriptConfig) {
     if (scriptConfig.infoSections && scriptConfig.infoSections.length > 0) {
         for (const section of scriptConfig.infoSections) {
             blocks.push([section.heading, [
-                ['label', section.body, { variant: 'body' }],
+                ['markdown', section.body],
             ]]);
         }
         return blocks;
@@ -177,7 +152,7 @@ function buildInfoTab(scriptConfig) {
     // Legacy fallback
     blocks.push(['About', [
         ['label', scriptConfig.title, { variant: 'heading' }],
-        ['label', scriptConfig.description || '', { variant: 'body' }],
+        ['markdown', scriptConfig.description || ''],
     ]]);
     
     if (scriptConfig.version) {
@@ -266,7 +241,6 @@ export default {
     buildSidebarConfig,
     buildParamsTab,
     buildAnimateTab,
-    buildExportTab,
     buildInfoTab,
     paramToComponent,
     getPresetNames

@@ -79,41 +79,41 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
-    animation: { type: 'loop', loopFrames: 3600, defaultFps: 60, animatableParams: ['amplitude', 'speed', 'frequency'] },
+    animation: { type: 'loop', loopFrames: 3600, defaultFps: 60, animatableParams: ['amplitude', 'speed', 'frequency'], sequencer: true },
 
     export: { png: true, gif: true, webm: false },
 
     infoSections: [
         {
-            heading: 'Overview',
+            heading: 'DESCRIPTION',
             body: 'Wave Interference renders interference patterns from four orbiting wave sources on a 1080x1080 pixel canvas. Each pixel\'s colour is derived from the angular differences between the surface normals of two source pairs and a rotating reference vector. The generator is fully deterministic — every frame depends only on the frame number and current parameter values, with no random elements.'
         },
         {
-            heading: 'Wave Model',
+            heading: 'WAVE MODEL',
             body: 'Each source emits a scalar wave described by: h(px, py, src, t) = amplitude x (sin(frequency x distance - speed x t) + 1) / 2, where distance is the Euclidean distance from the pixel to the source. There is no distance decay — amplitude is uniform at all ranges. The wave heights of a source pair are summed at each pixel to produce a local surface height used for normal estimation.'
         },
         {
-            heading: 'Source Orbits',
+            heading: 'SOURCE ORBITS',
             body: 'Four sources orbit the canvas perimeter continuously. Sources 1 and 2 form Pair A; sources 3 and 4 form Pair B. Sources 1 and 3 travel clockwise; sources 2 and 4 travel counter-clockwise. Start offsets are 0, half-perimeter, quarter-perimeter, and three-quarter-perimeter respectively. Each source completes its loop count per animation cycle. All positions are deterministic and frame-based.'
         },
         {
-            heading: 'Surface Normals',
+            heading: 'SURFACE NORMALS',
             body: 'For each effective pixel, two surface normals are computed — one for Pair A and one for Pair B — using a 4-point finite difference of the summed wave heights at offsets of 1 pixel in each cardinal direction. The resulting gradient vector is normalised to a unit sphere. This gives a compact representation of the local surface tilt at the interference pattern\'s surface.'
         },
         {
-            heading: 'Colour Mapping',
+            heading: 'COLOUR MAPPING',
             body: 'Six angular differences are computed between the pair normals and a rotating reference vector: three from Pair A (XY, XZ, ZY planes) and three from Pair B. Each is wrapped to [-pi, pi]. The XY differences sum to the red channel, the XZ differences to green, and the ZY differences to blue. Each channel is linearly mapped from [-2pi, 2pi] to [0, 255]. A hue shift is then applied using the total summed wave height across all four sources, rotating the colour by up to 360 degrees.'
         },
         {
-            heading: 'Reference Vector',
+            heading: 'REFERENCE VECTOR',
             body: 'The reference vector traces a triangle with vertices at approximately (540, 54), (1026, 1026), and (54, 1026) on the canvas, completing 10 circuits per animation cycle. The triangle position is converted to spherical coordinates — theta from the x-position and phi from the y-position — and mapped to a unit sphere. This rotating reference continuously shifts the colour output throughout the cycle.'
         },
         {
-            heading: 'Parameters',
+            heading: 'PARAMETERS',
             body: 'Amplitude (1-12): wave height scale; higher values increase colour saturation and contrast. Frequency (0.05-0.5): spatial frequency of waves; higher values produce finer interference fringes. Speed (0.001-0.1): temporal phase rate; controls how fast the wave pattern evolves. Source 1-4 Loops (1-30): orbit count per cycle for each source; different values produce complex asymmetric patterns. Resolution (1-6): pixel block size for rendering; 1 is full quality at ~2-5 fps, 6 gives blocks at ~60 fps. The animation cycle is fixed at 3600 frames.'
         },
         {
-            heading: 'Performance',
+            heading: 'PERFORMANCE',
             body: 'At full resolution (1) the generator computes approximately 20 transcendental operations per pixel across 1.16 million pixels — expect 2-5 fps on the main thread. At the default resolution of 2 (291k effective pixels), expect 5-15 fps. Resolution 4 gives 20-40 fps; resolution 6 meets the 60 fps target. During parameter interaction, canvas resolution is automatically halved to maintain responsiveness, then restored after 200ms of inactivity. Use resolution 4-6 for real-time preview and resolution 1-2 for final output.'
         }
     ],

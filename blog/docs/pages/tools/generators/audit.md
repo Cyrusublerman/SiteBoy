@@ -4,7 +4,7 @@
 - complete packs (all 8 files, score ≥ 2): `25`
 - completion: `100%`
 - pass completed: 2026-03-10
-- last updated: 2026-03-13 (implementation status updated for 8 generators; animatableParams placement fixed for 4 generators)
+- last updated: 2026-03-15 (full remediation pass complete: arch fixes, doc unification, browser verification)
 
 ## Pack Contents
 
@@ -69,8 +69,31 @@ Four generators had `animatableParams` declared at SCRIPT_CONFIG root rather tha
 - `solar-system`: `animatableParams: []` moved into `animation` block.
 - `shape-array`: `animatableParams: []` added to `animation` block (was entirely absent).
 
-## Recurring Issues Across Remaining Generators
+## Resolved Issues (2026-03-15 full remediation pass)
 
-1. **`loopFrames` conflict**: `curtain-morph` (`golden-grid` and `order-disorder` resolved in prior passes). Static `animation.loopFrames` mismatched to user-adjustable cycle param.
-2. **State on `SCRIPT_CONFIG`**: `p5-wave-colour`, `animated-lines`, `fibonacci-balls`, `cymatics`, `order-disorder` still store mutable state on the config object via `this.*`. No host mechanism to isolate per-instance state; single-instance use is unaffected.
-3. **Raw colours in canvas output**: exempt per design-law §6.2 (canvas pixel output); applicable only to CSS/UI styling, which all generators correctly avoid.
+### Architecture
+- **Sidebar EXPORT tab**: removed from `parameter-builder.js`. Export (PNG + animation) now exclusively in toolbar EXPORT ▾ dropdown. `AnimationExport` injects into `toolbar.getAnimExportMount()`.
+- **Sequencer opt-in**: `_injectSequencer` guard changed to `sequencer === true`. 14 generators opt in; 11 do not.
+- **INFO tab**: present on all 25 generators. `infoSections` populated with markdown-formatted content for all 25. `parameter-builder.buildInfoTab` emits `['markdown', body]`.
+- **Markdown rendering**: `Text.js` extended with `'markdown'` variant; `_parseMarkdown` converts headings, bold, italic, code, lists, paragraphs to HTML. `tool-base.js` maps `'markdown'` DSL type to Text component.
+- **ANIMATE tab conditional**: only shown for generators with `animation.type !== 'none'` (correct — static generators interference-figure and unified-pattern show PARAMS + INFO only).
+- **Toolbar UI**: `GeneratorToolbar.js` fixed: flex-based widths, `F*0.75` font sizes, `▾`/`▸` dropdown glyphs, `min-width:100%` export panel.
+
+### Documentation
+- `infoSections` for all 25 generators rewritten: self-contained markdown bodies, no internal path references, correct heading capitalisation.
+- `Legacy source:` lines removed from all `feature-parity.md` files.
+- `sequencer` flag set explicitly for all 25 generators.
+- `animatableParams` populated inside `animation` block for all animated generators.
+- `feature-parity.md` updated: host-provided features (play/pause, checkpointing) marked PASS; intentional gaps documented as DROP or DIVERGE.
+
+### Browser Verification (2026-03-15)
+All 25 generators load without console errors. Tab structure confirmed:
+- Static generators (interference-figure, unified-pattern): PARAMS + INFO
+- Animated generators without sequencer (circles, clockwise, defecated, fibonacci-balls, quine, shape-array, solar-system, wave-equation-synth): PARAMS + ANIMATE + INFO
+- Animated generators with sequencer (animated-lines, curtain-morph, cymatics, generative-pattern, golden-grid, harmonics, lissajous, moire, order-disorder, p5-wave-colour, p5-wave-interference, squares, tile-mosaic, torus, wave-interference): PARAMS + ANIMATE + INFO with SequencerV2 controls
+
+## Remaining Known Issues (not remediated — documented decisions)
+
+1. **State on `SCRIPT_CONFIG`**: Several generators store mutable state on the config object (`this.*`). No host mechanism to isolate per-instance state; single-instance use is unaffected. Documented in issues-and-conflicts files.
+2. **External network request** (`solar-system`): `fetch('https://ipapi.co/json/')` for IP geolocation. Documented; no offline fallback implemented.
+3. **`loopFrames` static vs dynamic mismatch** (`curtain-morph`): export loop length does not track user-adjusted cycle param. Documented as DIVERGE in feature-parity.

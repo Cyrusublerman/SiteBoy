@@ -134,40 +134,40 @@ export const SCRIPT_CONFIG = {
     // Flow advection uses time = frame × flowSpeed × 0.01. This advances without
     // modulo; the warp field never reproduces its initial state. Non-loopable →
     // gif and webm disabled. Sequencer not useful (no loop boundary).
-    animation: { type: 'infinite', defaultFps: 60 },
+    animation: { type: 'infinite', defaultFps: 60, animatableParams: ['flowSpeed', 'noiseFrequency'], sequencer: true },
 
     infoSections: [
         {
-            heading: 'Description',
+            heading: 'DESCRIPTION',
             body: 'Generative Pattern is a four-phase unified pattern system. A hybrid point set is distributed across the canvas; a proximity graph is built from the set; an optional Gray-Scott reaction-diffusion solver evolves scalar fields on the graph topology; and a 2D signed-distance field (SDF) is computed from the graph edges. The SDF drives four rendering modes: Blob (inflated smooth union), Truchet (arc-template tiles from marching-squares classification), Nested Contours (close-spaced iso-lines), and Global Contours (wide-spaced iso-lines across the full SDF range). A noise-warp flow field animates the SDF lookup continuously, advecting the visual output without recomputing the SDF each frame.'
         },
         {
-            heading: 'Algorithm',
+            heading: 'ALGORITHM',
             body: 'Phase 1 — Hybrid Point Distribution (GEO-023): N = clamp(density × 50, 10, 250) points placed on a ceil(√N) × ceil(√N) grid. Jitter displacement = (rng − 0.5) × 2 × jitter × cellSize × 0.5; point position = gridPos × gridStrength + (gridPos + jitter) × (1 − gridStrength). Cluster weight per point: w = 0.3 + 0.7 × valueNoise(x × clusterScale / W, y × clusterScale / H). Phase 2 — Proximity Graph (GEO-024): for each pair (i, j), Euclidean distance d is compared to connectionRadius × avgSpacing. Axis bias: effectiveDist = d × (1 + axisBias × |sin(2 × atan2(dy, dx))|). Arc quantisation: connection angle rounded to nearest 2π / (4 + arcQuantisation × 8) step before bias. Candidates sorted by effectiveDist; each node limited to maxDegree connections. Phase 3 — Gray-Scott Solver (PHYS-005): ∂u/∂t = Du·∇²u − u·v² + F·(1−u); ∂v/∂t = Dv·∇²v + u·v² − (F+k)·v; ∇² is the degree-normalised graph Laplacian; dt = 0.5 per step; seeded with v = 0.25 in nodes within 80 px of canvas centre. Phase 4 — SDF (IMG-018): per 80×80 grid cell, minimum weighted distance to any graph edge: sdf(c) = min over edges of dist(c, edge) / ((wa + wb)/2 × weightScale). Animation: per frame, each SDF sample warped by (ox, oy) = (noise2d(gx × f / SDF_RES, gy × f / SDF_RES, t) − 0.5) × flowSpeed × SDF_RES × 0.3, where t = frame × flowSpeed × 0.01.'
         },
         {
-            heading: 'Parameters',
+            heading: 'PARAMETERS',
             body: 'Points — density: 0.5–10 step 0.5 default 3; N = density × 50 (capped at 250). gridStrength: 0–1 step 0.05 default 0.5; 1 = pure grid, 0 = full jitter displacement. clusterScale: 0.1–5 step 0.1 default 1.5; spatial frequency of the noise-weight field. jitter: 0–1 step 0.05 default 0.35; maximum jitter as a fraction of cell size. Connectivity — connectionRadius: 0.5–5 step 0.1 default 2; multiplier of average cell spacing as connection threshold. maxDegree: 2–8 step 1 default 4; maximum edges per node. axisBias: 0–1 step 0.05 default 0.3; penalty for non-cardinal edge directions; 1 forces near-cardinal connections only. arcQuantisation: 0–1 step 0.05 default 0; 0 = continuous angles, 1 = angles quantised to nearest of 12 steps. Evolution — Du: 0.1–0.5 step 0.01 default 0.21; u-species diffusion rate. Dv: 0.01–0.2 step 0.005 default 0.105; v-species diffusion rate. feedRate: 0.01–0.1 step 0.001 default 0.055; Gray-Scott F parameter. killRate: 0.04–0.08 step 0.001 default 0.062; Gray-Scott k parameter. iterations: 0–5000 step 100 default 0; RD steps computed once at setup; 0 skips Phase 3. Render — renderMode: Blob / Truchet / Nested Contours / Global Contours. weightScale: 0.5–5 step 0.1 default 1.5; scales point weights in SDF, expanding or contracting the effective reach of each node. tileWindowSize: 0.5–2 step 0.1 default 1; iso-level spacing multiplier for contour modes; Truchet threshold range. boundaryCost: 0–1 step 0.05 default 0.5; shifts the SDF threshold toward the SDF maximum, thinning or thickening blobs/contours. Animation — flowSpeed: 0–2 step 0.05 default 0.3; controls both warp magnitude and time advance rate. noiseFrequency: 0.1–5 step 0.1 default 1.5; spatial frequency of the warp noise field.'
         },
         {
-            heading: 'Presets',
+            heading: 'PRESETS',
             body: 'Truchet Grid: density 4, gridStrength 0.9, jitter 0.1, axisBias 0.85, arcQuantisation 0.8, mode Truchet. A near-regular grid with strongly cardinal edges produces recognisable Truchet arc patterns with gentle flow. Blob Field: density 3, gridStrength 0.2, jitter 0.7, maxDegree 6, weightScale 2.5, mode Blob. Irregular point clusters produce organic blobby shapes animated by a moderate flow warp. RD Contours: density 2.5, iterations 2000, feedRate 0.037, killRate 0.06, mode Nested Contours. Gray-Scott run on a sparse graph seeds Turing-like weight variation; nested iso-contours reveal the topology of the RD pattern. Global Web: density 5, connectionRadius 2, mode Global Contours. Dense graph with no RD evolution; global iso-contours trace a web-like skeleton across the full canvas.'
         },
         {
-            heading: 'Performance',
+            heading: 'PERFORMANCE',
             body: 'Setup (rebuild, one-time cost on param change): Phase 1 O(N), Phase 2 O(N²) worst case (~75 µs at N = 150 using sorted candidates), Phase 3 O(N × iterations) (~50 ms at N = 150 and iterations = 5000), Phase 4 (SDF) O(SDF_RES² × E) = O(6400 × E); at E = 300: ~1.9M operations (~8 ms). Total rebuild at default params (iterations = 0): < 5 ms. Total rebuild at iterations = 5000, N = 150: ~55 ms (noticeable but one-time). Per-frame cost: O(SDF_RES²) = 6400 cells × 2 hash-noise evaluations = ~12,800 operations (~0.5 ms); plus O(TILE_N²) = 400 arc draw calls for Truchet, O(SDF_RES²) = 6400 marching-squares segments for contour modes. Total per-frame: 1–3 ms, well within 16 ms budget. Dominant per-frame cost for Truchet is the p.arc() draw call batch (400 arcs); for contour modes, the marching-squares line segment loop.'
         },
         {
-            heading: 'Animation',
+            heading: 'ANIMATION',
             body: 'Type: infinite. The animation warp is driven by t = frame × flowSpeed × 0.01, which advances monotonically without modulo; the warp field never reproduces its initial state. This makes the animation non-loopable: there is no frame at which the canvas returns to its initial appearance, so GIF and WebM export are disabled. flowSpeed = 0 produces a fully static render (no warp, no visual change between frames). flowSpeed > 0 applies a hash-noise UV displacement to each SDF lookup, creating an organic drift without recomputing the SDF. noiseFrequency controls the spatial granularity of the warp. The SDF itself is precomputed once and held constant; only the lookup coordinates change per frame. Default FPS: 60. PNG export available.'
         },
         {
-            heading: 'Known Limitations',
+            heading: 'KNOWN LIMITATIONS',
             body: 'SDF is rasterised at 80×80 resolution (10 px/cell on 800×800 canvas). Contour lines and Truchet arc boundaries may appear slightly stepped or blocky at high zoom, especially at low density (few, widely-spaced edges). Truchet mode uses a hard threshold and may show abrupt transitions on smooth SDF regions; increasing tileWindowSize spreads the threshold range. Gray-Scott solver with iterations > 0 triggers a full rebuild on every parameter change, including Evolution parameters; at iterations = 5000 this rebuild takes ~50 ms and is perceptible. The graph Laplacian Gray-Scott initialisation is seeded at canvas centre (within 80 px radius); for low-density configurations with few central nodes, the seed may find no nodes and produce no RD pattern. arcQuantisation rounds angles to a fixed step count (4–12 steps); at high quantisation, some edges that were within connectionRadius may have their quantised angle fall outside the proximity check, reducing edge count unexpectedly. Warp animation uses 2D value noise, not Perlin noise; the flow field lacks the smoothness of Perlin at high noiseFrequency values.'
         },
         {
-            heading: 'References',
-            body: 'Live script: assets/js/tools/generators/scripts/pattern/generative-pattern.gen.js v1.0.0. Spec: blog/docs/pages/tools/generators/generative-pattern/. Gray-Scott reaction-diffusion: Pearson, J.E. (1993) "Complex Patterns in a Simple System", Science 261:189–192. Truchet tiles: Smith, C.S. (1987) "The tiling patterns of Sebastien Truchet", Leonardo 20(4):373–385; Browne, C. (2008) "Truchet tilings revisited". Marching Squares: Lorensen, W.E. & Cline, H.E. (1987) "Marching Cubes", SIGGRAPH 87. Module codes: GEO-023 (hybrid point distribution), GEO-024 (proximity graph), PHYS-005 (Gray-Scott solver), IMG-018 (distance transform/SDF), PAT-010 (Truchet), PAT-011 (blob union), PAT-012 (nested contours), ANIM-012 (flow advection).'
+            heading: 'REFERENCES',
+            body: 'Gray-Scott reaction-diffusion: Pearson, J.E. (1993) "Complex Patterns in a Simple System", Science 261:189–192. Truchet tiles: Smith, C.S. (1987) "The tiling patterns of Sebastien Truchet", Leonardo 20(4):373–385; Browne, C. (2008) "Truchet tilings revisited". Marching Squares: Lorensen, W.E. & Cline, H.E. (1987) "Marching Cubes", SIGGRAPH 87. Module codes: GEO-023 (hybrid point distribution), GEO-024 (proximity graph), PHYS-005 (Gray-Scott solver), IMG-018 (distance transform/SDF), PAT-010 (Truchet), PAT-011 (blob union), PAT-012 (nested contours), ANIM-012 (flow advection).'
         }
     ],
 
@@ -269,7 +269,7 @@ export const SCRIPT_CONFIG = {
     },
 
     /**
-     * Performance mitigation (per performance.md): pre-compute the warped SDF
+     * Performance mitigation: pre-compute the warped SDF
      * for all SDF_RES² cells once per frame. Cost: O(SDF_RES²) = 6400 warp
      * evaluations. Renderers that visit every cell multiple times (contour modes
      * visit SDF_RES² cells × numLines iso-levels) use this cache instead of

@@ -47,7 +47,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Live script: assets/js/tools/generators/scripts/pattern/shape-array.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Archive: none (source-only analysis; no legacy docs). Origin: port of shape_array_accident sketch. v1.1.0 changes: globalT fixed to frame-derived constant (was frame-rate-dependent accumulator); stage sample pair cache added; _samplePerimeter optimised to O(n + circleRes log n); root-level _globalT state removed; preset values wrapped in values:{}; export corrected (gif: false); animation block extended (sequencer: false, animationExport: false); compute block added; infoSections added.'
+            body: 'Origin: port of shape_array_accident sketch.'
         }
     ],
 
@@ -118,7 +118,7 @@ export const SCRIPT_CONFIG = {
         defaultFps:      60,
         sequencer:       false,
         animationExport: false,
-        animatableParams: []
+        animatableParams: ['morphSpeed', 'phaseOffset', 'shapeSize', 'strokeWeight']
     },
 
     _polygon(p, n, radius, rotation = 0) {

@@ -111,7 +111,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'REFERENCES',
-            body: 'Algorithm: Lissajous figures — Jules Antoine Lissajous, 1857. The signedPow extension and multi-term per-axis sum are bespoke generalisations not attributed to a named algorithm. Live source: assets/js/tools/generators/scripts/parametric/lissajous.gen.js. Archive: reference/generators/lissajous/source/lissajous.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Legacy docs: reference/generators/lissajous/legacy-docs/lissajous.md (mixed bundle), reference/generators/lissajous/legacy-docs/lissajous-audit.md (audit only). Version 1.1.0: phi_* parameter keys renamed to camelCase (phiX1, phiX2, phiXm1, phiXm2, phiY1, phiY2, phiYm1, phiYm2); rotation trig precomputed once per frame; evaluate body inlined into draw loop; off-screen path-break mitigation applied; infoSections added; compute block added; draw moved to inline method on SCRIPT_CONFIG.'
+            body: 'Algorithm: Lissajous figures — Jules Antoine Lissajous, 1857. The signedPow extension and multi-term per-axis sum are bespoke generalisations not attributed to a named algorithm. Version 1.1.0: phi_* parameter keys renamed to camelCase (phiX1, phiX2, phiXm1, phiXm2, phiY1, phiY2, phiYm1, phiYm2); rotation trig precomputed once per frame; evaluate body inlined into draw loop; off-screen path-break mitigation applied; infoSections added; compute block added; draw moved to inline method on SCRIPT_CONFIG.'
         }
     ],
 
@@ -208,7 +208,8 @@ export const SCRIPT_CONFIG = {
             { key: 'Mx',     label: 'Mx',     mode: 'oscillate', rate: 0.2,  min: -1, max: 1  },
             { key: 'My',     label: 'My',     mode: 'oscillate', rate: 0.2,  min: -1, max: 1  },
             { key: 'scale',  label: 'scale',  mode: 'oscillate', rate: 0.15, min: 60, max: 200 },
-        ]
+        ],
+        sequencer: true,
     },
 
     export: {

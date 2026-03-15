@@ -136,7 +136,7 @@ export const SCRIPT_CONFIG = (() => {
             },
             {
                 heading: 'REFERENCES',
-                body: 'Live script: assets/js/tools/generators/scripts/other/circles.gen.js v1.0.0. Archive: reference/generators/circles/source/circles.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Shared import: TWO_PI from assets/js/tools/generators/shared/evaluation.js. Algorithm: hierarchical circular orbital chain with uniform angular rate. No named published algorithm; standard parameterised circular orbit geometry.'
+                body: 'Algorithm: hierarchical circular orbital chain with uniform angular rate. No named published algorithm; standard parameterised circular orbit geometry.'
             }
         ],
 

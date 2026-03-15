@@ -62,6 +62,7 @@ const COMPONENT_TYPES = {
 
     // Outputs
     'label': 'Text',
+    'markdown': 'Text',
     'value': 'Text',
     'imageviewport': 'ImageViewport',
     'image-viewport': 'ImageViewport',
@@ -1065,6 +1066,13 @@ export class ToolBase extends BaseComponent {
                 };
                 break;
             }
+
+            case 'markdown':
+                options = {
+                    variant: 'markdown',
+                    content: args[0],
+                };
+                break;
 
             case 'label':
             case 'value':
