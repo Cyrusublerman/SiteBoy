@@ -53,7 +53,7 @@ const NavigationController = {
                             .split('-')
                             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                             .join(' ');
-                        displayTitle = `GENERATOR: ${scriptName.toUpperCase()}`;
+                        displayTitle = scriptName.toUpperCase();
                     }
                 }
                 
@@ -99,12 +99,11 @@ const NavigationController = {
                             const params = new URLSearchParams(query);
                             const scriptParam = params.get('script');
                             if (scriptParam) {
-                                // Convert kebab-case to Title Case
                                 const scriptName = scriptParam
                                     .split('-')
                                     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                                     .join(' ');
-                                title = `GENERATOR: ${scriptName.toUpperCase()}`;
+                                title = scriptName.toUpperCase();
                             }
                         }
                         

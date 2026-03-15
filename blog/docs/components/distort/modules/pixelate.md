@@ -15,9 +15,9 @@ Divides the image into rectangular blocks and fills each with the average colour
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Block average | Inline | — |
+| Block average | `shared/algorithms/geometry/distortion.js` | — |
 
-Inline — two-pass tile averaging: sum R, G, B across all pixels in each `blockSize × blockSize` tile; write the average to all pixels in the tile.
+`shared/algorithms/geometry/distortion.js` — two-pass tile averaging: sum R, G, B across all pixels in each `blockSize × blockSize` tile; write the average to all pixels in the tile.
 
 ## Parameters
 

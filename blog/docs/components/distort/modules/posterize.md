@@ -15,9 +15,9 @@ Uniformly quantises each channel to N discrete levels, producing flat tonal band
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Uniform channel quantisation | Inline (`_map`) | — |
+| Uniform channel quantisation | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — `step = 1/N`; `level = floor((v/255) / step)`, clamped to `N−1`; `out = round((level / (N−1)) × 255)`. `isLUT = true` for chaining.
+`shared/algorithms/image/colour-adjustments.js` — `step = 1/N`; `level = floor((v/255) / step)`, clamped to `N−1`; `out = round((level / (N−1)) × 255)`. `isLUT = true` for chaining.
 
 ## Parameters
 

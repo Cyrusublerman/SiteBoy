@@ -17,6 +17,7 @@ export class ViewportCanvas extends BaseComponent {
     this._result        = null;
     this._source        = null;   // original pixels for split/diff/overlay modes
     this._variations    = null;   // Array<{pixels,width,height}> for variation grid
+    this._hasSource     = false;
     this._displayMode   = options.displayMode ?? 'normal';
     this._zoom          = options.zoom        ?? 'fit';
     this._zoomLevel     = options.zoomLevel   ?? 1;
@@ -39,11 +40,15 @@ export class ViewportCanvas extends BaseComponent {
     this._imgData       = null;
     this._imgDataSrc    = null;
     this._onResultClick = options.onResultClick ?? null;
+    this._onUpload      = options.onUpload ?? null;
+    this._emptyOverlay  = null;
     this._boundPointerDown  = this._onPointerDown.bind(this);
     this._boundPointerMove  = this._onPointerMove.bind(this);
     this._boundPointerUp    = this._onPointerUp.bind(this);
     this._boundWheel        = this._onWheel.bind(this);
     this._boundResize       = this._scheduleRedraw.bind(this);
+    this._boundDragOver     = this._onDragOver.bind(this);
+    this._boundDrop         = this._onDrop.bind(this);
   }
 
   render() {
@@ -73,13 +78,57 @@ export class ViewportCanvas extends BaseComponent {
     this._loadingOverlay.textContent = 'RENDERING...';
     this.element.appendChild(this._loadingOverlay);
 
+    // Empty state overlay — uninitiated state with upload affordance
+    this._fileInput = this.createElement('input', 'viewport-file-input');
+    this._fileInput.type = 'file';
+    this._fileInput.accept = 'image/*';
+    this._fileInput.style.display = 'none';
+    this._fileInput.addEventListener('change', () => {
+      const file = this._fileInput.files?.[0];
+      if (file) this._dispatchUpload(file);
+    });
+    this.element.appendChild(this._fileInput);
+
+    const { F } = this.getF();
+    this._emptyOverlay = this.createElement('div', 'viewport-empty');
+    this._emptyOverlay.style.cssText = [
+      'position:absolute', 'inset:0',
+      'display:flex', 'align-items:center', 'justify-content:center',
+      'cursor:pointer',
+      'pointer-events:auto',
+    ].join(';');
+
+    const uploadLabel = this.createElement('div', 'viewport-empty-label');
+    uploadLabel.textContent = 'UPLOAD IMAGE';
+    uploadLabel.style.cssText = [
+      `font-family:Space Mono,monospace`,
+      `font-size:${F}px`,
+      'color:var(--c-text)',
+      `letter-spacing:${Math.max(1, Math.round(F / 7))}px`,
+      `border:1px solid var(--c-border)`,
+      `width:${F * 12}px`,
+      `height:${F * 12}px`,
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'box-sizing:border-box',
+      'pointer-events:none',
+    ].join(';');
+
+    this._emptyOverlay.appendChild(uploadLabel);
+    this._emptyOverlay.addEventListener('click', () => this._fileInput?.click());
+    this.element.appendChild(this._emptyOverlay);
+
     this._canvas.addEventListener('pointerdown', this._boundPointerDown);
     this._canvas.addEventListener('pointermove', this._boundPointerMove);
     this._canvas.addEventListener('pointerup',   this._boundPointerUp);
     this._canvas.addEventListener('pointerleave', this._boundPointerUp);
     this._canvas.addEventListener('wheel', this._boundWheel, { passive: false });
+    this.element.addEventListener('dragover', this._boundDragOver);
+    this.element.addEventListener('drop', this._boundDrop);
     window.addEventListener('resize', this._boundResize);
 
+    this._updateEmptyState();
     this._scheduleRedraw();
     return this.element;
   }
@@ -94,6 +143,11 @@ export class ViewportCanvas extends BaseComponent {
   setSource(source) {
     this._source = source;
     this._scheduleRedraw();
+  }
+
+  setHasSource(has) {
+    this._hasSource = !!has;
+    this._updateEmptyState();
   }
 
   setVariations(variations) {
@@ -151,7 +205,7 @@ export class ViewportCanvas extends BaseComponent {
       this._canvas.width = cw; this._canvas.height = ch;
     }
     const ctx = this._ctx;
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = this._cssVar('--vga-black', '#000000');
     ctx.fillRect(0, 0, cw, ch);
 
     if (this._variations?.length) {
@@ -206,7 +260,7 @@ export class ViewportCanvas extends BaseComponent {
     ctx.restore();
 
     // Divider line
-    ctx.strokeStyle = '#c0c0c0';
+    ctx.strokeStyle = this._cssVar('--vga-silver', '#c0c0c0');
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(sx, oy); ctx.lineTo(sx, oy + dh); ctx.stroke();
 
@@ -245,7 +299,12 @@ export class ViewportCanvas extends BaseComponent {
   }
 
   _drawVariations(ctx, cw, ch) {
-    drawVariationGrid(ctx, cw, ch, this._variations, this.getF().F);
+    drawVariationGrid(ctx, cw, ch, this._variations, this.getF().F, {
+      bg:        this._cssVar('--vga-black',  '#000000'),
+      border:    this._cssVar('--vga-gray',   '#808080'),
+      labelBg:   this._cssVar('--vga-black',  '#000000'),
+      labelText: this._cssVar('--vga-silver', '#c0c0c0'),
+    });
   }
 
   // ── OffscreenCanvas management ────────────────────────────────────────────
@@ -341,6 +400,54 @@ export class ViewportCanvas extends BaseComponent {
     this._scheduleRedraw();
   }
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * Read a CSS custom property value from the document root for use in Canvas 2D.
+   * Canvas 2D fillStyle/strokeStyle cannot accept var(--x) directly.
+   * Falls back to `fallback` if the property is not set.
+   */
+  _cssVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  _updateEmptyState() {
+    if (!this._emptyOverlay) return;
+    this._emptyOverlay.style.display = this._hasSource ? 'none' : 'flex';
+  }
+
+  _dispatchUpload(file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = new OffscreenCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, img.width, img.height);
+      URL.revokeObjectURL(url);
+      this._onUpload?.({
+        pixels: data.data,
+        width: img.width,
+        height: img.height,
+        name: file.name
+      });
+    };
+    img.src = url;
+  }
+
+  _onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+
+  _onDrop(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file?.type?.startsWith('image/')) this._dispatchUpload(file);
+  }
+
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   destroy() {
@@ -352,6 +459,10 @@ export class ViewportCanvas extends BaseComponent {
       this._canvas.removeEventListener('pointerup',   this._boundPointerUp);
       this._canvas.removeEventListener('pointerleave', this._boundPointerUp);
       this._canvas.removeEventListener('wheel', this._boundWheel);
+    }
+    if (this.element) {
+      this.element.removeEventListener('dragover', this._boundDragOver);
+      this.element.removeEventListener('drop', this._boundDrop);
     }
     window.removeEventListener('resize', this._boundResize);
     super.destroy();

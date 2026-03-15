@@ -15,10 +15,10 @@ Rotates pixels within a circular region by an angle that decreases from the cent
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Radial twist rotation | Inline | — |
+| Radial twist rotation | `shared/algorithms/geometry/distortion.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — falloff `t = 1 − dist/r`; twist angle `= t² × maxAngle`. Standard 2D rotation applied to the displacement vector from centre.
+`shared/algorithms/geometry/distortion.js` — falloff `t = 1 − dist/r`; twist angle `= t² × maxAngle`. Standard 2D rotation applied to the displacement vector from centre.
 
 ## Parameters
 

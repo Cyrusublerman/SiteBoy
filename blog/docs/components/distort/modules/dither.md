@@ -15,8 +15,8 @@ Quantises to N grey levels with optional spatial error diffusion (Floyd-Steinber
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Floyd-Steinberg error diffusion | Inline (`_floydSteinberg`) | — |
-| Bayer 8×8 ordered dither | Inline (`_bayer`) | — |
+| Floyd-Steinberg error diffusion | `shared/algorithms/image/colour-adjustments.js` | — |
+| Bayer 8×8 ordered dither | `shared/algorithms/image/colour-adjustments.js` | — |
 
 Module-level constant `BAYER8` (64-entry matrix). Floyd-Steinberg diffuses quantisation error to 4 neighbours with standard weights (7/16, 3/16, 5/16, 1/16). Bayer adds a threshold offset from the matrix before quantisation.
 

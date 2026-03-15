@@ -109,115 +109,115 @@ import { InterferenceNode } from './optics/InterferenceNode.js';
 
 export const REGISTRY = {
   'COLOUR / TONE': [
-    { type: 'greyscale',    label: 'GREYSCALE',      factory: () => new GreyscaleNode() },
-    { type: 'levels',       label: 'LEVELS',          factory: () => new LevelsNode() },
-    { type: 'contrast',     label: 'LIFT/GAM/GAIN',   factory: () => new ContrastNode() },
-    { type: 'curves',       label: 'CURVES',           factory: () => new CurvesNode() },
-    { type: 'hsladjust',    label: 'HSL ADJUST',      factory: () => new HSLAdjustNode() },
-    { type: 'channelmixer', label: 'CHANNEL MIXER',   factory: () => new ChannelMixerNode() },
-    { type: 'colourbalance',label: 'COLOUR BALANCE',  factory: () => new ColourBalanceNode() },
-    { type: 'temptint',     label: 'TEMP / TINT',     factory: () => new TemperatureTintNode() },
-    { type: 'vibrance',     label: 'VIBRANCE',        factory: () => new VibranceNode() },
-    { type: 'gradientmap',  label: 'GRADIENT MAP',    factory: () => new GradientMapNode() },
-    { type: 'invert',       label: 'INVERT',          factory: () => new InvertNode() },
-    { type: 'quantise',     label: 'QUANTISE',        factory: () => new QuantiseNode() },
-    { type: 'posterize',    label: 'POSTERIZE',       factory: () => new PosterizeNode() },
-    { type: 'dither',       label: 'DITHER',           factory: () => new DitherNode() },
-    { type: 'histogrameq',  label: 'HISTOGRAM EQ',    factory: () => new HistogramEQNode() },
-    { type: 'clahe',        label: 'CLAHE',            factory: () => new CLAHENode() }
+    { type: 'greyscale',    label: 'GREYSCALE',      description: 'Converts image to greyscale using weighted luminance channels',      factory: () => new GreyscaleNode() },
+    { type: 'levels',       label: 'LEVELS',          description: 'Remaps tonal range via black point, white point, and gamma',         factory: () => new LevelsNode() },
+    { type: 'contrast',     label: 'LIFT/GAM/GAIN',   description: 'Adjusts shadow lift, midtone gamma, and highlight gain independently', factory: () => new ContrastNode() },
+    { type: 'curves',       label: 'CURVES',           description: 'Maps input to output tones using a custom bezier curve',             factory: () => new CurvesNode() },
+    { type: 'hsladjust',    label: 'HSL ADJUST',      description: 'Shifts hue, saturation, and lightness globally or per colour range', factory: () => new HSLAdjustNode() },
+    { type: 'channelmixer', label: 'CHANNEL MIXER',   description: 'Blends RGB channels into each output channel with custom weights',   factory: () => new ChannelMixerNode() },
+    { type: 'colourbalance',label: 'COLOUR BALANCE',  description: 'Shifts colour balance in shadows, midtones, and highlights',         factory: () => new ColourBalanceNode() },
+    { type: 'temptint',     label: 'TEMP / TINT',     description: 'Adjusts colour temperature (warm/cool) and green-magenta tint',      factory: () => new TemperatureTintNode() },
+    { type: 'vibrance',     label: 'VIBRANCE',        description: 'Boosts saturation of muted colours while protecting skin tones',     factory: () => new VibranceNode() },
+    { type: 'gradientmap',  label: 'GRADIENT MAP',    description: 'Maps luminance values to a two-colour gradient',                     factory: () => new GradientMapNode() },
+    { type: 'invert',       label: 'INVERT',          description: 'Inverts all pixel values to produce a colour negative',              factory: () => new InvertNode() },
+    { type: 'quantise',     label: 'QUANTISE',        description: 'Reduces the colour palette to a fixed number of tones or a preset',  factory: () => new QuantiseNode() },
+    { type: 'posterize',    label: 'POSTERIZE',       description: 'Reduces tonal steps per channel to flatten colour into bands',       factory: () => new PosterizeNode() },
+    { type: 'dither',       label: 'DITHER',           description: 'Adds ordered or diffusion dither to reduce banding at low bit-depth', factory: () => new DitherNode() },
+    { type: 'histogrameq',  label: 'HISTOGRAM EQ',    description: 'Redistributes tones to flatten the luminance histogram',             factory: () => new HistogramEQNode() },
+    { type: 'clahe',        label: 'CLAHE',            description: 'Locally equalises contrast in tiles to enhance local detail',       factory: () => new CLAHENode() }
   ],
   'BLUR': [
-    { type: 'boxblur',    label: 'BOX BLUR',    factory: () => new BoxBlurNode() },
-    { type: 'gaussblur',  label: 'GAUSS BLUR',  factory: () => new GaussianBlurNode() },
-    { type: 'motionblur', label: 'MOTION BLUR', factory: () => new MotionBlurNode() },
-    { type: 'radialblur', label: 'RADIAL BLUR', factory: () => new RadialBlurNode() },
-    { type: 'median',     label: 'MEDIAN',      factory: () => new MedianFilterNode() },
-    { type: 'bilateral',  label: 'BILATERAL',   factory: () => new BilateralFilterNode() }
+    { type: 'boxblur',    label: 'BOX BLUR',    description: 'Applies a uniform average blur over a square kernel',                factory: () => new BoxBlurNode() },
+    { type: 'gaussblur',  label: 'GAUSS BLUR',  description: 'Applies a Gaussian-weighted blur with configurable sigma',           factory: () => new GaussianBlurNode() },
+    { type: 'motionblur', label: 'MOTION BLUR', description: 'Blurs along a directional angle to simulate camera or object motion', factory: () => new MotionBlurNode() },
+    { type: 'radialblur', label: 'RADIAL BLUR', description: 'Blurs outward from a centre point to simulate zoom or rotation',     factory: () => new RadialBlurNode() },
+    { type: 'median',     label: 'MEDIAN',      description: 'Replaces each pixel with the median of its neighbourhood, removing noise', factory: () => new MedianFilterNode() },
+    { type: 'bilateral',  label: 'BILATERAL',   description: 'Edge-preserving blur that smooths flat regions while keeping boundaries', factory: () => new BilateralFilterNode() }
   ],
   'SHARPEN': [
-    { type: 'unsharpmask', label: 'UNSHARP MASK', factory: () => new UnsharpMaskNode() },
-    { type: 'highpass',    label: 'HIGH PASS',    factory: () => new HighPassNode() }
+    { type: 'unsharpmask', label: 'UNSHARP MASK', description: 'Sharpens by subtracting a blurred version from the original',       factory: () => new UnsharpMaskNode() },
+    { type: 'highpass',    label: 'HIGH PASS',    description: 'Isolates fine edge detail by removing low-frequency content',       factory: () => new HighPassNode() }
   ],
   'TRANSFORM': [
-    { type: 'affine', label: 'AFFINE XFORM', factory: () => new AffineTransformNode() }
+    { type: 'affine', label: 'AFFINE XFORM', description: 'Applies rotation, scale, shear, and translation via an affine matrix', factory: () => new AffineTransformNode() }
   ],
   'WARP': [
-    { type: 'flowfield', label: 'FLOW FIELD', factory: () => new FlowFieldNode() },
-    { type: 'bandshift', label: 'BAND SHIFT', factory: () => new BandShiftNode() },
-    { type: 'advection', label: 'ADVECTION',  factory: () => new AdvectionNode() }
+    { type: 'flowfield', label: 'FLOW FIELD', description: 'Displaces pixels along a Perlin noise flow field for fluid distortion', factory: () => new FlowFieldNode() },
+    { type: 'bandshift', label: 'BAND SHIFT', description: 'Offsets horizontal or vertical bands by a noise or sine pattern',       factory: () => new BandShiftNode() },
+    { type: 'advection', label: 'ADVECTION',  description: 'Iteratively advects pixels along a velocity field for smearing effects', factory: () => new AdvectionNode() }
   ],
   'REFRACTION': [
-    { type: 'ripple',      label: 'RADIAL RIPPLE', factory: () => new RadialRippleNode() },
-    { type: 'lensbubbles', label: 'LENS BUBBLES',  factory: () => new LensBubblesNode() }
+    { type: 'ripple',      label: 'RADIAL RIPPLE', description: 'Displaces pixels along concentric ripples from a centre point',    factory: () => new RadialRippleNode() },
+    { type: 'lensbubbles', label: 'LENS BUBBLES',  description: 'Places refraction bubbles that magnify regions beneath them',      factory: () => new LensBubblesNode() }
   ],
   'DISTORTION': [
-    { type: 'pixelate',    label: 'PIXELATE',     factory: () => new PixelateNode() },
-    { type: 'polarcoords', label: 'POLAR COORDS', factory: () => new PolarCoordsNode() },
-    { type: 'spherize',    label: 'SPHERIZE',     factory: () => new SpherizeNode() },
-    { type: 'twirl',       label: 'TWIRL',        factory: () => new TwirlNode() },
-    { type: 'chromaticab', label: 'CHROMATIC AB', factory: () => new ChromaticAbNode() }
+    { type: 'pixelate',    label: 'PIXELATE',     description: 'Reduces image to large square pixels by averaging block regions',   factory: () => new PixelateNode() },
+    { type: 'polarcoords', label: 'POLAR COORDS', description: 'Converts between rectangular and polar coordinate spaces',          factory: () => new PolarCoordsNode() },
+    { type: 'spherize',    label: 'SPHERIZE',     description: 'Wraps the image onto a spherical surface to create a globe effect', factory: () => new SpherizeNode() },
+    { type: 'twirl',       label: 'TWIRL',        description: 'Rotates pixels around a centre point by an amount tied to radius',  factory: () => new TwirlNode() },
+    { type: 'chromaticab', label: 'CHROMATIC AB', description: 'Laterally offsets RGB channels to simulate lens chromatic aberration', factory: () => new ChromaticAbNode() }
   ],
   'ACCUMULATION': [
-    { type: 'iterrewarp', label: 'ITER REWARP', factory: () => new IterativeRewarpNode() }
+    { type: 'iterrewarp', label: 'ITER REWARP', description: 'Repeatedly warps and resamples to accumulate painterly smear trails', factory: () => new IterativeRewarpNode() }
   ],
   'LINE RENDER': [
-    { type: 'lumflow',        label: 'LUMINANCE FLOW',  factory: () => new LuminanceFlowNode() },
-    { type: 'serpentine',     label: 'SERPENTINE',      factory: () => new SerpentineNode() },
-    { type: 'statichalftone', label: 'STATIC HALFTONE', factory: () => new StaticHalftoneNode() }
+    { type: 'lumflow',        label: 'LUMINANCE FLOW',  description: 'Draws contour lines that follow luminance gradients across the image', factory: () => new LuminanceFlowNode() },
+    { type: 'serpentine',     label: 'SERPENTINE',      description: 'Fills the image with a single continuous serpentine line modulated by luminance', factory: () => new SerpentineNode() },
+    { type: 'statichalftone', label: 'STATIC HALFTONE', description: 'Renders the image as a grid of lines whose weight varies with brightness', factory: () => new StaticHalftoneNode() }
   ],
-  'LINE RENDER (MODULE)': [
-    { type: 'moduleflowlines',   label: 'MODULE FLOW LINES',   factory: () => new ModuleFlowLinesNode() },
-    { type: 'moduleserpentine',  label: 'MODULE SERPENTINE',   factory: () => new ModuleSerpentineNode() },
-    { type: 'modulestaticlines', label: 'MODULE STATIC LINES', factory: () => new ModuleStaticLinesNode() }
+  'LINE RENDER II': [
+    { type: 'moduleflowlines',   label: 'FLOW LINES',   description: 'Module-based flow line renderer with per-tile direction variation',   factory: () => new ModuleFlowLinesNode() },
+    { type: 'moduleserpentine',  label: 'SERPENTINE II', description: 'Module-based serpentine renderer with configurable tile parameters', factory: () => new ModuleSerpentineNode() },
+    { type: 'modulestaticlines', label: 'STATIC LINES',  description: 'Module-based static line halftone with per-tile angle control',      factory: () => new ModuleStaticLinesNode() }
   ],
   'EDGE': [
-    { type: 'sobel',     label: 'SOBEL EDGE',    factory: () => new SobelNode() },
-    { type: 'canny',     label: 'CANNY EDGE',    factory: () => new CannyNode() },
-    { type: 'laplacian', label: 'LAPLACIAN',     factory: () => new LaplacianNode() },
-    { type: 'dog',       label: 'DIFF OF GAUSS', factory: () => new DoGNode() }
+    { type: 'sobel',     label: 'SOBEL EDGE',    description: 'Detects edges using the Sobel gradient operator on luminance',        factory: () => new SobelNode() },
+    { type: 'canny',     label: 'CANNY EDGE',    description: 'Multi-stage edge detector with noise suppression and hysteresis',     factory: () => new CannyNode() },
+    { type: 'laplacian', label: 'LAPLACIAN',     description: 'Detects edges at zero-crossings of the Laplacian of luminance',       factory: () => new LaplacianNode() },
+    { type: 'dog',       label: 'DIFF OF GAUSS', description: 'Subtracts two Gaussian blurs to isolate edges at a specific scale',   factory: () => new DoGNode() }
   ],
   'PATTERN': [
-    { type: 'truchet',         label: 'TRUCHET',      factory: () => new TruchetNode() },
-    { type: 'grating',         label: 'GRATING',      factory: () => new GratingNode() },
-    { type: 'moire',           label: 'MOIRE',        factory: () => new MoireNode() },
-    { type: 'halftonepattern', label: 'HALFTONE DOT', factory: () => new HalftonePatternNode() }
+    { type: 'truchet',         label: 'TRUCHET',      description: 'Renders a Truchet tile pattern with luminance-driven tile selection', factory: () => new TruchetNode() },
+    { type: 'grating',         label: 'GRATING',      description: 'Overlays a linear, radial, or spiral interference grating',          factory: () => new GratingNode() },
+    { type: 'moire',           label: 'MOIRE',        description: 'Generates moiré interference patterns from two overlapping grids',    factory: () => new MoireNode() },
+    { type: 'halftonepattern', label: 'HALFTONE DOT', description: 'Renders a dot halftone pattern where dot size maps to luminance',     factory: () => new HalftonePatternNode() }
   ],
   'NOISE': [
-    { type: 'perlinoverlay', label: 'NOISE OVERLAY', factory: () => new PerlinOverlayNode() },
-    { type: 'domainwarp',    label: 'DOMAIN WARP',   factory: () => new DomainWarpNode() }
+    { type: 'perlinoverlay', label: 'NOISE OVERLAY', description: 'Overlays multi-octave Perlin noise onto the image at variable opacity', factory: () => new PerlinOverlayNode() },
+    { type: 'domainwarp',    label: 'DOMAIN WARP',   description: 'Warps noise lookup coordinates to produce folded, organic shapes',     factory: () => new DomainWarpNode() }
   ],
   'PHYSICS': [
-    { type: 'reactiondiffusion', label: 'REACT-DIFFUSE', factory: () => new ReactionDiffusionNode() },
-    { type: 'wavedistortion',    label: 'WAVE DISTORT',  factory: () => new WaveDistortionNode() },
-    { type: 'cellularautomata',  label: 'CELL AUTOMATA', factory: () => new CellularAutomataNode() }
+    { type: 'reactiondiffusion', label: 'REACT-DIFFUSE', description: 'Simulates Gray-Scott reaction-diffusion to grow organic spot patterns', factory: () => new ReactionDiffusionNode() },
+    { type: 'wavedistortion',    label: 'WAVE DISTORT',  description: 'Displaces pixels using a sine-wave field with configurable frequency', factory: () => new WaveDistortionNode() },
+    { type: 'cellularautomata',  label: 'CELL AUTOMATA', description: 'Evolves a cellular automaton over the image to create texture growth', factory: () => new CellularAutomataNode() }
   ],
   'GENERATIVE': [
-    { type: 'paintstroke', label: 'PAINT STROKE', factory: () => new PaintStrokeNode() }
+    { type: 'paintstroke', label: 'PAINT STROKE', description: 'Renders the image as overlapping brushstrokes distributed by luminance', factory: () => new PaintStrokeNode() }
   ],
   'COMPOSITE': [
-    { type: 'tileblend',    label: 'TILE BLEND',    factory: () => new TileBlendNode() },
-    { type: 'stipple',      label: 'STIPPLE',       factory: () => new StippleNode() },
-    { type: 'delaunaymesh', label: 'DELAUNAY MESH', factory: () => new DelaunayMeshNode() }
+    { type: 'tileblend',    label: 'TILE BLEND',    description: 'Blends tiled copies of the image offset by varying amounts',          factory: () => new TileBlendNode() },
+    { type: 'stipple',      label: 'STIPPLE',       description: 'Renders the image as a field of dots whose density maps to brightness', factory: () => new StippleNode() },
+    { type: 'delaunaymesh', label: 'DELAUNAY MESH', description: 'Triangulates the image into a Delaunay mesh with colour-sampled faces', factory: () => new DelaunayMeshNode() }
   ],
   'TEXTURE': [
-    { type: 'filmgrain', label: 'FILM GRAIN', factory: () => new FilmGrainNode() },
-    { type: 'vignette',  label: 'VIGNETTE',   factory: () => new VignetteNode() },
-    { type: 'scanlines', label: 'SCANLINES',  factory: () => new ScanlinesNode() }
+    { type: 'filmgrain', label: 'FILM GRAIN', description: 'Adds luminance-responsive grain simulating film emulsion noise',        factory: () => new FilmGrainNode() },
+    { type: 'vignette',  label: 'VIGNETTE',   description: 'Darkens image edges with a configurable oval falloff from the centre',  factory: () => new VignetteNode() },
+    { type: 'scanlines', label: 'SCANLINES',  description: 'Overlays horizontal scanlines to simulate CRT or print screen effects', factory: () => new ScanlinesNode() }
   ],
   'MORPHOLOGY': [
-    { type: 'dilateerode', label: 'DILATE/ERODE', factory: () => new DilateErodeNode() },
-    { type: 'openclose',   label: 'OPEN/CLOSE',   factory: () => new OpenCloseNode() }
+    { type: 'dilateerode', label: 'DILATE/ERODE', description: 'Expands (dilates) or shrinks (erodes) bright regions using a shaped kernel', factory: () => new DilateErodeNode() },
+    { type: 'openclose',   label: 'OPEN/CLOSE',   description: 'Removes noise speckles (open) or fills small gaps (close) in bright areas', factory: () => new OpenCloseNode() }
   ],
   'SEGMENTATION': [
-    { type: 'otsuthreshold', label: 'OTSU THRESH', factory: () => new OtsuThresholdNode() }
+    { type: 'otsuthreshold', label: 'OTSU THRESH', description: 'Automatically thresholds to binary using Otsu variance maximisation', factory: () => new OtsuThresholdNode() }
   ],
   'GEOMETRIC': [
-    { type: 'voronoi',  label: 'VORONOI',   factory: () => new VoronoiNode() },
-    { type: 'contour',  label: 'CONTOUR',   factory: () => new ContourNode() },
-    { type: 'sdfshape', label: 'SDF SHAPE', factory: () => new SDFShapeNode() }
+    { type: 'voronoi',  label: 'VORONOI',   description: 'Divides the image into Voronoi cells sampled from seed point colours', factory: () => new VoronoiNode() },
+    { type: 'contour',  label: 'CONTOUR',   description: 'Draws isolines at equal luminance intervals like a topographic map',   factory: () => new ContourNode() },
+    { type: 'sdfshape', label: 'SDF SHAPE', description: 'Composites a signed-distance-field shape mask over the image',        factory: () => new SDFShapeNode() }
   ],
   'OPTICS': [
-    { type: 'interference', label: 'INTERFERENCE', factory: () => new InterferenceNode() }
+    { type: 'interference', label: 'INTERFERENCE', description: 'Generates thin-film interference colour patterns from luminance', factory: () => new InterferenceNode() }
   ]
 };
 

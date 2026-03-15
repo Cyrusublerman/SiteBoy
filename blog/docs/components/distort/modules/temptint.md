@@ -15,9 +15,9 @@ Adjusts colour temperature (warm/cool) by shifting red and blue, and tint (green
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Per-channel LUT offset | Inline (`buildLUT`) | — |
+| Per-channel LUT offset | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — `R += temperature × 0.5`, `B -= temperature × 0.5`, `G -= tint × 0.5`. `isLUT = true` for chaining.
+`shared/algorithms/image/colour-adjustments.js` — `R += temperature × 0.5`, `B -= temperature × 0.5`, `G -= tint × 0.5`. `isLUT = true` for chaining.
 
 ## Parameters
 

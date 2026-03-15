@@ -2,11 +2,11 @@
 
 ## Parameter Table
 
-| Key | Label | Type | Min | Max | Step | Default | Tier | Driveable | Controls |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `<key>` | `<LABEL>` | range | <min> | <max> | <step> | <default> | 3 | yes/no | <What this param actually does in apply(). Not just a restatement of the label.> |
+| Key | Label | Type | Min | Max | Step | Default (`value`) | Tier | Driveable | previewMax | Controls |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `<key>` | `<LABEL>` | range | <min> | <max> | <step> | <value default> | 3 | yes/no | <previewMax or —> | <What this param actually does in apply(). Not just a restatement of the label.> |
 
-<One row per paramDef entry. Never omit a parameter.>
+<One row per param entry. Never omit a parameter. Use `value` field name (not `default`).>
 
 ## Mask Controls
 

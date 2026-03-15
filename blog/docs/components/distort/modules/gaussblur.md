@@ -15,10 +15,10 @@ Applies a separable Gaussian blur with a normalised 1D kernel derived from sigma
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Separable Gaussian convolution | Inline (`_cH`, `_cV`, `_k`) | — |
+| Separable Gaussian convolution | `shared/algorithms/image/blur-filters.js` | — |
 | `Sampler` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — `_k(sigma, rad)` builds a normalised 1D Gaussian kernel of radius `ceil(sigma × 3)`. Horizontal then vertical separable convolution with clamped boundaries.
+`shared/algorithms/image/blur-filters.js` — `_k(sigma, rad)` builds a normalised 1D Gaussian kernel of radius `ceil(sigma × 3)`. Horizontal then vertical separable convolution with clamped boundaries.
 
 ## Parameters
 
@@ -68,7 +68,7 @@ Full RGBA image.
 Gaussian-blurred RGBA image.
 
 ### Preview strategy
-`sigma` halved; `passes` forced to 1.
+`sigma` capped at 5 via `previewMax: 5`; `passes` forced to 1.
 
 ## Mask controls
 

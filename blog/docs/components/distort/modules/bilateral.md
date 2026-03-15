@@ -15,9 +15,9 @@ Edge-preserving blur that weights neighbours by both spatial distance and colour
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Joint bilateral filter | Inline | — |
+| Joint bilateral filter | `shared/algorithms/image/blur-filters.js` | — |
 
-Inline — weight `= exp(−spatial² / 2σs² − colorDelta² / 2σr²)`. Kernel radius `= ceil(spatialSigma × 2)`. No lookup table — full per-pixel neighbourhood computation.
+`shared/algorithms/image/blur-filters.js` — weight `= exp(−spatial² / 2σs² − colorDelta² / 2σr²)`. Kernel radius `= ceil(spatialSigma × 2)`. No lookup table — full per-pixel neighbourhood computation.
 
 ## Parameters
 

@@ -15,10 +15,10 @@ Simulates wave fronts advancing across the image with luminance-driven drag, pro
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Wave-front luminance advection | Inline | — |
+| Wave-front luminance advection | `shared/algorithms/line/serpentine-line-engine.js` | — |
 | `vectorToRaster` | `assets/js/tools/processors/distort/nodes/bridge/node-adapters.js` | — |
 
-Inline — wave fronts spawn at `spacing` intervals from the image edge; each point in a front advances by `baseSpeed × (1 − drag)` per iteration, where `drag = lerp(dragLight, dragDark, 1 − lum)`. Sinusoidal lateral offset modulates each front.
+`shared/algorithms/line/serpentine-line-engine.js` — wave fronts spawn at `spacing` intervals from the image edge; each point in a front advances by `baseSpeed × (1 − drag)` per iteration, where `drag = lerp(dragLight, dragDark, 1 − lum)`. Sinusoidal lateral offset modulates each front.
 
 ## Parameters
 

@@ -15,12 +15,12 @@ Divides the image into horizontal or vertical bands and shifts each by a per-ban
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Per-band offset computation | Inline | — |
+| Per-band offset computation | `shared/algorithms/geometry/warp.js` | — |
 | `PerlinNoise.noise2D` | `assets/js/tools/processors/distort/core/PerlinNoise.js` | — |
 | `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — pre-computes a `Float32Array` of per-band offsets using sine, stepped random, or Perlin noise modes. Each pixel's offset determined by its band index.
+`shared/algorithms/geometry/warp.js` — pre-computes a `Float32Array` of per-band offsets using sine, stepped random, or Perlin noise modes. Each pixel's offset determined by its band index.
 
 ## Parameters
 

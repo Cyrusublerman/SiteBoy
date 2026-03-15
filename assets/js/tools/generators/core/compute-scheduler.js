@@ -334,5 +334,3 @@ export class ComputeScheduler {
         return !!this._animating;
     }
 }
-
-console.log('✅ ComputeScheduler v1.0.0 loaded');

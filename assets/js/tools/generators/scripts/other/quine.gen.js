@@ -6,8 +6,9 @@
  * the paper fibres using a float pixel buffer. Comments are coloured
  * in a warm terracotta, code in dark charcoal.
  *
- * The timing model is frame-based: each character is shown for `delayFrames`
- * frames (controlled by the FPS and a Perlin noise-driven delay multiplier).
+ * The timing model is character-index based: each character's delay is seeded
+ * from a deterministic hash of its character index, making the per-character
+ * delay reproducible across invocations with the same parameters.
  *
  * Based on Quine sketch.
  *
@@ -36,17 +37,195 @@ export const SCRIPT_CONFIG = {
         lineHeight, // vertical spacing
     ],
     // === Animation ===
-    // Each character has a Perlin noise-driven delay.
+    // Each character has a deterministic hash-seeded delay.
     // Punctuation (. , { }) add extra pause for rhythm.
     // After all text is typed: pause, fade, reset, repeat.
     p5Draw(p, params, frame) {
-        // Advance character state (frame-based millis simulation)
+        // Advance character state (frame-based)
         // Render ink on offscreen buffer
         // Bleed ink into float pixel residue
-        // Diffuse residue bidirectionally
+        // Diffuse residue (dirty-region bounded)
         // Composite sharp text + bleed halo to canvas
     }
 };`;
+
+// Canvas output colours (used only in canvas draw calls — exempt from UI CSS variable rule per design-law §6.2)
+const _BG          = { r: 242, g: 238, b: 226 };
+const _INK_CODE    = { r: 45,  g: 42,  b: 48  };
+const _INK_COMMENT = { r: 125, g: 88,  b: 82  };
+
+const _W = 1080;
+const _H = 1080;
+
+// Per-instance mutable state keyed by p5 instance — isolates state from the SCRIPT_CONFIG singleton
+const _instances = new WeakMap();
+
+function _makeState(imagined) {
+    const total   = _W * _H * 4;
+    const residue = new Float32Array(total);
+    const echo    = new Float32Array(total);
+    for (let i = 0; i < total; i += 4) {
+        residue[i] = _BG.r; residue[i + 1] = _BG.g; residue[i + 2] = _BG.b; residue[i + 3] = 0;
+    }
+    return {
+        imagined,
+        ego:      _QUINE_TEXT,
+        past:     [],
+        present:  '',
+        charIndex:   0,
+        lineIndex:   0,
+        dormant:     false,
+        clearing:    false,
+        blankLines:  0,
+        nextFrame:   0,
+        residue,
+        echo,
+        passDir:     0,          // 0 = forward, 1 = backward — alternates each frame
+        activeX0: _W, activeY0: _H, activeX1: 0, activeY1: 0,
+    };
+}
+
+// Deterministic hash → value in [0, 1) for character delay variation
+function _pseudoNoise(seed) {
+    let h = seed | 0;
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+    h = h ^ (h >>> 16);
+    return (h >>> 0) / 0x100000000;
+}
+
+function _isComment(line) {
+    const t = line.trim();
+    return t.startsWith('//') || t.startsWith('/*') || t.startsWith('*');
+}
+
+// Delay for the character at charIndex — seeded from charIndex for determinism
+function _charDelay(charIndex, ch, params) {
+    const { delayScale, pauseDelay } = params;
+    let base = 2 + Math.round(_pseudoNoise(charIndex) * 3);
+    if (ch === ' ')  base += 1;
+    if (ch === '.')  base += Math.round(pauseDelay * 0.6);
+    if (ch === '\n') base += Math.round(pauseDelay * 0.7);
+    if (ch === '{')  base += Math.round(pauseDelay * 0.2);
+    if (ch === ',')  base += Math.round(pauseDelay * 0.3);
+    return Math.round(base * delayScale);
+}
+
+// Read darkness from imagined buffer and transfer ink mass to residue.
+// Updates the active bounding box to cover newly inked pixels.
+function _absorbInk(state, urgency) {
+    const { imagined, residue } = state;
+    imagined.loadPixels();
+    const pixels = imagined.pixels;
+    let x0 = state.activeX0, y0 = state.activeY0;
+    let x1 = state.activeX1, y1 = state.activeY1;
+    for (let i = 0; i < pixels.length; i += 4) {
+        const pr = pixels[i], pg = pixels[i + 1], pb = pixels[i + 2];
+        const darkness = 255 - Math.max(pr, pg, pb);
+        if (darkness > 20) {
+            const existing = residue[i + 3];
+            const newWet   = Math.min(existing + (darkness / 255) * urgency, 50);
+            if (existing > 0) {
+                const ratio = urgency / (existing + urgency);
+                residue[i]     = residue[i]     + (pr - residue[i])     * ratio;
+                residue[i + 1] = residue[i + 1] + (pg - residue[i + 1]) * ratio;
+                residue[i + 2] = residue[i + 2] + (pb - residue[i + 2]) * ratio;
+            } else {
+                residue[i] = pr; residue[i + 1] = pg; residue[i + 2] = pb;
+            }
+            residue[i + 3] = newWet;
+            const pIdx = i >> 2;
+            const x = pIdx % _W, y = (pIdx / _W) | 0;
+            if (x < x0) x0 = x;
+            if (y < y0) y0 = y;
+            if (x > x1) x1 = x;
+            if (y > y1) y1 = y;
+        }
+    }
+    state.activeX0 = x0; state.activeY0 = y0;
+    state.activeX1 = x1; state.activeY1 = y1;
+}
+
+// Bidirectional diffusion limited to the active bounding box (dirty-region optimisation).
+// Single pass per frame (alternating forward/backward) using echo as a read-snapshot,
+// writing results back to residue. Uses 2 buffers instead of 3 (removes _reflection).
+function _diffuse(state, entropy, gravity) {
+    const residue = state.residue;
+    const echo    = state.echo;
+
+    // Expand by 2 to safely capture all bleed targets of border pixels
+    const bx0 = Math.max(1,       state.activeX0 - 2);
+    const by0 = Math.max(1,       state.activeY0 - 2);
+    const bx1 = Math.min(_W - 2,  state.activeX1 + 2);
+    const by1 = Math.min(_H - 2,  state.activeY1 + 2);
+
+    if (bx0 > bx1 || by0 > by1) { state.passDir = 1 - state.passDir; return; }
+
+    // Snapshot: copy residue → echo (read-only reference for this pass)
+    for (let y = by0; y <= by1; y++) {
+        for (let x = bx0; x <= bx1; x++) {
+            const i = (x + y * _W) * 4;
+            echo[i] = residue[i]; echo[i + 1] = residue[i + 1];
+            echo[i + 2] = residue[i + 2]; echo[i + 3] = residue[i + 3];
+        }
+    }
+
+    let nx0 = _W, ny0 = _H, nx1 = 0, ny1 = 0;
+    const fwd = state.passDir === 0;
+
+    const y0i = fwd ? by0 : by1, y1i = fwd ? by1 : by0, yd = fwd ? 1 : -1;
+    const x0i = fwd ? bx0 : bx1, x1i = fwd ? bx1 : bx0, xd = fwd ? 1 : -1;
+
+    for (let y = y0i; fwd ? y <= y1i : y >= y1i; y += yd) {
+        for (let x = x0i; fwd ? x <= x1i : x >= x1i; x += xd) {
+            const here = (x + y * _W) * 4;
+            const vit  = echo[here + 3];
+            if (vit > gravity) {
+                residue[here + 3] = vit - gravity * 0.5;
+                for (const n of [here + 4, here - 4, here + _W * 4, here - _W * 4]) {
+                    if (echo[n + 3] < vit) {
+                        const d = 0.15; // 0.3 * 0.5
+                        residue[n]     = residue[n]     + (echo[here]     - residue[n])     * d;
+                        residue[n + 1] = residue[n + 1] + (echo[here + 1] - residue[n + 1]) * d;
+                        residue[n + 2] = residue[n + 2] + (echo[here + 2] - residue[n + 2]) * d;
+                        residue[n + 3] = Math.min(echo[n + 3] + 0.3, vit * 0.8);
+                    }
+                }
+            }
+            residue[here + 3] = Math.max(0, residue[here + 3] - entropy);
+            if (residue[here + 3] > 0) {
+                if (x < nx0) nx0 = x; if (y < ny0) ny0 = y;
+                if (x > nx1) nx1 = x; if (y > ny1) ny1 = y;
+            }
+        }
+    }
+
+    state.activeX0 = nx0 < _W ? nx0 : _W;
+    state.activeY0 = ny0 < _H ? ny0 : _H;
+    state.activeX1 = nx1;
+    state.activeY1 = ny1;
+    state.passDir  = 1 - state.passDir;
+}
+
+// Cheaper entropy-only decay used during clearing and dormant phases (no neighbourhood bleed)
+function _decayResidue(state, entropy) {
+    const { residue, activeX0, activeY0, activeX1, activeY1 } = state;
+    if (activeX0 > activeX1 || activeY0 > activeY1) return;
+    let nx0 = _W, ny0 = _H, nx1 = 0, ny1 = 0;
+    for (let y = activeY0; y <= activeY1; y++) {
+        for (let x = activeX0; x <= activeX1; x++) {
+            const ai = (x + y * _W) * 4 + 3;
+            const a  = Math.max(0, residue[ai] - entropy);
+            residue[ai] = a;
+            if (a > 0) {
+                if (x < nx0) nx0 = x; if (y < ny0) ny0 = y;
+                if (x > nx1) nx1 = x; if (y > ny1) ny1 = y;
+            }
+        }
+    }
+    state.activeX0 = nx0; state.activeY0 = ny0;
+    state.activeX1 = nx1; state.activeY1 = ny1;
+}
 
 export const SCRIPT_CONFIG = {
     id: 'quine',
@@ -61,267 +240,200 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Ink',
             params: [
-                { key: 'entropy',    type: 'slider', label: 'Entropy',    min: 0.01, max: 0.5, step: 0.01, default: 0.15 },
-                { key: 'urgency',    type: 'slider', label: 'Urgency',    min: 1,    max: 20,  step: 1,    default: 8 },
-                { key: 'gravity',    type: 'slider', label: 'Gravity',    min: 0.5,  max: 10,  step: 0.5,  default: 2 }
+                { key: 'entropy',    type: 'slider', label: 'Entropy',    min: 0.01, max: 0.5,  step: 0.01, default: 0.15 },
+                { key: 'urgency',    type: 'slider', label: 'Urgency',    min: 1,    max: 20,   step: 1,    default: 8 },
+                { key: 'gravity',    type: 'slider', label: 'Gravity',    min: 0.5,  max: 10,   step: 0.5,  default: 2 }
             ]
         },
         {
             group: 'Typing',
             params: [
-                { key: 'delayScale', type: 'slider', label: 'Delay Scale', min: 0.5, max: 4,   step: 0.1, default: 1 },
-                { key: 'pauseDelay', type: 'slider', label: 'Pause Delay (frames)', min: 5, max: 60, step: 5, default: 20 }
+                { key: 'delayScale', type: 'slider', label: 'Delay Scale',        min: 0.5, max: 4,  step: 0.1, default: 1 },
+                { key: 'pauseDelay', type: 'slider', label: 'Pause Delay (frames)', min: 5, max: 60, step: 5,   default: 20 }
             ]
         },
         {
             group: 'Text',
             params: [
-                { key: 'fontSize',   type: 'slider', label: 'Font Size',   min: 10,  max: 28, step: 1,   default: 16 },
-                { key: 'lineHeight', type: 'slider', label: 'Line Height', min: 14,  max: 40, step: 1,   default: 24 },
-                { key: 'margin',     type: 'slider', label: 'Margin',      min: 20,  max: 80, step: 5,   default: 50 }
+                { key: 'fontSize',   type: 'slider', label: 'Font Size',   min: 10, max: 28, step: 1, default: 16 },
+                { key: 'lineHeight', type: 'slider', label: 'Line Height', min: 14, max: 40, step: 1, default: 24 },
+                { key: 'margin',     type: 'slider', label: 'Margin',      min: 20, max: 80, step: 5, default: 50 }
             ]
         }
     ],
 
     presets: [
-        { name: 'Classic',   entropy: 0.15, urgency: 8, gravity: 2, delayScale: 1,   pauseDelay: 20, fontSize: 16, lineHeight: 24, margin: 50 },
-        { name: 'Fast',      entropy: 0.2,  urgency: 6, gravity: 3, delayScale: 0.5, pauseDelay: 10, fontSize: 16, lineHeight: 24, margin: 50 },
-        { name: 'Slow Bleed',entropy: 0.05, urgency: 12, gravity: 1, delayScale: 2,  pauseDelay: 30, fontSize: 14, lineHeight: 22, margin: 40 }
+        { name: 'Classic',    values: { entropy: 0.15, urgency: 8,  gravity: 2, delayScale: 1,   pauseDelay: 20, fontSize: 16, lineHeight: 24, margin: 50 } },
+        { name: 'Fast',       values: { entropy: 0.2,  urgency: 6,  gravity: 3, delayScale: 0.5, pauseDelay: 10, fontSize: 16, lineHeight: 24, margin: 50 } },
+        { name: 'Slow Bleed', values: { entropy: 0.05, urgency: 12, gravity: 1, delayScale: 2,   pauseDelay: 30, fontSize: 14, lineHeight: 22, margin: 40 } }
     ],
 
-    animation: { type: 'infinite', defaultFps: 60 },
-
-    // Colours (paper-like)
-    _BG: { r: 242, g: 238, b: 226 },
-    _INK_CODE:    { r: 45,  g: 42,  b: 48 },
-    _INK_COMMENT: { r: 125, g: 88,  b: 82 },
-
-    // State
-    _ego: _QUINE_TEXT,
-    _past: null,
-    _present: null,
-    _charIndex: 0,
-    _lineIndex: 0,
-    _dormant: false,
-    _clearing: false,
-    _blankLines: 0,
-    _lastRenderedLine: -1,
-    _noiseT: 0,
-    _residue: null,
-    _echo: null,
-    _reflection: null,
-    _imagined: null,
-    _nextFrame: 0,
-    _initialized: false,
-
-    _isComment(line) {
-        const t = line.trim();
-        return t.startsWith('//') || t.startsWith('/*') || t.startsWith('*');
+    animation: {
+        type:             'infinite',
+        defaultFps:       60,
+        animatableParams: ['entropy', 'urgency', 'gravity', 'delayScale'],
+        sequencer:        false,
+        animationExport:  false,
     },
 
-    _charDelay(ch, params) {
-        const { delayScale, pauseDelay } = params;
-        let base = 2 + Math.round((this._noiseT % 1.0) * 3);
-        this._noiseT += 0.05;
-        if (ch === ' ')   base += 1;
-        if (ch === '.')   base += Math.round(pauseDelay * 0.6);
-        if (ch === '\n')  base += Math.round(pauseDelay * 0.7);
-        if (ch === '{')   base += Math.round(pauseDelay * 0.2);
-        if (ch === ',')   base += Math.round(pauseDelay * 0.3);
-        return Math.round(base * delayScale);
+    export: { png: true, gif: false, webm: false },
+
+    compute: {
+        cost:             'per-pixel',
+        interactionScale: 0.5,
+        idleDelay:        200,
     },
 
-    _absorbInk(imagined, residue, urgency, bg) {
-        const W = imagined.width, H = imagined.height;
-        imagined.loadPixels();
-        for (let i = 0; i < imagined.pixels.length; i += 4) {
-            const pr = imagined.pixels[i], pg = imagined.pixels[i + 1], pb = imagined.pixels[i + 2];
-            const darkness = 255 - Math.max(pr, pg, pb);
-            if (darkness > 20) {
-                const existing = residue[i + 3];
-                const newWet   = Math.min(existing + (darkness / 255) * urgency, 50);
-                if (existing > 0) {
-                    const ratio = urgency / (existing + urgency);
-                    residue[i]     = residue[i]     + (pr - residue[i])     * ratio;
-                    residue[i + 1] = residue[i + 1] + (pg - residue[i + 1]) * ratio;
-                    residue[i + 2] = residue[i + 2] + (pb - residue[i + 2]) * ratio;
-                } else {
-                    residue[i] = pr; residue[i + 1] = pg; residue[i + 2] = pb;
-                }
-                residue[i + 3] = newWet;
-            }
+    infoSections: [
+        {
+            heading: 'DESCRIPTION',
+            body: 'Quine is a P5.js pixel-buffer animation that types its own source code character by character onto a simulated 1080x1080 paper canvas. Ink bleeds from the typed text into the surrounding paper fibres via a float-precision pixel diffusion buffer. The generator is self-referential: the text it types is the _QUINE_TEXT constant embedded in the source, which is an abridged version of the generator\'s own SCRIPT_CONFIG block. The paper is warm off-white. Code text is dark charcoal. Comment lines (starting with //, /*, or *) are warm terracotta. The ink bleed produces a diffuse halo that spreads outward from each typed character over time, controlled by entropy, urgency, and gravity. After all text is typed, blank lines are inserted to push the content off screen, the generator enters a dormant phase that rapidly fades the residue, and the full cycle restarts from the beginning.'
+        },
+        {
+            heading: 'ALGORITHM',
+            body: 'The generator runs a four-stage pipeline per frame. Stage 1 — text state machine: if the current frame number meets or exceeds nextFrame, the next character from the ego string is emitted. _charDelay computes the delay for that character: it seeds a deterministic hash from charIndex to produce a base delay of 2-5 frames, then adds punctuation penalties (period: pauseDelay x 0.6, newline: x 0.7, brace: x 0.2, comma: x 0.3) and multiplies the total by delayScale. Newlines push the current in-progress line to the past array and reset the present string. When charIndex reaches the end of the ego string, the clearing flag is set; blank lines are pushed at intervals controlled by pauseDelay until 40 blanks have accumulated, then the dormant flag is set. During dormant, all residue alpha values are multiplied by 0.2 (rapid fade) and the text state is reset. Stage 2 — text render: the offscreen graphics buffer (_imagined) is cleared and filled white. The last maxLines = floor((H - 2 x margin) / lineHeight) completed lines from past are drawn at the configured fontSize and margin, using inkCode colour for code lines and inkComment for comment lines (detected by _isComment, which checks line prefixes // /* *). The current in-progress present string is drawn with a trailing underscore cursor. Stage 3 — _absorbInk: imagined.loadPixels() is called; for each pixel, darkness = 255 - max(R,G,B). If darkness exceeds 20, ink mass is added to the float residue buffer at that position: newWet = min(existing + (darkness/255) x urgency, 50). If the pixel already had ink, its residue colour is blended toward the new pixel colour by urgency/(existing+urgency). The active bounding box is expanded to include any newly inked pixel. Stage 4 — _diffuse (dirty-region bounded): during clearing and dormant phases, a cheaper _decayResidue pass applies entropy decay only. During normal typing, the full _diffuse function runs. _diffuse clips iteration to the active bounding box (expanded by 2 pixels on each side) and runs a single directional pass per frame, alternating forward (top-left to bottom-right) and backward (bottom-right to top-left) on successive frames, using a read-snapshot in echo and writing results to residue. Each pixel with alpha above gravity has its alpha reduced by gravity x 0.5 and bleeds a fraction (d=0.15) of its colour and mass to each of its four cardinal neighbours whose alpha is lower. All processed pixels then have entropy subtracted from their alpha. The new tight bounding box is recomputed from remaining wet pixels. Stage 5 — composite: p.loadPixels() is called. For each pixel: if the corresponding imagined pixel is ink (darkness > 20), the sharp pixel is copied directly. Else if residue alpha exceeds 0.5, the output is blended from paper colour toward the residue colour by min(wet/30, 0.6). Else the paper background colour is used. p.updatePixels() flushes the result.'
+        },
+        {
+            heading: 'PARAMETERS',
+            body: 'entropy [0.01, 0.5] step 0.01 default 0.15: decay rate of ink wetness per diffusion step. Higher values cause the bleed halo to fade faster. At maximum entropy (0.5) the bleed is barely visible; at minimum (0.01) ink persists for many frames. urgency [1, 20] step 1 default 8: ink mass added to the residue per frame per dark pixel. Higher values produce more aggressive bleeding and wider halos. At maximum urgency the residue fills quickly and may overflow the cap of 50. gravity [0.5, 10] step 0.5 default 2: minimum wetness threshold a pixel must exceed before it bleeds ink to its cardinal neighbours. Lower gravity allows even faint ink to spread; higher gravity restricts bleed to only heavily saturated pixels. entropy and gravity interact: high gravity with low entropy means ink accumulates without spreading far; low gravity with high entropy means ink spreads rapidly but fades quickly. delayScale [0.5, 4] step 0.1 default 1: global multiplier for per-character delay. Values above 1 slow typing; values below 1 speed it up. Affects the overall cycle length. pauseDelay [5, 60] step 5 default 20: base delay in frames for punctuation characters. Controls the rhythm of pauses at periods, newlines, braces, and commas. delayScale and pauseDelay both affect rhythm; delayScale scales the total delay uniformly, pauseDelay scales only the punctuation component. fontSize [10, 28] step 1 default 16: font size in pixels for the typed text on the canvas. Larger values reduce the number of visible lines. lineHeight [14, 40] step 1 default 24: vertical spacing in pixels between lines. Also reduces visible line count when increased. margin [20, 80] step 5 default 50: canvas margin in pixels applied on all sides. Affects both the horizontal text width and the vertical line count via maxLines = floor((1080 - 2 x margin) / lineHeight).'
+        },
+        {
+            heading: 'PRESETS',
+            body: 'Classic: entropy 0.15, urgency 8, gravity 2, delayScale 1, pauseDelay 20, fontSize 16, lineHeight 24, margin 50. The reference configuration. Moderate ink bleed with natural typing rhythm. Fast: entropy 0.2, urgency 6, gravity 3, delayScale 0.5, pauseDelay 10, fontSize 16, lineHeight 24, margin 50. Faster typing with reduced bleed. Higher gravity and entropy keep the halo tight and short-lived. Slow Bleed: entropy 0.05, urgency 12, gravity 1, delayScale 2, pauseDelay 30, fontSize 14, lineHeight 22, margin 40. Maximum bleed with slow typing. Low entropy causes ink to persist and spread widely. Higher urgency forces residue to fill rapidly. Smaller font and tighter line height allow more text on screen simultaneously.'
+        },
+        {
+            heading: 'PERFORMANCE',
+            body: 'Complexity is O(W x H) per frame, dominated by three full pixel-array passes: _absorbInk (~3-5ms), _diffuse (~15-25ms at defaults), and composite (~3-5ms). Expected frame rate is 20-40fps at default parameters — below the 60fps target. _diffuse is the dominant bottleneck at approximately 28M arithmetic operations per frame when the full canvas is wet. The dirty-region optimisation limits diffusion passes to the active bounding box of wet pixels, significantly reducing cost when only a small region of the canvas has ink (early in each cycle). Memory usage: two Float32Array buffers (residue and echo) at 1080x1080x4 floats each occupy approximately 37MB of heap total. This may cause pressure on devices with less than 4GB RAM. At maximum urgency (20) and minimum entropy (0.01), more pixels exceed the gravity threshold per frame, increasing the neighbourhood bleed loop cost. At minimum urgency and maximum entropy, most pixels are dry and the dirty-region shortcut is most effective.'
+        },
+        {
+            heading: 'ANIMATION',
+            body: 'Animation type is infinite with no defined loop frame count. The animation is not frame-deterministic: although the delay for each individual character is derived from a seeded hash of its character index (reproducible for a given charIndex value and params), the frame number at which any character is emitted is the cumulative sum of all prior delays, which depends on delayScale and pauseDelay at the time each prior character was emitted. Two render passes with the same frame index but different parameter histories will produce different visual output. GIF and WebM export are not supported. PNG export is supported. The animation is driven by the frame counter passed to p5Draw; no real-time clock or Math.random is used. passDir alternates each diffuse frame to achieve bidirectional spread over two consecutive frames.'
+        },
+        {
+            heading: 'KNOWN LIMITATIONS',
+            body: 'The self-referential text (_QUINE_TEXT) is a partial representation of the generator\'s configuration: it lists parameter names without their current numeric default values. A fully accurate quine would render the exact source of SCRIPT_CONFIG verbatim. The animation is not frame-deterministic with respect to frame index: the character emit schedule depends on cumulative delay history, not frame count alone. GIF and WebM export are therefore unavailable. At default settings the generator runs at approximately 20-40fps due to the cost of the pixel diffusion pass; it will not reach 60fps on most devices. Performance degrades at high urgency and low entropy when a large proportion of the canvas is simultaneously wet. At the start of each cycle, the dirty-region optimisation provides the greatest benefit; as ink spreads across the canvas, the active bounding box grows and the optimisation provides less saving.'
+        },
+        {
+            heading: 'REFERENCES',
+            body: 'Origin: port of the Quine sketch. Version 1.0.0. No external academic sources cited. The ink diffusion model is a custom single-direction-per-frame cellular automaton applied to a float-precision RGBA buffer, combining a gravity threshold with entropy decay and 4-connected neighbourhood bleed.'
         }
-    },
-
-    _diffuse(residue, echo, reflection, W, H, entropy, gravity) {
-        // Copy
-        for (let i = 0; i < residue.length; i++) { echo[i] = residue[i]; reflection[i] = residue[i]; }
-
-        // Forward pass
-        for (let y = 1; y < H - 1; y++) {
-            for (let x = 1; x < W - 1; x++) {
-                const here = (x + y * W) * 4;
-                const vit  = residue[here + 3];
-                if (vit > gravity) {
-                    echo[here + 3] = vit - gravity * 0.5;
-                    for (const n of [here + 4, here - 4, here + W * 4, here - W * 4]) {
-                        if (residue[n + 3] < vit) {
-                            const d = 0.3;
-                            echo[n]     = echo[n]     + (residue[here]     - echo[n])     * d * 0.5;
-                            echo[n + 1] = echo[n + 1] + (residue[here + 1] - echo[n + 1]) * d * 0.5;
-                            echo[n + 2] = echo[n + 2] + (residue[here + 2] - echo[n + 2]) * d * 0.5;
-                            echo[n + 3] = Math.min(residue[n + 3] + d, vit * 0.8);
-                        }
-                    }
-                }
-                echo[here + 3] = Math.max(0, echo[here + 3] - entropy);
-            }
-        }
-
-        // Backward pass
-        for (let y = H - 2; y > 0; y--) {
-            for (let x = W - 2; x > 0; x--) {
-                const here = (x + y * W) * 4;
-                const vit  = residue[here + 3];
-                if (vit > gravity) {
-                    reflection[here + 3] = vit - gravity * 0.5;
-                    for (const n of [here + 4, here - 4, here + W * 4, here - W * 4]) {
-                        if (residue[n + 3] < vit) {
-                            const d = 0.3;
-                            reflection[n]     = reflection[n]     + (residue[here]     - reflection[n])     * d * 0.5;
-                            reflection[n + 1] = reflection[n + 1] + (residue[here + 1] - reflection[n + 1]) * d * 0.5;
-                            reflection[n + 2] = reflection[n + 2] + (residue[here + 2] - reflection[n + 2]) * d * 0.5;
-                            reflection[n + 3] = Math.min(residue[n + 3] + d, vit * 0.8);
-                        }
-                    }
-                }
-                reflection[here + 3] = Math.max(0, reflection[here + 3] - entropy);
-            }
-        }
-
-        // Average
-        for (let i = 0; i < residue.length; i += 4) {
-            residue[i]     = (echo[i]     + reflection[i])     / 2;
-            residue[i + 1] = (echo[i + 1] + reflection[i + 1]) / 2;
-            residue[i + 2] = (echo[i + 2] + reflection[i + 2]) / 2;
-            residue[i + 3] = (echo[i + 3] + reflection[i + 3]) / 2;
-        }
-    },
-
-    _reset(params) {
-        const { bg } = this._getColors();
-        const total = 1080 * 1080 * 4;
-        this._residue = new Float32Array(total);
-        this._echo    = new Float32Array(total);
-        this._reflection = new Float32Array(total);
-        for (let i = 0; i < total; i += 4) {
-            this._residue[i] = bg.r; this._residue[i + 1] = bg.g; this._residue[i + 2] = bg.b;
-            this._residue[i + 3] = 0;
-        }
-        this._past = []; this._present = ''; this._charIndex = 0; this._lineIndex = 0;
-        this._dormant = false; this._clearing = false; this._blankLines = 0;
-        this._lastRenderedLine = -1; this._nextFrame = 0; this._noiseT = 0;
-    },
-
-    _getColors() {
-        return { bg: this._BG, inkCode: this._INK_CODE, inkComment: this._INK_COMMENT };
-    },
+    ],
 
     p5Setup(p, params) {
         p.pixelDensity(1);
         p.noLoop();
-        this._imagined = p.createGraphics(1080, 1080);
-        this._imagined.pixelDensity(1);
-        this._imagined.textFont('monospace');
-        this._imagined.noStroke();
-        this._reset(params);
-        this._initialized = true;
+        const imagined = p.createGraphics(_W, _H);
+        imagined.pixelDensity(1);
+        imagined.textFont('monospace');
+        imagined.noStroke();
+        _instances.set(p, _makeState(imagined));
     },
 
     p5Draw(p, params, frame) {
-        if (!this._initialized) { this._imagined = p.createGraphics(1080, 1080); this._imagined.pixelDensity(1); this._imagined.textFont('monospace'); this._imagined.noStroke(); this._reset(params); this._initialized = true; }
+        let state = _instances.get(p);
+        // Guard: re-initialise if p5Setup was not called before first p5Draw
+        if (!state) {
+            const imagined = p.createGraphics(_W, _H);
+            imagined.pixelDensity(1);
+            imagined.textFont('monospace');
+            imagined.noStroke();
+            state = _makeState(imagined);
+            _instances.set(p, state);
+        }
 
         const { entropy, urgency, gravity, fontSize, lineHeight, margin, pauseDelay } = params;
-        const { bg, inkCode, inkComment } = this._getColors();
 
-        // Advance text state (frame-based)
-        if (frame >= this._nextFrame) {
-            if (this._clearing) {
-                this._past.push('');
-                this._blankLines++;
-                this._nextFrame = frame + Math.round(pauseDelay * 0.1);
-                if (this._blankLines > 40) {
-                    this._clearing = false;
-                    this._dormant  = true;
-                    this._nextFrame = frame + pauseDelay * 3;
+        // Advance text state
+        if (frame >= state.nextFrame) {
+            if (state.clearing) {
+                state.past.push('');
+                state.blankLines++;
+                state.nextFrame = frame + Math.round(pauseDelay * 0.1);
+                if (state.blankLines > 40) {
+                    state.clearing = false;
+                    state.dormant  = true;
+                    state.nextFrame = frame + pauseDelay * 3;
                 }
-            } else if (this._dormant) {
-                // Fade residue and reset
-                for (let i = 0; i < this._residue.length; i += 4) this._residue[i + 3] *= 0.2;
-                this._past = []; this._present = ''; this._charIndex = 0; this._lineIndex = 0;
-                this._blankLines = 0; this._dormant = false; this._lastRenderedLine = -1;
-                this._nextFrame = frame + 2;
+            } else if (state.dormant) {
+                // Rapid fade over active region before reset
+                const { residue, activeX0, activeY0, activeX1, activeY1 } = state;
+                for (let y = activeY0; y <= activeY1; y++) {
+                    for (let x = activeX0; x <= activeX1; x++) {
+                        residue[(x + y * _W) * 4 + 3] *= 0.2;
+                    }
+                }
+                state.past = []; state.present = '';
+                state.charIndex = 0; state.lineIndex = 0; state.blankLines = 0;
+                state.dormant   = false;
+                state.nextFrame = frame + 2;
             } else {
-                const ch = this._ego.charAt(this._charIndex);
+                const ch = state.ego.charAt(state.charIndex);
                 if (ch === '\n') {
-                    this._past.push(this._present);
-                    this._present = '';
-                    this._lineIndex++;
+                    state.past.push(state.present);
+                    state.present = '';
+                    state.lineIndex++;
                 } else {
-                    this._present += ch;
+                    state.present += ch;
                 }
-                this._nextFrame = frame + this._charDelay(ch, params);
-                this._charIndex++;
-                if (this._charIndex >= this._ego.length) {
-                    this._past.push(this._present); this._present = '';
-                    this._clearing = true; this._blankLines = 0;
+                state.nextFrame = frame + _charDelay(state.charIndex, ch, params);
+                state.charIndex++;
+                if (state.charIndex >= state.ego.length) {
+                    state.past.push(state.present);
+                    state.present  = '';
+                    state.clearing = true;
+                    state.blankLines = 0;
                 }
             }
         }
 
-        // Render text to imagined buffer
-        const im = this._imagined;
+        // Render text to offscreen buffer
+        const im = state.imagined;
         im.clear();
         im.background(255);
         im.textSize(fontSize);
-        const maxLines = Math.floor((1080 - margin * 2) / lineHeight);
-        const visible  = this._past.slice(-maxLines);
+        const maxLines = Math.floor((_H - margin * 2) / lineHeight);
+        const visible  = state.past.slice(-maxLines);
         for (let i = 0; i < visible.length; i++) {
             const yPos = margin + i * lineHeight;
-            const col  = this._isComment(visible[i]) ? inkComment : inkCode;
+            const col  = _isComment(visible[i]) ? _INK_COMMENT : _INK_CODE;
             im.fill(col.r, col.g, col.b);
             im.text(visible[i], margin, yPos);
         }
         const curY = margin + visible.length * lineHeight;
-        if (curY < 1080 - margin && !this._clearing && !this._dormant) {
-            const col = this._isComment(this._present) ? inkComment : inkCode;
+        if (curY < _H - margin && !state.clearing && !state.dormant) {
+            const col = _isComment(state.present) ? _INK_COMMENT : _INK_CODE;
             im.fill(col.r, col.g, col.b);
-            im.text(this._present + '_', margin, curY);
+            im.text(state.present + '_', margin, curY);
         }
 
-        // Absorb ink
-        this._absorbInk(im, this._residue, urgency, bg);
+        // Absorb ink from imagined into residue (also calls im.loadPixels())
+        _absorbInk(state, urgency);
 
-        // Diffuse
-        this._diffuse(this._residue, this._echo, this._reflection, 1080, 1080, entropy, gravity);
+        // Diffuse or decay depending on phase
+        if (state.clearing) {
+            _decayResidue(state, entropy);
+        } else {
+            _diffuse(state, entropy, gravity);
+        }
 
         // Composite
-        im.loadPixels();
+        const { residue } = state;
+        const imPixels = im.pixels; // already loaded by _absorbInk
         p.loadPixels();
         for (let i = 0; i < p.pixels.length; i += 4) {
-            const sR = im.pixels[i], sG = im.pixels[i + 1], sB = im.pixels[i + 2];
-            const wet = this._residue[i + 3];
-            const bR  = this._residue[i], bG = this._residue[i + 1], bB = this._residue[i + 2];
+            const sR = imPixels[i], sG = imPixels[i + 1], sB = imPixels[i + 2];
+            const wet = residue[i + 3];
             const isInk = (255 - Math.max(sR, sG, sB)) > 20;
             if (isInk) {
                 p.pixels[i] = sR; p.pixels[i + 1] = sG; p.pixels[i + 2] = sB;
             } else if (wet > 0.5) {
+                const bR = residue[i], bG = residue[i + 1], bB = residue[i + 2];
                 const inf = Math.min(wet / 30, 0.6);
-                p.pixels[i]     = bg.r + (bR - bg.r) * inf;
-                p.pixels[i + 1] = bg.g + (bG - bg.g) * inf;
-                p.pixels[i + 2] = bg.b + (bB - bg.b) * inf;
+                p.pixels[i]     = _BG.r + (bR - _BG.r) * inf;
+                p.pixels[i + 1] = _BG.g + (bG - _BG.g) * inf;
+                p.pixels[i + 2] = _BG.b + (bB - _BG.b) * inf;
             } else {
-                p.pixels[i] = bg.r; p.pixels[i + 1] = bg.g; p.pixels[i + 2] = bg.b;
+                p.pixels[i] = _BG.r; p.pixels[i + 1] = _BG.g; p.pixels[i + 2] = _BG.b;
             }
             p.pixels[i + 3] = 255;
         }

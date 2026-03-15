@@ -1,6 +1,7 @@
 /**
  * DISTORT — EffectNode base class.
- * All 71 node types extend this class and override apply(src, dst, w, h, ctx).
+ * All 69 node types extend this class via createEffectModule() in core/EffectModule.js.
+ * Module files do not extend this class directly — they call createEffectModule(config).
  * Provides: parameter management, per-node mask (4 sources), parameter modulation,
  * dirty-node cache invalidation, JSON serialisation, and destroy().
  */
@@ -41,6 +42,9 @@ export class EffectNode {
 
     this.modulation = {};
   }
+
+  /** Returns the param definitions object (used by NodePanel to build controls). */
+  getParamDefs() { return this.paramDefs; }
 
   /** Override in subclasses. dst.set(src) = pass-through. */
   apply(src, dst, w, h, ctx) { dst.set(src); }

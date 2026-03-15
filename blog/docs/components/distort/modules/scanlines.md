@@ -15,9 +15,9 @@ Overlays horizontal scanline darkening by periodically attenuating alternating r
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Periodic row attenuation | Inline | — |
+| Periodic row attenuation | `shared/algorithms/image/texture-overlays.js` | — |
 
-Inline — for each row, `(y mod spacing) / spacing < thickness` selects the darkened rows; `factor = 1 − opacity` applied as a channel multiplier. Applied per row with no per-pixel branch inside x.
+`shared/algorithms/image/texture-overlays.js` — for each row, `(y mod spacing) / spacing < thickness` selects the darkened rows; `factor = 1 − opacity` applied as a channel multiplier. Applied per row with no per-pixel branch inside x.
 
 ## Parameters
 

@@ -9,21 +9,24 @@ None.
 **[STANDARDS] State stored on `SCRIPT_CONFIG` object**
 `_timeline`, `_totalDuration`, `_timelineKey` are properties of the exported config object, mutated via `this.*` in `p5Draw`/`_buildTimeline`. Shared state across instances. Same pattern as `fibonacci-balls`. Standards require per-invocation scoping.
 
-**[STANDARDS] Preset format non-standard**
-Presets are flat objects `{ name, key1, key2, ... }` rather than `{ name, values: { ... } }`. Host may fail to apply presets silently.
-
 **[STANDARDS] Raw P5 colour values**
 `p.background(20)` and `p.stroke(255)` use raw integers. Cannot be overridden by CSS variable system.
 
-**[STANDARDS] No `export` block**
-No PNG/GIF/WebM export available.
+**[RESOLVED] [STANDARDS] Preset format non-standard**
+*Fix: Presets updated to `{ name, values: { ... } }` wrapper format.*
+~~Presets are flat objects `{ name, key1, key2, ... }` rather than `{ name, values: { ... } }`. Host may fail to apply presets silently.~~
 
-**[PERFORMANCE] Shape arrays rebuilt every frame**
-`_buildLines`, `_buildArcs`, and `_buildPolygons` are called every frame regardless of whether `curve` or `sides` changed. During hold segments, the output is constant. A shape-array cache keyed on `curve | sides | lineCount | outerRadius | polySpacing | resolution | maxSides` would eliminate redundant computation.
-At `resolution = 400`, `lineCount = 20`: rebuilds 4 × 8000 = 32,000 points/frame unnecessarily during holds.
+**[RESOLVED] [STANDARDS] No `export` block**
+*Fix: `export: { png: true, gif: false, webm: false }` added; GIF/WebM disabled for infinite animation.*
+~~No PNG/GIF/WebM export available.~~
 
-**[UX] `fps` parameter label is misleading**
-The parameter is labelled "Simulated FPS" but controls animation speed (`timeMs = frame × 1000 / fps`). It is not a frame rate setting. Setting `fps = 120` doubles speed; `fps = 30` halves it. Renaming to `speed` with a range of 0.5–2 would be clearer.
+**[RESOLVED] [PERFORMANCE] Shape arrays rebuilt every frame**
+*Fix: Shape array cache (`_shapesKey`) and centroid cache (`_centroidKey`) added; shapes only rebuilt when `curve`, `sides`, or geometry params change; `_buildArcs` skipped when `arcBlend < 0.001`.*
+~~`_buildLines`, `_buildArcs`, and `_buildPolygons` are called every frame regardless of whether `curve` or `sides` changed. During hold segments, the output is constant. A shape-array cache keyed on `curve | sides | lineCount | outerRadius | polySpacing | resolution | maxSides` would eliminate redundant computation. At `resolution = 400`, `lineCount = 20`: rebuilds 4 × 8000 = 32,000 points/frame unnecessarily during holds.~~
+
+**[RESOLVED] [UX] `fps` parameter label is misleading**
+*Fix: Parameter renamed `speed`, range changed to 0.5–2.0, label set to 'Speed'; `timeMs = frame × (1000/60) × speed`.*
+~~The parameter is labelled "Simulated FPS" but controls animation speed (`timeMs = frame × 1000 / fps`). It is not a frame rate setting. Setting `fps = 120` doubles speed; `fps = 30` halves it. Renaming to `speed` with a range of 0.5–2 would be clearer.~~
 
 ## NOTE
 

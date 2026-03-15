@@ -26,9 +26,21 @@ Audit classification: "Complete — all features from reference implemented."
 
 | Parameter | Spec | Live | Status |
 |---|---|---|---|
-| displayMode (radio: lines/bw/gradient) | ✓ | ✓ | PASS |
+| displayMode (radio: Lines/B/W/Gradient) | ✓ | ✓ | PASS |
 | circleCount (10–200) | ✓ | ✓ | PASS |
 | cycleFrames (600–7200) | ✓ | ✓ | PASS |
 | largestRadius (100–400) | ✓ | ✗ | FAIL |
 | lineWidth | recommended | ✗ | FAIL |
 | strokeColor | recommended | ✗ | FAIL |
+
+## Standards Compliance
+
+| Check | Status | Notes |
+|---|---|---|
+| Module-level mutable state | PASS | resolved — closure via IIFE |
+| animatableParams declared | PASS | resolved — `animatableParams: []` |
+| console.log removed | PASS | resolved |
+| Canvas resize rebuild | PASS | resolved — `_prevW`/`_prevH` tracking |
+| displayMode undefined guard | PASS | resolved — `(params.displayMode \|\| 'lines').toLowerCase()` |
+| rgba() in gradient mode | FAIL | `rgba(255,255,255,${alpha})` still used in gradient draw path |
+| loopFrames static vs cycleFrames dynamic | OPEN | documented; loopFrames not updated when cycleFrames changes |

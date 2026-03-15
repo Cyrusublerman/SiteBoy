@@ -10,7 +10,7 @@
  *
  * Based on ring_polygon sketch.
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 // =====================================================
@@ -19,7 +19,7 @@
 const _PI  = Math.PI;
 const _TAU = Math.PI * 2;
 const _sin = Math.sin, _cos = Math.cos, _sqrt = Math.sqrt;
-const _floor = Math.floor, _abs = Math.abs, _max = Math.max, _min = Math.min;
+const _floor = Math.floor, _abs = Math.abs, _max = Math.max;
 const _tan = Math.tan, _lerp = (a, b, t) => a + (b - a) * t;
 const _HALF_PI = Math.PI / 2;
 
@@ -90,17 +90,6 @@ function _morphShapes(a, b, t) {
 
 function _translateShapes(shapes, dx, dy) {
     return shapes.map(s => s.map(p => ({ x: p.x + dx, y: p.y + dy })));
-}
-
-function _transformShapes(shapes, tx, cx, cy) {
-    const { scaleX = 1, scaleY = 1, skewX = 0, skewY = 0, perspectiveY = 0 } = tx;
-    return shapes.map(s => s.map(p => {
-        const x = p.x - cx, y = p.y - cy;
-        const sx = x + y * _tan(skewX), sy = y + x * _tan(skewY);
-        const px = sx * scaleX, py = sy * scaleY;
-        const pScale = perspectiveY !== 0 ? _max(0.1, 1 - perspectiveY * (py / 300)) : 1;
-        return { x: cx + px * pScale, y: cy + py };
-    }));
 }
 
 // =====================================================
@@ -307,47 +296,7 @@ function _buildCurtainSegments(pointSets, extrusionCfg, normalSide, mod, t, inve
         pushSeg(curRun, curSide);
     }
 
-    // Subdivide oversized segments
-    const minSegs = mod.minSegments || 0;
-    if (minSegs > 0 && pointSets.length > 0) {
-        const maxLen = _floor(pointSets[0].length / minSegs);
-        return _subdivide(allSegments, maxLen, globalEHat || { x: 0, y: 1 });
-    }
     return allSegments;
-}
-
-function _findApex(pts) {
-    if (pts.length < 3) return -1;
-    const first = pts[0], last = pts[pts.length - 1];
-    const dx = last.x - first.x, dy = last.y - first.y;
-    const len = _sqrt(dx * dx + dy * dy);
-    if (len < 0.001) return _floor(pts.length / 2);
-    let maxDist = 0, apex = _floor(pts.length / 2);
-    for (let i = 1; i < pts.length - 1; i++) {
-        const px = pts[i].x - first.x, py = pts[i].y - first.y;
-        const d = _abs(px * dy - py * dx) / len;
-        if (d > maxDist) { maxDist = d; apex = i; }
-    }
-    return apex;
-}
-
-function _subdivide(segments, maxLen, eHat) {
-    const result = [];
-    for (const seg of segments) {
-        if (seg.pts.length <= maxLen) { result.push(seg); continue; }
-        let apex = _findApex(seg.pts);
-        if (apex <= 1) apex = _floor(seg.pts.length / 3);
-        if (apex >= seg.pts.length - 2) apex = _floor(2 * seg.pts.length / 3);
-        const pts1 = seg.pts.slice(0, apex + 1), pts2 = seg.pts.slice(apex);
-        const sum1 = pts1.reduce((s, p) => s + p.x * eHat.x + p.y * eHat.y, 0);
-        const sum2 = pts2.reduce((s, p) => s + p.x * eHat.x + p.y * eHat.y, 0);
-        const sub = _subdivide([
-            { pts: pts1, extrusionDirs: seg.extrusionDirs?.slice(0, apex + 1), side: seg.side, axisAvg: sum1 / pts1.length, ringIndex: seg.ringIndex, ringAvgDist: seg.ringAvgDist },
-            { pts: pts2, extrusionDirs: seg.extrusionDirs?.slice(apex),        side: seg.side, axisAvg: sum2 / pts2.length, ringIndex: seg.ringIndex, ringAvgDist: seg.ringAvgDist }
-        ], maxLen, eHat);
-        sub.forEach(s => result.push(s));
-    }
-    return result;
 }
 
 // =====================================================
@@ -411,6 +360,25 @@ function _drawCurtainSegments(p, allSegments, extrusionCfg) {
 }
 
 // =====================================================
+// Module-level state (not on SCRIPT_CONFIG)
+// =====================================================
+
+let _timingState = null;
+let _lastTmKey   = null;
+let _cachedRings = null;
+let _cachedRingKey = null;
+
+function _tmKey(p) { return `${p.minSides}|${p.maxSides}|${p.loopFrames}`; }
+
+function _getWaves() {
+    return [
+        { cycles: 50.0, w: 0.70, loops: 200, phase: 0.0 },
+        { cycles: 23.0, w: 0.50, loops: -40, phase: 1.2 },
+        { cycles: 10.0, w: 0.40, loops: 7,   phase: 2.4 }
+    ];
+}
+
+// =====================================================
 // SCRIPT CONFIG
 // =====================================================
 
@@ -419,9 +387,46 @@ export const SCRIPT_CONFIG = {
     title: 'Curtain Morph',
     category: 'other',
     description: 'Polygon rings morph between shapes while wave oscillators create flowing curtain surfaces, extruded with perspective and shaded by light direction.',
-    version: '1.0.0',
+    version: '1.1.0',
+
+    infoSections: [
+        {
+            heading: 'DESCRIPTION',
+            body: 'Curtain Morph renders ringCount concentric polygon rings that continuously morph through every n-gon from minSides to maxSides and back. Three hardcoded sine-wave oscillators displace each ring\'s points perpendicular to the curve, producing a flowing curtain-like surface. The surface is extruded in vanishing-point or parallel mode and shaded by face orientation relative to a configurable light source. Three-stage pipeline: F1 builds polygon rings via a frame-based timeline; F2 wave-displaces points, classifies each as front or back by dot product, and groups contiguous same-side points into segments; F3 depth-sorts segments and draws each as a quadrilateral with gradient or solid shading. Canvas: 1080×1080, p5.js context. Fully deterministic; export-compatible for PNG and GIF.'
+        },
+        {
+            heading: 'ALGORITHM',
+            body: 'Time model: t = frame % loopFrames; loopProgress = t / loopFrames. _buildTimeline: total rotation = π across all morph steps (scaled by internalAngle sums); segments — 2% initial hold at minSides, 80% split evenly as morph/hold pairs for n = minSides..maxSides−1, 5% extended hold at maxSides, 5% fast morph back; all durations normalised to sum 1. _getTimingState: cosine-eased localT per segment; returns {sides, rotation} for hold or {fromSides, toSides, sidesT, rotation} for morph. _buildPolygonRings: produces ringCount rings at resolution+1 points each; adjR = _radiusForEqualArea(sides, outerRadius, maxSides) where for circles r = sqrt(targetArea/π) and for polygon r = sqrt(2×targetArea/(n×sin(2π/n))); innerR = adjR − (count−1)×polySpacing; each ring radius = max(innerR + i×polySpacing, polySpacing×0.3); _centroidOffsetY corrects vertical centroid; vOffset = −π/2−π/4 for squares, −π/2 otherwise; per-point linear interpolation between polygon vertices; baseRotation applied as angle offset. _morphShapes: per-point lerp between two ring sets at t=sidesT. _oscillate(i, t, mod): u = i/(totalPoints−1); ampMod = 1 + ampVariation×sin(2π×lineIndex/10); linePhase = lineIndex×phaseVariation; modWeights[j] = w[j].w×(1 + weightVariation×0.5×cos(2π×lineIndex/10 + phase)); wSum = Σ|modWeights|; s = Σ modWeights[j]×sin(2π×cycles[j]×u − 2π×loops[j]×t/loopFrames + phase[j] + linePhase); displacement = amplitude×ampMod×tanh(1.35×s/wSum)/tanh(1.35). _buildCurtainSegments: tangents via central difference; normals from tangents (left or right); wave-displace each point; re-compute normals from displaced curve; classify each point as front or back by dot product of normal against light direction; consecutive same-side points form a run; side transitions share the boundary point. Extrusion: vanishing — eHat = unit vector toward VP per waved point; parallel — fixed eHat = (0,1). _drawCurtainSegments: sort — vanishing by ringAvgDist desc then axisAvg; parallel by ringIndex asc then axisAvg; gradient — gradientSteps filled quad strips, front lerps shade 255→0, back 0→255 across strip depth; solid/solid-grey — one filled quad per segment, front=255, back=0 (solid) or back=128 (solid-grey), with stroke outline.'
+        },
+        {
+            heading: 'PARAMETERS',
+            body: 'Shape group — ringCount: slider 1–10 step 1 default 5; number of concentric polygon rings. outerRadius: slider 100–520 step 10 default 420; bounding radius of the outermost ring in canvas pixels. polySpacing: slider 20–300 step 10 default 150; pixel gap between successive ring radii. resolution: slider 100–3000 step 100 default 2000; points per ring (resolution+1 total including closing point); primary performance driver in gradient mode — cost scales as ringCount×gradientSteps×resolution. minSides: slider 3–10 step 1 default 4; starting polygon shape; triggers timeline rebuild on change. maxSides: slider 4–20 step 1 default 10; ending polygon shape; triggers timeline rebuild on change. loopFrames: slider 360–7200 step 360 default 3600; frames per complete morph cycle; triggers timeline rebuild on change; also updates animation.loopFrames for export. Waves group — waveAmplitude: slider 0–50 step 1 default 10; maximum wave displacement in canvas pixels. ampVariation: slider 0–2 step 0.1 default 0.5; depth of per-ring amplitude modulation (sinusoidal by ring index over period 10). weightVariation: slider 0–2 step 0.1 default 1; depth of per-ring wave weight modulation. phaseVariation: slider 0–1 step 0.05 default 0; per-ring phase shift increment applied as lineIndex×phaseVariation. Extrusion group — extrusionMode: dropdown vanishing|parallel default vanishing; selects extrusion geometry. extrusionFactor: slider 0–1 step 0.05 default 0.4; VP depth factor in vanishing mode (fraction of distance to VP). extrusionDist: slider 10–300 step 10 default 100; parallel extrusion distance in canvas pixels. vpX: slider −540–540 step 20 default 0; vanishing point X offset from canvas centre (vanishing mode only). vpY: slider −540–540 step 20 default 0; vanishing point Y offset from canvas centre (vanishing mode only). lightX: slider −540–540 step 20 default 0; light source X offset from canvas centre. lightY: slider −540–540 step 20 default −300; light source Y offset from canvas centre. Shading group — shadingMode: dropdown gradient|solid|solid-grey default gradient; gradient draws gradientSteps filled strips; solid uses white (front) / black (back); solid-grey uses white (front) / mid-grey (back). gradientSteps: slider 5–60 step 5 default 30; filled strip count per segment in gradient mode; reduce to 5–10 for interactive use. invertSides: dropdown off|on default off; swaps front/back classification, equivalent to inverting light polarity without adjusting lightX/lightY. normalSide: dropdown left|right default left; which side of the ring curve is treated as the front face.'
+        },
+        {
+            heading: 'PRESETS',
+            body: 'Classic: 5 rings, resolution 2000, gradient shading, vanishing extrusion, waveAmplitude 10 — the baseline visual at default quality. Solid: 5 rings, resolution 1000, solid-grey shading, vanishing extrusion, waveAmplitude 15 — significantly faster render; sharp extruded edges; suited for interactive exploration. Parallel: 4 rings, resolution 1500, gradient shading, parallel extrusion with extrusionDist 120, phaseVariation 0.1, light at (100, −200) — downward extrusion produces a different curtain geometry with stacked horizontal bands.'
+        },
+        {
+            heading: 'PERFORMANCE',
+            body: 'Three-stage cost — F1: O(ringCount×resolution) trig per frame; at defaults (5 rings, 2000 pts): ~10,000 trig calls. F2: O(ringCount×resolution) oscillator evaluations — 3 sin + 3 cos + 1 tanh per point; at defaults: ~70,000 transcendental calls/frame. F3: O(ringCount×gradientSteps×resolution) vertex calls — dominates; at defaults (5×30×2000×2): ~600,000 vertex calls/frame; at max settings (10×60×3000×2): ~7,200,000 — severe frame drops expected. Compute tier: geometric (Tier 2). Worker offload not feasible: P5 API renders to canvas; data transfer overhead for ringCount×resolution points/frame would offset any gain. Adaptive resolution (Tier 2, interactionScale 0.5): reduces effective vertex count by 4× during slider interaction. Ring geometry is cached during hold segments (when polygon shape and rotation are constant); oscillator is recomputed every frame regardless. Performance guidance — use solid or solid-grey for interactive exploration; switch to gradient for export; reduce gradientSteps to 5–10 for interactive gradient use; reduce resolution to 200–400 for fast feedback.'
+        },
+        {
+            heading: 'ANIMATION',
+            body: 'Type: loop. Default loopFrames: 3600 (60 seconds at 60 FPS). User param loopFrames (360–7200) controls actual cycle period; animation.loopFrames is updated in p5Setup to match, keeping export frame count consistent. Fully deterministic: frame % loopFrames drives all timing; same frame index and params always produce identical output. No Math.random, no Date.now dependency. Animatable params: waveAmplitude, ampVariation, weightVariation, phaseVariation, vpX, vpY, lightX, lightY, extrusionFactor, extrusionDist — all vary smoothly and meaningfully when sequenced. loopFrames, minSides, maxSides are excluded (trigger structural rebuilds). Sequencer enabled. Export: PNG (all states), GIF (deterministic loop).'
+        },
+        {
+            heading: 'KNOWN LIMITATIONS',
+            body: 'Parallel extrusion direction is hardcoded to (0,1) — always downward; no user angle control. vpX/vpY have no effect in parallel mode. The three wave oscillator components (cycles, weights, base phases) are hardcoded; users cannot change individual wave frequencies or speeds. At resolution=2000 the closing point (j=resolution) duplicates j=0, adding one redundant oscillation computation per ring per frame — intentional for closed shape continuity. At high parameter combinations (resolution ≥ 2000, gradientSteps ≥ 30, ringCount ≥ 7), gradient mode will cause significant frame rate reduction; solid or solid-grey mode is recommended for interactive use at these settings. GIF export at loopFrames=7200 produces 7200 frames (120 seconds at 60 FPS); use lower loopFrames for manageable export sizes.'
+        },
+        {
+            heading: 'REFERENCES',
+            body: 'Live script: assets/js/tools/generators/scripts/other/curtain-morph.gen.js v1.1.0. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Origin: port of ring_polygon sketch. No archived legacy source. Algorithm: concentric polygon morphology via per-vertex linear interpolation with cosine-eased timeline; normal displacement via three-frequency sine waves with tanh(1.35x)/tanh(1.35) soft-limiting; vanishing-point or parallel extrusion; Lambert-like front/back face classification by dot product of surface normal against light direction vector.'
+        }
+    ],
 
     canvas: { width: 1080, height: 1080, context: 'p5' },
+
+    compute: { cost: 'geometric', interactionScale: 0.5, idleDelay: 200 },
 
     parameters: [
         {
@@ -439,31 +444,31 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Waves',
             params: [
-                { key: 'waveAmplitude',    type: 'slider', label: 'Amplitude',       min: 0,    max: 50, step: 1, default: 10 },
-                { key: 'ampVariation',     type: 'slider', label: 'Amp Variation',   min: 0,    max: 2,  step: 0.1, default: 0.5 },
-                { key: 'weightVariation',  type: 'slider', label: 'Weight Variation', min: 0,   max: 2,  step: 0.1, default: 1 },
-                { key: 'phaseVariation',   type: 'slider', label: 'Phase Variation', min: 0,    max: 1,  step: 0.05, default: 0 }
+                { key: 'waveAmplitude',    type: 'slider', label: 'Amplitude',        min: 0,    max: 50, step: 1, default: 10 },
+                { key: 'ampVariation',     type: 'slider', label: 'Amp Variation',    min: 0,    max: 2,  step: 0.1, default: 0.5 },
+                { key: 'weightVariation',  type: 'slider', label: 'Weight Variation', min: 0,    max: 2,  step: 0.1, default: 1 },
+                { key: 'phaseVariation',   type: 'slider', label: 'Phase Variation',  min: 0,    max: 1,  step: 0.05, default: 0 }
             ]
         },
         {
             group: 'Extrusion',
             params: [
-                { key: 'extrusionMode',   type: 'dropdown', label: 'Mode', options: ['vanishing', 'parallel'], default: 'vanishing' },
-                { key: 'extrusionFactor', type: 'slider',   label: 'VP Factor',   min: 0, max: 1,   step: 0.05, default: 0.4 },
+                { key: 'extrusionMode',   type: 'dropdown', label: 'Mode',         options: ['vanishing', 'parallel'], default: 'vanishing' },
+                { key: 'extrusionFactor', type: 'slider',   label: 'VP Factor',    min: 0, max: 1,   step: 0.05, default: 0.4 },
                 { key: 'extrusionDist',   type: 'slider',   label: 'Parallel Dist', min: 10, max: 300, step: 10, default: 100 },
-                { key: 'vpX',             type: 'slider',   label: 'VP X Offset', min: -540, max: 540, step: 20, default: 0 },
-                { key: 'vpY',             type: 'slider',   label: 'VP Y Offset', min: -540, max: 540, step: 20, default: 0 },
-                { key: 'lightX',          type: 'slider',   label: 'Light X',     min: -540, max: 540, step: 20, default: 0 },
-                { key: 'lightY',          type: 'slider',   label: 'Light Y',     min: -540, max: 540, step: 20, default: -300 }
+                { key: 'vpX',             type: 'slider',   label: 'VP X Offset',  min: -540, max: 540, step: 20, default: 0 },
+                { key: 'vpY',             type: 'slider',   label: 'VP Y Offset',  min: -540, max: 540, step: 20, default: 0 },
+                { key: 'lightX',          type: 'slider',   label: 'Light X',      min: -540, max: 540, step: 20, default: 0 },
+                { key: 'lightY',          type: 'slider',   label: 'Light Y',      min: -540, max: 540, step: 20, default: -300 }
             ]
         },
         {
             group: 'Shading',
             params: [
-                { key: 'shadingMode',    type: 'dropdown', label: 'Shading', options: ['gradient', 'solid', 'solid-grey'], default: 'gradient' },
+                { key: 'shadingMode',    type: 'dropdown', label: 'Shading',        options: ['gradient', 'solid', 'solid-grey'], default: 'gradient' },
                 { key: 'gradientSteps', type: 'slider',   label: 'Gradient Steps', min: 5, max: 60, step: 5, default: 30 },
-                { key: 'invertSides',   type: 'dropdown', label: 'Invert Sides', options: ['off', 'on'], default: 'off' },
-                { key: 'normalSide',    type: 'dropdown', label: 'Normal Side', options: ['left', 'right'], default: 'left' }
+                { key: 'invertSides',   type: 'dropdown', label: 'Invert Sides',   options: ['off', 'on'], default: 'off' },
+                { key: 'normalSide',    type: 'dropdown', label: 'Normal Side',    options: ['left', 'right'], default: 'left' }
             ]
         }
     ],
@@ -471,64 +476,72 @@ export const SCRIPT_CONFIG = {
     presets: [
         {
             name: 'Classic',
-            ringCount: 5, outerRadius: 420, polySpacing: 150, resolution: 2000,
-            minSides: 4, maxSides: 10, loopFrames: 3600,
-            waveAmplitude: 10, ampVariation: 0.5, weightVariation: 1, phaseVariation: 0,
-            extrusionMode: 'vanishing', extrusionFactor: 0.4, extrusionDist: 100,
-            vpX: 0, vpY: 0, lightX: 0, lightY: -300,
-            shadingMode: 'gradient', gradientSteps: 30, invertSides: 'off', normalSide: 'left'
+            values: {
+                ringCount: 5, outerRadius: 420, polySpacing: 150, resolution: 2000,
+                minSides: 4, maxSides: 10, loopFrames: 3600,
+                waveAmplitude: 10, ampVariation: 0.5, weightVariation: 1, phaseVariation: 0,
+                extrusionMode: 'vanishing', extrusionFactor: 0.4, extrusionDist: 100,
+                vpX: 0, vpY: 0, lightX: 0, lightY: -300,
+                shadingMode: 'gradient', gradientSteps: 30, invertSides: 'off', normalSide: 'left'
+            }
         },
         {
             name: 'Solid',
-            ringCount: 5, outerRadius: 420, polySpacing: 150, resolution: 1000,
-            minSides: 3, maxSides: 8, loopFrames: 3600,
-            waveAmplitude: 15, ampVariation: 0.5, weightVariation: 1, phaseVariation: 0,
-            extrusionMode: 'vanishing', extrusionFactor: 0.4, extrusionDist: 100,
-            vpX: 0, vpY: 0, lightX: 0, lightY: -300,
-            shadingMode: 'solid-grey', gradientSteps: 30, invertSides: 'off', normalSide: 'left'
+            values: {
+                ringCount: 5, outerRadius: 420, polySpacing: 150, resolution: 1000,
+                minSides: 3, maxSides: 8, loopFrames: 3600,
+                waveAmplitude: 15, ampVariation: 0.5, weightVariation: 1, phaseVariation: 0,
+                extrusionMode: 'vanishing', extrusionFactor: 0.4, extrusionDist: 100,
+                vpX: 0, vpY: 0, lightX: 0, lightY: -300,
+                shadingMode: 'solid-grey', gradientSteps: 30, invertSides: 'off', normalSide: 'left'
+            }
         },
         {
             name: 'Parallel',
-            ringCount: 4, outerRadius: 350, polySpacing: 120, resolution: 1500,
-            minSides: 3, maxSides: 12, loopFrames: 3600,
-            waveAmplitude: 20, ampVariation: 0.3, weightVariation: 0.8, phaseVariation: 0.1,
-            extrusionMode: 'parallel', extrusionFactor: 0.4, extrusionDist: 120,
-            vpX: 0, vpY: 0, lightX: 100, lightY: -200,
-            shadingMode: 'gradient', gradientSteps: 20, invertSides: 'off', normalSide: 'left'
+            values: {
+                ringCount: 4, outerRadius: 350, polySpacing: 120, resolution: 1500,
+                minSides: 3, maxSides: 12, loopFrames: 3600,
+                waveAmplitude: 20, ampVariation: 0.3, weightVariation: 0.8, phaseVariation: 0.1,
+                extrusionMode: 'parallel', extrusionFactor: 0.4, extrusionDist: 120,
+                vpX: 0, vpY: 0, lightX: 100, lightY: -200,
+                shadingMode: 'gradient', gradientSteps: 20, invertSides: 'off', normalSide: 'left'
+            }
         }
     ],
 
-    animation: { type: 'loop', loopFrames: 3600, defaultFps: 60 },
-
-    // State
-    _timingState: null,
-    _lastTmKey: null,
-
-    _tmKey: p => `${p.minSides}|${p.maxSides}|${p.loopFrames}`,
-
-    _getWaves() {
-        return [
-            { cycles: 50.0, w: 0.70, loops: 200, phase: 0.0 },
-            { cycles: 23.0, w: 0.50, loops: -40, phase: 1.2 },
-            { cycles: 10.0, w: 0.40, loops: 7,   phase: 2.4 }
-        ];
+    animation: {
+        type: 'loop',
+        loopFrames: 3600,
+        defaultFps: 60,
+        animatableParams: [
+            'waveAmplitude', 'ampVariation', 'weightVariation', 'phaseVariation',
+            'vpX', 'vpY', 'lightX', 'lightY', 'extrusionFactor', 'extrusionDist'
+        ]
     },
 
+    export: { png: true, gif: true, webm: false },
+
     p5Setup(p, params) {
+        this.animation.loopFrames = params.loopFrames;
         p.noLoop();
-        this._timingState = _buildTimeline({
+        _timingState = _buildTimeline({
             minSides: params.minSides, maxSides: params.maxSides, cyclesPerLoop: 1
         }, params.loopFrames);
-        this._lastTmKey = this._tmKey(params);
+        _lastTmKey = _tmKey(params);
+        _cachedRings = null;
+        _cachedRingKey = null;
     },
 
     p5Draw(p, params, frame) {
-        const tmKey = this._tmKey(params);
-        if (tmKey !== this._lastTmKey) {
-            this._timingState = _buildTimeline({
+        const tmKey = _tmKey(params);
+        if (tmKey !== _lastTmKey) {
+            this.animation.loopFrames = params.loopFrames;
+            _timingState = _buildTimeline({
                 minSides: params.minSides, maxSides: params.maxSides, cyclesPerLoop: 1
             }, params.loopFrames);
-            this._lastTmKey = tmKey;
+            _lastTmKey = tmKey;
+            _cachedRings = null;
+            _cachedRingKey = null;
         }
 
         const { ringCount: count, outerRadius, polySpacing, resolution,
@@ -538,16 +551,21 @@ export const SCRIPT_CONFIG = {
                 shadingMode, gradientSteps, invertSides, normalSide } = params;
 
         const sc = { count, outerRadius, resolution, polySpacing, minSides, maxSides };
-        const state  = _getTimingState(this._timingState, frame);
-        const rot    = 0; // noVisualRotation = true
-        let pointSets;
+        const state = _getTimingState(_timingState, frame);
+        const rot   = state.rotation;
 
+        let pointSets;
         if (state.sidesT !== undefined) {
             const from = _buildPolygonRings(state.fromSides, sc, rot);
             const to   = _buildPolygonRings(state.toSides,   sc, rot);
             pointSets = _morphShapes(from, to, state.sidesT);
         } else {
-            pointSets = _buildPolygonRings(state.sides, sc, rot);
+            const ringKey = `${state.sides}:${rot}:${count}:${outerRadius}:${resolution}:${polySpacing}:${maxSides}`;
+            if (ringKey !== _cachedRingKey) {
+                _cachedRings   = _buildPolygonRings(state.sides, sc, rot);
+                _cachedRingKey = ringKey;
+            }
+            pointSets = _cachedRings;
         }
 
         pointSets = _translateShapes(pointSets, 540, 540);
@@ -565,8 +583,7 @@ export const SCRIPT_CONFIG = {
 
         const mod = {
             loopFrames, amplitude, ampVariation, weightVariation, phaseVariation,
-            minSegments: 0,
-            waves: this._getWaves()
+            waves: _getWaves()
         };
 
         const t = frame % loopFrames;

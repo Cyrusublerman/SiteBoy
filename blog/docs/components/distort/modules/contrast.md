@@ -15,9 +15,9 @@ DaVinci-style Lift/Gamma/Gain tonal grading with an optional contrast pivot oper
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Lift/Gamma/Gain chain | Inline (`_map`) | — |
+| Lift/Gamma/Gain chain | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — `x = (v/255 × gain) + lift` → `pow(max(0, x), 1/gamma)` → optional contrast pivot: `x = pivot + (x − pivot) × (1 + contrast)`.
+`shared/algorithms/image/colour-adjustments.js` — `x = (v/255 × gain) + lift` → `pow(max(0, x), 1/gamma)` → optional contrast pivot: `x = pivot + (x − pivot) × (1 + contrast)`.
 
 ## Parameters
 

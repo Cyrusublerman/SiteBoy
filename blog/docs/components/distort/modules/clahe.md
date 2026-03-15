@@ -15,9 +15,9 @@ Contrast-Limited Adaptive Histogram Equalisation — divides the image into tile
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| CLAHE (Contrast-Limited AHE) | Inline | — |
+| CLAHE (Contrast-Limited AHE) | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — two-phase: (1) per-tile luminance histogram with clip-limit redistribution → CDF LUT; (2) bilinear interpolation across four adjacent tile LUTs per pixel.
+`shared/algorithms/image/colour-adjustments.js` — two-phase: (1) per-tile luminance histogram with clip-limit redistribution → CDF LUT; (2) bilinear interpolation across four adjacent tile LUTs per pixel.
 
 ## Parameters
 

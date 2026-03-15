@@ -15,9 +15,9 @@ Replaces each pixel with the median value over a square neighbourhood, suppressi
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Brute-force median filter | Inline | — |
+| Brute-force median filter | `shared/algorithms/image/blur-filters.js` | — |
 
-Inline — collects `(2r+1)²` neighbourhood samples per channel into a reused `Uint8Array`, sorts, picks the middle index. No spatial optimisation.
+`shared/algorithms/image/blur-filters.js` — collects `(2r+1)²` neighbourhood samples per channel into a reused `Uint8Array`, sorts, picks the middle index. No spatial optimisation.
 
 ## Parameters
 

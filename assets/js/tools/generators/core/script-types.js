@@ -237,6 +237,3 @@ export const SCRIPT_CATEGORIES = {
         description: 'Miscellaneous generators'
     }
 };
-
-console.log('✅ Script types loaded');
-

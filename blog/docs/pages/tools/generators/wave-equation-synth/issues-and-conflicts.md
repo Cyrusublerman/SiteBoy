@@ -1,63 +1,38 @@
 # Wave Equation Synth — Issues and Conflicts
 
-## ERROR [BUG] — Generator Not Implemented (Stub)
+## ERROR
 
-**Location:** `assets/js/tools/generators/scripts/other/wave-equation-synth.gen.js` — entire file.
+**[RESOLVED]** **[BUG] Generator Not Implemented (Stub)**
+Full implementation present in `wave-equation-synth.gen.js` v1.0.0: sandboxed equation compiler (AUDIO-004), wave indexing (AUDIO-005), equation evaluator (AUDIO-006), AudioBuffer source (AUDIO-007), WAV exporter (AUDIO-008), oscilloscope renderer (CANVAS-014), circular loop renderer (CANVAS-015), GIF exporter stub (CANVAS-016).
 
-**Issue:** Live script is a placeholder. `draw` fills black; `harmonics` param not read. Source file referenced in TODO comment does not exist.
-
-**Impact:** Catastrophic — generator produces no output or audio.
-
-**Required action:** Full implementation of sandboxed equation compiler, Web Audio pipeline, oscilloscope/circular renderers, WAV exporter.
+**[RESOLVED]** **[BUG] harmonics Parameter Has No Effect**
+Replaced with `eq1`–`eq4` dropdown parameters (11 options each: Off, Sine, Triangle, Square, Sawtooth, 2nd Harm, 3rd Harm, 4th Harm, FM Sine, Pulse, AM Sine).
 
 ---
 
-## ERROR [BUG] — harmonics Parameter Has No Effect
+## WARN
 
-**Fix:** Implement or remove.
+**[RESOLVED]** **[ARCHITECTURE] Web Audio API is Outside Scope of draw Function**
+Audio lifecycle managed within `draw` via closure state (`_audioCtx`, `_gainNode`, `_source`, `_wasPlaying`, `_buffer`, `_bufferKey`). Buffer regeneration guarded by a synthesis-param cache key. No host extension was required.
 
----
+**[RESOLVED]** **[STANDARDS] No animation Block in SCRIPT_CONFIG**
+`animation: { type: 'infinite', defaultFps: 60, sequencer: false, animationExport: false }` added.
 
-## WARN [ARCHITECTURE] — Web Audio API is Outside Scope of draw Function
+**[RESOLVED]** **[STANDARDS] No export Block in SCRIPT_CONFIG**
+`export: { png: true, gif: false, webm: false }` added. GIF suppressed: infinite animation with no defined loopFrames.
 
-The spec calls for `AudioContext` instantiation and `AudioBuffer` playback. The `.gen.js` `draw` function signature `(ctx, canvas, params, frame)` has no mechanism for audio I/O. The host (`generative-tool-host.js`) would need to support an audio lifecycle hook (e.g., `init`, `onDestroy`, `onPlay`) beyond the standard `draw` contract.
+**[RESOLVED]** **[CONFLICT] Canvas Size Conflict (spec vs live)**
+Canvas is now 420×420 per spec.
 
-**Resolution required:** Either (a) extend the generator host to support audio hooks, or (b) treat this generator as an exception with custom host integration.
-
----
-
-## WARN [STANDARDS] — No animation Block in SCRIPT_CONFIG
-
-**Fix:** Add `animation: { type: 'infinite' }` for the oscilloscope display.
-
----
-
-## WARN [STANDARDS] — No export Block in SCRIPT_CONFIG
-
-**Fix:** Add `export: { png: true, gif: true }` minimum (WAV export requires separate action button).
+**[PARTIAL]** **[SECURITY] Sandboxed Equation Compiler Risk**
+`safeEquationCompiler` uses `new Function` with restricted scope (only `p`, `w`, `u`, `t`, `g`, `Math` visible). Worker-based sandboxing not implemented. CSP environments that prohibit `eval`-equivalent constructs will block equation compilation. Documented in KNOWN LIMITATIONS.
 
 ---
 
-## WARN [CONFLICT] — Canvas Size Conflict (spec vs live)
+## NOTE
 
-**Spec:** 420×420. **Live:** 800×800. Resolve to spec when implementing.
+**[RESOLVED]** **[STANDARDS] textarea Parameter Type Non-Standard**
+Equations implemented as dropdown selections from a predefined list (EQUATION_MAP). Free-text equation input is not supported; documented as a known limitation.
 
----
-
-## WARN [SECURITY] — Sandboxed Equation Compiler Risk
-
-`new Function('p', 'w', 'u', 't', 'g', 'Math', expr)` prevents access to declared variables but does not prevent access to global objects accessible via prototype chains or via `globalThis`. Full sandboxing requires either a CSP-restricted Worker or a dedicated expression parser.
-
-**Recommendation:** Run equation evaluation exclusively inside a Worker; never execute user equation strings on the main thread.
-
----
-
-## NOTE [STANDARDS] — textarea Parameter Type Non-Standard
-
-The spec uses `type: 'textarea'` for equation inputs. This is not a standard generator parameter type (`slider`, `radio`). The host must support free-text input fields for this generator.
-
----
-
-## NOTE [RESEARCH] — WAV Format Binary Encoding
-
-The WAV PCM format requires a RIFF header with specific chunk identifiers, sample rate, bit depth, and byte-rate fields. This is well-documented but non-trivial to implement correctly with 16-bit and 32-bit IEEE float variants.
+**[RESOLVED]** **[RESEARCH] WAV Format Binary Encoding**
+`wavExporter()` implements 16-bit PCM RIFF/WAVE format: RIFF header, fmt chunk (PCM, mono, 16-bit), data chunk. Sample encoding: `round(clamp(y,−1,1) × 32767)` as signed Int16LE. Not UI-accessible (no action button type in parameter system); documented as known limitation.

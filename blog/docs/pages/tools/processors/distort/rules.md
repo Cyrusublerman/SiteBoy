@@ -2,17 +2,19 @@
 
 Rules specific to all effect modules and the DISTORT host tool.
 
+**Authority:** `blog/docs/guides/standards/design-law.md` — absolute visual law. UI prohibitions here (§3) apply design-law §10, §16, §17. Sidebar structure applies `blog/docs/site/ui-interface-overview.md §3`.
+
 ## 1. Non-Optional Host Parts
 
 These are mandatory — always present:
-- Top bar (DistortToolbar): source cell, UNDO, REDO, FIT, FILL, ACTUAL, QUALITY, EXPORT
+- Top bar (DistortToolbar): status cell, UNDO, REDO, FIT, FILL, ACTUAL, QUALITY, EXPORT
 - Sidebar: PIPELINE tab, CANVAS tab
 - Canvas viewport (ViewportCanvas): zoom, pan, display modes
 - Stack block in PIPELINE: `[+ ADD EFFECT]` button + EffectStack
 
 These are conditional:
 - Transport strip iff `frameCount > 1`
-- EXPORT SVG iff all nodes in stack implement `buildGeometry()`
+- EXPORT SVG iff all nodes in stack have `isVector: true`
 - CategoryPicker iff `[+ ADD EFFECT]` has been clicked (replaces stack in sidebar)
 
 ## 2. Sidebar Law
@@ -25,12 +27,14 @@ Effect modules must not define:
 - Toolbar controls
 - Custom export panels
 
-The NodePanel derives all module controls from `paramDefs`. The module may only influence the UI through:
-- `paramDefs` — drives all tier-3 through tier-5 controls
+The NodePanel derives all module controls from `params`. The module may only influence the UI through:
+- `params` — drives all tier-3 through tier-5 controls
 - `type` / `category` — determines placement in CategoryPicker
-- `buildGeometry()` — presence enables EXPORT SVG
+- `isVector: true` — presence enables EXPORT SVG
 
 ## 3. UI Law
+
+General prohibitions from `design-law.md §10` apply. The rules below are distort-specific applications.
 
 Required:
 - Top bar is the sole owner of display-mode controls (FIT/FILL/ACTUAL) and export actions
@@ -65,26 +69,38 @@ Required:
 
 ## 5. Module Config Law
 
-Each module must satisfy:
-- One `type` string: lowercase, no spaces, no hyphens
-- One `category` string: matches a registered category name
-- `paramDefs` object: at minimum one tier-3 entry
-- `apply(src, dst, w, h, ctx)` method: the pixel render function
+Each module is produced by `createEffectModule(config)`. Required config fields:
+- `type` string: lowercase, no spaces, no hyphens
+- `name` string: UPPERCASE display label, max 20 chars
+- `category` string: matches a registered category key in `registry.js`
+- `params` object: at minimum one tier-3 entry
+- `apply(src, dst, w, h, p, ctx, modulate)` method: the pixel render function
 
-`paramDef` field requirements:
+For vector modules, also required:
+- `isVector: true`
+- `applyVector(src, w, h, p, ctx)` method: returns a `LineSet`
+
+`param` field requirements:
 
 | Field | Type | Rule |
 | --- | --- | --- |
 | key | string | camelCase; unique within module |
-| label | string | UPPERCASE; max 16 chars |
-| type | string | `'range'`, `'select'`, or `'toggle'` |
+| label | string | SCREAMING CASE; max 16 chars |
+| type | string | `'range'` (default), `'select'`, or `'toggle'` |
 | min, max, step | number | required for `range` |
-| default | any | required; must be within valid range |
-| tier | number | 3, 4, or 5; omit for type-specific tier 2 |
+| value | any | required default; must be within valid range for `range` |
+| tier | number | 3, 4, or 5 (tier 2 is reserved for universal controls) |
+| options | string[] | required for `select`; SCREAMING CASE entries |
+| driveable | boolean | `true` for any `range` param supporting image/expression drivers |
+| previewMax | number | cap applied in PREVIEW quality by the factory — no inline check needed |
+| previewMin | number | floor applied in PREVIEW quality by the factory |
+| unit | string | suffix shown in UI: `'px'`, `'deg'`, `'%'` |
+
+**Note on authority:** `blog/docs/guides/tools/effect-module-build-guide.md` (factory pattern) supersedes `blog/docs/guides/effect-module-standards.md` (old class-extension pattern) for all module authoring decisions.
 
 ## 6. Worker Law
 
-All pipeline computation runs inside `RenderWorker` (Web Worker). Module `apply()` and `buildGeometry()` execute off the main thread.
+All pipeline computation runs inside `RenderWorker` (Web Worker). Module `apply()` and `applyVector()` execute off the main thread.
 
 Forbidden in any module file:
 - `document.*` — any DOM access
@@ -97,14 +113,18 @@ A module that accesses browser globals will throw when executed in the Worker co
 
 ## 7. Driver Law
 
-Any `range`-type paramDef entry may have a driver attached.
+Any `range`-type param entry with `driveable: true` may have a driver attached.
 
 Driver types:
 - `none` — static param value
-- `image` — greyscale map sampled per-pixel; `getModulated(key, pixelIdx, ctx)` returns driven value
-- `expression` — math string evaluated per-pixel or per-frame; same method
+- `image` — greyscale map sampled per-pixel
+- `expression` — math string evaluated per-pixel or per-frame
 
-Module `apply()` must call `this.getModulated(key, pixelIdx, ctx)` (not `this.params[key]`) for any param intended to be driveable. A param declared as `range` but read via `this.params[key]` in the pixel loop is not actually driveable — it is a WARN.
+The factory provides `modulate(key, pixelIdx)` as the 7th argument to `apply()`. Inside pixel loops, call `modulate(key, i)` instead of reading `p[key]` directly for any driveable param. `modulate` short-circuits to `p[key]` when no driver is active — it is always safe to call.
+
+`p` (the 5th arg) holds pre-resolved param values with preview caps already applied. Do not read `this.params[key]` in `apply()` — use `p[key]` or `modulate(key, i)`.
+
+A param declared `driveable: true` but read via `p[key]` in the pixel loop is not actually driveable — it is a WARN.
 
 Expression scope classification:
 - Per-frame scope — expression contains only `frame`, `frameCount`, `t`, `seed`, constants. Evaluated once per render.
@@ -134,16 +154,22 @@ Cache memory ceiling: 128MB total. Pipeline evicts front-of-stack caches first w
 
 Modules with iteration counts, radius params, or other expensive scaling params must cap their cost in PREVIEW quality.
 
-Rule: read `ctx.quality` in `apply()` and apply caps when `ctx.quality === 'preview'`.
+**Primary mechanism:** declare `previewMax` (and/or `previewMin`) on the param definition. The factory applies the cap before passing `p` to `apply()` — no inline check in `apply()` is needed.
+
+```javascript
+steps: { value: 500, min: 10, max: 5000, step: 10, label: 'STEPS', tier: 3, previewMax: 100 }
+```
+
+**Secondary (legacy):** inline `ctx.quality === 'preview'` check inside `apply()`. Acceptable when the cap cannot be expressed as a simple param bound, but `previewMax` on the param def is preferred for all simple numeric caps.
 
 Required preview caps by category:
 
 | Category | Required cap |
 | --- | --- |
-| Physics (reaction-diffusion, cellular automata) | 5 iterations |
-| Accumulation (iterative rewarp) | 2 passes |
-| Generative (paint stroke) | 20 iterations |
-| Blur (median, bilateral) | Radius capped at 3px |
+| Physics (reaction-diffusion, cellular automata) | 5 iterations / previewMax: 5 |
+| Accumulation (iterative rewarp) | 2 passes / previewMax: 2 |
+| Generative (paint stroke) | 20 iterations / previewMax: 20 |
+| Blur (median, bilateral) | Radius capped at 3px / previewMax: 3 |
 
 A module that does not implement PREVIEW caps and has O(n × iterations) cost is a WARN.
 
@@ -153,6 +179,6 @@ Per-module documentation packs must capture:
 - What the module is (algorithm name, image effect, scope boundary)
 - What files own it (source node path, registry entry, algorithm imports)
 - How it works (algorithm with formulas, apply() execution order, preview strategy)
-- What UI it exposes (all paramDef tiers, mask controls, modulation targets)
+- What UI it exposes (all param tiers, mask controls, modulation targets)
 
 Do not duplicate tool-level rules inside per-module packs. Link upward to this folder instead.

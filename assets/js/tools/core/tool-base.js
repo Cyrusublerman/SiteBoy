@@ -243,7 +243,7 @@ export class ToolBase extends BaseComponent {
         if (this.element) return this.element;
 
         // Detect portrait/landscape (lower threshold for tools to ensure sidebar is visible)
-        const isPortrait = window.innerWidth < window.innerHeight || window.innerWidth < 600;
+        const isPortrait = window.innerWidth < window.innerHeight || window.innerWidth < 800;
 
         this.element = document.createElement('div');
         this.element.className = 'tool-base';

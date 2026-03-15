@@ -10,10 +10,10 @@ Three legacy docs were consolidated. `solar-system.md` (mixed bundle) and `SOLAR
 | Keplerian orbital elements (all 6 + rates) | solar-system.md, README | Confirmed | PLANET_DATA contains a0, aDot, e0, eDot, I0, IDot, L0, LDot, w0, wDot, O0, ODot for all 8 planets |
 | Kepler equation solver (Newton-Raphson) | solar-system.md, README | Confirmed | `solveKeplerEquation` — 30 max iterations, 1e-6° tolerance |
 | Logarithmic distance scaling | solar-system.md, README | Confirmed | `scaleDistance`: `log(AU × 10 + 1)` |
-| Viewer position on Earth (local solar time) | solar-system.md, README | Confirmed | `getLocalSolarTime`, viewer dot drawn on Earth's disc |
+| Viewer position on Earth (local solar time) | solar-system.md, README | Confirmed | `_getLocalSolarTime`, viewer dot drawn on Earth's disc |
 | FOV cone | solar-system.md | Confirmed | Two line segments from viewer dot; angle controlled by `fovAngle` |
-| Asteroid belt | solar-system.md, README | Confirmed | Particles [2.2, 3.2] AU; count: [100, 1000]; white/grey 1px rects |
-| IP-based geolocation (no permission popup) | solar-system.md, README | Confirmed | `fetch('https://ipapi.co/json/')` in `requestLocation()` |
+| Asteroid belt | solar-system.md, README | Confirmed | Particles [2.2, 3.2] AU; count: [100, 1000]; ImageData putImageData rendering (two-level cache) |
+| IP-based geolocation (no permission popup) | solar-system.md, README | Confirmed | `fetch('https://ipapi.co/json/')` in `_requestLocation()` |
 | Export PNG | solar-system.md | Confirmed | Export config: `png: true` |
 | Export SVG | solar-system.md | Confirmed | Export config: `svg: true` |
 | Hours since Emu War (Easter egg) | solar-system-audit.md (undocumented), README | Confirmed | `EMU_WAR_MS = new Date(1932, 10, 2, 11, 0, 0).getTime()` |
@@ -25,7 +25,7 @@ Three legacy docs were consolidated. `solar-system.md` (mixed bundle) and `SOLAR
 | Custom date/time selection | solar-system.md | Absent | Generator reads `Date.now()` only; no time-travel controls |
 | Reset button | solar-system-audit.md | Absent | Host feature; not a generator concern |
 | Distance to Pluto in giraffe units (Easter egg) | solar-system-audit.md (undocumented) | Confirmed | Present in `showInfo` block; Pluto approximated as circular orbit |
-| Canvas size controls (canvasWidth/Height) | solar-system.md | Changed | Parameters declared but not wired — `draw()` reads `canvas.width/height` from host argument, ignoring params |
+| Canvas size controls (canvasWidth/Height) | solar-system.md | Removed | Parameters removed in v5.0.0 — were declared but never wired to `draw()` |
 | VGA colour palette for planets | README | Confirmed | All PLANET_DATA colors are VGA palette values |
 
 ---
@@ -34,11 +34,11 @@ Three legacy docs were consolidated. `solar-system.md` (mixed bundle) and `SOLAR
 
 | Host feature | Used? | Notes |
 | --- | --- | --- |
-| Presets | Yes — 3 presets | Default, Dense Belt, Minimal; values nested under `values: {}` key (non-standard preset format) |
-| INFO tab | Yes | `description` field present |
-| Animation config | Yes | `type: 'infinite'`, `defaultFps: 1`, `canPrerender: false` (non-standard field) |
+| Presets | Yes — 3 presets | Default, Dense Belt, Minimal; values nested under `values: {}` key (non-standard preset format — still open) |
+| INFO tab | Yes | `infoSections` fully populated with DESCRIPTION, ALGORITHM, PARAMETERS, PRESETS, PERFORMANCE, ANIMATION, KNOWN LIMITATIONS, REFERENCES |
+| Animation config | Yes | `type: 'infinite'`, `defaultFps: 1`, `sequencer: false`, `animatableParams: []` inside animation block |
 | Export config | Yes — explicit | `png: true, svg: true, gif: false, webm: false, sequence: false` |
-| animatableParams | No | Not declared; `frame` argument is not used in `draw()` |
+| animatableParams | Declared | `animatableParams: []` inside `animation` block — empty; frame argument intentionally unused; non-deterministic by design |
 
 ---
 
@@ -54,6 +54,4 @@ Three legacy docs were consolidated. `solar-system.md` (mixed bundle) and `SOLAR
 
 5. **Custom date/time selection absent.** The generator uses `Date.now()` unconditionally. No time-travel or historical position display is possible.
 
-6. **`canvasWidth`/`canvasHeight` parameters are inert.** Declared in parameters, displayed in UI, but not read in `draw()`. The host provides canvas dimensions; the generator does not resize the canvas. Moving these sliders has no effect.
-
-7. **Non-standard preset format.** Each preset wraps its values under `values: {}` instead of placing them directly in the preset object. Standard contract requires `name` plus all parameter keys at the top level.
+6. **Non-standard preset format.** Each preset wraps its values under `values: {}` instead of placing them directly in the preset object. Standard contract requires `name` plus all parameter keys at the top level.

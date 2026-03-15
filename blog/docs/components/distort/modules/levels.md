@@ -15,9 +15,9 @@ Remaps the input tonal range with black/white point clipping, gamma correction, 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| LUT-based levels remap | Inline (`_lut`) | — |
+| LUT-based levels remap | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — builds a 256-entry LUT: normalises input to `[0,1]` within `[blackPoint, whitePoint]`, applies `pow(x, 1/gamma)`, scales to `[outBlack, outWhite]`. `isLUT = true` — consecutive LUT nodes (INVERT, CURVES, POSTERIZE, TEMP/TINT) can chain without intermediate pixel passes.
+`shared/algorithms/image/colour-adjustments.js` — builds a 256-entry LUT: normalises input to `[0,1]` within `[blackPoint, whitePoint]`, applies `pow(x, 1/gamma)`, scales to `[outBlack, outWhite]`. `isLUT = true` — consecutive LUT nodes (INVERT, CURVES, POSTERIZE, TEMP/TINT) can chain without intermediate pixel passes.
 
 ## Parameters
 

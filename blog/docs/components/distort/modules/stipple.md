@@ -15,10 +15,10 @@ Generates a luminance-weighted Poisson-disk stipple pattern — dense dots in da
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Luminance-weighted Poisson-disk sampling | Inline | — |
+| Luminance-weighted Poisson-disk sampling | `shared/algorithms/image/compositing.js` | — |
 | `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 
-Inline — spatial hash grid enforces minimum distance `minDist` between points. Luminance-proportional rejection probability gates point placement density. Accepted points rasterised as filled circles.
+`shared/algorithms/image/compositing.js` — spatial hash grid enforces minimum distance `minDist` between points. Luminance-proportional rejection probability gates point placement density. Accepted points rasterised as filled circles.
 
 ## Parameters
 

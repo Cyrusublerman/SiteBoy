@@ -15,9 +15,9 @@ Full four-stage Canny edge detector: Gaussian smoothing, Sobel gradient, non-max
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Canny edge detection (4-stage) | Inline | — |
+| Canny edge detection (4-stage) | `shared/algorithms/edge-detection/edge-operators.js` | — |
 
-Inline — full pipeline: greyscale → separable Gaussian blur → Sobel gradient → non-maximum suppression (4-direction quantisation) → hysteresis thresholding (strong/weak/zero with connectivity promotion).
+`shared/algorithms/edge-detection/edge-operators.js` — full pipeline: greyscale → separable Gaussian blur → Sobel gradient → non-maximum suppression (4-direction quantisation) → hysteresis thresholding (strong/weak/zero with connectivity promotion).
 
 ## Parameters
 
@@ -65,7 +65,7 @@ Full RGBA image.
 Binary-ish edge map (0 = no edge, 255 = detected edge). Cleaner, thinner edges than Sobel alone.
 
 ### Preview strategy
-No reduction.
+`sigma` has `previewMax: 2`.
 
 ## Mask controls
 

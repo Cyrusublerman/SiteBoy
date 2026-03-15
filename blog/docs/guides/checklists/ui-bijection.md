@@ -16,6 +16,14 @@
 - Case roles valid (UPPERCASE structural, Title Case blocks, Sentence case prose)? Y/N
 - No tool-isolated UI component where shared ComponentLibrary equivalent exists? Y/N
 - New UI components exported through `assets/js/shared/component-library.js`? Y/N
+- Glyph positions correct: state glyphs left, action glyphs right (design-law §15)? Y/N
+- All labels classified as state/action/identifier/qualifier (design-law §13.1)? Y/N
+
+## Responsive Lifecycle Gate (Pass/Fail)
+
+- Portrait→landscape and landscape→portrait transitions produce functional layout? Y/N
+- Tool-injected components re-injected after ToolBase destroy/rebuild (ui-interface-overview §5.7)? Y/N
+- No empty sidebar sections or blank canvas after orientation change? Y/N
 
 ## Distort Simultaneity Gate (Pass/Fail)
 

@@ -15,10 +15,10 @@ Extracts fine detail by subtracting a Gaussian-blurred version and lifting the d
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Separable Gaussian blur | Inline | — |
-| High-pass: `out = (src − blur) + 128` | Inline | — |
+| Separable Gaussian blur | `shared/algorithms/image/spatial-filters.js` | — |
+| High-pass: `out = (src − blur) + 128` | `shared/algorithms/image/spatial-filters.js` | — |
 
-Inline — same Gaussian kernel as GaussBlur and UnsharpMask. Output lifts the signed difference to a neutral grey midpoint so the result can be used as a detail layer.
+`shared/algorithms/image/spatial-filters.js` — same Gaussian kernel as GaussBlur and UnsharpMask. Output lifts the signed difference to a neutral grey midpoint so the result can be used as a detail layer.
 
 ## Parameters
 

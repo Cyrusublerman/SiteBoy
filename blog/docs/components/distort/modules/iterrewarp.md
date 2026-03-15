@@ -15,10 +15,10 @@ Accumulates multiple randomly jittered, rotated, and scaled copies of the source
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Weighted multi-sample accumulation | Inline | — |
+| Weighted multi-sample accumulation | `shared/algorithms/physics/accumulation.js` | — |
 | `SeededRNG`, `hashSeed` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 
-Inline — for each of `samples` iterations, derive a seeded RNG from `hashSeed(nodeSeed, si, 999)`, generate random translate, rotate, and scale jitter, compute bilinear sample from source at the transformed position, accumulate weighted RGBA into float accumulators, normalise.
+`shared/algorithms/physics/accumulation.js` — for each of `samples` iterations, derive a seeded RNG from `hashSeed(nodeSeed, si, 999)`, generate random translate, rotate, and scale jitter, compute bilinear sample from source at the transformed position, accumulate weighted RGBA into float accumulators, normalise.
 
 ## Parameters
 

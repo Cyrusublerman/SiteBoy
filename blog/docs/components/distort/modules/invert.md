@@ -15,9 +15,9 @@ Inverts all RGB channels (bitwise complement), producing a photographic negative
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Channel complement | Inline | — |
+| Channel complement | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — `out = 255 − in` per channel. `isLUT = true`; `buildLUT` inverts each entry for chaining.
+`shared/algorithms/image/colour-adjustments.js` — `out = 255 − in` per channel. `isLUT = true`; `buildLUT` inverts each entry for chaining.
 
 ## Parameters
 

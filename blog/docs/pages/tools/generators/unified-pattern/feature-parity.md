@@ -2,35 +2,33 @@
 
 Legacy source: `unified-pattern-generator-spec.md` (mixed bundle), `unified-pattern-generator-audit.md` (audit only).
 
-**The live script is a stub. All spec features are absent.**
-
 ## Core Algorithm
 
 | Feature | Spec | Live | Status |
 |---|---|---|---|
-| Jittered grid cell distribution | ✓ | ✗ | FAIL |
-| Domain warp (noise deformation) | ✓ | ✗ | FAIL |
-| Superellipse SDF evaluation | ✓ | ✗ | FAIL |
-| Nested shapes (scaled repetition) | ✓ | ✗ | FAIL |
-| Smooth union (smooth-min) | ✓ | ✗ | FAIL |
-| Palette colour mapping | ✓ | ✗ | FAIL |
-| SDF pixel renderer | ✓ | ✗ | FAIL |
+| Jittered grid cell distribution | ✓ | ✓ | PASS |
+| Domain warp (noise deformation) | ✓ | ✓ | PASS |
+| Superellipse SDF evaluation | ✓ | ✓ | PASS |
+| Nested shapes (scaled repetition) | ✓ | ✓ | PASS |
+| Smooth union (smooth-min) | ✓ | ✓ | PASS — numerically stable log-sum-exp form |
+| Palette colour mapping | ✓ | ✓ | PASS |
+| SDF pixel renderer | ✓ | ✓ | PASS — bounding-box spatial culling active |
 
 ## Parameters
 
 | Parameter | Spec | Live | Status |
 |---|---|---|---|
-| gridSpacing, jitter | ✓ | ✗ | FAIL |
-| warpAmplitude, warpFrequency | ✓ | ✗ | FAIL |
-| occupancyThreshold | ✓ | ✗ | FAIL |
-| cornerExponent | ✓ | ✗ | FAIL |
-| aspectRatioMin, aspectRatioMax | ✓ | ✗ | FAIL |
-| nestingLevels, nestingRatio | ✓ | ✗ | FAIL |
-| blendRadius | ✓ | ✗ | FAIL |
-| palettePreset, paletteVariance | ✓ | ✗ | FAIL |
-| sizeMin, sizeMax | ✓ | ✗ | FAIL |
-| scale | not in spec | ✓ (stub, unused) | N/A |
+| gridSpacing, jitter | ✓ | ✓ | PASS |
+| warpAmplitude, warpFrequency | ✓ | ✓ | PASS |
+| occupancyThreshold | ✓ | ✓ | PASS |
+| cornerExponent | ✓ | ✓ | PASS |
+| aspectRatioMin, aspectRatioMax | ✓ | ✓ | PASS |
+| nestingLevels, nestingRatio | ✓ | ✓ | PASS |
+| blendRadius | ✓ | ✓ | PASS |
+| palettePreset, paletteVariance | ✓ | ✓ | PASS |
+| sizeMin, sizeMax | ✓ | ✓ | PASS |
+| scale | not in spec | ✗ | N/A — removed (was stub, unused) |
 
 ## Summary
 
-0 of 7 specified features implemented. 0 of 15 spec parameters present in live.
+7 of 7 specified features implemented. 15 of 15 spec parameters present. 5 presets (Atomic, Op-Art, Organic, Minimal, Dense). Worker offload active. Canvas 800×800.

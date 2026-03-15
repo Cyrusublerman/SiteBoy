@@ -20,17 +20,16 @@ No legacy specification or audit exists. Assessment is internal consistency and 
 
 | check | status | notes |
 |---|---|---|
-| preset format `{ name, values }` | FAIL | flat object format used |
-| `animatableParams` declared | FAIL | not declared |
-| export options declared | FAIL | no export block |
-| `animation.loopFrames` matches `cycleFrames` param | FAIL | hardcoded 3600, param adjustable 360–7200 |
-| state via local vars not `SCRIPT_CONFIG` | PASS | only constants on SCRIPT_CONFIG |
-| canvas size dynamic (not hardcoded) | WARN | `_perimeter` hardcoded to 4320 for 1080×1080 |
+| preset format `{ name, values }` | PASS | standard format adopted |
+| `animatableParams` declared | PASS | `['amplitude', 'speed', 'frequency']` |
+| export options declared | PASS | `png: true, gif: true, webm: false` |
+| `animation.loopFrames` fixed; no conflicting param | PASS | `cycleFrames` param removed |
+| state via local vars not `SCRIPT_CONFIG` | PASS | only methods on SCRIPT_CONFIG |
+| canvas size dynamic (not hardcoded) | PASS | `_perimeter` removed; `2*(W+H)` computed in p5Draw |
 | CSS variable colours | N/A | pixel buffer (not CSS colours) |
 
 ## Architecture Notes
 
 - Generator is deterministic — no `Math.random()`. Pre-render compatible.
 - No accumulated state; each frame computed fresh from `frame` and `params`.
-- `_perimeter` hardcoding limits canvas resizing without breaking source positions.
-- Ref-atan2 values (from `ref` vector) computed per-pixel rather than cached per-frame — minor inefficiency.
+- Ref-atan2 values cached per-frame, not per-pixel.

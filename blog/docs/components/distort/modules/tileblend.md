@@ -15,9 +15,9 @@ Blends each pixel with a second sample from a tiled, optionally mirrored offset 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Tiled self-composite with blend modes | Inline | — |
+| Tiled self-composite with blend modes | `shared/algorithms/image/compositing.js` | — |
 
-Inline — wraps sample coordinates by `(offset + x) mod w, (offset + y) mod h` with optional axis-mirror. Three blend modes then exposure (`2^exposure`) and gamma (`pow(x, 1/gamma)`) applied.
+`shared/algorithms/image/compositing.js` — wraps sample coordinates by `(offset + x) mod w, (offset + y) mod h` with optional axis-mirror. Three blend modes then exposure (`2^exposure`) and gamma (`pow(x, 1/gamma)`) applied.
 
 ## Parameters
 

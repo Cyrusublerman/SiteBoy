@@ -15,9 +15,9 @@ Blurs along a directional vector by averaging a symmetrically sampled strip of p
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Directional sample averaging | Inline | — |
+| Directional sample averaging | `shared/algorithms/image/blur-filters.js` | — |
 
-Inline — `samples = max(3, distance)` nearest-neighbour samples symmetrically distributed along the direction vector. Clamped boundary.
+`shared/algorithms/image/blur-filters.js` — `samples = max(3, distance)` nearest-neighbour samples symmetrically distributed along the direction vector. Clamped boundary.
 
 ## Parameters
 

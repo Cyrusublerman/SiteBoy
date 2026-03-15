@@ -6,17 +6,19 @@
 
 ## apply() Execution Order
 
-1. <Read ctx.quality; apply PREVIEW cap if applicable — state what cap>
-2. <Read params via this.getModulated() or this.params — list which params>
-3. <Algorithm step 1>
+`apply(src, dst, w, h, p, ctx, modulate)` — `p` contains pre-resolved params (preview caps applied by factory via `previewMax`/`previewMin`).
+
+1. <Derive computed values from p — note any previewMax caps in effect>
+2. <If inline ctx.quality check present, note why it cannot use previewMax>
+3. <Algorithm step 1 — state which algorithm function is called>
 4. <Algorithm step 2 — continue for every step in source order>
-5. <Release any ctx.pool buffers before return>
+5. <Write to dst>
 
 ## Function Inventory
 
 | Function | Role | Inputs | Output | Complexity |
 | --- | --- | --- | --- | --- |
-| `apply(src, dst, w, h, ctx)` | Pixel render function | buffers + context | void | O(<formula>) |
+| `apply(src, dst, w, h, p, ctx, modulate)` | Pixel render function | buffers + resolved params + context | void | O(<formula>) |
 | `<helper>(...)` | <role> | <inputs> | <output> | O(<formula>) |
 
 ## Mathematical Model
@@ -31,4 +33,4 @@ where:
 
 ## Preview Strategy
 
-<Describe the exact PREVIEW cap implemented. State which params are capped, to what value, and cite the ctx.quality check. If no cap: state why (O(1) per pixel or similar).>
+<State which params declare previewMax/previewMin (primary mechanism — factory resolves before apply() is called). If the module also has an inline ctx.quality check, state what it caps and why previewMax alone is insufficient. If no cap: state why (O(1) per pixel, no expensive scaling params).>

@@ -44,7 +44,12 @@ Always read whole files linked.
 
 8) Standards to load (always, tools/generative)
 - `guides/standards/coding-standards.md`
-- `guides/tool-standards.md`
+- `guides/standards/tool-standards.md`
+- `guides/standards/design-law.md` — principles and prohibited patterns
+- `guides/standards/border-system.md` — every border decision (concrete CSS)
+- `guides/standards/semiotics.md` — every symbol and glyph
+- `guides/standards/text-treatment.md` — text context by context (case, size, alignment, padding)
+- `guides/standards/component-patterns.md` — component selection, space division, build recipes
 - `guides/page-design-guide.md`
 - `guides/f-system.md`
 - `guides/lazy-loading.md`

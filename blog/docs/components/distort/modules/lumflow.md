@@ -15,11 +15,11 @@ Renders a rasterised line field where line positions are iteratively displaced b
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Luminance gradient vector field | Inline (`VectorFieldMap`) | — |
-| Iterative line advection | Inline (`LineGenerator`) | — |
+| Luminance gradient vector field | `shared/algorithms/line/flow-line-engine.js` | — |
+| Iterative line advection | `shared/algorithms/line/flow-line-engine.js` | — |
 | `vectorToRaster` | `assets/js/tools/processors/distort/nodes/bridge/node-adapters.js` | — |
 
-Inline — `VectorFieldMap` computes a Sobel-like per-pixel gradient (luminance, magnitude, angle). `LineGenerator` seeds lines by pattern type and iteratively accumulates displacements from the gradient field. `vectorToRaster` converts line geometry to pixels.
+`shared/algorithms/line/flow-line-engine.js` — `VectorFieldMap` computes a Sobel-like per-pixel gradient (luminance, magnitude, angle). `LineGenerator` seeds lines by pattern type and iteratively accumulates displacements from the gradient field. `vectorToRaster` converts line geometry to pixels.
 
 ## Parameters
 
@@ -105,11 +105,11 @@ Applied after compositing. Mask luminance drives blend weight per-pixel: white =
 
 ## Vector geometry export
 
-This module implements `buildGeometry(w, h, ctx)` returning a `LineSet` for SVG export.
+This module implements `applyVector(src, w, h, p, ctx)` returning a `LineSet` for SVG export.
 
 **Output format:** Point arrays: one sub-array per seed line, each entry `[x, y]` after advection displacement.
 
-`buildGeometry()` is called internally by `apply()` before `vectorToRaster`. At the tool level, `DistortActions.exportSVG()` calls `buildGeometry()` directly to bypass rasterisation. See `docs/specs/module-contracts.md` for the `LineSet` schema.
+`applyVector()` is called internally by `apply()` before `vectorToRaster`. At the tool level, `DistortActions.exportSVG()` calls `applyVector()` directly to bypass rasterisation. See `docs/specs/module-contracts.md` for the `LineSet` schema.
 
 ## Modulation targets
 All `range`-type params accept image and expression drivers via the `+D` button in the NodePanel. No parameters in this module have pre-wired `getModulated()` calls in the current implementation — all values read directly from `this.params`.

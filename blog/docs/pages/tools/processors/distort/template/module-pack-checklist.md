@@ -40,7 +40,7 @@ Use to verify a completed module documentation pack scores 8/8 in `review-and-co
 
 ## ui-layout.md
 
-- [ ] Parameter table — one row per paramDef entry; Controls column substantive
+- [ ] Parameter table — one row per param entry; uses `value` column (not `default`); Controls column substantive
 - [ ] Mask controls section present
 - [ ] Modulation targets section present
 - [ ] UX notes section present
@@ -61,7 +61,7 @@ Use to verify a completed module documentation pack scores 8/8 in `review-and-co
 
 ## issues-and-conflicts.md
 
-- [ ] Standards compliance check — every build-module.md §8 item with evidence
+- [ ] Standards compliance check — every build-module.md §8 item with evidence (factory pattern checks, not class-extension checks)
 - [ ] At least one issue recorded
 - [ ] All issues in correct format (Severity, Category, Location, Evidence, Impact)
 - [ ] Parity holes carried over as [NOTE] [PARITY]

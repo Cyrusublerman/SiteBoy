@@ -21,7 +21,7 @@ Every file involved in a module migration must be classified before it is used. 
 Apply in order. Stop at first YES.
 
 ```
-1. Is the file a *Node.js file that Pipeline executes (in nodes/ subtree)?
+1. Is the file a *Node.js file with createEffectModule({...}) that Pipeline executes (in nodes/ subtree)?
    YES → functional source node
 
 2. Is the file the component-level doc at
@@ -91,14 +91,19 @@ If the split is ambiguous, treat the whole as a spec (lower risk of missing pari
 
 ## 4. Identifying a Source Node vs. a Spec Doc
 
-Signs that a `.js` file is not a functional source node:
-- No `export class <Name>Node extends EffectNode` declaration
-- No `apply(src, dst, w, h, ctx)` method
-- The file describes visual output in prose without implementation
-- The filename does not follow the `<Name>Node.js` pattern
-- The file is in a directory that is not `nodes/`
+Signs that a `.js` file is a functional source node:
+- `export const <Name>Node = createEffectModule({...})` declaration
+- `apply(src, dst, w, h, p, ctx, modulate)` or `applyVector(src, w, h, p, ctx)` in the config
+- Filename follows `<Name>Node.js` pattern
+- File is in the `nodes/<category>/` subtree
 
-**Action:** classify as `design/spec only`. In `source-reference.md`, note: "This file is a design document, not a functional source node. No live implementation was identified at this path."
+Signs that a `.js` file is NOT a functional source node:
+- No `createEffectModule` call
+- No `apply` or `applyVector` function in the config
+- The file describes visual output in prose without implementation
+- The file is not in the `nodes/` subtree
+
+**Action when not a source node:** classify as `design/spec only`. In `source-reference.md`, note: "This file is a design document, not a functional source node. No live implementation was identified at this path."
 
 ---
 

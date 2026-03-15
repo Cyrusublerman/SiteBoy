@@ -15,10 +15,10 @@ Applies a spherical lens distortion within a circular region, pinching (positive
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Radial power-curve remap | Inline | — |
+| Radial power-curve remap | `shared/algorithms/geometry/distortion.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — normalised distance `t = dist/r` remapped by power curve: `newR = t^(1+amount)·r` (positive/pinch) or `newR = t^(1/(1−amount))·r` (negative/bulge). Displacement vector rescaled accordingly.
+`shared/algorithms/geometry/distortion.js` — normalised distance `t = dist/r` remapped by power curve: `newR = t^(1+amount)·r` (positive/pinch) or `newR = t^(1/(1−amount))·r` (negative/bulge). Displacement vector rescaled accordingly.
 
 ## Parameters
 

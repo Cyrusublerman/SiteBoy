@@ -80,7 +80,11 @@ Every symbol that appears in a formula must be defined immediately after the for
    - `RGBA channel value, range 0–255` for colour components
    - `radians` for angles in warp or polar modules
 
-3. **Its source.** Is it a `params.*` value read via `this.getModulated(...)`? A derived intermediate? A fixed constant? Name it.
+3. **Its source.** Distinguish between:
+   - `p.key` — the pre-resolved param value (preview caps applied by factory); the base value passed to `apply`
+   - `modulate('key', pixelIdx)` — the per-pixel driven value; may differ from `p.key` when an image or expression driver is active
+   - Derived intermediate — computed from one or more of the above
+   - Fixed constant — literal value in the source
 
 ---
 

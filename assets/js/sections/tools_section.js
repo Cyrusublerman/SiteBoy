@@ -593,7 +593,7 @@ const ToolsSection = {
             'unified-pattern': () => import('../tools/generators/unified-pattern.js'),
             'moire-generator': () => import('../tools/generators/moire-generator.js'),
             'interference-figure': () => import('../tools/generators/interference-figure.js'),
-            'ribbon-breeze': () => import('../tools/generators/ribbon-breeze.js'),
+            // 'ribbon-breeze' — not yet implemented; import removed to prevent build error
             'tile-mosaic': () => import('../tools/generators/tile-mosaic.js'),
             'wave-equation-synth': () => import('../tools/generators/wave-equation-synth.js'),
             'clock': () => import('../tools/generators/solar-system-tool.js'),
@@ -675,14 +675,69 @@ const ToolsSection = {
                 contentContainer.classList.add('tool-viewport');
             }
             
+            // Ordered flat list of all generators for subheader prev/next navigation.
+            // Order mirrors ScriptRegistry.getByCategory() grouping.
+            const GENERATOR_NAV_IDS = [
+                // Parametric
+                'lissajous', 'harmonics', 'torus',
+                // Wave
+                'wave-interference', 'cymatics', 'moire', 'p5-wave-interference', 'p5-wave-colour',
+                // Pattern
+                'generative-pattern', 'tile-mosaic', 'golden-grid', 'order-disorder', 'animated-lines', 'shape-array',
+                // Physics
+                'fibonacci-balls',
+                // Other
+                'circles', 'squares', 'solar-system', 'interference-figure',
+                'wave-equation-synth', 'unified-pattern', 'defecated', 'clockwise', 'curtain-morph', 'quine',
+            ];
+
+            const generatorNavItems = GENERATOR_NAV_IDS.map(id => ({
+                id:    `generators?script=${id}`,
+                path:  `#tools/generators?script=${id}`,
+                title: id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').toUpperCase(),
+            }));
+
+            // Keep a mutable ref so the navigate closure can call switchToScript in-place
+            let hostRef = null;
+
+            const updateGeneratorSubheaderNav = (currentScriptId) => {
+                if (!window.Subheader) return;
+                window.Subheader.updateNavigation({
+                    section: 'tools',
+                    subsection: `generators?script=${currentScriptId}`,
+                    items: generatorNavItems,
+                    navigate: (targetSection, targetSubsection) => {
+                        if (
+                            targetSection === 'tools' &&
+                            targetSubsection &&
+                            targetSubsection.startsWith('generators?script=')
+                        ) {
+                            const newId = new URLSearchParams(
+                                targetSubsection.split('?')[1]
+                            ).get('script');
+                            if (newId && hostRef) {
+                                hostRef.switchToScript(newId);
+                            }
+                        } else if (callbacks && callbacks.navigateToSection) {
+                            callbacks.navigateToSection(targetSection, targetSubsection);
+                        }
+                    }
+                });
+            };
+
             // Create host with initial script
-            // Toolbar allows switching to other generators without navigation
+            // Toolbar handles internal script switching; subheader handles prev/next
             const host = new GenerativeToolHost(this.currentContainer, scriptId, {
                 ComponentLibrary: window.ComponentLibrary,
                 MF: LayoutCalculator,
-                Resize: window.ResizeManager
+                Resize: window.ResizeManager,
+                onScriptChange: (newId) => updateGeneratorSubheaderNav(newId)
             });
-            
+            hostRef = host;
+
+            // Set initial subheader navigation
+            updateGeneratorSubheaderNav(scriptId);
+
             this.currentTool = host;
             this.componentInstances.push(host);
             

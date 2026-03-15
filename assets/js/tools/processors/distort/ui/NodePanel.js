@@ -105,7 +105,8 @@ export class NodePanel extends BaseComponent {
     header.addEventListener('click', () => this._onSelect?.({ nodeIdx: this._nodeIdx }));
     header.addEventListener('dragover', event => {
       event.preventDefault();
-      header.style.borderTop = '2px solid var(--c-text)';
+      const F = this.getF().F;
+      header.style.borderTop = `${Math.max(1, Math.round(F / 7))}px solid var(--c-text)`;
     });
     header.addEventListener('dragleave', () => {
       header.style.borderTop = '';

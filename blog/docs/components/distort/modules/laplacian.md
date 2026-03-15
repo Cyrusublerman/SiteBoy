@@ -15,9 +15,9 @@ Computes the Laplacian (second-order derivative) of the luminance channel to det
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Discrete Laplacian operator | Inline | — |
+| Discrete Laplacian operator | `shared/algorithms/edge-detection/edge-operators.js` | — |
 
-Inline — two kernel modes: 4-connected (`[0,1,0 / 1,−4,1 / 0,1,0]`) or 8-connected (`[1,1,1 / 1,−8,1 / 1,1,1]`). Output is absolute value of the convolution result.
+`shared/algorithms/edge-detection/edge-operators.js` — two kernel modes: 4-connected (`[0,1,0 / 1,−4,1 / 0,1,0]`) or 8-connected (`[1,1,1 / 1,−8,1 / 1,1,1]`). Output is absolute value of the convolution result.
 
 ## Parameters
 

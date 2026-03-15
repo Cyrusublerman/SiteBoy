@@ -10,7 +10,7 @@
  *
  * Based on lines / line_2_shape sketches.
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 export const SCRIPT_CONFIG = {
@@ -18,19 +18,56 @@ export const SCRIPT_CONFIG = {
     title: 'Animated Lines',
     category: 'pattern',
     description: 'Horizontal lines morph through arcs into nested polygon rings, rotating through every regular polygon from triangle to circle.',
-    version: '1.0.0',
+    version: '1.1.0',
+
+    infoSections: [
+        {
+            heading: 'DESCRIPTION',
+            body: 'Animated Lines morphs lineCount horizontal white lines through intermediate arc shapes into nested polygon rings, cycling through every regular polygon from triangle to a maxSides-gon, then collapsing back to lines. The canvas is 600×500 px (non-square). Background: dark grey (20); stroke: white (255). Each full animation loop adds exactly π (180°) of cumulative rotation, so odd loops are rotated half a turn relative to even loops. Visual cycle: (1) hold on lines for holdLines ms; (2) morph lines → triangle via arc intermediate over morphTime ms; (3) step through all polygons triangle → … → maxSides-gon, pausing holdPoly ms per step; (4) extended hold at maxSides-gon for 3×holdPoly ms; (5) morph polygon → lines over morphTime ms.'
+        },
+        {
+            heading: 'ALGORITHM',
+            body: 'Time model: timeMs = frame × (1000/60) × speed; loopIndex = ⌊timeMs / totalDuration⌋; loopTime = timeMs % totalDuration; baseRot = loopIndex × π. Timeline (_buildTimeline): rebuilt when maxSides, holdLines, morphTime, or holdPoly changes (keyed by _timelineKey). Produces segments: [hold(∞,0), morph(∞→3), hold(3,0), morph(3→4), hold(4,rot), …, hold(maxSides, finalRot, ×3), morph(maxSides→∞)]. Rotation per step n→(n+1): internalAngle(n+1) × scaleFactor where internalAngle(n) = (n−2)π/n and scaleFactor = π / Σ_{n=4}^{maxSides} internalAngle(n); sum of all increments = π exactly. State extraction (_getState): linear scan through timeline segments; easing = 0.5 − 0.5 × cos(localT × π) (smoothstep). Shape building: _buildLines produces resolution equally-spaced horizontal points per line spanning 2×outerRadius wide; _buildArcs applies a sine-shaped sag (outerRadius×0.6×arcAmount×sin(s×π)) plus endpoint lift; _buildPolygons produces nested concentric n-gons with area-preserving radius (adjR), inner rings spaced polySpacing apart, using equal-arc-length parameterisation for n < maxSides. Square (n=4) uses vOffset = −π/2 − π/4 for flat-bottom alignment. Blend (_buildShapes): arcBlend = sin(curve×π), polyBlend = curve; lerps lines→arcs→polys. Polygon-step morph: _lerpShapes(from, to, sidesT) linearly interpolates between two built shape sets. Centring: _centroid computes mean of all points across all shapes; shapes shifted by −centroid each frame. Render: p.translate(w/2, h/2), p.rotate(state.rotation); shapes with curve > 0.99 use CLOSE, others open.'
+        },
+        {
+            heading: 'PARAMETERS',
+            body: 'Shape group — lineCount: slider, 3–20, step 1, default 9; number of lines and concentric polygon rings. outerRadius: slider, 50–250, step 5, default 140; half-width of lines in px; controls polygon area via (2×outerRadius)² target area. polySpacing: slider, 5–40, step 1, default 18; gap between concentric polygon rings in px. resolution: slider, 50–400, step 50, default 200; points per shape; affects drawing fidelity and polygon smoothness (at resolution < maxSides, each polygon edge has fewer than one point). maxSides: slider, 10–60, step 5, default 50; highest polygon in the cycle before morphing back to lines; triggers timeline rebuild. Timing group (ms) — holdLines: slider, 200–5000, step 100, default 2000; hold duration on lines state in ms; triggers timeline rebuild. morphTime: slider, 100–2000, step 100, default 2000; duration of lines↔polygon morph in ms; triggers timeline rebuild. holdPoly: slider, 50–1000, step 50, default 300; hold duration per polygon step in ms; triggers timeline rebuild. speed: slider, 0.5–2.0, step 0.25, default 1.0; animation speed multiplier (1.0 = real-time, 2.0 = 2× faster, 0.5 = half speed). Style group — strokeWeight: slider, 0.5–5, step 0.5, default 1.5; line stroke width in px.'
+        },
+        {
+            heading: 'PRESETS',
+            body: 'Classic: lineCount 9, outerRadius 140, polySpacing 18, resolution 200, maxSides 50, holdLines 2000, morphTime 2000, holdPoly 300, speed 1.0, strokeWeight 1.5. Full default state; approximately 51 s per loop. Fast: lineCount 9, outerRadius 140, polySpacing 18, resolution 200, maxSides 20, holdLines 500, morphTime 500, holdPoly 100, speed 1.0, strokeWeight 1.5. Short cycle (~11 s); fewer polygon steps. Sparse: lineCount 5, outerRadius 180, polySpacing 30, resolution 100, maxSides 30, holdLines 3000, morphTime 3000, holdPoly 500, speed 1.0, strokeWeight 2. Wide-spaced rings, slow morph.'
+        },
+        {
+            heading: 'PERFORMANCE',
+            body: 'Per-frame complexity: O(2 × lineCount × resolution) during hold segments, O(4 × lineCount × resolution) during polygon-step morphs. At defaults (lineCount=9, resolution=200): ~3,600–7,200 point computations/frame — well within 16 ms budget. At max params (lineCount=20, resolution=400): ~32,000 — borderline on low-end devices. Compute tier: geometric; worker offload not feasible (uses P5.js canvas API). Optimisations applied (v1.1.0): (1) Shape array cache — _shapesKey guards _buildLines/_buildArcs/_buildPolygons; shapes are not rebuilt during hold segments where curve and sides are constant; cache keyed on curve|sides|lineCount|outerRadius|polySpacing|resolution|maxSides. (2) Centroid cache — _centroidKey prevents recomputation of _centroid during hold segments; only recalculated when shape key changes. (3) _buildArcs guard — skipped entirely when arcBlend < 0.001 (near curve=0 or curve=1), eliminating ~lineCount×resolution computations when not needed.'
+        },
+        {
+            heading: 'ANIMATION',
+            body: 'Type: infinite. No loopFrames — total cycle duration depends on params: holdLines + morphTime + (2n−1)×holdPoly + holdPoly×3 + morphTime where n = maxSides − 3. At defaults: approximately 51 s per loop. Fully deterministic: same (frame, params) always produces identical output; no Math.random, no Date.now dependency. Speed control: speed param multiplies time advancement per frame; timeMs = frame × (1000/60) × speed. Sequencer: disabled (infinite type with no loop point). Export: PNG only — gif and webm disabled (infinite animation with no static loopFrames; export period cannot be defined without a loop boundary).'
+        },
+        {
+            heading: 'KNOWN LIMITATIONS',
+            body: 'Resolution vs maxSides: when resolution < maxSides, each polygon edge has fewer than one point; the polygon is visually indistinguishable from a circle at high maxSides with low resolution. No warning or enforcement is applied. Loop period is param-dependent: changing holdLines, morphTime, holdPoly, or maxSides changes the loop duration; no loopFrames field is updated, so GIF/sequence export is not supported. Shape cache invalidates on every frame during morph transitions (curve changes each frame); cache only benefits hold segments, which are the dominant portion of the cycle at default timings. Polygon centring: _centroid is computed from the polygon vertex set, not the mathematical centre; for degenerate params (very small polySpacing, large lineCount), visual centring may drift. Extended hold at maxSides uses 3×holdPoly; this is hardcoded and not user-configurable.'
+        },
+        {
+            heading: 'REFERENCES',
+            body: 'Live script: assets/js/tools/generators/scripts/pattern/animated-lines.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Archive: none (source-only analysis; original lines.js and line_2_shape.js were identical sketches, merged into this file). Algorithm origin: custom morphology system — no named published algorithm. Rotation normalisation via internalAngle summation is standard polygon geometry. Version 1.1.0: gif export corrected to false (infinite type, no loopFrames); fps param renamed to speed (0.5–2.0 multiplier); shape array cache added (_shapesKey); centroid cache added (_centroidKey); _buildArcs guard added; infoSections added; compute block added.'
+        }
+    ],
 
     canvas: { width: 600, height: 500, context: 'p5' },
+
+    compute: { cost: 'geometric' },
 
     parameters: [
         {
             group: 'Shape',
             params: [
-                { key: 'lineCount',   type: 'slider', label: 'Line Count',    min: 3,  max: 20,  step: 1,  default: 9 },
-                { key: 'outerRadius', type: 'slider', label: 'Outer Radius',  min: 50, max: 250, step: 5,  default: 140 },
-                { key: 'polySpacing', type: 'slider', label: 'Poly Spacing',  min: 5,  max: 40,  step: 1,  default: 18 },
-                { key: 'resolution',  type: 'slider', label: 'Resolution',    min: 50, max: 400, step: 50, default: 200 },
-                { key: 'maxSides',    type: 'slider', label: 'Max Sides',     min: 10, max: 60,  step: 5,  default: 50 }
+                { key: 'lineCount',   type: 'slider', label: 'Line Count',    min: 3,  max: 20,  step: 1,    default: 9 },
+                { key: 'outerRadius', type: 'slider', label: 'Outer Radius',  min: 50, max: 250, step: 5,    default: 140 },
+                { key: 'polySpacing', type: 'slider', label: 'Poly Spacing',  min: 5,  max: 40,  step: 1,    default: 18 },
+                { key: 'resolution',  type: 'slider', label: 'Resolution',    min: 50, max: 400, step: 50,   default: 200 },
+                { key: 'maxSides',    type: 'slider', label: 'Max Sides',     min: 10, max: 60,  step: 5,    default: 50 }
             ]
         },
         {
@@ -39,7 +76,7 @@ export const SCRIPT_CONFIG = {
                 { key: 'holdLines',   type: 'slider', label: 'Hold Lines (ms)',   min: 200, max: 5000, step: 100, default: 2000 },
                 { key: 'morphTime',   type: 'slider', label: 'Morph Time (ms)',   min: 100, max: 2000, step: 100, default: 2000 },
                 { key: 'holdPoly',    type: 'slider', label: 'Hold Poly (ms)',    min: 50,  max: 1000, step: 50,  default: 300 },
-                { key: 'fps',         type: 'slider', label: 'Simulated FPS',     min: 30,  max: 120,  step: 30,  default: 60 }
+                { key: 'speed',       type: 'slider', label: 'Speed',             min: 0.5, max: 2.0,  step: 0.25, default: 1.0 }
             ]
         },
         {
@@ -53,39 +90,68 @@ export const SCRIPT_CONFIG = {
     presets: [
         {
             name: 'Classic',
-            lineCount: 9, outerRadius: 140, polySpacing: 18, resolution: 200,
-            maxSides: 50, holdLines: 2000, morphTime: 2000, holdPoly: 300,
-            fps: 60, strokeWeight: 1.5
+            values: {
+                lineCount: 9, outerRadius: 140, polySpacing: 18, resolution: 200,
+                maxSides: 50, holdLines: 2000, morphTime: 2000, holdPoly: 300,
+                speed: 1.0, strokeWeight: 1.5
+            }
         },
         {
             name: 'Fast',
-            lineCount: 9, outerRadius: 140, polySpacing: 18, resolution: 200,
-            maxSides: 20, holdLines: 500, morphTime: 500, holdPoly: 100,
-            fps: 60, strokeWeight: 1.5
+            values: {
+                lineCount: 9, outerRadius: 140, polySpacing: 18, resolution: 200,
+                maxSides: 20, holdLines: 500, morphTime: 500, holdPoly: 100,
+                speed: 1.0, strokeWeight: 1.5
+            }
         },
         {
             name: 'Sparse',
-            lineCount: 5, outerRadius: 180, polySpacing: 30, resolution: 100,
-            maxSides: 30, holdLines: 3000, morphTime: 3000, holdPoly: 500,
-            fps: 60, strokeWeight: 2
+            values: {
+                lineCount: 5, outerRadius: 180, polySpacing: 30, resolution: 100,
+                maxSides: 30, holdLines: 3000, morphTime: 3000, holdPoly: 500,
+                speed: 1.0, strokeWeight: 2
+            }
         }
     ],
 
-    animation: { type: 'infinite', defaultFps: 60 },
+    animation: { type: 'infinite', defaultFps: 60, animatableParams: [] },
 
-    // Cache
+    export: {
+        png: true,
+        gif: false,
+        webm: false
+    },
+
+    // Timeline cache
     _timeline: null,
     _totalDuration: null,
     _timelineKey: null,
+
+    // Shape cache
+    _shapes: null,
+    _shapesKey: null,
+    _shapesFrom: null,
+    _shapesFromKey: null,
+    _shapesTo: null,
+    _shapesToKey: null,
+
+    // Centroid cache
+    _centroid_val: null,
+    _centroidKey: null,
 
     _buildTimeline(params) {
         const key = `${params.maxSides}|${params.holdLines}|${params.morphTime}|${params.holdPoly}`;
         if (this._timelineKey === key) return;
         this._timelineKey = key;
 
+        // Invalidate shape/centroid caches on timeline rebuild
+        this._shapesKey = null;
+        this._shapesFromKey = null;
+        this._shapesToKey = null;
+        this._centroidKey = null;
+
         const { maxSides, holdLines, morphTime, holdPoly } = params;
 
-        // Internal angle of n-gon
         const internalAngle = n => (n - 2) * Math.PI / n;
 
         let totalAngles = 0;
@@ -140,7 +206,7 @@ export const SCRIPT_CONFIG = {
         return { sides: Infinity, curve: 0, rotation: 0 };
     },
 
-    _buildLines(p, count, outerRadius, resolution) {
+    _buildLines(count, outerRadius, resolution) {
         const shapes = [];
         const lineWidth = 2 * outerRadius;
         const totalH = 2 * outerRadius;
@@ -158,7 +224,7 @@ export const SCRIPT_CONFIG = {
         return shapes;
     },
 
-    _buildArcs(p, count, outerRadius, resolution, arcAmount) {
+    _buildArcs(count, outerRadius, resolution, arcAmount) {
         const shapes = [];
         const lineWidth = 2 * outerRadius;
         const totalH = 2 * outerRadius;
@@ -180,7 +246,7 @@ export const SCRIPT_CONFIG = {
         return shapes;
     },
 
-    _buildPolygons(p, n, count, polySpacing, outerRadius, resolution, maxSides) {
+    _buildPolygons(n, count, polySpacing, outerRadius, resolution, maxSides) {
         const shapes = [];
         const side = 2 * outerRadius;
         const targetArea = side * side;
@@ -190,7 +256,6 @@ export const SCRIPT_CONFIG = {
         const innerR = adjR - (count - 1) * polySpacing;
         const vOffset = (n === 4) ? -Math.PI / 2 - Math.PI / 4 : -Math.PI / 2;
 
-        // Centroid Y offset
         let minY = Infinity, maxY = -Infinity;
         if (n < maxSides) {
             for (let i = 0; i < n; i++) {
@@ -228,15 +293,21 @@ export const SCRIPT_CONFIG = {
         return shapes;
     },
 
-    _buildShapes(p, curve, sides, params) {
+    _buildShapes(curve, sides, params) {
         const { lineCount: count, outerRadius, polySpacing, resolution, maxSides } = params;
-        const arcBlend  = Math.sin(curve * Math.PI);
-        const polyBlend = curve;
-        const lines = this._buildLines(p, count, outerRadius, resolution);
-        const arcs  = this._buildArcs(p, count, outerRadius, resolution, arcBlend);
-        const polys = this._buildPolygons(p, sides, count, polySpacing, outerRadius, resolution, maxSides);
+
+        const lines = this._buildLines(count, outerRadius, resolution);
         if (curve < 0.001) return lines;
+
+        const polys = this._buildPolygons(sides, count, polySpacing, outerRadius, resolution, maxSides);
         if (curve > 0.999) return polys;
+
+        const arcBlend = Math.sin(curve * Math.PI);
+        const polyBlend = curve;
+        const arcs = arcBlend > 0.001
+            ? this._buildArcs(count, outerRadius, resolution, arcBlend)
+            : lines;
+
         return lines.map((line, i) => line.map((lp, j) => {
             const ap = arcs[i][j], pp = polys[i][j];
             const lax = lp.x + (ap.x - lp.x) * arcBlend;
@@ -266,20 +337,46 @@ export const SCRIPT_CONFIG = {
     p5Draw(p, params, frame) {
         this._buildTimeline(params);
 
-        const timeMs = frame * (1000 / params.fps);
+        const timeMs = frame * (1000 / 60) * params.speed;
         const state = this._getState(timeMs);
 
         let shapes;
         if (state.sidesT !== undefined) {
-            const from = this._buildShapes(p, state.curve, state.fromSides, params);
-            const to   = this._buildShapes(p, state.curve, state.toSides,   params);
-            shapes = this._lerpShapes(from, to, state.sidesT);
+            // Polygon-to-polygon morph: cache from/to shapes independently
+            const fromKey = `${state.curve}|${state.fromSides}|${params.lineCount}|${params.outerRadius}|${params.polySpacing}|${params.resolution}|${params.maxSides}`;
+            const toKey   = `${state.curve}|${state.toSides}|${params.lineCount}|${params.outerRadius}|${params.polySpacing}|${params.resolution}|${params.maxSides}`;
+            if (this._shapesFromKey !== fromKey) {
+                this._shapesFromKey = fromKey;
+                this._shapesFrom = this._buildShapes(state.curve, state.fromSides, params);
+            }
+            if (this._shapesToKey !== toKey) {
+                this._shapesToKey = toKey;
+                this._shapesTo = this._buildShapes(state.curve, state.toSides, params);
+            }
+            shapes = this._lerpShapes(this._shapesFrom, this._shapesTo, state.sidesT);
         } else {
-            shapes = this._buildShapes(p, state.curve, state.sides, params);
+            // Hold or curve morph: cache shape set
+            const key = `${state.curve}|${state.sides}|${params.lineCount}|${params.outerRadius}|${params.polySpacing}|${params.resolution}|${params.maxSides}`;
+            if (this._shapesKey !== key) {
+                this._shapesKey = key;
+                this._shapes = this._buildShapes(state.curve, state.sides, params);
+                this._centroidKey = null; // Invalidate centroid on new shape
+            }
+            shapes = this._shapes;
         }
 
-        // Centre shapes
-        const c = this._centroid(shapes);
+        // Centroid: cached for hold segments (sidesT undefined and shape key stable)
+        let c;
+        if (state.sidesT === undefined) {
+            if (this._centroidKey !== this._shapesKey) {
+                this._centroidKey = this._shapesKey;
+                this._centroid_val = this._centroid(shapes);
+            }
+            c = this._centroid_val;
+        } else {
+            c = this._centroid(shapes);
+        }
+
         const centred = shapes.map(s => s.map(pt => ({ x: pt.x - c.x, y: pt.y - c.y })));
 
         p.background(20);

@@ -15,10 +15,10 @@ Segments the image into Voronoi cells from seeded random points and renders them
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Brute-force Voronoi (nearest + second-nearest) | Inline | — |
+| Brute-force Voronoi (nearest + second-nearest) | `shared/algorithms/image/compositing.js` | — |
 | `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 
-Inline — for each pixel, iterate all `pointCount` sites to find minimum and second-minimum squared Euclidean distance. Three rendering modes driven by these distances. All blended with source at `blendAmt`.
+`shared/algorithms/image/compositing.js` — for each pixel, iterate all `pointCount` sites to find minimum and second-minimum squared Euclidean distance. Three rendering modes driven by these distances. All blended with source at `blendAmt`.
 
 ## Parameters
 

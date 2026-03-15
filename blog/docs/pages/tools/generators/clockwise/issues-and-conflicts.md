@@ -4,7 +4,7 @@
 
 **p5 generator rules:**
 
-- `p.noLoop()` called in `p5Setup`: **PASS** — `p.noLoop()` present at line 187 of source
+- `p.noLoop()` called in `p5Setup`: **PASS** — `p.noLoop()` present in `p5Setup`
 - `p.createCanvas()` not called: **PASS** — absent from source; host creates and owns the canvas
 - `p.loop()` not called internally: **PASS** — absent from source
 - Animation driven by host, not internal: **PASS** — no `requestAnimationFrame`, `setInterval`, or `setTimeout` in source; frame delivery is entirely host-managed
@@ -28,48 +28,56 @@
 
 ## Bug and Risk Detection
 
-**[WARN] [BUG] Render reads from pre-physics buffer (one-frame rendering lag)**
+**[RESOLVED] [WARN] [BUG] Render reads from pre-physics buffer (one-frame rendering lag)**
 Location: `p5Draw` — render loop after call to `_updatePhysics(sq, params)`
 Evidence: `_updatePhysics` computes new values into `sq.next1` and `sq.next2`, then swaps buffers: `[sq.grid1, sq.next1] = [sq.next1, sq.grid1]`. After the swap, `sq.grid1` holds the newly computed values and `sq.next1` holds the prior-frame values. The render immediately following reads `const pulse = Math.max(0, Math.min(1, sq.next1[x][y]))` and `const hue = sq.next2[x][y]` — both from `next1`/`next2`, which are the pre-physics (old) values.
-Impact: The displayed frame shows physics values from the previous frame, not the current frame. This is a systematic one-physics-step rendering lag. It is visually subtle (one frame at 30fps ≈ 33ms delay) but technically incorrect. The fix is to read from `sq.grid1` and `sq.grid2` after the swap, not from `sq.next1` and `sq.next2`.
+Impact: The displayed frame shows physics values from the previous frame, not the current frame.
 
-**[WARN] [BUG] Unclamped pulse values in physics buffer**
+*Fix (v1.1.0): Render now reads from `sq.grid1[x][y]` and `sq.grid2[x][y]` (the post-swap active buffers) rather than `sq.next1`/`sq.next2`. Rendering lag eliminated.*
+
+**[RESOLVED] [WARN] [BUG] Unclamped pulse values in physics buffer**
 Location: `_updatePhysics` — grid1 update: `sq.next1[x][y] = (v1 + (a1 - v1) * cohesion + d1 * growthFactor * damping) * waveDecay`
-Evidence: No clamp is applied to `next1[x][y]` before it is stored. When `growthFactor × damping > 1` (e.g. growthFactor=5, damping=0.5 → coefficient=2.5), the diffusion term can amplify high-gradient cells beyond [0,1]. The render-time clamp `Math.max(0, Math.min(1, sq.next1[x][y]))` protects display but the out-of-range value re-enters the physics computation as `v1` in the next frame.
-Impact: At extreme parameter combinations (growthFactor near max, damping above 0.2–0.3), the pulse field can diverge — values grow frame-over-frame, producing runaway brightness oscillation. At default settings (growthFactor=2.0, damping=0.15, coefficient=0.3) this does not trigger.
+Evidence: No clamp is applied to `next1[x][y]` before it is stored. When `growthFactor × damping > 1`, the diffusion term can amplify high-gradient cells beyond [0,1]. The render-time clamp `Math.max(0, Math.min(1, sq.next1[x][y]))` protects display but the out-of-range value re-enters the physics computation as `v1` in the next frame.
+Impact: At extreme parameter combinations, the pulse field can diverge.
+
+*Fix (v1.1.0): Clamp applied at physics write time: `sq.next1[x][y] = raw1 < 0 ? 0 : raw1 > 1 ? 1 : raw1`. Out-of-range values no longer re-enter the simulation.*
 
 **[NOTE] [BUG] Collision map first-writer-only: third-square overlap ignored**
-Location: `p5Draw` — collision detection: `if (map[idx] === null) { map[idx] = {...}; } else { ...swap... }`
-Evidence: When two squares map to the same pixel, the first square's entry is stored and then used for the swap. After the swap, `map[idx]` still holds the first square's reference (not updated to reflect the swap). If a third square then maps to the same pixel, it will initiate a second swap with the same first-square cell.
-Impact: In dense overlap zones (many squares near the same orbit position), later squares do not correctly interact with the most recent occupant — they interact with the first-frame occupant. This produces a mild mixing bias in high-density scenarios; not a crash risk.
+Location: `p5Draw` — collision detection: `if (!map.has(idx)) { map.set(idx, {...}); } else { ...swap... }`
+Evidence: When two squares map to the same pixel, the first square's entry is stored and then used for the swap. If a third square then maps to the same pixel, it will initiate a second swap with the same first-frame occupant.
+Impact: In dense overlap zones, later squares do not correctly interact with the most recent occupant. Produces a mild mixing bias in high-density scenarios; not a crash risk. Documented in KNOWN LIMITATIONS.
 
 ---
 
 ## Performance Risks
 
-**[WARN] [PERFORMANCE] O(1,166,400) flat array clear per frame**
+**[RESOLVED] [WARN] [PERFORMANCE] O(1,166,400) flat array clear per frame**
 Location: `p5Draw` — `for (let i = 0; i < map.length; i++) map[i] = null;`
 Evidence: `_collisionMap` is a flat array of 1080 × 1080 = 1,166,400 elements. The entire array is cleared to `null` every frame regardless of how many cells are active.
-Impact: At 30fps this is approximately 35M null assignments per second. A sparse `Map` keyed by pixel index (cleared by iterating only populated entries) would reduce this to O(N × res²) ≈ O(171,000) at peak — approximately 7× fewer operations.
+Impact: At 30fps this is approximately 35M null assignments per second.
+
+*Fix (v1.1.0): `_collisionMap` converted from a flat null-initialised array to a sparse `Map`. Cleared each frame via `map.clear()` which operates only on populated entries — O(N × res²) ≈ O(171,000) at peak vs. O(1,166,400) previously.*
 
 **[WARN] [PERFORMANCE] O(N × res²) individual p.rect() calls per frame**
 Location: `p5Draw` — inner render loop: `p.rect(ent.cartesian.x - ent.drawSize * 0.5, ...)`
-Evidence: At `numSquares=6, orbitRadius=540`: approximately 171,000 `p.rect()` calls per frame. Each call carries p5's per-draw-call overhead (fill application, transform check, canvas API call).
-Impact: At 30fps this is approximately 5.1M draw calls per second. This is likely the dominant wall-clock cost on most hardware. A pixel-buffer approach (`putImageData`) or p5's `pixels` array would reduce this to a single canvas write per frame.
+Evidence: At `numSquares=6, orbitRadius=540`: approximately 171,000 `p.rect()` calls per frame. Each call carries p5's per-draw-call overhead.
+Impact: At 30fps this is approximately 5.1M draw calls per second. Dominant wall-clock cost on most hardware. Documented in PERFORMANCE section.
 
 **[NOTE] [PERFORMANCE] Per-frame trig evaluations in geometry pass**
 Location: `p5Draw` — cell world position: `Math.cos(theta)` and `Math.sin(theta)` per cell
 Evidence: At peak load (171,000 cells), 342,000 trig evaluations per frame.
-Impact: Moderate cost. Precomputing `cos(theta)` and `sin(theta)` at build time and updating via rotation matrix multiplication (`cos(θ+Δ) = cosθ·cosΔ − sinθ·sinΔ`) would reduce per-frame trig calls to O(N) (one per square for the incremental rotation).
+Impact: Moderate cost. Rotation matrix incremental update could reduce per-frame trig to O(N).
 
 ---
 
 ## Parity Holes (as Issues)
 
-**[NOTE] [PARITY] `animatableParams` not declared**
+**[RESOLVED] [NOTE] [PARITY] `animatableParams` not declared**
 Location: `SCRIPT_CONFIG.animation`
 Evidence: `animation: { type: 'infinite', defaultFps: 30 }` — `animatableParams` field absent
-Impact: The host cannot identify which parameters produce smooth animation when swept in a sequence export. Parameters such as `orbitSpeed`, `spinSpeed`, and `identityForce` would be natural candidates.
+Impact: The host cannot identify which parameters produce smooth animation when swept in a sequence export.
+
+*Fix (v1.1.0): `animatableParams` declared in `animation` block: `['orbitSpeed', 'spinSpeed', 'growthFactor', 'damping', 'waveDecay', 'identityForce']`.*
 
 **[NOTE] [PARITY] Fit/fill/actual viewport and zoom issues are host-level defects, not generator defects**
 Location: Not present in `clockwise.gen.js`

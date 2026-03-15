@@ -6,33 +6,31 @@ None.
 
 ## WARN
 
-**[BUG] Operator evolution is non-deterministic**
-`_pickNextOp` uses `Math.random()` to select the next operator when a transition completes. Two runs from the same frame start will diverge at the first operator transition. Pre-render output is not reproducible; pre-render frames captured at one time will not match a live replay.
-Fix: Use a seeded PRNG (e.g., `mulberry32` with `frame`-derived seed) instead of `Math.random()`.
+**[RESOLVED]** **[BUG] Operator evolution is non-deterministic**
+`_pickNextOp` now uses Wang-hash seeded PRNG `_seededRand(seed)` with seed derived from `operatorIndex × 100000 + transitionCount`. Operator sequences are fully deterministic given the same initial state.
 
-**[BUG] `animation.loopFrames` conflicts with `cycleFrames`**
-`animation.loopFrames = 3600` static; `cycleFrames` user slider (360–7200). Host pre-render uses the static value. Same issue as `golden-grid`, `order-disorder`, `curtain-morph`.
+**[RESOLVED]** **[BUG] `animation.loopFrames` conflicts with `cycleFrames`**
+`p5Setup` now executes `this.animation.loopFrames = params.cycleFrames`, synchronising the export loop length to the user-selected cycle period on every setup call.
 
-**[STANDARDS] Preset format non-standard**
-Flat objects without `values: { ... }` wrapper.
+**[RESOLVED]** **[STANDARDS] Preset format non-standard**
+All presets now use the standard `{ name, values: { ... } }` wrapper.
 
-**[STANDARDS] No `export` block**
-No PNG/GIF/WebM export available.
+**[RESOLVED]** **[STANDARDS] No `export` block**
+`export: { png: true, gif: true, webm: false }` added.
 
 **[STANDARDS] State stored on `SCRIPT_CONFIG` object**
-`_opStates`, `_lastOpSpeeds` mutated via `this.*`. Same issue as all prior P5 generators.
+`_opStates`, `_lastOpSpeeds` still mutated via `this.*`. Same pattern as other P5 generators; no host mechanism to isolate per-instance state.
 
-**[PERFORMANCE] `_normalAt` makes 4× `_process` calls per pixel**
-5× total `_process` per pixel (1 for colour, 4 for normal). Normal estimation accounts for 80% of per-pixel compute cost. At `resolution=2`: ~63M of the ~79M total ops/frame are from normal estimation.
-Optimisation: cache `_process` result for `(x,y)` and reuse for centre in `_normalAt`; reduce to 4 total (saving 1 call). Further: offer a "flat" shading mode that skips normals entirely for 5× speed increase.
+**[RESOLVED]** **[PERFORMANCE] `_normalAt` makes 4× `_process` calls per pixel**
+Reduced to 3-point forward-difference scheme: `_process` result at `(x,y)` is reused as `centreHeight`; two neighbour calls `(x+1,y)` and `(x,y+1)` complete the gradient. Total 3 `_process` calls per pixel (down from 5), a 40% reduction documented in the PERFORMANCE infoSection.
 
 **[PERFORMANCE] Main-thread pixel computation is too slow for 60fps**
-At `resolution=2`, ~79M arithmetic ops/frame including transcendental functions. Expected real-time performance: 5–15 fps on modern desktop hardware. Not suitable for interactive use at full quality. Worker offload is the primary mitigation (see performance.md).
+No Worker offload implemented. At `resolution=2`, ~79M arithmetic ops/frame; expected 5–15 fps. Documented in PERFORMANCE infoSection; resolution parameter and Tier 2 adaptive resolution are the primary mitigations.
 
 ## NOTE
 
 **[DESIGN] `opSpeed` change triggers full `_initOpStates` reset**
-When any of the 4 `opSpeed` params changes, `_initOpStates` re-randomises all 4 operator states. A visual discontinuity will occur. This is not user-visible as a warning. Consider a smoother per-operator speed update that doesn't randomise current/next.
+When any of the 4 `opSpeed` params changes, `_initOpStates` re-initialises all 4 operator states. A visual discontinuity will occur. This is not user-visible as a warning. Consider a smoother per-operator speed update that doesn't reinitialise current/next.
 
 **[DESIGN] Reference vector `ref` is computed from a triangle traversal**
 The triangle `{(540,54), (1026,1026), (54,1026)}` maps canvas coordinates to sphere coordinates. The mapping `theta = (sx/W) × 2π`, `phi = (sy/H) × π` applies a Mercator-like projection. The triangle is not a geodesic; the reference vector traces a non-great-circle path. This is visually smooth but physically non-uniform.

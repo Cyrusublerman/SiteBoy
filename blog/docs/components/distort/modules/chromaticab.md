@@ -15,9 +15,9 @@ Simulates chromatic aberration by laterally displacing the red and blue channels
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Radial channel shift | Inline | — |
+| Radial channel shift | `shared/algorithms/geometry/distortion.js` | — |
 
-Inline — for each pixel, compute normalised radial distance `t = dist/maxDist` and angle `ang = atan2(dy, dx)`. Red and blue channels sampled from shifted positions; green channel copied from source.
+`shared/algorithms/geometry/distortion.js` — for each pixel, compute normalised radial distance `t = dist/maxDist` and angle `ang = atan2(dy, dx)`. Red and blue channels sampled from shifted positions; green channel copied from source.
 
 ## Parameters
 
@@ -90,7 +90,7 @@ Applied after compositing. Mask luminance drives blend weight per-pixel: white =
 - `gradient` — system-generated linear or radial gradient
 
 ## Modulation targets
-`redShift`, `blueShift` — supports per-pixel modulation via `ctx.modMaps`.
+All `range`-type params accept image and expression drivers via the `+D` button in the NodePanel. `redShift` and `blueShift` do not support per-pixel modulation in the current implementation — `apply()` has no `ctx` parameter.
 
 See [driver-system.md](../driver-system.md) for image driver and expression driver reference.
 

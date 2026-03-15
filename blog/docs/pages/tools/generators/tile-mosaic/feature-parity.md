@@ -2,41 +2,39 @@
 
 Legacy source: `tile-mosaic-spec.md` (mixed bundle), `tile-mosaic-audit.md` (audit only).
 
-**The live script is a stub. All spec features are absent.**
-
 ## Core Algorithm
 
 | Feature | Spec | Live | Status |
 |---|---|---|---|
-| Rectilinear layout / rect packing | ✓ | ✗ | FAIL |
-| Offscreen sprite cache | ✓ | ✗ | FAIL |
-| Tile types: Concentric | ✓ | ✗ | FAIL |
-| Tile types: Wedge | ✓ | ✗ | FAIL |
-| Tile types: Stripe | ✓ | ✗ | FAIL |
-| Tile types: Solid | ✓ | ✗ | FAIL |
-| Tile types: Texture | ✓ | ✗ | FAIL |
-| Tile types: Micro | ✓ | ✗ | FAIL |
-| Pseudo-3D lighting | ✓ | ✗ | FAIL |
-| Noise texture overlay | ✓ | ✗ | FAIL |
-| Morph Layouts animation | ✓ | ✗ | FAIL |
-| Breathing animation | ✓ | ✗ | FAIL |
-| Texture Drift animation | ✓ | ✗ | FAIL |
-| Palette system | ✓ | ✗ | FAIL |
+| Rectilinear layout / rect packing | ✓ | ✓ | PASS — GEO-016; Uniform Grid, Packed Rects A/B shelf-first |
+| Offscreen sprite cache | ✓ | ✓ | PASS — OffscreenCanvas per (type, w, h, colorIdx); Map-based |
+| Tile types: Concentric | ✓ | ✓ | PASS — concentric arc rings |
+| Tile types: Wedge | ✓ | ✓ | PASS — 6 pie sectors |
+| Tile types: Stripe | ✓ | ✓ | PASS — 5 bands, horizontal or vertical |
+| Tile types: Solid | ✓ | ✓ | PASS |
+| Tile types: Texture | ✓ | ✓ | PASS — fBm noise multiply blend |
+| Tile types: Micro | ✓ | ✓ | PASS — 10 fine bands |
+| Pseudo-3D lighting | ✓ | ✓ | PASS — PAT-008; shadow + highlight linear gradients |
+| Noise texture overlay | ✓ | ✓ | PASS — PAT-009; fBm 4-octave noise; multiply composite |
+| Morph Layouts animation | ✓ | ✓ | PASS — ANIM-008; lerp between two seeded layouts |
+| Breathing animation | ✓ | ✓ | PASS — ANIM-009; sinusoidal tile scale |
+| Texture Drift animation | ✓ | ✓ | PASS — ANIM-010; scrolling noise overlay |
+| Palette system | ✓ | ✓ | PASS — 6 palettes × 8 HSL slots; per-tile variance |
 
 ## Parameters
 
 | Parameter | Spec | Live | Status |
 |---|---|---|---|
-| gridColumns, gridRows | ✓ | ✗ | FAIL |
-| tileSize | ✓ | ✓ (stub, unused) | PARTIAL |
-| layoutMode | ✓ | ✗ | FAIL |
-| tileTypes | ✓ | ✗ | FAIL |
-| randomSeed | ✓ | ✗ | FAIL |
-| animationMode, animationSpeed | ✓ | ✗ | FAIL |
-| paletteSelection, paletteVariance | ✓ | ✗ | FAIL |
-| depthStrength, highlightIntensity, globalLightAngle | ✓ | ✗ | FAIL |
-| textureStrength, overlayMode | ✓ | ✗ | FAIL |
+| gridColumns, gridRows | ✓ | ✓ | PASS |
+| tileSize | ✓ | ✓ | PASS |
+| layoutMode | ✓ | ✓ | PASS |
+| tileTypes | ✓ | ✓ | PASS — multi-select toggle |
+| randomSeed | ✓ | ✓ | PASS |
+| animationMode, animationSpeed | ✓ | ✓ | PASS |
+| paletteSelection, paletteVariance | ✓ | ✓ | PASS |
+| depthStrength, highlightIntensity, globalLightAngle | ✓ | ✓ | PASS |
+| textureStrength, overlayMode | ✓ | ✓ | PASS |
 
 ## Summary
 
-0 of 14 specified features are implemented. 1 of 14 parameters present in live (as an unused stub).
+14 of 14 specified features implemented. All 14 parameters present. 5 presets. Canvas 800×800 (spec 900×900 not adopted; design decision documented). Animation type: infinite. GIF/WebM disabled.

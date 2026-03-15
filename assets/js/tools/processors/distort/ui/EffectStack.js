@@ -29,16 +29,19 @@ export class EffectStack extends BaseComponent {
       min-height: 0;
     `;
 
-    this._addButton = this.createElement('button', 'distort-stack-add', '+ ADD EFFECT');
+    this._addButton = this.createElement('button', 'distort-stack-add', 'ADD EFFECT +');
     this._addButton.type = 'button';
     this._addButton.style.cssText = `
       width: 100%;
       height: ${F * 2}px;
-      border: 1px solid var(--c-border);
+      border: none;
+      border-bottom: 1px solid var(--c-border);
       background: var(--c-bg);
       color: var(--c-text);
       font-family: 'Space Mono', monospace;
-      font-size: ${F * 0.85}px;
+      font-size: ${F * 0.75}px;
+      text-align: left;
+      padding: 0 ${F}px;
       text-transform: uppercase;
       cursor: pointer;
       box-sizing: border-box;
@@ -65,7 +68,7 @@ export class EffectStack extends BaseComponent {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      border-top: 1px solid var(--c-border);
+      position: relative;
     `;
     this.element.appendChild(this._contentEl);
 
@@ -75,48 +78,17 @@ export class EffectStack extends BaseComponent {
 
   _renderContent() {
     if (this._addButton) {
-      this._addButton.textContent = this._pickerOpen ? '× CLOSE' : '+ ADD EFFECT';
+      this._addButton.textContent = this._pickerOpen ? 'CLOSE ×' : 'ADD EFFECT +';
     }
-    while (this._contentEl.firstChild) this._contentEl.removeChild(this._contentEl.firstChild);
-    this._panels.forEach(panel => panel.destroy());
-    this._panels = [];
+
+    // Destroy and remove any existing picker overlay
     this._picker?.destroy?.();
     this._picker = null;
 
-    if (this._pickerOpen) {
-      this._picker = new CategoryPicker({
-        onClose: () => {
-          this._pickerOpen = false;
-          this._renderContent();
-        },
-        onSelect: entry => {
-          const node = entry?.factory?.();
-          if (!node) return;
-          this._nodes.push(node);
-          this._expandedNodeId = node.id;
-          this._pickerOpen = false;
-          this._renderContent();
-          this._emitChange({ type: 'add', nodeId: node.id, soloNodeId: this._soloNodeId });
-        }
-      }, this.deps);
-      this._contentEl.appendChild(this._picker.render());
-      this._picker.focus?.();
-      return;
-    }
-
-    if (!this._nodes.length) {
-      const { F } = this.getF();
-      const empty = this.createElement('div', 'distort-stack-empty', 'ADD AN EFFECT TO BUILD THE PIPELINE');
-      empty.style.cssText = `
-        padding: ${F * 2}px ${F}px;
-        color: var(--c-border);
-        font-family: 'Space Mono', monospace;
-        font-size: ${F * 0.75}px;
-        text-align: center;
-      `;
-      this._contentEl.appendChild(empty);
-      return;
-    }
+    // Always re-render node panels (picker overlays them, does not replace them)
+    while (this._contentEl.firstChild) this._contentEl.removeChild(this._contentEl.firstChild);
+    this._panels.forEach(panel => panel.destroy());
+    this._panels = [];
 
     this._nodes.forEach((node, index) => {
       const panel = new NodePanel({
@@ -143,6 +115,27 @@ export class EffectStack extends BaseComponent {
       this._panels.push(panel);
       this._contentEl.appendChild(panel.render());
     });
+
+    // If picker is open, append it as a bounded overlay on top of node panels
+    if (this._pickerOpen) {
+      this._picker = new CategoryPicker({
+        onClose: () => {
+          this._pickerOpen = false;
+          this._renderContent();
+        },
+        onSelect: entry => {
+          const node = entry?.factory?.();
+          if (!node) return;
+          this._nodes.push(node);
+          this._expandedNodeId = node.id;
+          this._pickerOpen = false;
+          this._renderContent();
+          this._emitChange({ type: 'add', nodeId: node.id, soloNodeId: this._soloNodeId });
+        }
+      }, this.deps);
+      this._contentEl.appendChild(this._picker.render());
+      this._picker.focus?.();
+    }
   }
 
   _reorder(fromIdx, toIdx) {

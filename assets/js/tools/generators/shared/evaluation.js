@@ -236,6 +236,3 @@ export default {
     HALF_PI,
     QUARTER_PI
 };
-
-console.log('✅ Evaluation utilities loaded');
-

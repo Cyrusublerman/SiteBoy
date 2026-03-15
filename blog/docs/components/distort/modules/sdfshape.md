@@ -15,9 +15,9 @@ Composites a solid-colour analytical shape (circle, box, or ring) over the sourc
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| SDF per-pixel evaluation (circle, box, ring) | Inline | — |
+| SDF per-pixel evaluation (circle, box, ring) | `shared/algorithms/geometry/sdf-operations.js` | — |
 
-Inline — three SDF primitives: circle (`|p| − r`), box (Euclidean SDF for AABB), ring (`||p| − r| − ring_half`). Alpha from SDF: smooth ramp with softness, or hard threshold. Fill colour composited over source.
+`shared/algorithms/geometry/sdf-operations.js` — three SDF primitives: circle (`|p| − r`), box (Euclidean SDF for AABB), ring (`||p| − r| − ring_half`). Alpha from SDF: smooth ramp with softness, or hard threshold. Fill colour composited over source.
 
 **`size` semantics per shape:**
 

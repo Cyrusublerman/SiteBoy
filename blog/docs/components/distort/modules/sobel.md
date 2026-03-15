@@ -15,9 +15,9 @@ Detects edges by computing the gradient magnitude via 3×3 Sobel kernels applied
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Sobel gradient magnitude | Inline | — |
+| Sobel gradient magnitude | `shared/algorithms/edge-detection/edge-operators.js` | — |
 
-Inline — standard 3×3 Sobel kernels (Gx, Gy); `mag = sqrt(Gx² + Gy²)`. Optional normalisation by `255/maxMag`. Interior pixels only.
+`shared/algorithms/edge-detection/edge-operators.js` — standard 3×3 Sobel kernels (Gx, Gy); `mag = sqrt(Gx² + Gy²)`. Optional normalisation by `255/maxMag`. Interior pixels only.
 
 ## Parameters
 

@@ -15,10 +15,10 @@ Converts the image between rectangular and polar coordinate systems.
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Rectangular ↔ polar coordinate remap | Inline | — |
+| Rectangular ↔ polar coordinate remap | `shared/algorithms/geometry/distortion.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — `rectToPolar`: output `(x, y)` maps to source at `(cx + cos(angle)·r, cy + sin(angle)·r)` where `angle = x/w·2π`, `r = y/h·maxR`. `polarToRect`: inverse mapping from polar to rectangular space.
+`shared/algorithms/geometry/distortion.js` — `rectToPolar`: output `(x, y)` maps to source at `(cx + cos(angle)·r, cy + sin(angle)·r)` where `angle = x/w·2π`, `r = y/h·maxR`. `polarToRect`: inverse mapping from polar to rectangular space.
 
 ## Parameters
 

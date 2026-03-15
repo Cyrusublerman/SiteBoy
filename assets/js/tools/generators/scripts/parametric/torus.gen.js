@@ -1,95 +1,91 @@
 /**
  * Toroidal Spirals Script - 3D rotating torus with spirals
- * 
+ *
  * @script torus
  * @category parametric
- * @version 1.0.0
+ * @version 2.0.0
  */
-
-// ═══════════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════════
-
-let majorRadius = 0;
-let minorRadius = 0;
 
 // ═══════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
 
-function updateRadii(width, height, sizeFactor) {
-    const minDim = Math.min(width, height);
-    majorRadius = minDim * sizeFactor;
-    minorRadius = minDim * sizeFactor;
+/**
+ * Standard Ry × Rx orthographic projection.
+ * @param {number} x,y,z  3D surface point
+ * @param {number} cosX    cos(xRotation + viewAngleX) — pre-computed per frame
+ * @param {number} sinX    sin(xRotation + viewAngleX)
+ * @param {number} cosVY   cos(viewAngleY) — pre-computed per frame
+ * @param {number} sinVY   sin(viewAngleY)
+ * @param {number} cx,cy   canvas centre
+ */
+function project3D(x, y, z, cosX, sinX, cosVY, sinVY, cx, cy) {
+    // Stage 1 — Ry(viewAngleY): standard Y-axis rotation
+    const xR =  x * cosVY + z * sinVY;
+    const zR = -x * sinVY + z * cosVY;
+
+    // Stage 2 — Rx(xRotation + viewAngleX): combined X-axis rotation
+    const yR = y * cosX - zR * sinX;
+
+    return { x: cx + xR, y: cy - yR };
 }
 
-function project3D(x, y, z, xRotation, viewAngleX, viewAngleY, centerX, centerY) {
-    // Rotate around X-axis
-    let y0 = y * Math.cos(xRotation) - z * Math.sin(xRotation);
-    let z0 = y * Math.sin(xRotation) + z * Math.cos(xRotation);
-    
-    // Apply camera angles
-    let y1 = y0 * Math.cos(viewAngleX) - z0 * Math.sin(viewAngleX);
-    let z1 = y0 * Math.sin(viewAngleX) + z0 * Math.cos(viewAngleX);
-    let x2 = x * Math.cos(viewAngleY) + z1 * Math.sin(viewAngleY);
-    
-    return { x: centerX + x2, y: centerY - y1 };
-}
-
-function drawTorusSpiral(ctx, rotation, xRotation, viewAngleX, viewAngleY, centerX, centerY) {
+/**
+ * Draw 36 cross-section poloidal rings forming the torus mesh.
+ */
+function drawTorusSpiral(ctx, rotation, cosX, sinX, cosVY, sinVY, cx, cy, R, r) {
     const numEllipses = 36;
-    const R = majorRadius;
-    const r = minorRadius;
-    
+
     ctx.fillStyle = 'rgba(192, 192, 192, 0.25)';
-    
+
     for (let i = 0; i < numEllipses; i++) {
         const theta = (i / numEllipses) * Math.PI * 2 + rotation;
-        
+
         ctx.beginPath();
-        
+
         const points = 50;
         for (let j = 0; j <= points; j++) {
             const phi = (j / points) * Math.PI * 2;
-            
+
             const x = (R + r * Math.cos(phi)) * Math.cos(theta);
             const y = (R + r * Math.cos(phi)) * Math.sin(theta);
             const z = r * Math.sin(phi);
-            
-            const p = project3D(x, y, z, xRotation, viewAngleX, viewAngleY, centerX, centerY);
-            
+
+            const p = project3D(x, y, z, cosX, sinX, cosVY, sinVY, cx, cy);
+
             if (j === 0) ctx.moveTo(p.x, p.y);
             else ctx.lineTo(p.x, p.y);
         }
-        
+
         ctx.closePath();
         ctx.fill();
     }
 }
 
-function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, xRotation, reverse, winds, viewAngleX, viewAngleY, centerX, centerY) {
-    const R = majorRadius;
-    const r = minorRadius;
+/**
+ * Draw one toroidal surface spiral (1001 points) as a polyline.
+ */
+function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, reverse, winds, cosVY, sinVY, cx, cy, R, r) {
     const points = 1000;
-    
+
     ctx.beginPath();
-    
+
     for (let i = 0; i <= points; i++) {
         const t = i / points;
         const phi = t * Math.PI * 2;
         const windDirection = reverse ? -1 : 1;
         const theta = t * winds * windDirection * Math.PI * 2 + spiralRotation + offset;
-        
+
         const x = (R + r * Math.cos(phi)) * Math.cos(theta);
         const y = (R + r * Math.cos(phi)) * Math.sin(theta);
         const z = r * Math.sin(phi);
-        
-        const p = project3D(x, y, z, xRotation, viewAngleX, viewAngleY, centerX, centerY);
-        
+
+        const p = project3D(x, y, z, cosX, sinX, cosVY, sinVY, cx, cy);
+
         if (i === 0) ctx.moveTo(p.x, p.y);
         else ctx.lineTo(p.x, p.y);
     }
-    
+
     ctx.strokeStyle = '#c0c0c0';
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -102,38 +98,42 @@ function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, xRotation, rever
 function draw(ctx, canvas, params, frame) {
     const W = canvas.width;
     const H = canvas.height;
-    const centerX = W / 2;
-    const centerY = H / 2;
-    
-    // Update radii
-    updateRadii(W, H, params.torusSize || 0.18);
-    
-    // Convert degrees to radians
-    const viewAngleX = (params.viewX || 30) * Math.PI / 180;
-    const viewAngleY = (params.viewY || 22.5) * Math.PI / 180;
-    const cycleFrames = params.cycleFrames || 3600;
-    const numSpirals = params.numSpirals || 9;
-    const spiralWinds = params.spiralWinds || 4;
-    
+    const cx = W / 2;
+    const cy = H / 2;
+
+    // Radii computed locally — no module-level state
+    const R = Math.min(W, H) * (params.torusSize || 0.18);
+
+    const viewAngleX   = (params.viewX       || 30)   * Math.PI / 180;
+    const viewAngleY   = (params.viewY       || 22.5) * Math.PI / 180;
+    const cycleFrames  = params.cycleFrames  || 3600;
+    const numSpirals   = params.numSpirals   || 9;
+    const spiralWinds  = params.spiralWinds  || 4;
+
     // Clear
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, W, H);
-    
-    // Calculate rotations
-    const torusRotation = (frame / cycleFrames) * Math.PI * 2;
-    const spiralRotation = -(frame / cycleFrames) * Math.PI * 2;
-    const xRotation = (frame / cycleFrames) * Math.PI * 2;
-    
-    // Draw central torus spiral
-    if (params.showTorusMesh) {
-        drawTorusSpiral(ctx, torusRotation, xRotation, viewAngleX, viewAngleY, centerX, centerY);
+
+    // Rotation angles from frame
+    const phase          = (frame / cycleFrames) * Math.PI * 2;
+    const torusRotation  =  phase;
+    const spiralRotation = -phase;
+
+    // Pre-compute per-frame trig — eliminates ~6 trig calls per project3D invocation
+    const totalX = phase + viewAngleX;
+    const cosX  = Math.cos(totalX);
+    const sinX  = Math.sin(totalX);
+    const cosVY = Math.cos(viewAngleY);
+    const sinVY = Math.sin(viewAngleY);
+
+    if (params.showTorusMesh === 'on') {
+        drawTorusSpiral(ctx, torusRotation, cosX, sinX, cosVY, sinVY, cx, cy, R, R);
     }
-    
-    // Draw spirals in both directions
+
     for (let i = 0; i < numSpirals; i++) {
         const offset = (i / numSpirals) * Math.PI * 2;
-        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, xRotation, false, spiralWinds, viewAngleX, viewAngleY, centerX, centerY);
-        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, xRotation, true, spiralWinds, viewAngleX, viewAngleY, centerX, centerY);
+        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, false, spiralWinds, cosVY, sinVY, cx, cy, R, R);
+        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, true,  spiralWinds, cosVY, sinVY, cx, cy, R, R);
     }
 }
 
@@ -146,29 +146,67 @@ export const SCRIPT_CONFIG = {
     title: 'Toroidal Spirals',
     category: 'parametric',
     description: '3D toroidal spirals in continuous rotation. Multiple spiral paths wind around a torus shape with configurable view angles.',
-    version: '1.0.0',
-    
+    version: '2.0.0',
+
+    infoSections: [
+        {
+            heading: 'DESCRIPTION',
+            body: 'Torus renders an animated wireframe 3D torus (surface of revolution) on a fixed 800×800 2D canvas. The torus surface is parameterised by toroidal angle θ and poloidal angle φ: x = (R+r·cos(φ))·cos(θ), y = (R+r·cos(φ))·sin(θ), z = r·sin(φ), where R = r = min(W,H)×torusSize (major and minor radii are locked equal). Two visual layers are rendered each frame: cross-section mesh (36 evenly-spaced poloidal rings as filled paths at 25% alpha, enabled by showTorusMesh) and toroidal surface spirals (numSpirals clockwise + numSpirals counter-clockwise spirals, each 1001 points, winding spiralWinds times around the major circle). Animation: torusRotation, spiralRotation (counter-direction), and xRotation all advance as (frame/cycleFrames)×2π, completing one full revolution per cycle. Projection: standard Ry×Rx orthographic — Y-axis yaw (viewY) first, then combined X-axis rotation (xRotation+viewX). Output is monochrome on black.'
+        },
+        {
+            heading: 'ALGORITHM',
+            body: 'Five functions. project3D(x,y,z,cosX,sinX,cosVY,sinVY,cx,cy): applies Ry(viewY) then Rx(xRotation+viewX) via pre-computed trig; Stage 1 — xR = x·cosVY + z·sinVY, zR = −x·sinVY + z·cosVY; Stage 2 — yR = y·cosX − zR·sinX; output {x: cx+xR, y: cy−yR}. drawTorusSpiral: 36 rings; θ_i = (i/36)×2π+torusRotation; each ring is a closed path of 51 points (φ = 0→2π) projected and filled at rgba(192,192,192,0.25). drawToroidalSurfaceSpiral: one spiral as 1001-point polyline; t∈[0,1]; φ(t) = t×2π; θ(t) = t×winds×(±1)×2π+spiralRotation+offset; stroked at #c0c0c0, lineWidth 1. draw: clears canvas; computes R = min(W,H)×torusSize; pre-computes per-frame trig (totalX = phase+viewAngleX; cosX,sinX,cosVY,sinVY); computes torusRotation = phase, spiralRotation = −phase; calls drawTorusSpiral if showTorusMesh is on; iterates i=0..numSpirals−1, calling forward and reverse drawToroidalSurfaceSpiral per i.'
+        },
+        {
+            heading: 'PARAMETERS',
+            body: 'Torus group — numSpirals: slider, 3→18 step 1, default 9; number of unique spiral indices; total drawn spirals = 2×numSpirals (forward + reverse per index). torusSize: slider, 0.1→0.4 step 0.01, default 0.18; both major radius R and minor radius r = min(W,H)×torusSize; at torusSize ≥ 0.25 the torus approaches a horn torus. spiralWinds: slider, 1→10 step 1, default 4; number of times each spiral winds around the torus major circle. showTorusMesh: radio, on|off, default on; when on, draws 36 filled cross-section ellipses. Rotation group — viewX: slider, 0→360 step 1, default 30; camera X-axis tilt in degrees, combined with frame-driven xRotation. viewY: slider, 0→360 step 1, default 22.5; camera Y-axis yaw in degrees; applied first in the projection chain. cycleFrames: slider, 600→7200 step 60, default 3600; frames per complete animation loop; at 60 FPS, default = 60 s.'
+        },
+        {
+            heading: 'PRESETS',
+            body: 'Default: 9 spirals, 4 winds, torusSize 0.18, mesh on, viewX 30, viewY 22.5, cycleFrames 3600; standard ring torus rotating once per minute. Dense Spirals: 18 spirals, 6 winds, torusSize 0.2, mesh off, viewX 45, viewY 30, cycleFrames 3600; dense interlocking spiral lattice. Minimal: 3 spirals, 2 winds, torusSize 0.25, mesh on, viewX 20, viewY 15, cycleFrames 5400; slow-rotating horn torus with sparse spirals. Fast: 9 spirals, 4 winds, default geometry, cycleFrames 1200 (30 s loop at 60 FPS).'
+        },
+        {
+            heading: 'PERFORMANCE',
+            body: 'Compute tier: lightweight. No adaptive resolution or worker offload required. Dominant cost: project3D calls — ~20,000 point evaluations at default settings; ~38,000 at maximum (18 spirals, mesh on). Per-frame trig calls reduced via pre-computing cosX, sinX, cosVY, sinVY once in draw and passing to all project3D calls; eliminates ~6 trig calls per invocation (~228,000 → ~76,000 trig ops at max). Radii computed inline as Math.min(W,H)×torusSize — 2 arithmetic ops, no allocation. At maximum parameters (18 spirals, 10 winds, mesh on): ~360,036 point evaluations; estimated 3–6 ms. Well within 16.7 ms 60 FPS budget at all valid parameter values.'
+        },
+        {
+            heading: 'ANIMATION',
+            body: 'Type: loop. loopFrames: 3600, matching cycleFrames default; one full revolution at 60 FPS = 60 s. loopFrames is a static config field — if cycleFrames is changed by the user, exported GIF/WebM will span 3600 frames regardless of the user-selected cycle period. Fully deterministic: same frame index + same params = identical output. No Math.random, no accumulated state, no Date.now dependency. Export: png true, gif true, webm true, sequence true. animatableParams: [] — animation is entirely frame-driven; no per-parameter phase sweeps are declared. canPrerender: true.'
+        },
+        {
+            heading: 'KNOWN LIMITATIONS',
+            body: 'Major and minor radii are locked equal (R = r = min(W,H)×torusSize); separate majorRadius/minorRadius sliders are not implemented (legacy spec recommended independent ranges). Play/pause control not implemented at script level; host-provided only. If cycleFrames differs from 3600, exported animation will span 3600 frames regardless (loopFrames is fixed). Canvas size is fixed 800×800 and is not user-configurable. Spiral and mesh colours are hardcoded (#c0c0c0 / rgba(192,192,192,0.25)); no colour parameter is exposed.'
+        },
+        {
+            heading: 'REFERENCES',
+            body: 'Live script: assets/js/tools/generators/scripts/parametric/torus.gen.js v2.0.0. Archive: reference/generators/torus/source/torus.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Algorithm: standard torus surface parameterisation x=(R+r·cos(φ))·cos(θ), y=(R+r·cos(φ))·sin(θ), z=r·sin(φ). Projection: standard Ry×Rx orthographic matrix. Legacy docs: torus.md (mixed bundle), torus-audit.md (audit only). v2.0.0: module-level mutable state removed; project3D rewritten to standard Ry×Rx matrix; per-frame trig pre-computation; showTorusMesh type changed toggle→radio; inert canvas parameters removed; infoSections and compute block added.'
+        }
+    ],
+
+    compute: { cost: 'lightweight' },
+
     canvas: {
         width: 800,
         height: 800,
         context: '2d',
         background: '#000000'
     },
-    
+
     animation: {
         type: 'loop',
         loopFrames: 3600,
         defaultFps: 60,
-        canPrerender: true
+        canPrerender: true,
+        animatableParams: []
     },
-    
+
     export: {
         png: true,
         gif: true,
         webm: true,
         sequence: true
     },
-    
+
     presets: [
         {
             name: 'Default',
@@ -179,7 +217,7 @@ export const SCRIPT_CONFIG = {
                 viewX: 30,
                 viewY: 22.5,
                 cycleFrames: 3600,
-                showTorusMesh: true
+                showTorusMesh: 'on'
             }
         },
         {
@@ -191,7 +229,7 @@ export const SCRIPT_CONFIG = {
                 viewX: 45,
                 viewY: 30,
                 cycleFrames: 3600,
-                showTorusMesh: false
+                showTorusMesh: 'off'
             }
         },
         {
@@ -203,7 +241,7 @@ export const SCRIPT_CONFIG = {
                 viewX: 20,
                 viewY: 15,
                 cycleFrames: 5400,
-                showTorusMesh: true
+                showTorusMesh: 'on'
             }
         },
         {
@@ -215,11 +253,11 @@ export const SCRIPT_CONFIG = {
                 viewX: 30,
                 viewY: 22.5,
                 cycleFrames: 1200,
-                showTorusMesh: true
+                showTorusMesh: 'on'
             }
         }
     ],
-    
+
     parameters: [
         {
             group: 'Torus',
@@ -254,9 +292,10 @@ export const SCRIPT_CONFIG = {
                 },
                 {
                     key: 'showTorusMesh',
-                    type: 'toggle',
+                    type: 'radio',
                     label: 'Show Mesh',
-                    default: true
+                    options: ['on', 'off'],
+                    default: 'on'
                 }
             ]
         },
@@ -292,33 +331,8 @@ export const SCRIPT_CONFIG = {
                     default: 3600
                 }
             ]
-        },
-        {
-            group: 'Canvas',
-            params: [
-                {
-                    key: 'canvasWidth',
-                    type: 'slider',
-                    label: 'Width',
-                    min: 400,
-                    max: 1600,
-                    step: 100,
-                    default: 800
-                },
-                {
-                    key: 'canvasHeight',
-                    type: 'slider',
-                    label: 'Height',
-                    min: 400,
-                    max: 1600,
-                    step: 100,
-                    default: 800
-                }
-            ]
         }
     ],
-    
-    draw: draw
-};
 
-console.log('✅ Toroidal Spirals script loaded');
+    draw
+};

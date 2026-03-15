@@ -6,30 +6,35 @@ None.
 
 ## WARN
 
-**[BUG] `animation.loopFrames` conflicts with `params.loopFrames`**
-`SCRIPT_CONFIG.animation.loopFrames = 360` is static. The user-adjustable `loopFrames` slider (60–720) changes `params.loopFrames`, which correctly updates time `t` and the rendered loop period. However, the host reads `animation.loopFrames` for pre-render frame count and export duration. At any `params.loopFrames ≠ 360`, the pre-render will capture the wrong number of frames.
-Recommended fix: expose `loopFrames` only as a param and have the host dynamically read it from `params` when resolving pre-render length, or remove from `animation` block.
+**[RESOLVED] [BUG] `animation.loopFrames` conflicts with `params.loopFrames`**
+*Fix: `animation.loopFrames` replaced with a getter `get loopFrames() { return SCRIPT_CONFIG._liveLoopFrames ?? 360; }`; `p5Draw` syncs `SCRIPT_CONFIG._liveLoopFrames = params.loopFrames` every frame.*
+~~`SCRIPT_CONFIG.animation.loopFrames = 360` is static. The user-adjustable `loopFrames` slider (60–720) changes `params.loopFrames`, which correctly updates time `t` and the rendered loop period. However, the host reads `animation.loopFrames` for pre-render frame count and export duration. At any `params.loopFrames ≠ 360`, the pre-render will capture the wrong number of frames.~~
 
-**[STANDARDS] Preset format non-standard**
-Flat objects `{ name, key1, key2, ... }` rather than `{ name, values: { ... } }`.
+**[RESOLVED] [STANDARDS] Preset format non-standard**
+*Fix: Presets updated to `{ name, values: { ... } }` wrapper format.*
+~~Flat objects `{ name, key1, key2, ... }` rather than `{ name, values: { ... } }`.~~
 
-**[STANDARDS] No `export` block**
-No PNG/GIF/WebM export declared.
+**[RESOLVED] [STANDARDS] No `export` block**
+*Fix: `export: { png: true, gif: true, webm: false }` added.*
+~~No PNG/GIF/WebM export declared.~~
 
-**[STANDARDS] State on `SCRIPT_CONFIG` object**
-`_normBounds` is a config property that is set in `p5Setup` but never read by `p5Draw`. Dead code. Same structural issue as `fibonacci-balls`/`animated-lines` regarding state-on-config, though here the state is inert.
+**[RESOLVED] [STANDARDS] State on `SCRIPT_CONFIG` object — dead `_normBounds`**
+*Fix: `_normBounds` dead property removed from `SCRIPT_CONFIG` and `p5Setup`; bounds now computed on demand in `p5Draw` under `_lastMaxDepth` guard and stored as `_cachedBounds`.*
+~~`_normBounds` is a config property that is set in `p5Setup` but never read by `p5Draw`. Dead code. Same structural issue as `fibonacci-balls`/`animated-lines` regarding state-on-config, though here the state is inert.~~
 
-**[PERFORMANCE] `_getRatio` called once per internal tree node**
-`_getRatio(frame, loopFrames)` computes `PHI^sin(2πt)` where `frame` and `loopFrames` are constant for the entire frame. The result is identical for all `2^maxDepth − 1` internal nodes. At `maxDepth = 16`: 65,535 redundant `Math.pow(PHI, Math.sin(...))` evaluations per frame.
-Fix: compute once at start of `p5Draw`, pass as a parameter or close over.
+**[RESOLVED] [PERFORMANCE] `_getRatio` called once per internal tree node**
+*Fix: `_getRatio` eliminated; ratio computed once per frame as `const r = Math.pow(PHI, Math.sin(t * Math.PI * 2)); const ratio = r / (1 + r);` in `p5Draw` and passed as the final argument to `_subdivide`.*
+~~`_getRatio(frame, loopFrames)` computes `PHI^sin(2πt)` where `frame` and `loopFrames` are constant for the entire frame. The result is identical for all `2^maxDepth − 1` internal nodes. At `maxDepth = 16`: 65,535 redundant `Math.pow(PHI, Math.sin(...))` evaluations per frame.~~
 
-**[PERFORMANCE] Bounds recomputed every frame**
-`p5Draw` computes 6 `Math.pow` calls for `wMax`, `wMin`, `hMax`, `hMin`, `aMax`, `aMin` every frame. These change only when `maxDepth` changes. A `_lastMaxDepth` guard would avoid redundant computation.
+**[RESOLVED] [PERFORMANCE] Bounds recomputed every frame**
+*Fix: `_lastMaxDepth` guard added; bounds cached in `_cachedBounds` and only recomputed when `params.maxDepth` changes.*
+~~`p5Draw` computes 6 `Math.pow` calls for `wMax`, `wMin`, `hMax`, `hMin`, `aMax`, `aMin` every frame. These change only when `maxDepth` changes. A `_lastMaxDepth` guard would avoid redundant computation.~~
 
 ## NOTE
 
-**[DEAD CODE] `_normBounds` and `p5Setup` bounds computation**
-`p5Setup` computes and stores `this._normBounds`. `p5Draw` independently recomputes `bounds` as a local constant. The stored `_normBounds` is never passed to `_subdivide`. Remove from `p5Setup` and `SCRIPT_CONFIG`.
+**[RESOLVED] [DEAD CODE] `_normBounds` and `p5Setup` bounds computation**
+*Fix: `_normBounds` removed; `p5Setup` now only calls `colorMode`, `noStroke`, `noSmooth`, `noLoop`.*
+~~`p5Setup` computes and stores `this._normBounds`. `p5Draw` independently recomputes `bounds` as a local constant. The stored `_normBounds` is never passed to `_subdivide`. Remove from `p5Setup` and `SCRIPT_CONFIG`.~~
 
 **[DESIGN] `loopFrames` as a user parameter is unusual**
-All other generators with looping animations derive their loop from `animation.loopFrames` (a fixed constant). Exposing it as a user-facing slider creates the conflict noted above and may confuse users who expect it to be a read-only system property.
+All other generators with looping animations derive their loop from `animation.loopFrames` (a fixed constant). Exposing it as a user-facing slider creates the conflict noted above and may confuse users who expect it to be a read-only system property. The getter mechanism resolves the technical conflict but the UX ambiguity remains.

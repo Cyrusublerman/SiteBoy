@@ -15,9 +15,9 @@ Runs a configurable outer-totalistic cellular automaton from a luminance-thresho
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Outer-totalistic CA (Moore neighbourhood, toroidal) | Inline | — |
+| Outer-totalistic CA (Moore neighbourhood, toroidal) | `shared/algorithms/physics/reaction-diffusion.js` | — |
 
-Inline — 8-neighbour Moore neighbourhood with toroidal wrap. `birth` and `survival` sets define six named rules. `steps` generations computed; grid blended with source.
+`shared/algorithms/physics/reaction-diffusion.js` — 8-neighbour Moore neighbourhood with toroidal wrap. `birth` and `survival` sets define six named rules. `steps` generations computed; grid blended with source.
 
 **Built-in rules:**
 

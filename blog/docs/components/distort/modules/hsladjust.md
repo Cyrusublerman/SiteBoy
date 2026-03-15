@@ -15,9 +15,9 @@ Shifts hue, scales saturation, and offsets lightness via a full per-pixel RGB→
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| RGB↔HSL conversion | Inline | — |
+| RGB↔HSL conversion | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — standard min/max RGB→HSL formula; HSL→RGB via piecewise linear `hue2rgb`. No LUT — per-pixel computation.
+`shared/algorithms/image/colour-adjustments.js` — standard min/max RGB→HSL formula; HSL→RGB via piecewise linear `hue2rgb`. No LUT — per-pixel computation.
 
 ## Parameters
 

@@ -15,10 +15,10 @@ Applies an inverse-mapped affine transform (translate, rotate, scale) about a co
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Inverse affine transform (rotate + scale) | Inline | — |
+| Inverse affine transform (rotate + scale) | `shared/algorithms/image/spatial-filters.js` | — |
 | `Sampler.sampleDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — for each output pixel, back-project through the combined rotation + scale matrix about `centre`, offset by translation. `Sampler.sampleDst` performs bilinear or nearest-neighbour sampling.
+`shared/algorithms/image/spatial-filters.js` — for each output pixel, back-project through the combined rotation + scale matrix about `centre`, offset by translation. `Sampler.sampleDst` performs bilinear or nearest-neighbour sampling.
 
 ## Parameters
 

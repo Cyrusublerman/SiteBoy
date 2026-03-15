@@ -15,9 +15,9 @@ Adds per-channel offsets to shadows, midtones, and highlights independently, wei
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Luminance-weighted tonal blend | Inline | — |
+| Luminance-weighted tonal blend | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — BT.601 luminance used to derive shadow/midtone/highlight blend weights; each channel offset applied additively with weight-summed contribution × 0.5 scale.
+`shared/algorithms/image/colour-adjustments.js` — BT.601 luminance used to derive shadow/midtone/highlight blend weights; each channel offset applied additively with weight-summed contribution × 0.5 scale.
 
 ## Parameters
 

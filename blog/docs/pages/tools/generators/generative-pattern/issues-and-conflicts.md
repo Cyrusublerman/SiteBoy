@@ -1,63 +1,32 @@
 # Generative Pattern — Issues and Conflicts
 
-## ERROR [BUG] — Generator Not Implemented (Stub)
+## ERROR
 
-**Location:** `assets/js/tools/generators/scripts/pattern/generative-pattern.gen.js` — entire file.
+**[RESOLVED]** **[BUG] Generator Not Implemented (Stub)**
+Full implementation present in `generative-pattern.gen.js` v1.0.0: hybrid point distribution (GEO-023), proximity graph (GEO-024), Gray-Scott solver (PHYS-005), SDF computation (IMG-018), Blob (PAT-011), Truchet (PAT-010), Nested Contours (PAT-012), Global Contours (PAT-012 variant), flow-field animation (ANIM-012).
 
-**Issue:** The live script is a placeholder. The `draw` function fills the canvas black regardless of any parameter. The comment `// TODO: Extract from generative-pattern.js` references a source file that does not exist in the repository. The archive source (`reference/generators/generative-pattern/source/generative-pattern.gen.js`) is identical to the live stub.
-
-**Impact:** Catastrophic — the generator produces no output and cannot be used.
-
-**Required action:** Full implementation of the intended algorithm (hybrid point distribution, proximity graph, optional Gray-Scott solver, distance transform, 4 rendering modes, animation).
+**[RESOLVED]** **[BUG] complexity Parameter Has No Effect**
+Replaced with 18-parameter set across Points, Connectivity, Evolution, Render, and Animation groups.
 
 ---
 
-## ERROR [BUG] — complexity Parameter Has No Effect
+## WARN
 
-**Location:** `SCRIPT_CONFIG.parameters` — `complexity` slider; `draw` function — `params` not used.
+**[RESOLVED]** **[STANDARDS] No animation Block in SCRIPT_CONFIG**
+`animation: { type: 'infinite', defaultFps: 60 }` added.
 
-**Issue:** The `complexity` parameter is declared but the `draw` function takes `(ctx, canvas, params)` and does not read any params. Moving the slider produces no visual change.
+**[RESOLVED]** **[STANDARDS] No export Block in SCRIPT_CONFIG**
+`export: { png: true, gif: false, webm: false }` added. GIF/WebM disabled: animation advances monotonically (no loop point).
 
-**Fix:** Implement or remove the parameter when the generator is built.
-
----
-
-## WARN [STANDARDS] — No animation Block in SCRIPT_CONFIG
-
-**Location:** `SCRIPT_CONFIG` — no `animation` key.
-
-**Rule:** `code-standards.md` §Animation: all generators must declare their animation contract.
-
-**Fix:** Add `animation: { type: 'none' }` for the stub, or full animation declaration when implemented.
+**[RESOLVED]** **[STANDARDS] No presets in SCRIPT_CONFIG**
+4 presets added: Truchet Grid, Blob Field, RD Contours, Global Web.
 
 ---
 
-## WARN [STANDARDS] — No export Block in SCRIPT_CONFIG
+## NOTE
 
-**Location:** `SCRIPT_CONFIG` — no `export` key.
+**[RESOLVED]** **[RESEARCH] Gray-Scott Solver Required**
+PHYS-005 implemented with degree-normalised graph Laplacian on the proximity graph topology. Seeded with v=0.25 in nodes within 80 px of canvas centre. dt=0.5 per step.
 
-**Fix:** Add `export: { png: true }` as minimum, or full export block per spec when implemented.
-
----
-
-## WARN [STANDARDS] — No presets in SCRIPT_CONFIG
-
-**Location:** `SCRIPT_CONFIG` — no `presets` key.
-
-**Fix:** Add presets when implementation is complete.
-
----
-
-## NOTE [RESEARCH] — Gray-Scott Solver Required
-
-**Location:** Phase 3 of intended algorithm.
-
-**Note:** Full Gray-Scott implementation with graph-topology Laplacian requires significant research and testing. The audit lists this as HIGH priority research gap. The legacy audit explicitly flags `grayScottSolver` as missing.
-
----
-
-## NOTE [RESEARCH] — Jump Flood Algorithm Required
-
-**Location:** Phase 4 of intended algorithm.
-
-**Note:** JFA distance transform on an 800×800 canvas requires careful GPU or Worker implementation for acceptable performance. Flagged as HIGH priority in the audit.
+**[PARTIAL]** **[RESEARCH] Jump Flood Algorithm Required**
+JFA not implemented. SDF computed via brute-force minimum weighted distance on an 80×80 rasterised grid with per-pixel bounding-box spatial culling. Documented in KNOWN LIMITATIONS as producing stepped/blocky contours at low density or high zoom.

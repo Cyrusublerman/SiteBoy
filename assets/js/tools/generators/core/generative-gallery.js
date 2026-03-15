@@ -253,6 +253,3 @@ export class GenerativeGallery extends BaseComponent {
 }
 
 export default GenerativeGallery;
-
-console.log('✅ GenerativeGallery loaded');
-

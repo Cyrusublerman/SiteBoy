@@ -15,10 +15,10 @@ Solves the 2D wave equation from a centre-seeded initial displacement and applie
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| 2D wave equation (finite differences) | Inline | — |
+| 2D wave equation (finite differences) | `shared/algorithms/physics/wave-solver.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — explicit finite-difference wave solver: `next[i] = damping × (2×cur[i] − prev[i] + c² × Laplacian(cur)[i])`. Two initial displacement modes: Gaussian and damped cosine ripple.
+`shared/algorithms/physics/wave-solver.js` — explicit finite-difference wave solver: `next[i] = damping × (2×cur[i] − prev[i] + c² × Laplacian(cur)[i])`. Two initial displacement modes: Gaussian and damped cosine ripple.
 
 ## Parameters
 

@@ -6,13 +6,14 @@ Two legacy docs consolidated. `lissajous.md` (mixed bundle) is the primary spec 
 
 | Feature | Legacy source | Status in live source | Notes |
 | --- | --- | --- | --- |
-| Two-term X equation (Ax1, wx1, px1, φx1, Ax2, wx2, px2, φx2) | lissajous.md, audit | Confirmed | Present in SCRIPT_CONFIG.parameters |
-| X modulation term (Mx, wxm1, pxm1, φxm1, wxm2, pxm2, φxm2) | lissajous.md, audit | Confirmed | Present; default Mx=0 (disabled) |
+| Two-term X equation (Ax1, wx1, px1, phiX1, Ax2, wx2, px2, phiX2) | lissajous.md, audit | Confirmed | Present in SCRIPT_CONFIG.parameters; keys renamed to camelCase in v1.1.0 |
+| X modulation term (Mx, wxm1, pxm1, phiXm1, wxm2, pxm2, phiXm2) | lissajous.md, audit | Confirmed | Present; default Mx=0 (disabled); keys renamed to camelCase in v1.1.0 |
 | Two-term Y equation | lissajous.md | Confirmed | Y uses independent params (Ay1, wy1, etc.), not deltas |
 | Y modulation term | lissajous.md | Confirmed | Present; default My=0 (disabled) |
-| signedPow function | lissajous.md, audit | Confirmed | Imported from shared evaluation.js |
-| Scale and rotation | lissajous.md, audit | Confirmed | scale and rotation params in Global group |
-| Points control | lissajous.md, audit | Confirmed | points param, range [1000, 80000] |
+| signedPow function | lissajous.md, audit | Confirmed | Defined in generator; uses imported `safePow` from shared evaluation.js |
+| Scale and rotation | lissajous.md, audit | Confirmed | `scale` and `rotation` params in Global group |
+| Points control | lissajous.md, audit | Confirmed | `points` param, range [1000, 80000] |
+| Off-screen path-break guard | lissajous.md (audit: artifact lines) | Confirmed | Added in v1.1.0: `if (|rx| > 2W || |ry| > 2H) { first=true; continue; }` |
 | 27 preset landmarks | lissajous.md | Changed | Live source has 28 presets (Circle added as first entry) |
 | Y parameters as deltas from X (delta coupling) | lissajous.md | Absent | Live source uses independent absolute Y params; delta coupling architecture not ported |
 | 50-state undo history | lissajous.md | Absent | No history stack in live source |
@@ -20,7 +21,7 @@ Two legacy docs consolidated. `lissajous.md` (mixed bundle) is the primary spec 
 | Reset Y deltas button | lissajous.md | Absent | No delta architecture means no Reset Y needed |
 | Live equation display | lissajous.md | Absent | No text rendering in draw() |
 | Motion blur / trail | lissajous.md, audit | Absent | No trail accumulation; each frame is a fresh clear |
-| Animation with phase drift | lissajous.md, audit | Confirmed (via animatableParams) | 11 animatable params declared with mode/rate |
+| Animation with phase drift | lissajous.md, audit | Confirmed (via animatableParams) | 11 animatable params declared with mode/rate; phase keys renamed to camelCase in v1.1.0 |
 | Export PNG | lissajous.md, audit | Confirmed | export: { png: true } |
 | Export SVG | lissajous.md, audit | Changed | Legacy audit: missing. Live: `svg: false` — explicitly disabled |
 | Export GIF | lissajous.md (export block) | Confirmed | export: { gif: true } |
@@ -36,10 +37,11 @@ Two legacy docs consolidated. `lissajous.md` (mixed bundle) is the primary spec 
 | Host feature | Used? | Notes |
 | --- | --- | --- |
 | Presets | Yes — 28 presets | All in LANDMARKS array; each preset produced by `preset()` helper with all 30 keys present |
-| INFO tab | Yes | `description` field present |
-| Animation config | Yes | `type: 'parametric'`, `defaultFps: 60`, `defaultSpeed: 1`, 11 `animatableParams` declared |
+| INFO tab | Yes | `infoSections` fully populated with 8 sections including ALGORITHM and KNOWN LIMITATIONS |
+| Animation config | Yes | `type: 'parametric'`, `defaultFps: 60`, `defaultSpeed: 1`, 11 `animatableParams` declared; phase keys updated to camelCase in v1.1.0 |
 | Export config | Yes — explicit | `png: true, svg: false, gif: true, webm: true, sequence: true` |
-| animatableParams | Yes — declared | 11 params with mode ('phase' or 'oscillate'), rate, and optional min/max |
+| animatableParams | Yes — declared | 11 params with mode ('phase' or 'oscillate'), rate, and optional min/max; key names updated to camelCase |
+| Compute block | Yes | `compute: { cost: 'geometric' }` |
 
 ---
 

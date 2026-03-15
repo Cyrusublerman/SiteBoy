@@ -15,9 +15,9 @@ Replaces pixel colour with a linear interpolation between two colours driven by 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Two-stop luminance gradient remap | Inline | — |
+| Two-stop luminance gradient remap | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — BT.601 luminance `t ∈ [0,1]`; `outC = darkC + (lightC − darkC) × t` per channel.
+`shared/algorithms/image/colour-adjustments.js` — BT.601 luminance `t ∈ [0,1]`; `outC = darkC + (lightC − darkC) × t` per channel.
 
 ## Parameters
 

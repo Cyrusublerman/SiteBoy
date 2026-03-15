@@ -2,30 +2,28 @@
 
 Legacy source: `interference-figure-spec.md` (mixed bundle), `interference-figure-audit.md` (audit only).
 
-**The live script is a stub. All spec features are absent.**
-
 ## Core Algorithm
 
 | Feature | Spec | Live | Status |
 |---|---|---|---|
-| Normalised coordinate grid | ✓ | ✗ | FAIL |
-| Polar transform with rotation/scale | ✓ | ✗ | FAIL |
-| OPD basis fields (10 components) | ✓ | ✗ | FAIL |
-| Fractal noise perturbation | ✓ | ✗ | FAIL |
-| Phase retardation per wavelength | ✓ | ✗ | FAIL |
-| Interference intensity sin² formula | ✓ | ✗ | FAIL |
-| Polarisation factor | ✓ | ✗ | FAIL |
-| Spectral to XYZ → RGB | ✓ | ✗ | FAIL |
-| Tone mapping (exposure, gamma) | ✓ | ✗ | FAIL |
+| Normalised coordinate grid | ✓ | ✓ | PASS |
+| Polar transform with rotation/scale | ✓ | ✓ | PASS |
+| OPD basis fields (10 components) | ✓ | ✓ | PASS |
+| Fractal noise perturbation | ✓ | ✓ | PASS |
+| Phase retardation per wavelength | ✓ | ✓ | PASS |
+| Interference intensity sin² formula | ✓ | ✓ | PASS |
+| Polarisation factor | ✓ | ✗ | FAIL — partially specified in legacy spec; excluded to avoid undocumented behaviour |
+| Spectral to XYZ → RGB | ✓ | ✓ | PASS |
+| Tone mapping (exposure, gamma) | ✓ | ✓ | PASS |
 
 ## Parameters
 
-All 26 specified parameters are absent from the live script. The live stub has 1 unused parameter (`sources`, not in spec).
+26 parameters implemented across Pattern, Fields, Angular, Transform, Multi-Axis, Colour, and Noise groups. Additional parameters beyond spec: `multiAxisCount`, `axisRadius`, `axisAngleSpread`, `noiseWeight`, `noiseScale`, `noiseOctaves`, `saturationBoost`. Stub `sources` parameter removed.
 
 ## Presets
 
-6 named pattern presets specified; none implemented.
+6 named presets implemented: Rings, Spiral, Biaxial, Grid, Petal, Organic.
 
 ## Summary
 
-0 of 9 specified algorithmic features implemented. 0 of 26 spec parameters present in live.
+8 of 9 specified algorithmic features implemented. Polarisation factor explicitly excluded. 26+ parameters present. Worker offload via `computePixels` active. Canvas 420×420 per spec.

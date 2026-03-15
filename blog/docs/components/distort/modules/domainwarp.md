@@ -15,11 +15,11 @@ Iteratively warps the sample coordinates through a fractal Brownian motion noise
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Iterative domain warping | Inline | — |
+| Iterative domain warping | `shared/algorithms/noise/noise-functions.js` | — |
 | `PerlinNoise.fbm` | `assets/js/tools/processors/distort/core/PerlinNoise.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — each layer doubles scale and halves strength, offsetting `(wx, wy)` by two independent `fbm` evaluations (offset by `(5.2, 1.3)` to decorrelate x/y displacement fields).
+`shared/algorithms/noise/noise-functions.js` — each layer doubles scale and halves strength, offsetting `(wx, wy)` by two independent `fbm` evaluations (offset by `(5.2, 1.3)` to decorrelate x/y displacement fields).
 
 ## Parameters
 
@@ -74,7 +74,7 @@ Full RGBA image.
 Domain-warped RGBA image. Progressively more complex distortion with each additional layer.
 
 ### Preview strategy
-No reduction.
+`strength`, `scale`, and `octaves` params have `previewMax` values declared.
 
 ## Mask controls
 

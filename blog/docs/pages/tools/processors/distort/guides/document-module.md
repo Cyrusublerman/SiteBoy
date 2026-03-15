@@ -10,44 +10,48 @@ Before writing anything, read the live `*Node.js` file completely. The file is i
 
 **Read in this order:**
 
-### 0.1 Class declaration and registration
+### 0.1 Module declaration and registration
 
-- What class does the module extend? (Must be `EffectNode` or a subclass)
+- How is the module exported? (Must be `export const XNode = createEffectModule({...})`)
 - What is the `type` string?
+- What is the `name` string (display label)?
 - What is the `category` string?
-- What is the class name?
+- Is `isVector: true` present? (indicates a line-render module)
 
-### 0.2 paramDefs
+### 0.2 params
 
-Read every entry in `paramDefs`. For each, note:
+Read every entry in `params`. For each, note:
 
 - `key` (camelCase)
 - `label` (SCREAMING CASE)
-- `type` — `range`, `select`, or `toggle`
-- `min`, `max`, `step`, `default` (for `range`)
+- `type` — `range` (default if omitted), `select`, or `toggle`
+- `min`, `max`, `step`, `value` (for `range`)
 - `options` (for `select`)
 - `tier` — 3, 4, or 5
 - `driveable` — is this param intended to have an image or expression driver?
+- `previewMax` / `previewMin` — any preview caps declared on the param?
 
 Record the full param count by tier.
 
 ### 0.3 apply() signature and body
 
-Trace the complete execution path of `apply(src, dst, w, h, ctx)`:
+Trace the complete execution path of `apply(src, dst, w, h, p, ctx, modulate)`:
 
-1. Does it read `ctx.quality`? Where? What does it do with it?
-2. What params does it read via `this.getModulated(...)` vs. `this.params[key]`?
-3. What algorithm does the main loop implement? (per-pixel, convolution, integral-image, recursive, pass-based?)
-4. Does it acquire any buffers from `ctx.pool`? Does it release them before return?
-5. Does it import any algorithms from `assets/js/shared/algorithms/`?
+1. What does `p` contain? (Pre-resolved params with preview caps applied by factory)
+2. Does the module also check `ctx.quality` inline? Where? (Legacy or complex cap only)
+3. Which params are read via `modulate(key, i)` inside pixel loops vs. `p.key` directly?
+4. What algorithm does the main loop implement? (per-pixel, convolution, integral-image, recursive, pass-based?)
+5. What imports come from `assets/js/shared/algorithms/`?
 6. What is the execution order — list every numbered step in source order
 
-### 0.4 buildGeometry() — if present
+**No `ctx.pool`:** algorithms receive typed arrays directly. Note any scratch allocations (`new Float32Array`, etc.).
+
+### 0.4 applyVector() — if present (`isVector: true`)
 
 - What geometry type does it return?
 - Is it per-pixel, region-based, or derived from param values only?
 - What params influence the geometry?
-- What is the relationship between the pixel output (apply) and the vector output (buildGeometry)?
+- What is the relationship between the pixel output (`apply`) and the vector output (`applyVector`)?
 
 ### 0.5 destroy() — if present
 
@@ -56,9 +60,9 @@ Trace the complete execution path of `apply(src, dst, w, h, ctx)`:
 
 ### 0.6 Preview strategy
 
-- Does `apply()` check `ctx.quality === 'preview'`?
-- If yes: what caps apply? (iteration count, radius, pass count)
-- If no: is the module O(1) per pixel (no cap needed), or does it need caps (flag as WARN)?
+- Are `previewMax` or `previewMin` declared on any params? (Primary mechanism — factory resolves before calling apply)
+- Does `apply()` also check `ctx.quality === 'preview'` inline? (Secondary/complex cap only)
+- If neither: is the module O(1) per pixel (no cap needed), or does it need caps (flag as WARN)?
 
 ---
 
@@ -161,23 +165,22 @@ Four required sections:
 
 ### 4.1 apply() execution order
 
-Number every step in `apply()` in source order:
+Number every step in `apply(src, dst, w, h, p, ctx, modulate)` in source order:
 
-1. Read `ctx.quality`; if `'preview'`, set `radius = Math.min(params.blurRadius, 3)`
-2. Read `blurRadius` via `this.getModulated('blurRadius', 0, ctx)` (per-frame, not per-pixel — uniform driver only)
-3. Build separable Gaussian kernel: `_buildKernel(radius)` → array of weights
+1. Derive computed values from `p` (preview caps already applied by factory via `previewMax`)
+2. (If any inline `ctx.quality` check present: note what it does and why it cannot use `previewMax`)
+3. Build separable Gaussian kernel: `_buildKernel(p.sigma)` → array of weights
 4. Horizontal pass: for each row, convolve `src` into `tmp` buffer
 5. Vertical pass: for each column, convolve `tmp` into `dst`
-6. Release `tmp` back to `ctx.pool`
 
 ### 4.2 Function inventory
 
-List every named function (class methods and module-scope helpers):
+List every named function (the config methods and module-scope helpers):
 
 | Function | Role | Inputs | Output | Complexity |
 | --- | --- | --- | --- | --- |
-| `apply(src, dst, w, h, ctx)` | Pixel render function | buffers + pipeline context | void (writes dst) | O(w × h × k) where k = kernel size |
-| `_buildKernel(radius)` | Constructs Gaussian kernel weights | `radius: number` | `Float32Array` of weights | O(k) |
+| `apply(src, dst, w, h, p, ctx, modulate)` | Pixel render function | buffers + resolved params + context | void (writes dst) | O(w × h × k) where k = kernel size |
+| `_buildKernel(sigma)` | Constructs Gaussian kernel weights | `sigma: number` | `Float32Array` of weights | O(k) |
 | `_convolveRow(src, tmp, w, h, kernel)` | Horizontal convolution pass | buffers, dimensions, kernel | void (writes tmp) | O(w × h × k) |
 
 ### 4.3 Mathematical model
@@ -198,10 +201,10 @@ where:
 
 Document the exact PREVIEW caps implemented:
 
-- What is capped (radius, iterations, pass count)?
-- What is the cap value?
-- Does the cap apply to all params or only to the most expensive one?
-- Evidence: cite the source line or condition that implements the cap
+- Which params declare `previewMax` or `previewMin`? What are the cap values?
+- Does the module also have an inline `ctx.quality === 'preview'` check? Why (cannot express as `previewMax`)?
+- Does the cap apply to all expensive params or only the most expensive?
+- Evidence: cite the param def field or the source condition
 
 ---
 
@@ -211,12 +214,12 @@ Three required sections:
 
 ### 5.1 Parameter table
 
-One row per `paramDef` entry. Never omit a parameter.
+One row per `param` entry. Never omit a parameter.
 
-| Key | Label | Type | Min | Max | Step | Default | Tier | Driveable | Controls |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `blurRadius` | BLUR RADIUS | range | 0 | 50 | 0.5 | 2 | 3 | yes | Controls the Gaussian sigma (σ = radius/3). Larger values produce more blur. At PREVIEW quality, capped at 3. |
-| `blurMode` | BLUR MODE | select | — | — | — | SYMMETRIC | 4 | no | How boundary pixels are handled: SYMMETRIC (reflect), CLAMP (repeat edge), ZERO (black pad). |
+| Key | Label | Type | Min | Max | Step | Default (`value`) | Tier | Driveable | previewMax | Controls |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `sigma` | SIGMA | range | 0.1 | 30 | 0.1 | 2 | 3 | yes | 5 | Standard deviation in pixels. Larger values produce more blur. Factory caps to 5 in PREVIEW. |
+| `blurMode` | BLUR MODE | select | — | — | — | SYMMETRIC | 4 | no | — | How boundary pixels are handled: SYMMETRIC (reflect), CLAMP (repeat edge), ZERO (black pad). |
 
 The "Controls" column must explain what the parameter actually does in the render, not just restate the label.
 
@@ -323,18 +326,20 @@ Three required sections plus carry-overs:
 Run through every item in `build-module.md §8`. Record pass or specific failure with evidence.
 
 Module structure:
-- [ ] Class extends `EffectNode` — pass/fail
+- [ ] Produced by `createEffectModule({...})` — pass/fail
 - [ ] `type` lowercase, no separators, unique — pass/fail
-- [ ] `paramDefs` has ≥1 tier-3 param — pass/fail
+- [ ] `name` UPPERCASE, max 20 chars — pass/fail
+- [ ] `params` has ≥1 tier-3 param — pass/fail
 - [ ] All param keys camelCase — pass/fail
 - [ ] All labels SCREAMING CASE ≤16 chars — pass/fail
-- [ ] `apply(src, dst, w, h, ctx)` signature correct — pass/fail
-- [ ] Reads `ctx.quality`, applies PREVIEW caps — pass/fail
+- [ ] All `range` params have `min`, `max`, `step`, `value` — pass/fail
+- [ ] `apply(src, dst, w, h, p, ctx, modulate)` signature correct — pass/fail
+- [ ] Uses `p.key` not `this.params[key]` — pass/fail
+- [ ] `previewMax`/`previewMin` declared on cost-scaling params (or inline `ctx.quality` justified) — pass/fail
 - [ ] No `document.*`, `window.*` — pass/fail
 - [ ] No `fetch`, network API — pass/fail
 - [ ] No `requestAnimationFrame`, `setInterval`, `setTimeout` — pass/fail
 - [ ] No inline algorithm that exists in library — pass/fail
-- [ ] Releases all `ctx.pool` buffers before return — pass/fail
 
 ### 8.2 Bug and risk detection
 
@@ -349,10 +354,11 @@ Impact: what goes wrong or is missing
 
 Look for:
 - Buffer index out of bounds (off-by-one with w, h, stride = 4)
-- Param read via `this.params[key]` where `this.getModulated(...)` is required for a driveable param
-- Missing `ctx.pool.release()` call for every `ctx.pool.acquire()`
-- Missing PREVIEW cap for an O(n × param) module
-- Allocation inside the pixel loop (`new Float32Array()` per pixel)
+- Driveable param read via `p[key]` directly inside a pixel loop instead of `modulate(key, i)`
+- Missing PREVIEW cap (no `previewMax` and no inline `ctx.quality` check) for an O(n × param) module
+- Allocation inside the pixel loop (`new Float32Array()` per pixel) — costly GC pressure
+- Missing alpha passthrough (`dst[j+3] = src[j+3]`) in pixel transforms that write RGB only
+- Division by accumulated sum that can be zero (e.g. normalisation of empty histogram)
 
 ### 8.3 Performance risks (carried from Step 6)
 

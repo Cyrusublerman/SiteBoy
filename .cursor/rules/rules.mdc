@@ -41,8 +41,10 @@ Only these files may own the concern. Others must not implement it.
 - Every animator must call `.destroy()` in the tool/component's destroy method.
 
 ## Style Constraints (VGA/Mono)
-- Colors: only CSS vars `var(--vga-*)`. No raw hex/rgb/hsl.
-- Typeface: Space Mono only.
+- UI styling: only `var(--c-bg)`, `var(--c-text)`, `var(--c-border)`, `var(--c-accent)`. See `design-law.md §6`.
+- Canvas/render output: `var(--vga-*)` palette values permitted.
+- No raw hex/rgb/hsl/named colours in UI styling.
+- Typeface: `'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace` only.
 - Disallow: gradients, shadows, rounded corners.
 - Use math/tokens for dimensions (no ad-hoc px for layout logic).
 
@@ -101,9 +103,34 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 - Keep diffs minimal; do not add new files that duplicate owned concerns.
 - When unsure where logic goes: default to the owner listed above; never inline.
 
-## AI Routing (read these before build/verify)
+## Mandatory Pre-Decision Reads
+
+**You MUST read the listed file before making the listed decision. No exceptions. Do not rely on memory or prior context.**
+
+| Decision you are about to make | File you MUST read first |
+| --- | --- |
+| Which border to apply to any element | `blog/docs/guides/standards/border-system.md` |
+| Which symbol or glyph to use for any purpose | `blog/docs/guides/standards/semiotics.md` |
+| How to style, case, size, align, or pad any text | `blog/docs/guides/standards/text-treatment.md` |
+| Which component to use for any UI need | `blog/docs/guides/standards/component-patterns.md` |
+| Where to place any feature (toolbar vs sidebar vs other) | `blog/docs/guides/standards/component-patterns.md §4` |
+| How to divide space in a toolbar, sidebar, or canvas area | `blog/docs/guides/standards/component-patterns.md §3` |
+| Any visual or aesthetic design decision not covered above | `blog/docs/guides/standards/design-law.md` |
+| How to lay out a tool page or what the standard tool structure is | `blog/docs/site/ui-interface-overview.md` |
+| What task phase you are in or what checklist to use | `blog/docs/guides/ai-routing-map.md` |
+
+**Prohibited:** Making any decision in the left column without first reading the file in the right column. If you have already read it in this session, re-reading is not required — but you must have read it before writing the relevant code.
+
+## AI Routing
 - Routing map: `blog/docs/guides/ai-routing-map.md` (choice tree).
 - Phases: `blog/docs/guides/phases/` P0→P6; use matching checklists in `blog/docs/guides/checklists/`.
-- Standards: coding/layout/UI/loading/color in `blog/docs/guides/standards/` and `blog/docs/site/ui-interface-overview.md`.
 - Catalogs: components (`blog/docs/components/index.md`), algorithms (`blog/docs/algorithms/index.md`).
+
+## Fix Verification Protocol
+When implementing fixes for reported issues, ALL of the following apply:
+- **User intent overrides guide defaults.** If a user specifies a glyph, label, or behaviour for a specific element, use exactly that — do not substitute the guide's categorical default.
+- **Every discrete complaint clause maps to a discrete code change.** Broad to-dos that group multiple complaint sentences are insufficient. Track each sentence.
+- **No complaint clause may be skipped** in favour of easier clauses. Structural fixes (architecture, lifecycle, overlay) are not deferrable.
+- **Data dependencies must be fulfilled.** If code reads a field (e.g. `entry.description`), that field must exist in the data source. Code that reads an absent field is not a fix.
+- **Post-fix verification is mandatory.** After all changes: re-read the original complaint sentence by sentence. For each clause, confirm a code change (file + method + value) exists. If any clause has no corresponding change, the work is incomplete — do not mark done.
 

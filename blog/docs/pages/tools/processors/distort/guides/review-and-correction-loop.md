@@ -70,7 +70,7 @@ Use this guide after any agent or developer produces a documentation pack. The p
 ### `feature-parity.md` — pass requires all of:
 
 - [ ] Feature inventory table: for each feature in the component-level doc, status in live source (Confirmed / Changed / Absent / Conflicting), location in source or reason for absence
-- [ ] Module standard feature audit table: mask support, driver system, buildGeometry, destroy, PREVIEW cap, presets — each with Yes/No and notes
+- [ ] Module standard feature audit table: mask support, driver system (`driveable` params), `applyVector`/`isVector`, `destroy`, PREVIEW cap (`previewMax` or inline), presets — each with Yes/No and notes
 - [ ] Parity holes: explicit numbered list — not "none identified" unless the feature inventory genuinely shows every feature is confirmed
 
 **Fail signals:** feature inventory absent when component-level doc exists; module standard feature audit absent; parity holes section says only "none" without examination.
@@ -157,7 +157,7 @@ Read the file. Is there a numbered execution order for `apply()`? Is there a fun
 If the file contains only: a "This module performs a Gaussian blur" paragraph, a list of param keys, and "no preview cap detected" → **reject immediately**.
 
 **Check 3 — `ui-layout.md`:**
-Read the file. Is there a parameter table with a row for every `paramDef` key? Is there a mask controls section? Is there a modulation targets section?
+Read the file. Is there a parameter table with a row for every `param` key (including `value` column, not `default`)? Is there a mask controls section? Is there a modulation targets section?
 
 If the file contains only: a tier list, a count of driveable params, and a single UX note → **reject immediately**.
 

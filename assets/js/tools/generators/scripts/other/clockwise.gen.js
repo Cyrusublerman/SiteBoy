@@ -1,13 +1,11 @@
 /**
  * Clockwise - p5.js Generator
  *
- * Eight square pixel systems orbit and spin around a central point. Each
- * square has two internal grids: a pulse wave (brightness) and a hue field.
- * When two squares' pixels overlap, they swap values — mixing the fields.
+ * N pixel-grid squares orbit a central point on a circular path while
+ * spinning about their own centres. Each square carries two physics fields
+ * (pulse and hue). When squares overlap, field values are exchanged.
  *
- * Based on clockwise sketch (both versions are identical).
- *
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 export const SCRIPT_CONFIG = {
@@ -15,7 +13,42 @@ export const SCRIPT_CONFIG = {
     title: 'Clockwise',
     category: 'other',
     description: 'Orbiting pixel squares with internal cellular wave physics. Overlapping squares swap field values, blending colours and pulse patterns.',
-    version: '1.0.0',
+    version: '1.1.0',
+
+    infoSections: [
+        {
+            heading: 'DESCRIPTION',
+            body: 'Clockwise models N pixel-grid squares (N = numSquares, 2–12) orbiting a fixed canvas centre on a circular path of radius orbitRadius, each simultaneously spinning about its own centre. The mathematical basis is polar coordinate composition: each cell within a square is defined at build time by its local polar coordinates (r, θ₀) relative to the square pivot. Each frame the pivot is placed on the orbit circle via cx = 540 + orbitRadius · cos(startAngle + globalOrbitAngle), and every cell world position is computed as worldX = cx + r · cos(θ₀ + globalSpinAngle). Orbit and spin accumulate independently, making the two rotational degrees of freedom fully decoupled. Each square carries two independent scalar field grids — a pulse field (grid1, drives brightness) and a hue field (grid2). Both evolve via a discrete diffusion equation each frame using a 3×3 neighbourhood average, a weighted neighbourhood difference, and a global decay factor. The hue field has a per-square identity bias that pulls hue back toward its characteristic value. When two squares map to the same canvas pixel, their field values are exchanged — cross-contaminating pulse and hue. A cooldown gate prevents repeated swaps during sustained overlap. Colour organisation emerges from the interplay between diffusion (spreading hue) and identity force (anchoring hue) during contact and separation. Algorithm origin: discrete reaction-diffusion class (related to Turing / Gray-Scott models in structure). Scope: no 3D projection, true two-species reaction-diffusion, physical collision, rigid-body dynamics, or audio reactivity.'
+        },
+        {
+            heading: 'ALGORITHM',
+            body: 'Functions: _needsRebuild(params) — O(1) rebuild check; returns true if numSquares or orbitRadius changed. _buildSquares(p,params) — O(N·res²); computes chord geometry, resolution, cell size, per-cell polar coordinates, initialises physics grids. _getAvg(g,x,y,res,wrap) — O(9); arithmetic mean of 3×3 neighbourhood with optional toroidal wrap. _sampleDiff(g,x,y,res,wrap) — O(8); weighted mean of absolute differences; cardinal neighbours weight 1.0, diagonals 0.5. _updatePhysics(sq,params) — O(res²); advances grid1 and grid2 by one step; swaps active/buffer arrays. p5Setup(p,params) — initialises colour mode, builds squares, allocates sparse collision map. p5Draw(p,params,frame) — per-frame entry: rebuild check, angle advance, collision clear, geometry + collision detection + field swaps, physics update, render. Geometry: angleStep = 2π/numSquares; chordLen = 2·orbitRadius·sin(angleStep/2); sideLength = round((2√2·chordLen)/3); resolution = clamp(round(sideLength/3), 48, 180); cellSize = sideLength/resolution. Cell polar coords (build time): lx=(x−offset+0.5)·cellSize; ly=(y−offset+0.5)·cellSize; r=√(lx²+ly²); θ₀=atan2(ly,lx). Square orbit position: curAngle = startAngle + globalOrbitAngle; cx = 540 + orbitRadius·cos(curAngle); cy = 540 + orbitRadius·sin(curAngle). Cell world position: theta = θ₀ + globalSpinAngle; worldX = cx + r·cos(theta); worldY = cy + r·sin(theta). Pulse physics (grid1): raw = (v1 + (avg1−v1)·cohesion + diff1·growthFactor·damping)·waveDecay; next1[x][y] = clamp(raw, 0, 1); cohesion = 0.1 hardcoded. Hue physics (grid2): phys = ((v2 + (avg2−v2)·cohesion + diff2·growthFactor·damping) mod 1.0 + 1.0) mod 1.0; next2[x][y] = phys + (bias − phys)·identityForce; bias = i/numSquares. Rendering: H = hue·360; B = map(pulse, 0, 1, 100, 50); S = 90 (fixed); drawSize = max(1.25, cellSize·1.15) — 15% larger than cell to minimise gaps.'
+        },
+        {
+            heading: 'PARAMETERS',
+            body: 'System — numSquares: slider 2–12 step 1 default 8; number of orbiting squares; determines chord geometry, sideLength, resolution; changing triggers a full rebuild and angle reset. orbitRadius: slider 100–540 step 20 default 540; radius of orbit circle in pixels; changing alters chord and resolution; triggers rebuild; at 540 the orbit edge reaches the canvas boundary. Motion — orbitSpeed: slider 0.1–5 step 0.1 default 1; orbit angular advance per frame in degrees; at 1°/frame and 30fps one revolution takes 12 seconds. spinSpeed: slider 0.1–5 step 0.1 default 1; self-rotation advance per frame in degrees; independent of orbit speed and direction. orbitDir: dropdown CW|CCW default CCW; sets sign of orbit angular velocity; CCW multiplies by −1. Physics — growthFactor: slider 0.5–5 step 0.1 default 2.0; amplifies diffusion contribution in both fields (diff·growthFactor·damping); effective diffusion coefficient = growthFactor·damping. damping: slider 0.01–0.5 step 0.01 default 0.15; secondary scale on diffusion term; lower values slow spatial spread independently of growthFactor. waveDecay: slider 0.8–0.99 step 0.01 default 0.96; per-frame multiplicative decay applied to pulse field only; near 1 preserves pulse energy for many frames. identityForce: slider 0–0.1 step 0.005 default 0.01; pull rate at which each square hue returns to its identity hue (bias = squareIndex/numSquares); at 0 hue drifts freely; at 0.1 hue returns within a few frames of separation. swapCooldown: slider 5–60 step 5 default 20; minimum frames between successive field swaps for the same cell; prevents repeated swaps during sustained overlap. wrapAround: dropdown on|off default on; controls neighbourhood topology; on = toroidal edges; off = clamp-to-boundary.'
+        },
+        {
+            heading: 'PRESETS',
+            body: 'Classic — numSquares 8, orbitRadius 540, orbitSpeed 1, spinSpeed 1, orbitDir CCW, growthFactor 2.0, damping 0.15, waveDecay 0.96, identityForce 0.01, swapCooldown 20, wrapAround on. Baseline: 8 large squares at full orbit, moderate speed and diffusion, mild identity anchor; each square maintains a characteristic hue with gentle diffusion. Default entry state. Turbulent — numSquares 6, orbitRadius 400, orbitSpeed 2, spinSpeed 2, orbitDir CCW, growthFactor 3.5, damping 0.2, waveDecay 0.94, identityForce 0.005, swapCooldown 10, wrapAround on. High energy: faster motion, stronger diffusion, rapid pulse decay, very weak identity; colour mixes aggressively during contact and fades quickly in isolation. Calm — numSquares 4, orbitRadius 300, orbitSpeed 0.5, spinSpeed 0.5, orbitDir CW, growthFactor 1.0, damping 0.08, waveDecay 0.98, identityForce 0.02, swapCooldown 30, wrapAround on. Low energy: fewer, slower squares at smaller orbit; very slow diffusion; pulse persists for many frames; stronger identity anchor; CW direction reverses visual rotation sense.'
+        },
+        {
+            heading: 'PERFORMANCE',
+            body: 'Complexity: O(N·res²) per frame where N = numSquares (2–12) and res = grid resolution per square (48–180, derived from orbit geometry). Peak load at numSquares=6, orbitRadius=540 (res≈169): ~171,000 cells, ~5.8M neighbourhood reads per frame, ~171,000 p.rect() calls. Frame budget at 30fps: 33.3ms; estimated peak cost 19–46ms — frame drops likely on lower-end hardware at worst-case settings. Collision map uses a sparse JS Map keyed by pixel index (cleared per-frame via map.clear()), reducing the O(1.17M) flat-array null-fill to O(active cells) ≈ O(N·res²). During slider interaction, ComputeScheduler Tier 2 renders at 50% linear scale (25% pixel count) for real-time feedback.'
+        },
+        {
+            heading: 'ANIMATION',
+            body: 'Type: infinite — runs continuously with no terminal frame or defined loop point. Frame-driven: globalOrbitAngle and globalSpinAngle accumulate each frame by radians(orbitSpeed)·orbitDirMul and radians(spinSpeed) respectively. Default 30fps. Deterministic: no Math.random() — same initial state and same parameters always produce identical frame output. Export: PNG available. GIF and WebM not available — no defined loop point, so no bounded export cycle. Animatable parameters (smooth to sweep without rebuild): orbitSpeed, spinSpeed, growthFactor, damping, waveDecay, identityForce. Parameters numSquares and orbitRadius trigger a full rebuild on change and reset orbital angles — not suitable for smooth animation.'
+        },
+        {
+            heading: 'KNOWN LIMITATIONS',
+            body: 'Rebuild parameters (numSquares, orbitRadius): adjusting either live resets orbital and spin angles to zero, producing a visible snap back to starting position. Grid resolution is not user-adjustable; it is derived from orbit geometry and clamped to [48, 180]. At growthFactor·damping > 1 the pulse field amplifies rather than merely diffuses; values are clamped at physics write time. Collision detection is first-writer-only: in dense overlap zones where three or more squares share a pixel, the third square swaps with the first-frame occupant rather than the most recent one, producing a mild mixing bias in high-density scenarios. At swapCooldown=5 and sustained overlap, cells swap approximately 6 times per second, which can produce flickering colour patterns. Canvas is fixed 1080×1080; viewport fit/fill/actual and zoom behaviour is managed by the host.'
+        },
+        {
+            heading: 'REFERENCES',
+            body: 'Algorithm origin: discrete two-field cellular diffusion with identity restoration — related to Turing / Gray-Scott reaction-diffusion class; neighbourhood averaging + weighted difference amplification is a simplified discrete Laplacian diffusion operator. Orbital placement: standard polar-to-Cartesian coordinate composition. Live script: assets/js/tools/generators/scripts/other/clockwise.gen.js. Archive: reference/generators/clockwise/source/clockwise.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Version 1.1.0: rendering lag bug fixed (render reads post-physics buffer grid1/grid2 instead of pre-physics next1/next2); pulse clamp added to physics step; sparse Map collision map; infoSections added; animatableParams declared in animation block; GIF export corrected to false.'
+        }
+    ],
 
     canvas: { width: 1080, height: 1080, context: 'p5' },
 
@@ -51,24 +84,43 @@ export const SCRIPT_CONFIG = {
     presets: [
         {
             name: 'Classic',
-            numSquares: 8, orbitRadius: 540, orbitSpeed: 1, spinSpeed: 1, orbitDir: 'CCW',
-            growthFactor: 2.0, damping: 0.15, waveDecay: 0.96, identityForce: 0.01, swapCooldown: 20, wrapAround: 'on'
+            values: {
+                numSquares: 8, orbitRadius: 540, orbitSpeed: 1, spinSpeed: 1, orbitDir: 'CCW',
+                growthFactor: 2.0, damping: 0.15, waveDecay: 0.96, identityForce: 0.01, swapCooldown: 20, wrapAround: 'on'
+            }
         },
         {
             name: 'Turbulent',
-            numSquares: 6, orbitRadius: 400, orbitSpeed: 2, spinSpeed: 2, orbitDir: 'CCW',
-            growthFactor: 3.5, damping: 0.2, waveDecay: 0.94, identityForce: 0.005, swapCooldown: 10, wrapAround: 'on'
+            values: {
+                numSquares: 6, orbitRadius: 400, orbitSpeed: 2, spinSpeed: 2, orbitDir: 'CCW',
+                growthFactor: 3.5, damping: 0.2, waveDecay: 0.94, identityForce: 0.005, swapCooldown: 10, wrapAround: 'on'
+            }
         },
         {
             name: 'Calm',
-            numSquares: 4, orbitRadius: 300, orbitSpeed: 0.5, spinSpeed: 0.5, orbitDir: 'CW',
-            growthFactor: 1.0, damping: 0.08, waveDecay: 0.98, identityForce: 0.02, swapCooldown: 30, wrapAround: 'on'
+            values: {
+                numSquares: 4, orbitRadius: 300, orbitSpeed: 0.5, spinSpeed: 0.5, orbitDir: 'CW',
+                growthFactor: 1.0, damping: 0.08, waveDecay: 0.98, identityForce: 0.02, swapCooldown: 30, wrapAround: 'on'
+            }
         }
     ],
 
-    animation: { type: 'infinite', defaultFps: 30 },
+    animation: {
+        type: 'infinite',
+        defaultFps: 30,
+        animatableParams: ['orbitSpeed', 'spinSpeed', 'growthFactor', 'damping', 'waveDecay', 'identityForce']
+    },
 
-    // State
+    export: { png: true, gif: false, webm: false },
+
+    // Tier 2 adaptive resolution: reduces pixel count 75% during slider interaction.
+    // Tier 3 (worker) blocked: render pass requires p5 instance on main thread.
+    compute: {
+        cost: 'particle',
+        interactionScale: 0.5,
+        idleDelay: 200,
+    },
+
     _squares: null,
     _collisionMap: null,
     _globalOrbitAngle: 0,
@@ -107,8 +159,6 @@ export const SCRIPT_CONFIG = {
                         polar:     { r: Math.sqrt(lx * lx + ly * ly), theta: Math.atan2(ly, lx) },
                         gridX: x, gridY: y,
                         cartesian: { x: 0, y: 0 },
-                        centroid:  { x: 0, y: 0 },
-                        color:     { h: 0, s: 0, b: 0 },
                         lastSwap:  -1000,
                         drawSize:  Math.max(1.25, cellSize * 1.15)
                     });
@@ -167,7 +217,8 @@ export const SCRIPT_CONFIG = {
                 const v1 = sq.grid1[x][y];
                 const d1 = this._sampleDiff(sq.grid1, x, y, res, wrap);
                 const a1 = this._getAvg(sq.grid1, x, y, res, wrap);
-                sq.next1[x][y] = (v1 + (a1 - v1) * cohesion + d1 * growthFactor * damping) * waveDecay;
+                const raw1 = (v1 + (a1 - v1) * cohesion + d1 * growthFactor * damping) * waveDecay;
+                sq.next1[x][y] = raw1 < 0 ? 0 : raw1 > 1 ? 1 : raw1;
 
                 const v2 = sq.grid2[x][y];
                 const d2 = this._sampleDiff(sq.grid2, x, y, res, wrap);
@@ -186,7 +237,7 @@ export const SCRIPT_CONFIG = {
         p.noSmooth();
         p.noLoop();
         this._squares = this._buildSquares(p, params);
-        this._collisionMap = new Array(1080 * 1080).fill(null);
+        this._collisionMap = new Map();
         this._globalOrbitAngle = 0;
         this._globalSpinAngle  = 0;
         this._lastParams = { ...params };
@@ -195,7 +246,7 @@ export const SCRIPT_CONFIG = {
     p5Draw(p, params, frame) {
         if (this._needsRebuild(params)) {
             this._squares = this._buildSquares(p, params);
-            this._collisionMap = new Array(1080 * 1080).fill(null);
+            this._collisionMap = new Map();
             this._globalOrbitAngle = 0;
             this._globalSpinAngle  = 0;
             this._lastParams = { ...params };
@@ -208,9 +259,8 @@ export const SCRIPT_CONFIG = {
         this._globalOrbitAngle += p.radians(orbitSpeed) * orbitDirMul;
 
         const map = this._collisionMap;
-        for (let i = 0; i < map.length; i++) map[i] = null;
+        map.clear();
 
-        // Update geometry and collision map
         for (const sq of this._squares) {
             const curAngle = sq.startAngle + this._globalOrbitAngle;
             const cx = 540 + params.orbitRadius * Math.cos(curAngle);
@@ -228,10 +278,10 @@ export const SCRIPT_CONFIG = {
                     const sy = (ent.cartesian.y + 0.5) | 0;
                     if (sx >= 0 && sx < 1080 && sy >= 0 && sy < 1080) {
                         const idx = sy * 1080 + sx;
-                        if (map[idx] === null) {
-                            map[idx] = { sq, gx: x, gy: y };
+                        if (!map.has(idx)) {
+                            map.set(idx, { sq, gx: x, gy: y });
                         } else {
-                            const other = map[idx];
+                            const other = map.get(idx);
                             if (other.sq.id !== sq.id) {
                                 const now = frame;
                                 const p1 = sq.matrix[x][y];
@@ -253,7 +303,6 @@ export const SCRIPT_CONFIG = {
             }
         }
 
-        // Physics + render
         p.background(0);
         for (const sq of this._squares) {
             this._updatePhysics(sq, params);
@@ -261,8 +310,8 @@ export const SCRIPT_CONFIG = {
             for (let x = 0; x < res; x++) {
                 for (let y = 0; y < res; y++) {
                     const ent = sq.matrix[x][y];
-                    const pulse = Math.max(0, Math.min(1, sq.next1[x][y]));
-                    const hue   = sq.next2[x][y];
+                    const pulse = Math.max(0, Math.min(1, sq.grid1[x][y]));
+                    const hue   = sq.grid2[x][y];
                     const H = hue * 360;
                     const B = p.map(pulse, 0, 1, 100, 50);
                     p.fill(H, 90, B);

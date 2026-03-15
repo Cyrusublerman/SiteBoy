@@ -15,9 +15,9 @@ Maps tonal values through a smoothstep-interpolated three-point curve (shadows, 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Piecewise smoothstep LUT | Inline (`_buildCurveLUT`) | — |
+| Piecewise smoothstep LUT | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — three `(in, out)` control points; per-segment normalised `t` → smoothstep `t²(3−2t)` interpolation. `isLUT = true` enables LUT chaining.
+`shared/algorithms/image/colour-adjustments.js` — three `(in, out)` control points; per-segment normalised `t` → smoothstep `t²(3−2t)` interpolation. `isLUT = true` enables LUT chaining.
 
 ## Parameters
 

@@ -259,11 +259,19 @@ export class GenerativeToolHost extends BaseComponent {
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
 
-        // Inject SequencerV2 + AnimationExport UI if animation config present
-        if (this.scriptConfig.animation) {
+        // Inject SequencerV2 + AnimationExport UI — only for generators that animate.
+        // type: 'none' generators have no ANIMATE/EXPORT tabs so injection targets don't exist.
+        // Set animation.sequencer = false to suppress SequencerV2.
+        // Set animation.animationExport = false to suppress AnimationExport.
+        const animType = this.scriptConfig.animation?.type;
+        if (this.scriptConfig.animation && animType !== 'none') {
             setTimeout(() => {
-                this._injectSequencer();
-                this._injectExportUI();
+                if (this.scriptConfig.animation.sequencer !== false) {
+                    this._injectSequencer();
+                }
+                if (this.scriptConfig.animation.animationExport !== false) {
+                    this._injectExportUI();
+                }
             }, 0);
         }
         
@@ -293,6 +301,11 @@ export class GenerativeToolHost extends BaseComponent {
         // Update URL query parameter without triggering navigation
         this._updateUrlQueryParam(scriptId);
         
+        // Notify host consumer that the active script changed (e.g. to update subheader nav)
+        if (typeof this.deps.onScriptChange === 'function') {
+            this.deps.onScriptChange(scriptId);
+        }
+
         window.debugLog('TOOLS', `✅ Script "${scriptId}" loaded${this.isP5Context ? ' (p5.js)' : ''}`);
     }
     
@@ -622,13 +635,20 @@ export class GenerativeToolHost extends BaseComponent {
     // === TOOLBAR HANDLERS ===
     
     /**
+     * Switch to a generator script by ID — public API for external callers
+     */
+    async switchToScript(scriptId) {
+        await this._loadScript(scriptId);
+    }
+
+    /**
      * Handle generator change from toolbar
      */
     async _handleGeneratorChange(scriptId) {
         window.debugLog('TOOLS', `🎨 Generator change: ${scriptId}`);
         await this._loadScript(scriptId);
     }
-    
+
     /**
      * Handle display mode change from toolbar
      */
@@ -1200,5 +1220,3 @@ export class GenerativeToolHost extends BaseComponent {
  * Export as default
  */
 export default GenerativeToolHost;
-
-console.log('✅ GenerativeToolHost v2.1.0 loaded (with SequencerV2)');

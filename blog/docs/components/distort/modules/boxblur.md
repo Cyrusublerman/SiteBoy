@@ -15,10 +15,10 @@ Applies a uniform box blur via a sliding-window separable pass, with optional mu
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Separable sliding-window box blur | Inline (`_bH`, `_bV`) | — |
+| Separable sliding-window box blur | `shared/algorithms/image/blur-filters.js` | — |
 | `Sampler.clamp` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — horizontal pass (`_bH`) then vertical pass (`_bV`). Each pass maintains a running sum over a window of `2r+1` pixels — O(1) per pixel per axis. Multi-pass controlled by `passes`.
+`shared/algorithms/image/blur-filters.js` — horizontal pass (`_bH`) then vertical pass (`_bV`). Each pass maintains a running sum over a window of `2r+1` pixels — O(1) per pixel per axis. Multi-pass controlled by `passes`.
 
 ## Parameters
 

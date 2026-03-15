@@ -15,9 +15,9 @@ Applies a 3×3 linear matrix to mix RGB channels, enabling colour cross-talk and
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| 3×3 RGB matrix multiply | Inline | — |
+| 3×3 RGB matrix multiply | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — `outR = R·rr + G·rg + B·rb`, `outG = R·gr + G·gg + B·gb`, `outB = R·br + G·bg + B·bb`. Clamped to `[0,255]`.
+`shared/algorithms/image/colour-adjustments.js` — `outR = R·rr + G·rg + B·rb`, `outG = R·gr + G·gg + B·gb`, `outB = R·br + G·bg + B·bb`. Clamped to `[0,255]`.
 
 ## Parameters
 

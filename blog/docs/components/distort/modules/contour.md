@@ -15,10 +15,10 @@ Extracts iso-luminance contour lines by detecting band boundaries in a quantised
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Luminance band-boundary edge detection | Inline | — |
-| Morphological dilation (circular kernel) | Inline | — |
+| Luminance band-boundary edge detection | `shared/algorithms/image/compositing.js` | — |
+| Morphological dilation (circular kernel) | `shared/algorithms/image/compositing.js` | — |
 
-Inline — quantises luminance into `levels` uniform bands; marks pixels whose right or bottom neighbour is in a different band. Circular-kernel dilation expands marks by `strokeW` pixels. Contour pixels blended toward `strokeLevel`; others pass through.
+`shared/algorithms/image/compositing.js` — quantises luminance into `levels` uniform bands; marks pixels whose right or bottom neighbour is in a different band. Circular-kernel dilation expands marks by `strokeW` pixels. Contour pixels blended toward `strokeLevel`; others pass through.
 
 ## Parameters
 

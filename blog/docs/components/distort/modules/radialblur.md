@@ -15,9 +15,9 @@ Blurs radially from a centre point in either zoom (scale) or spin (rotation) mod
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Radial sample averaging (zoom / spin) | Inline | — |
+| Radial sample averaging (zoom / spin) | `shared/algorithms/image/blur-filters.js` | — |
 
-Inline — `samples` positions computed by scaling or rotating the displacement vector from centre; nearest-neighbour sampling; averaged per channel.
+`shared/algorithms/image/blur-filters.js` — `samples` positions computed by scaling or rotating the displacement vector from centre; nearest-neighbour sampling; averaged per channel.
 
 ## Parameters
 

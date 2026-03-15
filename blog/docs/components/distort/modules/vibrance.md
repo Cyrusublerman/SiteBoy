@@ -15,9 +15,9 @@ Boosts saturation selectively — already-saturated pixels receive less boost th
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Saturation-aware selective boost | Inline | — |
+| Saturation-aware selective boost | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — `sat = max − min` (chroma range); `amt = vibrance × (1 − sat)²`; each channel pushed away from mean: `out = ch + (ch − avg) × amt`.
+`shared/algorithms/image/colour-adjustments.js` — `sat = max − min` (chroma range); `amt = vibrance × (1 − sat)²`; each channel pushed away from mean: `out = ch + (ch − avg) × amt`.
 
 ## Parameters
 

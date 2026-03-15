@@ -42,4 +42,4 @@ Audit classification: "Complete port of harmonics variant from reference."
 | `type: 'loop'` | ✓ | ✓ | PASS |
 | `canPrerender: true` | — | ✓ | PASS |
 | `animatableParams: []` | — | ✓ | PASS |
-| Wall-clock timing | — | ✓ (see Issues) | DIVERGE |
+| Frame-based timing | ✓ | PASS | resolved — `elapsed = frame / fps`; wall-clock timing removed |

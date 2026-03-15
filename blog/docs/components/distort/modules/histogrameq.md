@@ -15,9 +15,9 @@ Globally equalises contrast by redistributing pixel intensities according to the
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Global histogram equalisation | Inline | — |
+| Global histogram equalisation | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — BT.601 luminance histogram → CDF → `lut[i] = (cdf[i] − cdfMin) / (N − cdfMin) × 255`. Applied per channel with blend.
+`shared/algorithms/image/colour-adjustments.js` — BT.601 luminance histogram → CDF → `lut[i] = (cdf[i] − cdfMin) / (N − cdfMin) × 255`. Applied per channel with blend.
 
 ## Parameters
 

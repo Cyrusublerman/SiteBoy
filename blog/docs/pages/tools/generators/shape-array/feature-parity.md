@@ -2,7 +2,7 @@
 
 ## Source Reference
 
-- Live: `assets/js/tools/generators/scripts/pattern/shape-array.gen.js` v1.0.0
+- Live: `assets/js/tools/generators/scripts/pattern/shape-array.gen.js` v1.1.0
 - Legacy spec: none (Phase 3 — source-only analysis)
 - Origin: port of `shape_array_accident` sketch
 
@@ -14,7 +14,7 @@ No legacy specification. Parity analysis is internal self-consistency and standa
 |---|---|---|
 | Grid of morphing shapes | PASS | cols × rows cells |
 | Line → triangle → square → circle morph | PASS | 4-stage via stages=[2,3,4,circleRes] |
-| Perimeter-sampled equal-arc-length interpolation | PASS | `_samplePerimeter` with arc-length parameterisation |
+| Perimeter-sampled equal-arc-length interpolation | PASS | `_samplePerimeter` with cumulative edge lengths + binary search (O(n + circleRes log n)) |
 | Diagonal phase offset ripple | PASS | `(col+row) × phaseOffset` |
 | `bgColor` dark/light toggle | PASS | `dropdown` type |
 | `strokeWeight` control | PASS | |
@@ -27,9 +27,9 @@ No legacy specification. Parity analysis is internal self-consistency and standa
 
 | Aspect | Status | Notes |
 |---|---|---|
-| Export block | ABSENT | No PNG/GIF/WebM |
-| `animatableParams` | ABSENT | Not declared |
-| Preset format | NON-STANDARD | Flat object; missing `values: {...}` |
-| State on SCRIPT_CONFIG | NON-STANDARD | `_globalT` on config |
-| `_globalT` frame-rate-dependent | BUG | Not tied to `frame`; non-deterministic |
+| Export block | PASS | `png: true, gif: false, webm: false` added v1.1.0 |
+| `animatableParams` | PASS | `animatableParams: []` added inside `animation` block |
+| Preset format | PASS | `{ name, values: {...} }` wrapper added v1.1.0 |
+| State on SCRIPT_CONFIG | PASS | `_globalT` removed; no persistent state on config object |
+| `_globalT` frame-rate-dependent | PASS | Fixed to `(frame × morphSpeed) % 1` v1.1.0 |
 | Raw P5 colour values | NON-STANDARD | Conditional literals 20/245 |

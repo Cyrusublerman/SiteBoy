@@ -15,9 +15,9 @@ Generates a Moiré interference pattern by combining two independent sinusoidal 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Two-grating Moiré interference | Inline | — |
+| Two-grating Moiré interference | `shared/algorithms/patterns/pattern-generators.js` | — |
 
-Inline — two independent linear gratings at configurable wavelengths and angles produce `i1`, `i2 ∈ [0,1]`; combined via a binary operator; result blended onto source.
+`shared/algorithms/patterns/pattern-generators.js` — two independent linear gratings at configurable wavelengths and angles produce `i1`, `i2 ∈ [0,1]`; combined via a binary operator; result blended onto source.
 
 ## Parameters
 

@@ -15,9 +15,9 @@ Darkens or brightens the edges of the image with a smooth elliptical falloff, co
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Elliptical distance vignette | Inline | — |
+| Elliptical distance vignette | `shared/algorithms/image/texture-overlays.js` | — |
 
-Inline — normalised elliptical distance from centre; `edge = 1 − softness`; inside edge → full brightness; outside → linear falloff to zero. `factor = 1 − amount × (1 − v²)`. Supports `amount` modulation.
+`shared/algorithms/image/texture-overlays.js` — normalised elliptical distance from centre; `edge = 1 − softness`; inside edge → full brightness; outside → linear falloff to zero. `factor = 1 − amount × (1 − v²)`. Supports `amount` modulation.
 
 ## Parameters
 

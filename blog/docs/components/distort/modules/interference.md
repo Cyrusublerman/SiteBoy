@@ -15,9 +15,9 @@ Simulates thin-film optical interference, producing luminance-dependent iridesce
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Thin-film interference (OPD model) | Inline | — |
+| Thin-film interference (OPD model) | `shared/algorithms/optics/interference.js` | — |
 
-Inline — optical path difference `OPD = 2 × n × d × cos(θ)` where `n = 1.33` (oil/water refractive index, **hardcoded**), `d = filmThickness + lum × 200 × iridescence`, `θ = viewAngle`. Per-channel reflectance `= 0.5 + 0.5 × cos(2π × OPD / λ)` for wavelengths λ: 650nm (R), 550nm (G), 450nm (B).
+`shared/algorithms/optics/interference.js` — optical path difference `OPD = 2 × n × d × cos(θ)` where `n = 1.33` (oil/water refractive index, **hardcoded**), `d = filmThickness + lum × 200 × iridescence`, `θ = viewAngle`. Per-channel reflectance `= 0.5 + 0.5 × cos(2π × OPD / λ)` for wavelengths λ: 650nm (R), 550nm (G), 450nm (B).
 
 > **Note:** refractive index `n = 1.33` is a module-level constant. It is not exposed as a parameter — changing it requires editing the source. The value approximates water or thin mineral oil.
 

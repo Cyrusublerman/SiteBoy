@@ -26,13 +26,15 @@ export class DistortToolbar extends BaseComponent {
 
     this._zoom = options.zoom ?? 'fit';
     this._quality = options.quality === 'final' ? 'full' : (options.quality ?? 'preview');
-    this._sourceName = 'NO SOURCE';
+    this._sourceName = 'ADD SOURCE +';
     this._canUndo = false;
     this._canRedo = false;
     this._stackIsAllVector = false;
     this._exportOpen = false;
+    this._compactMode = false;
 
     this._fileInput = null;
+    this._sourceCell = null;
     this._sourceText = null;
     this._undoBtn = null;
     this._redoBtn = null;
@@ -40,8 +42,12 @@ export class DistortToolbar extends BaseComponent {
     this._exportBtn = null;
     this._exportMenu = null;
     this._zoomButtons = {};
+    this._zoomCyclicBtn = null;
+    this._zoomCellsEl = [];
 
     this._boundOutsideClick = this._handleOutsideClick.bind(this);
+    this._boundResize = this._onResize.bind(this);
+    this._resizeObserver = null;
   }
 
   render() {
@@ -69,18 +75,16 @@ export class DistortToolbar extends BaseComponent {
     this.element.appendChild(this._fileInput);
 
     this._buildSourceCell();
-    this._undoBtn = this._buildActionCell('UNDO', '6.25%', () => {
+    this._undoBtn = this._buildFixedCell('UNDO', F * 6, () => {
       if (this._canUndo) this._onUndo?.();
     });
-    this._redoBtn = this._buildActionCell('REDO', '6.25%', () => {
+    this._redoBtn = this._buildFixedCell('REDO', F * 6, () => {
       if (this._canRedo) this._onRedo?.();
     });
-    this._zoomButtons.fit = this._buildActionCell('FIT', '6.25%', () => this._setZoom('fit'));
-    this._zoomButtons.fill = this._buildActionCell('FILL', '6.25%', () => this._setZoom('fill'));
-    this._zoomButtons['1:1'] = this._buildActionCell('ACTUAL', '6.25%', () => this._setZoom('1:1'));
-    this._qualityBtn = this._buildActionCell(this._quality === 'full' ? 'FULL' : 'PREVIEW', '12.5%', () => {
+    this._buildZoomCells();
+    this._qualityBtn = this._buildFixedCell(this._quality === 'full' ? 'FULL' : 'DRAFT', F * 6, () => {
       this._quality = this._quality === 'full' ? 'preview' : 'full';
-      this._qualityBtn.textContent = this._quality === 'full' ? 'FULL' : 'PREVIEW';
+      this._qualityBtn.textContent = this._quality === 'full' ? 'FULL' : 'DRAFT';
       this._applyQualityState();
       this._onQuality?.(this._quality);
     });
@@ -91,13 +95,71 @@ export class DistortToolbar extends BaseComponent {
     this.setHistoryState(false, false);
 
     document.addEventListener('click', this._boundOutsideClick);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver(() => this._onResize());
+      this._resizeObserver.observe(this.element);
+    }
+
     return this.element;
+  }
+
+  _onResize() {
+    const width = this.element?.offsetWidth ?? 0;
+    const compact = width < 500;
+    if (compact === this._compactMode) return;
+    this._compactMode = compact;
+    this._applyCompactMode();
+  }
+
+  _applyCompactMode() {
+    const { F } = this.getF();
+    const compact = this._compactMode;
+
+    // Hide UNDO/REDO cells in compact mode to free space
+    if (this._undoBtn?.parentElement) this._undoBtn.parentElement.style.display = compact ? 'none' : '';
+    if (this._redoBtn?.parentElement) this._redoBtn.parentElement.style.display = compact ? 'none' : '';
+
+    // Reduce source cell min-width in compact mode
+    if (this._sourceCell) this._sourceCell.style.minWidth = compact ? '0' : `${F * 30}px`;
+
+    // Show/hide individual zoom cells vs cyclic button
+    for (const el of this._zoomCellsEl) {
+      el.style.display = compact ? 'none' : '';
+    }
+
+    if (!this._zoomCyclicBtn) {
+      const cell = this._createCell(`${F * 6}px`);
+      this._zoomCyclicBtn = this._createCellButton(this._zoom.toUpperCase());
+      this._zoomCyclicBtn.style.minWidth = `${F * 4}px`;
+      const zoomOrder = ['fit', 'fill', '1:1'];
+      this._zoomCyclicBtn.addEventListener('click', () => {
+        const idx = zoomOrder.indexOf(this._zoom);
+        const next = zoomOrder[(idx + 1) % zoomOrder.length];
+        this._setZoom(next);
+        this._zoomCyclicBtn.textContent = next === '1:1' ? 'ACTUAL' : next.toUpperCase();
+      });
+      cell.appendChild(this._zoomCyclicBtn);
+      // Insert before quality button cell
+      if (this._qualityBtn?.parentElement?.parentElement) {
+        this.element.insertBefore(cell, this._qualityBtn.parentElement);
+      } else {
+        this.element.appendChild(cell);
+      }
+      this._zoomCyclicCell = cell;
+    }
+
+    if (this._zoomCyclicCell) {
+      this._zoomCyclicCell.style.display = compact ? '' : 'none';
+    }
   }
 
   _buildSourceCell() {
     const { F } = this.getF();
-    const cell = this._createCell('37.5%');
-    const button = this._createCellButton('SOURCE');
+    this._sourceCell = this._createFlexCell();
+    this._sourceCell.style.minWidth = `${F * 30}px`;
+    const cell = this._sourceCell;
+    const button = this._createCellButton('SOURCE:');
     button.style.justifyContent = 'space-between';
     button.addEventListener('click', () => this._fileInput?.click());
 
@@ -108,18 +170,16 @@ export class DistortToolbar extends BaseComponent {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-left: ${F}px;
     `;
 
-    const glyph = this.createElement('span', 'distort-toolbar-source-glyph', '▾');
-    glyph.style.cssText = `padding-left: ${F}px;`;
-
-    button.append(this._sourceText, glyph);
+    button.appendChild(this._sourceText);
     cell.appendChild(button);
     this.element.appendChild(cell);
   }
 
-  _buildActionCell(label, width, onClick) {
-    const cell = this._createCell(width);
+  _buildFixedCell(label, widthPx, onClick) {
+    const cell = this._createCell(`${widthPx}px`);
     const button = this._createCellButton(label);
     button.addEventListener('click', onClick);
     cell.appendChild(button);
@@ -127,8 +187,30 @@ export class DistortToolbar extends BaseComponent {
     return button;
   }
 
+  _buildZoomCells() {
+    const { F } = this.getF();
+    const fitCell  = this._createCell(`${F * 6}px`);
+    const fillCell = this._createCell(`${F * 6}px`);
+    const actCell  = this._createCell(`${F * 6}px`);
+
+    this._zoomButtons.fit    = this._attachActionButton(fitCell,  'FIT',    () => this._setZoom('fit'));
+    this._zoomButtons.fill   = this._attachActionButton(fillCell, 'FILL',   () => this._setZoom('fill'));
+    this._zoomButtons['1:1'] = this._attachActionButton(actCell,  'ACTUAL', () => this._setZoom('1:1'));
+
+    this._zoomCellsEl = [fitCell, fillCell, actCell];
+    for (const cell of this._zoomCellsEl) this.element.appendChild(cell);
+  }
+
+  _attachActionButton(cell, label, onClick) {
+    const button = this._createCellButton(label);
+    button.addEventListener('click', onClick);
+    cell.appendChild(button);
+    return button;
+  }
+
   _buildExportCell() {
-    const cell = this._createCell('12.5%', true);
+    const { F } = this.getF();
+    const cell = this._createCell(`${F * 6}px`, true);
     cell.style.position = 'relative';
 
     this._exportBtn = this._createCellButton('EXPORT ▾');
@@ -143,10 +225,11 @@ export class DistortToolbar extends BaseComponent {
       display: none;
       position: absolute;
       top: 100%;
-      right: -1px;
-      min-width: ${this.getF().F * 15}px;
+      right: 0;
+      min-width: 100%;
       background: var(--c-bg);
       border: 1px solid var(--c-border);
+      border-top: none;
       box-sizing: border-box;
       z-index: 20;
     `;
@@ -215,6 +298,19 @@ export class DistortToolbar extends BaseComponent {
       border-right: ${isLast ? 'none' : '1px solid var(--c-border)'};
       box-sizing: border-box;
       flex-shrink: 0;
+      position: relative;
+    `;
+    return cell;
+  }
+
+  _createFlexCell() {
+    const cell = this.createElement('div', 'distort-toolbar-cell');
+    cell.style.cssText = `
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      border-right: 1px solid var(--c-border);
+      box-sizing: border-box;
       position: relative;
     `;
     return cell;
@@ -331,8 +427,13 @@ export class DistortToolbar extends BaseComponent {
     if (this._redoBtn) this._applyDisabledState(this._redoBtn, !this._canRedo);
   }
 
-  setSourceInfo(name) {
-    this._sourceName = name ? String(name).toUpperCase() : 'NO SOURCE';
+  setSourceInfo(name, w, h) {
+    if (!name) {
+      this._sourceName = 'ADD SOURCE +';
+    } else {
+      const label = String(name).toUpperCase();
+      this._sourceName = (w && h) ? `${label}  ${w}×${h}` : label;
+    }
     if (this._sourceText) this._sourceText.textContent = this._sourceName;
   }
 
@@ -343,6 +444,8 @@ export class DistortToolbar extends BaseComponent {
 
   destroy() {
     document.removeEventListener('click', this._boundOutsideClick);
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = null;
     this._closeExport();
     super.destroy();
   }

@@ -46,7 +46,7 @@ Legacy source: `moire-generator-spec.md` (mixed bundle), `moire-generator-audit.
 |---|---|---|---|
 | None | ✓ | ✓ | PASS |
 | Circle | ✓ | ✓ | PASS |
-| Triangle | ✓ | ✓ (buggy SDF — see Issues) | PARTIAL |
+| Triangle | ✓ | ✓ | PASS — resolved; syntax error and formula corrected |
 | Polygon | ✓ | ✗ (replaced by 'square') | FAIL |
 | Square | not in spec | ✓ | NEW |
 

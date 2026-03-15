@@ -15,10 +15,10 @@ Applies radially expanding sinusoidal displacement from a centre point with expo
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Radial sinusoidal displacement | Inline | — |
+| Radial sinusoidal displacement | `shared/algorithms/geometry/warp.js` | — |
 | `Sampler.sampleDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — displacement `= sin(dist/w × freq × 2π + phase) × amplitude × exp(−(dist/maxDist) × falloff)` along the outward angle.
+`shared/algorithms/geometry/warp.js` — displacement `= sin(dist/w × freq × 2π + phase) × amplitude × exp(−(dist/maxDist) × falloff)` along the outward angle.
 
 ## Parameters
 

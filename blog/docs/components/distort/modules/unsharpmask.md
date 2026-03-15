@@ -15,10 +15,10 @@ Sharpens by amplifying the difference between the source and its Gaussian-blurre
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Separable Gaussian blur | Inline | — |
-| Unsharp mask: `out = src + amount × (src − blur)` | Inline | — |
+| Separable Gaussian blur | `shared/algorithms/image/spatial-filters.js` | — |
+| Unsharp mask: `out = src + amount × (src − blur)` | `shared/algorithms/image/spatial-filters.js` | — |
 
-Inline — identical Gaussian kernel construction to GaussBlur. Sharpening step: `diff = src − blur`; if `|diff| > threshold`, `out = src + amount × diff`; else `out = src`.
+`shared/algorithms/image/spatial-filters.js` — identical Gaussian kernel construction to GaussBlur. Sharpening step: `diff = src − blur`; if `|diff| > threshold`, `out = src + amount × diff`; else `out = src`.
 
 ## Parameters
 

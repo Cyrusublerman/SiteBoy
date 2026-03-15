@@ -15,11 +15,11 @@ Places randomly positioned magnifying lens bubbles on the image, each applying a
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Radial magnification warp | Inline | — |
+| Radial magnification warp | `shared/algorithms/geometry/warp.js` | — |
 | `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 | `Sampler.sampleDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — magnification factor `m = 1 + (magnification−1) × edgeSoftness × (1−t²)` where `t = dist/r`. Source pulled toward bubble centre by `1/m`.
+`shared/algorithms/geometry/warp.js` — magnification factor `m = 1 + (magnification−1) × edgeSoftness × (1−t²)` where `t = dist/r`. Source pulled toward bubble centre by `1/m`.
 
 ## Parameters
 

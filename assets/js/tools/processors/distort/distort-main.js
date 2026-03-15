@@ -44,7 +44,6 @@ export class DistortTool extends BaseComponent {
     this._stack = null;
     this._viewport = null;
     this._transport = null;
-    this._sourceReadout = null;
     this._sourceName = '';
     this._tmpAnchors = new Set();
   }
@@ -85,7 +84,7 @@ export class DistortTool extends BaseComponent {
     this.element.appendChild(this._toolBase.element);
     this.componentInstances.push(this._toolBase);
 
-    this._container.innerHTML = '';
+    while (this._container.firstChild) this._container.removeChild(this._container.firstChild);
     this._container.appendChild(this.element);
 
     this._bridge = new WorkerBridge(this._state, result => this._onRenderResult(result));
@@ -104,7 +103,6 @@ export class DistortTool extends BaseComponent {
       canvas: { mode: 'none' },
       sidebar: [
         ['PIPELINE', [
-          ['SOURCE', []],
           ['STACK', []],
         ]],
         ['CANVAS', [
@@ -132,31 +130,37 @@ export class DistortTool extends BaseComponent {
     toolBase.element.style.flex = '1';
     toolBase.element.style.minHeight = '0';
     this._onToolBaseInit(toolBase);
+
+    // Wrap _handleResize so re-injection runs after any full DOM rebuild
+    const _origResize = toolBase._handleResize.bind(toolBase);
+    toolBase._handleResize = () => {
+      const prevEl = toolBase.element;
+      _origResize();
+      if (toolBase.element !== prevEl) {
+        toolBase.element.style.flex = '1';
+        toolBase.element.style.minHeight = '0';
+        this._onToolBaseInit(toolBase);
+      }
+    };
+
     return toolBase;
   }
 
   _onToolBaseInit(tb) {
+    // Idempotent: destroy any existing injected instances before re-injecting
+    for (const key of ['_stack', '_viewport', '_transport']) {
+      const inst = this[key];
+      if (inst) {
+        inst.destroy();
+        const idx = this.componentInstances.indexOf(inst);
+        if (idx !== -1) this.componentInstances.splice(idx, 1);
+        this[key] = null;
+      }
+    }
+
     this._applyBlockTitles(tb);
 
-    const sourceBlock = this._findBlock(tb, 'SOURCE');
     const stackBlock = this._findBlock(tb, 'STACK');
-
-    if (sourceBlock) {
-      const { F } = this.getF();
-      this._sourceReadout = this.createElement('div', 'distort-source-readout');
-      this._sourceReadout.style.cssText = `
-        min-height: ${F * 2}px;
-        padding: 0 ${F}px;
-        border: 1px solid var(--c-border);
-        display: flex;
-        align-items: center;
-        color: var(--c-text);
-        font-family: 'Space Mono', monospace;
-        font-size: ${F * 0.75}px;
-        box-sizing: border-box;
-      `;
-      sourceBlock.appendChild(this._sourceReadout);
-    }
 
     this._stack = new EffectStack({
       nodes: this._state.stack ?? [],
@@ -180,7 +184,10 @@ export class DistortTool extends BaseComponent {
     canvasArea.style.flexDirection = 'column';
     canvasArea.style.minHeight = '0';
 
-    this._viewport = new ViewportCanvas({ zoom: 'fit' }, this.deps);
+    this._viewport = new ViewportCanvas({
+      zoom: 'fit',
+      onUpload: asset => this._loadSource(asset),
+    }, this.deps);
     this._viewport.render();
     this._viewport.element.style.flex = '1';
     this._viewport.element.style.minHeight = '0';
@@ -272,15 +279,6 @@ export class DistortTool extends BaseComponent {
     return null;
   }
 
-  _setSourceReadout() {
-    if (!this._sourceReadout) return;
-    if (!this._state.sourceW || !this._sourceName) {
-      this._sourceReadout.textContent = 'NO SOURCE';
-      return;
-    }
-    this._sourceReadout.textContent = `${this._state.sourceW} × ${this._state.sourceH}  ${this._sourceName}`;
-  }
-
   _syncUiFromState() {
     this._toolbar?.setSourceInfo(this._sourceName || '');
     this._toolBase?.setValue('outputWidth', this._state.outputWidth);
@@ -289,7 +287,6 @@ export class DistortTool extends BaseComponent {
     this._toolBase?.setValue('frameCount', this._state.frameCount);
     this._toolBase?.setValue('fps', this._state.fps);
     this._stack?.setSoloNodeId?.(this._state.soloNodeId ?? null);
-    this._setSourceReadout();
     this._transport?.setFrameCount(this._state.frameCount);
     this._transport?.setFrameIndex(this._state.currentFrame ?? 0);
     this._transport?.setFps(this._state.fps);
@@ -306,6 +303,7 @@ export class DistortTool extends BaseComponent {
     this._state.setSource(asset.pixels, asset.width, asset.height);
     this._viewport?.setSource({ pixels: asset.pixels, width: asset.width, height: asset.height });
     this._viewport?.setVariations(null);
+    this._viewport?.setHasSource(true);
     this._syncUiFromState();
     this._snapshot();
     this._scheduleRender();

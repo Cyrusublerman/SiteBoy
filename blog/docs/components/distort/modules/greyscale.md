@@ -15,9 +15,9 @@ Converts the image to greyscale using a weighted luminance sum across the three 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Weighted luminance sum | Inline | — |
+| Weighted luminance sum | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — per-pixel dot product `l = R·wr + G·wg + B·wb`; all three output channels set to `l`.
+`shared/algorithms/image/colour-adjustments.js` — per-pixel dot product `l = R·wr + G·wg + B·wb`; all three output channels set to `l`.
 
 ## Parameters
 

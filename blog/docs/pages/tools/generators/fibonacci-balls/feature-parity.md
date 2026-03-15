@@ -2,7 +2,7 @@
 
 ## Source Reference
 
-- Live: `assets/js/tools/generators/scripts/physics/fibonacci-balls.gen.js` v1.0.0
+- Live: `assets/js/tools/generators/scripts/physics/fibonacci-balls.gen.js` v1.1.0
 - Legacy spec: none (Phase 3 — source-only analysis)
 - Origin: "Based on Fib_balls sketch" (per file header JSDoc)
 
@@ -20,7 +20,7 @@ No legacy specification exists to compare against. Parity analysis is limited to
 | Multi-pass collision separation | PASS | Configurable 1–16 passes |
 | Impulse velocity resolution | PASS | Mass = r², restitution, damping |
 | Wall bounce | PASS | Hard boundary with restitution |
-| `velocityGrowth` chaos | PASS | Intentional unbounded speed growth |
+| `velocityGrowth` chaos with speed cap | PASS | Cap at `canvasSize × 0.3` added v1.1.0; inner cap at `max(parent.r − inner.r, 1)` |
 | P5.js HSL colour mode | PASS | Set in `p5Setup` |
 | Rebuild on config change | PASS | `_cfgKey` guards `fibIndexForCanvas`/`maxFibIndex` |
 
@@ -28,9 +28,9 @@ No legacy specification exists to compare against. Parity analysis is limited to
 
 | Aspect | Status | Notes |
 |---|---|---|
-| Export block | ABSENT | No PNG/GIF/WebM declared |
+| Export block | PASS | `png: true, gif: false, webm: false` added v1.1.0 |
 | `canPrerender` | ABSENT | Infinite animation; appropriate |
-| `animatableParams` | ABSENT | Not declared |
-| Preset format | NON-STANDARD | Flat object; missing `values: {...}` wrapper |
+| `animatableParams` | PASS | `animatableParams: []` declared inside `animation` block |
+| Preset format | PASS | `{ name, values: {...} }` wrapper added v1.1.0 |
 | State location | NON-STANDARD | `this.*` on SCRIPT_CONFIG; not inside class/component |
 | CSS colour variables | ABSENT | P5 `background(0,0,8)` is raw HSL |

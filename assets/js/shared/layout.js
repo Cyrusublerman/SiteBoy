@@ -845,13 +845,8 @@ export class PageHeader extends BaseComponent {
     
     render() {
         if (!this.element) {
-            const layout = this.getLayoutFromVars();
-            const { F } = this.getF();
-            // Header height = 24px (2*F)
-            
             this.element = this.createElement('header', 'page-header');
             this.element.id = 'header';
-            // Apply precise header styling - single container with full borders
             this.element.style.cssText = `
                 position: fixed;
                 top: var(--header-y);
@@ -866,13 +861,7 @@ export class PageHeader extends BaseComponent {
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: var(--f);
             `;
-            console.log('📄 PageHeader created with single-container approach');
 
-            // Listen for resize events to update F-based styling
-            this.resizeHandler = () => this.onResize();
-            window.addEventListener('resize', this.resizeHandler);
-
-            // Site title - EXACT SUBHEADER PATTERN
             const homeLink = this.createElement('div', 'header-item');
             homeLink.id = 'home-link';
             homeLink.textContent = 'AEINODER';
@@ -880,18 +869,17 @@ export class PageHeader extends BaseComponent {
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: ${layout.mainHeaderLeftWidth}px;
+                width: var(--header-left-width);
                 height: 100%;
                 display: flex;
                 align-items: center;
-                padding: 0 ${F}px;
+                padding: 0 var(--f);
                 text-transform: uppercase;
                 border-right: 1px solid var(--c-border);
                 box-sizing: border-box;
                 cursor: pointer;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-weight: 400;
-                font-size: ${F}px;
             `;
 
             if (this.onNavigate) {
@@ -910,21 +898,20 @@ export class PageHeader extends BaseComponent {
             navContainer.id = 'header-nav';
             navContainer.style.cssText = `
                 position: absolute;
-                left: ${layout.mainHeaderLeftWidth}px; /* Position after title */
+                left: var(--header-left-width);
                 top: 0;
-                width: ${layout.mainHeaderNavWidth}px;
+                width: var(--header-nav-width);
                 height: 100%;
                 display: flex;
                 align-items: center;
-                padding: 0 ${F}px;
+                padding: 0 var(--f);
                 text-transform: uppercase;
-                border-right: 1px solid var(--c-border); /* Separation from toggle */
+                border-right: 1px solid var(--c-border);
                 box-sizing: border-box;
                 cursor: pointer;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-                font-size: ${F}px;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
             `;
 
@@ -932,7 +919,7 @@ export class PageHeader extends BaseComponent {
             navText.textContent = 'SECTIONS';
             const menuSymbol = this.createElement('span');
             menuSymbol.id = 'menu-symbol';
-            menuSymbol.style.cssText = `font-size: ${F}px; margin-left: 2px; line-height: 1; display: inline-block;`;
+            menuSymbol.style.cssText = `margin-left: 2px; line-height: 1; display: inline-block;`;
             menuSymbol.textContent = '+';
 
             navContainer.appendChild(navText);
@@ -954,11 +941,10 @@ export class PageHeader extends BaseComponent {
                 zIndex: 210 // Higher than header z-index of 200
             });
 
-            // Position dropdown to match navigation area width exactly
-            dropdownMenu.style.position = 'fixed'; // Use fixed positioning like subheader
-            dropdownMenu.style.top = 'auto'; // Will be set by positionDropdownToBody
-            dropdownMenu.style.left = 'auto'; // Will be set by positionDropdownToBody
-            dropdownMenu.style.width = `${layout.mainHeaderNavWidth}px`; // Match navigation area width exactly
+            dropdownMenu.style.position = 'fixed';
+            dropdownMenu.style.top = 'auto';
+            dropdownMenu.style.left = 'auto';
+            dropdownMenu.style.width = 'var(--header-nav-width)';
 
             // Attach dropdown to document.body for consistent timing with subheader
             document.body.appendChild(dropdownMenu);
@@ -969,7 +955,6 @@ export class PageHeader extends BaseComponent {
             // Populate dropdown with navigation items
             this.navigationDropdown.populateDropdown(this.navigationItems);
 
-            // Theme toggle button - EXACT SUBHEADER PATTERN (rightmost, no borders)
             const headerToggle = this.createElement('div', 'header-toggle');
             headerToggle.id = 'header-toggle';
             headerToggle.textContent = this.getThemeIcon();
@@ -977,17 +962,16 @@ export class PageHeader extends BaseComponent {
                 position: absolute;
                 right: 0;
                 top: 0;
-                width: ${layout.mainHeaderToggleWidth}px;
+                width: var(--header-toggle-width);
                 height: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 box-sizing: border-box;
                 cursor: pointer;
-                font-size: ${F}px;
                 line-height: 1;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
-            `; /* No borders - rightmost element like subheader next button */
+            `;
 
             headerToggle.addEventListener('click', () => this.toggleTheme());
             headerToggle.classList.add('clickable');
@@ -1005,79 +989,16 @@ export class PageHeader extends BaseComponent {
             // Setup click outside functionality
             this.navigationDropdown.setupClickOutside(navContainer);
 
-            // Subscribe to resize
             this.subscribeToResize();
-            // Fallback window resize listener to match subheader timing
             this.windowResizeHandler = () => this.onResize();
             window.addEventListener('resize', this.windowResizeHandler);
-
-            // Ensure header is visible after creation
-            setTimeout(() => {
-                if (this.element) {
-                    console.log('📐 Header visibility check:', {
-                        display: this.element.style.display,
-                        position: getComputedStyle(this.element).position,
-                        top: getComputedStyle(this.element).top,
-                        left: getComputedStyle(this.element).left,
-                        zIndex: getComputedStyle(this.element).zIndex
-                    });
-                }
-            }, 100);
         }
         return this.element;
     }
     
-    /**
-     * Handle resize - recalculate layout like subheader
-     */
     onResize() {
-        if (this.element) {
-            const layout = this.getLayoutFromVars();
-            const { F } = this.getF();
-
-            // Update home link width and positioning (subheader pattern)
-            const homeLink = this.element.querySelector('#home-link');
-            if (homeLink) {
-                homeLink.style.width = `${layout.mainHeaderLeftWidth}px`;
-                homeLink.style.fontSize = `${F}px`;
-                homeLink.style.padding = `0 ${F}px`;
-            }
-
-            // Update navigation area width and positioning (subheader pattern)
-            const navContainer = this.element.querySelector('#header-nav');
-            if (navContainer) {
-                navContainer.style.left = `${layout.mainHeaderLeftWidth}px`; /* After title */
-                navContainer.style.width = `${layout.mainHeaderNavWidth}px`;
-                navContainer.style.fontSize = `${F}px`;
-                navContainer.style.padding = `0 ${F}px`;
-            }
-
-            // Update menu symbol font-size for F scaling
-            const menuSymbol = this.element.querySelector('#menu-symbol');
-            if (menuSymbol) {
-                menuSymbol.style.fontSize = `${F}px`;
-            }
-
-            // Update toggle width and positioning
-            const headerToggle = this.element.querySelector('#header-toggle');
-            if (headerToggle) {
-                headerToggle.style.width = `${layout.mainHeaderToggleWidth}px`;
-                headerToggle.style.fontSize = `${F}px`;
-            }
-
-            // Update dropdown width and positioning to match navigation area exactly
-            const dropdown = document.getElementById('dropdown-menu');
-            if (dropdown) {
-                dropdown.style.left = `${layout.mainHeaderLeftWidth}px`; /* After title */
-                dropdown.style.width = `${layout.mainHeaderNavWidth}px`;
-            }
-
-            // Update dropdown items if they exist
-            if (this.navigationDropdown) {
-                this.navigationDropdown.updateFontSizes(F);
-            }
-
-            console.log('📄 PageHeader: Single-container layout and F-based styling recalculated on resize');
+        if (this.navigationDropdown?.isOpen) {
+            this.navigationDropdown.positionDropdownToBody();
         }
     }
     
@@ -1100,10 +1021,6 @@ export class PageHeader extends BaseComponent {
         if (this.windowResizeHandler) {
             window.removeEventListener('resize', this.windowResizeHandler);
             this.windowResizeHandler = null;
-        }
-        if (this.resizeHandler) {
-            window.removeEventListener('resize', this.resizeHandler);
-            this.resizeHandler = null;
         }
         super.destroy();
     }
@@ -1499,6 +1416,7 @@ export class Subheader extends BaseComponent {
                 width: ${layout.subheaderNavContainerWidth}px;
                 height: 100%;
                 display: flex;
+                overflow: hidden;
             `;
             
             // Previous button - PRECISE WIDTH from layout calculations
@@ -1516,6 +1434,9 @@ export class Subheader extends BaseComponent {
                 cursor: pointer;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: ${F}px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             `;
             
             // Next button - PRECISE WIDTH from layout calculations (exact remainder)
@@ -1532,6 +1453,9 @@ export class Subheader extends BaseComponent {
                 cursor: pointer;
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
                 font-size: var(--f);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             `;
             
             if (this.onPrevClick) {
@@ -1710,14 +1634,31 @@ export class Subheader extends BaseComponent {
                 dropdownMenu.style.width = `${layout.subheaderTitleWidth}px`;
             }
             
-            // Update navigation button widths
+            // Update navigation button widths and re-evaluate text fit
             const navButtons = this.element.querySelectorAll('.nav-button');
             if (navButtons.length >= 2) {
                 navButtons[0].style.width = `${layout.subheaderPrevButtonWidth}px`;
                 navButtons[1].style.width = `${layout.subheaderNextButtonWidth}px`;
             }
-            
-            console.log('📐 Subheader: Layout recalculated on resize');
+            this._refreshNavButtonText();
+        }
+    }
+
+    /**
+     * Re-evaluate nav button text after width changes.
+     * Binary: shows full "NAME ←" / "→ NAME" when it fits, glyph-only otherwise.
+     */
+    _refreshNavButtonText() {
+        if (!this.element) return;
+        const navContainer = this.element.querySelector('.subheader-nav');
+        if (!navContainer) return;
+        const prevButton = navContainer.querySelector('.nav-button:first-child');
+        const nextButton = navContainer.querySelector('.nav-button:last-child');
+        if (prevButton && this.prevItem) {
+            prevButton.textContent = this.formatNavigationText(this.prevItem, 'prev');
+        }
+        if (nextButton && this.nextItem) {
+            nextButton.textContent = this.formatNavigationText(this.nextItem, 'next');
         }
     }
     
@@ -1921,44 +1862,42 @@ export class Subheader extends BaseComponent {
     }
     
     /**
-     * Format navigation text for buttons
+     * Format navigation text for buttons — binary fit/degrade.
+     * Shows "NAME ←" / "→ NAME" when the full string fits,
+     * degrades to glyph-only ("←" / "→") when it does not.
+     * Never truncates mid-word.
      */
     formatNavigationText(item, direction) {
-        // Extract display name from item
-        // For hierarchical paths like "utilities/tool-test", show just the tool name
         let displayTitle = item.title || item.id || 'ITEM';
-        
-        // If title contains slashes (hierarchical path), show only the last part
         if (displayTitle.includes('/')) {
             const parts = displayTitle.split('/');
             displayTitle = parts[parts.length - 1];
         }
-        
-        // Get actual button width from layout calculations
+
+        const glyph = direction === 'prev' ? '←' : '→';
+        const fullText = direction === 'prev'
+            ? `${displayTitle.toUpperCase()} ${glyph}`
+            : `${glyph} ${displayTitle.toUpperCase()}`;
+
         const layout = this.deps.MF ? this.deps.MF.computeLayout() : {};
         const F = this.deps.MF ? this.deps.MF.F : 14;
-        
-        const buttonWidth = direction === 'prev' ? 
-            (layout.subheaderPrevButtonWidth || 100) : 
-            (layout.subheaderNextButtonWidth || 100);
-        
-        // Calculate available width: button width - 2*F for safety margins and arrow space
-        const arrowAndSafetyWidth = 2 * F; // Space for " ←" or "→ " plus safety margin
-        const availableWidth = buttonWidth - arrowAndSafetyWidth;
-        
-        // Estimate character width (Atkinson Hyperlegible is roughly 0.7 * F per character)
-        const charWidth = F * 0.7;
-        const maxChars = Math.floor(availableWidth / charWidth);
-        
-        // Ensure minimum of 4 characters and maximum of reasonable length
-        const maxLength = Math.max(4, Math.min(maxChars, 25));
-        
-        let truncatedTitle = displayTitle.length > maxLength ? 
-            displayTitle.substring(0, maxLength - 1) + '…' : displayTitle;
-        
-        return direction === 'prev' ? 
-            `${truncatedTitle.toUpperCase()} ←` : 
-            `→ ${truncatedTitle.toUpperCase()}`;
+        const buttonWidth = direction === 'prev'
+            ? (layout.subheaderPrevButtonWidth || 100)
+            : (layout.subheaderNextButtonWidth || 100);
+
+        const textWidth = this._measureText(fullText, F);
+        if (textWidth <= buttonWidth - F) {
+            return fullText;
+        }
+        return glyph;
+    }
+
+    _measureText(text, fontSize) {
+        if (!this._measureCtx) {
+            this._measureCtx = document.createElement('canvas').getContext('2d');
+        }
+        this._measureCtx.font = `${fontSize}px 'Atkinson Hyperlegible Mono', monospace`;
+        return this._measureCtx.measureText(text).width;
     }
     
     /**
@@ -2033,7 +1972,6 @@ export class Subheader extends BaseComponent {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-                position: relative;
             `;
             
             const triggerText = this.createElement('span');

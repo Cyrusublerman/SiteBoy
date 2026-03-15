@@ -6,16 +6,16 @@ No legacy specification or audit exists. Assessment is internal consistency and 
 
 | feature | status | notes |
 |---|---|---|
-| character-by-character typing | PASS | frame-gated by `_nextFrame` |
-| variable per-character delay | PASS | pseudo-noise via `_noiseT` counter |
-| punctuation pauses | PASS | `.`, `\n`, `{`, `,` get extra delay |
+| character-by-character typing | PASS | frame-gated by `nextFrame` |
+| variable per-character delay | PASS | deterministic hash via `_pseudoNoise(charIndex)` |
+| punctuation pauses | PASS | `.`, `\n`, `{`, `,` get extra delay via `pauseDelay` |
 | comment/code colour distinction | PASS | `_isComment` per line |
 | ink absorption into float buffer | PASS | `_absorbInk` |
-| bidirectional ink diffusion | PASS | `_diffuse` forward+backward passes |
+| bidirectional ink diffusion | PASS | `_diffuse` forward+backward passes; alternates `passDir` |
 | gravity threshold for bleed spread | PASS | `gravity` param gates neighbour bleed |
 | entropy decay | PASS | residue alpha decremented per step |
 | composite: sharp ink + bleed halo | PASS | `isInk` branch in composite |
-| cycle phases (type→clear→dormant→reset) | PASS | `_clearing`, `_dormant` flags |
+| cycle phases (type→clear→dormant→reset) | PASS | `clearing`, `dormant` flags |
 | self-referential text content | PARTIAL | `_QUINE_TEXT` is an abridged/non-functional version of the config, not a full true quine |
 | 3 presets | PASS | Classic, Fast, Slow Bleed |
 
@@ -23,17 +23,17 @@ No legacy specification or audit exists. Assessment is internal consistency and 
 
 | check | status | notes |
 |---|---|---|
-| preset format `{ name, values }` | FAIL | flat object format used |
-| `animatableParams` declared | FAIL | not declared |
-| export options declared | FAIL | no export block |
-| state via local vars not `SCRIPT_CONFIG` | FAIL | all state on SCRIPT_CONFIG (`_residue`, `_charIndex`, etc.) |
-| CSS variable colours | FAIL | raw RGB object literals (`_BG`, `_INK_CODE`, `_INK_COMMENT`) |
-| deterministic per-frame output | FAIL | `_noiseT` advances by character count, not frame count — non-deterministic |
-| `p.noLoop()` in setup | WARN | `p.noLoop()` set in `p5Setup`, host calls `p5Draw` each frame externally — verify host calls `p.redraw()` or equivalent |
+| preset format `{ name, values }` | PASS | resolved — all presets use `values` wrapper |
+| `animatableParams` declared | PASS | resolved — `['entropy', 'urgency', 'gravity', 'delayScale']` |
+| export options declared | PASS | resolved — `{ png: true, gif: false, webm: false }` |
+| state via WeakMap, not `SCRIPT_CONFIG` | PASS | resolved — `_instances: WeakMap` + `_makeState()` |
+| CSS variable colours | PARTIAL | canvas-only RGB objects carry design-law §6.2 exemption comment; no UI colour violations |
+| deterministic per-frame output | PASS | resolved — `_pseudoNoise(charIndex)` replaces `_noiseT` accumulator |
+| `p.noLoop()` in setup | WARN | still present; host must call `p.redraw()` per frame |
 
 ## Architecture Notes
 
-- The `_lastRenderedLine` state property is set in `_reset` but never updated in `p5Draw` — appears to be dead code.
-- `_noiseT` is described in the header comment as "Perlin noise-driven delay" but is a simple linear counter — the comment is inaccurate.
-- `p5Setup` creates `_imagined` graphics buffer; `p5Draw` has a guard that re-creates it if `!_initialized`. This double-init guard suggests the host may not always call `p5Setup` before `p5Draw`.
-- The `_QUINE_TEXT` constant is a partial quine: it lists parameter names (`entropy`, `urgency`, …) without their actual values. A true quine would render its own exact source text verbatim.
+- `_makeState()` creates fresh per-instance state; `_instances: WeakMap` isolates state across concurrent mounts.
+- `_pseudoNoise` is a deterministic integer hash (32-bit multiply-xorshift); described accurately in source comments.
+- `p5Draw` has a re-initialisation guard (`if (!state) { ... }`) for cases where the host calls `p5Draw` before `p5Setup`.
+- `_QUINE_TEXT` is a partial quine: lists parameter names without numeric defaults.

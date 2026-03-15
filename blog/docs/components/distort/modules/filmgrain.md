@@ -15,10 +15,10 @@ Adds photographic film grain by overlaying seeded random noise scaled by luminan
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Downsampled random grain + luminance response | Inline | — |
+| Downsampled random grain + luminance response | `shared/algorithms/image/texture-overlays.js` | — |
 | `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 
-Inline — a downsampled noise grid (`size` pixels per cell) of uniform random values in `[-1,1]`. `lumResp` attenuates grain proportionally to distance from mid-grey. Supports `getModulated` for per-pixel `amount`.
+`shared/algorithms/image/texture-overlays.js` — a downsampled noise grid (`size` pixels per cell) of uniform random values in `[-1,1]`. `lumResp` attenuates grain proportionally to distance from mid-grey. Supports `getModulated` for per-pixel `amount`.
 
 ## Parameters
 

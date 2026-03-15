@@ -15,9 +15,9 @@ Overlays a seeded random Truchet tile pattern (quarter-circle arcs) blended onto
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Truchet tile arc SDF | Inline | — |
+| Truchet tile arc SDF | `shared/algorithms/patterns/pattern-generators.js` | — |
 
-Inline — per-tile orientation determined by a bitwise hash of `(seed XOR tileX, tileY)`. Per-pixel distance to nearest arc computed analytically; stroke membership gates binary pattern. Pattern blended onto source via `multiply`, `screen`, or `overlay`.
+`shared/algorithms/patterns/pattern-generators.js` — per-tile orientation determined by a bitwise hash of `(seed XOR tileX, tileY)`. Per-pixel distance to nearest arc computed analytically; stroke membership gates binary pattern. Pattern blended onto source via `multiply`, `screen`, or `overlay`.
 
 ## Parameters
 

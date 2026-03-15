@@ -15,9 +15,9 @@ Maps each pixel to the nearest colour in a fixed palette using Euclidean distanc
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Nearest-colour quantisation (RGB Euclidean) | Inline | — |
+| Nearest-colour quantisation (RGB Euclidean) | `shared/algorithms/image/colour-adjustments.js` | — |
 
-Inline — squared Euclidean distance to each palette entry; minimum wins. No dithering.
+`shared/algorithms/image/colour-adjustments.js` — squared Euclidean distance to each palette entry; minimum wins. No dithering.
 
 ## Parameters
 

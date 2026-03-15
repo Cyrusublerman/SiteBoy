@@ -19,10 +19,14 @@ export class CategoryPicker extends BaseComponent {
     this.element.style.cssText = `
       display: flex;
       flex-direction: column;
-      height: 100%;
-      min-height: 0;
+      position: absolute;
+      inset: 0;
+      z-index: 10;
       background: var(--c-bg);
-      border-top: 1px solid var(--c-border);
+      border-left: 1px solid var(--c-border);
+      border-right: 1px solid var(--c-border);
+      border-bottom: 1px solid var(--c-border);
+      box-sizing: border-box;
     `;
 
     this._buildHeader(F);
@@ -41,34 +45,9 @@ export class CategoryPicker extends BaseComponent {
       flex-shrink: 0;
     `;
 
-    const close = this.createElement('button', 'distort-picker-close', '× CLOSE');
-    close.type = 'button';
-    close.style.cssText = `
-      width: ${F * 7}px;
-      height: 100%;
-      border: none;
-      border-right: 1px solid var(--c-border);
-      background: var(--c-bg);
-      color: var(--c-text);
-      font-family: 'Space Mono', monospace;
-      font-size: ${F * 0.75}px;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-sizing: border-box;
-    `;
-    close.addEventListener('mouseenter', () => {
-      close.style.background = 'var(--c-text)';
-      close.style.color = 'var(--c-bg)';
-    });
-    close.addEventListener('mouseleave', () => {
-      close.style.background = 'var(--c-bg)';
-      close.style.color = 'var(--c-text)';
-    });
-    close.addEventListener('click', () => this._onClose?.());
-
     this._searchInput = this.createElement('input', 'distort-picker-search');
     this._searchInput.type = 'text';
-    this._searchInput.placeholder = 'FILTER MODULES';
+    this._searchInput.placeholder = 'SEARCH';
     this._searchInput.style.cssText = `
       flex: 1;
       height: 100%;
@@ -86,7 +65,7 @@ export class CategoryPicker extends BaseComponent {
       this._renderList();
     });
 
-    row.append(close, this._searchInput);
+    row.appendChild(this._searchInput);
     this.element.appendChild(row);
   }
 
@@ -98,6 +77,10 @@ export class CategoryPicker extends BaseComponent {
       overflow-y: auto;
     `;
     this.element.appendChild(this._listEl);
+  }
+
+  _stripModuleSuffix(label) {
+    return label.replace(/\s*module\s*$/i, '').replace(/^module\s+/i, '').trim();
   }
 
   _renderList() {
@@ -114,7 +97,12 @@ export class CategoryPicker extends BaseComponent {
         : entries;
       if (!matches.length) continue;
 
+      // Default collapsed unless query is active; preserve user toggle
+      if (!(category in this._collapsed) && !query) {
+        this._collapsed[category] = true;
+      }
       const collapsed = query ? false : !!this._collapsed[category];
+
       const header = this.createElement('button', 'distort-picker-category');
       header.type = 'button';
       header.textContent = `${collapsed ? '▸' : '▾'} ${category.toUpperCase()}`;
@@ -125,7 +113,7 @@ export class CategoryPicker extends BaseComponent {
         border: none;
         border-top: 1px solid var(--c-border);
         background: var(--c-bg);
-        color: var(--c-border);
+        color: var(--c-text);
         text-align: left;
         font-family: 'Space Mono', monospace;
         font-size: ${F * 0.75}px;
@@ -142,8 +130,10 @@ export class CategoryPicker extends BaseComponent {
       if (collapsed) continue;
 
       for (const entry of matches) {
-        const item = this.createElement('button', 'distort-picker-item', entry.label.toUpperCase());
+        const displayLabel = this._stripModuleSuffix(entry.label).toUpperCase();
+        const item = this.createElement('button', 'distort-picker-item', displayLabel);
         item.type = 'button';
+        item.title = entry.description ?? entry.label;
         item.style.cssText = `
           width: 100%;
           height: ${F * 2}px;
@@ -154,7 +144,7 @@ export class CategoryPicker extends BaseComponent {
           color: var(--c-text);
           text-align: left;
           font-family: 'Space Mono', monospace;
-          font-size: ${F * 0.85}px;
+          font-size: ${F * 0.75}px;
           text-transform: uppercase;
           cursor: pointer;
           box-sizing: border-box;
@@ -179,7 +169,7 @@ export class CategoryPicker extends BaseComponent {
         color: var(--c-border);
         font-family: 'Space Mono', monospace;
         font-size: ${F * 0.75}px;
-        text-align: center;
+        text-align: left;
       `;
       this._listEl.appendChild(empty);
     }

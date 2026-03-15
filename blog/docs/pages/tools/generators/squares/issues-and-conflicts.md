@@ -6,33 +6,47 @@ None.
 
 ## WARN
 
-**[STANDARDS] Module-level mutable state**
+**[RESOLVED] [STANDARDS] Module-level mutable state**
 `let time = 0`, `let GRID = 50`, `let spiralPath = []` are module-level. Standards require per-invocation state via `this.*` inside the component/host. Shared module state breaks multi-instance correctness and is a hot-reload hazard.
 - `time` is never written; dead code.
 - `GRID` and `spiralPath` function as a single-cell rebuild cache.
 
+*Fix (v2.1.0): Dead `time` variable removed. Rebuild cache moved to `SCRIPT_CONFIG._GRID`, `_spiralPath`, `_spiralIndexMap` — accessed via `this.*` in `draw()`.*
+
 **[STANDARDS] Raw hex colour literals**
 `ctx.fillStyle = '#ffffff'`, `'#000000'`, canvas background `'#000000'`. Must use `var(--vga-white)` / `var(--vga-black)` CSS variables. The generator uses `context: '2d'` so `getComputedStyle` or injected CSS vars are accessible.
 
-**[STANDARDS] `console.log` in production**
+**[RESOLVED] [STANDARDS] `console.log` in production**
 Line 547: `console.log('✅ Squares Illusion script loaded')`. Remove.
 
-**[BUG] `seek` parameter is inert**
+*Fix (v2.1.0): `console.log` call removed.*
+
+**[RESOLVED] [BUG] `seek` parameter is inert**
 `seek` is declared in `parameters` (slider 0–240) and in presets, but `draw` computes `t = (frame / 60) × speed` and never reads `params.seek`. The seek scrubber has no effect at runtime.
 Recommended fix: `const seekOffset = (params.seek || 0); const t = ((frame / 60) * speed + seekOffset) % 240;`
 
-**[PERFORMANCE] `spiralUnwind` transition — O(GRID⁴) linear scan**
+*Fix (v2.1.0): `draw()` now computes `const t = (frame / 60) * speed + seek`, wiring the seek slider.*
+
+**[RESOLVED] [PERFORMANCE] `spiralUnwind` transition — O(GRID⁴) linear scan**
 In `transitions.spiralUnwind`, per-tile lookup scans the full `spiralPath` array (`O(GRID²)` per tile × `GRID²` tiles = `O(GRID⁴)`). At `gridSize = 80`: ~41 M iterations/frame during the 198–210 s phase.
 Recommended fix: Precompute `spiralIndexMap = new Map(spiralPath.map(([c,r],i) => [c*GRID+r, i]))` in `generateSpiral`; look up with O(1) map get.
 
-**[STANDARDS] Inert `canvasWidth` / `canvasHeight` parameters**
+*Fix (v2.1.0): `generateSpiral` builds `indexMap: Map<col×100+row → index>` at path-construction time. `spiralUnwind` now performs an O(1) map lookup per tile. Overall cost reduced from O(GRID⁴) to O(GRID²).*
+
+**[RESOLVED] [STANDARDS] Inert `canvasWidth` / `canvasHeight` parameters**
 Declared in `parameters` and presets but the host does not forward them to the canvas element. Users expect these sliders to resize the canvas.
 
-**[COMPATIBILITY] `ctx.roundRect` API**
+*Fix (v2.1.0): `canvasWidth` and `canvasHeight` entries removed from `parameters` and presets.*
+
+**[RESOLVED] [COMPATIBILITY] `ctx.roundRect` API**
 `drawCard` calls `ctx.roundRect(...)` when `roundness > 0.01`. This API is only available in Chrome 99+, Firefox 112+, Safari 15.4+. Older targets require a polyfill or manual arc-based path.
 
-**[CORRECTNESS] `loopFrames` inaccurate at speed ≠ 1**
+*Fix (v2.1.0): `drawCard` checks `typeof ctx.roundRect === 'function'`; falls back to manual `arcTo`-based path for older browsers.*
+
+**[PARTIAL] [CORRECTNESS] `loopFrames` inaccurate at speed ≠ 1**
 `loopFrames: 240 * 60 = 14400` is valid only when `speed = 1`. At `speed = 2`, the effective loop is 7200 frames. Pre-render and GIF export will capture the wrong loop duration when speed deviates from default.
+
+*Status: Not structurally fixed. Behaviour acknowledged and documented in `SCRIPT_CONFIG.infoSections` KNOWN LIMITATIONS: "GIF and WebM loop duration declared as 14400 frames; accurate only when speed=1."*
 
 ## NOTE
 

@@ -2,7 +2,7 @@
 
 ## Source Reference
 
-- Live: `assets/js/tools/generators/scripts/pattern/golden-grid.gen.js` v1.0.0
+- Live: `assets/js/tools/generators/scripts/pattern/golden-grid.gen.js` v2.0.0
 - Legacy spec: none (Phase 3 — source-only analysis)
 - Origin: port of `pulsing_recursive_grid` sketch (noted in file header)
 
@@ -29,10 +29,10 @@ No legacy specification. Parity analysis is internal self-consistency and standa
 
 | Aspect | Status | Notes |
 |---|---|---|
-| Export block | ABSENT | No PNG/GIF/WebM |
-| `canPrerender` | ABSENT | Not set; `type: 'loop'` implies support |
-| `animatableParams` | ABSENT | Not declared |
-| Preset format | NON-STANDARD | Flat object; missing `values: {...}` |
-| State on SCRIPT_CONFIG | PARTIAL | `_normBounds` property is dead (precomputed but never read) |
-| `animation.loopFrames` conflict | BUG | Static 360; does not track `params.loopFrames` |
-| `_getRatio` redundant per-node calls | INEFFICIENCY | Same result every call within a frame |
+| Export block | PASS | `png: true, gif: true, webm: false` added v2.0.0 |
+| `canPrerender` | PASS | `canPrerender: true` declared in animation block |
+| `animatableParams` | PASS | `animatableParams: ['hueSpeed', 'satSpeed', 'lumSpeed']` declared |
+| Preset format | PASS | `{ name, values: {...} }` wrapper added v2.0.0 |
+| State on SCRIPT_CONFIG (dead `_normBounds`) | PASS | `_normBounds` removed; live state (`_cachedBounds`, `_lastMaxDepth`) used correctly |
+| `animation.loopFrames` conflict | PASS | Getter syncs from `params.loopFrames` every frame |
+| `_getRatio` redundant per-node calls | PASS | Ratio computed once in `p5Draw`, passed to `_subdivide` |

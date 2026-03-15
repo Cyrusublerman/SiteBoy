@@ -10,7 +10,7 @@
  *
  * Based on Fib_balls sketch.
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 // =====================================================
@@ -121,9 +121,46 @@ export const SCRIPT_CONFIG = {
     title: 'Fibonacci Balls',
     category: 'physics',
     description: 'Fibonacci-radius circles packed together. Each circle contains a bouncing inner ball. Collisions shift HSL colour based on size, angle, and speed.',
-    version: '1.0.0',
+    version: '1.1.0',
 
     canvas: { width: 610, height: 610, context: 'p5' },
+
+    infoSections: [
+        {
+            heading: 'DESCRIPTION',
+            body: 'Fibonacci Balls is a P5.js rigid-body physics simulation. A set of outer circles with radii drawn from consecutive Fibonacci numbers are packed into a square canvas using a front-chain tangent-placement algorithm, then animated as bouncing rigid bodies. Each outer circle contains a smaller inner ball that bounces freely inside it. Collisions between outer circles shift the HSL colour of both participants: hue proportional to size ratio, saturation proportional to collision angle, lightness proportional to speed difference. Inner balls shift colour on boundary bounce by angle, speed, and radial position. All circles leave positional trails with per-step opacity decay. Canvas size is itself a Fibonacci number: F[fibIndexForCanvas] (default 14 → 610px, 15 → 987px). The simulation is infinite and non-deterministic; velocityGrowth causes exponential speed amplification producing sustained chaotic motion, bounded by a per-frame speed cap (canvasSize × 0.3) to prevent tunnelling.'
+        },
+        {
+            heading: 'ALGORITHM',
+            body: 'Fibonacci sequence: standard iterative recurrence returning first n terms [1,1,2,3,5,...]. Canvas size = F[fibIndexForCanvas]. Outer circles use radii {F[i] | 2 ≤ i < maxFibIndex}, sorted descending. Front-chain packing: first circle at canvas centre; second tangent along x-axis; each successive circle finds the tangent position to adjacent front pairs minimising distance to centre, filtered for bounds and non-overlap. Interior front nodes (≥6 neighbours within r+neighbour.r+1) are pruned after each insertion. Fallback: if no front-chain position found, 36 evenly-spaced angular candidates tangent to each existing circle are tested. Physics per frame: (1) velocity grown by velocityGrowth, clamped to maxSpeed = canvasSize × 0.3; (2) position updated; (3) collisionPasses iterations of position-based separation — pairs pushed apart by overlap × separationStrength scaled by mass ratio (mass = r²); (4) wall bounce: reflect velocity component × restitution, clamp position; (5) one pass of elastic impulse resolution: j = dvn × (1+restitution) / (1/m1+1/m2), post-collision velocities scaled by collisionDamping. Inner balls move in parent-local coordinates; boundary collision (|localPos| > parent.r − inner.r) reflects velocity and applies restitution × collisionDamping. Colour: cyclic modular arithmetic colorMod(n,m) = ((n%m)+m)%m; hue shift by sizeRatio×hueShiftScale, saturation by (angle/π)×satShiftScale, lightness clamped to [25,85]. Rebuild triggered when fibIndexForCanvas or maxFibIndex changes (_cfgKey guard).'
+        },
+        {
+            heading: 'PARAMETERS',
+            body: 'Circles group (2 params). fibIndexForCanvas: slider 10–15 step 1 default 14 — canvas size as F[index]; triggers full rebuild. maxFibIndex: slider 4–12 step 1 default 12 — upper bound (exclusive) of Fibonacci radii set; 12 → up to 10 outer circles (F[2]…F[11]); triggers rebuild. Physics group (7 params). outerSpeed: slider 0.1–3 step 0.1 default 0.5 — initial outer circle speed magnitude. innerSpeed: slider 0.1–3 step 0.1 default 0.3 — initial inner ball speed magnitude. restitution: slider 0.5–1 step 0.05 default 0.95 — velocity fraction retained after wall bounce or impulse collision. collisionPasses: slider 1–16 step 1 default 8 — position-correction iterations per frame; higher values reduce interpenetration. separationStrength: slider 0.1–1 step 0.1 default 0.5 — positional push per separation pass. collisionDamping: slider 0.1–1 step 0.05 default 0.5 — speed scale applied after velocity impulse resolution. velocityGrowth: slider 1–1.05 step 0.001 default 1.01 — per-frame velocity multiplier; values above 1 cause chaotic speed growth bounded by the per-frame speed cap. Colour group (3 params). hueShiftScale: slider 0–100 step 5 default 50 — maximum hue change per collision (degrees). satShiftScale: slider 0–30 step 1 default 15 — maximum saturation shift per collision. lightShiftScale: slider 0–40 step 2 default 20 — maximum lightness shift per bounce. Trails group (2 params). trailLength: slider 0–15 step 1 default 5 — ghost positions retained per ball. trailAlphaDecay: slider 0.3–0.95 step 0.05 default 0.6 — per-step opacity retention; lower values fade trails faster. Total: 14 parameters. All are functional.'
+        },
+        {
+            heading: 'PRESETS',
+            body: 'Three presets. Classic (default): fibIndexForCanvas=14, maxFibIndex=12, outerSpeed=0.5, innerSpeed=0.3, restitution=0.95, collisionPasses=8, separationStrength=0.5, collisionDamping=0.5, velocityGrowth=1.01, hueShiftScale=50, satShiftScale=15, lightShiftScale=20, trailLength=5, trailAlphaDecay=0.6 — balanced reference state with steady colour evolution and visible trails. Bouncy: maxFibIndex=10 (fewer, larger circles), outerSpeed=1.5, innerSpeed=1.0, restitution=0.98, collisionPasses=12, velocityGrowth=1.005 (slower divergence), elevated colour shifts — fast energetic collisions with dense trails. Dense: maxFibIndex=12 (full circle set), reduced speeds, fewer passes, subdued colour shifts, shorter trails — slow meditative evolution. All presets use the standard { name, values: {...} } format.'
+        },
+        {
+            heading: 'PERFORMANCE',
+            body: 'Per-frame complexity: O(collisionPasses × N²) dominated by the separation loop, where N ≤ 10 at default maxFibIndex=12. At maximum parameters: 16 passes × 100 pairs = 1600 separation operations, plus O(N) velocity resolution and O(trailLength × N) draw calls. Estimated <2 ms/frame on mid-range hardware. Well within the 16.7 ms budget at all parameter values. Compute tier: particle — no Tier 2 adaptive resolution or Tier 3 worker offload is required. Rebuild cost (_buildCircles): O(N³) worst-case for _packFrontChain; at N=10 approximately 1000 operations; acceptable as one-time cost triggered only by fibIndexForCanvas or maxFibIndex change. Worker offload is not feasible: the generator uses P5.js canvas API (p.fill, p.circle, p.background) bound to a live P5 instance; porting to ImageData would require a full rewrite of all rendering.'
+        },
+        {
+            heading: 'ANIMATION',
+            body: 'Type: infinite. defaultFps: 60. No loopFrames; no fixed period. Non-deterministic: velocityGrowth causes exponential speed amplification making long-term trajectory state path-dependent and irreproducible from frame index alone. GIF and WebM export are disabled (non-deterministic). PNG export is available for static frame capture. Sequencer is disabled: no parameters are suited to linear phase animation; the simulation state accumulates via collision history, not a clock-driven phase. Per-frame speed cap (canvasSize × 0.3 px/frame) applied to both outer circles and inner balls prevents the simulation from reaching the velocity-tunnelling regime while preserving chaotic character.'
+        },
+        {
+            heading: 'KNOWN LIMITATIONS',
+            body: 'Infinite non-deterministic simulation: output cannot be reproduced from frame index alone; GIF and WebM export are unavailable. Canvas size is Fibonacci-derived and not independently configurable; changing fibIndexForCanvas alters the physics canvas size at runtime but the host P5 canvas element may not resize to match (SCRIPT_CONFIG canvas.width/height are static at the default 610). Speed cap preserves simulation usability but does not reset accumulated colour state; after extended runtime, colours may dwell at clamped lightness boundaries. At maxFibIndex=4, the smallest inner ball (r=1 in parent r=2) has maxD=1, producing near-zero inner motion. Fallback circle packing (36-angle scan) may fail to place the largest circles in dense configurations, so effective N may be lower than maxFibIndex − 2. Colour lightness clamping (l < 25 → +50; l > 85 → −30) produces discontinuous jumps visible as sudden brightness shifts after sustained collisions.'
+        },
+        {
+            heading: 'REFERENCES',
+            body: 'Algorithm origins: circle packing via front-chain tangent-to-two placement — Apollonius tangency problem (classical geometry); impulse-based rigid-body collision response — Baraff, D. (1997) "An Introduction to Physically Based Modeling". Original sketch: "Fib_balls" (no published URL). Live source: assets/js/tools/generators/scripts/physics/fibonacci-balls.gen.js. Registry: assets/js/tools/generators/core/script-registry.js. Host: assets/js/tools/generators/core/generative-tool-host.js. Version 1.1.0: gif export corrected to false (infinite non-deterministic type); animatableParams moved inside animation block; sequencer: false and animationExport: false declared; compute block added; maxSpeed cap (canvasSize × 0.3) added to outer and inner ball velocity update; _fibSeq: null dead property removed; infoSections added.'
+        }
+    ],
+
+    compute: { cost: 'particle' },
 
     parameters: [
         {
@@ -156,7 +193,7 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Trails',
             params: [
-                { key: 'trailLength',    type: 'slider', label: 'Trail Length',    min: 0,  max: 15, step: 1,   default: 5 },
+                { key: 'trailLength',     type: 'slider', label: 'Trail Length',     min: 0,  max: 15,  step: 1,    default: 5 },
                 { key: 'trailAlphaDecay', type: 'slider', label: 'Trail Alpha Decay', min: 0.3, max: 0.95, step: 0.05, default: 0.6 }
             ]
         }
@@ -165,36 +202,49 @@ export const SCRIPT_CONFIG = {
     presets: [
         {
             name: 'Classic',
-            fibIndexForCanvas: 14, maxFibIndex: 12,
-            outerSpeed: 0.5, innerSpeed: 0.3, restitution: 0.95, collisionPasses: 8,
-            separationStrength: 0.5, collisionDamping: 0.5, velocityGrowth: 1.01,
-            hueShiftScale: 50, satShiftScale: 15, lightShiftScale: 20,
-            trailLength: 5, trailAlphaDecay: 0.6
+            values: {
+                fibIndexForCanvas: 14, maxFibIndex: 12,
+                outerSpeed: 0.5, innerSpeed: 0.3, restitution: 0.95, collisionPasses: 8,
+                separationStrength: 0.5, collisionDamping: 0.5, velocityGrowth: 1.01,
+                hueShiftScale: 50, satShiftScale: 15, lightShiftScale: 20,
+                trailLength: 5, trailAlphaDecay: 0.6
+            }
         },
         {
             name: 'Bouncy',
-            fibIndexForCanvas: 14, maxFibIndex: 10,
-            outerSpeed: 1.5, innerSpeed: 1.0, restitution: 0.98, collisionPasses: 12,
-            separationStrength: 0.6, collisionDamping: 0.7, velocityGrowth: 1.005,
-            hueShiftScale: 80, satShiftScale: 20, lightShiftScale: 30,
-            trailLength: 8, trailAlphaDecay: 0.7
+            values: {
+                fibIndexForCanvas: 14, maxFibIndex: 10,
+                outerSpeed: 1.5, innerSpeed: 1.0, restitution: 0.98, collisionPasses: 12,
+                separationStrength: 0.6, collisionDamping: 0.7, velocityGrowth: 1.005,
+                hueShiftScale: 80, satShiftScale: 20, lightShiftScale: 30,
+                trailLength: 8, trailAlphaDecay: 0.7
+            }
         },
         {
             name: 'Dense',
-            fibIndexForCanvas: 14, maxFibIndex: 12,
-            outerSpeed: 0.3, innerSpeed: 0.2, restitution: 0.9, collisionPasses: 6,
-            separationStrength: 0.4, collisionDamping: 0.4, velocityGrowth: 1.02,
-            hueShiftScale: 40, satShiftScale: 10, lightShiftScale: 15,
-            trailLength: 3, trailAlphaDecay: 0.5
+            values: {
+                fibIndexForCanvas: 14, maxFibIndex: 12,
+                outerSpeed: 0.3, innerSpeed: 0.2, restitution: 0.9, collisionPasses: 6,
+                separationStrength: 0.4, collisionDamping: 0.4, velocityGrowth: 1.02,
+                hueShiftScale: 40, satShiftScale: 10, lightShiftScale: 15,
+                trailLength: 3, trailAlphaDecay: 0.5
+            }
         }
     ],
 
-    animation: { type: 'infinite', defaultFps: 60 },
+    export: { png: true, gif: false, webm: false },
+
+    animation: {
+        type: 'infinite',
+        defaultFps: 60,
+        animatableParams: [],
+        sequencer: false,
+        animationExport: false
+    },
 
     // State
     _circles: null,
     _canvasSize: 610,
-    _fibSeq: null,
     _lastCfgKey: null,
 
     _cfgKey(params) {
@@ -305,16 +355,27 @@ export const SCRIPT_CONFIG = {
         });
     },
 
-    _updateInner(inner, parent, params, frame) {
+    _updateInner(inner, parent, params) {
         inner.trail.push({ x: inner.localX, y: inner.localY });
         if (inner.trail.length > params.trailLength) inner.trail.shift();
 
         inner.vx *= params.velocityGrowth;
         inner.vy *= params.velocityGrowth;
+
+        // Speed cap: prevent inner ball from travelling more than the available
+        // radius per frame, which would cause it to skip over the boundary.
+        const maxD = parent.r - inner.r;
+        const maxSpd = Math.max(maxD, 1);
+        const innerSpd = Math.sqrt(inner.vx * inner.vx + inner.vy * inner.vy);
+        if (innerSpd > maxSpd) {
+            const scale = maxSpd / innerSpd;
+            inner.vx *= scale;
+            inner.vy *= scale;
+        }
+
         inner.localX += inner.vx;
         inner.localY += inner.vy;
 
-        const maxD = parent.r - inner.r;
         if (maxD <= 0) { inner.localX = 0; inner.localY = 0; return; }
         const d = Math.sqrt(inner.localX * inner.localX + inner.localY * inner.localY);
         if (d > maxD) {
@@ -381,8 +442,10 @@ export const SCRIPT_CONFIG = {
         }
 
         const { collisionPasses, velocityGrowth } = params;
-        const size = this._canvasSize;
+        const size    = this._canvasSize;
         const circles = this._circles;
+        // Cap at 30% of canvas size per frame to prevent tunnelling at high velocityGrowth values
+        const maxOuterSpeed = size * 0.3;
 
         p.background(0, 0, 8);
 
@@ -392,8 +455,14 @@ export const SCRIPT_CONFIG = {
             if (c.trail.length > params.trailLength) c.trail.shift();
             c.vx *= velocityGrowth;
             c.vy *= velocityGrowth;
-            c.x  += c.vx;
-            c.y  += c.vy;
+            const spd = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
+            if (spd > maxOuterSpeed) {
+                const s = maxOuterSpeed / spd;
+                c.vx *= s;
+                c.vy *= s;
+            }
+            c.x += c.vx;
+            c.y += c.vy;
         }
 
         // Collision resolution (multi-pass)
@@ -416,7 +485,7 @@ export const SCRIPT_CONFIG = {
 
         // Inner circle updates
         for (const c of circles) {
-            if (c.inner) this._updateInner(c.inner, c, params, frame);
+            if (c.inner) this._updateInner(c.inner, c, params);
         }
 
         // Draw

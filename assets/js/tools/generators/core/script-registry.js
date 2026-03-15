@@ -224,6 +224,3 @@ export const ScriptRegistry = {
  * Export as default for convenience
  */
 export default ScriptRegistry;
-
-console.log('✅ Script registry loaded');
-

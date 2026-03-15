@@ -3,7 +3,9 @@
 **VERSION:** 2.3  
 **UPDATED:** 2026-01-30 — Added ToolBase Universal Extensions (category tabs, canvas mode tabs, dynamic sidebar)  
 **RELATED:**
-- `blog/docs/guides/tool-standards.md` — Minimum functionality requirements
+- `blog/docs/guides/standards/design-law.md` — Absolute visual and geometric law (§13 labelling, §15 glyphs, §16 overlays, §17 toolbar partitions)
+- `blog/docs/site/ui-interface-overview.md` — Page archetypes, sidebar structure (§3), responsive rules (§5)
+- `blog/docs/guides/standards/tool-standards.md` — Minimum functionality requirements
 - `blog/docs/guides/shared-utilities.md` — Reusable code registry
 - `blog/docs/components/COMPONENT-REFERENCE.md` — Component API
 - `assets/js/core/animation-foundation.js` — Animation system (REQUIRED for animated tools)
@@ -401,6 +403,8 @@ renderMyNewTool() {
 
 ## Step 3: Sidebar Structure
 
+Standard tab and block names are defined in `ui-interface-overview.md §3`. Use those names unless a domain-specific partition is clearer.
+
 ### 3 LEVELS REQUIRED: TAB → BLOCK → COMPONENT
 
 ```
@@ -596,6 +600,8 @@ this.container.appendChild(this.tool.render());
 ToolBase automatically switches layout based on viewport:
 - **Landscape** (width ≥ 800px): Sidebar left, canvas right
 - **Portrait** (width < 800px): Canvas top, sidebar below
+
+See `ui-interface-overview.md §5` for breakpoint definitions, control priority tiers, cyclic button simplification, and responsive lifecycle re-injection.
 
 ---
 

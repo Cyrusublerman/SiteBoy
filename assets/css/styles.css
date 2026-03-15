@@ -1,11 +1,11 @@
 /**
  * SiteBoy Framework - Canonical Styles
  * 
- * F=12px VGA/MONO CONSTRAINED STYLING
+ * F=14px VGA/MONO CONSTRAINED STYLING
  * All visual styling must go through this file only
  * 
  * @version 1.0.0 - Canonical VGA/Mono
- * @constraints Atkinson Hyperlegible only, VGA colors only, F=12px base, no gradients/shadows/rounded corners
+ * @constraints Atkinson Hyperlegible only, VGA colors only, F=14px base, no gradients/shadows/rounded corners
  */
 
 /* Import Atkinson Hyperlegible font (base variant from Google Fonts) */
@@ -83,7 +83,7 @@ html, body {
 }
 
 /* =================================================================
-   F=12px TYPOGRAPHY SYSTEM
+   F=14px TYPOGRAPHY SYSTEM
    ================================================================= */
 
 h1, h2, h3, h4, h5, h6 {
@@ -289,7 +289,7 @@ blockquote {
     background: var(--c-bg);
 }
 
-/* Container-Aware Grid System - F=12px Translation of Reference Perfect Grid */
+/* Container-Aware Grid System - F=14px Translation of Reference Perfect Grid */
 
 /* Gallery Grid Container - Setup handled by JavaScript */
 
@@ -307,7 +307,7 @@ blockquote {
 /* Grid Content Area */
 .grid-content {
     font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
-    font-size: var(--f);                      /* F=12px consistent with system */
+    font-size: var(--f);                      /* F=14px consistent with system */
     text-transform: uppercase;
     text-align: center;
     font-weight: 400;
@@ -342,9 +342,9 @@ blockquote {
 /* Caption Text */
 .caption-text {
     flex: 1;
-    padding: 0 calc(var(--f));               /* F=12px padding like reference 12px */
+    padding: 0 calc(var(--f));               /* F=14px padding like reference 12px */
     font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
-    font-size: var(--f);                     /* F=12px for header consistency */
+    font-size: var(--f);                     /* F=14px for header consistency */
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
@@ -361,7 +361,7 @@ blockquote {
     position: relative;
     flex-shrink: 0;
     font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
-    font-size: var(--f);                     /* F=12px consistent */
+    font-size: var(--f);                     /* F=14px consistent */
     transition: background-color 0.2s ease, color 0.2s ease;
     /* Width and height set via JavaScript for mathematical precision */
 }
@@ -2361,7 +2361,7 @@ body.with-subheader .content-container.tool-viewport {
     box-sizing: border-box;
     z-index: 1000;
     min-width: 100%;
-    max-height: calc(var(--f) * 25); /* 300px at F=12px */
+    max-height: calc(var(--f) * 25); /* 300px at F=14px */
     overflow-y: auto;
     font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
@@ -2758,7 +2758,7 @@ body.with-subheader .content-container.tool-viewport {
    ================================================================= */
 
 /* 
-   All measurements MUST be multiples of F=12px
+   All measurements MUST be multiples of F=14px
    All colors MUST be from VGA palette
    Font MUST be Space Mono
    NO gradients, shadows, border-radius allowed

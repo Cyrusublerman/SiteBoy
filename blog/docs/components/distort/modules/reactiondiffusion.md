@@ -15,9 +15,9 @@ Simulates Gray–Scott reaction-diffusion, producing organic spot, coral, worm, 
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Gray–Scott reaction-diffusion | Inline | — |
+| Gray–Scott reaction-diffusion | `shared/algorithms/physics/reaction-diffusion.js` | — |
 
-Inline — two chemical species `u`, `v` on a 2D grid. Each step: `u_new = u + Du·∇²u − u·v² + feed·(1−u)`, `v_new = v + Dv·∇²v + u·v² − (feed+kill)·v`. Eight named parameter presets.
+`shared/algorithms/physics/reaction-diffusion.js` — two chemical species `u`, `v` on a 2D grid. Each step: `u_new = u + Du·∇²u − u·v² + feed·(1−u)`, `v_new = v + Dv·∇²v + u·v² − (feed+kill)·v`. Eight named parameter presets.
 
 **Built-in presets:**
 

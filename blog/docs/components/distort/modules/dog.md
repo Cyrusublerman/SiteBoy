@@ -15,9 +15,9 @@ Computes the Difference of Gaussians (DoG) — the subtraction of two Gaussian-b
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Difference of Gaussians | Inline | — |
+| Difference of Gaussians | `shared/algorithms/edge-detection/edge-operators.js` | — |
 
-Inline — internal `blur(src, sig)`: separable Gaussian, radius `ceil(sig × 3)`, horizontal then vertical with clamped boundary. DoG = `|G1 − G2|`; threshold gate.
+`shared/algorithms/edge-detection/edge-operators.js` — internal `blur(src, sig)`: separable Gaussian, radius `ceil(sig × 3)`, horizontal then vertical with clamped boundary. DoG = `|G1 − G2|`; threshold gate.
 
 ## Parameters
 

@@ -1,6 +1,7 @@
 # Torus — Issues and Conflicts
 
-## WARN [STANDARDS] — Module-Level Mutable State
+## **[RESOLVED]** WARN [STANDARDS] — Module-Level Mutable State
+*Fix: `let majorRadius`/`let minorRadius` removed; `const R = Math.min(W, H) * (params.torusSize)` computed locally inside `draw` and passed as arguments.*
 
 **Location:** Lines 13–14: `let majorRadius = 0; let minorRadius = 0;`
 
@@ -24,7 +25,8 @@
 
 ---
 
-## WARN [STANDARDS] — Non-Standard Parameter Type: toggle
+## **[RESOLVED]** WARN [STANDARDS] — Non-Standard Parameter Type: toggle
+*Fix: `showTorusMesh` changed to `type: 'radio'`, `options: ['on', 'off']`, `default: 'on'`.*
 
 **Location:** `SCRIPT_CONFIG.parameters` — `showTorusMesh` with `type: 'toggle'`.
 
@@ -34,7 +36,8 @@
 
 ---
 
-## WARN [STANDARDS] — Inert canvasWidth / canvasHeight Parameters
+## **[RESOLVED]** WARN [STANDARDS] — Inert canvasWidth / canvasHeight Parameters
+*Fix: Canvas parameter group removed entirely; `draw` reads `canvas.width`/`canvas.height` directly.*
 
 **Location:** `SCRIPT_CONFIG.parameters` group "Canvas".
 
@@ -44,7 +47,8 @@
 
 ---
 
-## WARN [STANDARDS] — No animatableParams Declared
+## **[RESOLVED]** WARN [STANDARDS] — No animatableParams Declared
+*Fix: `animatableParams: []` added to the `animation` block.*
 
 **Location:** `SCRIPT_CONFIG.animation` — missing `animatableParams`.
 
@@ -54,7 +58,8 @@
 
 ---
 
-## WARN [STANDARDS] — console.log in Production
+## **[RESOLVED]** WARN [STANDARDS] — console.log in Production
+*Fix: `console.log('✅ Toroidal Spirals script loaded')` removed.*
 
 **Location:** Line 324: `console.log('✅ Toroidal Spirals script loaded');`
 
@@ -62,7 +67,8 @@
 
 ---
 
-## WARN [BUG] — Non-Standard project3D Projection Matrix
+## **[RESOLVED]** WARN [BUG] — Non-Standard project3D Projection Matrix
+*Fix: Standard Ry×Rx orthographic matrix implemented — `xR = x·cosVY + z·sinVY`, `zR = −x·sinVY + z·cosVY`, `yR = y·cosX − zR·sinX`; per-frame trig pre-computed as `cosX`, `sinX`, `cosVY`, `sinVY`.*
 
 **Location:** `project3D` function.
 

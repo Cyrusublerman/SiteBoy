@@ -15,43 +15,53 @@
 - `id` is kebab-case and matches filename: **PASS** — `id: 'lissajous'`, file `lissajous.gen.js`
 - `title` is Title Case: **PASS** — `title: 'Lissajous Curves'`
 - `category` is one of permitted values: **PASS** — `category: 'parametric'`
-- All parameter keys are camelCase: **FAIL** — several parameter keys use snake_case with underscore: `phi_x1`, `phi_x2`, `phi_xm1`, `phi_xm2`, `phi_y1`, `phi_y2`, `phi_ym1`, `phi_ym2`. The `p` prefix params (px1, px2, pxm1, pxm2, py1, py2, pym1, pym2) are camelCase-acceptable. The `wx1, wx2, wy1, wy2, wxm1, wxm2, wym1, wym2` keys are also non-camelCase (lowercase with number suffix). While these use mathematical notation conventions (φ, ω), `build-page.md` §5.1 requires camelCase for all keys.
+- All parameter keys are camelCase: **PASS** — all phase parameters renamed from `phi_x1`, `phi_x2` etc. to `phiX1`, `phiX2`, `phiXm1`, `phiXm2`, `phiY1`, `phiY2`, `phiYm1`, `phiYm2` in v1.1.0. All keys now camelCase.
 - All preset objects include `name` and all parameter keys: **PASS** — the `preset()` helper provides all 30 parameter keys as defaults, and `LANDMARKS` is built entirely using this helper. All 28 presets have all keys.
-- `frame` argument used, no internal frame counter: **NOTE** — `frame` is declared in the signature but unused. For a static generator (no time dependence), this is acceptable; the host drives animation by modifying params.
-- Render hook is a method on SCRIPT_CONFIG: **FAIL** — `draw` is a module-level function assigned as `draw: draw` in SCRIPT_CONFIG. It does not use `this`.
+- `frame` argument used, no internal frame counter: **NOTE** — `frame` is not declared in the `draw(ctx, canvas, params)` signature; correctly omitted for a fully stateless generator driven by `params` alone.
+- Render hook is a method on SCRIPT_CONFIG: **PASS** — `draw(ctx, canvas, params)` is defined as an inline method on SCRIPT_CONFIG.
 
 ---
 
 ## Bug and Risk Detection
 
-**[WARN] [STANDARDS] Parameter keys are not camelCase**
+**[RESOLVED] [WARN] [STANDARDS] Parameter keys are not camelCase**
 Location: `SCRIPT_CONFIG.parameters` — `phi_x1`, `phi_x2`, `phi_xm1`, `phi_xm2`, `phi_y1`, `phi_y2`, `phi_ym1`, `phi_ym2`
 Evidence: `build-page.md` §5.1 requires all parameter keys to be camelCase. Keys containing underscores (`phi_x1` etc.) do not satisfy this requirement.
-Impact: If the host's parameter system serialises or de-serialises keys expecting camelCase, underscore keys may cause failures in preset loading, URL serialisation, or animation param lookup. The `animatableParams` block also references these keys (e.g. `{ key: 'phi_x1' }`) and must be kept consistent.
+Impact: If the host's parameter system serialises or de-serialises keys expecting camelCase, underscore keys may cause failures in preset loading, URL serialisation, or animation param lookup. The `animatableParams` block also references these keys and must be kept consistent.
 
-**[WARN] [STANDARDS] Render hook assigned as external function reference, not inline method**
+*Fix (v1.1.0): All `phi_*` keys renamed to camelCase: `phiX1`, `phiX2`, `phiXm1`, `phiXm2`, `phiY1`, `phiY2`, `phiYm1`, `phiYm2`. Parameter definitions, preset defaults, `animatableParams`, and `draw()` references updated consistently.*
+
+**[RESOLVED] [WARN] [STANDARDS] Render hook assigned as external function reference, not inline method**
 Location: `SCRIPT_CONFIG = { ..., draw: draw }` where `draw` is a module-level function
 Evidence: Same pattern as solar-system.gen.js. The function does not use `this` and is defined outside the SCRIPT_CONFIG literal.
-Impact: Violates the method pattern per `code-standards.md` §2. For this generator (which is stateless) there is no practical consequence, but it is a structural standards violation.
+Impact: Violates the method pattern per `code-standards.md` §2.
 
-**[WARN] [PERFORMANCE] Rotation trig computed inside `evaluate()` every call**
+*Fix (v1.1.0): `draw()` moved to an inline method on SCRIPT_CONFIG. Module-level `evaluate()` helper eliminated by inlining its body into the draw loop.*
+
+**[RESOLVED] [WARN] [PERFORMANCE] Rotation trig computed inside `evaluate()` every call**
 Location: `evaluate(t, p)` — `const rot = ...; const cosR = Math.cos(rot); const sinR = Math.sin(rot);`
 Evidence: The rotation angle is a function of `p.rotation` only, which does not change within a single frame. `evaluate` is called `points` times per frame. At `points=40000`, this produces 40,000 redundant `Math.cos` and `Math.sin` evaluations of the same constant angle.
-Impact: Estimated 0.5–2ms of unnecessary trig per frame at high point counts (80,000 calls × 2 trig). Easily fixed by computing `cosR, sinR` once in `draw()` and passing them as arguments to `evaluate`, or by inlining evaluate's body.
+Impact: Estimated 0.5–2ms of unnecessary trig per frame at high point counts.
 
-**[NOTE] [BUG] No guard against negative-power off-screen points**
+*Fix (v1.1.0): `evaluate()` eliminated; body inlined into `draw()` loop. `cosR` and `sinR` computed once per frame before the loop. Estimated saving: 0.5–2ms at 40,000–80,000 points.*
+
+**[RESOLVED] [NOTE] [BUG] No guard against negative-power off-screen points**
 Location: `evaluate(t, p)` — when `px1 < 0` or similar, `signedPow(cos(wx1·t + φx1), px1)` can produce very large values as `|cos(...)| → 0`
-Evidence: `signedPow` uses `safePow(|v|, p)` which handles `|v| = 0, p < 0` by returning 0 (from shared safePow). However, for small but non-zero `|v|` with large negative `p`, the result can be very large (e.g. `|0.01|^(-7) = 10^14`). The returned `{x, y}` value will be extremely large in screen coordinates.
-Impact: These off-screen extreme values cause `ctx.lineTo` to draw a line from the previous point to a position far outside the canvas. The canvas clipping prevents rendering, but the path accumulation includes them. This does not crash the renderer, but for artistic intent it produces artefacts: visible lines from normal curve positions to the edge of the clipping region and back.
+Evidence: `signedPow` uses `safePow(|v|, p)` which handles `|v| = 0, p < 0` by returning 0. However, for small but non-zero `|v|` with large negative `p`, the result can be very large. The returned `{x, y}` value will be extremely large in screen coordinates.
+Impact: These off-screen extreme values cause `ctx.lineTo` to draw a line from the previous point to a position far outside the canvas. Does not crash the renderer, but produces visible artefact lines.
+
+*Fix (v1.1.0): Path-break guard added: `if (Math.abs(rx) > boundX || Math.abs(ry) > boundY) { first = true; continue; }` where `boundX = W*2`, `boundY = H*2`. Out-of-range points restart the path segment rather than drawing a line to an off-screen position.*
 
 ---
 
 ## Performance Risks
 
-**[WARN] [PERFORMANCE] O(points) × 10 trig evaluations per frame**
-Location: `draw()` inner loop — `evaluate(t, params)` called `points` times
+**[PARTIAL] [WARN] [PERFORMANCE] O(points) × 10 trig evaluations per frame**
+Location: `draw()` inner loop — parametric evaluation called `points` times
 Evidence: At `points=80000`: approximately 800,000 trig calls + 640,000 safePow calls per frame.
-Impact: At 60fps budget (16.7ms), this is 80,000 evaluate calls leaving ~0.2µs per call. JavaScript trig is typically 20–50ns on modern V8, so 80,000 × 10 trig calls ≈ 16–40ms — likely to exceed frame budget at maximum points.
+Impact: At 60fps budget (16.7ms), this is 80,000 evaluate calls. At maximum points the frame budget is at risk on lower-end hardware.
+
+*Status: Core O(points) complexity is unchanged; this is inherent to the algorithm. Mitigations applied: (1) `cosR`/`sinR` precomputed once per frame; (2) `evaluate()` body inlined into draw loop, eliminating per-point call overhead and `{x,y}` object allocation; (3) path-break on out-of-range points reduces accumulated path cost. Remaining candidates (WebAssembly, typed array coordinate accumulation) not applied. Documented in PERFORMANCE infoSection.*
 
 ---
 
@@ -82,7 +92,7 @@ Impact: The trail/blur effect available in the prior ToolBase implementation is 
 ## Escalation Issues
 
 **[NOTE] [ESCALATION] Algorithm candidate: generalised Lissajous parametric evaluation**
-Location: `evaluate(t, p)` in `lissajous.gen.js`
+Location: `draw()` inner loop in `lissajous.gen.js`
 Description: Evaluates bivariate sum-of-terms parametric curve with signed power distortion and multiplicative modulation, plus rotation transform.
 Candidate library location: `assets/js/shared/algorithms/parametric/lissajous.js`
 Reason: non-trivial; named algorithm family; applicable to harmonics and any future parametric generator; the `signedPow` function is already partially in shared utilities via `safePow`

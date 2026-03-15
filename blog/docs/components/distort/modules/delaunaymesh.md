@@ -15,10 +15,10 @@ Triangulates a set of seeded random points via Bowyer–Watson Delaunay algorith
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Bowyer–Watson Delaunay triangulation | Inline (`_triangulate`) | — |
+| Bowyer–Watson Delaunay triangulation | `shared/algorithms/image/compositing.js` | — |
 | `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
 
-Inline — Bowyer–Watson incremental insertion. Triangle rendering via `OffscreenCanvas` 2D context. Flat mode: centroid-sampled fill colour; wire mode: `wireLevel` grey strokes alpha-composited over source.
+`shared/algorithms/image/compositing.js` — Bowyer–Watson incremental insertion. Triangle rendering via `OffscreenCanvas` 2D context. Flat mode: centroid-sampled fill colour; wire mode: `wireLevel` grey strokes alpha-composited over source.
 
 ## Parameters
 

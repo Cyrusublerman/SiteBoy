@@ -2,6 +2,8 @@
 
 Standards for p5.js-based generators in the unified generator system.
 
+**Authority:** `blog/docs/guides/standards/design-law.md` — visual and geometric law. Colour rules here (§4) apply design-law §6 to the p5 canvas context. Sizing rules (§5) apply design-law §4.
+
 ---
 
 ## 1. Scope
@@ -105,31 +107,44 @@ p5Draw(p, params, frame) {
 
 ## 4. Colour Constraints
 
-### VGA Palette Only
-Use p5 colour functions with VGA hex values:
+### Canvas Output Exception
+
+Colours used for generator visual output — pixels drawn to the p5 canvas — are **exempt** from the VGA/CSS-variable constraint. Generators may use any colour model (RGB, HSB, HSL, arbitrary hex) for their rendered output. This exemption is strictly scoped to the canvas drawing surface. All UI surfaces surrounding the canvas (controls, labels, borders, backgrounds) must still use `var(--c-*)` tokens.
+
+### VGA Palette for UI Controls
+
+When a generator exposes a user-selectable colour parameter, the UI control (rendered as a dropdown) must be populated with the VGA palette. The selected value is passed to the draw function, which may use it as-is on the canvas.
 
 ```javascript
-// ✅ ALLOWED
-p.fill('#000000');      // black
-p.stroke('#00ff00');    // lime
-p.background('#c0c0c0'); // silver
+// ✅ VGA palette for UI colour selector
+const VGA_PALETTE = [
+    '#000000', '#800000', '#008000', '#808000',
+    '#000080', '#800080', '#008080', '#c0c0c0',
+    '#808080', '#ff0000', '#00ff00', '#ffff00',
+    '#0000ff', '#ff00ff', '#00ffff', '#ffffff'
+];
+// parameter-builder renders type:'color' as a dropdown with VGA_PALETTE options
 
-// ✅ Full VGA palette
+// ✅ Canvas output may use any colour
+p.fill(255, 100, 50);       // fine for canvas output
+p.stroke('#ff5500');        // fine for canvas output
+p.background('coral');      // fine for canvas output
+
+// ❌ FORBIDDEN — UI surface colours (borders, text, backgrounds)
+element.style.color = '#ff5500';     // must use var(--c-text)
+element.style.background = 'coral'; // must use var(--c-bg)
+```
+
+### VGA Palette Reference
+
+```javascript
 const VGA = {
     black: '#000000', maroon: '#800000', green: '#008000', olive: '#808000',
     navy: '#000080', purple: '#800080', teal: '#008080', silver: '#c0c0c0',
     gray: '#808080', red: '#ff0000', lime: '#00ff00', yellow: '#ffff00',
     blue: '#0000ff', fuchsia: '#ff00ff', aqua: '#00ffff', white: '#ffffff'
 };
-
-// ❌ FORBIDDEN
-p.fill(255, 100, 50);       // Non-VGA RGB
-p.stroke('#ff5500');        // Non-VGA hex
-p.background('coral');      // Named colour
 ```
-
-### Dynamic Colours
-For user-selectable colours, use ColorInput component with VGA palette constraint.
 
 ---
 

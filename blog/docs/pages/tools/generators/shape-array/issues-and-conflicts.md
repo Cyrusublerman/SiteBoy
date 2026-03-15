@@ -6,25 +6,31 @@ None.
 
 ## WARN
 
-**[BUG] `_globalT` is frame-rate-dependent**
-`this._globalT = (this._globalT + morphSpeed) % 1` accumulates outside of `frame` counter. If the host skips frames (e.g., during tab switch, resize, or heavy load), `_globalT` drifts from its expected position. Replay, pre-render, and seek are all broken as a result.
-Fix: `const globalT = (frame × morphSpeed) % 1`.
+**[RESOLVED] [BUG] `_globalT` is frame-rate-dependent**
+*Fix: `_globalT` accumulator removed from SCRIPT_CONFIG; replaced with `const globalT = (frame * morphSpeed) % 1;` computed locally inside `p5Draw` each frame.*
+~~`this._globalT = (this._globalT + morphSpeed) % 1` accumulates outside of `frame` counter. If the host skips frames (e.g., during tab switch, resize, or heavy load), `_globalT` drifts from its expected position. Replay, pre-render, and seek are all broken as a result.~~
 
-**[STANDARDS] State stored on `SCRIPT_CONFIG` object**
-`_globalT` is a config-object property. Same architectural issue as `fibonacci-balls`, `animated-lines`, `golden-grid`, `order-disorder`. Should be scoped per-invocation.
+**[RESOLVED] [STANDARDS] State stored on `SCRIPT_CONFIG` object**
+*Fix: `_globalT` removed from SCRIPT_CONFIG; `stageCache` is now a local `Map` inside `p5Draw` scoped per frame.*
+~~`_globalT` is a config-object property. Same architectural issue as `fibonacci-balls`, `animated-lines`, `golden-grid`, `order-disorder`. Should be scoped per-invocation.~~
 
-**[STANDARDS] Preset format non-standard**
-Flat objects without `values: { ... }` wrapper.
+**[RESOLVED] [STANDARDS] Preset format non-standard**
+*Fix: Presets updated to `{ name, values: { ... } }` wrapper format.*
+~~Flat objects without `values: { ... }` wrapper.~~
 
-**[STANDARDS] No `export` block**
-No PNG/GIF/WebM export available.
+**[RESOLVED] [STANDARDS] No `export` block**
+*Fix: `export: { png: true, gif: false, webm: false }` added; GIF/WebM disabled — no static `loopFrames` for infinite type.*
+~~No PNG/GIF/WebM export available.~~
+
+**[RESOLVED] [STANDARDS] `animatableParams` absent from `animation` block**
+`animatableParams: []` added inside `animation` block; parameter-builder reads `scriptConfig.animation.animatableParams`.
 
 **[STANDARDS] Raw colour literals**
-`bgColor === 'dark' ? 20 : 245` and `bgColor === 'dark' ? 255 : 0` — raw P5 brightness/greyscale values, not CSS variables.
+`bgColor === 'dark' ? 20 : 245` and `bgColor === 'dark' ? 255 : 0` — raw P5 brightness/greyscale values. Canvas output; exempt per design-law §6.2.
 
-**[PERFORMANCE] `_samplePerimeter` O(circleRes × n) per cell**
-Inner edge-walk is O(n) per sample point, for circleRes samples → O(circleRes × n). At max params: 400 cells × 2 calls × 64 × 4 = 204,800 iterations just for sampling.
-Fix: precompute cumulative edge lengths, use binary search → O(n + circleRes) per call.
+**[RESOLVED] [PERFORMANCE] `_samplePerimeter` O(circleRes × n) per cell**
+*Fix: Precomputed cumulative edge-length array (`Float64Array`) with binary search implemented; complexity reduced to O(n + circleRes log n) per call; stage sample pairs cached per frame per unique `si` via `stageCache` Map, at most 3 pairs computed per frame regardless of grid size.*
+~~Inner edge-walk is O(n) per sample point, for circleRes samples → O(circleRes × n). At max params: 400 cells × 2 calls × 64 × 4 = 204,800 iterations just for sampling.~~
 
 ## NOTE
 

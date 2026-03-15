@@ -15,9 +15,9 @@ Generates a sinusoidal grating pattern in one of four coordinate systems and ble
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Sinusoidal grating (linear, radial, angular, spiral) | Inline | — |
+| Sinusoidal grating (linear, radial, angular, spiral) | `shared/algorithms/patterns/pattern-generators.js` | — |
 
-Inline — `intensity = 0.5 + 0.5 × cos(2π × position/wavelength + phase)` where position is computed in the selected coordinate system. Blended per channel via `multiply`, `screen`, or `replace`.
+`shared/algorithms/patterns/pattern-generators.js` — `intensity = 0.5 + 0.5 × cos(2π × position/wavelength + phase)` where position is computed in the selected coordinate system. Blended per channel via `multiply`, `screen`, or `replace`.
 
 ## Parameters
 

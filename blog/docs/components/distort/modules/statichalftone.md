@@ -15,11 +15,11 @@ Renders parallel sinusoidal halftone lines where amplitude encodes local luminan
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Sinusoidal halftone line rendering | Inline | — |
-| Amplitude curve shaping (`applyCurve`) | Inline | — |
+| Sinusoidal halftone line rendering | `shared/algorithms/line/static-line-engine.js` | — |
+| Amplitude curve shaping (`applyCurve`) | `shared/algorithms/line/static-line-engine.js` | — |
 | `vectorToRaster` | `assets/js/tools/processors/distort/nodes/bridge/node-adapters.js` | — |
 
-Inline — `applyCurve` supports `linear`, `exponential` (`t^str`), `logarithmic` (natural-log remap), and `sigmoid` (logistic) shaping. Per-sample displacement `= maxAmplitude × curve(1−lum) × sin(s/len × freq + phase)`.
+`shared/algorithms/line/static-line-engine.js` — `applyCurve` supports `linear`, `exponential` (`t^str`), `logarithmic` (natural-log remap), and `sigmoid` (logistic) shaping. Per-sample displacement `= maxAmplitude × curve(1−lum) × sin(s/len × freq + phase)`.
 
 ## Parameters
 

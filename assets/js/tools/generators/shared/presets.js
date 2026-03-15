@@ -22,24 +22,19 @@
  * // newParams = { Ax1: 1, wx1: 1 }
  */
 export function applyPreset(params, preset, paramDefs = null) {
-    // Clone params to avoid mutation
     const newParams = { ...params };
-    
-    // Get all valid param keys from definitions
     const validKeys = paramDefs ? getAllParamKeys(paramDefs) : null;
-    
-    // Apply preset values
-    for (const key in preset) {
-        // Skip metadata keys
-        if (key === 'name') continue;
-        
-        // Validate key if definitions provided
+
+    // Support both { name, values: {} } and legacy flat { name, key: val }
+    const source = preset.values || preset;
+
+    for (const key in source) {
+        if (key === 'name' || key === 'values') continue;
         if (validKeys && !validKeys.has(key)) {
             console.warn(`Preset "${preset.name}" contains unknown parameter: ${key}`);
             continue;
         }
-        
-        newParams[key] = preset[key];
+        newParams[key] = source[key];
     }
     
     return newParams;
@@ -264,7 +259,7 @@ export function validateParams(params, paramDefs) {
 export function createPreset(name, params) {
     return {
         name,
-        ...params
+        values: { ...params }
     };
 }
 
@@ -282,6 +277,3 @@ export default {
     validateParams,
     createPreset
 };
-
-console.log('✅ Preset utilities loaded');
-

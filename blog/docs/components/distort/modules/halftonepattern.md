@@ -15,9 +15,9 @@ Renders a rotated grid of circular dots whose radius is inversely proportional t
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Luminance-driven rotated dot grid | Inline | — |
+| Luminance-driven rotated dot grid | `shared/algorithms/patterns/pattern-generators.js` | — |
 
-Inline — rotated dot grid placement via `cos/sin` of `angle`; dot radius `= minDot + (1−lum) × (maxDot−minDot)`; filled circle rasterisation.
+`shared/algorithms/patterns/pattern-generators.js` — rotated dot grid placement via `cos/sin` of `angle`; dot radius `= minDot + (1−lum) × (maxDot−minDot)`; filled circle rasterisation.
 
 ## Parameters
 
@@ -74,7 +74,7 @@ Full RGBA image.
 Monochrome halftone dot image. Darker source areas → larger dots; brighter areas → smaller dots.
 
 ### Preview strategy
-No reduction.
+`spacing`, `minDot`, and `maxDot` params have `previewMax` values declared.
 
 ## Mask controls
 

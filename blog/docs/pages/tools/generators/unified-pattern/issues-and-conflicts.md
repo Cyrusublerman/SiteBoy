@@ -1,49 +1,32 @@
 # Unified Pattern — Issues and Conflicts
 
-## ERROR [BUG] — Generator Not Implemented (Stub)
+## ERROR
 
-**Location:** `assets/js/tools/generators/scripts/other/unified-pattern.gen.js` — entire file.
+**[RESOLVED]** **[BUG] Generator Not Implemented (Stub)**
+Full implementation present in `unified-pattern.gen.js` v1.0.0: jittered grid (GEO-018), domain warp (GEO-019), superellipse SDF (GEO-020), nested shapes (GEO-021), smooth union (GEO-022), palette mapper (COLOR-008), SDF renderer (CANVAS-013). Worker offload via `computePixels` active.
 
-**Issue:** Live script is a placeholder. The `draw` function fills the canvas black. `scale` parameter is not read. The comment `// TODO: Extract from unified-pattern.js` references a missing source file.
-
-**Impact:** Catastrophic — generator produces no output.
-
-**Required action:** Full implementation: jittered grid, domain warp, superellipse SDF, nested shapes, smooth union, palette mapper, SDF renderer.
+**[RESOLVED]** **[BUG] scale Parameter Has No Effect**
+Replaced with 15-parameter set across Layout, Shape, and Style groups.
 
 ---
 
-## ERROR [BUG] — scale Parameter Has No Effect
+## WARN
 
-**Location:** `SCRIPT_CONFIG.parameters` — `scale` slider; `draw` function — ignores `params`.
+**[RESOLVED]** **[STANDARDS] No animation Block in SCRIPT_CONFIG**
+`animation: { type: 'none' }` added.
 
----
+**[RESOLVED]** **[STANDARDS] No export Block in SCRIPT_CONFIG**
+`export: { png: true, gif: false, webm: false }` added. SVG export not implemented (per-pixel SDF output incompatible with vector export without contour extraction).
 
-## WARN [STANDARDS] — No animation Block in SCRIPT_CONFIG
-
-The generator is a static image tool (no animation in spec), but the absence of an `animation` key in SCRIPT_CONFIG is a standards violation.
-
-**Fix:** Add `animation: { type: 'none' }`.
-
----
-
-## WARN [STANDARDS] — No export Block in SCRIPT_CONFIG
-
-**Fix:** Add `export: { png: true, svg: true }` per spec.
+**[RESOLVED]** **[STANDARDS] No presets in SCRIPT_CONFIG**
+5 presets added: Atomic, Op-Art, Organic, Minimal, Dense.
 
 ---
 
-## WARN [STANDARDS] — No presets in SCRIPT_CONFIG
+## NOTE
 
-**Fix:** Add presets covering the main shape/palette combinations when implemented.
+**[RESOLVED]** **[PERFORMANCE] O(W×H×N_cells×nestingLevels) Render Cost**
+Tier 3 Worker offload via `computePixels` (main thread never blocked) + per-pixel bounding-box spatial culling (reduces O(N_cells) to O(~9 cells in range) at typical params). Tier 2 adaptive resolution (50% linear scale during slider interaction, idleDelay 300 ms) also active.
 
----
-
-## NOTE [PERFORMANCE] — O(W×H×N_cells×nestingLevels) Render Cost
-
-At `gridSpacing = 10` and `nestingLevels = 4`, the naïve algorithm is intractable (~16 B operations at 800×800). Spatial culling (per-cell bounding box) and Worker offload are required from the outset of implementation. See `performance.md`.
-
----
-
-## NOTE [RESEARCH] — Smooth-Min Stability
-
-The log-sum-exp smooth-min `−σ·ln(e^(−a/σ) + e^(−b/σ))` can produce NaN or Inf for large `|a/σ|` and `|b/σ|` values (due to exp underflow/overflow). A numerically stable formulation using the log-sum-exp trick is required: shift by `min(a, b)/σ` before exponentiation.
+**[RESOLVED]** **[RESEARCH] Smooth-Min Stability**
+Numerically stable log-sum-exp smooth-min implemented: `m − σ·ln(exp((m−a)/σ) + exp((m−b)/σ))` where `m = min(a,b)`. Shift by `m` prevents overflow/underflow for large `|a−b|/σ`.

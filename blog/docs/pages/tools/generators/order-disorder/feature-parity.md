@@ -2,7 +2,7 @@
 
 ## Source Reference
 
-- Live: `assets/js/tools/generators/scripts/pattern/order-disorder.gen.js` v1.0.0
+- Live: `assets/js/tools/generators/scripts/pattern/order-disorder.gen.js` v1.1.0
 - Legacy spec: none (Phase 3 — source-only analysis)
 - Origin: port of `order_and_disorder` sketch (noted in file header)
 
@@ -28,12 +28,12 @@ No legacy specification. Parity analysis is internal self-consistency and standa
 
 | Aspect | Status | Notes |
 |---|---|---|
-| Export block | ABSENT | No PNG/GIF/WebM |
+| Export block | PASS | `png: true, gif: false, webm: false` added v1.1.0 |
 | `canPrerender` | ABSENT | Not eligible — noise not loopable |
-| `animatableParams` | ABSENT | Not declared |
-| Preset format | NON-STANDARD | Flat object; missing `values: {...}` |
+| `animatableParams` | PASS | `animatableParams: []` moved inside `animation` block |
+| Preset format | PASS | `{ name, values: {...} }` wrapper added v1.1.0 |
 | State on SCRIPT_CONFIG | NON-STANDARD | `_points`, `_lastParams` on config |
 | Raw P5 colour values | NON-STANDARD | `background(255)`, `stroke(0)` |
-| `animation.loopFrames` conflict | BUG | Same issue as `golden-grid` |
-| Noise time not looping | BUG | `t = frame × noiseTimeScale` is non-cyclical |
-| Canvas size hardcoded | NON-STANDARD | `W = H = 1080` not from `p.width/height` |
+| `animation.loopFrames` conflict | PASS | `loopFrames` removed from animation block; type set to `infinite` |
+| Noise time not looping | PASS | Accepted as by design; type changed to `infinite`; GIF disabled |
+| Canvas size hardcoded | PASS | `_buildPoints` now receives `p.width`/`p.height` |

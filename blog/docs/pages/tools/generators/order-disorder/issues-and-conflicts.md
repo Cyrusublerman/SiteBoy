@@ -6,32 +6,38 @@ None.
 
 ## WARN
 
-**[BUG] Noise time is not looping**
-`t = frame × noiseTimeScale` and `jt = frame × jiggleSpeed` advance monotonically. At `frame = loopFrames`, `t = loopFrames × noiseTimeScale` (default: 360 × 0.016 = 5.76), not 0. The noise displacement at the start and end of a loop cycle do not match. Animation is `type: 'loop'` but is not seamlessly loopable.
-Fix: use `t = (frame % loopFrames) × noiseTimeScale / loopFrames` × some constant, or treat animation as `type: 'infinite'`.
+**[RESOLVED] [BUG] Noise time is not looping**
+*Fix: Animation type changed to `infinite`; GIF/WebM disabled; monotonic noise time accepted as by design and documented in KNOWN LIMITATIONS.*
+~~`t = frame × noiseTimeScale` and `jt = frame × jiggleSpeed` advance monotonically. At `frame = loopFrames`, `t = loopFrames × noiseTimeScale` (default: 360 × 0.016 = 5.76), not 0. The noise displacement at the start and end of a loop cycle do not match. Animation is `type: 'loop'` but is not seamlessly loopable.~~
 
-**[BUG] Canvas dimensions hardcoded in `_buildPoints`**
-`W = 1080, H = 1080` are literals. Centre is computed as `(540, 540)`. If the host renders at a different canvas size, grid extends beyond canvas bounds (or fails to cover it), and the influence field centre is misaligned.
-Fix: use `p.width`, `p.height` and pass them into `_buildPoints`.
+**[RESOLVED] [BUG] Canvas dimensions hardcoded in `_buildPoints`**
+*Fix: `_buildPoints` signature changed to `_buildPoints(params, w, h)`; called as `this._buildPoints(params, p.width, p.height)` in both `p5Setup` and `p5Draw`.*
+~~`W = 1080, H = 1080` are literals. Centre is computed as `(540, 540)`. If the host renders at a different canvas size, grid extends beyond canvas bounds (or fails to cover it), and the influence field centre is misaligned.~~
 
-**[BUG] `animation.loopFrames` conflicts with `params.loopFrames`**
-Static `animation.loopFrames = 360` is used by host/export; user-adjustable slider drives actual animation. Same issue as `golden-grid`. At `loopFrames = 720` ("Wide Chaos" preset), export will capture only 360 frames (half a loop).
+**[RESOLVED] [BUG] `animation.loopFrames` conflicts with `params.loopFrames`**
+*Fix: `loopFrames` removed from the `animation` block; animation type set to `infinite`; no export frame count conflict possible.*
+~~Static `animation.loopFrames = 360` is used by host/export; user-adjustable slider drives actual animation. Same issue as `golden-grid`. At `loopFrames = 720` ("Wide Chaos" preset), export will capture only 360 frames (half a loop).~~
+
+**[RESOLVED] [STANDARDS] `animatableParams` at SCRIPT_CONFIG root, not inside `animation` block**
+`animatableParams: []` moved inside `animation` block; parameter-builder reads `scriptConfig.animation.animatableParams`.
 
 **[STANDARDS] State stored on `SCRIPT_CONFIG` object**
 `_points`, `_lastParams` mutated via `this.*`. Same pattern as prior P5 generators.
 
-**[STANDARDS] Preset format non-standard**
-Flat objects without `values: { ... }` wrapper.
+**[RESOLVED] [STANDARDS] Preset format non-standard**
+*Fix: Presets updated to `{ name, values: { ... } }` wrapper format.*
+~~Flat objects without `values: { ... }` wrapper.~~
 
 **[STANDARDS] Raw P5 colour values**
 `p.background(255)` and `p.stroke(0)` — cannot be overridden by CSS variable system.
 
-**[STANDARDS] No `export` block**
-No PNG/GIF/WebM export available.
+**[RESOLVED] [STANDARDS] No `export` block**
+*Fix: `export: { png: true, gif: false, webm: false }` added; GIF/WebM disabled — noise field discontinuity at any wrap point.*
+~~No PNG/GIF/WebM export available.~~
 
-**[PERFORMANCE] `p.point` not batched**
-Each of N points calls `p.point(x, y)` individually. P5 does not batch these into a single draw call. At N ≈ 31,329 (default): 31K individual canvas path operations/frame.
-Fix: use `p.beginShape(p.POINTS); for each pt: p.vertex(x,y); p.endShape()` for a batched draw path.
+**[RESOLVED] [PERFORMANCE] `p.point` not batched**
+*Fix: Replaced all `p.point(x, y)` calls with `p.beginShape(p.POINTS); ... p.vertex(x, y); ... p.endShape()` for a single batched canvas path operation.*
+~~Each of N points calls `p.point(x, y)` individually. P5 does not batch these into a single draw call. At N ≈ 31,329 (default): 31K individual canvas path operations/frame.~~
 
 ## NOTE
 

@@ -19,6 +19,11 @@
 
 - (list every import from assets/js/shared/algorithms/, or "none — all computation is inline")
 
+## Module Pattern
+
+- Factory: `export const <Name>Node = createEffectModule({...})` from `core/EffectModule.js`
+- Pattern: factory (not class extension); no class body in module file
+
 ## Classifications
 
 - source node: functional source node

@@ -15,11 +15,11 @@ Traces each pixel backward through a velocity field for multiple steps, producin
 
 | Algorithm | Source | Documentation |
 |-----------|--------|---------------|
-| Backward advection integration | Inline | — |
+| Backward advection integration | `shared/algorithms/geometry/warp.js` | — |
 | `PerlinNoise.fbm` | `assets/js/tools/processors/distort/core/PerlinNoise.js` | — |
 | `Sampler.bilinearDst` | `assets/js/tools/processors/distort/core/Sampler.js` | — |
 
-Inline — per-pixel backward Euler integration over `steps` steps. Three velocity field types: fBm noise, radial, and vortex (perpendicular to radial).
+`shared/algorithms/geometry/warp.js` — per-pixel backward Euler integration over `steps` steps. Three velocity field types: fBm noise, radial, and vortex (perpendicular to radial).
 
 ## Parameters
 
