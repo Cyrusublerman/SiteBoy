@@ -1,36 +1,36 @@
 /**
  * Parameter Builder - Convert script parameters to ToolBase sidebar DSL
- * 
+ *
  * Responsibilities:
  * - Convert parameter definitions to ToolBase component arrays
- * - Generate PARAMS, ANIMATE, INFO tabs
+ * - Generate PARAMS, ANIMATE, CANVAS tabs
  * - Handle parameter groups as collapsible blocks
  * - Create preset/randomise/reset controls
- * 
- * @version 1.0.0
+ *
+ * INFO content is served via GeneratorToolbar.setInfoContent() — not a sidebar tab.
+ *
+ * @version 2.0.0
  */
 
 /**
- * Build complete ToolBase sidebar configuration from script config
- * @param {ScriptConfig} scriptConfig - Script configuration
+ * Build complete ToolBase sidebar configuration from script config.
+ * @param {ScriptConfig} scriptConfig
  * @returns {Array} ToolBase sidebar configuration
  */
 export function buildSidebarConfig(scriptConfig) {
     const tabs = [];
-    
+
     // PARAMS tab - auto-generated from parameters
     tabs.push(['PARAMS', buildParamsTab(scriptConfig)]);
-    
+
     // ANIMATE tab — only for generators that actually animate (type !== 'none')
     if (scriptConfig.animation && scriptConfig.animation.type !== 'none') {
         tabs.push(['ANIMATE', buildAnimateTab(scriptConfig)]);
     }
-    
-    // INFO tab — if description or infoSections present
-    if (scriptConfig.description || (scriptConfig.infoSections && scriptConfig.infoSections.length > 0)) {
-        tabs.push(['INFO', buildInfoTab(scriptConfig)]);
-    }
-    
+
+    // CANVAS tab — canvas size and colourway settings
+    tabs.push(['CANVAS', buildCanvasTab(scriptConfig)]);
+
     return tabs;
 }
 
@@ -125,52 +125,47 @@ function buildAnimateTab(scriptConfig) {
 }
 
 /**
- * Build INFO tab content.
- *
- * If scriptConfig.infoSections is present (array of { heading, body }), each section
- * is rendered as a labelled block. This is the full-knowledge-dump path used by
- * remediated generators.
- *
- * If infoSections is absent, falls back to the legacy title + description + stats layout
- * for backwards compatibility with unremediated generators.
- *
- * @param {ScriptConfig} scriptConfig - Script configuration
- * @returns {Array} Blocks for INFO tab
+ * Build CANVAS tab content — canvas size and colourway settings.
+ * @param {ScriptConfig} scriptConfig
+ * @returns {Array} Blocks for CANVAS tab
  */
-function buildInfoTab(scriptConfig) {
+function buildCanvasTab(scriptConfig) {
     const blocks = [];
+    const canvas = scriptConfig.canvas || {};
 
-    if (scriptConfig.infoSections && scriptConfig.infoSections.length > 0) {
-        for (const section of scriptConfig.infoSections) {
-            blocks.push([section.heading, [
-                ['markdown', section.body],
-            ]]);
-        }
-        return blocks;
-    }
+    // Size block — width and height sliders
+    blocks.push(['Size', [
+        ['slider', 'Width', 100, 4096, 1, {
+            key: 'canvasWidth',
+            value: canvas.width || 800,
+            withNumber: true,
+            precision: 0
+        }],
+        ['slider', 'Height', 100, 4096, 1, {
+            key: 'canvasHeight',
+            value: canvas.height || 800,
+            withNumber: true,
+            precision: 0
+        }],
+    ]]);
 
-    // Legacy fallback
-    blocks.push(['About', [
-        ['label', scriptConfig.title, { variant: 'heading' }],
-        ['markdown', scriptConfig.description || ''],
+    // Colourway block — background colour
+    const VGA_PALETTE_KEYS = [
+        '#000000', '#800000', '#008000', '#808000',
+        '#000080', '#800080', '#008080', '#c0c0c0',
+        '#808080', '#ff0000', '#00ff00', '#ffff00',
+        '#0000ff', '#ff00ff', '#00ffff', '#ffffff'
+    ];
+
+    blocks.push(['Colourway', [
+        ['dropdown', 'Background', VGA_PALETTE_KEYS, {
+            key: 'canvasBackground',
+            value: canvas.background || '#000000'
+        }],
     ]]);
-    
-    if (scriptConfig.version) {
-        blocks.push(['Version', [
-            ['label', scriptConfig.version, { variant: 'caption' }],
-        ]]);
-    }
-    
-    const paramCount = scriptConfig.parameters.reduce(
-        (sum, group) => sum + group.params.length, 0
-    );
-    blocks.push(['Statistics', [
-        ['label', `Parameters: ${paramCount}`, { variant: 'caption' }],
-        ['label', `Presets: ${scriptConfig.presets?.length || 0}`, { variant: 'caption' }],
-        ['label', `Category: ${scriptConfig.category}`, { variant: 'caption' }],
-    ]]);
-    
+
     return blocks;
+
 }
 
 /**
@@ -241,7 +236,7 @@ export default {
     buildSidebarConfig,
     buildParamsTab,
     buildAnimateTab,
-    buildInfoTab,
+    buildCanvasTab,
     paramToComponent,
     getPresetNames
 };

@@ -2,40 +2,53 @@ import { BaseComponent, BaseNavigationDropdown } from '../../foundation.js';
 
 /**
  * GeneratorToolbar - Horizontal toolbar for the unified generators page
- * 
- * Layout: [DROPDOWN (50%)] [FIT|FILL|ACTUAL|EXPORT (12.5% each)]
- * 
- * Matches ToolBase tab styling exactly.
+ *
+ * Layout: [DROPDOWN (30F)] [EXPORT (2/6)] [INFO (1/6)] [FIT (1/6)] [FILL (1/6)] [ACTUAL (1/6)]
+ * Responsive: when FIT/FILL/ACTUAL cells are each < 4F wide, they collapse into a single
+ * cycling VIEW button (cycles: fit → fill → actual → fit …).
+ *
+ * INFO button opens a floating overlay panel containing generator info content.
  */
 export class GeneratorToolbar extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'generator-toolbar' }, deps);
-        
-        this.generators = options.generators || [];
+
+        this.generators      = options.generators || [];
         this.activeGenerator = options.activeGenerator || null;
-        this.displayMode = options.displayMode || 'fit';
-        
-        this.onGeneratorChange = options.onGeneratorChange || (() => {});
-        this.onDisplayModeChange = options.onDisplayModeChange || (() => {});
-        this.onExport = options.onExport || (() => {});
-        
-        this.navigationDropdown = null;
-        this.displayModeButtons = [];
-        this.exportPanel = null;
-        this.exportBtn = null;
-        this.exportExpanded = false;
-        this.dropdownMenu = null;
-        this.dropdownOpen = false;
-        
+        this.displayMode     = options.displayMode || 'fit';
+
+        this.onGeneratorChange    = options.onGeneratorChange    || (() => {});
+        this.onDisplayModeChange  = options.onDisplayModeChange  || (() => {});
+        this.onExport             = options.onExport             || (() => {});
+        this.onInfo               = options.onInfo               || (() => {});
+
+        this.dropdownMenu       = null;
+        this.dropdownOpen       = false;
+        this.exportPanel             = null;
+        this.exportBtn               = null;
+        this.exportExpanded          = false;
+        this._exportPanelRerendering = false;
+        this.infoPanel          = null;
+        this.infoExpanded       = false;
+        this.infoBtn            = null;
+        this._infoContent       = null; // set via setInfoContent()
+
+        // Display-mode state
+        this.displayModeButtons = []; // [fitBtn, fillBtn, actualBtn] — null when collapsed
+        this._viewBtn           = null; // single cycling button when collapsed
+        this._collapsed         = false;
+
         this.F = deps.MF?.F || 14;
+
+        this._ro = null; // ResizeObserver
     }
 
     render() {
         if (this.element) return this.element;
-        
+
         const F = this.F;
-        
-        // Main toolbar container (children have individual bottom borders)
+
+        // Toolbar container
         this.element = this.createElement('div', 'generator-toolbar');
         this.element.style.cssText = `
             display: flex;
@@ -43,112 +56,135 @@ export class GeneratorToolbar extends BaseComponent {
             height: ${F * 2}px;
             background: var(--c-bg);
             flex-shrink: 0;
+            box-sizing: border-box;
+            overflow: visible;
+            position: relative;
         `;
-        
-        // === LEFT: GENERATOR DROPDOWN (flex: 1 — absorbs remaining space) ===
+
+        // === LEFT: GENERATOR DROPDOWN (30F — matches ToolBase sidebar width) ===
         const dropdownCell = this.createElement('div', 'generator-toolbar-dropdown');
         dropdownCell.style.cssText = `
             display: flex;
             align-items: center;
-            flex: 1;
-            height: 100%;
-            position: relative;
-            border-right: 1px solid var(--c-border);
-            border-bottom: 1px solid var(--c-border);
-            box-sizing: border-box;
-        `;
-        this._buildGeneratorDropdown(dropdownCell, F);
-        this.element.appendChild(dropdownCell);
-        
-        // === RIGHT: 4 ACTION CELLS (each 6F wide — design-law §17.1) ===
-        // FIT button
-        const fitBtn = this._createTabButton('FIT', this.displayMode === 'fit', F);
-        fitBtn.style.width = `${F * 6}px`;
-        fitBtn.style.flexShrink = '0';
-        fitBtn.style.borderRight = '1px solid var(--c-border)';
-        fitBtn.style.borderBottom = '1px solid var(--c-border)';
-        fitBtn.style.boxSizing = 'border-box';
-        fitBtn.dataset.mode = 'fit';
-        fitBtn.addEventListener('click', () => {
-            this._setActiveDisplayMode('fit');
-            this.onDisplayModeChange('fit');
-        });
-        this.displayModeButtons.push(fitBtn);
-        this.element.appendChild(fitBtn);
-        
-        // FILL button
-        const fillBtn = this._createTabButton('FILL', this.displayMode === 'fill', F);
-        fillBtn.style.width = `${F * 6}px`;
-        fillBtn.style.flexShrink = '0';
-        fillBtn.style.borderRight = '1px solid var(--c-border)';
-        fillBtn.style.borderBottom = '1px solid var(--c-border)';
-        fillBtn.style.boxSizing = 'border-box';
-        fillBtn.dataset.mode = 'fill';
-        fillBtn.addEventListener('click', () => {
-            this._setActiveDisplayMode('fill');
-            this.onDisplayModeChange('fill');
-        });
-        this.displayModeButtons.push(fillBtn);
-        this.element.appendChild(fillBtn);
-        
-        // ACTUAL button
-        const actualBtn = this._createTabButton('ACTUAL', this.displayMode === 'actual', F);
-        actualBtn.style.width = `${F * 6}px`;
-        actualBtn.style.flexShrink = '0';
-        actualBtn.style.borderRight = '1px solid var(--c-border)';
-        actualBtn.style.borderBottom = '1px solid var(--c-border)';
-        actualBtn.style.boxSizing = 'border-box';
-        actualBtn.dataset.mode = 'actual';
-        actualBtn.addEventListener('click', () => {
-            this._setActiveDisplayMode('actual');
-            this.onDisplayModeChange('actual');
-        });
-        this.displayModeButtons.push(actualBtn);
-        this.element.appendChild(actualBtn);
-        
-        // EXPORT button (6F wide) with dropdown panel
-        const exportCell = this.createElement('div', 'generator-toolbar-export');
-        exportCell.style.cssText = `
-            display: flex;
-            width: ${F * 6}px;
+            width: ${F * 30}px;
             flex-shrink: 0;
             height: 100%;
             position: relative;
             border-bottom: 1px solid var(--c-border);
             box-sizing: border-box;
         `;
-        this._buildExportButton(exportCell, F);
-        this.element.appendChild(exportCell);
-        
+        this._buildGeneratorDropdown(dropdownCell, F);
+        this.element.appendChild(dropdownCell);
+
+        // === RIGHT: grid container — 6 equal columns, export spans 2 ===
+        this._actionArea = this.createElement('div', 'generator-toolbar-actions');
+        this._actionArea.style.cssText = `
+            display: grid;
+            flex: 1;
+            height: 100%;
+            min-width: 0;
+            grid-template-rows: 100%;
+        `;
+        this.element.appendChild(this._actionArea);
+
+        this._buildActionCells(F);
+
+        // Observe width changes to toggle collapse
+        this._ro = new ResizeObserver(() => this._checkCollapse());
+        this._ro.observe(this._actionArea);
+
         return this.element;
     }
-    
+
+    // ─── ACTION CELLS ──────────────────────────────────────────────────────────
+
     /**
-     * Create a tab-styled button matching ToolBase exactly
+     * Build or rebuild all action cells inside _actionArea.
+     * Call again after collapse state changes.
      */
-    _createTabButton(text, isActive, F) {
-        const btn = this.createElement('button', 'tool-tab');
-        btn.type = 'button';
-        btn.textContent = text;
-        btn.style.cssText = `
-            height: ${F * 2}px;
-            padding: 0 ${F}px;
-            border: none;
-            background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
-            color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
-            font-family: 'Atkinson Hyperlegible', sans-serif;
-            font-size: ${F * 0.75}px;
-            text-transform: uppercase;
-            cursor: pointer;
-        `;
-        return btn;
+    _buildActionCells(F) {
+        this._actionArea.innerHTML = '';
+        this.displayModeButtons = [];
+        this._viewBtn = null;
+
+        // Grid columns: collapsed = 3 cols (INFO, VIEW, EXPORT×2 → but span 2 needs 4 total)
+        // Expanded = 6 cols (INFO, FIT, FILL, ACTUAL each 1col, EXPORT 2col)
+        // Collapsed = 4 cols (INFO 1col, VIEW 1col, EXPORT 2col)
+        this._actionArea.style.gridTemplateColumns = this._collapsed
+            ? 'repeat(4, 1fr)'
+            : 'repeat(6, 1fr)';
+
+        // INFO button — 1 column
+        this.infoBtn = this._createTabButton('INFO', false, F);
+        this._applyActionCellBorders(this.infoBtn);
+        this.infoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleInfoPanel();
+        });
+        this._actionArea.appendChild(this.infoBtn);
+
+        if (this._collapsed) {
+            // Single VIEW cycling button — 1 column
+            this._viewBtn = this._createTabButton(this.displayMode.toUpperCase(), true, F);
+            this._applyActionCellBorders(this._viewBtn);
+            this._viewBtn.addEventListener('click', () => this._cycleDisplayMode());
+            this._actionArea.appendChild(this._viewBtn);
+        } else {
+            // FIT / FILL / ACTUAL — 1 column each
+            const modes = ['fit', 'fill', 'actual'];
+            modes.forEach(mode => {
+                const btn = this._createTabButton(mode.toUpperCase(), this.displayMode === mode, F);
+                btn.dataset.mode = mode;
+                this._applyActionCellBorders(btn);
+                btn.addEventListener('click', () => {
+                    this._setActiveDisplayMode(mode);
+                    this.onDisplayModeChange(mode);
+                });
+                this.displayModeButtons.push(btn);
+                this._actionArea.appendChild(btn);
+            });
+        }
+
+        // EXPORT — spans 2 columns, rightmost
+        this._buildExportButton(this._actionArea, F);
+
+        // Build info overlay panel (appended to toolbar element for z-index)
+        this._buildInfoPanel(F);
     }
-    
+
     /**
-     * Build generator dropdown - simple custom implementation
+     * Cycle through display modes when in collapsed VIEW button mode.
      */
+    _cycleDisplayMode() {
+        const order = ['fit', 'fill', 'actual'];
+        const idx = order.indexOf(this.displayMode);
+        const next = order[(idx + 1) % order.length];
+        this._setActiveDisplayMode(next);
+        this.onDisplayModeChange(next);
+    }
+
+    /**
+     * Collapse check: if each display-mode slot would be < 4F wide, collapse.
+     * The action area total width is measured; 3 display-mode cells + 1 INFO + 2 export = 6 parts.
+     * Each 1-part cell = actionWidth / 6. Threshold: 4F.
+     */
+    _checkCollapse() {
+        if (!this._actionArea) return;
+        const F = this.F;
+        const totalWidth = this._actionArea.getBoundingClientRect().width;
+        // 6 columns when expanded: each column = totalWidth/6. Collapse when < 4F.
+        const onePart = totalWidth / 6;
+        const shouldCollapse = onePart < F * 4;
+
+        if (shouldCollapse !== this._collapsed) {
+            this._collapsed = shouldCollapse;
+            this._buildActionCells(F);
+        }
+    }
+
+    // ─── GENERATOR DROPDOWN ────────────────────────────────────────────────────
+
     _buildGeneratorDropdown(container, F) {
-        // Trigger button
         const triggerArea = this.createElement('button', 'generator-dropdown-trigger');
         triggerArea.type = 'button';
         triggerArea.style.cssText = `
@@ -166,20 +202,24 @@ export class GeneratorToolbar extends BaseComponent {
             text-transform: uppercase;
             cursor: pointer;
         `;
-        
+
         const label = this.createElement('span');
         label.textContent = this._getActiveGeneratorTitle();
+        label.style.flex = '1';
+        label.style.overflow = 'hidden';
+        label.style.textOverflow = 'ellipsis';
+        label.style.whiteSpace = 'nowrap';
         this.generatorLabel = label;
-        
-        const menuSymbol = this.createElement('span');
-        menuSymbol.textContent = '▸';
-        menuSymbol.style.marginLeft = `${F / 2}px`;
-        this.menuSymbol = menuSymbol;
-        
+
+        const glyph = this.createElement('span');
+        glyph.textContent = '▾';
+        glyph.style.flexShrink = '0';
+        this.menuSymbol = glyph;
+
         triggerArea.appendChild(label);
-        triggerArea.appendChild(menuSymbol);
+        triggerArea.appendChild(glyph);
         container.appendChild(triggerArea);
-        
+
         // Dropdown menu
         const dropdownMenu = this.createElement('div', 'generator-dropdown-menu');
         dropdownMenu.style.cssText = `
@@ -189,42 +229,41 @@ export class GeneratorToolbar extends BaseComponent {
             left: 0;
             right: 0;
             background: var(--c-bg);
-            border: 1px solid var(--c-border);
-            border-top: none;
+            border-left: 1px solid var(--c-border);
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
             z-index: 200;
             max-height: 400px;
             overflow-y: auto;
         `;
         this.dropdownMenu = dropdownMenu;
-        
-        // Populate dropdown with generators grouped by category
+
         this._populateDropdown(dropdownMenu, F);
-        
         container.appendChild(dropdownMenu);
-        
-        // Toggle on click
+
         triggerArea.addEventListener('click', (e) => {
             e.stopPropagation();
             this._toggleDropdown();
         });
-        
-        // Close on outside click
+
         document.addEventListener('click', (e) => {
             if (!container.contains(e.target)) {
                 this._closeDropdown();
             }
         });
     }
-    
+
     _populateDropdown(menu, F) {
         const grouped = this._groupByCategory();
-        
+
         for (const [category, generators] of Object.entries(grouped)) {
-            // Category header
             const header = this.createElement('div', 'generator-category-header');
             header.textContent = category.toUpperCase();
             header.style.cssText = `
-                padding: ${F / 2}px ${F}px;
+                padding: 0 ${F}px;
+                height: ${F * 2}px;
+                display: flex;
+                align-items: center;
                 background: var(--c-border);
                 color: var(--c-text);
                 font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -232,28 +271,30 @@ export class GeneratorToolbar extends BaseComponent {
                 text-transform: uppercase;
             `;
             menu.appendChild(header);
-            
-            // Generator items
+
             generators.forEach(gen => {
                 const item = this.createElement('div', 'generator-item');
                 item.textContent = gen.title;
                 const isActive = gen.id === this.activeGenerator;
                 item.style.cssText = `
-                    padding: ${F / 2}px ${F}px;
+                    padding: 0 ${F}px;
+                    height: ${F * 2}px;
+                    display: flex;
+                    align-items: center;
                     background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
                     color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
                     font-family: 'Atkinson Hyperlegible', sans-serif;
                     font-size: ${F * 0.75}px;
                     cursor: pointer;
-                    border-bottom: 1px solid var(--c-border);
+                    border-top: 1px solid var(--c-border);
                 `;
-                
+
                 item.addEventListener('click', () => {
                     this.setActiveGenerator(gen.id);
                     this.onGeneratorChange(gen.id);
                     this._closeDropdown();
                 });
-                
+
                 item.addEventListener('mouseenter', () => {
                     if (gen.id !== this.activeGenerator) {
                         item.style.background = 'var(--c-border)';
@@ -263,28 +304,26 @@ export class GeneratorToolbar extends BaseComponent {
                     item.style.background = gen.id === this.activeGenerator ? 'var(--c-text)' : 'var(--c-bg)';
                     item.style.color = gen.id === this.activeGenerator ? 'var(--c-bg)' : 'var(--c-text)';
                 });
-                
+
                 menu.appendChild(item);
             });
         }
     }
-    
+
     _toggleDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
         if (this.dropdownOpen) {
             this.dropdownMenu.style.display = 'block';
-            this.menuSymbol.textContent = '▾';
         } else {
             this._closeDropdown();
         }
     }
-    
+
     _closeDropdown() {
         this.dropdownOpen = false;
         if (this.dropdownMenu) this.dropdownMenu.style.display = 'none';
-        if (this.menuSymbol) this.menuSymbol.textContent = '▸';
     }
-    
+
     _groupByCategory() {
         const grouped = {};
         this.generators.forEach(gen => {
@@ -294,84 +333,483 @@ export class GeneratorToolbar extends BaseComponent {
         });
         return grouped;
     }
-    
+
     _getActiveGeneratorTitle() {
         const gen = this.generators.find(g => g.id === this.activeGenerator);
         return gen ? gen.title : 'SELECT GENERATOR';
     }
-    
-    _buildExportButton(container, F) {
-        const exportBtn = this._createTabButton('EXPORT ▾', false, F);
-        exportBtn.style.width = '100%';
-        exportBtn.style.flex = '1';
+
+    // ─── EXPORT BUTTON & PANEL ─────────────────────────────────────────────────
+
+    /**
+     * Build the export button cell + anchored dropdown panel.
+     * The button spans 2 grid columns (grid-column: span 2).
+     * Panel: anchored expansion (design-law §16.1), right: 0, overflow-y: auto.
+     */
+    _buildExportButton(actionArea, F) {
+        // Remove previous panel from toolbar root before rebuilding (collapse/expand cycle)
+        if (this.exportPanel && this.exportPanel.parentNode) {
+            this.exportPanel.parentNode.removeChild(this.exportPanel);
+        }
+        this.exportPanel = null;
+
+        const exportBtn = this.createElement('button', 'generator-toolbar-btn generator-toolbar-export-btn');
+        exportBtn.type = 'button';
+        exportBtn.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            padding: 0 ${F}px;
+            border: none;
+            min-width: 0;
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+            box-sizing: border-box;
+            position: relative;
+            grid-column: span 2;
+            border-left: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+        `;
+
+        const labelSpan = this.createElement('span');
+        labelSpan.textContent = 'EXPORT';
+        labelSpan.style.flex = '1';
+        labelSpan.style.textAlign = 'left';
+
+        const glyphSpan = this.createElement('span');
+        glyphSpan.textContent = '▾';
+        glyphSpan.style.flexShrink = '0';
+
+        exportBtn.appendChild(labelSpan);
+        exportBtn.appendChild(glyphSpan);
         this.exportBtn = exportBtn;
-        
-        // Export dropdown panel — min-width matches cell (100%)
+
+        // Export panel state — persists across re-renders
+        this._exportState = {
+            mode:         'image',   // 'image' | 'animation'
+            imageFormat:  'png',     // 'png' | 'jpeg' | 'webp' | 'avif'
+            animFormat:   'zip',     // 'zip' | 'gif' | 'webm' | 'mp4'
+            zipImageType: 'png',     // 'png' | 'jpeg' | 'webp'  (zip only)
+            fps:          60,
+            frames:       300,
+            duration:     5,
+            bitrate:      8000000,
+        };
+        // Loop info supplied by host via setExportConfig()
+        this._exportLoopFrames = 0;
+
         const exportPanel = this.createElement('div', 'export-panel');
         exportPanel.style.cssText = `
             display: none;
             position: absolute;
             top: 100%;
             right: 0;
-            min-width: 100%;
+            width: ${F * 16}px;
             background: var(--c-bg);
             border-left: 1px solid var(--c-border);
-            border-right: 1px solid var(--c-border);
             border-bottom: 1px solid var(--c-border);
             z-index: 200;
             box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: calc(100vh - ${F * 4}px);
         `;
-        
-        // Static PNG export button (always present)
-        const pngBtn = this._createTabButton('SAVE PNG', false, F);
-        pngBtn.style.width = '100%';
-        pngBtn.style.borderBottom = `1px solid var(--c-border)`;
-        pngBtn.addEventListener('click', () => {
-            this.onExport('png');
-            this._closeExportPanel();
-        });
-        exportPanel.appendChild(pngBtn);
-
-        // Mount point for AnimationExport UI (injected by host when script is animated)
-        this._animExportMount = this.createElement('div', 'export-anim-mount');
-        exportPanel.appendChild(this._animExportMount);
-        
         this.exportPanel = exportPanel;
-        
+        this._exportPanelF = F;
+
+        // Prevent any click/mousedown inside the panel from reaching the document
+        // close handler — covers native <select> dismiss events too.
+        exportPanel.addEventListener('mousedown', (e) => e.stopPropagation());
+        exportPanel.addEventListener('click',     (e) => e.stopPropagation());
+
+        this._renderExportPanel(F);
+
         exportBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this._toggleExportPanel();
         });
-        
-        // Close on outside click
+
         document.addEventListener('click', (e) => {
-            if (!container.contains(e.target)) {
+            if (this._exportPanelRerendering) return;
+            if (!exportBtn.contains(e.target) && !this.exportPanel?.contains(e.target)) {
                 this._closeExportPanel();
             }
         });
-        
-        container.appendChild(exportBtn);
-        container.appendChild(exportPanel);
+
+        // Panel is appended to the toolbar root element rather than inside exportBtn,
+        // so right:0 anchors to the full-width toolbar edge (never overflows viewport).
+        // top: 100% is relative to this.element which is position: relative.
+        this.element.appendChild(exportPanel);
+        actionArea.appendChild(exportBtn);
     }
 
     /**
-     * Returns the mount point div inside the export dropdown where
-     * AnimationExport UI should be injected by the host.
-     * @returns {HTMLElement}
+     * Fully re-render the export panel contents from _exportState.
+     * Sets _exportPanelRerendering to prevent the document click handler from
+     * treating a detached target (after innerHTML wipe) as an outside click.
      */
-    getAnimExportMount() {
-        return this._animExportMount ?? null;
+    _renderExportPanel(F) {
+        this._exportPanelRerendering = true;
+        setTimeout(() => { this._exportPanelRerendering = false; }, 0);
+
+        const panel = this.exportPanel;
+        panel.innerHTML = '';
+        const s = this._exportState;
+
+        // ── Mode toggle row: IMAGE | ANIMATION ──────────────────────────────
+        // No border-bottom on buttons — the first content row owns the shared
+        // boundary via border-top (border-system §3, §6).
+        const modeRow = this.createElement('div', 'export-mode-row');
+        modeRow.style.cssText = `
+            display: flex;
+            height: ${F * 2}px;
+            box-sizing: border-box;
+        `;
+        ['image', 'animation'].forEach((mode, i) => {
+            const btn = this.createElement('button', 'export-mode-btn');
+            btn.type = 'button';
+            const active = s.mode === mode;
+            btn.style.cssText = `
+                flex: 1;
+                height: ${F * 2}px;
+                padding: 0 ${F}px;
+                border: none;
+                border-left: ${i === 0 ? 'none' : '1px solid var(--c-border)'};
+                background: ${active ? 'var(--c-text)' : 'var(--c-bg)'};
+                color: ${active ? 'var(--c-bg)' : 'var(--c-text)'};
+                font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                font-size: ${F * 0.75}px;
+                text-transform: uppercase;
+                cursor: pointer;
+                white-space: nowrap;
+                box-sizing: border-box;
+            `;
+            btn.textContent = mode.toUpperCase();
+            btn.addEventListener('click', () => {
+                if (s.mode === mode) return;
+                s.mode = mode;
+                this._renderExportPanel(F);
+            });
+            modeRow.appendChild(btn);
+        });
+        panel.appendChild(modeRow);
+
+        if (s.mode === 'image') {
+            this._renderExportImageSection(panel, F);
+        } else {
+            this._renderExportAnimSection(panel, F);
+        }
     }
-    
-    _setActiveDisplayMode(mode) {
-        this.displayMode = mode;
-        this.displayModeButtons.forEach(btn => {
-            const isActive = btn.dataset.mode === mode;
-            btn.style.background = isActive ? 'var(--c-text)' : 'var(--c-bg)';
-            btn.style.color = isActive ? 'var(--c-bg)' : 'var(--c-text)';
+
+    /**
+     * IMAGE section: vertical stack of format buttons.
+     * Each button spans full width. First row provides the boundary with the
+     * mode row via border-top. No border-bottom on the last item — the panel
+     * container provides the terminal border (border-system §5 scrollable rule).
+     */
+    _renderExportImageSection(panel, F) {
+        const formats = ['png', 'jpeg', 'webp', 'avif'];
+        formats.forEach((fmt, i) => {
+            const btn = this.createElement('button', 'export-image-btn');
+            btn.type = 'button';
+            btn.style.cssText = `
+                display: flex;
+                align-items: center;
+                width: 100%;
+                height: ${F * 2}px;
+                padding: 0 ${F}px;
+                border: none;
+                border-top: 1px solid var(--c-border);
+                background: var(--c-bg);
+                color: var(--c-text);
+                font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                font-size: ${F * 0.75}px;
+                text-transform: uppercase;
+                cursor: pointer;
+                white-space: nowrap;
+                box-sizing: border-box;
+                text-align: left;
+            `;
+            btn.textContent = fmt.toUpperCase();
+            btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--c-text)'; btn.style.color = 'var(--c-bg)'; });
+            btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--c-bg)';   btn.style.color = 'var(--c-text)'; });
+            btn.addEventListener('click', () => {
+                this.onExport(fmt);
+                this._closeExportPanel();
+            });
+            panel.appendChild(btn);
         });
     }
-    
+
+    /**
+     * ANIMATION section: strict 50/50 two-column rows.
+     * Row structure: no padding on row; left cell = 50% with padding 0 F;
+     * right cell = 50% with border-left, input fills 100% of cell width.
+     * Terminal border comes from the panel container — no border-bottom on last row.
+     */
+    _renderExportAnimSection(panel, F) {
+        const s = this._exportState;
+
+        // FORMAT
+        this._exportRow(panel, F, 'FORMAT', (cell) => {
+            const sel = this._exportSelect(F, [
+                { value: 'zip',  label: 'ZIP FRAMES' },
+                { value: 'gif',  label: 'GIF' },
+                { value: 'webm', label: 'WEBM' },
+                { value: 'mp4',  label: 'MP4' },
+            ], s.animFormat);
+            sel.addEventListener('change', () => { s.animFormat = sel.value; this._renderExportPanel(F); });
+            cell.appendChild(sel);
+        });
+
+        // IMAGE TYPE (zip only)
+        if (s.animFormat === 'zip') {
+            this._exportRow(panel, F, 'IMAGE TYPE', (cell) => {
+                const sel = this._exportSelect(F, [
+                    { value: 'png',  label: 'PNG' },
+                    { value: 'jpeg', label: 'JPEG' },
+                    { value: 'webp', label: 'WEBP' },
+                ], s.zipImageType);
+                sel.addEventListener('change', () => { s.zipImageType = sel.value; });
+                cell.appendChild(sel);
+            });
+        }
+
+        // LOOP INFO — read-only; label includes unit context
+        if (this._exportLoopFrames > 0) {
+            const loopSecs = (this._exportLoopFrames / s.fps).toFixed(2);
+            this._exportRow(panel, F, 'LOOP LENGTH', (cell) => {
+                const span = this.createElement('span');
+                span.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    height: ${F * 2}px;
+                    padding: 0 ${Math.round(F / 2)}px;
+                    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                    font-size: ${F * 0.75}px;
+                    text-transform: uppercase;
+                    color: var(--c-text);
+                    white-space: nowrap;
+                    box-sizing: border-box;
+                `;
+                span.textContent = `${this._exportLoopFrames}F / ${loopSecs}S`;
+                cell.appendChild(span);
+            });
+        }
+
+        // FPS — re-renders on change to update loop info seconds
+        this._exportRow(panel, F, 'FPS', (cell) => {
+            const inp = this._exportNumInput(F, s.fps, 1, 120, 1);
+            inp.addEventListener('change', () => {
+                s.fps = Math.max(1, Math.min(120, parseInt(inp.value) || s.fps));
+                s.duration = parseFloat((s.frames / s.fps).toFixed(2));
+                this._renderExportPanel(F);
+            });
+            cell.appendChild(inp);
+        });
+
+        // FRAMES — patches DURATION in-place
+        this._exportRow(panel, F, 'FRAMES', (cell) => {
+            const inp = this._exportNumInput(F, s.frames, 1, 36000, 1);
+            inp.id = 'export-panel-frames';
+            inp.addEventListener('change', () => {
+                s.frames = Math.max(1, parseInt(inp.value) || s.frames);
+                s.duration = parseFloat((s.frames / s.fps).toFixed(2));
+                this._patchExportDuration();
+            });
+            cell.appendChild(inp);
+        });
+
+        // DURATION (S) — unit in label; patches FRAMES in-place
+        this._exportRow(panel, F, 'DURATION (S)', (cell) => {
+            const inp = this._exportNumInput(F, s.duration, 0.1, 600, 0.1);
+            inp.id = 'export-panel-duration';
+            inp.addEventListener('change', () => {
+                s.duration = Math.max(0.1, parseFloat(inp.value) || s.duration);
+                s.frames = Math.max(1, Math.round(s.duration * s.fps));
+                this._patchExportFrames();
+            });
+            cell.appendChild(inp);
+        });
+
+        // BITRATE (webm / mp4 only)
+        if (s.animFormat === 'webm' || s.animFormat === 'mp4') {
+            this._exportRow(panel, F, 'BITRATE', (cell) => {
+                const sel = this._exportSelect(F, [
+                    { value: 2000000,  label: '2 MBPS' },
+                    { value: 5000000,  label: '5 MBPS' },
+                    { value: 8000000,  label: '8 MBPS' },
+                    { value: 15000000, label: '15 MBPS' },
+                ], s.bitrate);
+                sel.addEventListener('change', () => { s.bitrate = parseInt(sel.value); });
+                cell.appendChild(sel);
+            });
+        }
+
+        // EXPORT ANIMATION — action row, last in stack.
+        // border-top shared with row above. No border-bottom — panel container owns terminal border.
+        const actionBtn = this.createElement('button', 'export-anim-go-btn');
+        actionBtn.type = 'button';
+        actionBtn.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: ${F * 2}px;
+            padding: 0 ${F}px;
+            border: none;
+            border-top: 1px solid var(--c-border);
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+            box-sizing: border-box;
+        `;
+        actionBtn.textContent = 'EXPORT ANIMATION';
+        actionBtn.addEventListener('mouseenter', () => { actionBtn.style.background = 'var(--c-text)'; actionBtn.style.color = 'var(--c-bg)'; });
+        actionBtn.addEventListener('mouseleave', () => { actionBtn.style.background = 'var(--c-bg)';   actionBtn.style.color = 'var(--c-text)'; });
+        actionBtn.addEventListener('click', () => this.onExport('animation', { ...s }));
+        panel.appendChild(actionBtn);
+    }
+
+    /**
+     * Strict 50/50 two-column row.
+     * Left cell: 50% wide, padding 0 F, contains label.
+     * Right cell: 50% wide, border-left, no padding — input fills it.
+     * Row: border-top only (vertical stack rule, border-system §3).
+     *
+     * @param {HTMLElement} panel
+     * @param {number} F
+     * @param {string} label
+     * @param {function(cell: HTMLElement, halfW: number): void} buildCell
+     */
+    _exportRow(panel, F, label, buildCell) {
+        const row = this.createElement('div', 'export-panel-row');
+        row.style.cssText = `
+            display: flex;
+            height: ${F * 2}px;
+            border-top: 1px solid var(--c-border);
+            box-sizing: border-box;
+            overflow: hidden;
+        `;
+
+        const labelCell = this.createElement('div', 'export-panel-label');
+        labelCell.style.cssText = `
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            padding: 0 ${F}px;
+            height: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+        `;
+        const labelEl = this.createElement('span');
+        labelEl.textContent = label;
+        labelEl.style.cssText = `
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            color: var(--c-text);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        `;
+        labelCell.appendChild(labelEl);
+        row.appendChild(labelCell);
+
+        const inputCell = this.createElement('div', 'export-panel-input-cell');
+        inputCell.style.cssText = `
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            border-left: 1px solid var(--c-border);
+            height: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+        `;
+        buildCell(inputCell);
+        row.appendChild(inputCell);
+        panel.appendChild(row);
+    }
+
+    /**
+     * Select that fills its container cell (width: 100%).
+     * No private four-sided border — right cell already has border-left from its container.
+     */
+    _exportSelect(F, options, currentValue) {
+        const sel = this.createElement('select', 'export-panel-select');
+        sel.style.cssText = `
+            width: 100%;
+            height: 100%;
+            padding: 0 ${Math.round(F / 2)}px;
+            border: none;
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            cursor: pointer;
+        `;
+        options.forEach(({ value, label }) => {
+            const opt = this.createElement('option');
+            opt.value = value;
+            opt.textContent = label;
+            if (String(value) === String(currentValue)) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        return sel;
+    }
+
+    /**
+     * Numeric input that fills its container cell (width: 100%).
+     * No private border — container cell provides border-left.
+     */
+    _exportNumInput(F, value, min, max, step) {
+        const inp = this.createElement('input', 'export-panel-number');
+        inp.type  = 'number';
+        inp.min   = min;
+        inp.max   = max;
+        inp.step  = step;
+        inp.value = value;
+        inp.style.cssText = `
+            width: 100%;
+            height: 100%;
+            padding: 0 ${Math.round(F / 2)}px;
+            border: none;
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            text-align: right;
+            box-sizing: border-box;
+        `;
+        return inp;
+    }
+
+    _patchExportDuration() {
+        const el = this.exportPanel?.querySelector('#export-panel-duration');
+        if (el) el.value = this._exportState.duration;
+    }
+
+    _patchExportFrames() {
+        const el = this.exportPanel?.querySelector('#export-panel-frames');
+        if (el) el.value = this._exportState.frames;
+    }
+
     _toggleExportPanel() {
         this.exportExpanded = !this.exportExpanded;
         if (this.exportExpanded) {
@@ -382,7 +820,7 @@ export class GeneratorToolbar extends BaseComponent {
             this._closeExportPanel();
         }
     }
-    
+
     _closeExportPanel() {
         this.exportExpanded = false;
         if (this.exportPanel) this.exportPanel.style.display = 'none';
@@ -391,9 +829,201 @@ export class GeneratorToolbar extends BaseComponent {
             this.exportBtn.style.color = 'var(--c-text)';
         }
     }
-    
-    // === PUBLIC API ===
-    
+
+    // ─── INFO PANEL ────────────────────────────────────────────────────────────
+
+    /**
+     * Build the info overlay panel. Appended to element (toolbar root) so it can
+     * overlap the canvas area. Position is anchored to the INFO button's right edge.
+     */
+    _buildInfoPanel(F) {
+        // Remove previous panel if rebuilding
+        if (this.infoPanel && this.infoPanel.parentNode) {
+            this.infoPanel.parentNode.removeChild(this.infoPanel);
+        }
+
+        const panel = this.createElement('div', 'generator-info-panel');
+        panel.style.cssText = `
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: ${F * 30}px;
+            max-height: calc(100vh - ${F * 4}px);
+            overflow-y: auto;
+            background: var(--c-bg);
+            border-left: 1px solid var(--c-border);
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+            z-index: 300;
+            box-sizing: border-box;
+        `;
+        this.infoPanel = panel;
+
+        // Content mount — filled by setInfoContent()
+        this._infoPanelContent = this.createElement('div', 'info-panel-content');
+        panel.appendChild(this._infoPanelContent);
+
+        if (this._infoContent) {
+            this._renderInfoContent(F);
+        }
+
+        this.element.appendChild(panel);
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (this.infoPanel && !this.infoPanel.contains(e.target) && e.target !== this.infoBtn) {
+                this._closeInfoPanel();
+            }
+        });
+    }
+
+    _toggleInfoPanel() {
+        this.infoExpanded = !this.infoExpanded;
+        if (this.infoExpanded) {
+            this.infoPanel.style.display = 'block';
+            this.infoBtn.style.background = 'var(--c-text)';
+            this.infoBtn.style.color = 'var(--c-bg)';
+        } else {
+            this._closeInfoPanel();
+        }
+    }
+
+    _closeInfoPanel() {
+        this.infoExpanded = false;
+        if (this.infoPanel) this.infoPanel.style.display = 'none';
+        if (this.infoBtn) {
+            this.infoBtn.style.background = 'var(--c-bg)';
+            this.infoBtn.style.color = 'var(--c-text)';
+        }
+    }
+
+    /**
+     * Supply info content from host after script load.
+     * @param {Array<{heading: string, body: string}>|null} sections
+     */
+    setInfoContent(sections) {
+        this._infoContent = sections;
+        if (this._infoPanelContent) {
+            this._renderInfoContent(this.F);
+        }
+    }
+
+    _renderInfoContent(F) {
+        this._infoPanelContent.innerHTML = '';
+
+        if (!this._infoContent || this._infoContent.length === 0) {
+            const empty = this.createElement('div');
+            empty.textContent = 'NO INFO AVAILABLE';
+            empty.style.cssText = `
+                padding: ${F}px;
+                font-family: 'Atkinson Hyperlegible', sans-serif;
+                font-size: ${F * 0.75}px;
+                text-transform: uppercase;
+                color: var(--c-text);
+            `;
+            this._infoPanelContent.appendChild(empty);
+            return;
+        }
+
+        this._infoContent.forEach((section, i) => {
+            const isFirst = i === 0;
+            const isLast  = i === this._infoContent.length - 1;
+
+            const block = this.createElement('div', 'info-block');
+            block.style.cssText = `
+                border-top: ${isFirst ? 'none' : '1px solid var(--c-border)'};
+                ${isLast ? 'border-bottom: 1px solid var(--c-border);' : ''}
+            `;
+
+            const heading = this.createElement('div', 'info-block-heading');
+            heading.textContent = section.heading.toUpperCase();
+            heading.style.cssText = `
+                padding: 0 ${F}px;
+                height: ${F * 2}px;
+                display: flex;
+                align-items: center;
+                font-family: 'Atkinson Hyperlegible', sans-serif;
+                font-size: ${F * 0.75}px;
+                text-transform: uppercase;
+                color: var(--c-text);
+                border-bottom: 1px solid var(--c-border);
+            `;
+            block.appendChild(heading);
+
+            const body = this.createElement('div', 'info-block-body');
+            body.style.cssText = `
+                padding: ${F}px;
+                font-family: 'Atkinson Hyperlegible', sans-serif;
+                font-size: ${F * 0.75}px;
+                color: var(--c-text);
+                line-height: 1.5;
+                white-space: pre-wrap;
+                word-break: break-word;
+            `;
+            body.textContent = section.body;
+            block.appendChild(body);
+
+            this._infoPanelContent.appendChild(block);
+        });
+    }
+
+    // ─── DISPLAY MODE ──────────────────────────────────────────────────────────
+
+    _setActiveDisplayMode(mode) {
+        this.displayMode = mode;
+
+        // Update expanded buttons
+        this.displayModeButtons.forEach(btn => {
+            const isActive = btn.dataset.mode === mode;
+            btn.style.background = isActive ? 'var(--c-text)' : 'var(--c-bg)';
+            btn.style.color = isActive ? 'var(--c-bg)' : 'var(--c-text)';
+        });
+
+        // Update collapsed view button
+        if (this._viewBtn) {
+            this._viewBtn.textContent = mode.toUpperCase();
+        }
+    }
+
+    // ─── HELPERS ───────────────────────────────────────────────────────────────
+
+    /**
+     * Apply borders to a grid action cell.
+     * Grid handles sizing; only borders and box-sizing are set here.
+     * @param {HTMLElement} el
+     */
+    _applyActionCellBorders(el) {
+        el.style.borderLeft   = '1px solid var(--c-border)';
+        el.style.borderBottom = '1px solid var(--c-border)';
+        el.style.boxSizing    = 'border-box';
+        el.style.width        = '100%';
+        el.style.height       = '100%';
+    }
+
+    _createTabButton(text, isActive, F) {
+        const btn = this.createElement('button', 'generator-toolbar-btn');
+        btn.type = 'button';
+        btn.textContent = text;
+        btn.style.cssText = `
+            height: ${F * 2}px;
+            padding: 0 ${F}px;
+            border: none;
+            min-width: 0;
+            background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
+            color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
+            font-family: 'Atkinson Hyperlegible', sans-serif;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+            box-sizing: border-box;
+        `;
+        return btn;
+    }
+
+    // ─── PUBLIC API ────────────────────────────────────────────────────────────
+
     setActiveGenerator(generatorId) {
         this.activeGenerator = generatorId;
         if (this.generatorLabel) {
@@ -401,21 +1031,45 @@ export class GeneratorToolbar extends BaseComponent {
         }
         this._closeDropdown();
     }
-    
+
     setDisplayMode(mode) {
         this._setActiveDisplayMode(mode);
     }
-    
+
     setGenerators(generators) {
         this.generators = generators;
         if (this.generatorLabel) {
             this.generatorLabel.textContent = this._getActiveGeneratorTitle();
         }
     }
-    
+
+    /**
+     * Supply animation metadata from the host so the export panel can show
+     * loop length and seed sensible defaults.
+     * @param {{ loopFrames?: number, defaultFps?: number }} config
+     */
+    setExportConfig(config = {}) {
+        this._exportLoopFrames = config.loopFrames ?? 0;
+        if (config.defaultFps && this._exportState) {
+            const fps = config.defaultFps;
+            this._exportState.fps = fps;
+            this._exportState.frames = config.loopFrames > 0 ? config.loopFrames : Math.round(fps * 5);
+            this._exportState.duration = parseFloat((this._exportState.frames / fps).toFixed(2));
+        }
+        // Re-render panel if it already exists and is in animation mode
+        if (this.exportPanel && this._exportState?.mode === 'animation') {
+            this._renderExportPanel(this._exportPanelF);
+        }
+    }
+
     destroy() {
+        if (this._ro) {
+            this._ro.disconnect();
+            this._ro = null;
+        }
         this._closeDropdown();
         this._closeExportPanel();
+        this._closeInfoPanel();
         super.destroy();
     }
 }

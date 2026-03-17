@@ -152,7 +152,7 @@ export class GenerativeToolHost extends BaseComponent {
             displayMode: this.displayMode,
             onGeneratorChange: (id) => this._handleGeneratorChange(id),
             onDisplayModeChange: (mode) => this._handleDisplayModeChange(mode),
-            onExport: (frameCount) => this._handleExport(frameCount)
+            onExport: (format, exportState) => this._handleExport(format, exportState)
         }, this.deps);
         
         this.wrapperEl.appendChild(this.toolbar.render());
@@ -300,6 +300,18 @@ export class GenerativeToolHost extends BaseComponent {
 
         // Update URL query parameter without triggering navigation
         this._updateUrlQueryParam(scriptId);
+
+        // Sync toolbar dropdown label to the newly loaded script
+        if (this.toolbar) {
+            this.toolbar.setActiveGenerator(scriptId);
+            // Supply info content to toolbar INFO button panel
+            const infoSections = this.scriptConfig.infoSections?.length
+                ? this.scriptConfig.infoSections
+                : this.scriptConfig.description
+                    ? [{ heading: 'About', body: this.scriptConfig.description }]
+                    : null;
+            this.toolbar.setInfoContent(infoSections);
+        }
         
         // Notify host consumer that the active script changed (e.g. to update subheader nav)
         if (typeof this.deps.onScriptChange === 'function') {
@@ -663,50 +675,77 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Export current frame as PNG (toolbar SAVE PNG button)
+     * Route export requests from the toolbar panel.
+     * format: image type string ('png','jpeg','webp','avif') or 'animation'.
+     * exportState: export panel state object (animation mode only).
      */
-    _handleExport(format) {
-        this._exportCurrentFrame();
+    _handleExport(format, exportState) {
+        if (format === 'animation') {
+            this._handleAnimationExport(exportState);
+        } else {
+            this._exportCurrentFrame(format);
+        }
     }
 
-    _exportCurrentFrame() {
+    _exportCurrentFrame(format = 'png') {
         const canvas = this._getActiveCanvas();
         if (!canvas) return;
+        const mimeMap = { png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif' };
+        const mime = mimeMap[format] ?? 'image/png';
+        const ext  = format === 'jpeg' ? 'jpg' : format;
         canvas.toBlob((blob) => {
+            if (!blob) return;
             const url = URL.createObjectURL(blob);
             const a = this.createElement('a');
             a.href = url;
-            a.download = `${this.scriptId}-${Date.now()}.png`;
+            a.download = `${this.scriptId}-${Date.now()}.${ext}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        });
+        }, mime);
+    }
+
+    _handleAnimationExport(exportState) {
+        if (!this.animationExporter) return;
+        // Push current panel state into the engine before starting
+        this.animationExporter.state.format    = exportState.animFormat === 'zip' ? 'frames' : exportState.animFormat;
+        this.animationExporter.state.fps       = exportState.fps;
+        this.animationExporter.state.frameCount= exportState.frames;
+        this.animationExporter.state.duration  = exportState.duration;
+        this.animationExporter.state.bitrate   = exportState.bitrate;
+        // ZIP image type: stored separately on the engine for _createFrameZip to read
+        this.animationExporter._zipImageType   = exportState.zipImageType ?? 'png';
+        this.animationExporter.startExport();
     }
 
     /**
-     * Inject AnimationExport UI into the toolbar EXPORT dropdown's animation mount point.
-     * The toolbar owns export (component-patterns §4, §6.6); sidebar EXPORT tab is removed.
+     * Initialise the AnimationExport engine for the current script (no UI render).
+     * The toolbar panel owns all UI; this method only sets up the engine.
      */
     _injectExportUI() {
         if (!this.scriptConfig.animation) return;
 
-        const mountEl = this.toolbar?.getAnimExportMount?.();
-        if (!mountEl) return;
+        // Destroy previous engine if switching scripts
+        if (this.animationExporter) {
+            this.animationExporter.destroy();
+            this.animationExporter = null;
+        }
 
-        // Clear any previously injected UI (script switch)
-        mountEl.innerHTML = '';
+        const anim = this.scriptConfig.animation;
+        const loopFrames = anim.loopFrames || 300;
+        const defaultFps = anim.defaultFps || 60;
 
-        let savedFrame = 0;
+        let savedFrame  = 0;
         let savedParams = {};
 
         this.animationExporter = new AnimationExport({
-            type: 'loop',
-            loopFrames: this.scriptConfig.animation.loopFrames || 300,
-            defaultFps: this.scriptConfig.animation.defaultFps || 60,
-            canPrerender: this.scriptConfig.animation.canPrerender ?? true,
-            getCanvas: () => this._getActiveCanvas(),
-            renderFrame: (i) => {
+            type:         'loop',
+            loopFrames,
+            defaultFps,
+            canPrerender: anim.canPrerender ?? true,
+            getCanvas:    () => this._getActiveCanvas(),
+            renderFrame:  (i) => {
                 this.frame = i;
                 this.updatePhaseAnimations();
                 this.draw();
@@ -718,7 +757,7 @@ export class GenerativeToolHost extends BaseComponent {
                 this.draw();
             },
             onExportStart: () => {
-                savedFrame = this.frame;
+                savedFrame  = this.frame;
                 savedParams = JSON.parse(JSON.stringify(this.params));
                 if (this.isPlaying) this.pause();
             },
@@ -730,8 +769,10 @@ export class GenerativeToolHost extends BaseComponent {
             },
         }, {});
 
-        mountEl.appendChild(this.animationExporter.render());
-        window.debugLog('TOOLS', `✅ AnimationExport UI injected into toolbar for "${this.scriptId}"`);
+        // Push metadata into toolbar panel so it can seed defaults and show loop info
+        this.toolbar?.setExportConfig?.({ loopFrames, defaultFps });
+
+        window.debugLog('TOOLS', `✅ AnimationExport engine ready for "${this.scriptId}"`);
     }
     
     // === TOOLBASE HANDLERS ===
@@ -791,12 +832,54 @@ export class GenerativeToolHost extends BaseComponent {
             this._exportCurrentFrame();
             return;
         }
-        
+
+        if (key === 'canvasWidth' || key === 'canvasHeight') {
+            this._handleCanvasResize(key, value);
+            return;
+        }
+
+        if (key === 'canvasBackground') {
+            this._handleCanvasBackground(value);
+            return;
+        }
+
         // Regular parameter update
         this.params[key] = value;
         this.scheduleRedraw();
     }
     
+    /**
+     * Handle canvas resize from CANVAS tab sliders.
+     * Updates the script config and resizes the ToolBase canvas.
+     */
+    _handleCanvasResize(key, value) {
+        if (!this.scriptConfig?.canvas) return;
+        if (key === 'canvasWidth')  this.scriptConfig.canvas.width  = value;
+        if (key === 'canvasHeight') this.scriptConfig.canvas.height = value;
+
+        if (this.isP5Context && this.p5Instance) {
+            this.p5Instance.resizeCanvas(
+                this.scriptConfig.canvas.width,
+                this.scriptConfig.canvas.height
+            );
+            this._applyP5DisplayMode();
+        } else if (this.tool?.canvas) {
+            this.tool.canvas.width  = this.scriptConfig.canvas.width;
+            this.tool.canvas.height = this.scriptConfig.canvas.height;
+        }
+
+        this.draw();
+    }
+
+    /**
+     * Handle background colour change from CANVAS tab.
+     */
+    _handleCanvasBackground(colour) {
+        if (!this.scriptConfig?.canvas) return;
+        this.scriptConfig.canvas.background = colour;
+        this.draw();
+    }
+
     /**
      * Handle preset selection
      */

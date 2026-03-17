@@ -673,11 +673,15 @@ export class AnimationExport extends BaseComponent {
                 this.metadata.renderFrame(i, totalFrames);
             }
             
-            // Capture frame
-            const dataUrl = canvas.toDataURL('image/png');
+            // Capture frame — honour zip image type chosen in toolbar panel
+            const imgType = this._zipImageType ?? 'png';
+            const mimeMap = { png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp' };
+            const mime = mimeMap[imgType] ?? 'image/png';
+            const dataUrl = canvas.toDataURL(mime);
             this.frameBuffer.push({
                 index: i,
-                data: dataUrl.split(',')[1] // Base64 data only
+                ext:   imgType === 'jpeg' ? 'jpg' : imgType,
+                data:  dataUrl.split(',')[1] // Base64 data only
             });
             
             this._updateProgress(i + 1, totalFrames, `Rendering frame ${i + 1}/${totalFrames}`);
@@ -727,7 +731,8 @@ export class AnimationExport extends BaseComponent {
         
         this.frameBuffer.forEach(frame => {
             const paddedNum = String(frame.index).padStart(4, '0');
-            folder.file(`frame-${paddedNum}.png`, frame.data, { base64: true });
+            const ext = frame.ext ?? 'png';
+            folder.file(`frame-${paddedNum}.${ext}`, frame.data, { base64: true });
         });
         
         // Add metadata file

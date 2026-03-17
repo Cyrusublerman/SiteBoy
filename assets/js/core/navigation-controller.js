@@ -42,20 +42,10 @@ const NavigationController = {
             if (window.Subheader) {
                 window.Subheader.show();
                 
-                // Format title for display (handle query parameters)
-                let displayTitle = currentPage.toUpperCase();
-                if (currentPage.includes('?')) {
-                    const [base, query] = currentPage.split('?');
-                    const params = new URLSearchParams(query);
-                    const scriptParam = params.get('script');
-                    if (scriptParam) {
-                        const scriptName = scriptParam
-                            .split('-')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ');
-                        displayTitle = scriptName.toUpperCase();
-                    }
-                }
+                // Format title for display — strip query params, show only the page name
+                let displayTitle = currentPage.includes('?')
+                    ? currentPage.split('?')[0].toUpperCase()
+                    : currentPage.toUpperCase();
                 
                 window.Subheader.updateTitle(displayTitle);
                 
