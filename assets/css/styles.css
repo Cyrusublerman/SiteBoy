@@ -46,7 +46,7 @@
     --f: 14px;
     --header-height: 28px;          /* 2*F = 28px (KEEP F SYSTEM) */
     --target-margin: 56px;          /* 4*F = 56px (KEEP F SYSTEM) */
-    --mobile-margin: 14px;
+    --mobile-margin: 1px;
     --outline-width: 1px;
 }
 

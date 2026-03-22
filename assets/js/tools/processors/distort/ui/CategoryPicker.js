@@ -23,8 +23,6 @@ export class CategoryPicker extends BaseComponent {
       inset: 0;
       z-index: 10;
       background: var(--c-bg);
-      border-left: 1px solid var(--c-border);
-      border-right: 1px solid var(--c-border);
       border-bottom: 1px solid var(--c-border);
       box-sizing: border-box;
     `;
@@ -55,7 +53,7 @@ export class CategoryPicker extends BaseComponent {
       border: none;
       background: var(--c-bg);
       color: var(--c-text);
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       box-sizing: border-box;
       text-transform: uppercase;
@@ -89,6 +87,8 @@ export class CategoryPicker extends BaseComponent {
     const query = this._query;
     const categories = Object.entries(REGISTRY);
 
+    let isFirstRow = true;
+
     for (const [category, entries] of categories) {
       const matches = query
         ? entries.filter(entry =>
@@ -107,15 +107,18 @@ export class CategoryPicker extends BaseComponent {
       header.type = 'button';
       header.textContent = `${collapsed ? '▸' : '▾'} ${category.toUpperCase()}`;
       header.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
         width: 100%;
         height: ${F * 2}px;
         padding: 0 ${F}px;
         border: none;
-        border-top: 1px solid var(--c-border);
+        border-top: ${isFirstRow ? 'none' : '1px solid var(--c-border)'};
         background: var(--c-bg);
         color: var(--c-text);
         text-align: left;
-        font-family: 'Space Mono', monospace;
+        font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
         font-size: ${F * 0.75}px;
         text-transform: uppercase;
         cursor: pointer;
@@ -126,6 +129,7 @@ export class CategoryPicker extends BaseComponent {
         this._renderList();
       });
       this._listEl.appendChild(header);
+      isFirstRow = false;
 
       if (collapsed) continue;
 
@@ -135,15 +139,18 @@ export class CategoryPicker extends BaseComponent {
         item.type = 'button';
         item.title = entry.description ?? entry.label;
         item.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
           width: 100%;
           height: ${F * 2}px;
-          padding: 0 ${F * 2}px;
+          padding: 0 ${F}px 0 ${F * 2}px;
           border: none;
           border-top: 1px solid var(--c-border);
           background: var(--c-bg);
           color: var(--c-text);
           text-align: left;
-          font-family: 'Space Mono', monospace;
+          font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
           font-size: ${F * 0.75}px;
           text-transform: uppercase;
           cursor: pointer;

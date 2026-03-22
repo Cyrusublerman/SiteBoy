@@ -362,8 +362,7 @@ const SiteBoyApp = {
             { title: 'HOME', onClick: () => this.navigateToSection('home') },
             { title: 'BLOG', onClick: () => this.navigateToSection('blog') },
             { title: 'ART', onClick: () => this.navigateToSection('art') },
-            { title: 'TOOLS', onClick: () => this.navigateToSection('tools') },
-            { title: 'PROJECTS', onClick: () => this.navigateToSection('projects') }
+            { title: 'TOOLS', onClick: () => this.navigateToSection('tools') }
         ];
         
         // Create page container with dependencies

@@ -34,7 +34,7 @@
  * What changes when you modify F:
  * - Header height = F × 2
  * - Desktop margins = F × 4  
- * - Mobile margins = F ÷ 2 (minimum 6px)
+ * - Mobile margins = 1px (fixed)
  * - All typography scales proportionally
  * - All component dimensions scale proportionally
  * - All spacing scales proportionally

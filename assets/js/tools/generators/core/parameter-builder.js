@@ -80,16 +80,20 @@ function buildAnimateTab(scriptConfig) {
     const anim = scriptConfig.animation;
     
     // Playback controls
-    blocks.push(['Playback', [
-        ['button', 'Play / Pause', null, { key: 'playPause' }],
-        ['button', 'Stop & Reset', null, { key: 'stopReset' }],
-        ['slider', 'Speed', 0.1, 5, 0.1, { 
-            key: 'animSpeed', 
-            value: anim.defaultSpeed || 1, 
+    const playbackComponents = [
+        ['button', 'PLAY', null, { key: 'playPause' }],
+        ['button', 'STOP', null, { key: 'stopReset' }],
+        ['slider', 'Speed', 0.1, 5, 0.1, {
+            key: 'animSpeed',
+            value: anim.defaultSpeed || 1,
             withNumber: true,
             precision: 1
         }],
-    ]]);
+    ];
+    if (anim.sequencer === true) {
+        playbackComponents.push(['button', 'Timeline', null, { key: 'toggleTimeline' }]);
+    }
+    blocks.push(['Playback', playbackComponents]);
     
     // Animatable params — each entry may be a string key or an object { key, label, mode, ... }
     if (anim.animatableParams && anim.animatableParams.length > 0) {

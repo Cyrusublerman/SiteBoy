@@ -26,10 +26,8 @@ export class TransportStrip extends BaseComponent {
 
     this.element.style.cssText = `
       display: flex;
-      align-items: center;
-      gap: ${F}px;
+      align-items: stretch;
       height: ${F * 2}px;
-      padding: 0 ${F}px;
       background: var(--c-bg);
       border-top: 1px solid var(--c-border);
       box-sizing: border-box;
@@ -37,9 +35,10 @@ export class TransportStrip extends BaseComponent {
       min-height: 0;
     `;
 
-    this._prevBtn = this._buildButton('◀', () => this._goPrev());
-    this._playBtn = this._buildButton('▶', () => this._togglePlay());
-    this._nextBtn = this._buildButton('▶▶', () => this._goNext());
+    // Horizontal stack — border-left for internal boundaries, border-right on NEXT → to close the button group
+    this._prevBtn = this._buildButton('← PREV', () => this._goPrev(), false, false, false);
+    this._playBtn = this._buildButton('▶',      () => this._togglePlay(), true,  true,  false);
+    this._nextBtn = this._buildButton('NEXT →', () => this._goNext(), false,     true,  true);
 
     this._scrubber = this.createElement('input', 'distort-transport-scrubber');
     this._scrubber.type = 'range';
@@ -50,17 +49,18 @@ export class TransportStrip extends BaseComponent {
     this._scrubber.style.cssText = `
       flex: 1;
       height: ${F * 2}px;
-      margin: 0;
+      margin: 0 0 0 ${F}px;
       accent-color: var(--c-text);
       cursor: pointer;
+      min-width: 0;
     `;
     this._scrubber.addEventListener('input', () => {
       this._pause();
       this._seekTo(Number(this._scrubber.value));
     });
 
-    this._frameLabel = this._buildReadout('1 / 1', `${F * 5}px`, 'var(--c-text)');
-    this._fpsLabel = this._buildReadout(`${this._fps} FPS`, `${F * 4}px`, 'var(--c-border)');
+    this._frameLabel = this._buildReadout('1 / 1', `${F * 5}px`);
+    this._fpsLabel   = this._buildReadout(`${this._fps} FPS`, `${F * 4}px`, true);
 
     this.element.append(
       this._prevBtn,
@@ -84,22 +84,32 @@ export class TransportStrip extends BaseComponent {
     return this.element;
   }
 
-  _buildButton(text, onClick) {
+  // iconOnly: fixed F*2 width. hasLeftBorder/hasRightBorder: §4 horizontal stack boundaries.
+  _buildButton(text, onClick, iconOnly = false, hasLeftBorder = false, hasRightBorder = false) {
     const { F } = this.getF();
     const button = this.createElement('button', 'distort-transport-button');
     button.type = 'button';
     button.textContent = text;
     button.style.cssText = `
-      width: ${F * 2}px;
-      height: ${F * 2}px;
-      border: 1px solid var(--c-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      ${iconOnly ? `width: ${F * 2}px;` : `padding: 0 ${F}px;`}
+      border-top: none;
+      border-bottom: none;
+      border-left: ${hasLeftBorder ? '1px solid var(--c-border)' : 'none'};
+      border-right: ${hasRightBorder ? '1px solid var(--c-border)' : 'none'};
       background: var(--c-bg);
       color: var(--c-text);
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
+      text-transform: uppercase;
       cursor: pointer;
       box-sizing: border-box;
       flex-shrink: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     `;
     button.addEventListener('mouseenter', () => {
       button.style.background = 'var(--c-text)';
@@ -113,16 +123,24 @@ export class TransportStrip extends BaseComponent {
     return button;
   }
 
-  _buildReadout(text, minWidth, color) {
+  // muted: FPS label is secondary info — text-treatment §2 permits var(--c-border) for muted readouts.
+  _buildReadout(text, minWidth, muted = false) {
     const { F } = this.getF();
     const el = this.createElement('span', 'distort-transport-readout', text);
     el.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
       min-width: ${minWidth};
-      text-align: right;
-      color: ${color};
-      font-family: 'Space Mono', monospace;
+      padding: 0 ${F}px;
+      color: ${muted ? 'var(--c-border)' : 'var(--c-text)'};
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       flex-shrink: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
     `;
     return el;
   }
@@ -135,7 +153,7 @@ export class TransportStrip extends BaseComponent {
   _play() {
     if (this._frameCount <= 1) return;
     this._playing = true;
-    if (this._playBtn) this._playBtn.textContent = '■';
+    if (this._playBtn) this._playBtn.textContent = '⏸';
     this._loop?.start();
   }
 

@@ -14,51 +14,66 @@ const EXPORT_ITEMS = [
   { label: 'RENDER SEQUENCE', key: 'renderSequence' },
 ];
 
+/**
+ * Layout (landscape):
+ *   [SOURCE — 30F fixed] [UNDO — 1u] [REDO — 1u] [FIT — 1u] [FILL — 1u] [ACTUAL — 1u] [DRAFT — 1u] [EXPORT — 2u]
+ *   Units fill the remaining canvas area (total width − 30F), split via flex proportions.
+ *   EXPORT is 2u so it has double the width of the other action cells.
+ *
+ * Compact mode (canvas area too narrow):
+ *   FIT + FILL + ACTUAL (3u) → single cyclic ZOOM button (1u).
+ *   UNDO + REDO hidden.
+ *   Threshold: canvas-area width (total − 30F) < 4F per unit → 8u × 4F = 32F → compact when < 32F.
+ *   Exit hysteresis: > 36F.
+ */
 export class DistortToolbar extends BaseComponent {
   constructor(options = {}, deps = {}) {
     super({ componentType: 'distort-toolbar', ...options }, deps);
-    this._onSource = options.onSource ?? null;
-    this._onUndo = options.onUndo ?? null;
-    this._onRedo = options.onRedo ?? null;
-    this._onZoom = options.onZoom ?? null;
+    this._onSource  = options.onSource  ?? null;
+    this._onUndo    = options.onUndo    ?? null;
+    this._onRedo    = options.onRedo    ?? null;
+    this._onZoom    = options.onZoom    ?? null;
     this._onQuality = options.onQuality ?? null;
-    this._onExport = options.onExport ?? null;
+    this._onExport  = options.onExport  ?? null;
 
-    this._zoom = options.zoom ?? 'fit';
-    this._quality = options.quality === 'final' ? 'full' : (options.quality ?? 'preview');
-    this._sourceName = 'ADD SOURCE +';
-    this._canUndo = false;
-    this._canRedo = false;
+    this._zoom        = options.zoom ?? 'fit';
+    this._quality     = options.quality === 'final' ? 'full' : (options.quality ?? 'preview');
+    this._sourceName  = 'ADD SOURCE +';
+    this._canUndo     = false;
+    this._canRedo     = false;
     this._stackIsAllVector = false;
-    this._exportOpen = false;
+    this._exportOpen  = false;
     this._compactMode = false;
 
-    this._fileInput = null;
-    this._sourceCell = null;
-    this._sourceText = null;
-    this._undoBtn = null;
-    this._redoBtn = null;
-    this._qualityBtn = null;
-    this._exportBtn = null;
-    this._exportMenu = null;
-    this._zoomButtons = {};
-    this._zoomCyclicBtn = null;
-    this._zoomCellsEl = [];
+    this._fileInput    = null;
+    this._sourceCell   = null;
+    this._sourceText   = null;
+    this._actionArea   = null;   // flex container for all action cells
+    this._undoCell     = null;
+    this._redoCell     = null;
+    this._zoomCells    = [];     // [fitCell, fillCell, actCell]
+    this._zoomButtons  = {};
+    this._zoomCyclicCell = null;
+    this._zoomCyclicBtn  = null;
+    this._draftCell    = null;
+    this._qualityBtn   = null;
+    this._exportCell   = null;
+    this._exportBtn    = null;
+    this._exportMenu   = null;
 
     this._boundOutsideClick = this._handleOutsideClick.bind(this);
-    this._boundResize = this._onResize.bind(this);
-    this._resizeObserver = null;
+    this._resizeObserver    = null;
   }
 
   render() {
+    if (this.element) return this.element;
     super.render();
     const { F } = this.getF();
-    const h = F * 2;
 
     this.element.style.cssText = `
       display: flex;
       width: 100%;
-      height: ${h}px;
+      height: ${F * 2}px;
       background: var(--c-bg);
       border-bottom: 1px solid var(--c-border);
       box-sizing: border-box;
@@ -67,6 +82,7 @@ export class DistortToolbar extends BaseComponent {
       z-index: 2;
     `;
 
+    // Hidden file input
     this._fileInput = this.createElement('input', 'distort-toolbar-file');
     this._fileInput.type = 'file';
     this._fileInput.accept = 'image/*';
@@ -74,96 +90,16 @@ export class DistortToolbar extends BaseComponent {
     this._fileInput.addEventListener('change', () => this._handleFile(this._fileInput.files?.[0] ?? null));
     this.element.appendChild(this._fileInput);
 
-    this._buildSourceCell();
-    this._undoBtn = this._buildFixedCell('UNDO', F * 6, () => {
-      if (this._canUndo) this._onUndo?.();
-    });
-    this._redoBtn = this._buildFixedCell('REDO', F * 6, () => {
-      if (this._canRedo) this._onRedo?.();
-    });
-    this._buildZoomCells();
-    this._qualityBtn = this._buildFixedCell(this._quality === 'full' ? 'FULL' : 'DRAFT', F * 6, () => {
-      this._quality = this._quality === 'full' ? 'preview' : 'full';
-      this._qualityBtn.textContent = this._quality === 'full' ? 'FULL' : 'DRAFT';
-      this._applyQualityState();
-      this._onQuality?.(this._quality);
-    });
-    this._buildExportCell();
-
-    this._applyZoomState();
-    this._applyQualityState();
-    this.setHistoryState(false, false);
-
-    document.addEventListener('click', this._boundOutsideClick);
-
-    if (typeof ResizeObserver !== 'undefined') {
-      this._resizeObserver = new ResizeObserver(() => this._onResize());
-      this._resizeObserver.observe(this.element);
-    }
-
-    return this.element;
-  }
-
-  _onResize() {
-    const width = this.element?.offsetWidth ?? 0;
-    const compact = width < 500;
-    if (compact === this._compactMode) return;
-    this._compactMode = compact;
-    this._applyCompactMode();
-  }
-
-  _applyCompactMode() {
-    const { F } = this.getF();
-    const compact = this._compactMode;
-
-    // Hide UNDO/REDO cells in compact mode to free space
-    if (this._undoBtn?.parentElement) this._undoBtn.parentElement.style.display = compact ? 'none' : '';
-    if (this._redoBtn?.parentElement) this._redoBtn.parentElement.style.display = compact ? 'none' : '';
-
-    // Reduce source cell min-width in compact mode
-    if (this._sourceCell) this._sourceCell.style.minWidth = compact ? '0' : `${F * 30}px`;
-
-    // Show/hide individual zoom cells vs cyclic button
-    for (const el of this._zoomCellsEl) {
-      el.style.display = compact ? 'none' : '';
-    }
-
-    if (!this._zoomCyclicBtn) {
-      const cell = this._createCell(`${F * 6}px`);
-      this._zoomCyclicBtn = this._createCellButton(this._zoom.toUpperCase());
-      this._zoomCyclicBtn.style.minWidth = `${F * 4}px`;
-      const zoomOrder = ['fit', 'fill', '1:1'];
-      this._zoomCyclicBtn.addEventListener('click', () => {
-        const idx = zoomOrder.indexOf(this._zoom);
-        const next = zoomOrder[(idx + 1) % zoomOrder.length];
-        this._setZoom(next);
-        this._zoomCyclicBtn.textContent = next === '1:1' ? 'ACTUAL' : next.toUpperCase();
-      });
-      cell.appendChild(this._zoomCyclicBtn);
-      // Insert before quality button cell
-      if (this._qualityBtn?.parentElement?.parentElement) {
-        this.element.insertBefore(cell, this._qualityBtn.parentElement);
-      } else {
-        this.element.appendChild(cell);
-      }
-      this._zoomCyclicCell = cell;
-    }
-
-    if (this._zoomCyclicCell) {
-      this._zoomCyclicCell.style.display = compact ? '' : 'none';
-    }
-  }
-
-  _buildSourceCell() {
-    const { F } = this.getF();
-    this._sourceCell = this._createFlexCell();
-    this._sourceCell.style.minWidth = `${F * 30}px`;
-    const cell = this._sourceCell;
-    const button = this._createCellButton('SOURCE:');
-    button.style.justifyContent = 'space-between';
-    button.addEventListener('click', () => this._fileInput?.click());
-
-    this._sourceText = this.createElement('span', 'distort-toolbar-source');
+    // ── SOURCE cell — fixed 30F, aligns with sidebar ──────────────────────────
+    this._sourceCell = this._makeCell('source');
+    this._sourceCell.style.cssText += `
+      width: ${F * 30}px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--c-border);
+    `;
+    const sourceBtn = this._makeBtn('SOURCE:', { justify: 'flex-start' });
+    sourceBtn.addEventListener('click', () => this._fileInput?.click());
+    this._sourceText = this.createElement('span', 'distort-toolbar-source-text');
     this._sourceText.textContent = this._sourceName;
     this._sourceText.style.cssText = `
       flex: 1;
@@ -172,196 +108,258 @@ export class DistortToolbar extends BaseComponent {
       white-space: nowrap;
       padding-left: ${F}px;
     `;
+    sourceBtn.appendChild(this._sourceText);
+    this._sourceCell.appendChild(sourceBtn);
+    this.element.appendChild(this._sourceCell);
 
-    button.appendChild(this._sourceText);
-    cell.appendChild(button);
-    this.element.appendChild(cell);
-  }
+    // ── Action area — fills remaining width, flex layout ──────────────────────
+    this._actionArea = this.createElement('div', 'distort-toolbar-actions');
+    this._actionArea.style.cssText = `
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      box-sizing: border-box;
+    `;
+    this.element.appendChild(this._actionArea);
 
-  _buildFixedCell(label, widthPx, onClick) {
-    const cell = this._createCell(`${widthPx}px`);
-    const button = this._createCellButton(label);
-    button.addEventListener('click', onClick);
-    cell.appendChild(button);
-    this.element.appendChild(cell);
-    return button;
-  }
+    // UNDO (1u)
+    this._undoCell = this._makeActionCell(1, false);
+    const undoBtn = this._makeBtn('UNDO');
+    undoBtn.addEventListener('click', () => { if (this._canUndo) this._onUndo?.(); });
+    this._undoCell.appendChild(undoBtn);
+    this._undoBtn = undoBtn;
+    this._actionArea.appendChild(this._undoCell);
 
-  _buildZoomCells() {
-    const { F } = this.getF();
-    const fitCell  = this._createCell(`${F * 6}px`);
-    const fillCell = this._createCell(`${F * 6}px`);
-    const actCell  = this._createCell(`${F * 6}px`);
+    // REDO (1u)
+    this._redoCell = this._makeActionCell(1, false);
+    const redoBtn = this._makeBtn('REDO');
+    redoBtn.addEventListener('click', () => { if (this._canRedo) this._onRedo?.(); });
+    this._redoCell.appendChild(redoBtn);
+    this._redoBtn = redoBtn;
+    this._actionArea.appendChild(this._redoCell);
 
-    this._zoomButtons.fit    = this._attachActionButton(fitCell,  'FIT',    () => this._setZoom('fit'));
-    this._zoomButtons.fill   = this._attachActionButton(fillCell, 'FILL',   () => this._setZoom('fill'));
-    this._zoomButtons['1:1'] = this._attachActionButton(actCell,  'ACTUAL', () => this._setZoom('1:1'));
+    // FIT / FILL / ACTUAL (1u each)
+    this._zoomCells = [];
+    const zoomDefs = [
+      { key: 'fit',  label: 'FIT'    },
+      { key: 'fill', label: 'FILL'   },
+      { key: '1:1',  label: 'ACTUAL' },
+    ];
+    for (const def of zoomDefs) {
+      const cell = this._makeActionCell(1, false);
+      const btn  = this._makeBtn(def.label);
+      btn.addEventListener('click', () => this._setZoom(def.key));
+      cell.appendChild(btn);
+      this._zoomButtons[def.key] = btn;
+      this._zoomCells.push(cell);
+      this._actionArea.appendChild(cell);
+    }
 
-    this._zoomCellsEl = [fitCell, fillCell, actCell];
-    for (const cell of this._zoomCellsEl) this.element.appendChild(cell);
-  }
+    // Cyclic ZOOM cell (1u) — hidden until compact
+    this._zoomCyclicCell = this._makeActionCell(1, false);
+    this._zoomCyclicCell.style.display = 'none';
+    this._zoomCyclicBtn = this._makeBtn(this._zoom === '1:1' ? 'ACTUAL' : this._zoom.toUpperCase());
+    const zoomOrder = ['fit', 'fill', '1:1'];
+    this._zoomCyclicBtn.addEventListener('click', () => {
+      const next = zoomOrder[(zoomOrder.indexOf(this._zoom) + 1) % zoomOrder.length];
+      this._setZoom(next);
+    });
+    this._zoomCyclicCell.appendChild(this._zoomCyclicBtn);
+    this._actionArea.appendChild(this._zoomCyclicCell);
 
-  _attachActionButton(cell, label, onClick) {
-    const button = this._createCellButton(label);
-    button.addEventListener('click', onClick);
-    cell.appendChild(button);
-    return button;
-  }
+    // DRAFT (1u)
+    this._draftCell = this._makeActionCell(1, false);
+    this._qualityBtn = this._makeBtn(this._quality === 'full' ? 'FULL' : 'DRAFT');
+    this._qualityBtn.addEventListener('click', () => {
+      this._quality = this._quality === 'full' ? 'preview' : 'full';
+      this._qualityBtn.textContent = this._quality === 'full' ? 'FULL' : 'DRAFT';
+      this._applyQualityState();
+      this._onQuality?.(this._quality);
+    });
+    this._draftCell.appendChild(this._qualityBtn);
+    this._actionArea.appendChild(this._draftCell);
 
-  _buildExportCell() {
-    const { F } = this.getF();
-    const cell = this._createCell(`${F * 6}px`, true);
-    cell.style.position = 'relative';
-
-    this._exportBtn = this._createCellButton('EXPORT ▾');
+    // EXPORT (2u, last — no right border)
+    this._exportCell = this._makeActionCell(2, true);
+    this._exportBtn  = this._makeBtn('EXPORT ▾', { justify: 'space-between' });
     this._exportBtn.addEventListener('click', e => {
       e.stopPropagation();
       this._exportOpen ? this._closeExport() : this._openExport();
     });
-    cell.appendChild(this._exportBtn);
+    this._exportCell.appendChild(this._exportBtn);
+    this._actionArea.appendChild(this._exportCell);
 
+    // Export menu
     this._exportMenu = this.createElement('div', 'distort-toolbar-export-menu');
     this._exportMenu.style.cssText = `
       display: none;
       position: absolute;
       top: 100%;
       right: 0;
-      min-width: 100%;
+      width: ${F * 16}px;
       background: var(--c-bg);
-      border: 1px solid var(--c-border);
-      border-top: none;
+      border-top: 1px solid var(--c-border);
+      border-left: 1px solid var(--c-border);
+      border-bottom: 1px solid var(--c-border);
       box-sizing: border-box;
-      z-index: 20;
+      z-index: 200;
+      overflow-y: auto;
+      max-height: calc(100vh - ${F * 4}px);
     `;
-    cell.appendChild(this._exportMenu);
-    this.element.appendChild(cell);
-
+    this._exportMenu.addEventListener('mousedown', e => e.stopPropagation());
+    this._exportMenu.addEventListener('click',     e => e.stopPropagation());
+    this.element.appendChild(this._exportMenu);
     this._renderExportMenu();
-  }
 
-  _renderExportMenu() {
-    if (!this._exportMenu) return;
-    while (this._exportMenu.firstChild) {
-      this._exportMenu.removeChild(this._exportMenu.firstChild);
+    // Initial state
+    this._applyZoomState();
+    this._applyQualityState();
+    this.setHistoryState(false, false);
+
+    document.addEventListener('click', this._boundOutsideClick);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this._resizeObserver = new ResizeObserver(() => this._onResize());
+      // Defer initial observation by one frame — at observation time the element
+      // may not yet have its laid-out width (zero), which would incorrectly
+      // trigger compact mode and hide UNDO/REDO permanently.
+      requestAnimationFrame(() => {
+        if (this._actionArea) this._resizeObserver.observe(this._actionArea);
+      });
     }
 
+    return this.element;
+  }
+
+  // ── Layout helpers ─────────────────────────────────────────────────────────
+
+  _makeCell(cls) {
+    const cell = this.createElement('div', `distort-toolbar-cell distort-toolbar-cell--${cls}`);
+    cell.style.cssText = `
+      height: 100%;
+      box-sizing: border-box;
+      position: relative;
+      display: flex;
+      align-items: stretch;
+    `;
+    return cell;
+  }
+
+  /**
+   * @param {number} units  flex-grow units (EXPORT = 2, others = 1)
+   * @param {boolean} isLast  if true, no right border (EXPORT is last)
+   */
+  _makeActionCell(units, isLast) {
+    const cell = this._makeCell('action');
+    cell.style.flex = `${units} ${units} 0`;
+    cell.style.minWidth = '0';
+    if (!isLast) cell.style.borderRight = '1px solid var(--c-border)';
+    return cell;
+  }
+
+  _makeBtn(text, { justify = 'center' } = {}) {
     const { F } = this.getF();
-    for (const itemDef of EXPORT_ITEMS) {
-      if (itemDef.show && !itemDef.show(this)) continue;
-      if (itemDef.separator) {
-        const separator = this.createElement('div', 'distort-toolbar-export-separator');
-        separator.style.cssText = 'height: 1px; background: var(--c-border);';
-        this._exportMenu.appendChild(separator);
-        continue;
-      }
-
-      const item = this.createElement('button', 'distort-toolbar-export-item');
-      item.type = 'button';
-      item.textContent = itemDef.label;
-      item.style.cssText = `
-        width: 100%;
-        height: ${F * 2}px;
-        padding: 0 ${F}px;
-        border: none;
-        border-top: 1px solid transparent;
-        background: var(--c-bg);
-        color: var(--c-text);
-        font-family: 'Space Mono', monospace;
-        font-size: ${F * 0.75}px;
-        text-align: left;
-        text-transform: uppercase;
-        cursor: pointer;
-        box-sizing: border-box;
-      `;
-      item.addEventListener('mouseenter', () => {
-        item.style.background = 'var(--c-text)';
-        item.style.color = 'var(--c-bg)';
-      });
-      item.addEventListener('mouseleave', () => {
-        item.style.background = 'var(--c-bg)';
-        item.style.color = 'var(--c-text)';
-      });
-      item.addEventListener('click', e => {
-        e.stopPropagation();
-        this._closeExport();
-        this._onExport?.(itemDef.key);
-      });
-      this._exportMenu.appendChild(item);
-    }
-  }
-
-  _createCell(width, isLast = false) {
-    const cell = this.createElement('div', 'distort-toolbar-cell');
-    cell.style.cssText = `
-      width: ${width};
-      height: 100%;
-      border-right: ${isLast ? 'none' : '1px solid var(--c-border)'};
-      box-sizing: border-box;
-      flex-shrink: 0;
-      position: relative;
-    `;
-    return cell;
-  }
-
-  _createFlexCell() {
-    const cell = this.createElement('div', 'distort-toolbar-cell');
-    cell.style.cssText = `
-      flex: 1;
-      min-width: 0;
-      height: 100%;
-      border-right: 1px solid var(--c-border);
-      box-sizing: border-box;
-      position: relative;
-    `;
-    return cell;
-  }
-
-  _createCellButton(text) {
-    const { F, F2 } = this.getF();
-    const button = this.createElement('button', 'distort-toolbar-button');
-    button.type = 'button';
-    button.textContent = text;
-    button.style.cssText = `
+    const btn = this.createElement('button', 'distort-toolbar-btn');
+    btn.type = 'button';
+    btn.textContent = text;
+    btn.style.cssText = `
       width: 100%;
       height: 100%;
       padding: 0 ${F}px;
       border: none;
       background: var(--c-bg);
       color: var(--c-text);
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       text-transform: uppercase;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: ${F2}px;
+      justify-content: ${justify};
       box-sizing: border-box;
       cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     `;
-    button.addEventListener('mouseenter', () => {
-      if (button.disabled) return;
-      if (button.dataset.active === 'true') return;
-      button.style.background = 'var(--c-text)';
-      button.style.color = 'var(--c-bg)';
+    btn.addEventListener('mouseenter', () => {
+      if (btn.disabled || btn.dataset.active === 'true') return;
+      btn.style.background = 'var(--c-text)';
+      btn.style.color = 'var(--c-bg)';
     });
-    button.addEventListener('mouseleave', () => {
-      if (button.disabled) return;
-      this._applyButtonState(button, button.dataset.active === 'true');
+    btn.addEventListener('mouseleave', () => {
+      if (btn.disabled) return;
+      this._applyBtnState(btn, btn.dataset.active === 'true');
     });
-    return button;
+    return btn;
   }
 
-  _applyButtonState(button, active) {
-    button.dataset.active = active ? 'true' : 'false';
-    button.style.background = active ? 'var(--c-text)' : 'var(--c-bg)';
-    button.style.color = active ? 'var(--c-bg)' : 'var(--c-text)';
+  // ── Compact mode ───────────────────────────────────────────────────────────
+
+  _onResize() {
+    const { F } = this.getF();
+    if (!this._actionArea) return;
+    const actionWidth = this._actionArea.offsetWidth;
+
+    // Unit width = actionWidth divided by total flex units.
+    // Full mode:    UNDO(1) + REDO(1) + FIT(1) + FILL(1) + ACTUAL(1) + DRAFT(1) + EXPORT(2) = 8u
+    // Compact mode: ZOOM(1) + DRAFT(1) + EXPORT(2) = 4u
+    //
+    // Minimum readable button width: 2F padding + label. Shortest label "FIT" ≈ 2F → min = 4F.
+    const MIN_UNIT = F * 4;
+
+    // Full mode:    8u (UNDO×1 + REDO×1 + FIT×1 + FILL×1 + ACTUAL×1 + DRAFT×1 + EXPORT×2)
+    // Compact mode: 5u (UNDO×0.5 + REDO×0.5 + ZOOM×1 + DRAFT×1 + EXPORT×2)
+    // Enter compact when full-mode unit < MIN_UNIT → actionWidth < 8 × MIN_UNIT.
+    // Exit compact when compact-mode unit >= MIN_UNIT → actionWidth >= 5 × MIN_UNIT,
+    // plus 1u hysteresis to prevent boundary flicker.
+    const ENTER_THRESHOLD = 8 * MIN_UNIT;
+    const EXIT_THRESHOLD  = 5 * MIN_UNIT + MIN_UNIT; // 6 × MIN_UNIT
+
+    const shouldBeCompact = this._compactMode
+      ? actionWidth < EXIT_THRESHOLD
+      : actionWidth < ENTER_THRESHOLD;
+
+    if (shouldBeCompact === this._compactMode) return;
+    this._compactMode = shouldBeCompact;
+    this._applyCompactMode();
   }
 
-  _applyDisabledState(button, disabled) {
-    button.disabled = disabled;
-    button.style.cursor = disabled ? 'default' : 'pointer';
-    button.style.background = 'var(--c-bg)';
-    button.style.color = disabled ? 'var(--c-border)' : 'var(--c-text)';
+  _applyCompactMode() {
+    const compact = this._compactMode;
+
+    // UNDO / REDO: shrink to 0.5u icon-only in compact, full 1u label in full mode
+    if (this._undoCell) {
+      this._undoCell.style.flex = compact ? '0.5 0.5 0' : '1 1 0';
+      this._undoBtn.textContent = compact ? '←' : 'UNDO';
+    }
+    if (this._redoCell) {
+      this._redoCell.style.flex = compact ? '0.5 0.5 0' : '1 1 0';
+      this._redoBtn.textContent = compact ? '→' : 'REDO';
+    }
+
+    // FIT / FILL / ACTUAL cells vs cyclic cell
+    for (const cell of this._zoomCells) {
+      cell.style.display = compact ? 'none' : '';
+    }
+    if (this._zoomCyclicCell) {
+      this._zoomCyclicCell.style.display = compact ? '' : 'none';
+    }
+  }
+
+  // ── State helpers ──────────────────────────────────────────────────────────
+
+  _applyBtnState(btn, active) {
+    btn.dataset.active = active ? 'true' : 'false';
+    btn.style.background = active ? 'var(--c-text)' : 'var(--c-bg)';
+    btn.style.color      = active ? 'var(--c-bg)'   : 'var(--c-text)';
+  }
+
+  _applyDisabledState(btn, disabled) {
+    btn.disabled        = disabled;
+    btn.style.cursor    = disabled ? 'default' : 'pointer';
+    btn.style.background = 'var(--c-bg)';
+    btn.style.color     = disabled ? 'var(--c-border)' : 'var(--c-text)';
   }
 
   _setZoom(mode) {
@@ -371,33 +369,81 @@ export class DistortToolbar extends BaseComponent {
   }
 
   _applyZoomState() {
-    for (const [mode, button] of Object.entries(this._zoomButtons)) {
-      this._applyButtonState(button, mode === this._zoom);
+    for (const [mode, btn] of Object.entries(this._zoomButtons)) {
+      this._applyBtnState(btn, mode === this._zoom);
+    }
+    if (this._zoomCyclicBtn) {
+      this._zoomCyclicBtn.textContent = this._zoom === '1:1' ? 'ACTUAL' : this._zoom.toUpperCase();
+      this._applyBtnState(this._zoomCyclicBtn, false);
     }
   }
 
   _applyQualityState() {
     if (!this._qualityBtn) return;
-    this._applyButtonState(this._qualityBtn, this._quality === 'full');
+    this._applyBtnState(this._qualityBtn, this._quality === 'full');
+  }
+
+  // ── Export panel ───────────────────────────────────────────────────────────
+
+  _renderExportMenu() {
+    if (!this._exportMenu) return;
+    while (this._exportMenu.firstChild) this._exportMenu.removeChild(this._exportMenu.firstChild);
+    const { F } = this.getF();
+    let count = 0, pendingSep = false;
+
+    for (const def of EXPORT_ITEMS) {
+      if (def.show && !def.show(this)) continue;
+      if (def.separator) { pendingSep = true; continue; }
+
+      const item = this.createElement('button', 'distort-export-item');
+      item.type = 'button';
+      item.textContent = def.label;
+      item.style.cssText = `
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: ${F * 2}px;
+        padding: 0 ${F}px;
+        border: none;
+        border-top: ${(count > 0 || pendingSep) ? '1px solid var(--c-border)' : 'none'};
+        background: var(--c-bg);
+        color: var(--c-text);
+        font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+        font-size: ${F * 0.75}px;
+        text-align: left;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-sizing: border-box;
+        white-space: nowrap;
+      `;
+      item.addEventListener('mouseenter', () => { item.style.background = 'var(--c-text)'; item.style.color = 'var(--c-bg)'; });
+      item.addEventListener('mouseleave', () => { item.style.background = 'var(--c-bg)';   item.style.color = 'var(--c-text)'; });
+      item.addEventListener('click', () => { this._closeExport(); this._onExport?.(def.key); });
+      this._exportMenu.appendChild(item);
+      count++;
+      pendingSep = false;
+    }
   }
 
   _openExport() {
     this._exportOpen = true;
-    this._applyButtonState(this._exportBtn, true);
+    this._applyBtnState(this._exportBtn, true);
     if (this._exportMenu) this._exportMenu.style.display = 'block';
   }
 
   _closeExport() {
     this._exportOpen = false;
     if (this._exportMenu) this._exportMenu.style.display = 'none';
-    if (this._exportBtn) this._applyButtonState(this._exportBtn, false);
+    if (this._exportBtn) this._applyBtnState(this._exportBtn, false);
   }
 
-  _handleOutsideClick(event) {
+  _handleOutsideClick(e) {
     if (!this._exportOpen) return;
-    if (this.element?.contains(event.target)) return;
+    if (this.element?.contains(e.target)) return;
     this._closeExport();
   }
+
+  // ── File handling ──────────────────────────────────────────────────────────
 
   _handleFile(file) {
     if (!file) return;
@@ -405,20 +451,17 @@ export class DistortToolbar extends BaseComponent {
     const img = new Image();
     img.onload = () => {
       const canvas = new OffscreenCanvas(img.width, img.height);
-      const ctx = canvas.getContext('2d');
+      const ctx    = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, img.width, img.height);
       URL.revokeObjectURL(url);
       this.setSourceInfo(file.name, img.width, img.height);
-      this._onSource?.({
-        pixels: data.data,
-        width: img.width,
-        height: img.height,
-        name: file.name
-      });
+      this._onSource?.({ pixels: data.data, width: img.width, height: img.height, name: file.name });
     };
     img.src = url;
   }
+
+  // ── Public API ─────────────────────────────────────────────────────────────
 
   setHistoryState(canUndo, canRedo) {
     this._canUndo = !!canUndo;
@@ -428,12 +471,9 @@ export class DistortToolbar extends BaseComponent {
   }
 
   setSourceInfo(name, w, h) {
-    if (!name) {
-      this._sourceName = 'ADD SOURCE +';
-    } else {
-      const label = String(name).toUpperCase();
-      this._sourceName = (w && h) ? `${label}  ${w}×${h}` : label;
-    }
+    this._sourceName = name
+      ? ((w && h) ? `${String(name).toUpperCase()}  ${w}×${h}` : String(name).toUpperCase())
+      : 'ADD SOURCE +';
     if (this._sourceText) this._sourceText.textContent = this._sourceName;
   }
 
@@ -441,6 +481,8 @@ export class DistortToolbar extends BaseComponent {
     this._stackIsAllVector = !!stackIsAllVector;
     this._renderExportMenu();
   }
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   destroy() {
     document.removeEventListener('click', this._boundOutsideClick);

@@ -26,7 +26,8 @@ export class NumericInput extends BaseComponent {
         
         // Display mode
         this.display = options.display ?? 'both'; // 'slider' | 'field' | 'both'
-        this.showSteppers = options.showSteppers ?? false;
+        // Steppers shown by default whenever a field is present; opt out with showSteppers: false
+        this.showSteppers = options.showSteppers ?? (options.display !== 'slider');
         this.logarithmic = options.logarithmic ?? false;
         
         // Labels & formatting
@@ -45,6 +46,11 @@ export class NumericInput extends BaseComponent {
         // Internal refs
         this.sliderEl = null;
         this.fieldEl = null;
+        
+        // Scroll velocity tracking for exponential scroll response
+        this._scrollVelocity = 0;
+        this._scrollLastTime = 0;
+        this._scrollDecayTimer = null;
     }
     
     _inferPrecision() {
@@ -150,17 +156,7 @@ export class NumericInput extends BaseComponent {
             controlRow.appendChild(this.sliderEl);
         }
         
-        // Stepper minus (shares right border with field)
-        if (this.showSteppers) {
-            const minusBtn = this.createElement('button', 'numeric-input-stepper minus');
-            minusBtn.type = 'button';
-            minusBtn.textContent = '−';
-            minusBtn.style.cssText = this._stepperStyle(F, 'left');
-            minusBtn.addEventListener('click', () => this._step(-1));
-            controlRow.appendChild(minusBtn);
-        }
-        
-        // Number field - hide browser spinners, share borders with steppers
+        // Number field - hide browser spinners; field is left anchor of [field | − | +]
         if (this.display === 'field' || this.display === 'both') {
             this.fieldEl = this.createElement('input', 'numeric-input-field');
             this.fieldEl.type = 'number';
@@ -168,21 +164,25 @@ export class NumericInput extends BaseComponent {
             this.fieldEl.max = this.max;
             this.fieldEl.step = this.step;
             this.fieldEl.value = this._formatValue(this.value);
+            // Field owns top/left/bottom borders; right border is owned by the adjacent stepper's border-left
+            const fieldBorderRight = this.showSteppers ? 'none' : '1px solid var(--c-border)';
             this.fieldEl.style.cssText = `
                 width: ${F * this.fieldWidthF}px;
                 height: ${F * 2}px;
                 padding: 0 ${F2}px;
-                border: 1px solid var(--c-border);
-                ${this.showSteppers ? 'margin-left: -1px;' : ''}
+                border-top: 1px solid var(--c-border);
+                border-left: 1px solid var(--c-border);
+                border-bottom: 1px solid var(--c-border);
+                border-right: ${fieldBorderRight};
                 background: var(--c-bg);
                 color: var(--c-text);
-                font-family: 'Atkinson Hyperlegible', monospace;
-                font-size: ${F}px;
-                text-align: center;
+                font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                font-size: ${F * 0.75}px;
+                text-align: right;
                 box-sizing: border-box;
                 -moz-appearance: textfield;
+                flex-shrink: 0;
             `;
-            // Hide browser spinners
             this._injectSpinnerHideCSS();
             
             this.fieldEl.addEventListener('input', (e) => {
@@ -200,18 +200,23 @@ export class NumericInput extends BaseComponent {
                     e.target.value = this._formatValue(this.value);
                 }
             });
+
+            this.fieldEl.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                this._handleScrollStep(e.deltaY);
+            }, { passive: false });
             
             controlRow.appendChild(this.fieldEl);
         }
         
-        // Stepper plus (shares left border with field)
+        // Stepper minus — border-left only (shared boundary with field per border-system §4)
         if (this.showSteppers) {
-            const plusBtn = this.createElement('button', 'numeric-input-stepper plus');
-            plusBtn.type = 'button';
-            plusBtn.textContent = '+';
-            plusBtn.style.cssText = this._stepperStyle(F, 'right');
-            plusBtn.addEventListener('click', () => this._step(1));
-            controlRow.appendChild(plusBtn);
+            controlRow.appendChild(this._makeStepperBtn('−', -1, F));
+        }
+        
+        // Stepper plus — border-left only (shared boundary with minus per border-system §4)
+        if (this.showSteppers) {
+            controlRow.appendChild(this._makeStepperBtn('+', 1, F));
         }
         
         // Unit label
@@ -232,24 +237,73 @@ export class NumericInput extends BaseComponent {
         return this.element;
     }
     
-    _stepperStyle(F, position) {
-        // Shared borders: left stepper shares right border with field, right stepper shares left
-        const marginStyle = position === 'right' ? 'margin-left: -1px;' : '';
+    _makeStepperBtn(glyph, direction, F) {
+        const btn = this.createElement('button', `numeric-input-stepper ${direction > 0 ? 'plus' : 'minus'}`);
+        btn.type = 'button';
+        btn.textContent = glyph;
+        btn.style.cssText = this._stepperStyle(F);
+        btn.addEventListener('click', () => this._step(direction));
+        btn.addEventListener('mouseenter', () => {
+            btn.style.background = 'var(--c-text)';
+            btn.style.color = 'var(--c-bg)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.background = 'var(--c-bg)';
+            btn.style.color = 'var(--c-text)';
+        });
+        return btn;
+    }
+
+    _stepperStyle(F) {
+        // Horizontal stack: each stepper owns its left boundary only (border-system §4)
         return `
             width: ${F * 2}px;
             height: ${F * 2}px;
-            border: 1px solid var(--c-border);
-            ${marginStyle}
+            border-top: none;
+            border-bottom: none;
+            border-right: none;
+            border-left: 1px solid var(--c-border);
             background: var(--c-bg);
             color: var(--c-text);
-            font-family: 'Atkinson Hyperlegible', monospace;
-            font-size: ${F}px;
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            line-height: ${F * 2}px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
             box-sizing: border-box;
+            padding: 0;
+            user-select: none;
         `;
+    }
+
+    _handleScrollStep(deltaY) {
+        const now = performance.now();
+        const dt = now - this._scrollLastTime;
+        this._scrollLastTime = now;
+
+        // Exponential velocity accumulation — faster scroll = larger steps
+        // Decay previous velocity if time gap is large
+        const decay = dt > 200 ? 0 : Math.exp(-dt / 150);
+        this._scrollVelocity = this._scrollVelocity * decay + Math.abs(deltaY);
+
+        // Clamp velocity to prevent runaway accumulation
+        this._scrollVelocity = Math.min(this._scrollVelocity, 800);
+
+        // Exponential multiplier: 1× at low velocity, up to ~8× at high velocity
+        const multiplier = 1 + (this._scrollVelocity / 100) ** 1.4;
+        const steps = Math.sign(deltaY) * multiplier;
+        const newVal = this._clamp(this.value + this.step * steps);
+
+        this._updateValue(newVal, false);
+
+        // Decay velocity back to zero when scrolling stops
+        if (this._scrollDecayTimer) clearTimeout(this._scrollDecayTimer);
+        this._scrollDecayTimer = setTimeout(() => {
+            this._scrollVelocity = 0;
+        }, 200);
     }
     
     _injectSpinnerHideCSS() {
@@ -346,6 +400,14 @@ export class NumericInput extends BaseComponent {
     
     reset() {
         this.setValue(this.defaultValue);
+    }
+
+    destroy() {
+        if (this._scrollDecayTimer) {
+            clearTimeout(this._scrollDecayTimer);
+            this._scrollDecayTimer = null;
+        }
+        super.destroy?.();
     }
 }
 

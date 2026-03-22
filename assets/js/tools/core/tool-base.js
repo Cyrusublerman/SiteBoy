@@ -262,7 +262,7 @@ export class ToolBase extends BaseComponent {
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                ${this.categoryTabsConfig ? 'position: relative;' : ''}
+                position: relative;
             `;
         } else {
             // Landscape: sidebar left, canvas right
@@ -270,10 +270,10 @@ export class ToolBase extends BaseComponent {
                 width: 100%;
                 height: 100%;
                 display: grid;
+                position: relative;
                 grid-template-columns: ${this.SIDEBAR_WIDTH}px 1fr;
                 gap: 0;
                 overflow: hidden;
-                ${this.categoryTabsConfig ? 'position: relative;' : ''}
             `;
         }
 
@@ -606,21 +606,23 @@ export class ToolBase extends BaseComponent {
 
         if (hasNestedPanels) {
             // 3-level: panels contain blocks contain components
-            let isFirstBlock = true;
-            blocks.forEach(([panelTitle, nestedBlocks]) => {
-                nestedBlocks.forEach(blockDef => {
-                    const [blockTitle, components, options = {}] = blockDef;
-                    const block = this._buildBlock(blockTitle, components, isFirstBlock, options);
-                    panel.appendChild(block);
-                    this.blocks.push(block);
-                    isFirstBlock = false;
-                });
+            // Flatten to a single list first so we can identify first/last reliably.
+            const flatDefs = [];
+            blocks.forEach(([, nestedBlocks]) => {
+                nestedBlocks.forEach(blockDef => flatDefs.push(blockDef));
+            });
+            flatDefs.forEach((blockDef, i) => {
+                const [blockTitle, components, options = {}] = blockDef;
+                const block = this._buildBlock(blockTitle, components, i === 0, i === flatDefs.length - 1, options);
+                panel.appendChild(block);
+                this.blocks.push(block);
             });
         } else {
             // 2-level: blocks contain components (standard)
             blocks.forEach((blockDef, blockIndex) => {
                 const [blockTitle, components, options = {}] = blockDef;
-                const block = this._buildBlock(blockTitle, components, blockIndex === 0, options);
+                const isLast = blockIndex === blocks.length - 1;
+                const block = this._buildBlock(blockTitle, components, blockIndex === 0, isLast, options);
                 panel.appendChild(block);
                 this.blocks.push(block);
             });
@@ -652,12 +654,12 @@ export class ToolBase extends BaseComponent {
         return !isComponentType;
     }
 
-    _buildBlock(title, components, isFirst = false, options = {}) {
+    _buildBlock(title, components, isFirst = false, isLast = false, options = {}) {
         const block = document.createElement('div');
         block.className = 'tool-block';
-        // No padding on block - divider lines extend to edges
         block.style.cssText = `
             ${isFirst ? '' : `border-top: 1px solid var(--c-border);`}
+            ${isLast  ? `border-bottom: 1px solid var(--c-border);` : ''}
         `;
 
         const isSelectable = options.mode === 'selectable';
@@ -1161,7 +1163,7 @@ export class ToolBase extends BaseComponent {
                 height: 100%;
                 min-height: 0;
                 min-width: 0;
-                overflow-x: hidden;
+                overflow: hidden;
                 background: var(--c-bg);
             `;
         }

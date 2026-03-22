@@ -204,12 +204,15 @@ export const LayoutCalculator = {
             Math.min(width, document.documentElement.clientWidth) : width;
 
         const F = Config.F;
-        const margin = Config.margin;
+        const isMobile = actualWidth < Config.breakpoints.desktop;
+        const margin = isMobile ? 1 : Config.margin;
         const headerHeight = Config.sizing.header; // Always 2F
 
         // SINGLE FRAME CALCULATION - F-snapped for mathematical precision
         const availableWidth = actualWidth - 2 * margin;           // Viewport minus margins
-        const frameWidth = Math.floor(availableWidth / F) * F;     // Snap to F multiple
+        const frameWidth = isMobile
+            ? availableWidth                                        // No F-snapping on mobile; use full available width
+            : Math.floor(availableWidth / F) * F;                  // Snap to F multiple on desktop
         const availableHeight = height - 2 * margin;               // Viewport minus margins
         const frameHeight = Math.floor(availableHeight / F) * F;   // Snap to F multiple
         const marginLeft = (actualWidth - frameWidth) / 2;         // Center the frame

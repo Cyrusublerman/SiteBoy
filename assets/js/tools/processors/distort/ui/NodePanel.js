@@ -1,8 +1,10 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
 import { DriverPicker } from './DriverPicker.js';
+import { Dropdown } from '../../../../shared/components/input/Dropdown.js';
+import { DrawMaskOverlay } from '../../../../shared/components/drawing/DrawMaskOverlay.js';
 
 const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'difference', 'darken', 'lighten'];
-const MASK_MODES = ['none', 'upload', 'luminance', 'gradient'];
+const MASK_MODES = ['none', 'upload', 'luminance', 'gradient', 'draw'];
 
 export class NodePanel extends BaseComponent {
   constructor(options = {}, deps = {}) {
@@ -16,6 +18,9 @@ export class NodePanel extends BaseComponent {
     this._expanded = options.expanded ?? false;
     this._isSolo = options.isSolo ?? false;
 
+    this._canvasAreaEl = options.canvasAreaEl ?? null;
+    this._getSourceDims = options.getSourceDims ?? null;
+
     this._body = null;
     this._headerEl = null;
     this._nameEl = null;
@@ -23,7 +28,9 @@ export class NodePanel extends BaseComponent {
     this._soloBtn = null;
     this._openDriverKey = null;
     this._driverPickers = {};
+    this._dropdowns = [];
     this._maskExpanded = false;
+    this._drawOverlay = null;
   }
 
   render() {
@@ -38,6 +45,7 @@ export class NodePanel extends BaseComponent {
     this._body.style.cssText = `
       display: ${this._expanded ? 'flex' : 'none'};
       flex-direction: column;
+      border-top: 1px solid var(--c-border);
       background: var(--c-bg);
     `;
     this.element.appendChild(this._body);
@@ -56,7 +64,6 @@ export class NodePanel extends BaseComponent {
       background: var(--c-bg);
       cursor: pointer;
       box-sizing: border-box;
-      border-bottom: ${this._expanded ? '1px solid var(--c-border)' : 'none'};
     `;
     this._headerEl = header;
 
@@ -83,8 +90,8 @@ export class NodePanel extends BaseComponent {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-family: 'Space Mono', monospace;
-      font-size: ${F * 0.85}px;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+      font-size: ${F * 0.75}px;
       text-transform: uppercase;
     `;
 
@@ -95,6 +102,7 @@ export class NodePanel extends BaseComponent {
     });
 
     const removeBtn = this._buildHeaderCell('×', 'var(--c-border)');
+    removeBtn.style.borderRight = 'none';  // last cell — shares container right edge per §4
     removeBtn.addEventListener('click', event => {
       event.stopPropagation();
       this._onRemove?.({ nodeIdx: this._nodeIdx });
@@ -134,7 +142,7 @@ export class NodePanel extends BaseComponent {
       border-right: 1px solid var(--c-border);
       background: var(--c-bg);
       color: ${color};
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       box-sizing: border-box;
       flex-shrink: 0;
@@ -152,9 +160,6 @@ export class NodePanel extends BaseComponent {
       this._soloBtn.style.background = this._isSolo ? 'var(--c-text)' : 'var(--c-bg)';
       this._soloBtn.style.color = this._isSolo ? 'var(--c-bg)' : 'var(--c-border)';
     }
-    if (this._headerEl) {
-      this._headerEl.style.borderBottom = this._expanded ? '1px solid var(--c-border)' : 'none';
-    }
     if (this._body) {
       this._body.style.display = this._expanded ? 'flex' : 'none';
     }
@@ -164,6 +169,10 @@ export class NodePanel extends BaseComponent {
     if (!this._body) return;
     while (this._body.firstChild) this._body.removeChild(this._body.firstChild);
     this._closeDriverPicker();
+    this._dropdowns.forEach(dd => dd.destroy?.());
+    this._dropdowns = [];
+
+    this._buildMaskBlock();
 
     this._buildRangeRow({
       key: '__opacity__',
@@ -172,6 +181,7 @@ export class NodePanel extends BaseComponent {
       min: 0,
       max: 1,
       step: 0.01,
+      driveable: true,
       onChange: value => {
         this._node.opacity = value;
         this._emit();
@@ -203,9 +213,6 @@ export class NodePanel extends BaseComponent {
         this._buildParamRow(key, def);
       }
     }
-
-    this._appendDivider();
-    this._buildMaskBlock();
   }
 
   _buildParamRow(key, def) {
@@ -241,7 +248,7 @@ export class NodePanel extends BaseComponent {
       min: def.min ?? 0,
       max: def.max ?? 1,
       step: def.step ?? 0.01,
-      driveable: !!def.driveable,
+      driveable: def.driveable !== false,
       onChange: value => {
         this._node.params[key] = value;
         this._emit();
@@ -260,8 +267,11 @@ export class NodePanel extends BaseComponent {
       align-items: center;
       gap: ${F / 2}px;
       min-height: ${F * 2}px;
-      padding: 0 ${F}px;
-      border-top: 1px solid var(--c-border);
+      padding-top: 0;
+      padding-bottom: 0;
+      padding-left: ${F}px;
+      padding-right: ${config.driveable ? '0' : F + 'px'};
+      border-top: ${config.noBorderTop ? 'none' : '1px solid var(--c-border)'};
       box-sizing: border-box;
     `;
 
@@ -285,7 +295,7 @@ export class NodePanel extends BaseComponent {
     valueEl.style.cssText = `
       width: ${F * 4}px;
       text-align: right;
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       color: var(--c-text);
       flex-shrink: 0;
@@ -300,40 +310,54 @@ export class NodePanel extends BaseComponent {
 
     row.append(label, slider, valueEl);
 
+    // Always reserve F*2 on the right so all sliders are the same width
     if (config.driveable) {
       const driverBtn = this.createElement('button', 'distort-driver-button', '+D');
       driverBtn.type = 'button';
       driverBtn.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: ${F * 2}px;
-        height: ${F * 2}px;
-        border: 1px solid var(--c-border);
+        border-top: none;
+        border-bottom: none;
+        border-left: 1px solid var(--c-border);
+        border-right: none;
         background: var(--c-bg);
         color: var(--c-text);
-        font-family: 'Space Mono', monospace;
-        font-size: ${F * 0.7}px;
+        font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+        font-size: ${F * 0.75}px;
+        text-transform: uppercase;
         box-sizing: border-box;
         cursor: pointer;
         flex-shrink: 0;
-        opacity: 0;
-        transition: opacity 120ms ease;
+        align-self: stretch;
       `;
       const syncDriverState = () => {
         const driver = this._node.modulation?.[config.key];
         const active = !!driver && driver.mode && driver.mode !== 'none';
         slider.disabled = active;
         slider.style.opacity = active ? '0.35' : '1';
-        driverBtn.style.opacity = active || row.matches(':hover') ? '1' : '0';
         driverBtn.style.background = active ? 'var(--c-accent)' : 'var(--c-bg)';
         driverBtn.style.color = active ? 'var(--c-bg)' : 'var(--c-text)';
       };
-      row.addEventListener('mouseenter', syncDriverState);
-      row.addEventListener('mouseleave', syncDriverState);
+      driverBtn.addEventListener('mouseenter', () => {
+        const driver = this._node.modulation?.[config.key];
+        const active = !!driver && driver.mode && driver.mode !== 'none';
+        if (!active) { driverBtn.style.background = 'var(--c-text)'; driverBtn.style.color = 'var(--c-bg)'; }
+      });
+      driverBtn.addEventListener('mouseleave', syncDriverState);
       driverBtn.addEventListener('click', event => {
         event.stopPropagation();
         this._toggleDriverPicker(config.key, config.label, wrap, driverBtn, slider, syncDriverState);
       });
       row.appendChild(driverBtn);
       syncDriverState();
+    } else {
+      // Blank spacer matches F*2 +D slot — keeps non-driveable slider widths equal
+      const spacer = this.createElement('div', 'distort-driver-spacer');
+      spacer.style.cssText = `width: ${F * 2}px; flex-shrink: 0;`;
+      row.appendChild(spacer);
     }
 
     wrap.appendChild(row);
@@ -348,33 +372,33 @@ export class NodePanel extends BaseComponent {
       align-items: center;
       gap: ${F / 2}px;
       min-height: ${F * 2}px;
-      padding: 0 ${F}px;
-      border-top: 1px solid var(--c-border);
+      padding-top: 0;
+      padding-bottom: 0;
+      padding-left: ${F}px;
+      padding-right: 0;
+      border-top: ${config.noBorderTop ? 'none' : '1px solid var(--c-border)'};
       box-sizing: border-box;
     `;
 
     const label = this._rowLabel(config.label);
-    const select = this.createElement('select', 'distort-select-input');
-    select.style.cssText = `
-      flex: 1;
-      height: ${F * 2}px;
-      border: 1px solid var(--c-border);
-      background: var(--c-bg);
-      color: var(--c-text);
-      font-family: 'Space Mono', monospace;
-      font-size: ${F * 0.75}px;
-      text-transform: uppercase;
-      box-sizing: border-box;
-    `;
-    for (const optionValue of config.options) {
-      const option = this.createElement('option');
-      option.value = optionValue;
-      option.textContent = String(optionValue).toUpperCase();
-      if (String(optionValue) === String(config.value)) option.selected = true;
-      select.appendChild(option);
+    const dropdown = new Dropdown({
+      options: config.options.map(v => ({ value: String(v), label: String(v).toUpperCase() })),
+      value: String(config.value),
+      onChange: value => config.onChange(value),
+    }, this.deps);
+    const dropdownEl = dropdown.render();
+    dropdownEl.style.flex = '1';
+    // Inline trigger: no top/bottom border (row border-top is the separator);
+    // left/right borders retained to show the control boundary.
+    if (dropdown.triggerEl) {
+      dropdown.triggerEl.style.borderTop = 'none';
+      dropdown.triggerEl.style.borderBottom = 'none';
     }
-    select.addEventListener('change', () => config.onChange(select.value));
-    row.append(label, select);
+    // Spacer = F*4 value readout + F*2 driver button slot — matches range row right section exactly
+    const spacer = this.createElement('div', 'distort-select-spacer');
+    spacer.style.cssText = `width: ${F * 6}px; flex-shrink: 0;`;
+    this._dropdowns.push(dropdown);
+    row.append(label, dropdownEl, spacer);
     this._body.appendChild(row);
   }
 
@@ -397,11 +421,15 @@ export class NodePanel extends BaseComponent {
     button.style.cssText = `
       width: ${F * 4}px;
       height: ${F * 2}px;
-      border: 1px solid var(--c-border);
+      border-top: none;
+      border-bottom: none;
+      border-left: 1px solid var(--c-border);
+      border-right: 1px solid var(--c-border);
       background: ${config.value ? 'var(--c-text)' : 'var(--c-bg)'};
       color: ${config.value ? 'var(--c-bg)' : 'var(--c-text)'};
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
+      text-transform: uppercase;
       cursor: pointer;
       box-sizing: border-box;
     `;
@@ -419,27 +447,38 @@ export class NodePanel extends BaseComponent {
   _buildMaskBlock() {
     const { F } = this.getF();
     if (!this._node.mask) {
-      this._node.mask = { enabled: false, source: 'none', invert: false, feather: 0, data: null };
+      this._node.mask = { enabled: false, source: 'none', invert: false, feather: 0, data: null, _drawPixels: null, _drawW: 0, _drawH: 0 };
+    }
+    // Ensure draw fields exist on older mask objects
+    if (!('_drawPixels' in this._node.mask)) {
+      this._node.mask._drawPixels = null;
+      this._node.mask._drawW = 0;
+      this._node.mask._drawH = 0;
     }
 
     const header = this.createElement('button', 'distort-mask-header');
     header.type = 'button';
     header.textContent = `${this._maskExpanded ? '▾' : '▸'} MASK`;
     header.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
       width: 100%;
       height: ${F * 2}px;
       padding: 0 ${F}px;
       border: none;
-      border-top: 1px solid var(--c-border);
       background: var(--c-bg);
       color: var(--c-border);
       text-align: left;
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       text-transform: uppercase;
       cursor: pointer;
       box-sizing: border-box;
     `;
+    if (this._maskExpanded) {
+      header.style.borderBottom = '1px solid var(--c-border)';
+    }
     header.addEventListener('click', () => {
       this._maskExpanded = !this._maskExpanded;
       this._rebuildBody();
@@ -450,15 +489,22 @@ export class NodePanel extends BaseComponent {
 
     this._buildSelectRow({
       label: 'SOURCE',
+      noBorderTop: true,
       value: this._node.mask.source ?? 'none',
       options: MASK_MODES,
       onChange: value => {
+        const prev = this._node.mask.source;
         this._node.mask.source = value;
         this._node.mask.enabled = value !== 'none';
         if (value !== 'upload') {
           this._node.mask._sourcePixels = null;
           this._node.mask._sourceW = 0;
           this._node.mask._sourceH = 0;
+        }
+        if (prev === 'draw' && value !== 'draw') {
+          this._node.mask._drawPixels = null;
+          this._node.mask._drawW = 0;
+          this._node.mask._drawH = 0;
         }
         this._emit();
         this._rebuildBody();
@@ -467,6 +513,10 @@ export class NodePanel extends BaseComponent {
 
     if (this._node.mask.source === 'upload') {
       this._buildFileRow('UPLOAD', this._node.mask._fileName || 'NO MASK', file => this._loadMaskFile(file));
+    }
+
+    if (this._node.mask.source === 'draw') {
+      this._buildDrawMaskRow();
     }
 
     if ((this._node.mask.source ?? 'none') !== 'none') {
@@ -494,6 +544,79 @@ export class NodePanel extends BaseComponent {
     }
   }
 
+  _buildDrawMaskRow() {
+    const { F } = this.getF();
+    const row = this.createElement('div', 'distort-draw-mask-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+
+    const dims = this._getSourceDims?.() ?? { w: 0, h: 0 };
+    const hasSource = !!(dims.w && dims.h);
+    const hasDrawn  = !!this._node.mask._drawPixels;
+
+    const btn = this.createElement('button', 'distort-draw-mask-btn');
+    btn.type = 'button';
+    btn.textContent = hasDrawn ? 'EDIT MASK …' : 'EDIT MASK +';
+    btn.disabled = !hasSource;
+    btn.style.cssText = `
+      flex: 1;
+      height: ${F * 2}px;
+      border: none;
+      background: var(--c-bg);
+      color: ${hasSource ? 'var(--c-text)' : 'var(--c-border)'};
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      text-align: left;
+      cursor: ${hasSource ? 'pointer' : 'default'};
+      padding: 0;
+      box-sizing: border-box;
+    `;
+
+    if (hasSource) {
+      btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--c-text)'; btn.style.color = 'var(--c-bg)'; });
+      btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--c-bg)'; btn.style.color = 'var(--c-text)'; });
+      btn.addEventListener('click', () => this._openDrawOverlay());
+    }
+
+    row.appendChild(btn);
+    this._body.appendChild(row);
+  }
+
+  _openDrawOverlay() {
+    if (!this._canvasAreaEl) return;
+    this._drawOverlay?.destroy();
+
+    const dims = this._getSourceDims?.() ?? { w: 0, h: 0 };
+    const sw = dims.w || this._node.mask._drawW || 512;
+    const sh = dims.h || this._node.mask._drawH || 512;
+
+    this._drawOverlay = new DrawMaskOverlay({
+      mountEl: this._canvasAreaEl,
+      sourceW: sw,
+      sourceH: sh,
+      onDone: (pixels, w, h) => {
+        this._node.mask._drawPixels = pixels;
+        this._node.mask._drawW = w;
+        this._node.mask._drawH = h;
+        this._drawOverlay = null;
+        this._emit();
+        this._rebuildBody();
+      },
+      onCancel: () => {
+        this._drawOverlay = null;
+      }
+    }, this.deps);
+
+    this._drawOverlay.render();
+  }
+
   _buildFileRow(labelText, fileName, onSelectFile) {
     const { F } = this.getF();
     const row = this.createElement('div', 'distort-file-row');
@@ -513,11 +636,15 @@ export class NodePanel extends BaseComponent {
     button.style.cssText = `
       width: ${F * 4}px;
       height: ${F * 2}px;
-      border: 1px solid var(--c-border);
+      border-top: none;
+      border-bottom: none;
+      border-left: 1px solid var(--c-border);
+      border-right: 1px solid var(--c-border);
       background: var(--c-bg);
       color: var(--c-text);
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
+      text-transform: uppercase;
       cursor: pointer;
       box-sizing: border-box;
       flex-shrink: 0;
@@ -529,9 +656,10 @@ export class NodePanel extends BaseComponent {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
-      color: var(--c-text);
+      color: var(--c-border);
+      padding: 0 ${F / 2}px;
     `;
 
     const input = this.createElement('input');
@@ -614,9 +742,7 @@ export class NodePanel extends BaseComponent {
   }
 
   _appendDivider() {
-    const divider = this.createElement('div');
-    divider.style.cssText = 'height: 1px; background: var(--c-border);';
-    this._body.appendChild(divider);
+    // No-op: rows already have border-top; a separate divider div would double the border.
   }
 
   _rowLabel(text) {
@@ -624,11 +750,13 @@ export class NodePanel extends BaseComponent {
     const label = this.createElement('span', 'distort-row-label', text);
     label.style.cssText = `
       width: ${F * 7}px;
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       color: var(--c-text);
       text-transform: uppercase;
       flex-shrink: 0;
+      overflow: hidden;
+      white-space: nowrap;
     `;
     return label;
   }
@@ -653,10 +781,18 @@ export class NodePanel extends BaseComponent {
     this._onChange?.({ nodeIdx: this._nodeIdx });
   }
 
+  onSourceChanged() {
+    if (this._expanded) this._rebuildBody();
+  }
+
   destroy() {
     this._closeDriverPicker();
     Object.values(this._driverPickers).forEach(picker => picker.destroy?.());
     this._driverPickers = {};
+    this._dropdowns.forEach(dd => dd.destroy?.());
+    this._dropdowns = [];
+    this._drawOverlay?.destroy();
+    this._drawOverlay = null;
     super.destroy();
   }
 }

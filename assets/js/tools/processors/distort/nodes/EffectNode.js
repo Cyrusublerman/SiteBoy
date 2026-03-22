@@ -31,13 +31,16 @@ export class EffectNode {
 
     this.mask = {
       enabled: false,
-      source: 'none',       // 'none' | 'upload' | 'luminance' | 'gradient'
+      source: 'none',       // 'none' | 'upload' | 'luminance' | 'gradient' | 'draw'
       invert: false,
       feather: 0,
       data: null,            // Uint8Array(w*h) — single channel, 0..255
       _sourcePixels: null,
       _sourceW: 0,
-      _sourceH: 0
+      _sourceH: 0,
+      _drawPixels: null,     // Uint8Array greyscale — draw mode painted mask
+      _drawW: 0,
+      _drawH: 0
     };
 
     this.modulation = {};
@@ -143,6 +146,13 @@ export class EffectNode {
       }
     } else if (this.mask.source === 'upload' && this.mask._sourcePixels) {
       this._resizeMask(data, w, h);
+    } else if (this.mask.source === 'draw') {
+      if (!this.mask._drawPixels) {
+        // No pixels painted yet — treat as no mask (full effect pass-through)
+        this.mask.data = null;
+        return;
+      }
+      this._resizeRaw(this.mask._drawPixels, this.mask._drawW, this.mask._drawH, data, w, h);
     }
 
     if (this.mask.invert) for (let i = 0; i < n; i++) data[i] = 255 - data[i];
@@ -159,6 +169,16 @@ export class EffectNode {
       const oy = Math.min(sh - 1, Math.round(y * sy));
       const si = (oy * sw + ox) * 4;
       dst[y * tw + x] = Math.round(sp[si] * 0.299 + sp[si + 1] * 0.587 + sp[si + 2] * 0.114);
+    }
+  }
+
+  /** Nearest-neighbour resample of a single-channel greyscale Uint8Array. */
+  _resizeRaw(src, sw, sh, dst, tw, th) {
+    const scaleX = sw / tw, scaleY = sh / th;
+    for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) {
+      const ox = Math.min(sw - 1, Math.round(x * scaleX));
+      const oy = Math.min(sh - 1, Math.round(y * scaleY));
+      dst[y * tw + x] = src[oy * sw + ox];
     }
   }
 
@@ -213,5 +233,8 @@ export class EffectNode {
     this._cache = null;
     this.mask.data = null;
     this.mask._sourcePixels = null;
+    this.mask._drawPixels = null;
+    this.mask._drawW = 0;
+    this.mask._drawH = 0;
   }
 }

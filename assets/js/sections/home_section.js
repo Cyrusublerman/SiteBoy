@@ -54,18 +54,6 @@ const HomeSection = {
                 { id: 'typography', title: 'Typography Tool', path: '#tools/typography' }
             ]
         },
-        {
-            id: 'projects',
-            title: 'PROJECTS',
-            description: 'Selected works, experiments, and technical demos',
-            isExpandable: true,
-            isExpanded: false,
-            subsections: [
-                { id: 'siteboy', title: 'SiteBoy Framework', path: '#projects/siteboy' },
-                { id: 'vga-renderer', title: 'VGA Renderer', path: '#projects/vga-renderer' },
-                { id: 'math-foundation', title: 'Math Foundation', path: '#projects/math-foundation' }
-            ]
-        }
     ],
     
     /**

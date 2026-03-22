@@ -248,6 +248,8 @@ export class GenerativeToolHost extends BaseComponent {
             this.sequencerV2.destroy();
             this.sequencerV2 = null;
         }
+        this._sequencerStripEl      = null;
+        this._sequencerStripVisible = true;
 
         this.tool = new ToolBase(toolConfig, {
             ComponentLibrary: this.deps.ComponentLibrary,
@@ -822,6 +824,14 @@ export class GenerativeToolHost extends BaseComponent {
             this.stop();
             return;
         }
+
+        if (key === 'toggleTimeline') {
+            if (this._sequencerStripEl) {
+                this._sequencerStripVisible = !this._sequencerStripVisible;
+                this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+            }
+            return;
+        }
         
         if (key === 'phaseToggles') {
             this.handlePhaseToggles(value);
@@ -998,17 +1008,48 @@ export class GenerativeToolHost extends BaseComponent {
             this.play();
         }
     }
-    
+
     /**
-     * Start animation
+     * Reflect current play state onto the Play / Pause button.
+     * Inverted (bg=text, color=bg) = playing; normal = stopped/paused.
+     * A data-playing attribute is set so the corrective mouseleave handler
+     * can restore the playing colour after hover, rather than always
+     * restoring to the default idle colours.
+     */
+    _syncPlayButton() {
+        const btn = this.tool?.getComponent?.('playPause');
+        if (!btn?.element) return;
+        const playing = this.isPlaying;
+        btn.setText(playing ? 'PAUSE' : 'PLAY');
+        btn.element.dataset.playing = playing ? '1' : '';
+        btn.element.style.background = playing ? 'var(--c-text)' : 'var(--c-bg)';
+        btn.element.style.color      = playing ? 'var(--c-bg)'   : 'var(--c-text)';
+
+        // Attach corrective mouseleave only once (guarded by flag on element)
+        if (!btn.element._playStateLeaveAttached) {
+            btn.element._playStateLeaveAttached = true;
+            btn.element.addEventListener('mouseleave', () => {
+                if (btn.element.dataset.playing === '1') {
+                    btn.element.style.background = 'var(--c-text)';
+                    btn.element.style.color      = 'var(--c-bg)';
+                }
+            });
+        }
+    }
+
+    /**
+     * Start or resume animation.
+     * AnimationLoop.start() only works from a stopped/fresh state; after pause()
+     * the loop's isRunning stays true, so the correct call is resume().
      */
     play() {
         if (this.isPlaying) return;
-        
+
         this.isPlaying = true;
+        this._syncPlayButton();
         this._scheduler?.setAnimating(true);
         window.debugLog('TOOLS', '▶️ Animation started');
-        
+
         if (!this.animator) {
             this.animator = new AnimationLoop({
                 fps: this.scriptConfig.animation?.defaultFps || 60,
@@ -1026,8 +1067,13 @@ export class GenerativeToolHost extends BaseComponent {
                 }
             });
         }
-        
-        this.animator.start();
+
+        // Resume if paused, start fresh otherwise
+        if (this.animator.isPaused) {
+            this.animator.resume();
+        } else {
+            this.animator.start();
+        }
     }
     
     /**
@@ -1037,6 +1083,7 @@ export class GenerativeToolHost extends BaseComponent {
         if (!this.isPlaying) return;
         
         this.isPlaying = false;
+        this._syncPlayButton();
         this._scheduler?.setAnimating(false);
         if (this.animator) {
             this.animator.pause();
@@ -1049,6 +1096,7 @@ export class GenerativeToolHost extends BaseComponent {
      */
     stop() {
         this.isPlaying = false;
+        this._syncPlayButton();
         this._scheduler?.setAnimating(false);
         this.frame = 0;
         
@@ -1240,6 +1288,9 @@ export class GenerativeToolHost extends BaseComponent {
         const stripEl = this.sequencerV2.getStripElement();
         if (stripEl && this.tool.canvasArea) {
             this.tool.canvasArea.appendChild(stripEl);
+            this._sequencerStripEl      = stripEl;
+            this._sequencerStripVisible = false;
+            stripEl.style.display = 'none';
         }
 
         window.debugLog('TOOLS', `✅ SequencerV2 injected for "${this.scriptId}"`);

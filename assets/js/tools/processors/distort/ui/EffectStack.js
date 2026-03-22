@@ -7,6 +7,8 @@ export class EffectStack extends BaseComponent {
     super({ componentType: 'effect-stack', ...options }, deps);
     this._nodes = options.nodes ?? [];
     this._onChange = options.onChange ?? null;
+    this._canvasAreaEl = options.canvasAreaEl ?? null;
+    this._getSourceDims = options.getSourceDims ?? null;
 
     this._soloNodeId = null;
     this._expandedNodeId = null;
@@ -38,7 +40,7 @@ export class EffectStack extends BaseComponent {
       border-bottom: 1px solid var(--c-border);
       background: var(--c-bg);
       color: var(--c-text);
-      font-family: 'Space Mono', monospace;
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       text-align: left;
       padding: 0 ${F}px;
@@ -96,6 +98,8 @@ export class EffectStack extends BaseComponent {
         nodeIdx: index,
         expanded: node.id === this._expandedNodeId,
         isSolo: node.id === this._soloNodeId,
+        canvasAreaEl: this._canvasAreaEl,
+        getSourceDims: this._getSourceDims,
         onSelect: ({ nodeIdx }) => {
           const current = this._nodes[nodeIdx];
           if (!current) return;
@@ -163,6 +167,10 @@ export class EffectStack extends BaseComponent {
 
   _emitChange(payload) {
     this._onChange?.(payload);
+  }
+
+  notifySourceChanged() {
+    this._panels.forEach(panel => panel.onSourceChanged?.());
   }
 
   getNodes() {

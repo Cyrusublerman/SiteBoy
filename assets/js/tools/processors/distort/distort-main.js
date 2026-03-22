@@ -12,8 +12,6 @@ import { TransportStrip } from '../../../shared/components/tool/distort/Transpor
 import { BaseComponent } from '../../../shared/foundation.js';
 
 const BLOCK_TITLE_MAP = {
-  SOURCE: 'Source',
-  STACK: 'Stack',
   OUTPUT: 'Output',
   SEED: 'Seed',
   ANIMATION: 'Animation',
@@ -103,7 +101,7 @@ export class DistortTool extends BaseComponent {
       canvas: { mode: 'none' },
       sidebar: [
         ['PIPELINE', [
-          ['STACK', []],
+          ['', []],
         ]],
         ['CANVAS', [
           ['OUTPUT', [
@@ -160,22 +158,45 @@ export class DistortTool extends BaseComponent {
 
     this._applyBlockTitles(tb);
 
-    const stackBlock = this._findBlock(tb, 'STACK');
+    // Find the PIPELINE tab panel directly — EffectStack owns the full tab area (no section header)
+    const panelsContainer = tb.element.querySelector('.tool-panels');
+    if (panelsContainer) {
+      // The panels container must not scroll in the flex direction — each panel manages its own scroll
+      panelsContainer.style.overflow = 'hidden';
+      panelsContainer.style.display = 'flex';
+      panelsContainer.style.flexDirection = 'column';
+    }
+    const allPanels = panelsContainer ? Array.from(panelsContainer.querySelectorAll(':scope > .tool-panel')) : [];
+    const pipelinePanel = allPanels[0] ?? null;
+
+    // CANVAS tab panel (index 1) gets its own vertical scroll for its controls
+    const canvasTabPanel = allPanels[1] ?? null;
+    if (canvasTabPanel) {
+      canvasTabPanel.style.overflowY = 'auto';
+      canvasTabPanel.style.flex = '1';
+    }
 
     this._stack = new EffectStack({
       nodes: this._state.stack ?? [],
+      canvasAreaEl: tb.canvasArea,
+      getSourceDims: () => ({ w: this._state.sourceW ?? 0, h: this._state.sourceH ?? 0 }),
       onChange: event => this._handleStackChange(event)
     }, this.deps);
     this._stack.render();
     this._stack.element.style.flex = '1';
+    this._stack.element.style.minHeight = '0';
 
-    if (stackBlock) {
-      stackBlock.style.display = 'flex';
-      stackBlock.style.flexDirection = 'column';
-      stackBlock.style.flex = '1';
-      stackBlock.style.minHeight = '0';
-      stackBlock.style.overflow = 'hidden';
-      stackBlock.appendChild(this._stack.element);
+    if (pipelinePanel) {
+      // Remove any auto-generated block (empty-title block from ToolBase config)
+      while (pipelinePanel.firstChild) pipelinePanel.removeChild(pipelinePanel.firstChild);
+      pipelinePanel.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: visible;
+      `;
+      pipelinePanel.appendChild(this._stack.element);
     }
     this.componentInstances.push(this._stack);
 
@@ -199,7 +220,11 @@ export class DistortTool extends BaseComponent {
       fps: this._state.fps,
       onFrame: frame => {
         this._viewport?.setVariations(null);
+        // Always update currentFrame so time-driven nodes get the new frame index.
+        // seekFrame also swaps sourcePixels if a multi-frame source is loaded.
+        this._state.currentFrame = Math.max(0, Math.min(this._state.frameCount - 1, frame));
         this._state.seekFrame(frame);
+        this._state.invalidateAllCaches();
         this._scheduleRender();
       }
     }, this.deps);
@@ -295,7 +320,8 @@ export class DistortTool extends BaseComponent {
 
   _updateTransportVisibility() {
     if (!this._transport?.element) return;
-    this._transport.element.style.display = this._state.frameCount > 1 ? 'flex' : 'none';
+    const visible = this._state.frameCount > 1;
+    this._transport.element.style.display = visible ? 'flex' : 'none';
   }
 
   _loadSource(asset) {
@@ -304,6 +330,7 @@ export class DistortTool extends BaseComponent {
     this._viewport?.setSource({ pixels: asset.pixels, width: asset.width, height: asset.height });
     this._viewport?.setVariations(null);
     this._viewport?.setHasSource(true);
+    this._stack?.notifySourceChanged?.();
     this._syncUiFromState();
     this._snapshot();
     this._scheduleRender();

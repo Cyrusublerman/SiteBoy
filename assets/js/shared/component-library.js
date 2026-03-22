@@ -83,6 +83,10 @@ import { BarGraph, LineGraph, PieGraph } from './graphs.js';
 // Import specialized components
 import { VGAGrid, MathematicalCanvas, SVGDisplay, AnimationControls } from './specialized.js';
 
+// Import drawing components
+import { DrawCanvas } from './components/drawing/DrawCanvas.js';
+import { DrawMaskOverlay } from './components/drawing/DrawMaskOverlay.js';
+
 // Import feedback components
 import LoadingOverlay from './components/feedback/LoadingOverlay.js';
 
@@ -237,6 +241,10 @@ const ComponentLibrary = {
             'svg-display': SVGDisplay,
             'animation-controls': AnimationControls,
 
+            // Drawing
+            'draw-canvas': DrawCanvas,
+            'draw-mask-overlay': DrawMaskOverlay,
+
             // P5.js integration
             'p5-canvas': P5Canvas,
             'p5-embedded-sketch': P5EmbeddedSketch,
@@ -383,6 +391,10 @@ ComponentLibrary.MathematicalCanvas = MathematicalCanvas;
 ComponentLibrary.SVGDisplay = SVGDisplay;
 ComponentLibrary.AnimationControls = AnimationControls;
 
+// Assign drawing components to ComponentLibrary immediately
+ComponentLibrary.DrawCanvas = DrawCanvas;
+ComponentLibrary.DrawMaskOverlay = DrawMaskOverlay;
+
 // Assign P5.js integration components to ComponentLibrary immediately
 ComponentLibrary.P5Canvas = P5Canvas;
 ComponentLibrary.P5EmbeddedSketch = P5EmbeddedSketch;
@@ -510,6 +522,10 @@ export {
     MathematicalCanvas,
     SVGDisplay,
     AnimationControls,
+
+    // Drawing
+    DrawCanvas,
+    DrawMaskOverlay,
 
     // P5.js integration
     P5Canvas,
