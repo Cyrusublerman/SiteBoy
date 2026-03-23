@@ -15,6 +15,10 @@ const state    = new AppState();
 const pipeline = new Pipeline(state);
 const allEntries = Object.values(REGISTRY).flat();
 
+// Signal the bridge that the worker module is fully loaded and ready to receive messages.
+// Without this, dispatches during the module-load window are silently dropped.
+self.postMessage({ type: 'ready' });
+
 function _buildStack(msgStack) {
   const stack = [];
   for (const nd of msgStack) {
@@ -44,6 +48,8 @@ function _applyMsg(msg) {
   state.sourceH      = msg.sourceH;
   state.quality      = msg.quality;
   state.previewScale = msg.previewScale;
+  // If the sent pixels are already downsampled, set scale to 1 so Pipeline skips downsample
+  state._preScaled   = !!msg.preScaled;
   state.globalSeed   = msg.globalSeed;
   state.soloNodeId   = msg.soloNodeId ?? null;
   state.currentFrame = msg.frame ?? 0;
@@ -56,23 +62,27 @@ self.onmessage = function (e) {
   const msg = e.data;
 
   if (msg.type === 'render') {
-    state.sourcePixels = new Uint8ClampedArray(msg.sourcePixels);
-    _applyMsg(msg);
-    state.stack = _buildStack(msg.stack);
-    // Invalidate all caches for fresh state
-    for (const n of state.stack) { n._cacheValid = false; }
+    try {
+      state.sourcePixels = new Uint8ClampedArray(msg.sourcePixels);
+      _applyMsg(msg);
+      state.stack = _buildStack(msg.stack);
+      for (const n of state.stack) { n._cacheValid = false; }
 
-    const result = pipeline.render();
-    if (result) {
-      const buf = result.pixels;
-      self.postMessage({
-        type: 'result',
-        renderId: msg.renderId,
-        pixels: buf.buffer,
-        width: result.width,
-        height: result.height,
-        renderTime: state.lastRenderTime
-      }, [buf.buffer]);
+      const result = pipeline.render();
+      if (result) {
+        const buf = result.pixels.buffer;
+        self.postMessage({
+          type: 'result',
+          renderId: msg.renderId,
+          pixels: buf,
+          width: result.width,
+          height: result.height,
+          renderTime: state.lastRenderTime
+        }, [buf]);
+      }
+    } catch (err) {
+      // Report error back so WorkerBridge can fall back to sync pipeline instead of timing out
+      self.postMessage({ type: 'error', renderId: msg.renderId, message: String(err) });
     }
     return;
   }

@@ -86,6 +86,40 @@ export class AppState {
     this.frames = [pixels];
     this.frameCount = 1;
     this.currentFrame = 0;
+    this._previewCache = null; // invalidate cached downsampled buffer
+  }
+
+  /**
+   * Return (and cache) a downsampled preview buffer at the current previewScale.
+   * Built once per source load; reused for every subsequent preview render.
+   */
+  getPreviewPixels() {
+    const sc = this.previewScale;
+    const pw = Math.max(1, Math.round(this.sourceW * sc));
+    const ph = Math.max(1, Math.round(this.sourceH * sc));
+    const need = pw * ph * 4;
+
+    if (this._previewCache && this._previewCache.length === need) {
+      return { pixels: this._previewCache, w: pw, h: ph };
+    }
+
+    const src = this.sourcePixels;
+    const dst = new Uint8ClampedArray(need);
+    const sx = this.sourceW / pw, sy = this.sourceH / ph;
+    for (let y = 0; y < ph; y++) {
+      const oy = Math.min(this.sourceH - 1, Math.round(y * sy)) * this.sourceW;
+      const dy = y * pw;
+      for (let x = 0; x < pw; x++) {
+        const si = (oy + Math.min(this.sourceW - 1, Math.round(x * sx))) * 4;
+        const di = (dy + x) * 4;
+        dst[di]     = src[si];
+        dst[di + 1] = src[si + 1];
+        dst[di + 2] = src[si + 2];
+        dst[di + 3] = src[si + 3];
+      }
+    }
+    this._previewCache = dst;
+    return { pixels: dst, w: pw, h: ph };
   }
 
   setStack(stack) {

@@ -14,7 +14,6 @@
  *   - Frame context: frame / frameCount / time forwarded to every node ctx
  *   - Vector adapter: composites LineSet outputs via vectorToRaster
  */
-import { Sampler } from './Sampler.js';
 import { hashSeed } from './SeededRNG.js';
 import { pool } from './BufferPool.js';
 import { vectorToRaster } from '../nodes/bridge/node-adapters.js';
@@ -64,14 +63,17 @@ export class Pipeline {
     s.rendering = true;
 
     const prev = s.quality === 'preview';
-    const sc   = prev ? s.previewScale : 1;
-    const w    = Math.max(1, Math.round(s.sourceW * sc));
-    const h    = Math.max(1, Math.round(s.sourceH * sc));
+    // If source pixels are pre-scaled (sent from WorkerBridge already downsampled),
+    // treat them as full-res — skip the downsample step entirely.
+    const preScaled = !!s._preScaled;
+    const sc   = (prev && !preScaled) ? s.previewScale : 1;
+    const w    = Math.max(1, preScaled ? s.sourceW : Math.round(s.sourceW * sc));
+    const h    = Math.max(1, preScaled ? s.sourceH : Math.round(s.sourceH * sc));
     const bufSize = w * h * 4;
 
     // ── Source pixels ──
     let src;
-    if (prev && sc < 1) {
+    if (prev && sc < 1 && !preScaled) {
       src = pool.acquire(bufSize);
       this._downsample(s.sourcePixels, s.sourceW, s.sourceH, w, h, src);
     } else {
@@ -89,6 +91,15 @@ export class Pipeline {
       }
     } else {
       active = s.stack.filter(n => n.enabled);
+    }
+
+    // ── Short-circuit: no active nodes → return source as-is ──
+    if (active.length === 0) {
+      s.lastRenderTime = 0;
+      s.rendering = false;
+      s.needsRender = false;
+      // _pooled: false — do not release src back to pool after transfer (see end of render()).
+      return { pixels: src, width: w, height: h, _pooled: false };
     }
 
     // ── Modulation maps ──
@@ -187,7 +198,10 @@ export class Pipeline {
     s.rendering      = false;
     s.needsRender    = false;
 
-    return { pixels: bufA, width: w, height: h, _pooled: true };
+    // bufA is returned to the caller. Mark _pooled: false — do NOT release it back to
+    // the pool. The worker transfers bufA.buffer to the main thread, which detaches it;
+    // releasing a detached buffer back into the pool corrupts future pool.acquire() calls.
+    return { pixels: bufA, width: w, height: h, _pooled: false };
   }
 
   releaseResult(result) {
@@ -285,11 +299,19 @@ export class Pipeline {
   }
 
   _downsample(src, sw, sh, dw, dh, dst) {
+    // Nearest-neighbour — fast enough for preview; bilinear gains nothing at 35% scale
     const sx = sw / dw, sy = sh / dh;
-    for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
-      const c = Sampler.bilinear(src, sw, sh, x * sx, y * sy);
-      const i = (y * dw + x) * 4;
-      dst[i] = c[0]; dst[i + 1] = c[1]; dst[i + 2] = c[2]; dst[i + 3] = c[3];
+    for (let y = 0; y < dh; y++) {
+      const oy = Math.min(sh - 1, Math.round(y * sy)) * sw;
+      const dy = y * dw;
+      for (let x = 0; x < dw; x++) {
+        const si = (oy + Math.min(sw - 1, Math.round(x * sx))) * 4;
+        const di = (dy + x) * 4;
+        dst[di]     = src[si];
+        dst[di + 1] = src[si + 1];
+        dst[di + 2] = src[si + 2];
+        dst[di + 3] = src[si + 3];
+      }
     }
   }
 

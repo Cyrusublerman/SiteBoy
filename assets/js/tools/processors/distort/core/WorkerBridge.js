@@ -16,6 +16,8 @@ export class WorkerBridge {
     this.onResult  = onResult;
 
     this._worker      = null;
+    this._workerReady = false;    // true once worker posts 'ready'
+    this._pendingDispatch = false; // dispatch waiting for worker ready
     this._pending     = false;
     this._queued      = false;
     this._renderId    = 0;        // monotonic counter; sent with every request
@@ -35,6 +37,9 @@ export class WorkerBridge {
   queueRender() {
     if (!this.state.needsRender || !this.state.sourcePixels) return;
     if (!this._worker) { this._renderSync(); return; }
+    // Worker exists but hasn't finished loading its module yet — mark pending
+    // and dispatch once the 'ready' handshake arrives.
+    if (!this._workerReady) { this._pendingDispatch = true; return; }
     if (this._pending) { this._queued = true; return; }
     this._dispatch();
   }
@@ -79,8 +84,10 @@ export class WorkerBridge {
   _killWorker() {
     if (this._worker) { this._worker.terminate(); this._worker = null; }
     this._clearTimeout();
-    this._pending  = false;
-    this._activeId = null;
+    this._pending        = false;
+    this._activeId       = null;
+    this._workerReady    = false;
+    this._pendingDispatch = false;
   }
 
   // ── Dispatch / receive ───────────────────────────────────────────────────────
@@ -103,12 +110,30 @@ export class WorkerBridge {
       modulation: { ...(n.modulation ?? {}) },
       frame: s.frame ?? 0
     }));
-    const pixelsCopy = new Uint8ClampedArray(s.sourcePixels);
+
+    // For preview renders, send the pre-downsampled buffer (cached in AppState) —
+    // avoids copying the full-res source and lets the worker skip the downsample step.
+    const isPrev = s.quality === 'preview';
+    let pixelsCopy, sendW, sendH;
+    if (isPrev && s.previewScale < 1) {
+      const prev = s.getPreviewPixels();
+      // Use TypedArray.slice() — copies only the view's own bytes, not the whole backing buffer.
+      // buffer.slice() can copy padding bytes if the array is a subview with byteOffset.
+      pixelsCopy = prev.pixels.slice(0);
+      sendW = prev.w;
+      sendH = prev.h;
+    } else {
+      pixelsCopy = s.sourcePixels.slice(0);
+      sendW = s.sourceW;
+      sendH = s.sourceH;
+    }
 
     this._worker.postMessage({
       type: 'render', renderId: id,
       sourcePixels: pixelsCopy.buffer,
-      sourceW: s.sourceW, sourceH: s.sourceH,
+      sourceW: sendW, sourceH: sendH,
+      // Signal worker that pixels are already at target resolution (skip its downsample)
+      preScaled: isPrev && s.previewScale < 1,
       quality: s.quality, previewScale: s.previewScale,
       globalSeed: s.globalSeed, soloNodeId: s.soloNodeId,
       frame: s.frame ?? 0, frameCount: s.frameCount ?? 1,
@@ -127,6 +152,26 @@ export class WorkerBridge {
   }
 
   _onMessage(data) {
+    if (data.type === 'ready') {
+      this._workerReady = true;
+      // Fire any dispatch that arrived before the worker was ready
+      if (this._pendingDispatch && this.state.needsRender && this.state.sourcePixels) {
+        this._pendingDispatch = false;
+        this._dispatch();
+      }
+      return;
+    }
+
+    if (data.type === 'error') {
+      console.warn('[DISTORT] Worker render error, falling back to main thread:', data.message);
+      this._clearTimeout();
+      this._pending  = false;
+      this._activeId = null;
+      this.state.rendering = false;
+      this._renderSync();
+      return;
+    }
+
     if (data.type !== 'result') return;
 
     // Discard stale responses

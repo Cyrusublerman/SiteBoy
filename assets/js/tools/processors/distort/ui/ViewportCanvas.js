@@ -64,15 +64,16 @@ export class ViewportCanvas extends BaseComponent {
     this._ctx = this._canvas.getContext('2d');
     this.element.appendChild(this._canvas);
 
-    // Loading overlay
+    // Loading overlay — transparent so the previous result stays visible underneath
     this._loadingOverlay = this.createElement('div', 'viewport-loading');
     this._loadingOverlay.style.cssText = [
-      'position:absolute', 'inset:0',
-      'background:var(--c-bg)',
+      'position:absolute', 'bottom:0', 'left:0', 'right:0',
+      'background:transparent',
       'display:none',
-      'align-items:center', 'justify-content:center',
-      `font-family:Space Mono,monospace`, `font-size:${this.getF().F}px`,
+      'align-items:flex-end', 'justify-content:flex-start',
+      `font-family:\'Atkinson Hyperlegible\',monospace`, `font-size:${this.getF().F}px`,
       'color:var(--c-text)', `letter-spacing:${Math.max(1, Math.round(this.getF().F / 7))}px`,
+      `padding:${this.getF().F / 2}px`,
       'pointer-events:none'
     ].join(';');
     this._loadingOverlay.textContent = 'RENDERING...';

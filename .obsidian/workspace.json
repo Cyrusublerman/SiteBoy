@@ -183,6 +183,7 @@
   },
   "active": "5a75c3372daf48f1",
   "lastOpenFiles": [
+    "blog/docs/temp/distort-module-questionnaire.md",
     "assets/js/shared/components/drawing/DrawMaskOverlay.js",
     "assets/js/shared/components/drawing/DrawCanvas.js",
     "assets/js/shared/components/drawing",
@@ -202,7 +203,6 @@
     "reference/distort/spherize/source",
     "reference/distort/spherize/legacy-docs",
     "reference/distort/spherize",
-    "reference/distort/sobel/source",
     "blog/docs/temp/fix-attempt-forensics.md",
     "blog/docs/build issues/assessment 2026-03-12/summary.md",
     "blog/docs/build issues/assessment 2026-03-12/08-process-gate-analysis.md",

@@ -43,6 +43,9 @@ export class DistortTool extends BaseComponent {
     this._viewport = null;
     this._transport = null;
     this._sourceName = '';
+    this._lastResult = null;
+    this._renderSafetyTimer = null;
+    this._previewRafId = null;
     this._tmpAnchors = new Set();
   }
 
@@ -127,6 +130,7 @@ export class DistortTool extends BaseComponent {
     toolBase.render();
     toolBase.element.style.flex = '1';
     toolBase.element.style.minHeight = '0';
+    toolBase.element.style.height = '';  // override ToolBase's height:100% for flex-column parent
     this._onToolBaseInit(toolBase);
 
     // Wrap _handleResize so re-injection runs after any full DOM rebuild
@@ -135,8 +139,11 @@ export class DistortTool extends BaseComponent {
       const prevEl = toolBase.element;
       _origResize();
       if (toolBase.element !== prevEl) {
+        // Override ToolBase's self-imposed height:100% — distort root is flex-column,
+        // so the toolbase must be a flex child (flex:1) not a height:100% block.
         toolBase.element.style.flex = '1';
         toolBase.element.style.minHeight = '0';
+        toolBase.element.style.height = '';
         this._onToolBaseInit(toolBase);
       }
     };
@@ -231,6 +238,19 @@ export class DistortTool extends BaseComponent {
     this._transport.render();
     canvasArea.appendChild(this._transport.element);
     this.componentInstances.push(this._transport);
+
+    // Restore viewport state — viewport is recreated on every layout rebuild,
+    // so _hasSource and _result reset to null/false.
+    if (this._state.sourcePixels) {
+      this._viewport?.setSource({ pixels: this._state.sourcePixels, width: this._state.sourceW, height: this._state.sourceH });
+      this._viewport?.setHasSource(true);
+      // Restore last render result if available, otherwise re-render.
+      if (this._lastResult) {
+        this._viewport?.setResult(this._lastResult);
+      } else {
+        this._scheduleRender();
+      }
+    }
 
     this._syncUiFromState();
     this._refreshVectorState();
@@ -346,12 +366,39 @@ export class DistortTool extends BaseComponent {
   _scheduleRender() {
     if (!this._state.sourcePixels) return;
     this._syncModulationMaps();
-    this._viewport?.setLoading(true);
-    this._state.scheduleRender(80);
+    // Preview renders run synchronously on the main thread — no worker round-trip,
+    // no source copy, instant feedback. Worker is used for final-quality only.
+    if (this._state.quality === 'preview') {
+      // Debounce via rAF to collapse rapid slider drags into one render.
+      if (this._previewRafId) cancelAnimationFrame(this._previewRafId);
+      this._previewRafId = requestAnimationFrame(() => {
+        this._previewRafId = null;
+        const r = this._pipeline.render();
+        if (r) this._onRenderResult(r);
+        else this._viewport?.setLoading(false);
+      });
+    } else {
+      this._viewport?.setLoading(true);
+      if (this._renderSafetyTimer) clearTimeout(this._renderSafetyTimer);
+      this._renderSafetyTimer = setTimeout(() => {
+        this._renderSafetyTimer = null;
+        if (!this._viewport) return;
+        console.warn('[DISTORT] Render safety timeout — falling back to sync pipeline');
+        const r = this._pipeline.render();
+        if (r) this._onRenderResult(r);
+        else this._viewport?.setLoading(false);
+      }, 5000);
+      this._state.scheduleRender(80);
+    }
   }
 
   _onRenderResult(result) {
+    if (this._renderSafetyTimer) {
+      clearTimeout(this._renderSafetyTimer);
+      this._renderSafetyTimer = null;
+    }
     if (!result) return;
+    this._lastResult = result;
     this._viewport?.setResult(result);
     this._viewport?.setLoading(false);
   }
@@ -576,6 +623,8 @@ ${paths.join('\n')}
   }
 
   destroy() {
+    if (this._renderSafetyTimer) { clearTimeout(this._renderSafetyTimer); this._renderSafetyTimer = null; }
+    if (this._previewRafId) { cancelAnimationFrame(this._previewRafId); this._previewRafId = null; }
     this._bridge?.destroy?.();
     for (const link of this._tmpAnchors) link.parentNode?.removeChild?.(link);
     this._tmpAnchors.clear();
