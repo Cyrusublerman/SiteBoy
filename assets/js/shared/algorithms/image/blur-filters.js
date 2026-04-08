@@ -11,6 +11,8 @@
  *   spin radial: sample at rotation by angle in [-d, +d] around (cx, cy)
  */
 
+import { separableGaussianKernel1D } from '../math/gaussian-kernel-1d.js';
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function sampleNearest(src, w, h, fx, fy, dst, i) {
@@ -80,14 +82,24 @@ export function boxBlurSeparable(src, w, h, radius = 3, passes = 1) {
   return cur;
 }
 
+/**
+ * Alias for separable multi-pass box blur (plan2403 naming).
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [radius]
+ * @param {number} [passes]
+ * @returns {Uint8ClampedArray}
+ */
+export function separableBoxBlurPasses(src, w, h, radius = 3, passes = 1) {
+  return boxBlurSeparable(src, w, h, radius, passes);
+}
+
 // ── Gaussian Blur ─────────────────────────────────────────────────────────────
 
 function _gaussKernel(sigma, r) {
-  const k = new Float32Array(r * 2 + 1);
-  let sum = 0;
-  for (let i = -r; i <= r; i++) { k[i + r] = Math.exp(-(i * i) / (2 * sigma * sigma)); sum += k[i + r]; }
-  for (let i = 0; i < k.length; i++) k[i] /= sum;
-  return k;
+  const { kernel } = separableGaussianKernel1D(sigma, r);
+  return kernel;
 }
 
 function _gaussH(src, dst, w, h, k, r) {
@@ -185,7 +197,9 @@ export function medianFilter(src, w, h, radius = 1) {
  * @returns {Uint8ClampedArray} New buffer
  */
 export function bilateralFilter(src, w, h, spatialSigma = 5, rangeSigma = 30) {
-  const rad = Math.ceil(spatialSigma * 2);
+  /** Kernel radius cap — unbounded ceil(2σ) is O(w·h·σ²) and hangs at high σ. */
+  const BILATERAL_MAX_RADIUS = 10;
+  const rad = Math.min(Math.ceil(spatialSigma * 2), BILATERAL_MAX_RADIUS);
   const sSq2 = 2 * spatialSigma * spatialSigma;
   const rSq2 = 2 * rangeSigma * rangeSigma;
   const dst = new Uint8ClampedArray(src.length);
@@ -215,6 +229,118 @@ export function bilateralFilter(src, w, h, spatialSigma = 5, rangeSigma = 30) {
       dst[ci + 1] = Math.round(wg * inv);
       dst[ci + 2] = Math.round(wb * inv);
       dst[ci + 3] = src[ci + 3];
+    }
+  }
+  return dst;
+}
+
+/**
+ * Bilateral filter on a downsampled grid, then bilinear upsample (grid approx).
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [spatialSigma=5]
+ * @param {number} [rangeSigma=30]
+ * @param {number} [gridFactor=4]
+ * @returns {Uint8ClampedArray}
+ */
+export function bilateralGridApprox(src, w, h, spatialSigma = 5, rangeSigma = 30, gridFactor = 4) {
+  const gw = Math.max(8, Math.floor(w / gridFactor));
+  const gh = Math.max(8, Math.floor(h / gridFactor));
+  const small = new Uint8ClampedArray(gw * gh * 4);
+  for (let y = 0; y < gh; y++) {
+    for (let x = 0; x < gw; x++) {
+      const sx = Math.min(w - 1, Math.floor((x + 0.5) * w / gw));
+      const sy = Math.min(h - 1, Math.floor((y + 0.5) * h / gh));
+      const si = (sy * w + sx) * 4;
+      const di = (y * gw + x) * 4;
+      small[di] = src[si];
+      small[di + 1] = src[si + 1];
+      small[di + 2] = src[si + 2];
+      small[di + 3] = src[si + 3];
+    }
+  }
+  const ss = Math.max(0.5, spatialSigma / gridFactor);
+  const blurredSmall = bilateralFilter(small, gw, gh, ss, rangeSigma);
+  const dst = new Uint8ClampedArray(src.length);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const fx = ((x + 0.5) / w) * gw - 0.5;
+      const fy = ((y + 0.5) / h) * gh - 0.5;
+      const x0 = Math.floor(fx);
+      const y0 = Math.floor(fy);
+      const dx = fx - x0;
+      const dy = fy - y0;
+      const cx0 = x0 < 0 ? 0 : x0 >= gw ? gw - 1 : x0;
+      const cy0 = y0 < 0 ? 0 : y0 >= gh ? gh - 1 : y0;
+      const cx1 = Math.min(gw - 1, cx0 + 1);
+      const cy1 = Math.min(gh - 1, cy0 + 1);
+      const iw = 1 - dx;
+      const ih = 1 - dy;
+      for (let c = 0; c < 4; c++) {
+        const i00 = (cy0 * gw + cx0) * 4 + c;
+        const i10 = (cy0 * gw + cx1) * 4 + c;
+        const i01 = (cy1 * gw + cx0) * 4 + c;
+        const i11 = (cy1 * gw + cx1) * 4 + c;
+        const v = blurredSmall[i00] * iw * ih + blurredSmall[i10] * dx * ih
+          + blurredSmall[i01] * iw * dy + blurredSmall[i11] * dx * dy;
+        dst[(y * w + x) * 4 + c] = Math.round(Math.min(255, Math.max(0, v)));
+      }
+    }
+  }
+  return dst;
+}
+
+/**
+ * Per-channel median via 8-bin histogram approximation (small windows only).
+ * For radius 1 uses exact 3x3 histogram median on [0,255].
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [radius=1]
+ * @returns {Uint8ClampedArray}
+ */
+export function medianHistogramApprox(src, w, h, radius = 1) {
+  if (radius !== 1) return medianFilter(src, w, h, radius);
+  const dst = new Uint8ClampedArray(src.length);
+  const hist = new Uint16Array(256);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const oi = (y * w + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        hist.fill(0);
+        let cnt = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const v = src[((y + dy) * w + (x + dx)) * 4 + c];
+            hist[v]++;
+            cnt++;
+          }
+        }
+        const need = (cnt + 1) >> 1;
+        let acc = 0;
+        let med = 0;
+        for (let v = 0; v < 256; v++) {
+          acc += hist[v];
+          if (acc >= need) {
+            med = v;
+            break;
+          }
+        }
+        dst[oi + c] = med;
+      }
+      dst[oi + 3] = src[oi + 3];
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (y === 0 || y === h - 1 || x === 0 || x === w - 1) {
+        const i = (y * w + x) * 4;
+        dst[i] = src[i];
+        dst[i + 1] = src[i + 1];
+        dst[i + 2] = src[i + 2];
+        dst[i + 3] = src[i + 3];
+      }
     }
   }
   return dst;

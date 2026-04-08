@@ -314,3 +314,5 @@ export function simplifyContour(contour, epsilon) {
     return simplifyRange(0, contour.length - 1);
 }
 
+/** @type {typeof extractContours} */
+export const marchingSquaresContour = extractContours;

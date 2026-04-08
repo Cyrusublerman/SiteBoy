@@ -201,6 +201,10 @@ export class NumericInput extends BaseComponent {
                 }
             });
 
+            this.fieldEl.addEventListener('dblclick', () => {
+                this._updateValue(this.defaultValue, false);
+            });
+
             this.fieldEl.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 this._handleScrollStep(e.deltaY);

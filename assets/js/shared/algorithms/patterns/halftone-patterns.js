@@ -239,6 +239,32 @@ export function sizeDotsFromLuminance(lattice, luminance, width, height, params)
     });
 }
 
+/**
+ * Per-pixel halftone dot coverage [0, 1] from a luminance sampler.
+ * @param {(x:number,y:number)=>number} sampler
+ * @param {number} x
+ * @param {number} y
+ * @param {'dots'|string} [patternType='dots']
+ * @param {{ cellSize?: number }} [grid]
+ * @param {(t:number)=>number} [curve]
+ * @returns {number}
+ */
+export function halftoneResponseMap(sampler, x, y, patternType = 'dots', grid = { cellSize: 8 }, curve = (t) => t) {
+    const cellSize = grid.cellSize ?? 8;
+    if (patternType !== 'dots' || cellSize <= 0) return 0;
+    const cx = Math.floor(x / cellSize) * cellSize + cellSize * 0.5;
+    const cy = Math.floor(y / cellSize) * cellSize + cellSize * 0.5;
+    const lum = sampler(cx, cy);
+    const a = curve(1 - lum);
+    const dotRadius = Math.max(0, a * cellSize * 0.5);
+    const dist = Math.hypot(x - cx, y - cy);
+    const edge = Math.max(1e-6, cellSize * 0.02);
+    if (dist >= dotRadius + edge) return 0;
+    if (dist <= dotRadius - edge) return 1;
+    const t = (dotRadius + edge - dist) / (2 * edge);
+    return Math.max(0, Math.min(1, t * t * (3 - 2 * t)));
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DYADIC FREQUENCY SCALING
 // ═══════════════════════════════════════════════════════════════════════════

@@ -118,7 +118,19 @@ import {
     NodePanel,
     DriverPicker,
     CategoryPicker,
-    ViewportCanvas
+    ViewportCanvas,
+    ColourRampControl,
+    CentrePointPicker,
+    FrameSlider,
+    SVGExportButton,
+    NoiseSourceControl,
+    InputDomainSelector,
+    OutputModeSelector,
+    MaskControls,
+    DriverMappingPanel,
+    TemporalModeControl,
+    DiagnosticPreviewToggle,
+    LuminanceCurveEditor,
 } from './components/tool/index.js';
 
 // Import navigation components
@@ -271,6 +283,18 @@ const ComponentLibrary = {
             'driver-picker': DriverPicker,
             'category-picker': CategoryPicker,
             'viewport-canvas': ViewportCanvas,
+            'colour-ramp-control': ColourRampControl,
+            'centre-point-picker': CentrePointPicker,
+            'frame-slider': FrameSlider,
+            'svg-export-button': SVGExportButton,
+            'noise-source-control': NoiseSourceControl,
+            'input-domain-selector': InputDomainSelector,
+            'output-mode-selector': OutputModeSelector,
+            'mask-controls': MaskControls,
+            'driver-mapping-panel': DriverMappingPanel,
+            'temporal-mode-control': TemporalModeControl,
+            'diagnostic-preview-toggle': DiagnosticPreviewToggle,
+            'luminance-curve-editor': LuminanceCurveEditor,
             
             // Navigation
             'scrollbar': Scrollbar,
@@ -440,6 +464,18 @@ ComponentLibrary.NodePanel = NodePanel;
 ComponentLibrary.DriverPicker = DriverPicker;
 ComponentLibrary.CategoryPicker = CategoryPicker;
 ComponentLibrary.ViewportCanvas = ViewportCanvas;
+ComponentLibrary.ColourRampControl = ColourRampControl;
+ComponentLibrary.CentrePointPicker = CentrePointPicker;
+ComponentLibrary.FrameSlider = FrameSlider;
+ComponentLibrary.SVGExportButton = SVGExportButton;
+ComponentLibrary.NoiseSourceControl = NoiseSourceControl;
+ComponentLibrary.InputDomainSelector = InputDomainSelector;
+ComponentLibrary.OutputModeSelector = OutputModeSelector;
+ComponentLibrary.MaskControls = MaskControls;
+ComponentLibrary.DriverMappingPanel = DriverMappingPanel;
+ComponentLibrary.TemporalModeControl = TemporalModeControl;
+ComponentLibrary.DiagnosticPreviewToggle = DiagnosticPreviewToggle;
+ComponentLibrary.LuminanceCurveEditor = LuminanceCurveEditor;
 
 // Assign navigation components to ComponentLibrary immediately
 ComponentLibrary.Scrollbar = Scrollbar;

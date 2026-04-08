@@ -47,6 +47,8 @@ export class DistortTool extends BaseComponent {
     this._renderSafetyTimer = null;
     this._previewRafId = null;
     this._tmpAnchors = new Set();
+    /** G19: user override; when true, transport strip stays hidden if frameCount > 1 */
+    this._timelineCollapsed = false;
   }
 
   render() {
@@ -118,6 +120,7 @@ export class DistortTool extends BaseComponent {
           ['ANIMATION', [
             ['slider', 'FRAME COUNT', 1, 240, 1, { key: 'frameCount', value: this._state.frameCount, withNumber: true }],
             ['slider', 'FPS', 1, 120, 1, { key: 'fps', value: this._state.fps, withNumber: true }],
+            ['button', 'TOGGLE TIMELINE', { key: 'toggleTimeline', onClick: () => this._toggleTimelineFromCanvasTab() }],
           ]],
         ]],
       ],
@@ -187,6 +190,22 @@ export class DistortTool extends BaseComponent {
       nodes: this._state.stack ?? [],
       canvasAreaEl: tb.canvasArea,
       getSourceDims: () => ({ w: this._state.sourceW ?? 0, h: this._state.sourceH ?? 0 }),
+      getSourcePixels: () => {
+        if (!this._state.sourcePixels) return null;
+        return { pixels: this._state.sourcePixels, width: this._state.sourceW, height: this._state.sourceH };
+      },
+      getRenderContext: () => {
+        const fc = this._state.frameCount ?? 1;
+        const fr = this._state.currentFrame ?? 0;
+        return {
+          quality: this._state.quality ?? 'preview',
+          globalSeed: this._state.globalSeed ?? 0,
+          frame: fr,
+          frameCount: fc,
+          time: fc > 1 ? fr / fc : 0
+        };
+      },
+      onRequestPick: (_kx, _ky, cb) => this._viewport?.enterPickMode(cb),
       onChange: event => this._handleStackChange(event)
     }, this.deps);
     this._stack.render();
@@ -338,9 +357,15 @@ export class DistortTool extends BaseComponent {
     this._updateTransportVisibility();
   }
 
+  _toggleTimelineFromCanvasTab() {
+    this._timelineCollapsed = !this._timelineCollapsed;
+    this._updateTransportVisibility();
+  }
+
   _updateTransportVisibility() {
     if (!this._transport?.element) return;
-    const visible = this._state.frameCount > 1;
+    const canUse = this._state.frameCount > 1;
+    const visible = canUse && !this._timelineCollapsed;
     this._transport.element.style.display = visible ? 'flex' : 'none';
   }
 
@@ -363,12 +388,33 @@ export class DistortTool extends BaseComponent {
     this._scheduleRender();
   }
 
+  _previewNeedsWorker() {
+    const stack = this._state.stack ?? [];
+    for (const n of stack) {
+      if (n.enabled === false) continue;
+      const C = n.constructor;
+      if (C?.forceWorkerPreview) return true;
+      if (n._forceWorkerPreviewNext) return true;
+    }
+    return false;
+  }
+
   _scheduleRender() {
     if (!this._state.sourcePixels) return;
     this._syncModulationMaps();
     // Preview renders run synchronously on the main thread — no worker round-trip,
     // no source copy, instant feedback. Worker is used for final-quality only.
     if (this._state.quality === 'preview') {
+      if (this._previewNeedsWorker()) {
+        if (this._previewRafId) {
+          cancelAnimationFrame(this._previewRafId);
+          this._previewRafId = null;
+        }
+        this._viewport?.setLoading(true);
+        this._state.needsRender = true;
+        this._bridge?.queueRender();
+        return;
+      }
       // Debounce via rAF to collapse rapid slider drags into one render.
       if (this._previewRafId) cancelAnimationFrame(this._previewRafId);
       this._previewRafId = requestAnimationFrame(() => {
@@ -396,6 +442,9 @@ export class DistortTool extends BaseComponent {
     if (this._renderSafetyTimer) {
       clearTimeout(this._renderSafetyTimer);
       this._renderSafetyTimer = null;
+    }
+    for (const n of (this._state.stack ?? [])) {
+      n._forceWorkerPreviewNext = false;
     }
     if (!result) return;
     this._lastResult = result;
@@ -471,9 +520,10 @@ export class DistortTool extends BaseComponent {
       globalSeed: this._state.globalSeed
     };
 
+    const srcPx = this._state.sourcePixels;
     const paths = [];
     for (const node of stack) {
-      const lines = node.buildGeometry(w, h, ctx) || [];
+      const lines = node.buildGeometry(w, h, ctx, srcPx) || [];
       for (const line of lines) {
         if (!line?.length) continue;
         const d = line.map((point, idx) => `${idx ? 'L' : 'M'} ${Math.round(point[0])} ${Math.round(point[1])}`).join(' ');

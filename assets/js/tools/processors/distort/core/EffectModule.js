@@ -64,6 +64,16 @@ import { EffectNode } from '../nodes/EffectNode.js';
  * @property {function} [destroy]
  *   () => void
  *   - Optional cleanup called in addition to EffectNode.destroy().
+ *
+ * @property {function} [buildGeometry]
+ *   (w, h, p, ctx, srcPixels) => Array<line[]>
+ *   - Optional polylines for SVG export; srcPixels = pipeline source RGBA at (w,h).
+ *
+ * @property {boolean} [forceWorkerPreview=false]
+ *   - When true, preview renders use WorkerBridge instead of main-thread Pipeline.
+ *
+ * @property {Array<{type: string, options?: object, paramKeys?: Object.<string, string>}>} [extendedControls=[]]
+ *   - Extra ComponentLibrary controls; `type` is kebab-case. `paramKeys` maps control state keys to `params` keys.
  */
 
 /**
@@ -81,6 +91,7 @@ import { EffectNode } from '../nodes/EffectNode.js';
  */
 export function createEffectModule(config) {
   _validateConfig(config);
+  _normalizeParamDefs(config.params);
 
   class Module extends EffectNode {
     static type     = config.type;
@@ -108,6 +119,13 @@ export function createEffectModule(config) {
       return config.applyVector(src, w, h, p, ctx);
     }
 
+    /** @returns {Array<Array<[number, number]>>} */
+    buildGeometry(w, h, ctx, srcPixels) {
+      if (!config.buildGeometry) return [];
+      const p = this._resolveParams(ctx);
+      return config.buildGeometry(w, h, p, ctx, srcPixels) || [];
+    }
+
     destroy() {
       config.destroy?.call(this);
       super.destroy();
@@ -124,6 +142,7 @@ export function createEffectModule(config) {
       const resolved = {};
       const isPreview = ctx?.quality === 'preview';
       for (const [key, def] of Object.entries(this.paramDefs)) {
+        if (key === '__opacity__') continue;
         let val = this.params[key];
         if (isPreview) {
           if (def.previewMax !== undefined) val = Math.min(val, def.previewMax);
@@ -142,14 +161,60 @@ export function createEffectModule(config) {
      */
     _makeModulate(resolvedParams, ctx) {
       return (key, pixelIdx) => {
+        if (key === '__opacity__') {
+          const mod = this.modulation[key];
+          if (!mod) return this.opacity;
+          const modeO = mod.mode || mod.type || 'none';
+          if (modeO === 'none') return this.opacity;
+          if (modeO === 'image' && (!mod.mapId || !ctx?.modMaps)) return this.opacity;
+          return this.getModulated(key, pixelIdx, ctx);
+        }
         const mod = this.modulation[key];
-        if (!mod?.mapId || !ctx?.modMaps) return resolvedParams[key];
+        if (!mod) return resolvedParams[key];
+        const mode = mod.mode || mod.type || 'none';
+        if (mode === 'none') return resolvedParams[key];
+        if (mode === 'image' && (!mod.mapId || !ctx?.modMaps)) return resolvedParams[key];
         return this.getModulated(key, pixelIdx, ctx);
       };
     }
   }
 
+  Module.hasVectorExport = typeof config.buildGeometry === 'function';
+  Module.forceWorkerPreview = config.forceWorkerPreview === true;
+  Module.extendedControls = config.extendedControls ?? [];
+
   return Module;
+}
+
+// ── G2 / G16 — default driveable + unit for every range param (modular-synth: every knob is a modulation target) ──
+
+function _inferUnit(key, def) {
+  const k = key.toLowerCase();
+  const label = (def.label || '').toUpperCase();
+  if (k === 'centrex' || k === 'centrey' || k.includes('centre')) return '0–1';
+  if (k === 'passes' || k === 'samples' || k === 'octaves') return 'n';
+  if (k.includes('sigma') || label.includes('SIGMA')) return 'σ';
+  if (k.includes('angle') || label.includes('ANGLE')) return 'deg';
+  if ((k.includes('phase') || label.includes('PHASE')) && def.max <= 7 && def.min >= 0) return 'rad';
+  if (k.includes('frame') || label.includes('FRAME')) return 'frames';
+  if (label.includes('THRESH') || k.includes('threshold')) return def.max <= 1 ? '0–1' : 'lvl';
+  if (def.max === 255 && def.min === 0 && Number(def.step) >= 1) return 'lvl';
+  if (def.max <= 1 && def.min >= 0 && def.step <= 0.05) return '0–1';
+  if (label.includes('WEIGHT') || k.endsWith('r') || k.endsWith('g') || k.endsWith('b')) return '0–1';
+  if (k.includes('freq') || label.includes('FREQ')) return 'Hz';
+  if (k.includes('speed') || label.includes('SPEED')) return '0–1';
+  if (def.max >= 50 && def.max <= 10000) return 'px';
+  return '0–1';
+}
+
+function _normalizeParamDefs(params) {
+  for (const [key, def] of Object.entries(params)) {
+    const t = def.type ?? 'range';
+    if (t === 'internal') continue;
+    if (t !== 'range') continue;
+    if (def.driveable === undefined) def.driveable = true;
+    if (!def.unit || def.unit === '') def.unit = _inferUnit(key, def);
+  }
 }
 
 // ── Config validation ─────────────────────────────────────────────────────────
@@ -167,6 +232,7 @@ function _validateConfig(cfg) {
     if (!def.label) throw new Error(`[EffectModule] ${cfg.type}.params.${key}: label is required`);
     if (def.tier === 2) throw new Error(`[EffectModule] ${cfg.type}.params.${key}: tier 2 is reserved for universal controls (opacity, blendMode)`);
     const t = def.type ?? 'range';
+    if (t === 'internal') continue;
     if (t === 'range' && (def.min === undefined || def.max === undefined || def.step === undefined)) {
       throw new Error(`[EffectModule] ${cfg.type}.params.${key}: range params require min, max, step`);
     }

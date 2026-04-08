@@ -93,6 +93,84 @@ export function sdfSegment(px, py, ax, ay, bx, by) {
 }
 
 /**
+ * Ellipse SDF (analytic approximation, IQ-style).
+ * @param {number} px
+ * @param {number} py
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} rx
+ * @param {number} ry
+ * @returns {number}
+ */
+export function sdfEllipse(px, py, cx, cy, rx, ry) {
+    if (rx <= 0 || ry <= 0) return Infinity;
+    const ox = px - cx;
+    const oy = py - cy;
+    const k0 = Math.hypot(ox / rx, oy / ry);
+    if (k0 < 1e-12) return -Math.min(rx, ry);
+    const k1 = Math.hypot(ox / (rx * rx), oy / (ry * ry));
+    return (k0 * (k0 - 1)) / k1;
+}
+
+/**
+ * Capsule: segment (ax,ay)-(bx,by) expanded by radius r.
+ * @param {number} px
+ * @param {number} py
+ * @param {number} ax
+ * @param {number} ay
+ * @param {number} bx
+ * @param {number} by
+ * @param {number} r
+ * @returns {number}
+ */
+export function sdfCapsule(px, py, ax, ay, bx, by, r) {
+    return sdfSegment(px, py, ax, ay, bx, by) - r;
+}
+
+/**
+ * Ring: circular band about radius outerR with radial thickness.
+ * @param {number} px
+ * @param {number} py
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} outerR
+ * @param {number} thickness
+ * @returns {number}
+ */
+export function sdfRing(px, py, cx, cy, outerR, thickness) {
+    return Math.abs(sdfCircle(px, py, cx, cy, outerR)) - thickness / 2;
+}
+
+/**
+ * Unified primitive dispatch.
+ * @param {number} px
+ * @param {number} py
+ * @param {'circle'|'box'|'rounded_box'|'ellipse'|'capsule'|'ring'|'segment'} shape
+ * @param {object} params - shape-specific fields
+ * @returns {number}
+ */
+export function sdfPrimitive2D(px, py, shape, params = {}) {
+    switch (shape) {
+        case 'circle':
+            return sdfCircle(px, py, params.cx, params.cy, params.r);
+        case 'box':
+            return sdfBox(px, py, params.cx, params.cy, params.hw, params.hh);
+        case 'rounded_box':
+            return sdfRoundedBox(px, py, params.cx, params.cy, params.hw, params.hh, params.r);
+        case 'ellipse':
+            return sdfEllipse(px, py, params.cx, params.cy, params.rx, params.ry);
+        case 'capsule':
+            return sdfCapsule(px, py, params.ax, params.ay, params.bx, params.by, params.r);
+        case 'ring':
+            return sdfRing(px, py, params.cx, params.cy, params.outerR, params.thickness);
+        case 'segment':
+            return sdfSegment(px, py, params.ax, params.ay, params.bx, params.by);
+        default:
+            return Infinity;
+    }
+}
+
+/**
  * Polygon SDF (convex or concave)
  * 
  * @param {number} px - Point X

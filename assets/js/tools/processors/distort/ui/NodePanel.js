@@ -3,7 +3,7 @@ import { DriverPicker } from './DriverPicker.js';
 import { Dropdown } from '../../../../shared/components/input/Dropdown.js';
 import { DrawMaskOverlay } from '../../../../shared/components/drawing/DrawMaskOverlay.js';
 
-const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'difference', 'darken', 'lighten'];
+const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'difference', 'darken', 'lighten', 'softlight', 'hardlight', 'colordodge', 'colorburn'];
 const MASK_MODES = ['none', 'upload', 'luminance', 'gradient', 'draw'];
 
 export class NodePanel extends BaseComponent {
@@ -20,6 +20,9 @@ export class NodePanel extends BaseComponent {
 
     this._canvasAreaEl = options.canvasAreaEl ?? null;
     this._getSourceDims = options.getSourceDims ?? null;
+    this._getSourcePixels = options.getSourcePixels ?? null;
+    this._getRenderContext = options.getRenderContext ?? null;
+    this._onRequestPick = options.onRequestPick ?? null;
 
     this._body = null;
     this._headerEl = null;
@@ -31,6 +34,23 @@ export class NodePanel extends BaseComponent {
     this._dropdowns = [];
     this._maskExpanded = false;
     this._drawOverlay = null;
+    this._extendedControlInstances = [];
+  }
+
+  /** G14: param defs may set `when: { param, equals } | { param, in: string[] } | { param, notEquals }` */
+  _paramDefVisible(def) {
+    const w = def?.when;
+    if (!w || !w.param) return true;
+    const pv = this._node.params[w.param];
+    if (Object.prototype.hasOwnProperty.call(w, 'equals')) return pv === w.equals;
+    if (Object.prototype.hasOwnProperty.call(w, 'notEquals')) return pv !== w.notEquals;
+    if (Array.isArray(w.in)) return w.in.includes(pv);
+    return true;
+  }
+
+  _paramDefsDependOn(depKey) {
+    const defs = this._node.getParamDefs ? this._node.getParamDefs() : {};
+    return Object.values(defs).some(d => d?.when?.param === depKey);
   }
 
   render() {
@@ -167,6 +187,8 @@ export class NodePanel extends BaseComponent {
 
   _rebuildBody() {
     if (!this._body) return;
+    this._extendedControlInstances.forEach(inst => inst.destroy?.());
+    this._extendedControlInstances = [];
     while (this._body.firstChild) this._body.removeChild(this._body.firstChild);
     this._closeDriverPicker();
     this._dropdowns.forEach(dd => dd.destroy?.());
@@ -181,6 +203,8 @@ export class NodePanel extends BaseComponent {
       min: 0,
       max: 1,
       step: 0.01,
+      unit: '0–1',
+      defaultValue: 1,
       driveable: true,
       onChange: value => {
         this._node.opacity = value;
@@ -201,6 +225,7 @@ export class NodePanel extends BaseComponent {
     const paramDefs = this._node.getParamDefs ? this._node.getParamDefs() : {};
     const byTier = {};
     for (const [key, def] of Object.entries(paramDefs)) {
+      if (def.type === 'internal') continue;
       const tier = def.tier ?? 3;
       if (!byTier[tier]) byTier[tier] = [];
       byTier[tier].push([key, def]);
@@ -210,9 +235,71 @@ export class NodePanel extends BaseComponent {
       if (!byTier[tier]?.length) continue;
       this._appendDivider();
       for (const [key, def] of byTier[tier]) {
+        if (!this._paramDefVisible(def)) continue;
         this._buildParamRow(key, def);
       }
     }
+
+    const extCtrls = this._node.constructor?.extendedControls ?? [];
+    for (const ctrl of extCtrls) {
+      this._buildExtendedControl(ctrl);
+    }
+
+    const defs = this._node.getParamDefs ? this._node.getParamDefs() : {};
+    if (this._node.constructor?.hasVectorExport) {
+      this._buildVectorExportRow();
+    }
+    if (defs.centreX && defs.centreY && this._onRequestPick && this._paramDefVisible(defs.centreX) && this._paramDefVisible(defs.centreY)) {
+      this._buildPickCentreRow();
+    }
+  }
+
+  _applyExtendedPatch(patch, paramKeys) {
+    if (patch == null || !paramKeys) return;
+    if (typeof patch === 'string' || typeof patch === 'number' || typeof patch === 'boolean') {
+      if (paramKeys.mode) this._node.params[paramKeys.mode] = patch;
+      this._emit();
+      return;
+    }
+    if (typeof patch === 'object') {
+      for (const [sk, pk] of Object.entries(paramKeys)) {
+        if (Object.prototype.hasOwnProperty.call(patch, sk)) {
+          this._node.params[pk] = patch[sk];
+        }
+      }
+    }
+    this._emit();
+  }
+
+  _paramDefsDependOnAnyExtended(paramKeys) {
+    const keys = new Set(Object.values(paramKeys));
+    for (const k of keys) {
+      if (this._paramDefsDependOn(k)) return true;
+    }
+    return false;
+  }
+
+  _buildExtendedControl(ctrl) {
+    const CL = this.deps.ComponentLibrary;
+    if (!ctrl?.type || !CL?.create) return;
+    const paramKeys = ctrl.paramKeys ?? {};
+    const mergedOpts = { ...(ctrl.options ?? {}) };
+    for (const [stateKey, paramKey] of Object.entries(paramKeys)) {
+      const v = this._node.params[paramKey];
+      if (v !== undefined && v !== null) mergedOpts[stateKey] = v;
+    }
+    const inst = CL.create(ctrl.type, {
+      ...mergedOpts,
+      onChange: patch => {
+        this._applyExtendedPatch(patch, paramKeys);
+        if (this._paramDefsDependOnAnyExtended(paramKeys)) this._rebuildBody();
+      }
+    }, this.deps);
+    const el = inst.render();
+    el.style.borderTop = '1px solid var(--c-border)';
+    el.style.boxSizing = 'border-box';
+    this._body.appendChild(el);
+    this._extendedControlInstances.push(inst);
   }
 
   _buildParamRow(key, def) {
@@ -224,6 +311,7 @@ export class NodePanel extends BaseComponent {
         onChange: value => {
           this._node.params[key] = value;
           this._emit();
+          if (this._paramDefsDependOn(key)) this._rebuildBody();
         }
       });
       return;
@@ -248,6 +336,8 @@ export class NodePanel extends BaseComponent {
       min: def.min ?? 0,
       max: def.max ?? 1,
       step: def.step ?? 0.01,
+      unit: def.unit ?? '',
+      defaultValue: def.value,
       driveable: def.driveable !== false,
       onChange: value => {
         this._node.params[key] = value;
@@ -291,21 +381,66 @@ export class NodePanel extends BaseComponent {
     `;
 
     const precision = this._precisionFor(config.step);
-    const valueEl = this.createElement('span', 'distort-param-value', this._formatValue(config.value, precision));
+    const unitSuffix = config.unit ? String(config.unit) : '';
+    const valueEl = this.createElement('input', 'distort-param-value');
+    valueEl.type = 'text';
+    valueEl.inputMode = 'decimal';
+    valueEl.autocomplete = 'off';
+    valueEl.spellcheck = false;
+    const defNum = config.defaultValue !== undefined ? Number(config.defaultValue) : Number(config.min ?? 0);
+    const writeReadout = num => {
+      const core = this._formatValue(num, precision);
+      valueEl.value = unitSuffix ? `${core} ${unitSuffix}` : core;
+    };
+    writeReadout(Number(config.value ?? config.min));
+    const parseReadout = () => {
+      const raw = (valueEl.value || '').trim().split(/\s+/)[0] ?? '';
+      let n = Number.parseFloat(raw);
+      if (!Number.isFinite(n)) n = Number(slider.value);
+      const lo = Number(config.min);
+      const hi = Number(config.max);
+      n = Math.max(lo, Math.min(hi, n));
+      return n;
+    };
+    const applyNumeric = (commit = false) => {
+      const n = parseReadout();
+      slider.value = String(n);
+      writeReadout(n);
+      if (commit) config.onChange(n);
+    };
     valueEl.style.cssText = `
-      width: ${F * 4}px;
+      width: ${F * 5.5}px;
+      min-width: 0;
       text-align: right;
       font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
       font-size: ${F * 0.75}px;
       color: var(--c-text);
       flex-shrink: 0;
+      border: none;
+      border-left: 1px solid var(--c-border);
+      border-right: none;
+      background: var(--c-bg);
+      padding: 0 ${F / 4}px;
+      box-sizing: border-box;
+      height: ${F * 2}px;
     `;
-
-    slider.addEventListener('input', () => {
-      valueEl.textContent = this._formatValue(Number(slider.value), precision);
+    valueEl.title = unitSuffix ? `UNIT: ${unitSuffix}` : '';
+    slider.addEventListener('input', () => writeReadout(Number(slider.value)));
+    slider.addEventListener('change', () => config.onChange(Number(slider.value)));
+    valueEl.addEventListener('focus', () => {
+      valueEl.value = String(parseReadout());
+      valueEl.select?.();
     });
-    slider.addEventListener('change', () => {
-      config.onChange(Number(slider.value));
+    valueEl.addEventListener('blur', () => applyNumeric(true));
+    valueEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); valueEl.blur(); }
+    });
+    valueEl.addEventListener('dblclick', e => {
+      e.preventDefault();
+      if (!Number.isFinite(defNum)) return;
+      slider.value = String(defNum);
+      writeReadout(defNum);
+      config.onChange(defNum);
     });
 
     row.append(label, slider, valueEl);
@@ -337,7 +472,9 @@ export class NodePanel extends BaseComponent {
         const driver = this._node.modulation?.[config.key];
         const active = !!driver && driver.mode && driver.mode !== 'none';
         slider.disabled = active;
+        valueEl.disabled = active;
         slider.style.opacity = active ? '0.35' : '1';
+        valueEl.style.opacity = active ? '0.35' : '1';
         driverBtn.style.background = active ? 'var(--c-accent)' : 'var(--c-bg)';
         driverBtn.style.color = active ? 'var(--c-bg)' : 'var(--c-text)';
       };
@@ -349,6 +486,7 @@ export class NodePanel extends BaseComponent {
       driverBtn.addEventListener('mouseleave', syncDriverState);
       driverBtn.addEventListener('click', event => {
         event.stopPropagation();
+        event.preventDefault();
         this._toggleDriverPicker(config.key, config.label, wrap, driverBtn, slider, syncDriverState);
       });
       row.appendChild(driverBtn);
@@ -536,6 +674,9 @@ export class NodePanel extends BaseComponent {
         min: 0,
         max: 20,
         step: 1,
+        unit: 'px',
+        defaultValue: 0,
+        driveable: false,
         onChange: value => {
           this._node.mask.feather = value;
           this._emit();
@@ -699,7 +840,6 @@ export class NodePanel extends BaseComponent {
         } else {
           this._node.modulation[key] = driver;
         }
-        slider.disabled = driver.mode !== 'none';
         syncDriverState();
         this._emit();
       }
@@ -707,6 +847,9 @@ export class NodePanel extends BaseComponent {
     wrap.appendChild(picker.render());
     this._driverPickers[key] = picker;
     syncDriverState();
+    requestAnimationFrame(() => {
+      try { picker.element?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }); } catch (_) { /* ignore */ }
+    });
   }
 
   _closeDriverPicker() {
@@ -743,6 +886,122 @@ export class NodePanel extends BaseComponent {
 
   _appendDivider() {
     // No-op: rows already have border-top; a separate divider div would double the border.
+  }
+
+  _buildVectorExportRow() {
+    const { F } = this.getF();
+    const row = this.createElement('div', 'distort-vector-export-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+    const label = this._rowLabel('VECTOR');
+    const btn = this.createElement('button', 'distort-export-svg', 'EXPORT SVG');
+    btn.type = 'button';
+    btn.style.cssText = `
+      flex: 1;
+      height: ${F * 2}px;
+      border: none;
+      border-left: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-sizing: border-box;
+    `;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const pack = this._getSourcePixels?.();
+      if (!pack?.pixels?.length || !pack.width || !pack.height) return;
+      const w = pack.width | 0;
+      const h = pack.height | 0;
+      const rc = this._getRenderContext?.() ?? {};
+      const fc = rc.frameCount ?? 1;
+      const fr = rc.frame ?? 0;
+      const ctx = {
+        width: w,
+        height: h,
+        frame: fr,
+        frameCount: fc,
+        time: fc > 1 ? fr / fc : 0,
+        quality: 'final',
+        globalSeed: rc.globalSeed ?? 0
+      };
+      const lines = this._node.buildGeometry(w, h, ctx, pack.pixels) || [];
+      const paths = [];
+      for (const line of lines) {
+        if (!line?.length) continue;
+        const d = line.map((pt, idx) => `${idx ? 'L' : 'M'} ${Math.round(pt[0])} ${Math.round(pt[1])}`).join(' ');
+        paths.push(`<path d="${d}" fill="none" stroke="#ffffff" stroke-width="1"/>`);
+      }
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+<rect x="0" y="0" width="${w}" height="${h}" fill="#000000"/>
+${paths.join('\n')}
+</svg>`;
+      this._downloadSvgBlob(svg, `distort-${this._node.type}-${Date.now()}.svg`);
+    });
+    row.append(label, btn);
+    this._body.appendChild(row);
+  }
+
+  _buildPickCentreRow() {
+    const { F } = this.getF();
+    const row = this.createElement('div', 'distort-pick-centre-row');
+    row.style.cssText = `
+      display: flex;
+      align-items: center;
+      min-height: ${F * 2}px;
+      padding: 0 ${F}px;
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
+    `;
+    const label = this._rowLabel('CENTRE');
+    const btn = this.createElement('button', 'distort-pick-centre', 'PICK CENTRE');
+    btn.type = 'button';
+    btn.style.cssText = `
+      flex: 1;
+      height: ${F * 2}px;
+      border: none;
+      border-left: 1px solid var(--c-border);
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+      font-size: ${F * 0.75}px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-sizing: border-box;
+    `;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      this._onRequestPick?.('centreX', 'centreY', (nx, ny) => {
+        this._node.params.centreX = nx;
+        this._node.params.centreY = ny;
+        this._emit();
+        this._rebuildBody();
+      });
+    });
+    row.append(label, btn);
+    this._body.appendChild(row);
+  }
+
+  _downloadSvgBlob(svg, filename) {
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const link = this.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    this.element.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+      link.parentNode?.removeChild(link);
+    }, 300);
   }
 
   _rowLabel(text) {
@@ -791,6 +1050,8 @@ export class NodePanel extends BaseComponent {
     this._driverPickers = {};
     this._dropdowns.forEach(dd => dd.destroy?.());
     this._dropdowns = [];
+    this._extendedControlInstances.forEach(inst => inst.destroy?.());
+    this._extendedControlInstances = [];
     this._drawOverlay?.destroy();
     this._drawOverlay = null;
     super.destroy();

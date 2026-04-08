@@ -7,12 +7,12 @@ export const BandShiftNode = createEffectModule({
   type: 'bandshift', name: 'BAND SHIFT', category: 'WARP',
   params: {
     axis:       { value: 'horizontal', type: 'select', options: ['horizontal', 'vertical'], label: 'AXIS',       tier: 3 },
-    intensity:  { value: 30,  min: 0,   max: 200, step: 1,    label: 'INTENSITY',  tier: 3, driveable: true },
-    bandSize:   { value: 20,  min: 2,   max: 200, step: 1,    label: 'BAND SIZE',  tier: 3, driveable: true },
+    intensity:  { value: 30,  min: 0,   max: 200, step: 1,    label: 'INTENSITY',  tier: 3, driveable: true, unit: 'px' },
+    bandSize:   { value: 20,  min: 2,   max: 200, step: 1,    label: 'BAND SIZE',  tier: 3, driveable: true, unit: 'px' },
     offsetType: { value: 'noise', type: 'select', options: ['noise', 'sine', 'stepped'], label: 'OFFSET TYPE', tier: 4 },
-    phase:      { value: 0,   min: 0,   max: 6.28, step: 0.01, label: 'PHASE',     tier: 4, driveable: true },
-    freq:       { value: 1,   min: 0.1, max: 10,  step: 0.1,  label: 'FREQ',       tier: 4 },
-    noiseScale: { value: 2,   min: 0.1, max: 10,  step: 0.1,  label: 'NOISE SC',   tier: 5 }
+    phase:      { value: 0,   min: 0,   max: 6.28, step: 0.01, label: 'PHASE',     tier: 4, driveable: true, unit: 'rad' },
+    freq:       { value: 1,   min: 0.1, max: 10,  step: 0.1,  label: 'FREQ',       tier: 4, driveable: true, unit: 'n', when: { param: 'offsetType', in: ['sine', 'stepped'] } },
+    noiseScale: { value: 2,   min: 0.1, max: 10,  step: 0.1,  label: 'NOISE SC',   tier: 5, driveable: true, unit: 'n', when: { param: 'offsetType', equals: 'noise' } }
   },
   apply(src, dst, w, h, p, ctx) {
     const seed = ctx?.nodeSeed ?? 42;

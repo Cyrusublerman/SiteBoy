@@ -20,12 +20,12 @@ export const PaintStrokeNode = createEffectModule({
   name: 'PAINT STROKE',
   category: 'GENERATIVE',
   params: {
-    brushMin:    { label: 'BRUSH MIN',  min: 1,   max: 100,   step: 1,   value: 10,   tier: 3, unit: 'px' },
-    brushMax:    { label: 'BRUSH MAX',  min: 2,   max: 200,   step: 1,   value: 50,   tier: 3, unit: 'px' },
-    minOpacity:  { label: 'MIN OPAC',   min: 1,   max: 255,   step: 1,   value: 10,   tier: 3 },
-    maxOpacity:  { label: 'MAX OPAC',   min: 1,   max: 255,   step: 1,   value: 50,   tier: 3 },
-    iterations:  { label: 'STROKES',    min: 100, max: 50000, step: 100, value: 5000, tier: 3, previewMax: 1000 },
-    maxLayers:   { label: 'MAX LAYERS', min: 1,   max: 50,    step: 1,   value: 15,   tier: 4 },
+    brushMin:    { label: 'BRUSH MIN',  min: 1,   max: 100,   step: 1,   value: 10,   tier: 3, unit: 'px', driveable: true },
+    brushMax:    { label: 'BRUSH MAX',  min: 2,   max: 200,   step: 1,   value: 50,   tier: 3, unit: 'px', driveable: true },
+    minOpacity:  { label: 'MIN OPAC',   min: 1,   max: 255,   step: 1,   value: 10,   tier: 3, driveable: true, unit: 'lvl' },
+    maxOpacity:  { label: 'MAX OPAC',   min: 1,   max: 255,   step: 1,   value: 50,   tier: 3, driveable: true, unit: 'lvl' },
+    iterations:  { label: 'STROKES',    min: 100, max: 50000, step: 100, value: 5000, tier: 3, previewMax: 1000, driveable: true, unit: 'n' },
+    maxLayers:   { label: 'MAX LAYERS', min: 1,   max: 50,    step: 1,   value: 15,   tier: 4, driveable: true, unit: 'n' },
     paletteMode: { label: 'PALETTE',    type: 'select', options: ['SOURCE', 'GREYSCALE', 'WARM', 'COOL'], value: 'SOURCE', tier: 4 }
   },
   apply(src, dst, w, h, p, ctx) {

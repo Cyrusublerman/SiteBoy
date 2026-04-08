@@ -26,7 +26,6 @@ import { BilateralFilterNode } from './blur/BilateralFilterNode.js';
 
 // ── Sharpen ──
 import { UnsharpMaskNode } from './sharpen/UnsharpMaskNode.js';
-import { HighPassNode } from './sharpen/HighPassNode.js';
 
 // ── Transform ──
 import { AffineTransformNode } from './transform/AffineTransformNode.js';
@@ -55,8 +54,6 @@ import { LuminanceFlowNode } from './line/LuminanceFlowNode.js';
 import { SerpentineNode } from './line/SerpentineNode.js';
 import { StaticHalftoneNode } from './line/StaticHalftoneNode.js';
 import { ModuleFlowLinesNode } from './line/ModuleFlowLinesNode.js';
-import { ModuleSerpentineNode } from './line/ModuleSerpentineNode.js';
-import { ModuleStaticLinesNode } from './line/ModuleStaticLinesNode.js';
 
 // ── Generative ──
 import { PaintStrokeNode } from './generative/PaintStrokeNode.js';
@@ -100,7 +97,6 @@ import { OpenCloseNode } from './morphology/OpenCloseNode.js';
 import { OtsuThresholdNode } from './segmentation/OtsuThresholdNode.js';
 
 // ── Geometric ──
-import { VoronoiNode } from './geometric/VoronoiNode.js';
 import { ContourNode } from './geometric/ContourNode.js';
 import { SDFShapeNode } from './geometric/SDFShapeNode.js';
 
@@ -135,8 +131,7 @@ export const REGISTRY = {
     { type: 'bilateral',  label: 'BILATERAL',   description: 'Edge-preserving blur that smooths flat regions while keeping boundaries', factory: () => new BilateralFilterNode() }
   ],
   'SHARPEN': [
-    { type: 'unsharpmask', label: 'UNSHARP MASK', description: 'Sharpens by subtracting a blurred version from the original',       factory: () => new UnsharpMaskNode() },
-    { type: 'highpass',    label: 'HIGH PASS',    description: 'Isolates fine edge detail by removing low-frequency content',       factory: () => new HighPassNode() }
+    { type: 'unsharpmask', label: 'UNSHARP MASK', description: 'Sharpens by subtracting a blurred version from the original',       factory: () => new UnsharpMaskNode() }
   ],
   'TRANSFORM': [
     { type: 'affine', label: 'AFFINE XFORM', description: 'Applies rotation, scale, shear, and translation via an affine matrix', factory: () => new AffineTransformNode() }
@@ -161,14 +156,10 @@ export const REGISTRY = {
     { type: 'iterrewarp', label: 'ITER REWARP', description: 'Repeatedly warps and resamples to accumulate painterly smear trails', factory: () => new IterativeRewarpNode() }
   ],
   'LINE RENDER': [
-    { type: 'lumflow',        label: 'LUMINANCE FLOW',  description: 'Draws contour lines that follow luminance gradients across the image', factory: () => new LuminanceFlowNode() },
-    { type: 'serpentine',     label: 'SERPENTINE',      description: 'Fills the image with a single continuous serpentine line modulated by luminance', factory: () => new SerpentineNode() },
-    { type: 'statichalftone', label: 'STATIC HALFTONE', description: 'Renders the image as a grid of lines whose weight varies with brightness', factory: () => new StaticHalftoneNode() }
-  ],
-  'LINE RENDER II': [
-    { type: 'moduleflowlines',   label: 'FLOW LINES',   description: 'Module-based flow line renderer with per-tile direction variation',   factory: () => new ModuleFlowLinesNode() },
-    { type: 'moduleserpentine',  label: 'SERPENTINE II', description: 'Module-based serpentine renderer with configurable tile parameters', factory: () => new ModuleSerpentineNode() },
-    { type: 'modulestaticlines', label: 'STATIC LINES',  description: 'Module-based static line halftone with per-tile angle control',      factory: () => new ModuleStaticLinesNode() }
+    { type: 'lumflow',        label: 'LUMINANCE FLOW',  description: 'Draws contour lines that follow luminance gradients across the image', factory: () => new LuminanceFlowNode(), vector: true },
+    { type: 'serpentine',     label: 'SERPENTINE',      description: 'Fills the image with a single continuous serpentine line modulated by luminance', factory: () => new SerpentineNode(), vector: true },
+    { type: 'statichalftone', label: 'STATIC HALFTONE', description: 'Renders the image as a grid of lines whose weight varies with brightness', factory: () => new StaticHalftoneNode(), vector: true },
+    { type: 'moduleflowlines', label: 'FLOW LINES',      description: 'Module-based flow line renderer with per-tile direction variation', factory: () => new ModuleFlowLinesNode(), vector: true }
   ],
   'EDGE': [
     { type: 'sobel',     label: 'SOBEL EDGE',    description: 'Detects edges using the Sobel gradient operator on luminance',        factory: () => new SobelNode() },
@@ -212,7 +203,6 @@ export const REGISTRY = {
     { type: 'otsuthreshold', label: 'OTSU THRESH', description: 'Automatically thresholds to binary using Otsu variance maximisation', factory: () => new OtsuThresholdNode() }
   ],
   'GEOMETRIC': [
-    { type: 'voronoi',  label: 'VORONOI',   description: 'Divides the image into Voronoi cells sampled from seed point colours', factory: () => new VoronoiNode() },
     { type: 'contour',  label: 'CONTOUR',   description: 'Draws isolines at equal luminance intervals like a topographic map',   factory: () => new ContourNode() },
     { type: 'sdfshape', label: 'SDF SHAPE', description: 'Composites a signed-distance-field shape mask over the image',        factory: () => new SDFShapeNode() }
   ],
@@ -266,7 +256,7 @@ export const PRESETS = {
   ]},
   HOLOGRAM: { version:1, globalSeed:777, previewScale:0.5, nodes:[
     {type:'chromaticab',enabled:true,opacity:1,params:{redShift:4,blueShift:-4,centreX:0.5,centreY:0.5}},
-    {type:'grating',enabled:true,opacity:0.4,params:{type:'linear',wavelength:8,phase:0,angle:30,spiralRate:1,blendMode:'screen'}},
+    {type:'grating',enabled:true,opacity:0.4,params:{type:'linear',wavelength:8,phase:0,angle:30,spiralRate:1,internalBlend:'screen'}},
     {type:'scanlines',enabled:true,opacity:1,params:{spacing:3,thickness:0.3,opacity:0.2}},
     {type:'vignette',enabled:true,opacity:1,params:{amount:0.6,softness:0.5,roundness:0.8}}
   ]},

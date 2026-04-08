@@ -287,6 +287,137 @@ function hashTile(i, j, seed) {
     return h;
 }
 
+function _truchetSDFFromSeed(px, py, tileSize, seed, strokeWidth) {
+    const i = Math.floor(px / tileSize);
+    const j = Math.floor(py / tileSize);
+    const state = hashTile(i, j, seed) & 1;
+    const lx = px - i * tileSize;
+    const ly = py - j * tileSize;
+    const r = tileSize / 2;
+    let minDist = Infinity;
+    const arcs = getTruchetArcs(0, 0, state, tileSize);
+    for (const arc of arcs) {
+        const dx = lx - arc.cx;
+        const dy = ly - arc.cy;
+        const dist = Math.abs(Math.sqrt(dx * dx + dy * dy) - r);
+        minDist = Math.min(minDist, dist);
+    }
+    return minDist - strokeWidth / 2;
+}
+
+function _gratingPhaseU(x, y, mode, params) {
+    const period = params.wavelength ?? params.period ?? 8;
+    switch (mode) {
+        case 'linear': {
+            const angle = params.angle ?? 0;
+            const rotX = x * Math.cos(angle) + y * Math.sin(angle);
+            return rotX / period + (params.phase ?? 0);
+        }
+        case 'radial': {
+            const cx = params.cx ?? 0;
+            const cy = params.cy ?? 0;
+            const r = Math.hypot(x - cx, y - cy);
+            return r / period + (params.phase ?? 0);
+        }
+        case 'angular': {
+            const cx = params.cx ?? 0;
+            const cy = params.cy ?? 0;
+            const n = params.n ?? 8;
+            const theta = Math.atan2(y - cy, x - cx);
+            return (n * theta) / (Math.PI * 2) + (params.phase ?? 0);
+        }
+        case 'spiral': {
+            const cx = params.cx ?? 0;
+            const cy = params.cy ?? 0;
+            const spiralRate = params.spiralRate ?? 1;
+            const dx = x - cx;
+            const dy = y - cy;
+            const r = Math.sqrt(dx * dx + dy * dy);
+            const theta = Math.atan2(dy, dx);
+            return r / period + (spiralRate * theta) / (Math.PI * 2) + (params.phase ?? 0);
+        }
+        default:
+            return x / period;
+    }
+}
+
+/**
+ * Per-pixel Truchet field: SDF stroke distance, outward normal, binary mask.
+ * @param {number} x
+ * @param {number} y
+ * @param {number} tileSize
+ * @param {number} seed
+ * @param {'arcs'|string} [motifSet='arcs']
+ * @param {number} [strokeWidth=1]
+ * @returns {{ distStroke: number, normal: {x:number,y:number}, mask: number }}
+ */
+export function truchetTileField2D(x, y, tileSize, seed, motifSet = 'arcs', strokeWidth = 1) {
+    void motifSet;
+    const eps = Math.max(1e-4, tileSize * 1e-4);
+    const distStroke = _truchetSDFFromSeed(x, y, tileSize, seed, strokeWidth);
+    const dx =
+        (_truchetSDFFromSeed(x + eps, y, tileSize, seed, strokeWidth) -
+            _truchetSDFFromSeed(x - eps, y, tileSize, seed, strokeWidth)) /
+        (2 * eps);
+    const dy =
+        (_truchetSDFFromSeed(x, y + eps, tileSize, seed, strokeWidth) -
+            _truchetSDFFromSeed(x, y - eps, tileSize, seed, strokeWidth)) /
+        (2 * eps);
+    const len = Math.hypot(dx, dy) || 1;
+    const normal = { x: dx / len, y: dy / len };
+    const mask = distStroke < 0 ? 1 : 0;
+    return { distStroke, normal, mask };
+}
+
+/**
+ * N-wave cosine interference, normalised to [0, 1].
+ * @param {number} x
+ * @param {number} y
+ * @param {Array<{ freq?: number, angle?: number, phase?: number, weight?: number }>} waves
+ * @returns {number}
+ */
+export function moireWaveInterference2D(x, y, waves) {
+    let sum = 0;
+    let wsum = 0;
+    const PI2 = Math.PI * 2;
+    for (const w of waves) {
+        const freq = w.freq ?? 1;
+        const angle = w.angle ?? 0;
+        const phase = w.phase ?? 0;
+        const weight = w.weight ?? 1;
+        const phi = PI2 * (freq * (x * Math.cos(angle) + y * Math.sin(angle))) + phase;
+        sum += weight * Math.cos(phi);
+        wsum += Math.abs(weight);
+    }
+    const n = wsum > 1e-12 ? sum / wsum : 0;
+    return 0.5 * (1 + Math.max(-1, Math.min(1, n)));
+}
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {'linear'|'radial'|'angular'|'spiral'} mode
+ * @param {object} [params]
+ * @returns {{ phi: number, bandIndex: number, distEdge: number, tangent: {x:number,y:number}, normal: {x:number,y:number} }}
+ */
+export function gratingBandField2D(x, y, mode, params = {}) {
+    const period = params.wavelength ?? params.period ?? 8;
+    const eps = Math.max(1e-4, period * 1e-4);
+    const u0 = _gratingPhaseU(x, y, mode, params);
+    const uxp = _gratingPhaseU(x + eps, y, mode, params);
+    const uyp = _gratingPhaseU(x, y + eps, mode, params);
+    const gx = (uxp - u0) / eps;
+    const gy = (uyp - u0) / eps;
+    const glen = Math.hypot(gx, gy) || 1;
+    const normal = { x: gx / glen, y: gy / glen };
+    const tangent = { x: -normal.y, y: normal.x };
+    const bandIndex = Math.floor(u0);
+    const frac = u0 - bandIndex;
+    const distEdge = Math.min(frac, 1 - frac) * period;
+    const phi = Math.PI * 2 * u0;
+    return { phi, bandIndex, distEdge, tangent, normal };
+}
+
 // ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
 
 function _blendPixel(src, dst, i, intensity, blendMode) {

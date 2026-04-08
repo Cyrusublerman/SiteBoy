@@ -134,8 +134,8 @@ export class CategoryPicker extends BaseComponent {
       if (collapsed) continue;
 
       for (const entry of matches) {
-        const displayLabel = this._stripModuleSuffix(entry.label).toUpperCase();
-        const item = this.createElement('button', 'distort-picker-item', displayLabel);
+        const displayLabel = `${entry.vector ? 'V · ' : ''}${this._stripModuleSuffix(entry.label).toUpperCase()}`;
+        const item = this.createElement('button', 'distort-picker-item-prefixed', displayLabel);
         item.type = 'button';
         item.title = entry.description ?? entry.label;
         item.style.cssText = `

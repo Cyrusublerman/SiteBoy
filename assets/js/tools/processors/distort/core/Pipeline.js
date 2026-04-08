@@ -20,32 +20,78 @@ import { vectorToRaster } from '../nodes/bridge/node-adapters.js';
 import { ExpressionEval } from './ExpressionEval.js';
 
 const N_CACHE_MAX = 12;
+/** Single-node wall time above which preview is nudged to the worker on the next render. */
+const NODE_SLOW_MS = 2000;
 
-// ── Blend-mode compositor ─────────────────────────────────────────────────────
+// ── sRGB ↔ linear (G13 — blend in linear light) ───────────────────────────────
+const _LIN_LUT = new Float32Array(256);
+const _ENC_LUT = new Uint8Array(65536);
+for (let i = 0; i < 256; i++) {
+  const s = i / 255;
+  _LIN_LUT[i] = s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+}
+for (let i = 0; i < 65536; i++) {
+  const l = i / 65535;
+  const s = l <= 0.0031308 ? 12.92 * l : 1.055 * l ** (1 / 2.4) - 0.055;
+  _ENC_LUT[i] = Math.round(Math.max(0, Math.min(255, s * 255)));
+}
+function _srgbByteToLinear(v) {
+  return _LIN_LUT[Math.max(0, Math.min(255, v | 0))];
+}
+function _linearToSrgbByte(lin) {
+  const x = Math.max(0, Math.min(1, lin));
+  const idx = Math.round(x * 65535);
+  return _ENC_LUT[idx];
+}
 
+// ── Blend-mode compositor (per channel, linear light) ─────────────────────────
 function _blend(base, layer, mode, opacity, maskVal) {
-  const op  = opacity * maskVal;
+  const op = opacity * maskVal;
   const inv = 1 - op;
-
-  function ch(b, l, m) {
-    const bv = b / 255, lv = l / 255;
-    let out;
-    switch (m) {
-      case 'screen':     out = 1 - (1 - bv) * (1 - lv); break;
-      case 'multiply':   out = bv * lv; break;
-      case 'overlay':    out = bv < 0.5 ? 2 * bv * lv : 1 - 2 * (1 - bv) * (1 - lv); break;
-      case 'add':        out = Math.min(1, bv + lv); break;
-      case 'difference': out = Math.abs(bv - lv); break;
-      case 'softlight':  out = bv < 0.5 ? bv - (1 - 2 * lv) * bv * (1 - bv) : bv + (2 * lv - 1) * ((bv > 0.25 ? Math.sqrt(bv) : ((16 * bv - 12) * bv + 4) * bv) - bv); break;
-      case 'hardlight':  out = lv < 0.5 ? 2 * bv * lv : 1 - 2 * (1 - bv) * (1 - lv); break;
-      case 'colordodge': out = lv === 1 ? 1 : Math.min(1, bv / (1 - lv)); break;
-      case 'colorburn':  out = lv === 0 ? 0 : Math.max(0, 1 - (1 - bv) / lv); break;
-      default:           out = lv; // 'normal'
-    }
-    return Math.round(b * inv + out * 255 * op);
+  const bv = _srgbByteToLinear(base);
+  const lv = _srgbByteToLinear(layer);
+  let out;
+  switch (mode) {
+    case 'screen':
+      out = 1 - (1 - bv) * (1 - lv);
+      break;
+    case 'multiply':
+      out = bv * lv;
+      break;
+    case 'overlay':
+      out = bv < 0.5 ? 2 * bv * lv : 1 - 2 * (1 - bv) * (1 - lv);
+      break;
+    case 'add':
+      out = Math.min(1, bv + lv);
+      break;
+    case 'difference':
+      out = Math.abs(bv - lv);
+      break;
+    case 'lighten':
+      out = Math.max(bv, lv);
+      break;
+    case 'darken':
+      out = Math.min(bv, lv);
+      break;
+    case 'softlight':
+      out = bv < 0.5
+        ? bv - (1 - 2 * lv) * bv * (1 - bv)
+        : bv + (2 * lv - 1) * ((bv > 0.25 ? Math.sqrt(bv) : ((16 * bv - 12) * bv + 4) * bv) - bv);
+      break;
+    case 'hardlight':
+      out = lv < 0.5 ? 2 * bv * lv : 1 - 2 * (1 - bv) * (1 - lv);
+      break;
+    case 'colordodge':
+      out = lv >= 1 ? 1 : Math.min(1, bv / (1 - lv));
+      break;
+    case 'colorburn':
+      out = lv <= 0 ? 0 : Math.max(0, 1 - (1 - bv) / lv);
+      break;
+    default:
+      out = lv;
   }
-
-  return ch(base, layer, mode);
+  const blended = bv * inv + out * op;
+  return _linearToSrgbByte(blended);
 }
 
 export class Pipeline {
@@ -171,18 +217,24 @@ export class Pipeline {
         const maskData = hasMask ? node.mask.data : null;
         for (let i = 0; i < bufSize; i += 4) {
           const maskVal = maskData ? maskData[i >> 2] / 255 : 1;
+          const opA = node.opacity * maskVal;
           bufB[i]     = _blend(bufA[i],     tmp[i],     mode, node.opacity, maskVal);
           bufB[i + 1] = _blend(bufA[i + 1], tmp[i + 1], mode, node.opacity, maskVal);
           bufB[i + 2] = _blend(bufA[i + 2], tmp[i + 2], mode, node.opacity, maskVal);
-          bufB[i + 3] = bufA[i + 3];
+          bufB[i + 3] = Math.round(bufA[i + 3] + (tmp[i + 3] - bufA[i + 3]) * opA);
         }
         pool.release(tmp);
       } else {
         this._runNode(node, bufA, bufB, w, h, ctx, hasMask);
       }
 
-      node._lastMs = performance.now() - tNode;
-      this._nodeTimings.set(node.id, node._lastMs);
+      const elapsed = performance.now() - tNode;
+      node._lastMs = elapsed;
+      this._nodeTimings.set(node.id, elapsed);
+      if (elapsed > NODE_SLOW_MS) {
+        console.warn(`[DISTORT] Node "${node.type}" exceeded ${NODE_SLOW_MS}ms — worker preview forced next frame`);
+        node._forceWorkerPreviewNext = true;
+      }
       restoreParams?.();
 
       if (!node._cache || node._cache.length !== bufSize) node._cache = new Uint8ClampedArray(bufSize);
@@ -283,6 +335,15 @@ export class Pipeline {
     let changed = false;
 
     for (const key of keys) {
+      if (key === '__opacity__') {
+        prev[key] = node.opacity;
+        const v = node.getModulated(key, centreIdx, ctx);
+        if (typeof v === 'number' && isFinite(v)) {
+          node.opacity = Math.max(0, Math.min(1, v));
+          changed = true;
+        }
+        continue;
+      }
       if (!(key in node.params)) continue;
       prev[key] = node.params[key];
       const v = node.getModulated(key, centreIdx, ctx);
@@ -294,7 +355,10 @@ export class Pipeline {
 
     if (!changed) return null;
     return () => {
-      for (const [k, v] of Object.entries(prev)) node.params[k] = v;
+      for (const [k, v] of Object.entries(prev)) {
+        if (k === '__opacity__') node.opacity = v;
+        else node.params[k] = v;
+      }
     };
   }
 

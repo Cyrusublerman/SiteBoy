@@ -13,12 +13,38 @@
  *   scanlines: linePhase = y % spacing / spacing; factor = (phase < thickness) ? 1-opacity : 1
  */
 
+import { perlin2D, simplex2D, fbm2D } from '../noise/noise-functions.js';
+import { valueNoise2D } from '../noise/value-2d.js';
+import { worleyNoise2D } from '../noise/worley-2d.js';
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** LCG pseudo-random, seed-initialised. Returns values in [0, 1). */
 function lcgRng(seed) {
   let s = (seed >>> 0) || 1;
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; };
+}
+
+/**
+ * @param {number} nx
+ * @param {number} ny
+ * @param {string} type
+ * @param {number} seed
+ * @param {number} octaves
+ * @param {number} freq
+ * @returns {number}
+ */
+function proceduralNoiseScalar(nx, ny, type, seed, octaves, freq) {
+  const x = nx * freq * 8;
+  const y = ny * freq * 8;
+  switch (type) {
+    case 'simplex': return simplex2D(x, y);
+    case 'perlin': return perlin2D(x, y, seed);
+    case 'value': return valueNoise2D(x, y, seed) * 2 - 1;
+    case 'worley': return worleyNoise2D(x, y, seed).f1 * 2 - 1;
+    case 'fbm': return fbm2D(x, y, { octaves, persistence: 0.5, lacunarity: 2, noiseFn: simplex2D });
+    default: return 0;
+  }
 }
 
 // ── Film Grain ───────────────────────────────────────────────────────────────
@@ -36,18 +62,40 @@ function lcgRng(seed) {
  * @param {number} [lumResp=0.5] - Luminance response: 0=flat, 1=strong midtone bias
  * @param {boolean} [chromatic=false] - Separate R/G/B noise channels
  * @param {number} [seed=42]
+ * @param {object} [opts={}]
+ * @param {string} [opts.noiseType='white'] - white|perlin|simplex|value|worley|fbm
+ * @param {number} [opts.scale=1]
+ * @param {number} [opts.octaves=4]
  * @returns {Uint8ClampedArray} New buffer
  */
-export function filmGrain(src, w, h, amount = 25, size = 1, lumResp = 0.5, chromatic = false, seed = 42) {
+export function filmGrain(src, w, h, amount = 25, size = 1, lumResp = 0.5, chromatic = false, seed = 42, opts = {}) {
   const rng = lcgRng(seed);
   const scale = amount / 100;
   const gw = Math.ceil(w / size), gh = Math.ceil(h / size);
   const noiseR = new Float32Array(gw * gh);
   const noiseG = chromatic ? new Float32Array(gw * gh) : noiseR;
   const noiseB = chromatic ? new Float32Array(gw * gh) : noiseR;
+  const noiseType = opts.noiseType ?? 'white';
+  const nf = typeof opts.scale === 'number' ? opts.scale : 1;
+  const octaves = typeof opts.octaves === 'number' ? opts.octaves : 4;
   for (let i = 0; i < gw * gh; i++) {
-    noiseR[i] = (rng() - 0.5) * 2;
-    if (chromatic) { noiseG[i] = (rng() - 0.5) * 2; noiseB[i] = (rng() - 0.5) * 2; }
+    const cx = (i % gw) + 0.5;
+    const cy = Math.floor(i / gw) + 0.5;
+    const nx = cx / Math.max(1, gw);
+    const ny = cy / Math.max(1, gh);
+    if (noiseType === 'white') {
+      noiseR[i] = (rng() - 0.5) * 2;
+      if (chromatic) {
+        noiseG[i] = (rng() - 0.5) * 2;
+        noiseB[i] = (rng() - 0.5) * 2;
+      }
+    } else {
+      noiseR[i] = proceduralNoiseScalar(nx, ny, noiseType, seed, octaves, nf);
+      if (chromatic) {
+        noiseG[i] = proceduralNoiseScalar(nx, ny, noiseType, seed + 101, octaves, nf);
+        noiseB[i] = proceduralNoiseScalar(nx, ny, noiseType, seed + 202, octaves, nf);
+      }
+    }
   }
 
   const dst = new Uint8ClampedArray(src.length);
@@ -112,13 +160,16 @@ export function vignette(src, w, h, amount = 0.5, softness = 0.5, roundness = 1)
  * @param {number} [spacing=2] - Vertical spacing between scanline bands
  * @param {number} [thickness=0.5] - Fraction of spacing that is darkened [0, 1]
  * @param {number} [opacity=0.3] - Darkening strength [0, 1]
+ * @param {number} [phase=0] - Vertical phase offset in pixels (G9 FRAME)
  * @returns {Uint8ClampedArray} New buffer
  */
-export function scanlines(src, w, h, spacing = 2, thickness = 0.5, opacity = 0.3) {
+export function scanlines(src, w, h, spacing = 2, thickness = 0.5, opacity = 0.3, phase = 0) {
   const keep = 1 - opacity;
   const dst = new Uint8ClampedArray(src.length);
+  const sp = Math.max(1, spacing);
   for (let y = 0; y < h; y++) {
-    const factor = ((y % spacing) / spacing) < thickness ? keep : 1;
+    const yy = ((y + phase) % sp + sp) % sp;
+    const factor = (yy / sp) < thickness ? keep : 1;
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
       dst[i]     = src[i]     * factor;

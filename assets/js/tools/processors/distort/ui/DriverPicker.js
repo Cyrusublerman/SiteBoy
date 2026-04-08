@@ -47,6 +47,8 @@ export class DriverPicker extends BaseComponent {
       display: flex;
       flex-direction: column;
       background: var(--c-bg);
+      border-top: 1px solid var(--c-border);
+      box-sizing: border-box;
     `;
 
     this._buildModeRow(F);

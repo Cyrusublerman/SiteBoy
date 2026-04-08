@@ -157,6 +157,19 @@ export function jfaToDistanceField(seeds, width, height) {
 }
 
 /**
+ * Euclidean distance transform (2-D) from binary foreground mask via JFA.
+ *
+ * @param {Uint8Array} mask - Non-zero = seed / distance 0
+ * @param {number} width
+ * @param {number} height
+ * @returns {Float32Array}
+ */
+export function euclideanDistanceTransform2D(mask, width, height) {
+    const seeds = jumpFloodAlgorithm(mask, width, height);
+    return jfaToDistanceField(seeds, width, height);
+}
+
+/**
  * Compute signed distance field using JFA
  * 
  * @param {Uint8Array} mask - Binary mask (non-zero = inside shape)

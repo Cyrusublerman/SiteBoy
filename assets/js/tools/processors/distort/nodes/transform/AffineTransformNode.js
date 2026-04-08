@@ -4,13 +4,13 @@ import { affineTransform } from '../../../../../shared/algorithms/image/spatial-
 export const AffineTransformNode = createEffectModule({
   type: 'affine', name: 'AFFINE XFORM', category: 'TRANSFORM',
   params: {
-    translateX: { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'TRANSLATE X', tier: 3, driveable: true },
-    translateY: { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'TRANSLATE Y', tier: 3, driveable: true },
+    translateX: { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'TRANSLATE X', tier: 3, driveable: true, unit: '0–1' },
+    translateY: { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'TRANSLATE Y', tier: 3, driveable: true, unit: '0–1' },
     rotate:     { value: 0,   min: -180, max: 180, step: 0.5,  label: 'ROTATE',      tier: 3, unit: 'deg', driveable: true },
-    scaleX:     { value: 1,   min: 0.1,  max: 5,   step: 0.01, label: 'SCALE X',     tier: 4, driveable: true },
-    scaleY:     { value: 1,   min: 0.1,  max: 5,   step: 0.01, label: 'SCALE Y',     tier: 4, driveable: true },
-    centreX:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE X',    tier: 5 },
-    centreY:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE Y',    tier: 5 }
+    scaleX:     { value: 1,   min: 0.1,  max: 5,   step: 0.01, label: 'SCALE X',     tier: 4, driveable: true, unit: 'n' },
+    scaleY:     { value: 1,   min: 0.1,  max: 5,   step: 0.01, label: 'SCALE Y',     tier: 4, driveable: true, unit: 'n' },
+    centreX:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE X',    tier: 5, driveable: true, unit: '0–1' },
+    centreY:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE Y',    tier: 5, driveable: true, unit: '0–1' }
   },
   apply(src, dst, w, h, p, ctx) {
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';

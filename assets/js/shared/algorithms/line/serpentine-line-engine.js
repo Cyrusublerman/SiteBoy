@@ -137,6 +137,47 @@ export function toSerpentineLineSet(state) {
 }
 
 /**
+ * Run serpentine oscillator for `frame` update steps; returns current path set.
+ * @param {object} [params]
+ * @param {number} [params.width]
+ * @param {number} [params.height]
+ * @param {number} [params.padding]
+ * @param {(x:number,y:number)=>number} [params.drag]
+ * @param {number} [params.baseSpeed]
+ * @param {number} [params.spawnRate]
+ * @param {number} [params.oscSpeed]
+ * @param {number} [params.oscTopPercent]
+ * @param {number} [params.oscBottomPercent]
+ * @param {boolean} [params.invert]
+ * @param {number} [frame=0]
+ * @param {(x:number,y:number)=>number} [luminanceAt]
+ * @returns {{ lines: Array<Array<{x,y}>>, bounds: object }}
+ */
+export function serpentineOscillatorRaster(params = {}, frame = 0, luminanceAt = () => 0.5) {
+  const width = params.width ?? 64;
+  const height = params.height ?? 64;
+  const state = initSerpentineState({
+    width,
+    height,
+    padding: params.padding ?? 0
+  });
+  const updateOpts = {
+    luminanceAt,
+    drag: params.drag,
+    baseSpeed: params.baseSpeed,
+    spawnRate: params.spawnRate,
+    oscSpeed: params.oscSpeed,
+    oscTopPercent: params.oscTopPercent,
+    oscBottomPercent: params.oscBottomPercent,
+    invert: params.invert
+  };
+  for (let f = 0; f < frame; f++) {
+    updateSerpentineState(state, updateOpts);
+  }
+  return toSerpentineLineSet(state);
+}
+
+/**
  * Simulate wavefront propagation — multiple horizontal wavefronts flow downward,
  * each slowed by luminance drag. For each wavefront, spawn an identical row of
  * horizontal points that advect independently based on local luminance.
