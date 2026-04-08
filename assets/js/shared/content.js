@@ -25,6 +25,7 @@
  */
 
 import { BaseComponent } from './foundation.js';
+import { ASCII_NAV_FONT, FONT_ROWS, FONT_COLS, FONT_GAP } from '../../data/ascii-nav-font.js';
 
 /**
  * Heading - Semantic heading component
@@ -1527,3 +1528,304 @@ export class TOCGallery extends BaseComponent {
 }
 
 // Components are exported individually at their class declarations
+
+const RANDOM_CHAR_POOL = '@#%&*/\\+=~?!^$';
+
+function randomNavChar() {
+    return RANDOM_CHAR_POOL[Math.floor(Math.random() * RANDOM_CHAR_POOL.length)];
+}
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+}
+
+/**
+ * AsciiNavWord — ASCII-art word block used on the homepage.
+ *
+ * Idle state: a continuous sine-based noise field mutates every span's
+ * character (~12 fps). Filled cells always show a char from the pool;
+ * background cells show a char only when the noise exceeds a threshold,
+ * creating sparse "static" around the glyphs.
+ *
+ * Hover: noise pauses on filled cells; they progressively reveal their
+ * true letter. Mouse-leave resumes noise on all cells.
+ *
+ * Options: { word, sectionId, onNavigate, numWords, sharedTotalCols }
+ */
+export class AsciiNavWord extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'ascii-nav-word' }, deps);
+        this.word         = (options.word || '').toUpperCase();
+        this.sectionId    = options.sectionId || '';
+        this.onNavigate   = options.onNavigate || null;
+        this.filledSpans  = [];
+        this.allSpanData  = []; // [{ span, row, col, filled }]
+        this.idleAnimator = null;
+        this.hoverAnimator = null;
+        this.isHovering   = false;
+        this.gridEl       = null;
+    }
+
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'ascii-nav-word');
+            this._buildGrid();
+            this._applySize();
+            this._bindEvents();
+            this.subscribeToResize();
+            this._startIdleAnimation();
+        }
+        return this.element;
+    }
+
+    onResize() {
+        this._applySize();
+    }
+
+    // ─── Grid construction ───────────────────────────────────────────────────
+
+    _buildGrid() {
+        const letters = this.word.split('');
+        this.filledSpans = [];
+        this.allSpanData = [];
+
+        this.gridEl = this.createElement('div', 'ascii-nav-grid');
+        this.gridEl.style.cssText = 'display: inline-block;';
+
+        for (let row = 0; row < FONT_ROWS; row++) {
+            const rowEl = this.createElement('div', 'ascii-nav-row');
+            rowEl.style.cssText = 'white-space: pre; display: block; line-height: 1;';
+            let col = 0;
+
+            letters.forEach((letter, letterIdx) => {
+                const bitmap = ASCII_NAV_FONT[letter];
+                if (!bitmap) return;
+
+                if (letterIdx > 0) {
+                    for (let g = 0; g < FONT_GAP; g++) {
+                        const span = this.createElement('span');
+                        span.textContent = '\u00A0';
+                        this.allSpanData.push({ span, row, col, filled: false });
+                        col++;
+                        rowEl.appendChild(span);
+                    }
+                }
+
+                for (let c = 0; c < FONT_COLS; c++) {
+                    const filled = bitmap[row] && bitmap[row][c] === 1;
+                    const span = this.createElement('span');
+                    span.dataset.letter = letter;
+                    if (filled) {
+                        span.textContent = randomNavChar();
+                        span.dataset.filled = '1';
+                        this.filledSpans.push(span);
+                    } else {
+                        span.textContent = '\u00A0';
+                        span.dataset.filled = '0';
+                    }
+                    this.allSpanData.push({ span, row, col, filled });
+                    col++;
+                    rowEl.appendChild(span);
+                }
+            });
+
+            this.gridEl.appendChild(rowEl);
+        }
+
+        this.element.appendChild(this.gridEl);
+    }
+
+    // ─── Sizing ──────────────────────────────────────────────────────────────
+
+    _totalCols() {
+        const n = this.word.length;
+        return n * FONT_COLS + Math.max(0, n - 1) * FONT_GAP;
+    }
+
+    _charWidthRatio() {
+        if (AsciiNavWord._cachedCharWidthRatio !== null) {
+            return AsciiNavWord._cachedCharWidthRatio;
+        }
+        const refSize = 40;
+        const probe = document.createElement('span');
+        probe.style.cssText = [
+            "font-family:'Atkinson Hyperlegible Mono',monospace",
+            `font-size:${refSize}px`,
+            'position:fixed',
+            'top:-9999px',
+            'left:-9999px',
+            'visibility:hidden',
+            'white-space:pre',
+            'pointer-events:none',
+        ].join(';');
+        probe.textContent = 'X';
+        document.body.appendChild(probe);
+        const w = probe.getBoundingClientRect().width;
+        document.body.removeChild(probe);
+        AsciiNavWord._cachedCharWidthRatio = w > 0 ? w / refSize : 0.6;
+        return AsciiNavWord._cachedCharWidthRatio;
+    }
+
+    _applySize() {
+        const { F } = this.getF();
+        const MF           = this.deps.MF || window.MathematicalFoundation;
+        const margin       = MF?.Config?.margin || F * 4;
+        const headerHeight = MF?.Config?.sizing?.header || F * 2;
+
+        const parentWidth    = this.element.parentElement?.getBoundingClientRect().width || 0;
+        const containerWidth = parentWidth > 0 ? parentWidth : window.innerWidth - margin * 2;
+        const totalCols      = this.options.sharedTotalCols || this._totalCols();
+        const ratio          = this._charWidthRatio();
+        const fontFromWidth  = containerWidth > 0 ? containerWidth / (totalCols * ratio) : Infinity;
+
+        const lineHeightFactor = 1.2;
+        const numWords         = this.options.numWords || 3;
+        const footerHeight     = MF?.Config?.sizing?.footer || headerHeight;
+        const contentHeight    = window.innerHeight - headerHeight - footerHeight - margin;
+        const gapTotal         = F * 2 * (numWords - 1);
+        const slotHeight       = contentHeight / numWords - gapTotal / numWords;
+        const fontFromHeight   = Math.max(0, slotHeight) / (FONT_ROWS * lineHeightFactor);
+
+        const rawFontSize = Math.min(fontFromWidth, fontFromHeight);
+        const fontSize    = Math.floor(Math.max(F, Math.min(F * 2, rawFontSize)));
+
+        this.element.style.cssText = `
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${fontSize}px;
+            line-height: ${lineHeightFactor};
+            cursor: pointer;
+            color: var(--c-text);
+            background: var(--c-bg);
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+            user-select: none;
+        `;
+    }
+
+    // ─── Noise ───────────────────────────────────────────────────────────────
+
+    // Layered sine waves produce a smooth, continuous field over (x, y, t).
+    // Output is approximately in [-1, 1].
+    _noise(x, y, t) {
+        return (
+            Math.sin(x * 0.6 + t)           * Math.cos(y * 0.5 + t * 0.8) +
+            Math.sin((x * 0.4 - y * 0.3)    + t * 1.5) * 0.5              +
+            Math.cos((x * 0.2 + y * 0.4)    - t * 0.6) * 0.3
+        ) / 1.8;
+    }
+
+    _startIdleAnimation() {
+        this._stopIdleAnimation();
+        const AF = window.AnimationFoundation;
+        if (!AF) return;
+
+        const pool         = RANDOM_CHAR_POOL;
+        const poolLen      = pool.length;
+        const bgThreshold  = 0.45; // noise level above which a bg cell shows a char
+        let t = 0;
+
+        this.idleAnimator = new AF.AnimationLoop({
+            fps: 12,
+            onFrame: () => {
+                t += 0.05;
+                this.allSpanData.forEach(({ span, row, col, filled }) => {
+                    // While hovering, leave filled cells alone — they show the letter.
+                    if (filled && this.isHovering) return;
+
+                    const n = this._noise(col, row, t); // ≈ [-1, 1]
+
+                    if (filled) {
+                        // Always show a noise-driven char on filled cells.
+                        const idx = Math.floor(((n + 1) * 0.5) * poolLen) % poolLen;
+                        span.textContent = pool[Math.max(0, idx)];
+                    } else {
+                        // Show a char only when noise breaks the threshold.
+                        if (n > bgThreshold) {
+                            const norm = (n - bgThreshold) / (1 - bgThreshold);
+                            const idx  = Math.floor(norm * poolLen) % poolLen;
+                            span.textContent = pool[Math.max(0, idx)];
+                        } else {
+                            span.textContent = '\u00A0';
+                        }
+                    }
+                });
+            }
+        });
+        this.idleAnimator.start();
+    }
+
+    _stopIdleAnimation() {
+        if (this.idleAnimator) {
+            this.idleAnimator.destroy();
+            this.idleAnimator = null;
+        }
+    }
+
+    // ─── Hover ───────────────────────────────────────────────────────────────
+
+    _bindEvents() {
+        this.element.addEventListener('mouseenter', () => this._onHoverIn());
+        this.element.addEventListener('mouseleave', () => this._onHoverOut());
+        this.element.addEventListener('click', () => {
+            if (this.onNavigate) this.onNavigate(this.sectionId);
+        });
+    }
+
+    _onHoverIn() {
+        this.isHovering = true;
+        this._stopHoverAnimator();
+
+        const spans = [...this.filledSpans];
+        shuffleArray(spans);
+        let idx = 0;
+        const batch = Math.max(1, Math.ceil(spans.length / 10));
+
+        const AF = window.AnimationFoundation;
+        if (!AF) return;
+
+        this.hoverAnimator = new AF.AnimationLoop({
+            fps: 30,
+            onFrame: () => {
+                if (idx >= spans.length) { this.hoverAnimator.stop(); return; }
+                for (let i = 0; i < batch && idx < spans.length; i++, idx++) {
+                    spans[idx].textContent = spans[idx].dataset.letter;
+                }
+            }
+        });
+        this.hoverAnimator.start();
+    }
+
+    _onHoverOut() {
+        this.isHovering = false;
+        this._stopHoverAnimator();
+        // Idle animation is still running — it resumes updating filled cells now
+        // that isHovering is false, dissolving letters back into noise naturally.
+    }
+
+    _stopHoverAnimator() {
+        if (this.hoverAnimator) {
+            this.hoverAnimator.destroy();
+            this.hoverAnimator = null;
+        }
+    }
+
+    // ─── Lifecycle ───────────────────────────────────────────────────────────
+
+    destroy() {
+        this._stopIdleAnimation();
+        this._stopHoverAnimator();
+        this.filledSpans = [];
+        this.allSpanData = [];
+        this.gridEl = null;
+        super.destroy();
+    }
+}
+
+// Class-level cache for the measured character width ratio (one DOM read per page load).
+AsciiNavWord._cachedCharWidthRatio = null;

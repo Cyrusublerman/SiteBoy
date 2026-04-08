@@ -60,26 +60,63 @@ export function getProjectUrl(projectName, assetPath) {
 }
 
 /**
- * Fetch and parse gallery manifest from R2.
- * 
+ * Fetch and parse gallery manifest from R2 (photos-specific, legacy).
  * @param {string} galleryName - Gallery name
  * @returns {Promise<Object>} Gallery manifest object
  */
 export async function fetchGalleryManifest(galleryName) {
-  const manifestUrl = `${R2Config.baseUrl}/art/photos/${galleryName}/manifest.json`;
-  
+  return fetchManifest('photos', galleryName);
+}
+
+/**
+ * Fetch manifest for any gallery type.
+ * @param {string} galleryType - Type: 'photos'|'digital'|'physical'|'objects'|'render'
+ * @param {string} galleryName - Gallery/series name (may include slashes for nested)
+ * @returns {Promise<Object>} Manifest object
+ */
+export async function fetchManifest(galleryType, galleryName) {
+  // In dev, route through Vite proxy (/r2) to avoid CORS; in prod use direct R2 URL
+  const base = import.meta.env.DEV ? '/r2' : R2Config.baseUrl;
+  const url = `${base}/art/${galleryType}/${galleryName}/manifest.json`;
   try {
-    const response = await fetch(manifestUrl);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch manifest: ${response.status}`);
-    }
-    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
   } catch (error) {
-    console.error(`Failed to load gallery manifest: ${galleryName}`, error);
+    console.error(`Failed to load manifest: art/${galleryType}/${galleryName}`, error);
     throw error;
   }
+}
+
+/**
+ * Build URL for any gallery type/size.
+ * @param {string} galleryType - 'photos'|'digital'|'physical'|'objects'|'render'
+ * @param {string} galleryName - Gallery name (may include path segments)
+ * @param {string} imageName   - Image filename
+ * @param {string} size        - 'thumbs'|'web'|'zoom'|'originals'
+ * @returns {string}
+ */
+export function getGalleryUrl(galleryType, galleryName, imageName, size = 'web') {
+  if (R2Config.useFallback) {
+    return `${R2Config.localBasePath}/${galleryType}/${galleryName}/${size}/${imageName}`;
+  }
+  return `${R2Config.baseUrl}/art/${galleryType}/${galleryName}/${size}/${imageName}`;
+}
+
+/**
+ * Get all size-variant URLs for any gallery type.
+ * @param {string} galleryType
+ * @param {string} galleryName
+ * @param {string} imageName
+ * @returns {{ thumb: string, web: string, zoom: string, original: string }}
+ */
+export function getGalleryUrlSet(galleryType, galleryName, imageName) {
+  return {
+    thumb:    getGalleryUrl(galleryType, galleryName, imageName, 'thumbs'),
+    web:      getGalleryUrl(galleryType, galleryName, imageName, 'web'),
+    zoom:     getGalleryUrl(galleryType, galleryName, imageName, 'zoom'),
+    original: getGalleryUrl(galleryType, galleryName, imageName, 'originals'),
+  };
 }
 
 /**
@@ -209,6 +246,9 @@ export default {
   getArtUrl,
   getProjectUrl,
   fetchGalleryManifest,
+  fetchManifest,
+  getGalleryUrl,
+  getGalleryUrlSet,
   getPhotoUrlSet,
   getPhotoSrcSet,
   configureR2,

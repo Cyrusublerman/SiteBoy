@@ -42,7 +42,8 @@ import {
     NumberedTOC,
     TOCGallery,
     Table,
-    StatusDisplay
+    StatusDisplay,
+    AsciiNavWord
 } from './content.js';
 
 // Import interactive components
@@ -352,6 +353,7 @@ ComponentLibrary.NumberedTOC = NumberedTOC;
 ComponentLibrary.TOCGallery = TOCGallery;
 ComponentLibrary.Table = Table;
 ComponentLibrary.StatusDisplay = StatusDisplay;
+ComponentLibrary.AsciiNavWord = AsciiNavWord;
 
 // Assign interactive components to ComponentLibrary immediately
 ComponentLibrary.CollapsibleBase = CollapsibleBase;
@@ -493,6 +495,7 @@ export {
     TOCGallery,
     Table,
     StatusDisplay,
+    AsciiNavWord,
 
     // Interactive
     CollapsibleBase,
