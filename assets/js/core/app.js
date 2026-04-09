@@ -482,15 +482,13 @@ const SiteBoyApp = {
         } else {
             document.body.classList.remove('full-mode');
             
-            // Restore header/footer/subheader visibility
+            // Restore header/footer visibility; subheader is managed by sections via Subheader.show()/hide()
             requestAnimationFrame(() => {
                 const header = document.getElementById('header');
                 const footer = document.getElementById('footer');
-                const subheader = document.getElementById('subheader');
                 
                 if (header) header.style.display = '';
                 if (footer) footer.style.display = section === 'tools' ? 'none' : '';
-                if (subheader) subheader.style.display = '';
             });
             
             console.log(`🔍 Full mode disabled, body classes: "${document.body.className}"`);
@@ -587,8 +585,13 @@ const SiteBoyApp = {
         try {
             const isToolDetailPage = sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc';
             const isToolsTOC = sectionName === 'tools' && !isToolDetailPage;
-            const NO_SUBHEADER_SECTIONS = ['home', 'projects'];
-            const hasSubheader = isToolDetailPage || (!NO_SUBHEADER_SECTIONS.includes(sectionName) && !isToolsTOC);
+            // Sections whose index page (no subsection) hides the subheader
+            const NO_SUBHEADER_INDEX_SECTIONS = ['home', 'projects', 'art', 'qr'];
+            const isIndexPage = !subsectionName;
+            const hasSubheader = isToolDetailPage || (
+                !isToolsTOC &&
+                !(isIndexPage && NO_SUBHEADER_INDEX_SECTIONS.includes(sectionName))
+            );
             
             // Normalise body class + subheader visibility before layout math
             this.setSubheaderState(hasSubheader);

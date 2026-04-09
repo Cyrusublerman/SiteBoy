@@ -25,6 +25,7 @@
  */
 
 import { BaseComponent } from './foundation.js';
+import { ASCII_NAV_FONT, FONT_ROWS, FONT_COLS, FONT_GAP } from '../../data/ascii-nav-font.js';
 
 /**
  * Heading - Semantic heading component
@@ -1527,3 +1528,687 @@ export class TOCGallery extends BaseComponent {
 }
 
 // Components are exported individually at their class declarations
+
+// Characters used for background noise cells
+const BG_CHAR_POOL = '@#%&*/\\+=~?!^$';
+// Wingdings system font — maps Latin chars to pictographic symbols at any text size.
+// Available on all Windows systems (the primary platform for this site).
+// Fallback chain ensures graceful degradation on other platforms.
+const NERD_FONT_FAMILY = "'Wingdings', 'Wingdings 2', 'Wingdings 3', 'Webdings', serif";
+
+// Characters that produce visually interesting/dense Wingdings glyphs.
+// Uppercase A-Z and lowercase a-z each map to distinct pictograms in Wingdings.
+const LETTER_SYMBOL_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' +
+                            '!@#$%^&*()-_+=[]{}|;:,.<>?';
+
+function randomNavChar() {
+    return BG_CHAR_POOL[Math.floor(Math.random() * BG_CHAR_POOL.length)];
+}
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+}
+
+// Shared character-width-ratio measurement — one DOM probe per page load.
+let _sharedCharWidthRatio = null;
+function getCharWidthRatio() {
+    if (_sharedCharWidthRatio !== null) return _sharedCharWidthRatio;
+    const refSize = 40;
+    const probe = document.createElement('span');
+    probe.style.cssText = [
+        "font-family:'Atkinson Hyperlegible Mono',monospace",
+        `font-size:${refSize}px`,
+        'position:fixed', 'top:-9999px', 'left:-9999px',
+        'visibility:hidden', 'white-space:pre', 'pointer-events:none',
+    ].join(';');
+    probe.textContent = 'X';
+    document.body.appendChild(probe);
+    const w = probe.getBoundingClientRect().width;
+    document.body.removeChild(probe);
+    _sharedCharWidthRatio = w > 0 ? w / refSize : 0.6;
+    return _sharedCharWidthRatio;
+}
+
+// Layered sine-wave noise field — smooth and continuous over (x, y, t) ≈ [-1, 1]
+function noiseField(x, y, t) {
+    return (
+        Math.sin(x * 0.6 + t)            * Math.cos(y * 0.5 + t * 0.8) +
+        Math.sin((x * 0.4 - y * 0.3)     + t * 1.5) * 0.5              +
+        Math.cos((x * 0.2 + y * 0.4)     - t * 0.6) * 0.3
+    ) / 1.8;
+}
+
+/**
+ * AsciiNavWord — ASCII-art word block used on the homepage.
+ *
+ * Idle state: a continuous sine-based noise field mutates every span's
+ * character (~12 fps). Filled cells always show a char from the pool;
+ * background cells show a char only when the noise exceeds a threshold,
+ * creating sparse "static" around the glyphs.
+ *
+ * Hover: noise pauses on filled cells; they progressively reveal their
+ * true letter. Mouse-leave resumes noise on all cells.
+ *
+ * Options: { word, sectionId, onNavigate, numWords, sharedTotalCols }
+ */
+export class AsciiNavWord extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'ascii-nav-word' }, deps);
+        this.word         = (options.word || '').toUpperCase();
+        this.sectionId    = options.sectionId || '';
+        this.onNavigate   = options.onNavigate || null;
+        this.filledSpans  = [];
+        this.allSpanData  = []; // [{ span, row, col, filled }]
+        this.idleAnimator = null;
+        this.hoverAnimator = null;
+        this.isHovering   = false;
+        this.gridEl       = null;
+    }
+
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'ascii-nav-word');
+            this._buildGrid();
+            this._applySize();
+            this._bindEvents();
+            this.subscribeToResize();
+            this._startIdleAnimation();
+        }
+        return this.element;
+    }
+
+    onResize() {
+        this._applySize();
+    }
+
+    // ─── Grid construction ───────────────────────────────────────────────────
+
+    _buildGrid() {
+        const letters = this.word.split('');
+        this.filledSpans = [];
+        this.allSpanData = [];
+
+        this.gridEl = this.createElement('div', 'ascii-nav-grid');
+        this.gridEl.style.cssText = 'display: inline-block;';
+
+        for (let row = 0; row < FONT_ROWS; row++) {
+            const rowEl = this.createElement('div', 'ascii-nav-row');
+            rowEl.style.cssText = 'white-space: pre; display: block; line-height: 1;';
+            let col = 0;
+
+            letters.forEach((letter, letterIdx) => {
+                const bitmap = ASCII_NAV_FONT[letter];
+                if (!bitmap) return;
+
+                if (letterIdx > 0) {
+                    for (let g = 0; g < FONT_GAP; g++) {
+                        const span = this.createElement('span');
+                        span.textContent = '\u00A0';
+                        this.allSpanData.push({ span, row, col, filled: false });
+                        col++;
+                        rowEl.appendChild(span);
+                    }
+                }
+
+                for (let c = 0; c < FONT_COLS; c++) {
+                    const filled = bitmap[row] && bitmap[row][c] === 1;
+                    const span = this.createElement('span');
+                    span.dataset.letter = letter;
+                    if (filled) {
+                        span.textContent = randomNavChar();
+                        span.dataset.filled = '1';
+                        this.filledSpans.push(span);
+                    } else {
+                        span.textContent = '\u00A0';
+                        span.dataset.filled = '0';
+                    }
+                    this.allSpanData.push({ span, row, col, filled });
+                    col++;
+                    rowEl.appendChild(span);
+                }
+            });
+
+            this.gridEl.appendChild(rowEl);
+        }
+
+        this.element.appendChild(this.gridEl);
+    }
+
+    // ─── Sizing ──────────────────────────────────────────────────────────────
+
+    _totalCols() {
+        const n = this.word.length;
+        return n * FONT_COLS + Math.max(0, n - 1) * FONT_GAP;
+    }
+
+    _charWidthRatio() {
+        return getCharWidthRatio();
+    }
+
+    _applySize() {
+        const { F } = this.getF();
+        const MF           = this.deps.MF || window.MathematicalFoundation;
+        const margin       = MF?.Config?.margin || F * 4;
+        const headerHeight = MF?.Config?.sizing?.header || F * 2;
+
+        const parentWidth    = this.element.parentElement?.getBoundingClientRect().width || 0;
+        const containerWidth = parentWidth > 0 ? parentWidth : window.innerWidth - margin * 2;
+        const totalCols      = this.options.sharedTotalCols || this._totalCols();
+        const ratio          = this._charWidthRatio();
+        const fontFromWidth  = containerWidth > 0 ? containerWidth / (totalCols * ratio) : Infinity;
+
+        const lineHeightFactor = 1.2;
+        const numWords         = this.options.numWords || 3;
+        const footerHeight     = MF?.Config?.sizing?.footer || headerHeight;
+        const contentHeight    = window.innerHeight - headerHeight - footerHeight - margin;
+        const gapTotal         = F * 2 * (numWords - 1);
+        const slotHeight       = contentHeight / numWords - gapTotal / numWords;
+        const fontFromHeight   = Math.max(0, slotHeight) / (FONT_ROWS * lineHeightFactor);
+
+        const rawFontSize = Math.min(fontFromWidth, fontFromHeight);
+        const fontSize    = Math.floor(Math.max(F, Math.min(F * 2, rawFontSize)));
+
+        this.element.style.cssText = `
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${fontSize}px;
+            line-height: ${lineHeightFactor};
+            cursor: pointer;
+            color: var(--c-text);
+            background: var(--c-bg);
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+            user-select: none;
+        `;
+    }
+
+    // ─── Noise ───────────────────────────────────────────────────────────────
+
+    _startIdleAnimation() {
+        this._stopIdleAnimation();
+        const AF = window.AnimationFoundation;
+        if (!AF) return;
+
+        const symLen      = LETTER_SYMBOL_POOL.length;
+        const bgLen       = BG_CHAR_POOL.length;
+        const bgThreshold = 0.45;
+        let t = 0;
+
+        this.idleAnimator = new AF.AnimationLoop({
+            fps: 12,
+            onFrame: () => {
+                t += 0.05;
+                this.allSpanData.forEach(({ span, row, col, filled }) => {
+                    if (filled && this.isHovering) return;
+                    const n = noiseField(col, row, t);
+                    if (filled) {
+                        const idx = Math.floor(((n + 1) * 0.5) * symLen) % symLen;
+                        span.textContent = LETTER_SYMBOL_POOL[Math.max(0, idx)];
+                    } else {
+                        if (n > bgThreshold) {
+                            const norm = (n - bgThreshold) / (1 - bgThreshold);
+                            const idx  = Math.floor(norm * bgLen) % bgLen;
+                            span.textContent = BG_CHAR_POOL[Math.max(0, idx)];
+                        } else {
+                            span.textContent = ' ';
+                        }
+                    }
+                });
+            }
+        });
+        this.idleAnimator.start();
+    }
+
+    _stopIdleAnimation() {
+        if (this.idleAnimator) {
+            this.idleAnimator.destroy();
+            this.idleAnimator = null;
+        }
+    }
+
+    // ─── Hover ───────────────────────────────────────────────────────────────
+
+    _bindEvents() {
+        this.element.addEventListener('mouseenter', () => this._onHoverIn());
+        this.element.addEventListener('mouseleave', () => this._onHoverOut());
+        this.element.addEventListener('click', () => {
+            if (this.onNavigate) this.onNavigate(this.sectionId);
+        });
+    }
+
+    _onHoverIn() {
+        this.isHovering = true;
+        this._stopHoverAnimator();
+
+        const spans = [...this.filledSpans];
+        shuffleArray(spans);
+        let idx = 0;
+        const batch = Math.max(1, Math.ceil(spans.length / 10));
+
+        const AF = window.AnimationFoundation;
+        if (!AF) return;
+
+        this.hoverAnimator = new AF.AnimationLoop({
+            fps: 30,
+            onFrame: () => {
+                if (idx >= spans.length) { this.hoverAnimator.stop(); return; }
+                for (let i = 0; i < batch && idx < spans.length; i++, idx++) {
+                    spans[idx].textContent = spans[idx].dataset.letter;
+                }
+            }
+        });
+        this.hoverAnimator.start();
+    }
+
+    _onHoverOut() {
+        this.isHovering = false;
+        this._stopHoverAnimator();
+        // Idle animation is still running — it resumes updating filled cells now
+        // that isHovering is false, dissolving letters back into noise naturally.
+    }
+
+    _stopHoverAnimator() {
+        if (this.hoverAnimator) {
+            this.hoverAnimator.destroy();
+            this.hoverAnimator = null;
+        }
+    }
+
+    // ─── Lifecycle ───────────────────────────────────────────────────────────
+
+    destroy() {
+        this._stopIdleAnimation();
+        this._stopHoverAnimator();
+        this.filledSpans = [];
+        this.allSpanData = [];
+        this.gridEl = null;
+        super.destroy();
+    }
+}
+
+/**
+ * AsciiNavScene — full-content-area ASCII noise canvas for the homepage.
+ *
+ * A single monospace character grid covers the entire content area.
+ * The three word bitmaps are stamped into the grid at their visual positions.
+ * Letter cells idle as Wingdings-style block symbols driven by noise;
+ * background cells show sparse ASCII chars. Hovering a word progressively
+ * reveals its true letters. Mouse-leave lets the noise dissolve them back.
+ *
+ * Options: { navWords: [{ word, sectionId }], onNavigate }
+ */
+export class AsciiNavScene extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'ascii-nav-scene' }, deps);
+        this.navWords       = options.navWords || [];
+        this.onNavigate     = options.onNavigate || null;
+        this.allSpanData    = []; // { span, row, col, filled, wordIdx, letter }
+        this.wordRegions    = []; // { wordIdx, sectionId, rowStart, rowEnd, filledSpans }
+        this.idleAnimator   = null;
+        this.hoverAnimator  = null;
+        this.hoveredWordIdx = -1;
+        this.gridEl         = null;
+    }
+
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'ascii-nav-scene');
+            this._buildScene();
+            this._bindEvents();
+            this.subscribeToResize();
+            this._startIdleAnimation();
+        }
+        return this.element;
+    }
+
+    onResize() {
+        this._stopIdleAnimation();
+        this._stopHoverAnimator();
+        this.hoveredWordIdx = -1;
+        this.allSpanData    = [];
+        this.wordRegions    = [];
+        if (this.gridEl) {
+            this.element.removeChild(this.gridEl);
+            this.gridEl = null;
+        }
+        this._buildScene();
+        this._startIdleAnimation();
+    }
+
+    // ─── Layout ──────────────────────────────────────────────────────────────
+
+    _computeLayout() {
+        const { F }        = this.getF();
+        const MF           = this.deps.MF || window.MathematicalFoundation;
+        const margin       = MF?.Config?.margin ?? F;
+        const headerHeight = MF?.Config?.sizing?.header || F * 2;
+        const footerHeight = MF?.Config?.sizing?.footer || headerHeight;
+        const ratio        = getCharWidthRatio();
+
+        // Use F-snapped frame dimensions so that integer-divisor cell sizes
+        // produce exact gridCols/gridRows with no remainder.
+        const layout      = MF?.computeLayout?.() || {};
+        const frameWidth  = layout.frameWidth  || window.innerWidth;
+        const frameHeight = layout.frameHeight || window.innerHeight;
+        // frameWidth and frameHeight - (header+footer) are both guaranteed F-multiples.
+        const W = frameWidth;
+        const H = frameHeight - headerHeight - footerHeight;
+
+        const numWords = this.navWords.length;
+        const GAP_ROWS = 4;
+        const totalUnits = numWords * FONT_ROWS + (numWords - 1) * GAP_ROWS;
+
+        const sharedTotalCols = Math.max(...this.navWords.map(({ word }) => {
+            const n = word.length;
+            return n * FONT_COLS + Math.max(0, n - 1) * FONT_GAP;
+        }));
+
+        // ── Cell size ───────────────────────────────────────────────────────
+        // Words are stacked VERTICALLY, so height is the primary constraint.
+        // Width is secondary: allow the group to fill up to 100% of container
+        // width (any minor excess is centred and clipped by overflow:hidden).
+        //
+        //   height (primary): totalUnits * cell = 0.7 * H
+        //   width  (secondary): sharedTotalCols * cell = W  (100%, not 70%)
+        const cellFromH = (0.7 * H) / totalUnits;
+        const cellFromW = W / sharedTotalCols;
+        // Take the binding (smaller) constraint, round to nearest integer,
+        // clamped to [4, 2F]. Integer steps avoid wild jumps while still
+        // adapting smoothly across screen sizes.
+        const cell = Math.max(4, Math.min(F * 2, Math.round(Math.min(cellFromH, cellFromW))));
+
+        const charWidth  = cell;
+        const charHeight = cell; // square grid
+
+        // ── Grid dimensions ─────────────────────────────────────────────────
+        // Ceil so the grid reaches every pixel of the container. The gridEl has
+        // overflow:hidden and an explicit pixel width, so the ≤ cell-1 px excess
+        // is clipped — no gap at right or bottom.
+        const gridCols = Math.max(1, Math.ceil(W / cell));
+        const gridRows = Math.max(1, Math.ceil(H / cell));
+
+        // Centre word-group vertically by distributing remaining rows equally.
+        const vertPadRows   = Math.floor((gridRows - totalUnits) / 2);
+        const innerGridRows = Math.max(1, gridRows - 2 * vertPadRows);
+
+        // fontSize: cells are square (cell × cell). At font-size = cell the
+        // Atkinson char height ≈ cell (fits) and width = cell × ratio < cell
+        // (narrower than cell, centred). Using cell/ratio would fill the width
+        // but the char height > cell → vertical clipping on hover.
+        const fontSize = Math.floor(cell);
+
+        return { F, fontSize, charWidth, charHeight, gridCols, gridRows,
+                 vertPadRows, innerGridRows,
+                 contentHeight: H, containerWidth: W,
+                 numWords, GAP_ROWS };
+    }
+
+    // ─── Grid construction ───────────────────────────────────────────────────
+
+    _buildScene() {
+        const { fontSize, charWidth, charHeight, gridCols, gridRows,
+                vertPadRows, innerGridRows, contentHeight,
+                numWords, GAP_ROWS } = this._computeLayout();
+
+        // Cache for position-based hover detection in _onMouseMove.
+        this._charWidth  = charWidth;
+        this._charHeight = charHeight;
+
+        this.element.style.cssText = `
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${fontSize}px;
+            line-height: 1;
+            color: var(--c-text);
+            background: var(--c-bg);
+            width: 100%;
+            height: ${contentHeight}px;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: block;
+            user-select: none;
+        `;
+
+        // ── Build a 2-D letter map ────────────────────────────────────────
+        const letterMap = Array.from({ length: gridRows }, () => new Array(gridCols).fill(null));
+
+        const gapRowsFloat   = GAP_ROWS;
+        const totalRowsFloat = numWords * FONT_ROWS + (numWords - 1) * gapRowsFloat;
+        const startRowFloat  = vertPadRows + (innerGridRows - totalRowsFloat) / 2;
+
+        this.wordRegions = [];
+
+        this.navWords.forEach(({ word, sectionId }, wordIdx) => {
+            const letters  = word.toUpperCase().split('');
+            const wordCols = letters.length * FONT_COLS + Math.max(0, letters.length - 1) * FONT_GAP;
+            const colStart = Math.max(0, Math.floor((gridCols - wordCols) / 2));
+            const rowStart = Math.max(0, Math.round(startRowFloat + wordIdx * (FONT_ROWS + gapRowsFloat)));
+
+            letters.forEach((letter, li) => {
+                const bitmap = ASCII_NAV_FONT[letter];
+                if (!bitmap) return;
+                const lcol = colStart + li * (FONT_COLS + FONT_GAP);
+                for (let r = 0; r < FONT_ROWS; r++) {
+                    for (let c = 0; c < FONT_COLS; c++) {
+                        if (bitmap[r]?.[c] === 1) {
+                            const gr = rowStart + r;
+                            const gc = lcol + c;
+                            if (gr >= 0 && gr < gridRows && gc >= 0 && gc < gridCols) {
+                                letterMap[gr][gc] = { wordIdx, letter };
+                            }
+                        }
+                    }
+                }
+            });
+
+            // colEnd covers the full bounding box of the word for area-based hover.
+            this.wordRegions.push({
+                wordIdx, sectionId,
+                rowStart, rowEnd: rowStart + FONT_ROWS,
+                colStart, colEnd: colStart + wordCols,
+                filledSpans: [],
+            });
+        });
+
+        // ── Build span grid (every cell is a fixed-size inline-block) ────
+        // Using identical box dimensions for ALL spans guarantees the grid
+        // stays monospace-locked regardless of which font is applied.
+        this.allSpanData = [];
+        this.gridEl = this.createElement('div', 'ascii-nav-grid');
+        // Explicit width locks the grid to exactly gridCols * cell pixels.
+        // Without this, display:block auto-expands to fit white-space:nowrap rows.
+        this.gridEl.style.cssText = `display:block;width:${gridCols * charWidth}px;` +
+                                    `line-height:0;font-size:0;overflow:hidden;`;
+
+        const cellW      = `${charWidth}px`;
+        const cellH      = `${charHeight}px`;
+        // cell = charWidth = charHeight (square).
+        // 85% of cell keeps Wingdings glyphs comfortably inside their cell —
+        // full-size (100%) causes sidebearing bleed into neighbouring cells.
+        const cellFs     = `${Math.floor(charWidth * 0.85)}px`;
+        // Atkinson Hyperlegible Mono: char width = fontSize * ratio = cell
+        // → fontSize = cell / ratio (computed in _computeLayout).
+        const revealedFs = `${fontSize}px`;
+        this._revealedFs = revealedFs;      // used by hoverAnimator (Atkinson reveal)
+        this._cellFs     = cellFs;          // used by idleAnimator (Wingdings restore)
+
+        // Shared cell geometry — only font-family and cursor differ per cell type.
+        const baseCell = `display:inline-block;width:${cellW};height:${cellH};` +
+                         `line-height:${cellH};font-size:${cellFs};` +
+                         `font-family:${NERD_FONT_FAMILY};` +
+                         `text-align:center;vertical-align:top;overflow:hidden;`;
+
+        for (let row = 0; row < gridRows; row++) {
+            const rowEl = this.createElement('div');
+            rowEl.style.cssText = `display:block;white-space:nowrap;` +
+                                  `height:${cellH};line-height:0;font-size:0;`;
+
+            for (let col = 0; col < gridCols; col++) {
+                const info = letterMap[row][col];
+                const span = this.createElement('span');
+
+                if (info) {
+                    const n   = noiseField(col, row, 0);
+                    const idx = Math.floor(((n + 1) * 0.5) * LETTER_SYMBOL_POOL.length) % LETTER_SYMBOL_POOL.length;
+                    span.textContent    = LETTER_SYMBOL_POOL[Math.max(0, idx)];
+                    span.dataset.filled = '1';
+                    span.dataset.letter = info.letter;
+                    span.style.cssText  = baseCell + `cursor:pointer;`;
+                    this.wordRegions[info.wordIdx].filledSpans.push(span);
+                    this.allSpanData.push({ span, row, col, filled: true, wordIdx: info.wordIdx, letter: info.letter });
+                } else {
+                    span.textContent    = ' ';
+                    span.dataset.filled = '0';
+                    span.style.cssText  = baseCell;
+                    this.allSpanData.push({ span, row, col, filled: false, wordIdx: -1, letter: '' });
+                }
+
+                rowEl.appendChild(span);
+            }
+
+            this.gridEl.appendChild(rowEl);
+        }
+
+        this.element.appendChild(this.gridEl);
+    }
+
+    // ─── Noise animation ─────────────────────────────────────────────────────
+
+    _startIdleAnimation() {
+        this._stopIdleAnimation();
+        const AF = window.AnimationFoundation;
+        if (!AF) return;
+
+        const symLen      = LETTER_SYMBOL_POOL.length;
+        const bgLen       = BG_CHAR_POOL.length;
+        const bgThreshold = 0.55; // ~22% of bg cells lit at any moment
+        let t = 0;
+
+        this.idleAnimator = new AF.AnimationLoop({
+            fps: 12,
+            onFrame: () => {
+                t += 0.05;
+                this.allSpanData.forEach(({ span, row, col, filled, wordIdx }) => {
+                    // Leave cells that belong to the hovered word alone —
+                    // the hover animator is writing letters into them.
+                    if (filled && this.hoveredWordIdx === wordIdx) return;
+
+                    const n = noiseField(col, row, t);
+
+                    if (filled) {
+                        // Restore Wingdings font & size if hover reveal changed them.
+                        if (span.style.fontFamily !== NERD_FONT_FAMILY) {
+                            span.style.fontFamily = NERD_FONT_FAMILY;
+                            span.style.fontSize   = this._cellFs || span.style.fontSize;
+                        }
+                        const idx = Math.floor(((n + 1) * 0.5) * symLen) % symLen;
+                        span.textContent = LETTER_SYMBOL_POOL[Math.max(0, idx)];
+                    } else {
+                        if (n > bgThreshold) {
+                            const norm = (n - bgThreshold) / (1 - bgThreshold);
+                            const idx  = Math.floor(norm * bgLen) % bgLen;
+                            span.textContent = BG_CHAR_POOL[Math.max(0, idx)];
+                        } else {
+                            span.textContent = ' ';
+                        }
+                    }
+                });
+            }
+        });
+        this.idleAnimator.start();
+    }
+
+    _stopIdleAnimation() {
+        if (this.idleAnimator) { this.idleAnimator.destroy(); this.idleAnimator = null; }
+    }
+
+    // ─── Hover ───────────────────────────────────────────────────────────────
+
+    _bindEvents() {
+        this.element.addEventListener('mousemove', (e) => this._onMouseMove(e));
+        this.element.addEventListener('mouseleave', ()  => this._onMouseLeave());
+        this.element.addEventListener('click',     (e) => this._onClick(e));
+    }
+
+    // Resolve which word (if any) the mouse is currently over using grid coordinates.
+    // This covers the FULL bounding box of the word, not just filled cells.
+    _wordIdxAtMouse(e) {
+        const rect = this.element.getBoundingClientRect();
+        const row  = Math.floor((e.clientY - rect.top)  / this._charHeight);
+        const col  = Math.floor((e.clientX - rect.left) / this._charWidth);
+        for (const region of this.wordRegions) {
+            if (row >= region.rowStart && row < region.rowEnd &&
+                col >= region.colStart && col < region.colEnd) {
+                return region.wordIdx;
+            }
+        }
+        return -1;
+    }
+
+    _onMouseMove(e) {
+        const wIdx = this._wordIdxAtMouse(e);
+        if (wIdx === this.hoveredWordIdx) return;
+
+        this._stopHoverAnimator();
+        this.hoveredWordIdx = wIdx;
+        this.element.style.cursor = wIdx >= 0 ? 'pointer' : 'default';
+
+        if (wIdx < 0 || !this.wordRegions[wIdx]) return;
+
+        const spans = [...this.wordRegions[wIdx].filledSpans];
+        shuffleArray(spans);
+        let idx = 0;
+        const batch = Math.max(1, Math.ceil(spans.length / 10));
+
+        const AF = window.AnimationFoundation;
+        if (!AF) return;
+
+        this.hoverAnimator = new AF.AnimationLoop({
+            fps: 30,
+            onFrame: () => {
+                if (idx >= spans.length) { this.hoverAnimator.stop(); return; }
+                for (let i = 0; i < batch && idx < spans.length; i++, idx++) {
+                    // Reveal: switch to Atkinson at full fontSize so the monospace
+                    // char fills the cell width (charWidth = fontSize × ratio).
+                    spans[idx].style.fontFamily = "'Atkinson Hyperlegible Mono', monospace";
+                    spans[idx].style.fontSize   = this._revealedFs || spans[idx].style.fontSize;
+                    spans[idx].textContent = spans[idx].dataset.letter;
+                }
+            }
+        });
+        this.hoverAnimator.start();
+    }
+
+    _onMouseLeave() {
+        this._stopHoverAnimator();
+        this.hoveredWordIdx = -1;
+        this.element.style.cursor = 'default';
+        // Idle animation resumes and restores Wingdings naturally.
+    }
+
+    _onClick(e) {
+        const wIdx = this._wordIdxAtMouse(e);
+        if (wIdx >= 0 && this.wordRegions[wIdx] && this.onNavigate) {
+            this.onNavigate(this.wordRegions[wIdx].sectionId);
+        }
+    }
+
+    _stopHoverAnimator() {
+        if (this.hoverAnimator) { this.hoverAnimator.destroy(); this.hoverAnimator = null; }
+    }
+
+    // ─── Lifecycle ───────────────────────────────────────────────────────────
+
+    destroy() {
+        this._stopIdleAnimation();
+        this._stopHoverAnimator();
+        this.allSpanData = [];
+        this.wordRegions = [];
+        this.gridEl = null;
+        super.destroy();
+    }
+}

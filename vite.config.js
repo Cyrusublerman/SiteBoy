@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
 
     // ES Module bundling with proper chunking
     build: {
-      rollupOptions: {
+      bundlerOptions: {
         input: {
           main: 'src/main.js'  // Use our new entry point
         },
@@ -77,10 +77,15 @@ export default defineConfig(({ mode }) => {
       },
       cors: true, // CORS support for development
       proxy: {
-        // Proxy for API endpoints if needed
         '/api': {
           target: 'http://localhost:3001',
           changeOrigin: true
+        },
+        // Proxy R2 manifest fetches to avoid CORS in dev
+        '/r2': {
+          target: 'https://media.einoder.net',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/r2/, ''),
         }
       }
     },
