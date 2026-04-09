@@ -43,7 +43,8 @@ import {
     TOCGallery,
     Table,
     StatusDisplay,
-    AsciiNavWord
+    AsciiNavWord,
+    AsciiNavScene
 } from './content.js';
 
 // Import interactive components
@@ -95,7 +96,7 @@ import LoadingOverlay from './components/feedback/LoadingOverlay.js';
 import { P5Canvas, P5EmbeddedSketch, P5ControlledSketch } from './p5-integration.js';
 
 // Import gallery components
-import { MasonryGallery } from './masonry-gallery.js';
+import { MasonryGallery, GalleryLightbox } from './masonry-gallery.js';
 
 // Import output components
 import { AnimationExport } from './components/output/AnimationExport.js';
@@ -353,7 +354,8 @@ ComponentLibrary.NumberedTOC = NumberedTOC;
 ComponentLibrary.TOCGallery = TOCGallery;
 ComponentLibrary.Table = Table;
 ComponentLibrary.StatusDisplay = StatusDisplay;
-ComponentLibrary.AsciiNavWord = AsciiNavWord;
+ComponentLibrary.AsciiNavWord  = AsciiNavWord;
+ComponentLibrary.AsciiNavScene = AsciiNavScene;
 
 // Assign interactive components to ComponentLibrary immediately
 ComponentLibrary.CollapsibleBase = CollapsibleBase;
@@ -403,7 +405,8 @@ ComponentLibrary.P5EmbeddedSketch = P5EmbeddedSketch;
 ComponentLibrary.P5ControlledSketch = P5ControlledSketch;
 
 // Assign gallery components to ComponentLibrary immediately
-ComponentLibrary.MasonryGallery = MasonryGallery;
+ComponentLibrary.MasonryGallery   = MasonryGallery;
+ComponentLibrary.GalleryLightbox  = GalleryLightbox;
 
 // Assign output components to ComponentLibrary immediately
 ComponentLibrary.AnimationExport = AnimationExport;
@@ -496,6 +499,7 @@ export {
     Table,
     StatusDisplay,
     AsciiNavWord,
+    AsciiNavScene,
 
     // Interactive
     CollapsibleBase,
@@ -537,7 +541,8 @@ export {
 
     // Gallery
     MasonryGallery,
-    
+    GalleryLightbox,
+
     // Tool Components
     ToolContainer,
     ToolSidebar,

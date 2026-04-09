@@ -25,7 +25,8 @@ const Router = {
         'art': 'ArtSection',
         'tools': 'ToolsSection',
         'projects': 'ProjectsSection',
-        'contact': 'ContactSection'
+        'contact': 'ContactSection',
+        'qr': 'QrHubSection'
     },
 
     /**

@@ -586,7 +586,7 @@ const SiteBoyApp = {
             const isToolDetailPage = sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc';
             const isToolsTOC = sectionName === 'tools' && !isToolDetailPage;
             // Sections whose index page (no subsection) hides the subheader
-            const NO_SUBHEADER_INDEX_SECTIONS = ['home', 'projects', 'art'];
+            const NO_SUBHEADER_INDEX_SECTIONS = ['home', 'projects', 'art', 'qr'];
             const isIndexPage = !subsectionName;
             const hasSubheader = isToolDetailPage || (
                 !isToolsTOC &&

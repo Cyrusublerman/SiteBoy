@@ -1,0 +1,1 @@
+function e(e,t){let n=URL.createObjectURL(e),r=document.createElement(`a`);r.download=t,r.href=n,r.click(),setTimeout(()=>URL.revokeObjectURL(n),100),window.debugLog(`TOOLS`,`Download triggered: ${t}`)}export{e as t};

@@ -51,7 +51,6 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 
 GALLERY_MAP = [
     # ── Digital ───────────────────────────────────────────────────────────────
-    ("digital/AI",                "digital", "ai",               False),
     ("digital/Bear and Girl",     "digital", "bear-and-girl",    False),
     ("digital/Chopped",           "digital", "chopped",          False),
     ("digital/Experiments",       "digital", "experiments",      False),

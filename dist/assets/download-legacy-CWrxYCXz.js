@@ -1,0 +1,1 @@
+System.register([],function(e,t){return e("t",function(e,t){const n=URL.createObjectURL(e),o=document.createElement("a");o.download=t,o.href=n,o.click(),setTimeout(()=>URL.revokeObjectURL(n),100),window.debugLog("TOOLS",`Download triggered: ${t}`)}),{setters:[],execute:function(){}}});

@@ -1,16 +1,17 @@
 /**
  * Home Section - SiteBoy Framework
  *
- * Renders the site navigation as three stacked ASCII-art word blocks:
- * BLOG / ART / TOOLS. Each block fills the content width, animates on hover,
- * and navigates to the corresponding section on click.
+ * Renders a full-content-area ASCII noise scene. The three navigation words
+ * (ART / TOOLS / BLOG) are stamped into a character grid that covers the
+ * entire content area. Letter cells idle as block symbols; background cells
+ * show sparse noise. Hovering a word progressively reveals its letters.
  *
- * @version 4.0.0 - ASCII Nav Home Page
+ * @version 5.0.0 - AsciiNavScene
  * @dependencies ['ComponentLibrary'] - Component system
  */
 
 const HomeSection = {
-    version: '4.0.0',
+    version: '5.0.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
@@ -34,67 +35,25 @@ const HomeSection = {
     renderHomePage() {
         this.currentContainer.innerHTML = '';
 
-        const MF           = window.MathematicalFoundation;
-        const F            = MF ? MF.F : 14;
-        const margin       = MF?.Config?.margin || F * 4;
-        const headerHeight = MF?.Config?.sizing?.header || F * 2;
-        const footerHeight = MF?.Config?.sizing?.footer || headerHeight;
-
-        // Content container starts immediately below the header — no margin gap.
-        // The centering math (justify-content:center) distributes whitespace
-        // symmetrically; shifting the container top by an extra margin would
-        // add a one-sided gap that breaks that symmetry.
+        // Remove internal padding so the scene fills the container flush.
         const contentContainer = this.currentContainer.closest('.content-container');
         if (contentContainer) {
-            contentContainer.style.top = `${headerHeight}px`;
+            contentContainer.style.padding  = '0';
             contentContainer.style.overflow = 'hidden';
         }
-
-        // Usable height: from header bottom (headerHeight) to footer top
-        // (innerHeight - headerHeight - margin).
-        const contentHeight = window.innerHeight - headerHeight - footerHeight - margin;
-
-        // Wrapper fills exactly the usable area; justify-content:center splits
-        // any remaining space equally above and below the word group.
-        const wrapper = document.createElement('div');
-        wrapper.className = 'ascii-nav-home';
-        wrapper.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: ${F * 2}px;
-            width: 100%;
-            height: ${contentHeight}px;
-            box-sizing: border-box;
-            overflow: hidden;
-        `;
 
         const deps = {
             MF:     window.MathematicalFoundation,
             Resize: window.ResizeManager,
         };
 
-        // FONT_COLS=10, FONT_GAP=2 — mirrors ascii-nav-font.js constants.
-        // The widest word sets the width constraint for ALL words so every
-        // word renders at the same font size (one shared document feel).
-        const sharedTotalCols = Math.max(...this.navWords.map(({ word }) =>
-            word.length * 10 + Math.max(0, word.length - 1) * 2
-        ));
+        const scene = new ComponentLibrary.AsciiNavScene({
+            navWords:   this.navWords,
+            onNavigate: (id) => this.navigateToSection(id),
+        }, deps);
 
-        this.navWords.forEach(({ word, sectionId }) => {
-            const navWord = new ComponentLibrary.AsciiNavWord({
-                word,
-                sectionId,
-                onNavigate:       (id) => this.navigateToSection(id),
-                numWords:         this.navWords.length,
-                sharedTotalCols,
-            }, deps);
-
-            this.componentInstances.push(navWord);
-            wrapper.appendChild(navWord.render());
-        });
-
-        this.currentContainer.appendChild(wrapper);
+        this.componentInstances.push(scene);
+        this.currentContainer.appendChild(scene.render());
     },
 
     navigateToSection(section, subsection = null) {

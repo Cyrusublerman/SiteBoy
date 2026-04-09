@@ -329,6 +329,8 @@ export class BaseNavigationDropdown extends BaseComponent {
             this.subsectionStates.set(subsectionId, true); // true = expanded
         }
         
+        const isNavigable = !!item.path;
+
         // Create subsection header row (like a folder)
         const subsectionHeader = this.createElement('div', 'dropdown-subsection');
         subsectionHeader.dataset.subsectionId = subsectionId;
@@ -341,44 +343,56 @@ export class BaseNavigationDropdown extends BaseComponent {
             justify-content: space-between;
             border-bottom: 1px solid var(--c-border);
         `;
-        
+
         // Title text
         const titleSpan = this.createElement('span');
         titleSpan.textContent = item.title;
         titleSpan.style.cssText = 'flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
-        
+
         // +/- toggle symbol
         const toggleSymbol = this.createElement('span', 'subsection-toggle');
         toggleSymbol.textContent = isCollapsed ? '+' : '-';
         toggleSymbol.style.cssText = `font-size: ${F}px; margin-left: ${F/2}px; flex-shrink: 0;`;
-        
+
         subsectionHeader.appendChild(titleSpan);
         subsectionHeader.appendChild(toggleSymbol);
-        
+
         // Create container for child items
         const childContainer = this.createElement('div', 'dropdown-subsection-children');
         childContainer.dataset.parentId = subsectionId;
         childContainer.style.cssText = isCollapsed ? 'display: none;' : 'display: block;';
-        
+
         // Add child items to container
         if (item.items && item.items.length > 0) {
             item.items.forEach(childItem => {
                 this.createMenuItem(childItem, F, 1, childContainer);
             });
         }
-        
-        // Toggle click handler
-        subsectionHeader.addEventListener('click', (e) => {
-            e.stopPropagation();
+
+        const doToggle = () => {
             const currentlyCollapsed = childContainer.style.display === 'none';
             childContainer.style.display = currentlyCollapsed ? 'block' : 'none';
             toggleSymbol.textContent = currentlyCollapsed ? '-' : '+';
             this.subsectionStates.set(subsectionId, !currentlyCollapsed);
             this.updateOverflowBehavior();
             this.updateLastItemBorder();
+        };
+
+        // Click: left half navigates, right half toggles
+        subsectionHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = subsectionHeader.getBoundingClientRect();
+            const inLeftHalf = e.clientX < rect.left + rect.width / 2;
+            if (inLeftHalf && isNavigable) {
+                if (childContainer.style.display === 'none') doToggle();
+                if (this.onItemClick) this.onItemClick(item);
+                this.close();
+            } else {
+                doToggle();
+            }
         });
-        
-        // Hover effect for subsection header
+
+        // Hover effect
         subsectionHeader.addEventListener('mouseenter', () => {
             subsectionHeader.style.setProperty('background', 'var(--c-text)', 'important');
             subsectionHeader.style.setProperty('color', 'var(--c-bg)', 'important');

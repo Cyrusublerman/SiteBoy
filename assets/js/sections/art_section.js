@@ -42,20 +42,19 @@ const ArtSection = {
         '#art/objects/plates',
         // Digital
         '#art/digital',
-        '#art/digital/ai',
+        '#art/digital/posters',
+        '#art/digital/women-and-horses',
         '#art/digital/bear-and-girl',
-        '#art/digital/chopped',
+        '#art/digital/portraits',
+        '#art/digital/must',
+        '#art/digital/simple1',
         '#art/digital/experiments',
         '#art/digital/low-effort',
+        '#art/digital/chopped',
         '#art/digital/monsters',
-        '#art/digital/must',
-        '#art/digital/pieces',
-        '#art/digital/portraits',
-        '#art/digital/posters',
         '#art/digital/rough',
-        '#art/digital/simple1',
+        '#art/digital/pieces',
         '#art/digital/uncertain',
-        '#art/digital/women-and-horses',
         // Render
         '#art/render',
         '#art/render/eternal-ascent',
@@ -110,20 +109,19 @@ const ArtSection = {
             title: 'DIGITAL',
             description: 'Digital artworks and compositions',
             subsections: [
-                { id: 'ai',               title: 'AI',               count: 22 },
-                { id: 'bear-and-girl',    title: 'BEAR AND GIRL',    count: 7  },
-                { id: 'chopped',          title: 'CHOPPED',          count: 2  },
-                { id: 'experiments',      title: 'EXPERIMENTS',      count: 31 },
-                { id: 'low-effort',       title: 'LOW EFFORT',       count: 4  },
-                { id: 'monsters',         title: 'MONSTERS',         count: 9  },
-                { id: 'must',             title: 'MUST',             count: 4  },
-                { id: 'pieces',           title: 'PIECES',           count: 2  },
-                { id: 'portraits',        title: 'PORTRAITS',        count: 13 },
-                { id: 'posters',          title: 'POSTERS',          count: 1  },
-                { id: 'rough',            title: 'ROUGH',            count: 3  },
-                { id: 'simple1',          title: 'SIMPLE',           count: 4  },
-                { id: 'uncertain',        title: 'UNCERTAIN',        count: 2  },
+                { id: 'posters',          title: 'POSTERS',          count: 7  },
                 { id: 'women-and-horses', title: 'WOMEN AND HORSES', count: 8  },
+                { id: 'bear-and-girl',    title: 'BEAR AND GIRL',    count: 7  },
+                { id: 'portraits',        title: 'PORTRAITS',        count: 13 },
+                { id: 'must',             title: 'MUST',             count: 4  },
+                { id: 'simple1',          title: 'SIMPLE',           count: 4  },
+                { id: 'experiments',      title: 'EXPERIMENTS',      count: 53 },
+                { id: 'low-effort',       title: 'LOW EFFORT',       count: 4  },
+                { id: 'chopped',          title: 'CHOPPED',          count: 2  },
+                { id: 'monsters',         title: 'MONSTERS',         count: 9  },
+                { id: 'rough',            title: 'ROUGH',            count: 3  },
+                { id: 'pieces',           title: 'PIECES',           count: 2  },
+                { id: 'uncertain',        title: 'UNCERTAIN',        count: 2  },
             ],
         },
         render: {
@@ -735,7 +733,7 @@ const ArtSection = {
             empty.style.cssText = `padding:${F * 4}px;color:var(--c-border);font-size:${F * 0.75}px;`;
             strip.appendChild(empty);
         } else {
-            images.forEach(img => {
+            images.forEach((img, idx) => {
                 const cell = this.createElement('div', 'scroll-gallery-cell');
                 cell.style.cssText = `
                     flex-shrink:0;height:${F * 36}px;position:relative;
@@ -745,12 +743,15 @@ const ArtSection = {
                 const imgEl = document.createElement('img');
                 imgEl.src = img.thumb;
                 imgEl.alt = img.title;
-                imgEl.style.cssText = `
-                    height:100%;width:auto;display:block;
-                    object-fit:cover;
-                `;
-                imgEl.addEventListener('click', () => {
-                    if (img.zoom) window.open(img.zoom, '_blank');
+                imgEl.style.cssText = `height:100%;width:auto;display:block;object-fit:cover;`;
+                imgEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const lb = new ComponentLibrary.GalleryLightbox(
+                        { images, index: idx },
+                        { MF: window.MathematicalFoundation }
+                    );
+                    this.componentInstances.push(lb);
+                    lb.open();
                 });
                 cell.appendChild(imgEl);
                 strip.appendChild(cell);
