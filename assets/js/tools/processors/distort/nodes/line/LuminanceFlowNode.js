@@ -11,7 +11,7 @@ export const LuminanceFlowNode = createEffectModule({
   params: {
     frame:        { label: 'FRAME',     min: 0, max: 240, step: 1,    value: 0,   tier: 3, driveable: true, unit: 'frames' },
     patternType:  { label: 'PATTERN',   type: 'select', options: ['HORIZONTAL', 'VERTICAL', 'DIAGONAL', 'GRID', 'RADIAL', 'CONCENTRIC'], value: 'HORIZONTAL', tier: 3 },
-    spacing:      { label: 'SPACING',   min: 1, max: 40,  step: 1,   value: 8,    tier: 3, unit: 'px', driveable: true },
+    spacing:      { label: 'SPACING',   min: 1, max: 40,  step: 1,   value: 8,    tier: 3, unit: 'px', driveable: true, previewMax: 8 },
     strokeWeight: { label: 'STROKE W',  min: 0.1, max: 4, step: 0.1, value: 0.7, tier: 3, unit: 'px', driveable: true },
     resolution:   { label: 'STEP',      min: 1, max: 10,  step: 1,   value: 2,    tier: 4, driveable: true, unit: 'n' },
     amplitude:    { label: 'AMPLITUDE', min: 0, max: 80,  step: 1,   value: 15,   tier: 3, unit: 'px', driveable: true },
@@ -32,7 +32,7 @@ export const LuminanceFlowNode = createEffectModule({
     });
     return { lines: set.lines, strokeRGBA: [255, 255, 255, 204], strokeWidth: p.strokeWeight, clearRGBA: [p.bgBrightness, p.bgBrightness, p.bgBrightness, 255] };
   },
-  apply(src, dst, w, h, p, ctx) {
+  apply(src, dst, w, h, p, ctx, modulate) {
     let iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 2) : p.iterations;
     iters = capByFrame(iters, p.frame);
     const set = buildGradientDisplacedLines({

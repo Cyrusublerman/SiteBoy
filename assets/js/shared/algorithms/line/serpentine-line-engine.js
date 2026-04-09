@@ -186,39 +186,62 @@ export function serpentineOscillatorRaster(params = {}, frame = 0, luminanceAt =
  * @param {number}  opts.width
  * @param {number}  opts.height
  * @param {(x:number,y:number)=>number} opts.luminanceAt
- * @param {number}  [opts.mode='flow']        - 'flow' or 'serpentine'
- * @param {number}  [opts.spacing=6]          - Y spacing between wavefronts (px)
- * @param {number}  [opts.amplitude=2.5]      - Sinusoidal Y offset for spawn row
- * @param {number}  [opts.frequency=1]        - Sine frequency for spawn offset
- * @param {number}  [opts.baseSpeed=0.5]      - Horizontal step size per iteration
- * @param {number}  [opts.dragLight=0]        - Drag for light pixels
- * @param {number}  [opts.dragDark=0.5]       - Drag for dark pixels
- * @param {number}  [opts.iterations=200]     - Simulation iterations
+ * @param {number}  [opts.mode='flow']           - 'flow' or 'serpentine'
+ * @param {number}  [opts.spacing=6]             - Y spacing between wavefronts (px)
+ * @param {number}  [opts.amplitude=2.5]         - Sinusoidal Y offset for spawn row
+ * @param {number}  [opts.frequency=1]           - Sine frequency for spawn offset
+ * @param {number}  [opts.baseSpeed=0.5]         - Horizontal step size per iteration
+ * @param {number}  [opts.dragLight=0]           - Drag for light pixels
+ * @param {number}  [opts.dragDark=0.5]          - Drag for dark pixels
+ * @param {number}  [opts.iterations=200]        - Simulation iterations
+ * @param {number}  [opts.spawnRate=1]           - Wavefronts spawned per interval (density)
+ * @param {number}  [opts.topBound=0]            - Normalised upper clamp of flow range [0,1]
+ * @param {number}  [opts.bottomBound=1]         - Normalised lower clamp of flow range [0,1]
+ * @param {string}  [opts.responseCurve='linear'] - Drag response curve: 'linear'|'exponential'|'sigmoid'
+ * @param {number}  [opts.curveStrength=1]       - Exponent / steepness of the response curve
  * @returns {{ lines: Array<Array<{x,y}>>, bounds: object }}
  */
 export function buildWavefrontLines({
   width, height, luminanceAt,
   mode = 'flow', spacing = 6, amplitude = 2.5, frequency = 1,
-  baseSpeed = 0.5, dragLight = 0, dragDark = 0.5, iterations = 200
+  baseSpeed = 0.5, dragLight = 0, dragDark = 0.5, iterations = 200,
+  spawnRate = 1, topBound = 0, bottomBound = 1,
+  responseCurve = 'linear', curveStrength = 1
 }) {
   const pad = 2;
   const lineStart = pad, lineEnd = width - pad;
-  const flowStart = pad, farEdge = height - pad;
+  const boundsTop    = pad + topBound    * (height - 2 * pad);
+  const boundsBottom = pad + bottomBound * (height - 2 * pad);
+  const farEdge = boundsBottom;
+  const flowStart = boundsTop;
+
   const spawnInterval = Math.max(1, Math.round(spacing / Math.max(0.01, baseSpeed)));
   const waveFronts = [];
   let framesSinceSpawn = Infinity;
 
+  /** Shape t ∈ [0,1] per responseCurve. */
+  const shapeDrag = (t) => {
+    if (responseCurve === 'exponential') return Math.pow(t, Math.max(0.1, curveStrength));
+    if (responseCurve === 'sigmoid') {
+      const k = Math.max(0.1, curveStrength) * 10;
+      return 1 / (1 + Math.exp(-k * (t - 0.5)));
+    }
+    return t;
+  };
+
   for (let frame = 0; frame < iterations; frame++) {
     framesSinceSpawn++;
     if (framesSinceSpawn >= spawnInterval) {
-      const pts = [];
-      for (let s = lineStart; s <= lineEnd; s++) {
-        pts.push({
-          linePos: s,
-          flowPos: flowStart + Math.sin(s * frequency * 0.01) * amplitude
-        });
+      for (let r = 0; r < Math.max(1, Math.round(spawnRate)); r++) {
+        const pts = [];
+        for (let s = lineStart; s <= lineEnd; s++) {
+          pts.push({
+            linePos: s,
+            flowPos: flowStart + Math.sin(s * frequency * 0.01) * amplitude
+          });
+        }
+        waveFronts.push({ points: pts, complete: false });
       }
-      waveFronts.push({ points: pts, complete: false });
       framesSinceSpawn = 0;
     }
     for (const wf of waveFronts) {
@@ -227,7 +250,7 @@ export function buildWavefrontLines({
       for (const pt of wf.points) {
         if (pt.flowPos >= farEdge) continue;
         const lum = luminanceAt(pt.linePos, pt.flowPos);
-        const t = 1 - lum;
+        const t = shapeDrag(1 - lum);
         const drag = dragLight + (dragDark - dragLight) * t;
         pt.flowPos += baseSpeed * (1 - drag);
         if (pt.flowPos >= farEdge) pt.flowPos = farEdge; else allDone = false;

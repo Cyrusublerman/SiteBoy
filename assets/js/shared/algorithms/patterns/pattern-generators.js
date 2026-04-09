@@ -515,18 +515,92 @@ export function moireRGBA(src, w, h, wavelength1, angle1, wavelength2, angle2, c
  * @param {number} bgLevel      @param {number} dotLevel (0-255)
  * @returns {Uint8ClampedArray}
  */
-export function halftonePatternRGBA(src, w, h, spacing, angle, minDot, maxDot, bgLevel, dotLevel) {
+export function halftonePatternRGBA(
+  src, w, h, spacing, angle, minDot, maxDot, bgLevel, dotLevel,
+  gridType = 'square', responseSource = 'luminance', responseCurve = 'linear',
+  invert = false, softClamp = false
+) {
   const cosA = Math.cos(angle * Math.PI / 180), sinA = Math.sin(angle * Math.PI / 180);
   const dst = new Uint8ClampedArray(src.length);
   for (let i = 0, n = w * h * 4; i < n; i += 4) { dst[i] = dst[i + 1] = dst[i + 2] = bgLevel; dst[i + 3] = src[i + 3]; }
-  const lum = new Float32Array(w * h);
-  for (let i = 0; i < w * h; i++) { const j = i * 4; lum[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+
+  // Build response field
+  const field = new Float32Array(w * h);
+  if (responseSource === 'luminance') {
+    for (let i = 0; i < w * h; i++) { const j = i * 4; field[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+  } else if (responseSource === 'red') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4] / 255;
+  } else if (responseSource === 'green') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4 + 1] / 255;
+  } else if (responseSource === 'blue') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4 + 2] / 255;
+  } else if (responseSource === 'alpha') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4 + 3] / 255;
+  } else if (responseSource === 'hue') {
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4, r = src[j] / 255, g = src[j + 1] / 255, b = src[j + 2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+      if (d === 0) { field[i] = 0; continue; }
+      let h6 = mx === r ? (g - b) / d : mx === g ? 2 + (b - r) / d : 4 + (r - g) / d;
+      field[i] = (((h6 / 6) % 1) + 1) % 1;
+    }
+  } else if (responseSource === 'saturation') {
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4, r = src[j] / 255, g = src[j + 1] / 255, b = src[j + 2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      field[i] = mx === 0 ? 0 : (mx - mn) / mx;
+    }
+  } else if (responseSource === 'gradientMagnitude') {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      const gx2 = x < w - 1 ? x + 1 : x, gx0 = x > 0 ? x - 1 : x;
+      const gy2 = y < h - 1 ? y + 1 : y, gy0 = y > 0 ? y - 1 : y;
+      const lum = (v) => { const j = v * 4; return (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; };
+      const sx = lum(y * w + gx2) - lum(y * w + gx0);
+      const sy = lum(gy2 * w + x) - lum(gy0 * w + x);
+      field[i] = Math.min(1, Math.sqrt(sx * sx + sy * sy));
+    }
+  } else if (responseSource === 'distanceToEdge') {
+    const tmp = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) { const j = i * 4; tmp[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const dx = Math.min(x, w - 1 - x), dy = Math.min(y, h - 1 - y);
+      field[y * w + x] = Math.min(1, Math.min(dx, dy) / (Math.min(w, h) * 0.1 + 1));
+    }
+  } else {
+    for (let i = 0; i < w * h; i++) { const j = i * 4; field[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+  }
+
+  function applyResponseCurve(v) {
+    if (responseCurve === 'smoothstep') return v * v * (3 - 2 * v);
+    if (responseCurve === 'exponential') return v * v;
+    if (responseCurve === 'threshold') return v >= 0.5 ? 1 : 0;
+    if (responseCurve === 'stepped') return Math.round(v * 4) / 4;
+    return v;
+  }
+
+  function computeRadius(fieldVal) {
+    let v = applyResponseCurve(invert ? 1 - fieldVal : fieldVal);
+    const radius = minDot + (1 - v) * (maxDot - minDot);
+    if (softClamp) {
+      const t = Math.max(0, Math.min(1, (radius - minDot) / (maxDot - minDot + 0.001)));
+      return minDot + t * t * (3 - 2 * t) * (maxDot - minDot);
+    }
+    return Math.max(minDot, Math.min(maxDot, radius));
+  }
+
   const diag = Math.sqrt(w * w + h * h), numI = Math.ceil(diag / spacing) * 2;
+
   for (let gi = -numI; gi <= numI; gi++) for (let gj = -numI; gj <= numI; gj++) {
-    const gx = gi * spacing, gy = gj * spacing;
-    const px = Math.round(w / 2 + gx * cosA - gy * sinA), py = Math.round(h / 2 + gx * sinA + gy * cosA);
+    let gx = gi * spacing, gy = gj * spacing;
+    // Grid type offsets
+    if (gridType === 'hexagonal' && (gi & 1)) gy += spacing * 0.5;
+    else if (gridType === 'staggered' && (gj & 1)) gx += spacing * 0.5;
+    const px = Math.round(w / 2 + gx * cosA - gy * sinA);
+    const py = Math.round(h / 2 + gx * sinA + gy * cosA);
     if (px < 0 || px >= w || py < 0 || py >= h) continue;
-    const l = lum[py * w + px], radius = minDot + (1 - l) * (maxDot - minDot), r2 = radius * radius, ir = Math.ceil(radius);
+    const radius = computeRadius(field[py * w + px]);
+    const r2 = radius * radius, ir = Math.ceil(radius);
     for (let dy = -ir; dy <= ir; dy++) { const ny = py + dy; if (ny < 0 || ny >= h) continue;
       for (let dx = -ir; dx <= ir; dx++) { const nx = px + dx; if (nx < 0 || nx >= w) continue;
         if (dx * dx + dy * dy <= r2) { const oi = (ny * w + nx) * 4; dst[oi] = dst[oi + 1] = dst[oi + 2] = dotLevel; }

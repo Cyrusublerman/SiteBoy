@@ -10,7 +10,10 @@ export const RadialBlurNode = createEffectModule({
     amount:  { value: 10,  min: 1, max: 50, step: 1,    label: 'AMOUNT',   tier: 3, previewMax: 15, driveable: true, unit: 'n' },
     samples: { value: 12,  min: 4, max: 32, step: 1,    label: 'SAMPLES',  tier: 4, previewMax: 6, driveable: true, unit: 'n' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(radialBlur(src, w, h, p.type, p.centreX, p.centreY, p.amount, p.samples));
+  apply(src, dst, w, h, p, ctx, modulate) {
+    const cx = modulate('centreX', 0);
+    const cy = modulate('centreY', 0);
+    const am = modulate('amount', 0);
+    dst.set(radialBlur(src, w, h, p.type, cx, cy, am, p.samples));
   }
 });

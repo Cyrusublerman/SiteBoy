@@ -197,12 +197,28 @@ export function medianFilter(src, w, h, radius = 1) {
  * @returns {Uint8ClampedArray} New buffer
  */
 export function bilateralFilter(src, w, h, spatialSigma = 5, rangeSigma = 30) {
-  /** Kernel radius cap — unbounded ceil(2σ) is O(w·h·σ²) and hangs at high σ. */
   const BILATERAL_MAX_RADIUS = 10;
   const rad = Math.min(Math.ceil(spatialSigma * 2), BILATERAL_MAX_RADIUS);
   const sSq2 = 2 * spatialSigma * spatialSigma;
   const rSq2 = 2 * rangeSigma * rangeSigma;
   const dst = new Uint8ClampedArray(src.length);
+  const dia = 2 * rad + 1;
+
+  // Precompute spatial Gaussian weights for all (dx,dy) in the kernel.
+  const spatialLUT = new Float32Array(dia * dia);
+  for (let dy = -rad; dy <= rad; dy++) {
+    for (let dx = -rad; dx <= rad; dx++) {
+      spatialLUT[(dy + rad) * dia + (dx + rad)] = Math.exp(-(dx * dx + dy * dy) / sSq2);
+    }
+  }
+
+  // Precompute range Gaussian over all possible squared RGB distances.
+  // Max squared RGB distance: 3 * 255^2 = 195075.
+  const RANGE_LUT_SIZE = 195076;
+  const rangeLUT = new Float32Array(RANGE_LUT_SIZE);
+  for (let rd = 0; rd < RANGE_LUT_SIZE; rd++) {
+    rangeLUT[rd] = Math.exp(-rd / rSq2);
+  }
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -216,9 +232,9 @@ export function bilateralFilter(src, w, h, spatialSigma = 5, rangeSigma = 30) {
           const nx = Math.max(0, Math.min(w - 1, x + dx));
           const ni = (ny * w + nx) * 4;
           const nr = src[ni], ng = src[ni + 1], nb = src[ni + 2];
-          const sd = dx * dx + dy * dy;
-          const rd = (nr - cr) * (nr - cr) + (ng - cg) * (ng - cg) + (nb - cb) * (nb - cb);
-          const weight = Math.exp(-sd / sSq2 - rd / rSq2);
+          const dr = nr - cr, dg = ng - cg, db = nb - cb;
+          const rd = dr * dr + dg * dg + db * db;
+          const weight = spatialLUT[(dy + rad) * dia + (dx + rad)] * rangeLUT[rd];
           wr += nr * weight; wg += ng * weight; wb += nb * weight;
           wSum += weight;
         }

@@ -269,6 +269,53 @@ export function invertColours(src, w, h) {
   return dst;
 }
 
+function _hue2rgb(p, q, t) {
+  if (t < 0) t += 1; if (t > 1) t -= 1;
+  if (t < 1/6) return p + (q - p) * 6 * t;
+  if (t < 1/2) return q;
+  if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+  return p;
+}
+
+function _rgbToHsl(r, g, b) {
+  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn), d = max - min;
+  const l = (max + min) / 2;
+  if (d === 0) return [0, 0, l];
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0);
+  else if (max === gn) h = (bn - rn) / d + 2;
+  else h = (rn - gn) / d + 4;
+  return [h / 6, s, l];
+}
+
+function _hslToRgb(h, s, l) {
+  if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  return [
+    Math.round(_hue2rgb(p, q, h + 1/3) * 255),
+    Math.round(_hue2rgb(p, q, h) * 255),
+    Math.round(_hue2rgb(p, q, h - 1/3) * 255)
+  ];
+}
+
+export function invertColoursSelective(src, w, h, mode) {
+  if (mode === 'all') return invertColours(src, w, h);
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0, n = w * h * 4; i < n; i += 4) {
+    const [hv, s, l] = _rgbToHsl(src[i], src[i + 1], src[i + 2]);
+    let r, g, b;
+    if (mode === 'luminosity') {
+      [r, g, b] = _hslToRgb(hv, s, 1 - l);
+    } else {
+      [r, g, b] = _hslToRgb((hv + 0.5) % 1, s, l);
+    }
+    dst[i] = r; dst[i + 1] = g; dst[i + 2] = b; dst[i + 3] = src[i + 3];
+  }
+  return dst;
+}
+
 // ── Lift / Gamma / Gain ───────────────────────────────────────────────────────
 
 /**
@@ -553,6 +600,66 @@ export function quantiseToPalette(src, w, h, palette) {
     }
     dst[i] = palette[bestIdx][0]; dst[i + 1] = palette[bestIdx][1];
     dst[i + 2] = palette[bestIdx][2]; dst[i + 3] = src[i + 3];
+  }
+  return dst;
+}
+
+// ── Posterize (per-channel) ───────────────────────────────────────────────────
+
+function _makeLUT(levels) {
+  const n = Math.max(2, levels);
+  const step = 1 / n;
+  const lut = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) {
+    const level = Math.min(Math.floor((i / 255) / step), n - 1);
+    lut[i] = Math.round((level / (n - 1)) * 255);
+  }
+  return lut;
+}
+
+/**
+ * Per-channel RGB posterisation with independent level counts.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [rLevels=4]
+ * @param {number} [gLevels=4]
+ * @param {number} [bLevels=4]
+ * @returns {Uint8ClampedArray}
+ */
+export function posterizeRGB(src, w, h, rLevels = 4, gLevels = 4, bLevels = 4) {
+  const lr = _makeLUT(rLevels), lg = _makeLUT(gLevels), lb = _makeLUT(bLevels);
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0, n = w * h * 4; i < n; i += 4) {
+    dst[i] = lr[src[i]]; dst[i + 1] = lg[src[i + 1]]; dst[i + 2] = lb[src[i + 2]]; dst[i + 3] = src[i + 3];
+  }
+  return dst;
+}
+
+function _quantiseChannel(v, levels) {
+  const n = Math.max(2, levels);
+  return Math.round(Math.min(Math.floor(v * n), n - 1) / (n - 1) * 1000) / 1000;
+}
+
+/**
+ * Per-channel HSL posterisation with independent level counts.
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {number} [hLevels=4]
+ * @param {number} [sLevels=4]
+ * @param {number} [lLevels=4]
+ * @returns {Uint8ClampedArray}
+ */
+export function posterizeHSL(src, w, h, hLevels = 4, sLevels = 4, lLevels = 4) {
+  const dst = new Uint8ClampedArray(src.length);
+  for (let i = 0, n = w * h * 4; i < n; i += 4) {
+    const [h, s, l] = _rgbToHsl(src[i], src[i + 1], src[i + 2]);
+    const qh = _quantiseChannel(h, hLevels);
+    const qs = _quantiseChannel(s, sLevels);
+    const ql = _quantiseChannel(l, lLevels);
+    const [r, g, b] = _hslToRgb(qh, qs, ql);
+    dst[i] = r; dst[i + 1] = g; dst[i + 2] = b; dst[i + 3] = src[i + 3];
   }
   return dst;
 }

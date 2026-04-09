@@ -3,6 +3,7 @@ import { applyLevels } from '../../../../../shared/algorithms/image/colour-adjus
 
 export const LevelsNode = createEffectModule({
   type: 'levels', name: 'LEVELS', category: 'COLOUR / TONE',
+  isLUT: true,
   params: {
     blackPoint: { value: 0,   min: 0,   max: 255, step: 1,    label: 'BLACK IN',  tier: 3, driveable: true, unit: 'lvl' },
     whitePoint: { value: 255, min: 0,   max: 255, step: 1,    label: 'WHITE IN',  tier: 3, driveable: true, unit: 'lvl' },

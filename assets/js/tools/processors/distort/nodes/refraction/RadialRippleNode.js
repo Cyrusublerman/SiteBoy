@@ -9,7 +9,7 @@ export const RadialRippleNode = createEffectModule({
     amplitude: { value: 15,  min: 0,   max: 100, step: 0.5, label: 'AMPLITUDE', tier: 3, driveable: true, unit: 'px' },
     frequency: { value: 10,  min: 0.5, max: 50, step: 0.5,  label: 'FREQUENCY', tier: 3, driveable: true, unit: 'Hz' },
     phase:     { value: 0,   min: 0,   max: 6.28, step: 0.01, label: 'PHASE',   tier: 4, driveable: true, unit: 'rad' },
-    falloff:   { value: 1,   min: 0,   max: 5,  step: 0.1,  label: 'FALLOFF',   tier: 4, driveable: true, unit: 'n' }
+    falloff:   { value: 1,   min: 0,   max: 5,  step: 0.1,  label: 'FALLOFF',   tier: 4, unit: 'n' }
   },
   apply(src, dst, w, h, p, ctx) {
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';

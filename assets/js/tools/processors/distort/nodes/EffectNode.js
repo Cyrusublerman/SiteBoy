@@ -242,8 +242,13 @@ export class EffectNode {
     this.opacity   = data.opacity   ?? 1;
     this.blendMode = data.blendMode ?? 'normal';
     for (const k in data.params) if (k in this.params) this.params[k] = data.params[k];
-    if (Object.prototype.hasOwnProperty.call(this.params, 'internalBlend') && data.params && Object.prototype.hasOwnProperty.call(data.params, 'blendMode') && !Object.prototype.hasOwnProperty.call(data.params, 'internalBlend')) {
-      this.params.internalBlend = data.params.blendMode;
+    // Backwards-compat: old tileblend/perlinoverlay used 'blendMode' or 'internalBlend'; migrate to current keys.
+    if (data.params) {
+      const legacy = data.params.internalBlend ?? data.params.blendMode;
+      if (legacy !== undefined) {
+        if ('combineMode' in this.params && !('combineMode' in data.params)) this.params.combineMode = legacy;
+        if ('blendMode'  in this.params && !('blendMode'  in data.params)) this.params.blendMode  = legacy;
+      }
     }
     if (data.mask) {
       this.mask.enabled = data.mask.enabled ?? false;
