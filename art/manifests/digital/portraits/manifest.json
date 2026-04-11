@@ -1,0 +1,126 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "portraits",
+  "base_url": "https://media.einoder.net/art/digital/portraits",
+  "generated_at": "2026-04-08T03:10:56.179480+00:00",
+  "total_images": 13,
+  "images": [
+    {
+      "id": "25A25FF4-4136-4C7E-AA69-4056256A684E",
+      "filename": "25A25FF4-4136-4C7E-AA69-4056256A684E.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/25A25FF4-4136-4C7E-AA69-4056256A684E.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/25A25FF4-4136-4C7E-AA69-4056256A684E.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/25A25FF4-4136-4C7E-AA69-4056256A684E.jpg"
+      }
+    },
+    {
+      "id": "27B926DD-83AC-46BE-9DFE-9A3BFF5B9D2B",
+      "filename": "27B926DD-83AC-46BE-9DFE-9A3BFF5B9D2B.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/27B926DD-83AC-46BE-9DFE-9A3BFF5B9D2B.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/27B926DD-83AC-46BE-9DFE-9A3BFF5B9D2B.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/27B926DD-83AC-46BE-9DFE-9A3BFF5B9D2B.jpg"
+      }
+    },
+    {
+      "id": "2956A2D2-7160-4A28-8E6F-6BB1C4FC5D3D",
+      "filename": "2956A2D2-7160-4A28-8E6F-6BB1C4FC5D3D.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/2956A2D2-7160-4A28-8E6F-6BB1C4FC5D3D.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/2956A2D2-7160-4A28-8E6F-6BB1C4FC5D3D.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/2956A2D2-7160-4A28-8E6F-6BB1C4FC5D3D.jpg"
+      }
+    },
+    {
+      "id": "31DC7964-AAA2-4221-9960-E5462FF25883",
+      "filename": "31DC7964-AAA2-4221-9960-E5462FF25883.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/31DC7964-AAA2-4221-9960-E5462FF25883.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/31DC7964-AAA2-4221-9960-E5462FF25883.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/31DC7964-AAA2-4221-9960-E5462FF25883.jpg"
+      }
+    },
+    {
+      "id": "4D0AFE56-D18D-4160-92C6-F4D03A58C2BE",
+      "filename": "4D0AFE56-D18D-4160-92C6-F4D03A58C2BE.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/4D0AFE56-D18D-4160-92C6-F4D03A58C2BE.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/4D0AFE56-D18D-4160-92C6-F4D03A58C2BE.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/4D0AFE56-D18D-4160-92C6-F4D03A58C2BE.jpg"
+      }
+    },
+    {
+      "id": "617B44B5-91A4-4A12-B180-E6A62EAE5611",
+      "filename": "617B44B5-91A4-4A12-B180-E6A62EAE5611.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/617B44B5-91A4-4A12-B180-E6A62EAE5611.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/617B44B5-91A4-4A12-B180-E6A62EAE5611.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/617B44B5-91A4-4A12-B180-E6A62EAE5611.jpg"
+      }
+    },
+    {
+      "id": "89C8B36B-1C15-43AC-A013-D4192DA9BA69",
+      "filename": "89C8B36B-1C15-43AC-A013-D4192DA9BA69.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/89C8B36B-1C15-43AC-A013-D4192DA9BA69.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/89C8B36B-1C15-43AC-A013-D4192DA9BA69.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/89C8B36B-1C15-43AC-A013-D4192DA9BA69.jpg"
+      }
+    },
+    {
+      "id": "9E44CC91-443A-462C-941D-61F9C25AA037",
+      "filename": "9E44CC91-443A-462C-941D-61F9C25AA037.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/9E44CC91-443A-462C-941D-61F9C25AA037.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/9E44CC91-443A-462C-941D-61F9C25AA037.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/9E44CC91-443A-462C-941D-61F9C25AA037.jpg"
+      }
+    },
+    {
+      "id": "PSX_20190820_161604",
+      "filename": "PSX_20190820_161604.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/PSX_20190820_161604.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/PSX_20190820_161604.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/PSX_20190820_161604.jpg"
+      }
+    },
+    {
+      "id": "PSX_20190914_185409",
+      "filename": "PSX_20190914_185409.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/PSX_20190914_185409.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/PSX_20190914_185409.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/PSX_20190914_185409.jpg"
+      }
+    },
+    {
+      "id": "PSX_20190916_100447",
+      "filename": "PSX_20190916_100447.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/PSX_20190916_100447.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/PSX_20190916_100447.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/PSX_20190916_100447.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191112_140209",
+      "filename": "PSX_20191112_140209.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/PSX_20191112_140209.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/PSX_20191112_140209.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/PSX_20191112_140209.jpg"
+      }
+    },
+    {
+      "id": "SnowPose",
+      "filename": "SnowPose.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/portraits/thumbs/SnowPose.jpg",
+        "web": "https://media.einoder.net/art/digital/portraits/web/SnowPose.jpg",
+        "zoom": "https://media.einoder.net/art/digital/portraits/zoom/SnowPose.jpg"
+      }
+    }
+  ]
+}

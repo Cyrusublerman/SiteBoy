@@ -75,15 +75,15 @@ export async function fetchGalleryManifest(galleryName) {
  * @returns {Promise<Object>} Manifest object
  */
 export async function fetchManifest(galleryType, galleryName) {
-  // In dev, route through Vite proxy (/r2) to avoid CORS; in prod use direct R2 URL
-  const base = import.meta.env.DEV ? '/r2' : R2Config.baseUrl;
-  const url = `${base}/art/${galleryType}/${galleryName}/manifest.json`;
+  // Manifests are committed to /art/manifests/ (same origin — no CORS).
+  // Images themselves still load from R2 CDN via <img src> (no CORS restriction).
+  const url = `/art/manifests/${galleryType}/${galleryName}/manifest.json`;
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
   } catch (error) {
-    console.error(`Failed to load manifest: art/${galleryType}/${galleryName}`, error);
+    console.error(`Failed to load manifest: ${url}`, error);
     throw error;
   }
 }

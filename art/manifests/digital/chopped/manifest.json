@@ -1,0 +1,27 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "chopped",
+  "base_url": "https://media.einoder.net/art/digital/chopped",
+  "generated_at": "2026-04-08T03:09:20.482214+00:00",
+  "total_images": 2,
+  "images": [
+    {
+      "id": "IMG_20200220_121601_043",
+      "filename": "IMG_20200220_121601_043.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/chopped/thumbs/IMG_20200220_121601_043.jpg",
+        "web": "https://media.einoder.net/art/digital/chopped/web/IMG_20200220_121601_043.jpg",
+        "zoom": "https://media.einoder.net/art/digital/chopped/zoom/IMG_20200220_121601_043.jpg"
+      }
+    },
+    {
+      "id": "trainboy",
+      "filename": "trainboy.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/chopped/thumbs/trainboy.jpg",
+        "web": "https://media.einoder.net/art/digital/chopped/web/trainboy.jpg",
+        "zoom": "https://media.einoder.net/art/digital/chopped/zoom/trainboy.jpg"
+      }
+    }
+  ]
+}

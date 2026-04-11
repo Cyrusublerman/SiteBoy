@@ -1,0 +1,72 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "posters",
+  "base_url": "https://media.einoder.net/art/digital/posters",
+  "generated_at": "2026-04-09T04:29:58.534031+00:00",
+  "total_images": 7,
+  "images": [
+    {
+      "id": "8murray3",
+      "filename": "8murray3.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/8murray3.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/8murray3.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/8murray3.jpg"
+      }
+    },
+    {
+      "id": "COWBOY",
+      "filename": "COWBOY.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/COWBOY.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/COWBOY.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/COWBOY.jpg"
+      }
+    },
+    {
+      "id": "cowboyFramed",
+      "filename": "cowboyFramed.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/cowboyFramed.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/cowboyFramed.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/cowboyFramed.jpg"
+      }
+    },
+    {
+      "id": "JapanRoadHouse",
+      "filename": "JapanRoadHouse.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/JapanRoadHouse.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/JapanRoadHouse.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/JapanRoadHouse.jpg"
+      }
+    },
+    {
+      "id": "man_and_horse",
+      "filename": "man_and_horse.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/man_and_horse.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/man_and_horse.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/man_and_horse.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191016_113829",
+      "filename": "PSX_20191016_113829.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/PSX_20191016_113829.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/PSX_20191016_113829.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/PSX_20191016_113829.jpg"
+      }
+    },
+    {
+      "id": "SelfPortraitatMurray",
+      "filename": "SelfPortraitatMurray.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/SelfPortraitatMurray.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/SelfPortraitatMurray.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/SelfPortraitatMurray.jpg"
+      }
+    }
+  ]
+}

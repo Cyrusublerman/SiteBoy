@@ -1,0 +1,54 @@
+{
+  "gallery_name": "urban",
+  "gallery_type": "photos",
+  "base_url": "https://media.einoder.net/art/photos/urban",
+  "generated_at": "2026-04-07T05:51:32.671837+00:00",
+  "total_images": 5,
+  "images": [
+    {
+      "id": "237040610010",
+      "filename": "237040610010.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/urban/thumbs/237040610010.jpg",
+        "web": "https://media.einoder.net/art/photos/urban/web/237040610010.jpg",
+        "zoom": "https://media.einoder.net/art/photos/urban/zoom/237040610010.jpg"
+      }
+    },
+    {
+      "id": "237040610011",
+      "filename": "237040610011.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/urban/thumbs/237040610011.jpg",
+        "web": "https://media.einoder.net/art/photos/urban/web/237040610011.jpg",
+        "zoom": "https://media.einoder.net/art/photos/urban/zoom/237040610011.jpg"
+      }
+    },
+    {
+      "id": "237040610012",
+      "filename": "237040610012.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/urban/thumbs/237040610012.jpg",
+        "web": "https://media.einoder.net/art/photos/urban/web/237040610012.jpg",
+        "zoom": "https://media.einoder.net/art/photos/urban/zoom/237040610012.jpg"
+      }
+    },
+    {
+      "id": "237040610014",
+      "filename": "237040610014.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/urban/thumbs/237040610014.jpg",
+        "web": "https://media.einoder.net/art/photos/urban/web/237040610014.jpg",
+        "zoom": "https://media.einoder.net/art/photos/urban/zoom/237040610014.jpg"
+      }
+    },
+    {
+      "id": "237040620001",
+      "filename": "237040620001.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/urban/thumbs/237040620001.jpg",
+        "web": "https://media.einoder.net/art/photos/urban/web/237040620001.jpg",
+        "zoom": "https://media.einoder.net/art/photos/urban/zoom/237040620001.jpg"
+      }
+    }
+  ]
+}

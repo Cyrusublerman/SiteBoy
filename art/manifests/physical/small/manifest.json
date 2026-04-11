@@ -1,0 +1,144 @@
+{
+  "gallery_type": "physical",
+  "gallery_name": "small",
+  "base_url": "https://media.einoder.net/art/physical/small",
+  "generated_at": "2026-04-08T03:12:41.041967+00:00",
+  "total_images": 15,
+  "images": [
+    {
+      "id": "Bathing",
+      "filename": "Bathing.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/Bathing.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/Bathing.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/Bathing.jpg"
+      }
+    },
+    {
+      "id": "blob_face",
+      "filename": "blob_face.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/blob_face.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/blob_face.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/blob_face.jpg"
+      }
+    },
+    {
+      "id": "doghold",
+      "filename": "doghold.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/doghold.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/doghold.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/doghold.jpg"
+      }
+    },
+    {
+      "id": "ladyBOx",
+      "filename": "ladyBOx.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/ladyBOx.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/ladyBOx.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/ladyBOx.jpg"
+      }
+    },
+    {
+      "id": "Laurence",
+      "filename": "Laurence.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/Laurence.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/Laurence.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/Laurence.jpg"
+      }
+    },
+    {
+      "id": "ManBLockl",
+      "filename": "ManBLockl.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/ManBLockl.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/ManBLockl.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/ManBLockl.jpg"
+      }
+    },
+    {
+      "id": "ManOnGrass",
+      "filename": "ManOnGrass.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/ManOnGrass.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/ManOnGrass.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/ManOnGrass.jpg"
+      }
+    },
+    {
+      "id": "ManOnGrass2",
+      "filename": "ManOnGrass2.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/ManOnGrass2.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/ManOnGrass2.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/ManOnGrass2.jpg"
+      }
+    },
+    {
+      "id": "Mess1",
+      "filename": "Mess1.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/Mess1.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/Mess1.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/Mess1.jpg"
+      }
+    },
+    {
+      "id": "MouldedandGlued",
+      "filename": "MouldedandGlued.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/MouldedandGlued.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/MouldedandGlued.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/MouldedandGlued.jpg"
+      }
+    },
+    {
+      "id": "NoMoreGaps",
+      "filename": "NoMoreGaps.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/NoMoreGaps.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/NoMoreGaps.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/NoMoreGaps.jpg"
+      }
+    },
+    {
+      "id": "PSX_20190814_221044",
+      "filename": "PSX_20190814_221044.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/PSX_20190814_221044.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/PSX_20190814_221044.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/PSX_20190814_221044.jpg"
+      }
+    },
+    {
+      "id": "pylon",
+      "filename": "pylon.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/pylon.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/pylon.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/pylon.jpg"
+      }
+    },
+    {
+      "id": "TalkBlock",
+      "filename": "TalkBlock.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/TalkBlock.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/TalkBlock.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/TalkBlock.jpg"
+      }
+    },
+    {
+      "id": "Waterfall",
+      "filename": "Waterfall.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/small/thumbs/Waterfall.jpg",
+        "web": "https://media.einoder.net/art/physical/small/web/Waterfall.jpg",
+        "zoom": "https://media.einoder.net/art/physical/small/zoom/Waterfall.jpg"
+      }
+    }
+  ]
+}

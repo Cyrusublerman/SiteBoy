@@ -1,0 +1,108 @@
+{
+  "gallery_name": "life1",
+  "gallery_type": "photos",
+  "base_url": "https://media.einoder.net/art/photos/life1",
+  "generated_at": "2026-04-07T05:51:17.661452+00:00",
+  "total_images": 11,
+  "images": [
+    {
+      "id": "237040610016",
+      "filename": "237040610016.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610016.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610016.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610016.jpg"
+      }
+    },
+    {
+      "id": "237040610021",
+      "filename": "237040610021.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610021.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610021.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610021.jpg"
+      }
+    },
+    {
+      "id": "237040610022",
+      "filename": "237040610022.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610022.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610022.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610022.jpg"
+      }
+    },
+    {
+      "id": "237040610023",
+      "filename": "237040610023.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610023.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610023.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610023.jpg"
+      }
+    },
+    {
+      "id": "237040610024",
+      "filename": "237040610024.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610024.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610024.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610024.jpg"
+      }
+    },
+    {
+      "id": "237040610025",
+      "filename": "237040610025.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610025.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610025.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610025.jpg"
+      }
+    },
+    {
+      "id": "237040610027",
+      "filename": "237040610027.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610027.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610027.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610027.jpg"
+      }
+    },
+    {
+      "id": "237040610028",
+      "filename": "237040610028.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610028.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610028.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610028.jpg"
+      }
+    },
+    {
+      "id": "237040610029",
+      "filename": "237040610029.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610029.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610029.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610029.jpg"
+      }
+    },
+    {
+      "id": "237040610030",
+      "filename": "237040610030.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610030.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610030.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610030.jpg"
+      }
+    },
+    {
+      "id": "237040610032",
+      "filename": "237040610032.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/life1/thumbs/237040610032.jpg",
+        "web": "https://media.einoder.net/art/photos/life1/web/237040610032.jpg",
+        "zoom": "https://media.einoder.net/art/photos/life1/zoom/237040610032.jpg"
+      }
+    }
+  ]
+}

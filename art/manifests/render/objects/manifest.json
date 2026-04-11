@@ -1,0 +1,81 @@
+{
+  "gallery_type": "render",
+  "gallery_name": "objects",
+  "base_url": "https://media.einoder.net/art/render/objects",
+  "generated_at": "2026-04-08T03:13:31.996277+00:00",
+  "total_images": 8,
+  "images": [
+    {
+      "id": "2_pics_1_cube_2020-Aug-26_07-14-23AM-000_CustomizedView13200202377",
+      "filename": "2_pics_1_cube_2020-Aug-26_07-14-23AM-000_CustomizedView13200202377.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/2_pics_1_cube_2020-Aug-26_07-14-23AM-000_CustomizedView13200202377.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/2_pics_1_cube_2020-Aug-26_07-14-23AM-000_CustomizedView13200202377.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/2_pics_1_cube_2020-Aug-26_07-14-23AM-000_CustomizedView13200202377.jpg"
+      }
+    },
+    {
+      "id": "2_pics_1_cube_2020-Aug-26_07-14-42AM-000_CustomizedView36884429188",
+      "filename": "2_pics_1_cube_2020-Aug-26_07-14-42AM-000_CustomizedView36884429188.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/2_pics_1_cube_2020-Aug-26_07-14-42AM-000_CustomizedView36884429188.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/2_pics_1_cube_2020-Aug-26_07-14-42AM-000_CustomizedView36884429188.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/2_pics_1_cube_2020-Aug-26_07-14-42AM-000_CustomizedView36884429188.jpg"
+      }
+    },
+    {
+      "id": "2d675f07-cfd9-4851-b74f-37bf8b0a7445",
+      "filename": "2d675f07-cfd9-4851-b74f-37bf8b0a7445.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/2d675f07-cfd9-4851-b74f-37bf8b0a7445.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/2d675f07-cfd9-4851-b74f-37bf8b0a7445.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/2d675f07-cfd9-4851-b74f-37bf8b0a7445.jpg"
+      }
+    },
+    {
+      "id": "ANGELSPEAKS_2020-Oct-20_08-03-16AM-000_CustomizedView8603903297_jpg",
+      "filename": "ANGELSPEAKS_2020-Oct-20_08-03-16AM-000_CustomizedView8603903297_jpg.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/ANGELSPEAKS_2020-Oct-20_08-03-16AM-000_CustomizedView8603903297_jpg.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/ANGELSPEAKS_2020-Oct-20_08-03-16AM-000_CustomizedView8603903297_jpg.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/ANGELSPEAKS_2020-Oct-20_08-03-16AM-000_CustomizedView8603903297_jpg.jpg"
+      }
+    },
+    {
+      "id": "MAZE_2",
+      "filename": "MAZE_2.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/MAZE_2.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/MAZE_2.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/MAZE_2.jpg"
+      }
+    },
+    {
+      "id": "maze_3",
+      "filename": "maze_3.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/maze_3.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/maze_3.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/maze_3.jpg"
+      }
+    },
+    {
+      "id": "maze_render1",
+      "filename": "maze_render1.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/maze_render1.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/maze_render1.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/maze_render1.jpg"
+      }
+    },
+    {
+      "id": "maze4",
+      "filename": "maze4.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/objects/thumbs/maze4.jpg",
+        "web": "https://media.einoder.net/art/render/objects/web/maze4.jpg",
+        "zoom": "https://media.einoder.net/art/render/objects/zoom/maze4.jpg"
+      }
+    }
+  ]
+}

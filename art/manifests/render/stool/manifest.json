@@ -1,0 +1,117 @@
+{
+  "gallery_type": "render",
+  "gallery_name": "stool",
+  "base_url": "https://media.einoder.net/art/render/stool",
+  "generated_at": "2026-04-08T03:13:42.840499+00:00",
+  "total_images": 12,
+  "images": [
+    {
+      "id": "1000015243_quant_custom_dither_on",
+      "filename": "1000015243_quant_custom_dither_on.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/1000015243_quant_custom_dither_on.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/1000015243_quant_custom_dither_on.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/1000015243_quant_custom_dither_on.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image_4",
+      "filename": "FotoSketcher_image_4.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image_4.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image_4.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image_4.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image",
+      "filename": "FotoSketcher_image.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image2",
+      "filename": "FotoSketcher_image2.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image2.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image2.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image2.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image3",
+      "filename": "FotoSketcher_image3.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image3.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image3.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image3.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image5",
+      "filename": "FotoSketcher_image5.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image5.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image5.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image5.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image6",
+      "filename": "FotoSketcher_image6.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image6.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image6.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image6.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image7",
+      "filename": "FotoSketcher_image7.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image7.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image7.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image7.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image8",
+      "filename": "FotoSketcher_image8.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image8.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image8.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image8.jpg"
+      }
+    },
+    {
+      "id": "FotoSketcher_image9",
+      "filename": "FotoSketcher_image9.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/FotoSketcher_image9.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/FotoSketcher_image9.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/FotoSketcher_image9.jpg"
+      }
+    },
+    {
+      "id": "stool",
+      "filename": "stool.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/stool.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/stool.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/stool.jpg"
+      }
+    },
+    {
+      "id": "stoolnomirror",
+      "filename": "stoolnomirror.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/stool/thumbs/stoolnomirror.jpg",
+        "web": "https://media.einoder.net/art/render/stool/web/stoolnomirror.jpg",
+        "zoom": "https://media.einoder.net/art/render/stool/zoom/stoolnomirror.jpg"
+      }
+    }
+  ]
+}

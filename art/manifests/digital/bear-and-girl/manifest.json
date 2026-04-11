@@ -1,0 +1,72 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "bear-and-girl",
+  "base_url": "https://media.einoder.net/art/digital/bear-and-girl",
+  "generated_at": "2026-04-08T03:09:18.765467+00:00",
+  "total_images": 7,
+  "images": [
+    {
+      "id": "bear_and_girl4",
+      "filename": "bear_and_girl4.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/bear_and_girl4.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/bear_and_girl4.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/bear_and_girl4.jpg"
+      }
+    },
+    {
+      "id": "IMG_20191118_091903_201",
+      "filename": "IMG_20191118_091903_201.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/IMG_20191118_091903_201.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/IMG_20191118_091903_201.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/IMG_20191118_091903_201.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191113_163951",
+      "filename": "PSX_20191113_163951.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/PSX_20191113_163951.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/PSX_20191113_163951.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/PSX_20191113_163951.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191113_164455",
+      "filename": "PSX_20191113_164455.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/PSX_20191113_164455.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/PSX_20191113_164455.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/PSX_20191113_164455.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191113_164802",
+      "filename": "PSX_20191113_164802.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/PSX_20191113_164802.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/PSX_20191113_164802.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/PSX_20191113_164802.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191113_165426_eightbit",
+      "filename": "PSX_20191113_165426_eightbit.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/PSX_20191113_165426_eightbit.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/PSX_20191113_165426_eightbit.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/PSX_20191113_165426_eightbit.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191113_165426_eightbit4",
+      "filename": "PSX_20191113_165426_eightbit4.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/bear-and-girl/thumbs/PSX_20191113_165426_eightbit4.jpg",
+        "web": "https://media.einoder.net/art/digital/bear-and-girl/web/PSX_20191113_165426_eightbit4.jpg",
+        "zoom": "https://media.einoder.net/art/digital/bear-and-girl/zoom/PSX_20191113_165426_eightbit4.jpg"
+      }
+    }
+  ]
+}

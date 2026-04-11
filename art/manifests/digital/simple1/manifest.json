@@ -1,0 +1,45 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "simple1",
+  "base_url": "https://media.einoder.net/art/digital/simple1",
+  "generated_at": "2026-04-08T03:11:05.307993+00:00",
+  "total_images": 4,
+  "images": [
+    {
+      "id": "IMG_20200207_202003_172",
+      "filename": "IMG_20200207_202003_172.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/simple1/thumbs/IMG_20200207_202003_172.jpg",
+        "web": "https://media.einoder.net/art/digital/simple1/web/IMG_20200207_202003_172.jpg",
+        "zoom": "https://media.einoder.net/art/digital/simple1/zoom/IMG_20200207_202003_172.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191127_075411",
+      "filename": "PSX_20191127_075411.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/simple1/thumbs/PSX_20191127_075411.jpg",
+        "web": "https://media.einoder.net/art/digital/simple1/web/PSX_20191127_075411.jpg",
+        "zoom": "https://media.einoder.net/art/digital/simple1/zoom/PSX_20191127_075411.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191127_075517",
+      "filename": "PSX_20191127_075517.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/simple1/thumbs/PSX_20191127_075517.jpg",
+        "web": "https://media.einoder.net/art/digital/simple1/web/PSX_20191127_075517.jpg",
+        "zoom": "https://media.einoder.net/art/digital/simple1/zoom/PSX_20191127_075517.jpg"
+      }
+    },
+    {
+      "id": "The_Wind_Blows_Unerotically",
+      "filename": "The_Wind_Blows_Unerotically.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/simple1/thumbs/The_Wind_Blows_Unerotically.jpg",
+        "web": "https://media.einoder.net/art/digital/simple1/web/The_Wind_Blows_Unerotically.jpg",
+        "zoom": "https://media.einoder.net/art/digital/simple1/zoom/The_Wind_Blows_Unerotically.jpg"
+      }
+    }
+  ]
+}

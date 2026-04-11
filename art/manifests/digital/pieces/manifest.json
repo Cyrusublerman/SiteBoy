@@ -1,0 +1,27 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "pieces",
+  "base_url": "https://media.einoder.net/art/digital/pieces",
+  "generated_at": "2026-04-08T03:10:37.269961+00:00",
+  "total_images": 2,
+  "images": [
+    {
+      "id": "MESS",
+      "filename": "MESS.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/pieces/thumbs/MESS.jpg",
+        "web": "https://media.einoder.net/art/digital/pieces/web/MESS.jpg",
+        "zoom": "https://media.einoder.net/art/digital/pieces/zoom/MESS.jpg"
+      }
+    },
+    {
+      "id": "P2",
+      "filename": "P2.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/pieces/thumbs/P2.jpg",
+        "web": "https://media.einoder.net/art/digital/pieces/web/P2.jpg",
+        "zoom": "https://media.einoder.net/art/digital/pieces/zoom/P2.jpg"
+      }
+    }
+  ]
+}

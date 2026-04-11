@@ -1,0 +1,153 @@
+{
+  "gallery_type": "physical",
+  "gallery_name": "medium",
+  "base_url": "https://media.einoder.net/art/physical/medium",
+  "generated_at": "2026-04-08T03:12:23.930314+00:00",
+  "total_images": 16,
+  "images": [
+    {
+      "id": "arrayofSilhouettes",
+      "filename": "arrayofSilhouettes.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/arrayofSilhouettes.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/arrayofSilhouettes.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/arrayofSilhouettes.jpg"
+      }
+    },
+    {
+      "id": "AssWHale",
+      "filename": "AssWHale.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/AssWHale.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/AssWHale.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/AssWHale.jpg"
+      }
+    },
+    {
+      "id": "Dissolved",
+      "filename": "Dissolved.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/Dissolved.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/Dissolved.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/Dissolved.jpg"
+      }
+    },
+    {
+      "id": "Favela_Cowboy",
+      "filename": "Favela_Cowboy.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/Favela_Cowboy.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/Favela_Cowboy.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/Favela_Cowboy.jpg"
+      }
+    },
+    {
+      "id": "fOAMED_uP",
+      "filename": "fOAMED_uP.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/fOAMED_uP.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/fOAMED_uP.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/fOAMED_uP.jpg"
+      }
+    },
+    {
+      "id": "FramedLady1",
+      "filename": "FramedLady1.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/FramedLady1.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/FramedLady1.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/FramedLady1.jpg"
+      }
+    },
+    {
+      "id": "FramedLady2",
+      "filename": "FramedLady2.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/FramedLady2.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/FramedLady2.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/FramedLady2.jpg"
+      }
+    },
+    {
+      "id": "FramedLady3",
+      "filename": "FramedLady3.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/FramedLady3.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/FramedLady3.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/FramedLady3.jpg"
+      }
+    },
+    {
+      "id": "GiraffeonGlass",
+      "filename": "GiraffeonGlass.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/GiraffeonGlass.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/GiraffeonGlass.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/GiraffeonGlass.jpg"
+      }
+    },
+    {
+      "id": "Grazing",
+      "filename": "Grazing.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/Grazing.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/Grazing.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/Grazing.jpg"
+      }
+    },
+    {
+      "id": "HorseAndBirdx",
+      "filename": "HorseAndBirdx.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/HorseAndBirdx.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/HorseAndBirdx.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/HorseAndBirdx.jpg"
+      }
+    },
+    {
+      "id": "IslandFlirting",
+      "filename": "IslandFlirting.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/IslandFlirting.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/IslandFlirting.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/IslandFlirting.jpg"
+      }
+    },
+    {
+      "id": "paperBoy",
+      "filename": "paperBoy.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/paperBoy.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/paperBoy.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/paperBoy.jpg"
+      }
+    },
+    {
+      "id": "Plastic_Silhoettes",
+      "filename": "Plastic_Silhoettes.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/Plastic_Silhoettes.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/Plastic_Silhoettes.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/Plastic_Silhoettes.jpg"
+      }
+    },
+    {
+      "id": "PlasticLady",
+      "filename": "PlasticLady.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/PlasticLady.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/PlasticLady.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/PlasticLady.jpg"
+      }
+    },
+    {
+      "id": "slave_Semaphore",
+      "filename": "slave_Semaphore.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/medium/thumbs/slave_Semaphore.jpg",
+        "web": "https://media.einoder.net/art/physical/medium/web/slave_Semaphore.jpg",
+        "zoom": "https://media.einoder.net/art/physical/medium/zoom/slave_Semaphore.jpg"
+      }
+    }
+  ]
+}

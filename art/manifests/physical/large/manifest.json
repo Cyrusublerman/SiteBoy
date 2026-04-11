@@ -1,0 +1,324 @@
+{
+  "gallery_type": "physical",
+  "gallery_name": "large",
+  "base_url": "https://media.einoder.net/art/physical/large",
+  "generated_at": "2026-04-08T03:12:02.184939+00:00",
+  "total_images": 35,
+  "images": [
+    {
+      "id": "Alien_Queen",
+      "filename": "Alien_Queen.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Alien_Queen.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Alien_Queen.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Alien_Queen.jpg"
+      }
+    },
+    {
+      "id": "Amoeba",
+      "filename": "Amoeba.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Amoeba.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Amoeba.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Amoeba.jpg"
+      }
+    },
+    {
+      "id": "Apocalypse",
+      "filename": "Apocalypse.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Apocalypse.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Apocalypse.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Apocalypse.jpg"
+      }
+    },
+    {
+      "id": "Axe_Murderer",
+      "filename": "Axe_Murderer.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Axe_Murderer.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Axe_Murderer.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Axe_Murderer.jpg"
+      }
+    },
+    {
+      "id": "Burned",
+      "filename": "Burned.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Burned.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Burned.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Burned.jpg"
+      }
+    },
+    {
+      "id": "CentaurSelf",
+      "filename": "CentaurSelf.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/CentaurSelf.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/CentaurSelf.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/CentaurSelf.jpg"
+      }
+    },
+    {
+      "id": "Demons",
+      "filename": "Demons.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Demons.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Demons.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Demons.jpg"
+      }
+    },
+    {
+      "id": "Door_Lady",
+      "filename": "Door_Lady.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Door_Lady.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Door_Lady.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Door_Lady.jpg"
+      }
+    },
+    {
+      "id": "Field_Couple",
+      "filename": "Field_Couple.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Field_Couple.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Field_Couple.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Field_Couple.jpg"
+      }
+    },
+    {
+      "id": "fordite1",
+      "filename": "fordite1.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/fordite1.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/fordite1.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/fordite1.jpg"
+      }
+    },
+    {
+      "id": "ForGrandmere",
+      "filename": "ForGrandmere.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/ForGrandmere.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/ForGrandmere.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/ForGrandmere.jpg"
+      }
+    },
+    {
+      "id": "Future_Humans",
+      "filename": "Future_Humans.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Future_Humans.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Future_Humans.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Future_Humans.jpg"
+      }
+    },
+    {
+      "id": "Garbaged",
+      "filename": "Garbaged.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Garbaged.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Garbaged.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Garbaged.jpg"
+      }
+    },
+    {
+      "id": "Homestead",
+      "filename": "Homestead.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Homestead.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Homestead.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Homestead.jpg"
+      }
+    },
+    {
+      "id": "HorseSign",
+      "filename": "HorseSign.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/HorseSign.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/HorseSign.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/HorseSign.jpg"
+      }
+    },
+    {
+      "id": "Jim",
+      "filename": "Jim.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Jim.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Jim.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Jim.jpg"
+      }
+    },
+    {
+      "id": "KAtH_Gir",
+      "filename": "KAtH_Gir.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/KAtH_Gir.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/KAtH_Gir.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/KAtH_Gir.jpg"
+      }
+    },
+    {
+      "id": "King",
+      "filename": "King.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/King.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/King.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/King.jpg"
+      }
+    },
+    {
+      "id": "Lingerie",
+      "filename": "Lingerie.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Lingerie.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Lingerie.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Lingerie.jpg"
+      }
+    },
+    {
+      "id": "LostInDots",
+      "filename": "LostInDots.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/LostInDots.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/LostInDots.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/LostInDots.jpg"
+      }
+    },
+    {
+      "id": "MaxAndHazel",
+      "filename": "MaxAndHazel.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/MaxAndHazel.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/MaxAndHazel.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/MaxAndHazel.jpg"
+      }
+    },
+    {
+      "id": "MIC",
+      "filename": "MIC.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/MIC.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/MIC.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/MIC.jpg"
+      }
+    },
+    {
+      "id": "Plastic_Ocean",
+      "filename": "Plastic_Ocean.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Plastic_Ocean.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Plastic_Ocean.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Plastic_Ocean.jpg"
+      }
+    },
+    {
+      "id": "PLasticLAdy",
+      "filename": "PLasticLAdy.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/PLasticLAdy.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/PLasticLAdy.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/PLasticLAdy.jpg"
+      }
+    },
+    {
+      "id": "Posed",
+      "filename": "Posed.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Posed.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Posed.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Posed.jpg"
+      }
+    },
+    {
+      "id": "Prawns.",
+      "filename": "Prawns..jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Prawns..jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Prawns..jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Prawns..jpg"
+      }
+    },
+    {
+      "id": "PSX_20190917_124043",
+      "filename": "PSX_20190917_124043.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/PSX_20190917_124043.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/PSX_20190917_124043.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/PSX_20190917_124043.jpg"
+      }
+    },
+    {
+      "id": "RideOrDIe",
+      "filename": "RideOrDIe.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/RideOrDIe.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/RideOrDIe.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/RideOrDIe.jpg"
+      }
+    },
+    {
+      "id": "SaintlySelfPortrait",
+      "filename": "SaintlySelfPortrait.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/SaintlySelfPortrait.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/SaintlySelfPortrait.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/SaintlySelfPortrait.jpg"
+      }
+    },
+    {
+      "id": "SnatchBrew",
+      "filename": "SnatchBrew.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/SnatchBrew.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/SnatchBrew.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/SnatchBrew.jpg"
+      }
+    },
+    {
+      "id": "Tropical_Holiday",
+      "filename": "Tropical_Holiday.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Tropical_Holiday.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Tropical_Holiday.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Tropical_Holiday.jpg"
+      }
+    },
+    {
+      "id": "UglyBaby",
+      "filename": "UglyBaby.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/UglyBaby.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/UglyBaby.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/UglyBaby.jpg"
+      }
+    },
+    {
+      "id": "Utopia",
+      "filename": "Utopia.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Utopia.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Utopia.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Utopia.jpg"
+      }
+    },
+    {
+      "id": "Yell",
+      "filename": "Yell.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/Yell.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/Yell.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/Yell.jpg"
+      }
+    },
+    {
+      "id": "YsAndRom",
+      "filename": "YsAndRom.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/physical/large/thumbs/YsAndRom.jpg",
+        "web": "https://media.einoder.net/art/physical/large/web/YsAndRom.jpg",
+        "zoom": "https://media.einoder.net/art/physical/large/zoom/YsAndRom.jpg"
+      }
+    }
+  ]
+}

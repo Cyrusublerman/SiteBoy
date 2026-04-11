@@ -1,0 +1,45 @@
+{
+  "gallery_name": "nature",
+  "gallery_type": "photos",
+  "base_url": "https://media.einoder.net/art/photos/nature",
+  "generated_at": "2026-04-07T05:51:27.228489+00:00",
+  "total_images": 4,
+  "images": [
+    {
+      "id": "262556200028",
+      "filename": "262556200028.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/nature/thumbs/262556200028.jpg",
+        "web": "https://media.einoder.net/art/photos/nature/web/262556200028.jpg",
+        "zoom": "https://media.einoder.net/art/photos/nature/zoom/262556200028.jpg"
+      }
+    },
+    {
+      "id": "262556200029",
+      "filename": "262556200029.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/nature/thumbs/262556200029.jpg",
+        "web": "https://media.einoder.net/art/photos/nature/web/262556200029.jpg",
+        "zoom": "https://media.einoder.net/art/photos/nature/zoom/262556200029.jpg"
+      }
+    },
+    {
+      "id": "262556200030",
+      "filename": "262556200030.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/nature/thumbs/262556200030.jpg",
+        "web": "https://media.einoder.net/art/photos/nature/web/262556200030.jpg",
+        "zoom": "https://media.einoder.net/art/photos/nature/zoom/262556200030.jpg"
+      }
+    },
+    {
+      "id": "R1-01040-0003",
+      "filename": "R1-01040-0003.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/photos/nature/thumbs/R1-01040-0003.jpg",
+        "web": "https://media.einoder.net/art/photos/nature/web/R1-01040-0003.jpg",
+        "zoom": "https://media.einoder.net/art/photos/nature/zoom/R1-01040-0003.jpg"
+      }
+    }
+  ]
+}

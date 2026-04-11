@@ -1,0 +1,81 @@
+{
+  "gallery_type": "digital",
+  "gallery_name": "women-and-horses",
+  "base_url": "https://media.einoder.net/art/digital/women-and-horses",
+  "generated_at": "2026-04-08T03:11:15.001715+00:00",
+  "total_images": 8,
+  "images": [
+    {
+      "id": "PSX_20191029_114535",
+      "filename": "PSX_20191029_114535.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_114535.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_114535.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_114535.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_114541",
+      "filename": "PSX_20191029_114541.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_114541.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_114541.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_114541.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_114614",
+      "filename": "PSX_20191029_114614.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_114614.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_114614.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_114614.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_114703",
+      "filename": "PSX_20191029_114703.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_114703.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_114703.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_114703.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_114723",
+      "filename": "PSX_20191029_114723.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_114723.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_114723.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_114723.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_115234",
+      "filename": "PSX_20191029_115234.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_115234.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_115234.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_115234.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_115322",
+      "filename": "PSX_20191029_115322.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_115322.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_115322.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_115322.jpg"
+      }
+    },
+    {
+      "id": "PSX_20191029_121849",
+      "filename": "PSX_20191029_121849.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/women-and-horses/thumbs/PSX_20191029_121849.jpg",
+        "web": "https://media.einoder.net/art/digital/women-and-horses/web/PSX_20191029_121849.jpg",
+        "zoom": "https://media.einoder.net/art/digital/women-and-horses/zoom/PSX_20191029_121849.jpg"
+      }
+    }
+  ]
+}

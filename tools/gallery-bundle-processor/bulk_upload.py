@@ -28,9 +28,10 @@ from botocore.exceptions import ClientError
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-REPO_ROOT   = Path(__file__).parent.parent.parent
-REF_ROOT    = REPO_ROOT / "reference" / "images to upload"
-OUTPUT_ROOT = Path(__file__).parent / "output" / "_bulk2"
+REPO_ROOT      = Path(__file__).parent.parent.parent
+REF_ROOT       = REPO_ROOT / "reference" / "images to upload"
+OUTPUT_ROOT    = Path(__file__).parent / "output" / "_bulk2"
+MANIFEST_ROOT  = REPO_ROOT / "art" / "manifests"   # committed to repo (no CORS)
 
 # ── R2 config ──────────────────────────────────────────────────────────────────
 
@@ -293,11 +294,14 @@ def process_gallery(client, src_rel: str, r2_type: str, r2_slug: str, direct_onl
 
     print(f"  upload: {stats['uploaded']} uploaded, {stats['skipped']} skipped, {stats['failed']} failed")
 
-    # Manifest
+    # Manifest — push to R2 and write locally (local copy avoids CORS on GitHub Pages)
     manifest = build_manifest(r2_prefix, r2_type, r2_slug, stems)
     manifest_key = f"{r2_prefix}/manifest.json"
     put_json(client, manifest_key, manifest)
-    print(f"  manifest -> {manifest_key}")
+    local_manifest = MANIFEST_ROOT / r2_type / r2_slug / "manifest.json"
+    local_manifest.parent.mkdir(parents=True, exist_ok=True)
+    local_manifest.write_text(json.dumps(manifest, indent=2))
+    print(f"  manifest -> {manifest_key} + art/manifests/{r2_type}/{r2_slug}/manifest.json")
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 

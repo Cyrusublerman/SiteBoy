@@ -1,0 +1,63 @@
+{
+  "gallery_type": "render",
+  "gallery_name": "lady-on-field",
+  "base_url": "https://media.einoder.net/art/render/lady-on-field",
+  "generated_at": "2026-04-08T03:13:26.908446+00:00",
+  "total_images": 6,
+  "images": [
+    {
+      "id": "ladysit",
+      "filename": "ladysit.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/lady-on-field/thumbs/ladysit.jpg",
+        "web": "https://media.einoder.net/art/render/lady-on-field/web/ladysit.jpg",
+        "zoom": "https://media.einoder.net/art/render/lady-on-field/zoom/ladysit.jpg"
+      }
+    },
+    {
+      "id": "ladysit2",
+      "filename": "ladysit2.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/lady-on-field/thumbs/ladysit2.jpg",
+        "web": "https://media.einoder.net/art/render/lady-on-field/web/ladysit2.jpg",
+        "zoom": "https://media.einoder.net/art/render/lady-on-field/zoom/ladysit2.jpg"
+      }
+    },
+    {
+      "id": "ladysit3",
+      "filename": "ladysit3.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/lady-on-field/thumbs/ladysit3.jpg",
+        "web": "https://media.einoder.net/art/render/lady-on-field/web/ladysit3.jpg",
+        "zoom": "https://media.einoder.net/art/render/lady-on-field/zoom/ladysit3.jpg"
+      }
+    },
+    {
+      "id": "ladysit3_quant_3bit_dither_on",
+      "filename": "ladysit3_quant_3bit_dither_on.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/lady-on-field/thumbs/ladysit3_quant_3bit_dither_on.jpg",
+        "web": "https://media.einoder.net/art/render/lady-on-field/web/ladysit3_quant_3bit_dither_on.jpg",
+        "zoom": "https://media.einoder.net/art/render/lady-on-field/zoom/ladysit3_quant_3bit_dither_on.jpg"
+      }
+    },
+    {
+      "id": "ladysit3_quant_ggost_dither_off",
+      "filename": "ladysit3_quant_ggost_dither_off.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/lady-on-field/thumbs/ladysit3_quant_ggost_dither_off.jpg",
+        "web": "https://media.einoder.net/art/render/lady-on-field/web/ladysit3_quant_ggost_dither_off.jpg",
+        "zoom": "https://media.einoder.net/art/render/lady-on-field/zoom/ladysit3_quant_ggost_dither_off.jpg"
+      }
+    },
+    {
+      "id": "ladysit3_quant_ggost_dither_on",
+      "filename": "ladysit3_quant_ggost_dither_on.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/render/lady-on-field/thumbs/ladysit3_quant_ggost_dither_on.jpg",
+        "web": "https://media.einoder.net/art/render/lady-on-field/web/ladysit3_quant_ggost_dither_on.jpg",
+        "zoom": "https://media.einoder.net/art/render/lady-on-field/zoom/ladysit3_quant_ggost_dither_on.jpg"
+      }
+    }
+  ]
+}

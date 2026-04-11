@@ -1,0 +1,18 @@
+{
+  "gallery_type": "objects",
+  "gallery_name": "guitar1",
+  "base_url": "https://media.einoder.net/art/objects/guitar1",
+  "generated_at": "2026-04-08T03:13:17.570796+00:00",
+  "total_images": 1,
+  "images": [
+    {
+      "id": "FRONT_AND_BACK",
+      "filename": "FRONT_AND_BACK.jpg",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/objects/guitar1/thumbs/FRONT_AND_BACK.jpg",
+        "web": "https://media.einoder.net/art/objects/guitar1/web/FRONT_AND_BACK.jpg",
+        "zoom": "https://media.einoder.net/art/objects/guitar1/zoom/FRONT_AND_BACK.jpg"
+      }
+    }
+  ]
+}
