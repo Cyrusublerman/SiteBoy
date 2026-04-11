@@ -20,7 +20,10 @@ export class EffectNode {
     this.blendMode = 'normal';
     this.expanded  = true;
     this.params = {};
-    this.paramDefs = paramDefs;
+    this.paramDefs = {
+      ...paramDefs,
+      __opacity__: { min: 0, max: 1, step: 0.01, value: 1, label: 'OPACITY' },
+    };
     for (const [k, v] of Object.entries(paramDefs)) {
       this.params[k] = v.value;
     }
@@ -52,6 +55,14 @@ export class EffectNode {
   /** Override in subclasses. dst.set(src) = pass-through. */
   apply(src, dst, w, h, ctx) { dst.set(src); }
 
+  /**
+   * Optional vector polylines for per-node SVG export.
+   * @returns {Array<Array<[number, number]>>}
+   */
+  buildGeometry(w, h, ctx, srcPixels) {
+    return [];
+  }
+
   /** Hook for LUT-composable nodes (deprecated; Pipeline is strictly sequential). */
   buildLUT(lutR, lutG, lutB) {}
 
@@ -63,7 +74,7 @@ export class EffectNode {
    * Falls back to base param value if no modulation is active.
    */
   getModulated(key, pixelIdx, ctx) {
-    const base = this.params[key];
+    const base = key === '__opacity__' ? this.opacity : this.params[key];
     const mod = this.modulation[key];
     if (!mod || !ctx) return base;
 
@@ -78,6 +89,17 @@ export class EffectNode {
       const map = ctx.modMaps[mod.mapId];
       const idx = Math.max(0, Math.min(map.length - 1, pixelIdx | 0));
       let mv = map[idx] / 255;
+      if (mod.invert) mv = 1 - mv;
+      const amount = typeof mod.amount === 'number' ? mod.amount : 1;
+      const driven = lo + mv * (hi - lo);
+      const out = base * (1 - amount) + driven * amount;
+      return Math.max(lo, Math.min(hi, out));
+    }
+
+    if (mode === 'source') {
+      const px = ctx?.pixelVars?.[pixelIdx];
+      if (!px) return base;
+      let mv = px.lum;
       if (mod.invert) mv = 1 - mv;
       const amount = typeof mod.amount === 'number' ? mod.amount : 1;
       const driven = lo + mv * (hi - lo);
@@ -220,6 +242,14 @@ export class EffectNode {
     this.opacity   = data.opacity   ?? 1;
     this.blendMode = data.blendMode ?? 'normal';
     for (const k in data.params) if (k in this.params) this.params[k] = data.params[k];
+    // Backwards-compat: old tileblend/perlinoverlay used 'blendMode' or 'internalBlend'; migrate to current keys.
+    if (data.params) {
+      const legacy = data.params.internalBlend ?? data.params.blendMode;
+      if (legacy !== undefined) {
+        if ('combineMode' in this.params && !('combineMode' in data.params)) this.params.combineMode = legacy;
+        if ('blendMode'  in this.params && !('blendMode'  in data.params)) this.params.blendMode  = legacy;
+      }
+    }
     if (data.mask) {
       this.mask.enabled = data.mask.enabled ?? false;
       this.mask.source  = data.mask.source  ?? 'none';

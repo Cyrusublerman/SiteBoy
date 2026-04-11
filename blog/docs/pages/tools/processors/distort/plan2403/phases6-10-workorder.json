@@ -1,0 +1,53 @@
+{
+  "phase6": {
+    "action": "Rewrite 8-file packs under reference/distort/<type>/ per Phase 6 in _implementation_plan.md",
+    "seedMarker": "migration-log.md appended with PLAN2403 block (all packs)",
+    "fieldOutputNote": "Add field-output.md where module exports scalar/vector fields"
+  },
+  "phase7": {
+    "rule": "Each review action item maps to mechanisms.md | issues-and-conflicts.md | feature-parity.md sentence",
+    "specialReviews": {
+      "EQUALISATION": ["histogrameq_review2403.md", "clahe_review2403.md"],
+      "QUANTISE": ["quantise_review2403.md", "posterize_review2403.md", "dither_review2403.md"],
+      "HSL": ["hsladjust_review2403.md", "temptint_review2403.md"],
+      "CONTRAST": ["vibrance_review2403.md"],
+      "DELAUNAYMESH": ["delaunaymesh_review2403.md", "voronoi_review2403.md"]
+    },
+    "ambiguities": [
+      {"type": "PERLINOVERLAY", "question": "Final type string", "options": ["perlinoverlay", "noisefield"], "owner": "user"},
+      {"type": "DELAUNAYMESH", "question": "Display rename", "options": ["mosaic", "tessellation", "keep"], "owner": "user"},
+      {"type": "QUANTISE", "question": "Dither set scope", "options": ["review minimum", "full index from DITHER review"], "owner": "standards+algorithms"},
+      {"type": "MERGE", "question": "Feature depth", "options": ["MVP", "full multi-stage"], "owner": "user"},
+      {"type": "INTERFERENCE", "question": "Param rename", "options": ["COUPLING STRENGTH", "THICKNESS RESPONSE"], "owner": "user"},
+      {"type": "LUMFLOW", "question": "Display canonical", "options": ["LUMFLOW", "LUMINANCE FLOW"], "owner": "user"},
+      {"type": "VORONOI_to_DELAUNAY", "question": "API surface", "options": ["mode only", "shared field bus"], "owner": "algorithm"},
+      {"type": "G4", "question": "Blur unification", "options": ["single BLUR module", "six modules"], "owner": "user"},
+      {"type": "INVERT", "question": "Hue-only inversion", "options": ["HSL rotate", "per-channel"], "owner": "algorithm"}
+    ]
+  },
+  "phase8": {
+    "perModuleDocumentMustCover": [
+      "Operating mode logic",
+      "Param visibility (G14 / when)",
+      "Driver boundary + honest driveable",
+      "Field output contract",
+      "Worker boundary",
+      "Compositing contract (G15)"
+    ]
+  },
+  "phase9": {
+    "checks": [
+      "Naming: FIELD vs MASK vs SCALAR",
+      "Shared component prop parity (ColourRampControl etc.)",
+      "FIELD format [0,1] vs raw",
+      "Driveability matches apply() modulation use",
+      "Worker policy agreement (CA, RD, WAVE, STIPPLE, DELAUNAY, BILATERAL)",
+      "FRAME semantic single convention"
+    ],
+    "passCriterion": "Zero unresolved contradiction across six dimensions or explicit exception rows in programme log"
+  },
+  "phase10": {
+    "activeTargetCount": 60,
+    "note": "Execution order A→L in _implementation_plan.md Phase 10; code merges absorb 7 MERGE sources during target builds"
+  }
+}

@@ -1,4 +1,5 @@
 import { createEffectModule } from '../../core/EffectModule.js';
+import { capByFrame } from '../../core/frameCap.js';
 import { buildWavefrontLines } from '../../../../../shared/algorithms/line/serpentine-line-engine.js';
 import { vectorToRaster } from '../bridge/node-adapters.js';
 
@@ -12,47 +13,91 @@ export const SerpentineNode = createEffectModule({
   category: 'LINE',
   isVector: true,
   params: {
-    spacing:     { label: 'SPACING',    min: 2, max: 40,   step: 1,    value: 6,   tier: 3, unit: 'px', driveable: true },
-    amplitude:   { label: 'AMPLITUDE',  min: 0.5, max: 20, step: 0.5,  value: 2.5, tier: 3, unit: 'px', driveable: true },
-    frequency:   { label: 'FREQUENCY',  min: 0.1, max: 5,  step: 0.1,  value: 1,   tier: 3, driveable: true },
-    baseSpeed:   { label: 'SPEED',      min: 0.05, max: 3, step: 0.05, value: 0.5, tier: 3, driveable: true },
-    dragLight:   { label: 'DRAG LIGHT', min: 0, max: 0.8,  step: 0.01, value: 0,   tier: 4 },
-    dragDark:    { label: 'DRAG DARK',  min: 0, max: 0.95, step: 0.01, value: 0.5, tier: 4, driveable: true },
-    iterations:  { label: 'ITERATIONS', min: 10, max: 2000, step: 10,  value: 200, tier: 4, previewMax: 60 },
-    strokeW:     { label: 'STROKE W',   min: 0.25, max: 4, step: 0.25, value: 1,   tier: 3, unit: 'px' },
-    bgColor:     { label: 'BG LEVEL',   min: 0, max: 255,  step: 1,   value: 255,  tier: 4 },
-    strokeColor: { label: 'STROKE LVL', min: 0, max: 255,  step: 1,   value: 0,    tier: 4, driveable: true }
+    frame:         { label: 'FRAME',        min: 0,    max: 240,  step: 1,    value: 0,      tier: 3, driveable: true, unit: 'frames' },
+    spacing:       { label: 'SPACING',      min: 2,    max: 40,   step: 1,    value: 6,      tier: 3, unit: 'px', driveable: true, previewMax: 10 },
+    amplitude:     { label: 'AMPLITUDE',    min: 0.5,  max: 20,   step: 0.5,  value: 2.5,    tier: 3, unit: 'px', driveable: true },
+    frequency:     { label: 'FREQUENCY',    min: 0.1,  max: 5,    step: 0.1,  value: 1,      tier: 3, driveable: true, unit: 'Hz' },
+    baseSpeed:     { label: 'SPEED',        min: 0.05, max: 3,    step: 0.05, value: 0.5,    tier: 3, driveable: true, unit: 'n', previewMax: 0.5 },
+    dragLight:     { label: 'DRAG LIGHT',   min: 0,    max: 0.8,  step: 0.01, value: 0,      tier: 4, driveable: true, unit: '0–1' },
+    dragDark:      { label: 'DRAG DARK',    min: 0,    max: 0.95, step: 0.01, value: 0.5,    tier: 4, driveable: true, unit: '0–1' },
+    iterations:    { label: 'ITERATIONS',   min: 10,   max: 2000, step: 10,   value: 200,    tier: 4, previewMax: 60, driveable: true, unit: 'n' },
+    strokeW:       { label: 'STROKE W',     min: 0.25, max: 4,    step: 0.25, value: 1,      tier: 3, unit: 'px', driveable: true },
+    bgColor:       { label: 'BG LEVEL',     min: 0,    max: 255,  step: 1,    value: 255,    tier: 4, driveable: true, unit: 'lvl' },
+    strokeColor:   { label: 'STROKE LVL',   min: 0,    max: 255,  step: 1,    value: 0,      tier: 4, driveable: true, unit: 'lvl' },
+    lineOpacity:   { label: 'LINE OPACITY', min: 0,    max: 1,    step: 0.01, value: 1,      tier: 4, driveable: true, unit: '0–1' },
+    spawnRate:     { label: 'SPAWN RATE',   min: 1,    max: 8,    step: 1,    value: 1,      tier: 4, driveable: true, unit: 'n' },
+    topBound:      { label: 'TOP BOUND',    min: 0,    max: 1,    step: 0.01, value: 0,      tier: 4, driveable: true, unit: '0–1' },
+    bottomBound:   { label: 'BOTTOM BOUND', min: 0,    max: 1,    step: 0.01, value: 1,      tier: 4, driveable: true, unit: '0–1' },
+    responseCurve: { label: 'RESPONSE CURVE', type: 'select', value: 'linear', options: ['linear', 'exponential', 'sigmoid'], tier: 4 },
+    curveStrength: { label: 'CURVE STRENGTH', min: 0.1, max: 5,  step: 0.1,  value: 1,      tier: 4, driveable: true, unit: 'n' }
   },
   applyVector(src, w, h, p, ctx) {
     const n = w * h, lum = new Float32Array(n);
     for (let i = 0; i < n; i++) { const j = i * 4; lum[i] = (0.2126 * src[j] + 0.7152 * src[j + 1] + 0.0722 * src[j + 2]) / 255; }
-    const iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 60) : p.iterations;
+    let iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 60) : p.iterations;
+    iters = capByFrame(iters, p.frame);
     const set = buildWavefrontLines({
       width: w, height: h,
       luminanceAt: (cx, cy) => _lumAt(lum, w, h, cx, cy),
       spacing: p.spacing, amplitude: p.amplitude, frequency: p.frequency,
       baseSpeed: p.baseSpeed, dragLight: p.dragLight, dragDark: p.dragDark,
-      iterations: iters
+      iterations: iters,
+      spawnRate: p.spawnRate, topBound: p.topBound, bottomBound: p.bottomBound,
+      responseCurve: p.responseCurve, curveStrength: p.curveStrength
     });
     return { lines: set.lines, strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255], strokeWidth: p.strokeW, clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255] };
   },
-  apply(src, dst, w, h, p, ctx) {
+  apply(src, dst, w, h, p, ctx, modulate) {
     const n = w * h, lum = new Float32Array(n);
     for (let i = 0; i < n; i++) { const j = i * 4; lum[i] = (0.2126 * src[j] + 0.7152 * src[j + 1] + 0.0722 * src[j + 2]) / 255; }
-    const iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 60) : p.iterations;
+    // Frame-level modulation: sample at pixel 0 (geometry params are whole-frame, not per-pixel)
+    const spacing      = modulate('spacing', 0);
+    const amplitude    = modulate('amplitude', 0);
+    const frequency    = modulate('frequency', 0);
+    const baseSpeed    = modulate('baseSpeed', 0);
+    const dragLight    = modulate('dragLight', 0);
+    const dragDark     = modulate('dragDark', 0);
+    const strokeW      = modulate('strokeW', 0);
+    const bgColor      = modulate('bgColor', 0);
+    const strokeColor  = modulate('strokeColor', 0);
+    const lineOpacity  = modulate('lineOpacity', 0);
+    const spawnRate    = modulate('spawnRate', 0);
+    const topBound     = modulate('topBound', 0);
+    const bottomBound  = modulate('bottomBound', 0);
+    const curveStrength = modulate('curveStrength', 0);
+    let iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 60) : p.iterations;
+    iters = capByFrame(iters, p.frame);
+    const set = buildWavefrontLines({
+      width: w, height: h,
+      luminanceAt: (cx, cy) => _lumAt(lum, w, h, cx, cy),
+      spacing, amplitude, frequency, baseSpeed, dragLight, dragDark,
+      iterations: iters,
+      spawnRate, topBound, bottomBound,
+      responseCurve: p.responseCurve, curveStrength
+    });
+    dst.set(vectorToRaster({
+      basePixels: src, width: w, height: h, lines: set.lines,
+      strokeRGBA: [strokeColor, strokeColor, strokeColor, 255],
+      strokeWidth: strokeW,
+      clearRGBA: [bgColor, bgColor, bgColor, 255],
+      opacity: lineOpacity
+    }));
+  },
+  buildGeometry(w, h, p, ctx, src) {
+    if (!src || src.length < w * h * 4) return [];
+    const n = w * h, lum = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const j = i * 4; lum[i] = (0.2126 * src[j] + 0.7152 * src[j + 1] + 0.0722 * src[j + 2]) / 255; }
+    let iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 60) : p.iterations;
+    iters = capByFrame(iters, p.frame);
     const set = buildWavefrontLines({
       width: w, height: h,
       luminanceAt: (cx, cy) => _lumAt(lum, w, h, cx, cy),
       spacing: p.spacing, amplitude: p.amplitude, frequency: p.frequency,
       baseSpeed: p.baseSpeed, dragLight: p.dragLight, dragDark: p.dragDark,
-      iterations: iters
+      iterations: iters,
+      spawnRate: p.spawnRate, topBound: p.topBound, bottomBound: p.bottomBound,
+      responseCurve: p.responseCurve, curveStrength: p.curveStrength
     });
-    dst.set(vectorToRaster({
-      basePixels: src, width: w, height: h, lines: set.lines,
-      strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255],
-      strokeWidth: p.strokeW,
-      clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255],
-      opacity: 1
-    }));
+    return set.lines || [];
   }
 });

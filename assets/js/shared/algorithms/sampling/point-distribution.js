@@ -492,6 +492,62 @@ export function lloydRelaxation(points, width, height, iterations = 10, sampleDe
     return current;
 }
 
+/**
+ * Lloyd relaxation with per-sample weights from a tone field (e.g. stipple density).
+ *
+ * @param {Array<{x: number, y: number}>} points
+ * @param {number} width
+ * @param {number} height
+ * @param {Float32Array} toneField - length tw*th, non-negative weights
+ * @param {number} tw
+ * @param {number} th
+ * @param {number} [iterations=8]
+ * @param {number} [samples=48] - Grid samples per axis for centroid accumulation
+ * @returns {Array<{x: number, y: number}>}
+ */
+export function lloydRelaxationToneWeighted(points, width, height, toneField, tw, th, iterations = 8, samples = 48) {
+    let current = points.map(p => ({ x: p.x, y: p.y }));
+    const sampleStepX = width / samples;
+    const sampleStepY = height / samples;
+    const toneAt = (x, y) => {
+        const tx = Math.floor((x / width) * tw);
+        const ty = Math.floor((y / height) * th);
+        const ix = Math.max(0, Math.min(tw - 1, tx));
+        const iy = Math.max(0, Math.min(th - 1, ty));
+        return toneField[iy * tw + ix];
+    };
+    for (let iter = 0; iter < iterations; iter++) {
+        const centroids = current.map(() => ({ wx: 0, wy: 0, wsum: 0 }));
+        for (let sy = 0; sy < samples; sy++) {
+            for (let sx = 0; sx < samples; sx++) {
+                const x = (sx + 0.5) * sampleStepX;
+                const y = (sy + 0.5) * sampleStepY;
+                const wgt = toneAt(x, y);
+                if (wgt < 1e-9) continue;
+                let nearestIdx = 0;
+                let nearestDist = Infinity;
+                for (let i = 0; i < current.length; i++) {
+                    const dist = MathUtils.distEuclideanSq([x, y], [current[i].x, current[i].y]);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestIdx = i;
+                    }
+                }
+                centroids[nearestIdx].wx += x * wgt;
+                centroids[nearestIdx].wy += y * wgt;
+                centroids[nearestIdx].wsum += wgt;
+            }
+        }
+        for (let i = 0; i < current.length; i++) {
+            if (centroids[i].wsum > 0) {
+                current[i].x = centroids[i].wx / centroids[i].wsum;
+                current[i].y = centroids[i].wy / centroids[i].wsum;
+            }
+        }
+    }
+    return current;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // IMPORTANCE SAMPLING
 // ═══════════════════════════════════════════════════════════════════════════
@@ -561,6 +617,7 @@ export default {
     stratifiedSampling,
     jitteredGrid,
     lloydRelaxation,
+    lloydRelaxationToneWeighted,
     importanceSampling,
     weightedPoissonDisk
 };

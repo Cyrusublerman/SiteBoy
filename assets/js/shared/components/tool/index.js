@@ -16,3 +16,17 @@ export { NodePanel } from './distort/NodePanel.js';
 export { DriverPicker } from './distort/DriverPicker.js';
 export { CategoryPicker } from './distort/CategoryPicker.js';
 export { ViewportCanvas } from './distort/ViewportCanvas.js';
+export {
+  ColourRampControl,
+  CentrePointPicker,
+  FrameSlider,
+  SVGExportButton,
+  NoiseSourceControl,
+  InputDomainSelector,
+  OutputModeSelector,
+  MaskControls,
+  DriverMappingPanel,
+  TemporalModeControl,
+  DiagnosticPreviewToggle,
+  LuminanceCurveEditor,
+} from './distort/DistortExtendedControls.js';

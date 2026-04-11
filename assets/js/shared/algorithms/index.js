@@ -94,6 +94,13 @@ export * as SpaceFilling from './space-filling/space-filling-curves.js';
 export * as TSP from './tsp/path-optimization.js';
 export * as Geometry from './geometry/polygon-operations.js';
 export * as Noise from './noise/noise-functions.js';
+export * as ValueNoise from './noise/value-2d.js';
+export * as WorleyNoise from './noise/worley-2d.js';
+export * as WhiteGaussianNoise from './noise/white-gaussian-2d.js';
+export * as RidgedFbm from './noise/ridged-fbm-2d.js';
+export * as Turbulence from './noise/turbulence-2d.js';
+export * as BlueNoiseMask from './noise/blue-noise-mask-2d.js';
+export * as PaintStroke from './rendering/paintstroke-error.js';
 export * as Patterns from './patterns/pattern-generators.js';
 export * as HalftonePatterns from './patterns/halftone-patterns.js';
 
@@ -101,6 +108,8 @@ export * as HalftonePatterns from './patterns/halftone-patterns.js';
 export * as SDF from './geometry/sdf-operations.js';
 export * as BinPacking from './geometry/bin-packing.js';
 export * as MarchingSquares from './geometry/marching-squares.js';
+export * as Delaunay from './geometry/delaunay-2d.js';
+export * as Voronoi2D from './geometry/voronoi-2d.js';
 export * as SpatialIndex from './geometry/spatial-index.js';
 export * as CurveGeometry from './geometry/curve-geometry.js';
 
@@ -118,6 +127,8 @@ export * as Optics from './optics/interference.js';
 
 // Features
 export * as HOG from './features/hog.js';
+export * as FeatureExtraction from './features/feature-extraction.js';
+export * as GaussianKernelMath from './math/gaussian-kernel-1d.js';
 
 // Image
 export * as Posterization from './image/posterization.js';
@@ -221,8 +232,30 @@ export {
     smoothstep,
     smootherstep,
     seedNoise,
-    mapNoiseRange
+    mapNoiseRange,
+    perlin2D as perlinNoise2D,
+    simplex2D as simplexNoise2D,
+    fbm2D as fbmNoise2D
 } from './noise/noise-functions.js';
+
+export {
+    valueNoise2D
+} from './noise/value-2d.js';
+export {
+    worleyNoise2D
+} from './noise/worley-2d.js';
+export {
+    whiteGaussianNoise2D
+} from './noise/white-gaussian-2d.js';
+export {
+    ridgedFbm2D
+} from './noise/ridged-fbm-2d.js';
+export {
+    turbulenceField2D
+} from './noise/turbulence-2d.js';
+export {
+    paintStrokeErrorGuided
+} from './rendering/paintstroke-error.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // RE-EXPORTS: Pattern Generators
@@ -231,6 +264,9 @@ export {
     generateTruchetGrid,
     getTruchetArcs,
     truchetSDF,
+    truchetTileField2D,
+    moireWaveInterference2D,
+    gratingBandField2D,
     linearGrating,
     radialGrating,
     angularGrating,
@@ -249,6 +285,7 @@ export {
     crossHatchHalftone,
     contourAlignedLattice,
     sizeDotsFromLuminance,
+    halftoneResponseMap,
     dyadicHalftone,
     extractLuminance,
     extractNormalMap,
@@ -263,6 +300,10 @@ export {
     sdfBox,
     sdfRoundedBox,
     sdfSegment,
+    sdfEllipse,
+    sdfCapsule,
+    sdfRing,
+    sdfPrimitive2D,
     sdfPolygon,
     sdfUnion,
     sdfIntersection,
@@ -297,6 +338,7 @@ export {
 export {
     marchingSquares,
     extractContours,
+    marchingSquaresContour,
     extractMultipleContours,
     autoContourLevels,
     contourArea,
@@ -347,9 +389,11 @@ export {
     advectParticleEuler,
     advectParticleRK4,
     traceStreamline,
+    streamlineIntegrate2D,
     uniformVelocityField,
     rotationalVelocityField,
-    curlNoiseVelocityField
+    curlNoiseVelocityField,
+    curlNoise2D
 } from './physics/advection.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -391,7 +435,8 @@ export {
     jumpFloodAlgorithm,
     jfaToDistanceField,
     jfaSignedDistanceField,
-    jfaVoronoi
+    jfaVoronoi,
+    euclideanDistanceTransform2D
 } from './distance/jfa.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -648,6 +693,36 @@ export * as TextureOverlays from './image/texture-overlays.js';
 // IMAGE COMPOSITING — stipple placement, tile blend
 // ═══════════════════════════════════════════════════════════════════════════
 export * as ImageCompositing from './image/compositing.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// plan2403 / audit — flat aliases (supplement namespace exports above)
+// ═══════════════════════════════════════════════════════════════════════════
+export { separableGaussianKernel1D } from './math/gaussian-kernel-1d.js';
+export { gradientMagnitude2D, edgeTangentDistance2D } from './features/feature-extraction.js';
+export {
+  bilateralGridApprox,
+  separableBoxBlurPasses,
+  medianHistogramApprox
+} from './image/blur-filters.js';
+export { morphologySeparableApprox } from './image/morphology.js';
+export { stippleLloydRelax2d } from './image/compositing.js';
+export {
+  lloydRelaxationToneWeighted,
+  poissonDisk as poissonDiscSampling2d
+} from './sampling/point-distribution.js';
+export { histogramEqualise as histogramEqualiseGlobal, clahe as claheTiles } from './image/colour-adjustments.js';
+export { otsuThreshold as otsuGlobalThreshold } from './segmentation/thresholding.js';
+export {
+  stepGrayScott as grayscottStep2d,
+  stepCellularAutomaton as cellularAutomataTotalisticStep
+} from './physics/reaction-diffusion.js';
+export { stepWave2D as waveEquationFd2D } from './physics/wave-solver.js';
+export { thinFilmOPD as thinFilmPhaseThickness } from './optics/interference.js';
+
+export { blueNoiseMask2D, generateBlueNoiseTile } from './noise/blue-noise-mask-2d.js';
+export { delaunayTriangulation2D } from './geometry/delaunay-2d.js';
+export { voronoiDiagram2d, voronoiQuery2d } from './geometry/voronoi-2d.js';
+export { serpentineOscillatorRaster } from './line/serpentine-line-engine.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GEOMETRIC DISTORTION — band shift, spherize, twirl, chromatic aberration, lens bubbles

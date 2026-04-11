@@ -256,6 +256,47 @@ export function traceStreamline(startX, startY, velocityX, velocityY, width, hei
     return points;
 }
 
+/**
+ * Streamline as polyline; Euler or RK4 per step.
+ * @param {number} startX
+ * @param {number} startY
+ * @param {Float32Array} velocityX
+ * @param {Float32Array} velocityY
+ * @param {number} width
+ * @param {number} height
+ * @param {number} [dt=1]
+ * @param {number} [maxSteps=200]
+ * @param {'euler'|'rk4'} [method='rk4']
+ * @returns {Array<{x: number, y: number}>}
+ */
+export function streamlineIntegrate2D(
+    startX,
+    startY,
+    velocityX,
+    velocityY,
+    width,
+    height,
+    dt = 1,
+    maxSteps = 200,
+    method = 'rk4'
+) {
+    const points = [{ x: startX, y: startY }];
+    let x = startX;
+    let y = startY;
+    const stepFn = method === 'euler' ? advectParticleEuler : advectParticleRK4;
+    for (let i = 0; i < maxSteps; i++) {
+        const next = stepFn(x, y, velocityX, velocityY, width, height, dt);
+        if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height) break;
+        const vx = bilinearSample(velocityX, width, height, next.x, next.y);
+        const vy = bilinearSample(velocityY, width, height, next.x, next.y);
+        if (vx * vx + vy * vy < 0.0001) break;
+        points.push(next);
+        x = next.x;
+        y = next.y;
+    }
+    return points;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // VELOCITY FIELD GENERATORS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -340,3 +381,25 @@ export function curlNoiseVelocityField(width, height, noiseFunc, scale, strength
     return { velocityX, velocityY };
 }
 
+/**
+ * Pointwise curl noise sample (2-D).
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {function(number, number): number} noiseFunc
+ * @param {number} [scale=1]
+ * @param {number} [eps=0.001]
+ * @returns {{ vx: number, vy: number }}
+ */
+export function curlNoise2D(x, y, noiseFunc, scale = 1, eps = 0.001) {
+    const nx = x * scale;
+    const ny = y * scale;
+    const n1 = noiseFunc(nx, ny + eps);
+    const n2 = noiseFunc(nx, ny - eps);
+    const n3 = noiseFunc(nx + eps, ny);
+    const n4 = noiseFunc(nx - eps, ny);
+    return {
+        vx: (n1 - n2) / (2 * eps),
+        vy: -(n3 - n4) / (2 * eps)
+    };
+}

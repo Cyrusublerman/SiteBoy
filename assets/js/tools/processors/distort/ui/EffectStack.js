@@ -9,6 +9,9 @@ export class EffectStack extends BaseComponent {
     this._onChange = options.onChange ?? null;
     this._canvasAreaEl = options.canvasAreaEl ?? null;
     this._getSourceDims = options.getSourceDims ?? null;
+    this._getSourcePixels = options.getSourcePixels ?? null;
+    this._getRenderContext = options.getRenderContext ?? null;
+    this._onRequestPick = options.onRequestPick ?? null;
 
     this._soloNodeId = null;
     this._expandedNodeId = null;
@@ -100,6 +103,9 @@ export class EffectStack extends BaseComponent {
         isSolo: node.id === this._soloNodeId,
         canvasAreaEl: this._canvasAreaEl,
         getSourceDims: this._getSourceDims,
+        getSourcePixels: this._getSourcePixels,
+        getRenderContext: this._getRenderContext,
+        onRequestPick: this._onRequestPick,
         onSelect: ({ nodeIdx }) => {
           const current = this._nodes[nodeIdx];
           if (!current) return;

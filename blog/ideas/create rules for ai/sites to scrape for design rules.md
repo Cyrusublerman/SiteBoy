@@ -140,3 +140,12 @@ https://medium.com/@rentierdigital/i-stopped-vibe-coding-and-started-prompt-cont
 
 http://nurxmedov.medium.com/were-using-5-percent-of-what-ai-can-do-3c4790ea0f8d
 
+https://webflow.com/blog/brutalism?utm_source=google&utm_medium=search&utm_campaign=SS-GoogleSearch-Nonbrand-DynamicSearchAds-Tier1&utm_term=dsa-394662097580___769775243240__&gad_source=1&gad_campaignid=21388869024&gbraid=0AAAAADsEFNNRWZbIaaPKIQlrQTo0kSSjG&gclid=Cj0KCQjwyr3OBhD0ARIsALlo-Om046tFzQIWgjMYtOOmp3wTmCjsAumU2A-O-a39kNbJrV4Ul-PaZN4aAklyEALw_wcB
+
+https://brutalist-web.design/
+
+https://bbs.boingboing.net/t/guidelines-for-brutalist-web-design/124230/41?page=3
+
+http://khalilstemmler.com/blogs/thoughts/brutalist-websites/
+
+https://carder.market/threads/the-2025-web-design-paradigm-a-symphony-of-purpose-performance-and-personality.175752/

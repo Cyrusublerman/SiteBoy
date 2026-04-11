@@ -170,6 +170,44 @@ export function grayscaleClose(channel, w, h, radius = 1) {
   return grayscaleErode(grayscaleDilate(channel, w, h, radius), w, h, radius);
 }
 
+/**
+ * Separable approximation: horizontal then vertical 1-D min/max (box SE).
+ * @param {Uint8Array} channel
+ * @param {number} w
+ * @param {number} h
+ * @param {number} radius
+ * @param {'dilate'|'erode'} mode
+ * @returns {Uint8Array}
+ */
+export function morphologySeparableApprox(channel, w, h, radius, mode = 'dilate') {
+  const isMax = mode === 'dilate';
+  const tmp = new Uint8Array(channel.length);
+  const mid = new Uint8Array(channel.length);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let v = isMax ? 0 : 255;
+      for (let ox = -radius; ox <= radius; ox++) {
+        const xx = Math.max(0, Math.min(w - 1, x + ox));
+        const t = channel[idx(xx, y, w)];
+        if (isMax) { if (t > v) v = t; } else { if (t < v) v = t; }
+      }
+      mid[idx(x, y, w)] = v;
+    }
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let v = isMax ? 0 : 255;
+      for (let oy = -radius; oy <= radius; oy++) {
+        const yy = Math.max(0, Math.min(h - 1, y + oy));
+        const t = mid[idx(x, yy, w)];
+        if (isMax) { if (t > v) v = t; } else { if (t < v) v = t; }
+      }
+      tmp[idx(x, y, w)] = v;
+    }
+  }
+  return tmp;
+}
+
 // ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
 
 function _splitChannels(src, n) {

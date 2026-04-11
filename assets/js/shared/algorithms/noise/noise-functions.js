@@ -150,7 +150,8 @@ export function fbm2D(x, y, options = {}) {
     const {
         octaves = 4,
         lacunarity = 2.0,
-        persistence = 0.5
+        persistence = 0.5,
+        noiseFn = simplex2D
     } = options;
     
     let value = 0;
@@ -159,7 +160,7 @@ export function fbm2D(x, y, options = {}) {
     let maxValue = 0;
     
     for (let i = 0; i < octaves; i++) {
-        value += amplitude * simplex2D(x * frequency, y * frequency);
+        value += amplitude * noiseFn(x * frequency, y * frequency);
         maxValue += amplitude;
         amplitude *= persistence;
         frequency *= lacunarity;
@@ -339,9 +340,14 @@ export function mapNoiseRange(value, min, max) {
  * 
  * @param {number} x - X coordinate
  * @param {number} y - Y coordinate
+ * @param {number} [seed=0] - Per-call seed (coordinate offset; does not mutate global permutation)
  * @returns {number} Noise value in range [-1, 1]
  */
-export function perlin2D(x, y) {
+export function perlin2D(x, y, seed = 0) {
+    const ox = (seed | 0) * 0.103081 + ((seed | 0) * (seed | 0)) * 1e-7;
+    const oy = (seed | 0) * 0.172713 + ((seed | 0) * (seed | 0)) * 2e-7;
+    x = x + ox;
+    y = y + oy;
     // Step 1: Identify four corners of unit square containing point
     const xi = Math.floor(x) & 255;
     const yi = Math.floor(y) & 255;

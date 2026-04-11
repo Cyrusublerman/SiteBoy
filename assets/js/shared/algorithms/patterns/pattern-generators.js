@@ -287,6 +287,137 @@ function hashTile(i, j, seed) {
     return h;
 }
 
+function _truchetSDFFromSeed(px, py, tileSize, seed, strokeWidth) {
+    const i = Math.floor(px / tileSize);
+    const j = Math.floor(py / tileSize);
+    const state = hashTile(i, j, seed) & 1;
+    const lx = px - i * tileSize;
+    const ly = py - j * tileSize;
+    const r = tileSize / 2;
+    let minDist = Infinity;
+    const arcs = getTruchetArcs(0, 0, state, tileSize);
+    for (const arc of arcs) {
+        const dx = lx - arc.cx;
+        const dy = ly - arc.cy;
+        const dist = Math.abs(Math.sqrt(dx * dx + dy * dy) - r);
+        minDist = Math.min(minDist, dist);
+    }
+    return minDist - strokeWidth / 2;
+}
+
+function _gratingPhaseU(x, y, mode, params) {
+    const period = params.wavelength ?? params.period ?? 8;
+    switch (mode) {
+        case 'linear': {
+            const angle = params.angle ?? 0;
+            const rotX = x * Math.cos(angle) + y * Math.sin(angle);
+            return rotX / period + (params.phase ?? 0);
+        }
+        case 'radial': {
+            const cx = params.cx ?? 0;
+            const cy = params.cy ?? 0;
+            const r = Math.hypot(x - cx, y - cy);
+            return r / period + (params.phase ?? 0);
+        }
+        case 'angular': {
+            const cx = params.cx ?? 0;
+            const cy = params.cy ?? 0;
+            const n = params.n ?? 8;
+            const theta = Math.atan2(y - cy, x - cx);
+            return (n * theta) / (Math.PI * 2) + (params.phase ?? 0);
+        }
+        case 'spiral': {
+            const cx = params.cx ?? 0;
+            const cy = params.cy ?? 0;
+            const spiralRate = params.spiralRate ?? 1;
+            const dx = x - cx;
+            const dy = y - cy;
+            const r = Math.sqrt(dx * dx + dy * dy);
+            const theta = Math.atan2(dy, dx);
+            return r / period + (spiralRate * theta) / (Math.PI * 2) + (params.phase ?? 0);
+        }
+        default:
+            return x / period;
+    }
+}
+
+/**
+ * Per-pixel Truchet field: SDF stroke distance, outward normal, binary mask.
+ * @param {number} x
+ * @param {number} y
+ * @param {number} tileSize
+ * @param {number} seed
+ * @param {'arcs'|string} [motifSet='arcs']
+ * @param {number} [strokeWidth=1]
+ * @returns {{ distStroke: number, normal: {x:number,y:number}, mask: number }}
+ */
+export function truchetTileField2D(x, y, tileSize, seed, motifSet = 'arcs', strokeWidth = 1) {
+    void motifSet;
+    const eps = Math.max(1e-4, tileSize * 1e-4);
+    const distStroke = _truchetSDFFromSeed(x, y, tileSize, seed, strokeWidth);
+    const dx =
+        (_truchetSDFFromSeed(x + eps, y, tileSize, seed, strokeWidth) -
+            _truchetSDFFromSeed(x - eps, y, tileSize, seed, strokeWidth)) /
+        (2 * eps);
+    const dy =
+        (_truchetSDFFromSeed(x, y + eps, tileSize, seed, strokeWidth) -
+            _truchetSDFFromSeed(x, y - eps, tileSize, seed, strokeWidth)) /
+        (2 * eps);
+    const len = Math.hypot(dx, dy) || 1;
+    const normal = { x: dx / len, y: dy / len };
+    const mask = distStroke < 0 ? 1 : 0;
+    return { distStroke, normal, mask };
+}
+
+/**
+ * N-wave cosine interference, normalised to [0, 1].
+ * @param {number} x
+ * @param {number} y
+ * @param {Array<{ freq?: number, angle?: number, phase?: number, weight?: number }>} waves
+ * @returns {number}
+ */
+export function moireWaveInterference2D(x, y, waves) {
+    let sum = 0;
+    let wsum = 0;
+    const PI2 = Math.PI * 2;
+    for (const w of waves) {
+        const freq = w.freq ?? 1;
+        const angle = w.angle ?? 0;
+        const phase = w.phase ?? 0;
+        const weight = w.weight ?? 1;
+        const phi = PI2 * (freq * (x * Math.cos(angle) + y * Math.sin(angle))) + phase;
+        sum += weight * Math.cos(phi);
+        wsum += Math.abs(weight);
+    }
+    const n = wsum > 1e-12 ? sum / wsum : 0;
+    return 0.5 * (1 + Math.max(-1, Math.min(1, n)));
+}
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {'linear'|'radial'|'angular'|'spiral'} mode
+ * @param {object} [params]
+ * @returns {{ phi: number, bandIndex: number, distEdge: number, tangent: {x:number,y:number}, normal: {x:number,y:number} }}
+ */
+export function gratingBandField2D(x, y, mode, params = {}) {
+    const period = params.wavelength ?? params.period ?? 8;
+    const eps = Math.max(1e-4, period * 1e-4);
+    const u0 = _gratingPhaseU(x, y, mode, params);
+    const uxp = _gratingPhaseU(x + eps, y, mode, params);
+    const uyp = _gratingPhaseU(x, y + eps, mode, params);
+    const gx = (uxp - u0) / eps;
+    const gy = (uyp - u0) / eps;
+    const glen = Math.hypot(gx, gy) || 1;
+    const normal = { x: gx / glen, y: gy / glen };
+    const tangent = { x: -normal.y, y: normal.x };
+    const bandIndex = Math.floor(u0);
+    const frac = u0 - bandIndex;
+    const distEdge = Math.min(frac, 1 - frac) * period;
+    const phi = Math.PI * 2 * u0;
+    return { phi, bandIndex, distEdge, tangent, normal };
+}
+
 // ── RGBA pixel-buffer API (DISTORT pipeline) ─────────────────────────────────
 
 function _blendPixel(src, dst, i, intensity, blendMode) {
@@ -384,18 +515,92 @@ export function moireRGBA(src, w, h, wavelength1, angle1, wavelength2, angle2, c
  * @param {number} bgLevel      @param {number} dotLevel (0-255)
  * @returns {Uint8ClampedArray}
  */
-export function halftonePatternRGBA(src, w, h, spacing, angle, minDot, maxDot, bgLevel, dotLevel) {
+export function halftonePatternRGBA(
+  src, w, h, spacing, angle, minDot, maxDot, bgLevel, dotLevel,
+  gridType = 'square', responseSource = 'luminance', responseCurve = 'linear',
+  invert = false, softClamp = false
+) {
   const cosA = Math.cos(angle * Math.PI / 180), sinA = Math.sin(angle * Math.PI / 180);
   const dst = new Uint8ClampedArray(src.length);
   for (let i = 0, n = w * h * 4; i < n; i += 4) { dst[i] = dst[i + 1] = dst[i + 2] = bgLevel; dst[i + 3] = src[i + 3]; }
-  const lum = new Float32Array(w * h);
-  for (let i = 0; i < w * h; i++) { const j = i * 4; lum[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+
+  // Build response field
+  const field = new Float32Array(w * h);
+  if (responseSource === 'luminance') {
+    for (let i = 0; i < w * h; i++) { const j = i * 4; field[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+  } else if (responseSource === 'red') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4] / 255;
+  } else if (responseSource === 'green') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4 + 1] / 255;
+  } else if (responseSource === 'blue') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4 + 2] / 255;
+  } else if (responseSource === 'alpha') {
+    for (let i = 0; i < w * h; i++) field[i] = src[i * 4 + 3] / 255;
+  } else if (responseSource === 'hue') {
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4, r = src[j] / 255, g = src[j + 1] / 255, b = src[j + 2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+      if (d === 0) { field[i] = 0; continue; }
+      let h6 = mx === r ? (g - b) / d : mx === g ? 2 + (b - r) / d : 4 + (r - g) / d;
+      field[i] = (((h6 / 6) % 1) + 1) % 1;
+    }
+  } else if (responseSource === 'saturation') {
+    for (let i = 0; i < w * h; i++) {
+      const j = i * 4, r = src[j] / 255, g = src[j + 1] / 255, b = src[j + 2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      field[i] = mx === 0 ? 0 : (mx - mn) / mx;
+    }
+  } else if (responseSource === 'gradientMagnitude') {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      const gx2 = x < w - 1 ? x + 1 : x, gx0 = x > 0 ? x - 1 : x;
+      const gy2 = y < h - 1 ? y + 1 : y, gy0 = y > 0 ? y - 1 : y;
+      const lum = (v) => { const j = v * 4; return (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; };
+      const sx = lum(y * w + gx2) - lum(y * w + gx0);
+      const sy = lum(gy2 * w + x) - lum(gy0 * w + x);
+      field[i] = Math.min(1, Math.sqrt(sx * sx + sy * sy));
+    }
+  } else if (responseSource === 'distanceToEdge') {
+    const tmp = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) { const j = i * 4; tmp[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const dx = Math.min(x, w - 1 - x), dy = Math.min(y, h - 1 - y);
+      field[y * w + x] = Math.min(1, Math.min(dx, dy) / (Math.min(w, h) * 0.1 + 1));
+    }
+  } else {
+    for (let i = 0; i < w * h; i++) { const j = i * 4; field[i] = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255; }
+  }
+
+  function applyResponseCurve(v) {
+    if (responseCurve === 'smoothstep') return v * v * (3 - 2 * v);
+    if (responseCurve === 'exponential') return v * v;
+    if (responseCurve === 'threshold') return v >= 0.5 ? 1 : 0;
+    if (responseCurve === 'stepped') return Math.round(v * 4) / 4;
+    return v;
+  }
+
+  function computeRadius(fieldVal) {
+    let v = applyResponseCurve(invert ? 1 - fieldVal : fieldVal);
+    const radius = minDot + (1 - v) * (maxDot - minDot);
+    if (softClamp) {
+      const t = Math.max(0, Math.min(1, (radius - minDot) / (maxDot - minDot + 0.001)));
+      return minDot + t * t * (3 - 2 * t) * (maxDot - minDot);
+    }
+    return Math.max(minDot, Math.min(maxDot, radius));
+  }
+
   const diag = Math.sqrt(w * w + h * h), numI = Math.ceil(diag / spacing) * 2;
+
   for (let gi = -numI; gi <= numI; gi++) for (let gj = -numI; gj <= numI; gj++) {
-    const gx = gi * spacing, gy = gj * spacing;
-    const px = Math.round(w / 2 + gx * cosA - gy * sinA), py = Math.round(h / 2 + gx * sinA + gy * cosA);
+    let gx = gi * spacing, gy = gj * spacing;
+    // Grid type offsets
+    if (gridType === 'hexagonal' && (gi & 1)) gy += spacing * 0.5;
+    else if (gridType === 'staggered' && (gj & 1)) gx += spacing * 0.5;
+    const px = Math.round(w / 2 + gx * cosA - gy * sinA);
+    const py = Math.round(h / 2 + gx * sinA + gy * cosA);
     if (px < 0 || px >= w || py < 0 || py >= h) continue;
-    const l = lum[py * w + px], radius = minDot + (1 - l) * (maxDot - minDot), r2 = radius * radius, ir = Math.ceil(radius);
+    const radius = computeRadius(field[py * w + px]);
+    const r2 = radius * radius, ir = Math.ceil(radius);
     for (let dy = -ir; dy <= ir; dy++) { const ny = py + dy; if (ny < 0 || ny >= h) continue;
       for (let dx = -ir; dx <= ir; dx++) { const nx = px + dx; if (nx < 0 || nx >= w) continue;
         if (dx * dx + dy * dy <= r2) { const oi = (ny * w + nx) * 4; dst[oi] = dst[oi + 1] = dst[oi + 2] = dotLevel; }

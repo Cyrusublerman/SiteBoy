@@ -11,6 +11,9 @@
  *     then tonemapped: out = clamp(out * 2^exposure, 0,1)^(1/gamma)
  */
 
+import { weightedPoissonDisk, lloydRelaxationToneWeighted } from '../sampling/point-distribution.js';
+import { delaunayTriangulation2D } from '../geometry/delaunay-2d.js';
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function lcgRng(seed) {
@@ -87,6 +90,69 @@ export function stipple(src, w, h, opts = {}) {
       for (let dx = -ir; dx <= ir; dx++) {
         const nx = Math.round(px) + dx; if (nx < 0 || nx >= w) continue;
         if (dx * dx + dy * dy <= r2) { const oi = (ny * w + nx) * 4; dst[oi] = dst[oi + 1] = dst[oi + 2] = dotLevel; }
+      }
+    }
+  }
+  return dst;
+}
+
+/**
+ * Stipple via weighted blue-noise placement and tone-weighted Lloyd relaxation.
+ *
+ * @param {Uint8ClampedArray} src
+ * @param {number} w
+ * @param {number} h
+ * @param {object} [opts={}]
+ * @returns {Uint8ClampedArray}
+ */
+export function stippleLloydRelax2d(src, w, h, opts = {}) {
+  const {
+    minDist = 6,
+    iterations = 12,
+    seed = 42,
+    maxPoints = 8000,
+    dotRadius = 1.5,
+    bgLevel = 255,
+    dotLevel = 0
+  } = opts;
+  const rng = lcgRng(seed);
+  const n = w * h;
+  const tone = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const j = i * 4;
+    const lum = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255;
+    tone[i] = Math.max(0, 1 - lum);
+  }
+  const weightFn = (x, y) => {
+    const xi = Math.floor(x);
+    const yi = Math.floor(y);
+    if (xi < 0 || yi < 0 || xi >= w || yi >= h) return 0;
+    return tone[yi * w + xi];
+  };
+  let pts = weightedPoissonDisk(w, h, weightFn, minDist, 30, rng);
+  if (pts.length > maxPoints) pts = pts.slice(0, maxPoints);
+  pts = lloydRelaxationToneWeighted(pts, w, h, tone, w, h, iterations, 64);
+
+  const dst = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0, nn = w * h * 4; i < nn; i += 4) {
+    dst[i] = dst[i + 1] = dst[i + 2] = bgLevel;
+    dst[i + 3] = src[i + 3];
+  }
+  const r2 = dotRadius * dotRadius;
+  const ir = Math.ceil(dotRadius);
+  for (let p = 0; p < pts.length; p++) {
+    const px = pts[p].x;
+    const py = pts[p].y;
+    for (let dy = -ir; dy <= ir; dy++) {
+      const ny = Math.round(py) + dy;
+      if (ny < 0 || ny >= h) continue;
+      for (let dx = -ir; dx <= ir; dx++) {
+        const nx = Math.round(px) + dx;
+        if (nx < 0 || nx >= w) continue;
+        if (dx * dx + dy * dy <= r2) {
+          const oi = (ny * w + nx) * 4;
+          dst[oi] = dst[oi + 1] = dst[oi + 2] = dotLevel;
+        }
       }
     }
   }
@@ -296,7 +362,7 @@ export function delaunayMeshRGBA(src, w, h, pointCount, wireWeight, wireLevel, c
   const pts = [];
   for (let i = 0; i < pointCount; i++) pts.push({ x: rng.next() * w, y: rng.next() * h });
   pts.push({ x: 0, y: 0 }, { x: w, y: 0 }, { x: 0, y: h }, { x: w, y: h });
-  const tris = _triangulate(pts);
+  const { triangles: tris } = delaunayTriangulation2D(pts);
 
   if (typeof OffscreenCanvas !== 'undefined') {
     const oc = new OffscreenCanvas(w, h);

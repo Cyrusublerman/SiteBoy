@@ -40,6 +40,7 @@ export class ViewportCanvas extends BaseComponent {
     this._imgData       = null;
     this._imgDataSrc    = null;
     this._onResultClick = options.onResultClick ?? null;
+    this._pickCallback  = null;
     this._onUpload      = options.onUpload ?? null;
     this._emptyOverlay  = null;
     this._boundPointerDown  = this._onPointerDown.bind(this);
@@ -181,6 +182,17 @@ export class ViewportCanvas extends BaseComponent {
   }
 
   resetPan() { this._panX = 0; this._panY = 0; this._scheduleRedraw(); }
+
+  /**
+   * One-shot: next pointerdown on the result image calls `callback(nx, ny)` with
+   * normalised coordinates in [0,1] relative to the rendered image, then exits pick mode.
+   */
+  enterPickMode(callback) {
+    this._pickCallback = typeof callback === 'function' ? callback : null;
+    if (this._canvas) {
+      this._canvas.style.cursor = this._pickCallback ? 'crosshair' : 'grab';
+    }
+  }
 
   // ── Draw pipeline ─────────────────────────────────────────────────────────
 
@@ -354,6 +366,29 @@ export class ViewportCanvas extends BaseComponent {
   // ── Interaction ───────────────────────────────────────────────────────────
 
   _onPointerDown(e) {
+    if (this._pickCallback && this._result && !this._variations?.length) {
+      const rect = this._canvas.getBoundingClientRect();
+      const scaleX = this._canvas.width / Math.max(1, rect.width);
+      const scaleY = this._canvas.height / Math.max(1, rect.height);
+      const px = (e.clientX - rect.left) * scaleX;
+      const py = (e.clientY - rect.top) * scaleY;
+      const cw = this._canvas.width;
+      const ch = this._canvas.height;
+      const rw = this._result.width;
+      const rh = this._result.height;
+      const { dw, dh, ox, oy } = this._layout(cw, ch, rw, rh);
+      const nx = dw > 0 ? (px - ox) / dw : 0;
+      const ny = dh > 0 ? (py - oy) / dh : 0;
+      const fnx = Math.max(0, Math.min(1, nx));
+      const fny = Math.max(0, Math.min(1, ny));
+      const cb = this._pickCallback;
+      this._pickCallback = null;
+      this._canvas.style.cursor = 'grab';
+      cb(fnx, fny);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (this._displayMode === 'split') {
       const rect  = this._canvas.getBoundingClientRect();
       const relX  = (e.clientX - rect.left) / rect.width;
@@ -452,6 +487,7 @@ export class ViewportCanvas extends BaseComponent {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   destroy() {
+    this._pickCallback = null;
     this._drawLoop?.destroy();
     this._drawLoop = null;
     if (this._canvas) {
