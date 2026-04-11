@@ -284,13 +284,15 @@ const ArtSection = {
     },
 
     async createArtTOCWithGalleries() {
-        let i = 0;
-        for (const [key, gallery] of Object.entries(this.galleryStructure)) {
-            await this.createArtTOCItem(gallery, key, ++i);
+        const entries = Object.entries(this.galleryStructure);
+        const total = entries.length;
+        for (let i = 0; i < total; i++) {
+            const [key, gallery] = entries[i];
+            await this.createArtTOCItem(gallery, key, i + 1, i === total - 1);
         }
     },
 
-    async createArtTOCItem(gallery, galleryKey, itemIndex) {
+    async createArtTOCItem(gallery, galleryKey, itemIndex, isLast = false) {
         const F = window.MathematicalFoundation?.F || 14;
         const headerH = F * 4;
         const galleryH = F * 24;
@@ -299,8 +301,8 @@ const ArtSection = {
         tocItem.style.cssText = `
             height:${headerH + galleryH}px;cursor:pointer;display:flex;flex-direction:column;
             border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:${itemIndex === 1 ? '1px solid var(--c-border)' : 'none'};
-            border-bottom:1px solid var(--c-border);
+            border-top:1px solid var(--c-border);
+            border-bottom:${isLast ? '1px solid var(--c-border)' : 'none'};
             font-family:'Atkinson Hyperlegible Mono',monospace;background:var(--c-bg);
         `;
 
@@ -451,8 +453,9 @@ const ArtSection = {
         // View-all button at top
         this._appendViewAllButton(navKey, gallery, subsections);
 
-        for (let i = 0; i < subsections.length; i++) {
-            await this.createSectionTOCItemWithPreview(navKey, r2Type, basePath, subsections[i], i + 1);
+        const total = subsections.length;
+        for (let i = 0; i < total; i++) {
+            await this.createSectionTOCItemWithPreview(navKey, r2Type, basePath, subsections[i], i + 1, i === 0, i === total - 1);
         }
 
         const pad = this.createElement('div');
@@ -483,16 +486,20 @@ const ArtSection = {
         this.currentContainer.appendChild(wrap);
     },
 
-    async createSectionTOCItemWithPreview(navKey, r2Type, basePath, subsection, itemIndex) {
+    async createSectionTOCItemWithPreview(navKey, r2Type, basePath, subsection, itemIndex, isFirst = false, isLast = false) {
         const F = window.MathematicalFoundation?.F || 14;
         const headerH = F * 4;
         const galleryH = F * 24;
 
         const tocItem = this.createElement('div', 'toc-item art-toc-item');
+        // view-all button above owns the top separator via its border-bottom;
+        // first item has no border-top. Middle items own their separator via border-top.
+        // Last item closes the stack with border-bottom (§3).
         tocItem.style.cssText = `
             height:${headerH + galleryH}px;cursor:pointer;display:flex;flex-direction:column;
             border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:none;border-bottom:1px solid var(--c-border);
+            border-top:${isFirst ? 'none' : '1px solid var(--c-border)'};
+            border-bottom:${isLast ? '1px solid var(--c-border)' : 'none'};
             font-family:'Atkinson Hyperlegible Mono',monospace;background:var(--c-bg);
         `;
 
@@ -810,15 +817,17 @@ const ArtSection = {
         const photography = this.galleryStructure.photography;
         const F = window.MathematicalFoundation?.F || 14;
 
-        photography.subsections.forEach((sub, i) => {
-            this.createPhotoArtTOCItem(sub, i + 1);
+        const subs = photography.subsections;
+        subs.forEach((sub, i) => {
+            this.createPhotoArtTOCItem(sub, i + 1, i === subs.length - 1);
         });
 
+        // view-all owns the top separator (§3 — lower element owns boundary via border-top)
         const viewAllContainer = this.createElement('div', 'view-all-container');
         viewAllContainer.style.cssText = `
             height:${F * 6}px;display:flex;align-items:stretch;justify-content:stretch;
             border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-bottom:1px solid var(--c-border);margin:0;padding:0;
+            border-top:1px solid var(--c-border);border-bottom:1px solid var(--c-border);margin:0;padding:0;
         `;
         const viewAllBtn = new ComponentLibrary.Button({
             text: 'VIEW ALL PHOTOS (128)',
@@ -835,7 +844,7 @@ const ArtSection = {
         this.currentContainer.appendChild(pad);
     },
 
-    createPhotoArtTOCItem(subsection, itemIndex) {
+    createPhotoArtTOCItem(subsection, itemIndex, isLast = false) {
         const F = window.MathematicalFoundation?.F || 14;
         const headerH = F * 4;
         const galleryH = F * 24;
@@ -844,8 +853,8 @@ const ArtSection = {
         tocItem.style.cssText = `
             height:${headerH + galleryH}px;cursor:pointer;display:flex;flex-direction:column;
             border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:${itemIndex === 1 ? '1px solid var(--c-border)' : 'none'};
-            border-bottom:1px solid var(--c-border);
+            border-top:1px solid var(--c-border);
+            border-bottom:none;
             font-family:'Atkinson Hyperlegible Mono',monospace;background:var(--c-bg);
         `;
 
