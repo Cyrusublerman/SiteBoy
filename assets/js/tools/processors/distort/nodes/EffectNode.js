@@ -66,8 +66,34 @@ export class EffectNode {
   /** Hook for LUT-composable nodes (deprecated; Pipeline is strictly sequential). */
   buildLUT(lutR, lutG, lutB) {}
 
-  /** Return GLSL fragment shader source or null. */
+  /** Return GLSL ES 3.00 fragment shader source for WebGL2 fallback, or null. */
   glsl() { return null; }
+
+  /**
+   * Return WGSL compute shader source for WebGPU, or null.
+   * When non-null the node is eligible for GPU acceleration.
+   * The shader must follow the standard binding layout:
+   *   @binding(0) uniforms, @binding(1) read texture, @binding(2) write texture.
+   * @returns {string|null}
+   */
+  wgsl() { return null; }
+
+  /**
+   * Return the GPU binding descriptor for this node's uniforms, or null.
+   * Shape: { uniforms: { [key]: 'f32'|'i32'|'u32' }, multiPass?: boolean }
+   * When multiPass is true, GPURenderPath issues one dispatch per pass declared
+   * in the shader rather than a single dispatch.
+   * @returns {Object|null}
+   */
+  gpuBindings() { return null; }
+
+  /**
+   * True when this node has a GPU shader implementation available.
+   * Nodes with only glsl() are still GPU-capable (WebGL2 path).
+   * Nodes with neither return false and always run on CPU.
+   * @returns {boolean}
+   */
+  get gpuCapable() { return this.wgsl() !== null || this.glsl() !== null; }
 
   /**
    * Get modulated parameter value at a pixel index.

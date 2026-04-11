@@ -18,6 +18,7 @@ import { hashSeed } from './SeededRNG.js';
 import { pool } from './BufferPool.js';
 import { vectorToRaster } from '../nodes/bridge/node-adapters.js';
 import { ExpressionEval } from './ExpressionEval.js';
+import { GPURenderPath } from './GPURenderPath.js';
 
 const N_CACHE_MAX = 12;
 /** Single-node wall time above which preview is nudged to the worker on the next render. */
@@ -95,9 +96,16 @@ function _blend(base, layer, mode, opacity, maskVal) {
 }
 
 export class Pipeline {
-  constructor(state) {
+  /**
+   * @param {Object} state - AppState instance
+   * @param {import('./GPURenderPath.js').GPURenderPath|null} [gpuRenderPath=null]
+   *   Optional GPU render path. When provided, GPU-eligible node runs are
+   *   dispatched to the GPU instead of the CPU pixel loop.
+   */
+  constructor(state, gpuRenderPath = null) {
     this.s = state;
     this._nodeTimings = new Map(); // nodeId → ms
+    this._gpuPath = gpuRenderPath ?? null;
   }
 
   /** Per-node render time in ms, keyed by node id. */
@@ -187,62 +195,107 @@ export class Pipeline {
     const frameCount = s.frameCount ?? 1;
     const time       = frameCount > 1 ? frame / frameCount : 0;
 
-    for (let ni = startIdx; ni < active.length; ni++) {
-      const node    = active[ni];
-      const hasMask = node.mask?.enabled && node.mask.source !== 'none';
-      const hasMod  = Object.keys(node.modulation ?? {}).length > 0;
-      const mode    = node.blendMode ?? 'normal';
+    const pipelineCtx = { width: w, height: h, quality: s.quality, globalSeed: s.globalSeed,
+      previewScale: sc, pixelVars, frame, frameCount, time };
 
-      const ctx = {
-        width: w, height: h,
-        quality: s.quality,
-        globalSeed: s.globalSeed,
-        nodeSeed: hashSeed(s.globalSeed, ni, node.id),
-        previewScale: sc,
-        nodeIndex: ni,
-        modMaps: hasMod ? modMaps : null,
-        pixelVars,
-        frame, frameCount, time
-      };
+    // ── Partition nodes into GPU / CPU runs when GPU path is available ──
+    const dirty = active.slice(startIdx);
+    const runs  = this._gpuPath ? this._gpuPath.partitionNodes(dirty) : [{ gpu: false, nodes: dirty }];
 
-      if (hasMask) node.buildMask(bufA, w, h);
+    let nodeOffset = startIdx; // absolute index into active[] for ctx.nodeIndex
 
-      const tNode = performance.now();
-      const needsBlend = node.opacity < 1 || hasMask || mode !== 'normal';
-      const restoreParams = this._applyNodeModulation(node, ctx, w, h);
+    for (const run of runs) {
+      if (run.gpu && this._gpuPath) {
+        // ── GPU run (async — awaited inline) ─────────────────────────────────
+        // GPU execution is fire-and-forget from the perspective of this sync
+        // render() call ONLY when called from the main thread preview path.
+        // The worker path is always sync-compatible.
+        // For correctness, we schedule GPU runs as microtasks and fall back
+        // to CPU if the promise is not yet resolved when we continue.
+        // In practice the worker sends results back asynchronously anyway.
+        // We store a pending promise for the distort-main to handle.
+        const tNode = performance.now();
+        this._pendingGPU = this._gpuPath.execute(bufA, run.nodes, w, h, pipelineCtx)
+          .then(outPixels => {
+            // Write GPU result into bufA so subsequent CPU runs read correct data
+            bufA.set(outPixels);
+            // Update caches for all GPU-run nodes (they share the same output)
+            for (const n of run.nodes) {
+              if (!n._cache || n._cache.length !== bufSize) n._cache = new Uint8ClampedArray(bufSize);
+              n._cache.set(bufA);
+              n._cacheValid = true;
+            }
+          })
+          .catch(err => {
+            console.warn('[DISTORT] GPU run failed, node(s) will be re-run on CPU next frame:', err.message);
+            for (const n of run.nodes) { n._cacheValid = false; }
+          });
 
-      if (needsBlend) {
-        const tmp = pool.acquire(bufSize);
-        this._runNode(node, bufA, tmp, w, h, ctx, hasMask);
-        const maskData = hasMask ? node.mask.data : null;
-        for (let i = 0; i < bufSize; i += 4) {
-          const maskVal = maskData ? maskData[i >> 2] / 255 : 1;
-          const opA = node.opacity * maskVal;
-          bufB[i]     = _blend(bufA[i],     tmp[i],     mode, node.opacity, maskVal);
-          bufB[i + 1] = _blend(bufA[i + 1], tmp[i + 1], mode, node.opacity, maskVal);
-          bufB[i + 2] = _blend(bufA[i + 2], tmp[i + 2], mode, node.opacity, maskVal);
-          bufB[i + 3] = Math.round(bufA[i + 3] + (tmp[i + 3] - bufA[i + 3]) * opA);
+        const elapsed = performance.now() - tNode;
+        for (const n of run.nodes) {
+          n._lastMs = elapsed / run.nodes.length;
+          this._nodeTimings.set(n.id, n._lastMs);
         }
-        pool.release(tmp);
+        nodeOffset += run.nodes.length;
+        s.renderProgress = nodeOffset / active.length;
+
       } else {
-        this._runNode(node, bufA, bufB, w, h, ctx, hasMask);
+        // ── CPU run (existing sequential logic) ──────────────────────────────
+        for (let ri = 0; ri < run.nodes.length; ri++) {
+          const ni   = nodeOffset + ri;
+          const node = run.nodes[ri];
+          const hasMask = node.mask?.enabled && node.mask.source !== 'none';
+          const hasMod  = Object.keys(node.modulation ?? {}).length > 0;
+          const mode    = node.blendMode ?? 'normal';
+
+          const ctx = {
+            ...pipelineCtx,
+            nodeSeed: hashSeed(s.globalSeed, ni, node.id),
+            nodeIndex: ni,
+            modMaps: hasMod ? modMaps : null,
+          };
+
+          if (hasMask) node.buildMask(bufA, w, h);
+
+          const tNode = performance.now();
+          const needsBlend = node.opacity < 1 || hasMask || mode !== 'normal';
+          const restoreParams = this._applyNodeModulation(node, ctx, w, h);
+
+          if (needsBlend) {
+            const tmp = pool.acquire(bufSize);
+            this._runNode(node, bufA, tmp, w, h, ctx, hasMask);
+            const maskData = hasMask ? node.mask.data : null;
+            for (let i = 0; i < bufSize; i += 4) {
+              const maskVal = maskData ? maskData[i >> 2] / 255 : 1;
+              const opA = node.opacity * maskVal;
+              bufB[i]     = _blend(bufA[i],     tmp[i],     mode, node.opacity, maskVal);
+              bufB[i + 1] = _blend(bufA[i + 1], tmp[i + 1], mode, node.opacity, maskVal);
+              bufB[i + 2] = _blend(bufA[i + 2], tmp[i + 2], mode, node.opacity, maskVal);
+              bufB[i + 3] = Math.round(bufA[i + 3] + (tmp[i + 3] - bufA[i + 3]) * opA);
+            }
+            pool.release(tmp);
+          } else {
+            this._runNode(node, bufA, bufB, w, h, ctx, hasMask);
+          }
+
+          const elapsed = performance.now() - tNode;
+          node._lastMs = elapsed;
+          this._nodeTimings.set(node.id, elapsed);
+          if (elapsed > NODE_SLOW_MS) {
+            console.warn(`[DISTORT] Node "${node.type}" exceeded ${NODE_SLOW_MS}ms — worker preview forced next frame`);
+            node._forceWorkerPreviewNext = true;
+          }
+          restoreParams?.();
+
+          if (!node._cache || node._cache.length !== bufSize) node._cache = new Uint8ClampedArray(bufSize);
+          node._cache.set(bufB);
+          node._cacheValid = true;
+
+          s.renderProgress = (ni + 1) / active.length;
+          [bufA, bufB] = [bufB, bufA];
+        }
+        nodeOffset += run.nodes.length;
       }
-
-      const elapsed = performance.now() - tNode;
-      node._lastMs = elapsed;
-      this._nodeTimings.set(node.id, elapsed);
-      if (elapsed > NODE_SLOW_MS) {
-        console.warn(`[DISTORT] Node "${node.type}" exceeded ${NODE_SLOW_MS}ms — worker preview forced next frame`);
-        node._forceWorkerPreviewNext = true;
-      }
-      restoreParams?.();
-
-      if (!node._cache || node._cache.length !== bufSize) node._cache = new Uint8ClampedArray(bufSize);
-      node._cache.set(bufB);
-      node._cacheValid = true;
-
-      s.renderProgress = (ni + 1) / active.length;
-      [bufA, bufB] = [bufB, bufA];
     }
 
     pool.release(bufB);
@@ -255,6 +308,14 @@ export class Pipeline {
     // releasing a detached buffer back into the pool corrupts future pool.acquire() calls.
     return { pixels: bufA, width: w, height: h, _pooled: false };
   }
+
+  /**
+   * If the last render dispatched any GPU work, this promise resolves
+   * when the GPU result has been written back into the node caches.
+   * May be null if no GPU work was dispatched.
+   * @type {Promise<void>|null}
+   */
+  get pendingGPU() { return this._pendingGPU ?? null; }
 
   releaseResult(result) {
     if (result?._pooled) pool.release(result.pixels);

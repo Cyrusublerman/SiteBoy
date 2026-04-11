@@ -1,6 +1,8 @@
 import { ToolBase } from '../../../tools/core/tool-base.js';
 import { AppState } from './core/AppState.js';
 import { Pipeline } from './core/Pipeline.js';
+import { GPURenderPath } from './core/GPURenderPath.js';
+import { GPUFoundation } from '../../../core/gpu-foundation.js';
 import { WorkerBridge } from './core/WorkerBridge.js';
 import { History } from './core/History.js';
 import { Recipe } from './core/Recipe.js';
@@ -33,7 +35,10 @@ export class DistortTool extends BaseComponent {
     this.componentInstances = [];
 
     this._state = new AppState();
-    this._pipeline = new Pipeline(this._state);
+    this._gpuCtx = null;      // GPUFoundation.GPUContext — set async after first render
+    this._gpuRenderPath = null;
+    this._gpuTier = 'cpu';    // 'webgpu' | 'webgl2' | 'cpu'
+    this._pipeline = new Pipeline(this._state, null); // gpuRenderPath wired after detect()
     this._history = new History(40);
     this._bridge = null;
 
@@ -97,6 +102,10 @@ export class DistortTool extends BaseComponent {
     this._syncUiFromState();
     this._toolbar.setHistoryState(this._history.canUndo, this._history.canRedo);
     this._snapshot();
+
+    // Async GPU init — does not block render; GPU path is wired in when ready.
+    this._initGPU();
+
     return this;
   }
 
@@ -399,6 +408,29 @@ export class DistortTool extends BaseComponent {
     return false;
   }
 
+  async _initGPU() {
+    try {
+      const detected = await GPUFoundation.detect();
+      this._gpuTier = detected.tier;
+      if (detected.tier !== 'cpu') {
+        this._gpuCtx = GPUFoundation.createContext(detected);
+        this._gpuRenderPath = new GPURenderPath(this._gpuCtx);
+        // Wire GPU path into pipeline
+        this._pipeline._gpuPath = this._gpuRenderPath;
+      }
+      this._updateGPUStatus();
+    } catch (e) {
+      console.warn('[DISTORT] GPU init failed — CPU fallback:', e.message);
+      this._gpuTier = 'cpu';
+      this._updateGPUStatus();
+    }
+  }
+
+  _updateGPUStatus() {
+    const label = { webgpu: 'GPU:WebGPU', webgl2: 'GPU:WebGL2', cpu: 'GPU:CPU' }[this._gpuTier] ?? 'GPU:CPU';
+    this._toolbar?.setGPUTier?.(label);
+  }
+
   _scheduleRender() {
     if (!this._state.sourcePixels) return;
     this._syncModulationMaps();
@@ -676,6 +708,10 @@ ${paths.join('\n')}
     if (this._renderSafetyTimer) { clearTimeout(this._renderSafetyTimer); this._renderSafetyTimer = null; }
     if (this._previewRafId) { cancelAnimationFrame(this._previewRafId); this._previewRafId = null; }
     this._bridge?.destroy?.();
+    this._gpuRenderPath?.destroy?.();
+    this._gpuCtx?.destroy?.();
+    this._gpuRenderPath = null;
+    this._gpuCtx = null;
     for (const link of this._tmpAnchors) link.parentNode?.removeChild?.(link);
     this._tmpAnchors.clear();
     for (const instance of this.componentInstances) instance?.destroy?.();

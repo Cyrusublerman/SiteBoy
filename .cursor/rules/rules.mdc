@@ -17,20 +17,25 @@ Only these files may own the concern. Others must not implement it.
 - Layout math → assets/js/core/mathematical-foundation.js
 - Base OO system → assets/js/core/base-component.js
 - **Animation logic → assets/js/core/animation-foundation.js**
+- **GPU compute (context, detection, shaders, buffers) → assets/js/core/gpu-foundation.js**
 - Routing/nav → assets/js/core/router.js
 - App bootstrap/init → assets/js/core/app.js
 - UI components → assets/js/shared/component-library.js
 - Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
 - Sections/page composition → assets/js/sections/*.js
 - All styling → assets/css/styles.css
+- Distort GPU dispatch → assets/js/tools/processors/distort/core/GPURenderPath.js
+- Distort node shaders → assets/js/tools/processors/distort/shaders/*.shader.js
 
 ## Mandatory Patterns
 - All UI classes extend `BaseComponent`.
 - Instances: `const x = new X(...); this.componentInstances.push(x)`.
 - All dimensional math via `MathematicalFoundation.calculateDimensions(kind|props)`.
 - **All animations via `AnimationFoundation` classes (AnimationLoop, FrameSequencer, etc.)**.
+- **All GPU compute via `GPUFoundation` classes (GPUContext, BufferRing, ShaderCompiler).**
 - No manual DOM outside BaseComponent internals.
 - No manual RAF/setInterval for animations.
+- No raw `navigator.gpu`, `canvas.getContext('webgl2')`, `GPUDevice`, or `WebGLTexture` outside `gpu-foundation.js`.
 
 ## Architecture Rules
 - NO `document.*`, `window.*`, `.innerHTML`, `.createElement`, `.appendChild` etc. outside BaseComponent module.
@@ -87,6 +92,7 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
   - class BaseComponent outside its owner.
   - calculateDimensions( outside MathematicalFoundation definition.
   - **requestAnimationFrame/cancelAnimationFrame/setInterval/clearInterval for animations (use AnimationFoundation)**.
+  - **navigator.gpu / getContext('webgl2') / GPUDevice / WebGLTexture outside gpu-foundation.js**.
   - routing (pushState, popstate, location.hash) outside router.js.
   - bootstrap/initialize outside app.js.
   - raw colours or border-radius/box-shadow/text-shadow anywhere.
@@ -118,6 +124,8 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 | Any visual or aesthetic design decision not covered above | `blog/docs/guides/standards/design-law.md` |
 | How to lay out a tool page or what the standard tool structure is | `blog/docs/site/ui-interface-overview.md` |
 | What task phase you are in or what checklist to use | `blog/docs/guides/ai-routing-map.md` |
+| Any GPU compute, WebGPU, WebGL2, or shader decision | `blog/docs/guides/standards/gpu-compute.md` |
+| Writing a WGSL or GLSL shader for a distort node | `blog/docs/guides/tools/gpu-shader-authoring.md` |
 
 **Prohibited:** Making any decision in the left column without first reading the file in the right column. If you have already read it in this session, re-reading is not required — but you must have read it before writing the relevant code.
 

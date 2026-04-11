@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { sobelEdge } from '../../../../../shared/algorithms/edge-detection/edge-operators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings, sobelUniformMap } from '../../shaders/sobel.shader.js';
 
 function _hexToRgb(hex) {
   const s = String(hex).replace('#', '');
@@ -59,5 +60,11 @@ export const SobelNode = createEffectModule({
       dst[j + 2] = Math.round(b);
       dst[j + 3] = src[j + 3];
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: sobelUniformMap,
+  },
 });

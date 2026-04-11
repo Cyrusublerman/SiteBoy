@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { boxBlurSeparable } from '../../../../../shared/algorithms/image/blur-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/boxblur.shader.js';
 
 export const BoxBlurNode = createEffectModule({
   type: 'boxblur', name: 'BOX BLUR', category: 'BLUR',
@@ -9,5 +10,17 @@ export const BoxBlurNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(boxBlurSeparable(src, w, h, p.radius, p.passes));
-  }
+  },
+  wgsl,
+  glsl,
+  // Each logical pass = 2 GPU dispatches (horizontal + vertical).
+  // The `passes` param drives how many times GPURenderPath repeats the pair.
+  gpuBindings: {
+    ..._gpuBindings,
+    // Override passes count dynamically from the node's resolved params
+    uniformMap: p => ({ uRadius: Math.round(p.radius) }),
+    // GPURenderPath reads bindings.passes; we provide a function here so
+    // GPURenderPath can call it with resolved params to get the actual count.
+    passesFromParams: p => Math.round(p.passes) * 2,
+  },
 });

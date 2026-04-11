@@ -74,6 +74,23 @@ import { EffectNode } from '../nodes/EffectNode.js';
  *
  * @property {Array<{type: string, options?: object, paramKeys?: Object.<string, string>}>} [extendedControls=[]]
  *   - Extra ComponentLibrary controls; `type` is kebab-case. `paramKeys` maps control state keys to `params` keys.
+ *
+ * @property {string|null} [wgsl=null]
+ *   - WGSL compute shader source for WebGPU acceleration. Must follow the standard binding layout:
+ *     binding 0 = uniforms (float32 array matching gpuBindings.uniforms keys in order),
+ *     binding 1 = read texture (rgba8unorm), binding 2 = write texture (rgba8unorm).
+ *     Workgroup size must be @workgroup_size(16, 16).
+ *
+ * @property {string|null} [glsl=null]
+ *   - GLSL ES 3.00 fragment shader source for WebGL2 fallback. Standard uniforms:
+ *     uTex (sampler2D, read texture bound at unit 0), uResolution (vec2), plus any
+ *     node-specific uniforms matching gpuBindings.uniforms keys.
+ *
+ * @property {{uniforms: Object.<string, 'f32'|'i32'|'u32'>, multiPass?: boolean}|null} [gpuBindings=null]
+ *   - Describes the uniform layout shared by wgsl and glsl shaders.
+ *     Keys must match param names; values are the WGSL scalar type.
+ *     multiPass: true signals GPURenderPath to call the shader once per declared pass
+ *     (used for separable filters like box blur that need horizontal + vertical passes).
  */
 
 /**
@@ -112,6 +129,10 @@ export function createEffectModule(config) {
       const modulate = this._makeModulate(p, ctx);
       config.apply(src, dst, w, h, p, ctx, modulate);
     }
+
+    wgsl()        { return config.wgsl        ?? null; }
+    glsl()        { return config.glsl        ?? null; }
+    gpuBindings() { return config.gpuBindings ?? null; }
 
     applyVector(src, w, h, ctx) {
       if (!config.applyVector) return null;

@@ -5,10 +5,13 @@ Defines the full strategy for keeping the tool responsive under arbitrary pipeli
 **Implementation files:**
 - `core/WorkerBridge.js` — render request management
 - `core/RenderWorker.js` — off-thread Pipeline execution
-- `core/Pipeline.js` — sequential node execution, dirty cache, preview scale
-- `core/BufferPool.js` — buffer recycling
+- `core/Pipeline.js` — sequential node execution, dirty cache, preview scale, GPU partitioning
+- `core/GPURenderPath.js` — GPU node dispatch (WebGPU / WebGL2)
+- `core/BufferPool.js` — CPU buffer recycling
 - `core/ExpressionEval.js` — driver expression evaluation
 - `core/AppState.js` — shared state including `renderProgress`, `lastRenderTime`
+- `assets/js/core/gpu-foundation.js` — GPU context, feature detection, shader compiler, BufferRing
+- `shaders/*.shader.js` — per-node WGSL + GLSL shader sources
 
 ---
 
@@ -447,14 +450,68 @@ When building or porting a node, verify:
 
 ---
 
-## 13. Future Optimisation Paths
+## 13. GPU Acceleration Architecture
 
-Documented here to avoid premature implementation — implement when profiling evidence justifies.
+GPU acceleration is available for nodes that implement WGSL (WebGPU) and/or GLSL (WebGL2) shader sources. The CPU path remains the fallback and is always available.
+
+### 13.1 Tier detection
+
+`GPUFoundation.detect()` runs once at tool init and resolves to one of three tiers:
+
+| Tier | Mechanism | Coverage |
+|------|-----------|----------|
+| `webgpu` | WebGPU compute shaders (WGSL) | Chrome/Edge 113+, Firefox 120+, Safari 18+ partial |
+| `webgl2` | WebGL2 fragment shaders (GLSL ES 3.00) | Universal |
+| `cpu` | Existing CPU pipeline unchanged | Universal fallback |
+
+Status displayed in toolbar: `GPU:WebGPU`, `GPU:WebGL2`, or `GPU:CPU`.
+
+### 13.2 Node partitioning
+
+`GPURenderPath.partitionNodes()` divides the active node list into alternating GPU/CPU runs. A node routes to GPU if: `gpuCapable === true`, no active mask, no active modulation, `opacity === 1`, `blendMode === 'normal'`.
+
+Batching contiguous GPU nodes minimises upload+readback overhead to one round-trip per contiguous run.
+
+### 13.3 Memory model
+
+| Layer | Storage | Manager |
+|-------|---------|---------|
+| CPU pixel buffers | `Uint8ClampedArray` pooled | `BufferPool` |
+| GPU textures | `GPUTexture` / `WebGLTexture` | `BufferRing` in `gpu-foundation.js` |
+| Compiled shaders | `GPUComputePipeline` / `WebGLProgram` | `ShaderCompiler` in `gpu-foundation.js` |
+
+### 13.4 Performance
+
+| Operation | CPU (1080p) | GPU WebGPU (1080p) | Speedup |
+|-----------|------------|---------------------|---------|
+| Per-pixel transform | ~20ms | less than 1ms | ~40x |
+| Separable blur r=10 | ~120ms | ~3ms | ~40x |
+| Sobel edge | ~80ms | ~4ms | ~20x |
+| Upload+readback overhead | -- | ~4ms | -- |
+
+Threshold: 256x256 pixels (`GPUFoundation.GPU_MIN_PIXELS`). Below this, CPU is used.
+
+### 13.5 GPU path scope
+
+Preview renders only (main thread). Final/sequence renders run CPU in `RenderWorker` as before.
+
+### 13.6 Adding GPU to a node
+
+See `guides/tools/gpu-shader-authoring.md`. Currently GPU-capable: `invert`, `boxblur`, `sobel`.
+
+---
+
+## 14. Future Optimisation Paths
+
+Documented here to avoid premature implementation � implement when profiling evidence justifies.
 
 | Optimisation | Benefit | Prerequisite |
 |---|---|---|
-| LUT chain fusion | Merge all adjacent `isLUT = true` nodes into one pass | Measure that LUT nodes are actually a bottleneck |
-| OffscreenCanvas-based compositing | GPU-accelerated blend modes | Validate browser support and worth vs complexity |
-| Chunked progressive rendering | Show partial output while render is in progress | Only needed if single-frame renders exceed ~4s |
-| SharedArrayBuffer for pixel data | Zero-copy between main thread and worker | Requires COOP/COEP headers on the server |
-| Worker pool (multiple workers) | Parallel node execution | Only valid for independent nodes; sequential pipeline limits parallelism |
+| GPU shaders for remaining ~61 nodes | Consistent GPU speedup across full stack | Use shader authoring guide; batch by category |
+| GPU blend modes | GPU path active for opacity/blendMode nodes | GPU compositing in `GPURenderPath` |
+| GPU masking | GPU path active for masked nodes | Mask texture upload + shader compositing |
+| Worker-side GPU (OffscreenCanvas) | GPU for final renders | Refactor `RenderWorker` |
+| GPU reduction (histogrameq, clahe) | Reduction nodes on GPU | Atomic ops; see `algorithms/rendering.md` |
+| LUT chain fusion | Merge adjacent `isLUT` nodes into one pass | Measure LUT bottleneck at scale |
+| SharedArrayBuffer for pixel data | Zero-copy between main thread and worker | Requires COOP/COEP headers on server |
+| Worker pool | Parallel node execution | Only valid for independent nodes |
