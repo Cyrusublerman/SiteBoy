@@ -1047,71 +1047,78 @@ export class PageFooter extends BaseComponent {
             this.element.id = 'footer';
 
             const F = this.deps?.MF?.F || 14;
+            const showBackToTop     = window.Config?.showBackToTop    !== false;
             const showFooterControls = window.Config?.showFooterControls !== false;
             const hasControls = showFooterControls;
 
-            // Calculate widths based on whether controls are shown
-            const itemCount = hasControls ? 4 : 3;
-            const itemWidth = 100 / itemCount; // 25% when controls shown, 33.33% when hidden
+            // Slot count drives equal-width absolute positioning
+            const itemCount = (showBackToTop ? 1 : 0) + 2 + (hasControls ? 1 : 0);
+            const itemWidth = 100 / itemCount; // % per slot
 
             // Initialize control element variables
             let fDisplay = null;
             let tightButton = null;
             let looseButton = null;
 
-            // Back to top button
-            const backToTop = this.createElement('div', 'footer-item');
-            backToTop.id = 'back-to-top';
-            backToTop.textContent = '↑ TOP';
-            backToTop.style.cssText = `
-                position: absolute; top: 0; left: 0; height: 100%; width: ${itemWidth}%;
-                display: flex; align-items: center; justify-content: center;
-                text-transform: uppercase; font-size: ${F}px;
-                box-sizing: border-box; cursor: pointer;
-            `;
-            backToTop.addEventListener('click', () => {
-                document.documentElement.scrollTop = 0;
-                document.body.scrollTop = 0;
-            });
-            backToTop.classList.add('clickable');
-            this.element.appendChild(backToTop);
+            // Running slot index — each rendered item claims the next slot
+            let slotIndex = 0;
 
-            // Instagram link - with right border separator
+            // Back to top button (conditional)
+            if (showBackToTop) {
+                const backToTop = this.createElement('div', 'footer-item');
+                backToTop.id = 'back-to-top';
+                backToTop.textContent = '↑ TOP';
+                backToTop.style.cssText = `
+                    position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
+                    display: flex; align-items: center; justify-content: center;
+                    text-transform: uppercase; font-size: ${F}px;
+                    box-sizing: border-box; cursor: pointer;
+                `;
+                backToTop.addEventListener('click', () => {
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                });
+                backToTop.classList.add('clickable');
+                this.element.appendChild(backToTop);
+                slotIndex++;
+            }
+
+            // Instagram link
             const instagramLink = this.createElement('a', 'footer-item');
             instagramLink.href = 'https://www.instagram.com/a.einoder/';
             instagramLink.target = '_blank';
             instagramLink.textContent = '@A.EINODER';
             instagramLink.style.cssText = `
-                position: absolute; top: 0; left: ${itemWidth}%; height: 100%; width: ${itemWidth}%;
+                position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
                 border-right: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
             `;
             instagramLink.classList.add('clickable');
             this.element.appendChild(instagramLink);
+            slotIndex++;
 
-            // Contact link - with conditional right border separator
+            // Contact link
             const contactLink = this.createElement('a', 'footer-item');
             contactLink.href = '#contact';
             contactLink.textContent = 'CONTACT';
-            const contactLeft = itemWidth * 2;
             const contactBorder = hasControls ? 'border-right: 1px solid var(--c-border); ' : '';
             contactLink.style.cssText = `
-                position: absolute; top: 0; left: ${contactLeft}%; height: 100%; width: ${itemWidth}%;
+                position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
                 ${contactBorder}box-sizing: border-box; cursor: pointer;
             `;
             contactLink.classList.add('clickable');
             this.element.appendChild(contactLink);
+            slotIndex++;
 
             // F Controller Container (conditional)
             let fControllerContainer = null;
             if (hasControls) {
                 fControllerContainer = this.createElement('div', 'footer-item f-controller-container');
-                const controlsLeft = itemWidth * 3;
                 fControllerContainer.style.cssText = `
-                    position: absolute; top: 0; left: ${controlsLeft}%; height: 100%; width: ${itemWidth}%;
+                    position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
                     display: flex; align-items: center; justify-content: center;
                     font-size: ${F}px; font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
                     box-sizing: border-box;

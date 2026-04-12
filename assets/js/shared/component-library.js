@@ -40,6 +40,7 @@ import {
     MarkdownBody,
     SimpleTOC,
     NumberedTOC,
+    TreeTOC,
     TOCGallery,
     Table,
     StatusDisplay,
@@ -224,6 +225,7 @@ const ComponentLibrary = {
             'markdown': MarkdownBody,
             'simple-toc': SimpleTOC,
             'numbered-toc': NumberedTOC,
+            'tree-toc': TreeTOC,
             'toc-gallery': TOCGallery,
             'table': Table,
             'status-display': StatusDisplay,
@@ -375,6 +377,7 @@ ComponentLibrary.Audio = Audio;
 ComponentLibrary.MarkdownBody = MarkdownBody;
 ComponentLibrary.SimpleTOC = SimpleTOC;
 ComponentLibrary.NumberedTOC = NumberedTOC;
+ComponentLibrary.TreeTOC = TreeTOC;
 ComponentLibrary.TOCGallery = TOCGallery;
 ComponentLibrary.Table = Table;
 ComponentLibrary.StatusDisplay = StatusDisplay;
@@ -531,6 +534,7 @@ export {
     MarkdownBody,
     SimpleTOC,
     NumberedTOC,
+    TreeTOC,
     TOCGallery,
     Table,
     StatusDisplay,

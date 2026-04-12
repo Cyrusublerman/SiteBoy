@@ -76,40 +76,17 @@ const ToolsSection = {
      * Render tools index using ComponentLibrary NumberedTOC (hierarchical)
      */
     renderToolsIndex() {
-        console.log('🔧 Rendering tools index with NumberedTOC component');
-        
-        // Clear container and add TOC container class for proper CSS styling
+        // TOC is the PCS — minimal chrome per ui-interface-overview.md §4.4
         this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('toc-container');
-        
-        const contentContainer = this.currentContainer.closest('.content-container');
-        if (contentContainer) {
-            contentContainer.classList.add('toc-container');
-        }
-        
-        // Create tools title
-        const title = new ComponentLibrary.Heading({
-            level: 1,
-            content: 'TOOLS'
-        });
-        this.componentInstances.push(title);
-        this.currentContainer.appendChild(title.render());
-        
-        const description = new ComponentLibrary.Paragraph({
-            content: 'Select a tool to use. Tools are organized by category and function.'
-        });
-        this.componentInstances.push(description);
-        this.currentContainer.appendChild(description.render());
 
         // Create hierarchical TOC data
         const toolsTOCData = this.prepareToolsTOCData();
         
-        // Create numbered TOC component using ComponentLibrary with dependencies
-        const tocComponent = new ComponentLibrary.NumberedTOC({
+        const tocComponent = new ComponentLibrary.TreeTOC({
             sections: toolsTOCData,
+            rootLabel: 'TOOLS',
             onItemClick: (item) => this.handleToolClick(item),
-            collapsible: true, // Enable collapsible category sections
-            showCategories: true
+            collapsible: true
         }, {
             MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
@@ -118,7 +95,7 @@ const ToolsSection = {
         this.componentInstances.push(tocComponent);
         this.currentContainer.appendChild(tocComponent.render());
         
-        console.log('✅ Tools index rendered with NumberedTOC component');
+        console.log('✅ Tools index rendered with TreeTOC component');
     },
     
     /**

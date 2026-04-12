@@ -100,7 +100,8 @@ export const Config = {
         this.marginMode = this.marginMode === 'B' ? 'S' : 'B';
     },
     
-    // Footer controls configuration
+    // Footer configuration
+    showBackToTop: false,       // Show/hide the ↑ TOP back-to-top button in footer
     showFooterControls: false,  // Toggle all footer controls (F display +/- buttons and B/S margin buttons)
 
     // Debug configuration

@@ -1156,6 +1156,294 @@ export class NumberedTOC extends BaseComponent {
 }
 
 /**
+ * TreeTOC — Arbitrary-depth horizontal tree diagram with SVG connectors.
+ *
+ * Column geometry:
+ *   colWidth[d] = maxTextWidth[d] + n        (n = total inter-column gap)
+ *   railX[d]    = labelX[d] + maxTextWidth[d] + n/2   (rail is centred in the gap)
+ *   labelX[d+1] = railX[d] + n/2             (= labelX[d] + maxTextWidth[d] + n)
+ *
+ *   Left arm  (text column right edge → rail): always n/2 — same for every node
+ *   Right arm (rail → child label start):      always n/2 — same for every node
+ *   Both arms equal. n/2 = HALF_GAP = F * 2.
+ *
+ * Text measurement: Atkinson Hyperlegible Mono (monospace), font-size F.
+ *   Char advance ≈ 0.60 × F.  _tw(str, F) = str.length × F × 0.60
+ *
+ * No collapse glyphs — interactivity signalled by hover inversion only.
+ * Font size = F (matches header text, per user requirement).
+ *
+ * Props:
+ *   data:        { label, children? }   — root of arbitrary tree
+ *   sections:    Array<{ title, description?, articles }>  — legacy adapter
+ *   rootLabel:   string (default 'TOOLS')
+ *   onItemClick: (nodeData) => void
+ *   collapsible: bool (default true)
+ */
+export class TreeTOC extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'tree-toc' }, deps);
+        this.onItemClick = options.onItemClick || null;
+        this.collapsible = options.collapsible !== false;
+        this.root = options.data
+            ? options.data
+            : TreeTOC._sectionsToTree(options.sections || [], options.rootLabel || 'TOOLS');
+        this._geoMap = {};  // depth → { labelX, maxW, railX }
+        this._svgEl  = null;
+        this._halfN  = 0;   // n/2 arm length, set in _buildGeo
+    }
+
+    // ── Legacy adapter ────────────────────────────────────────────────────────
+    static _sectionsToTree(sections, rootLabel) {
+        return {
+            label: rootLabel,
+            children: sections.map(s => ({
+                label: s.title || '',
+                _data: { section: s },
+                children: (s.articles || []).map(a => ({
+                    label: a.title || '',
+                    _data: a,
+                })),
+            })),
+        };
+    }
+
+    render() {
+        if (!this.element) {
+            this.element = this.createElement('div', 'tree-toc component');
+            this._svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            this._svgEl.style.cssText = `
+                position: absolute; top: 0; left: 0;
+                color: var(--c-border);
+                pointer-events: none; overflow: visible;
+            `;
+            this.element.appendChild(this._svgEl);
+            this._draw();
+        }
+        return this.element;
+    }
+
+    // ── Text width (monospace, font-size = F, char advance ≈ 0.60 × F) ───────
+    _tw(str, F) { return str.length * F * 0.60; }
+
+    // ── Pass 1: depth + collapsed init ────────────────────────────────────────
+    // Non-root nodes start collapsed. Once set, never overwritten.
+    _assignDepths(node, d = 0) {
+        node._depth = d;
+        if (node._collapsed === undefined) node._collapsed = d > 0;
+        (node.children || []).forEach(c => this._assignDepths(c, d + 1));
+    }
+
+    // ── Pass 2: max text width per depth (ALL nodes, not just visible) ────────
+    _collectMaxWidths(node, F, map = {}) {
+        const d = node._depth;
+        map[d] = Math.max(map[d] || 0, this._tw(node.label, F));
+        (node.children || []).forEach(c => this._collectMaxWidths(c, F, map));
+        return map;
+    }
+
+    // ── Pass 3: column geometry ───────────────────────────────────────────────
+    // Layout per column: [n/2 padding] TEXT [buffer] [n/2 arm] rail
+    //   n/2 is the LEFT PADDING inside the label element (not an external offset).
+    //   buffer = maxW - textWidth (variable; absorbs shorter labels within the column).
+    //   n/2 arm runs from column text boundary (textX + maxW) → railX.
+    //
+    //   textX[d]     = labelX[d] + n/2          (where text visually starts)
+    //   railX[d]     = textX[d] + maxW[d] + n/2 (= labelX[d] + n + maxW[d])
+    //   labelX[d+1]  = railX[d]                 (next column starts AT the rail)
+    //   textX[d+1]   = labelX[d+1] + n/2        (n/2 padding inside child)
+    //
+    //   Left arm:  textX[d] + maxW[d] → railX[d]        length = n/2 always ✓
+    //   Right stub: railX[d] → textX[d+1]                length = n/2 always ✓
+    //   n/2 = 6 × charWidth (user: "one char space", then "make n 6×")
+    _buildGeo(maxWidths, F) {
+        const HALF_N = F * 0.60 * 6;     // n/2 = 6 char widths
+        const depths = Object.keys(maxWidths).map(Number).sort((a, b) => a - b);
+        let labelX = 0;
+        this._geoMap = {};
+        this._halfN  = HALF_N;
+        for (const d of depths) {
+            const textX = labelX + HALF_N;
+            const railX = textX + maxWidths[d] + HALF_N;
+            this._geoMap[d] = { labelX, textX, maxW: maxWidths[d], railX };
+            labelX = railX;   // next column element starts AT the rail
+        }
+    }
+
+    // ── Pass 4: row assignment ────────────────────────────────────────────────
+    // Parent row = first child row. Subsequent children stack below.
+    _assignRows(node, cursor = 0) {
+        node._row = cursor;
+        const expanded = !node._collapsed && node.children && node.children.length;
+        if (!expanded) {
+            node._lastChildRow = cursor;
+            return cursor + 1;
+        }
+        let cur = cursor;
+        node.children.forEach(c => { cur = this._assignRows(c, cur); });
+        node._lastChildRow = node.children[node.children.length - 1]._row;
+        return cur;
+    }
+
+    _yc(ROW_H, row) { return row * ROW_H + ROW_H / 2; }
+
+    // ── SVG line helper ───────────────────────────────────────────────────────
+    _svgLine(x1, y1, x2, y2) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        el.setAttribute('x1', Math.round(x1));
+        el.setAttribute('y1', Math.round(y1));
+        el.setAttribute('x2', Math.round(x2));
+        el.setAttribute('y2', Math.round(y2));
+        el.setAttribute('stroke', 'currentColor');
+        el.setAttribute('stroke-width', '1');
+        this._svgEl.appendChild(el);
+    }
+
+    // ── Render: connectors ────────────────────────────────────────────────────
+    // Left arm:   textX + maxW → railX          length = n/2 for every node ✓
+    // V-rail:     railX, this row → last child row
+    // Right stub: railX → child textX           length = n/2 for every child ✓
+    _drawConnectors(node, ROW_H) {
+        const expanded = !node._collapsed && node.children && node.children.length;
+        if (!expanded) return;
+
+        const { textX, maxW, railX }  = this._geoMap[node._depth];
+        const childTextX              = this._geoMap[node._depth + 1].textX;
+        const py                      = this._yc(ROW_H, node._row);
+
+        this._svgLine(textX + maxW, py, railX, py);
+        this._svgLine(railX, this._yc(ROW_H, node._row), railX, this._yc(ROW_H, node._lastChildRow));
+        node.children.forEach(child => {
+            this._svgLine(railX, this._yc(ROW_H, child._row), childTextX, this._yc(ROW_H, child._row));
+            this._drawConnectors(child, ROW_H);
+        });
+    }
+
+    // ── Render: labels ────────────────────────────────────────────────────────
+    // Collapsed parent nodes show label + ' +' (right of label — structural glyph).
+    // Expanded parent nodes and leaf nodes show label only.
+    // No fixed width. Font-size = F.
+    _placeLabel(node, F, ROW_H) {
+        const { labelX } = this._geoMap[node._depth];
+        const hasKids    = node.children && node.children.length;
+        const canInteract = (hasKids && this.collapsible) || (!hasKids && this.onItemClick);
+
+        const el = this.createElement('div', 'tree-toc-node');
+        el.style.cssText = `
+            position: absolute;
+            left: ${labelX}px;
+            top: ${node._row * ROW_H}px;
+            height: ${ROW_H}px;
+            display: flex;
+            align-items: center;
+            padding-left: ${this._halfN}px;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F}px;
+            text-transform: uppercase;
+            color: var(--c-text);
+            background: var(--c-bg);
+            white-space: nowrap;
+            user-select: none;
+            box-sizing: border-box;
+            cursor: ${canInteract ? 'pointer' : 'default'};
+        `;
+
+        // Label span — plain text only (no glyph concatenation)
+        const labelSpan = this.createElement('span');
+        labelSpan.textContent = node.label;
+        el.appendChild(labelSpan);
+
+        // Collapsed indicator: separate glyph span RIGHT of label (semiotics §1 structural)
+        // Only shown when node has children AND is currently collapsed.
+        if (hasKids && this.collapsible && node._collapsed) {
+            const glyph = this.createElement('span');
+            glyph.textContent = ' +';
+            glyph.style.cssText = `flex-shrink: 0; color: var(--c-border);`;
+            el.appendChild(glyph);
+        }
+
+        if (canInteract) {
+            el.addEventListener('mouseenter', () => {
+                el.style.color      = 'var(--c-bg)';
+                el.style.background = 'var(--c-text)';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.color      = 'var(--c-text)';
+                el.style.background = 'var(--c-bg)';
+            });
+        }
+
+        if (hasKids && this.collapsible) {
+            el.addEventListener('click', () => { node._collapsed = !node._collapsed; this._draw(); });
+        } else if (!hasKids && this.onItemClick) {
+            el.addEventListener('click', () => this.onItemClick(node._data || node));
+        }
+
+        this.element.appendChild(el);
+        if (!node._collapsed) {
+            (node.children || []).forEach(c => this._placeLabel(c, F, ROW_H));
+        }
+    }
+
+    _F() { return this.deps?.MF?.F || window.Config?.F || 14; }
+
+    // ── Main draw ─────────────────────────────────────────────────────────────
+    _draw() {
+        const F     = this._F();
+        const ROW_H = F * 2;
+
+        this.element.querySelectorAll('.tree-toc-node').forEach(e => e.remove());
+        while (this._svgEl.firstChild) this._svgEl.removeChild(this._svgEl.firstChild);
+
+        this._assignDepths(this.root);
+        const maxWidths = this._collectMaxWidths(this.root, F);
+        this._buildGeo(maxWidths, F);
+        const totalRows = this._assignRows(this.root);
+
+        // Deepest visible depth determines canvas width
+        let maxVisibleDepth = 0;
+        const walkDepth = n => {
+            if (n._depth > maxVisibleDepth) maxVisibleDepth = n._depth;
+            if (!n._collapsed) (n.children || []).forEach(walkDepth);
+        };
+        walkDepth(this.root);
+
+        const lastGeo = this._geoMap[maxVisibleDepth];
+        const totalW  = lastGeo.textX + lastGeo.maxW + this._halfN;
+        const totalH  = totalRows * ROW_H + 4;
+
+        this.element.style.cssText = `
+            position: relative;
+            width: ${totalW}px;
+            height: ${totalH}px;
+            font-family: 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F}px;
+            color: var(--c-text);
+            background: var(--c-bg);
+            box-sizing: border-box;
+            overflow: visible;
+        `;
+
+        this._svgEl.setAttribute('width',  totalW);
+        this._svgEl.setAttribute('height', totalH);
+
+        this._placeLabel(this.root, F, ROW_H);
+        this._drawConnectors(this.root, ROW_H);
+    }
+
+    // ── Expand / collapse all ─────────────────────────────────────────────────
+    _setAll(node, state, isRoot = false) {
+        if (!isRoot && node.children && node.children.length) node._collapsed = state;
+        (node.children || []).forEach(c => this._setAll(c, state));
+    }
+
+    expandAll()   { this._setAll(this.root, false, true); this._draw(); }
+    collapseAll() { this._setAll(this.root, true,  true); this._draw(); }
+
+    destroy() { super.destroy(); }
+}
+
+/**
  * Table - Data table component with proper structure
  */
 export class Table extends BaseComponent {
