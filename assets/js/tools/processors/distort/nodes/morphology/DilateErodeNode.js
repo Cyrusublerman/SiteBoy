@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { morphologyRGBA } from '../../../../../shared/algorithms/image/morphology.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/dilateerode.shader.js';
 
 export const DilateErodeNode = createEffectModule({
   type: 'dilateerode',
@@ -22,5 +23,8 @@ export const DilateErodeNode = createEffectModule({
       result = morphologyRGBA(result, w, h, p.mode.toLowerCase(), p.radius, p.shape.toLowerCase());
     }
     dst.set(result);
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

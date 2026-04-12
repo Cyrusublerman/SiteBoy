@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { polarCoords } from '../../../../../shared/algorithms/geometry/distortion.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/polarcoords.shader.js';
 
 export const PolarCoordsNode = createEffectModule({
   type: 'polarcoords', name: 'POLAR COORDS', category: 'DISTORTION',
@@ -10,5 +11,8 @@ export const PolarCoordsNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx) {
     dst.set(polarCoords(src, w, h, p.mode, p.centreX, p.centreY));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

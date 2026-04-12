@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { motionBlur } from '../../../../../shared/algorithms/image/blur-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/motionblur.shader.js';
 
 export const MotionBlurNode = createEffectModule({
   type: 'motionblur', name: 'MOTION BLUR', category: 'BLUR',
@@ -9,5 +10,8 @@ export const MotionBlurNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     dst.set(motionBlur(src, w, h, p.angle, p.distance));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { liftGammaGain, applyVibrance } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/contrast.shader.js';
 
 export const ContrastNode = createEffectModule({
   type: 'contrast', name: 'LIFT/GAM/GAIN', category: 'COLOUR / TONE',
@@ -14,5 +15,14 @@ export const ContrastNode = createEffectModule({
   apply(src, dst, w, h, p) {
     const toned = liftGammaGain(src, w, h, p.lift, p.gamma, p.gain, p.contrast, p.pivot);
     dst.set(p.vibrance !== 0 ? applyVibrance(toned, w, h, p.vibrance) : toned);
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: p => ({
+      uLift: p.lift, uGamma: p.gamma, uGain: p.gain,
+      uContrast: p.contrast, uPivot: p.pivot, uVibrance: p.vibrance,
+    }),
+  },
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { applyTemperatureTint } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/temptint.shader.js';
 
 export const TemperatureTintNode = createEffectModule({
   type: 'temptint', name: 'TEMP / TINT', category: 'COLOUR / TONE',
@@ -10,5 +11,8 @@ export const TemperatureTintNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(applyTemperatureTint(src, w, h, p.temperature, p.tint));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

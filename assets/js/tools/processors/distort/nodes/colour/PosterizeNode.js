@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { posterize } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/posterize.shader.js';
 
 export const PosterizeNode = createEffectModule({
   type: 'posterize', name: 'POSTERIZE', category: 'COLOUR / TONE',
@@ -9,5 +10,11 @@ export const PosterizeNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(posterize(src, w, h, p.levels));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: p => ({ uLevels: p.levels }),
+  },
 });

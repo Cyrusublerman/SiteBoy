@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { halftonePatternRGBA } from '../../../../../shared/algorithms/patterns/pattern-generators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/halftonepattern.shader.js';
 
 export const HalftonePatternNode = createEffectModule({
   type: 'halftonepattern',
@@ -26,5 +27,8 @@ export const HalftonePatternNode = createEffectModule({
       modulate('bgLevel',  0), modulate('dotLevel', 0),
       p.gridType, p.responseSource, p.responseCurve, p.invert, p.softClamp
     ));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

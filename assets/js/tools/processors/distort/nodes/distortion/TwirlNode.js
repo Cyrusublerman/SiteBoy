@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { twirl } from '../../../../../shared/algorithms/geometry/distortion.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/twirl.shader.js';
 
 export const TwirlNode = createEffectModule({
   type: 'twirl', name: 'TWIRL', category: 'DISTORTION',
@@ -12,5 +13,8 @@ export const TwirlNode = createEffectModule({
   apply(src, dst, w, h, p, ctx) {
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
     dst.set(twirl(src, w, h, p.angle, p.centreX, p.centreY, p.radius, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { spherize } from '../../../../../shared/algorithms/geometry/distortion.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/spherize.shader.js';
 
 export const SpherizeNode = createEffectModule({
   type: 'spherize', name: 'SPHERIZE', category: 'DISTORTION',
@@ -12,5 +13,8 @@ export const SpherizeNode = createEffectModule({
   apply(src, dst, w, h, p, ctx, modulate) {
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
     dst.set(spherize(src, w, h, p.amount, p.centreX, p.centreY, p.radius, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

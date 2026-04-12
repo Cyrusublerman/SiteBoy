@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { applyGradientMap } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/gradientmap.shader.js';
 
 export const GradientMapNode = createEffectModule({
   type: 'gradientmap', name: 'GRADIENT MAP', category: 'COLOUR / TONE',
@@ -20,5 +21,8 @@ export const GradientMapNode = createEffectModule({
     const lightB = modulate ? this.getModulated('lightB', 0, ctx) : p.lightB;
     const gradient = [[darkR, darkG, darkB], [lightR, lightG, lightB]];
     dst.set(applyGradientMap(src, w, h, gradient));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

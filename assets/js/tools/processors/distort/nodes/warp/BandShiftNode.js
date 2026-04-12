@@ -2,6 +2,7 @@ import { createEffectModule } from '../../core/EffectModule.js';
 import { PerlinNoise } from '../../core/PerlinNoise.js';
 import { SeededRNG } from '../../core/SeededRNG.js';
 import { bandShift } from '../../../../../shared/algorithms/geometry/warp.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/bandshift.shader.js';
 
 export const BandShiftNode = createEffectModule({
   type: 'bandshift', name: 'BAND SHIFT', category: 'WARP',
@@ -20,5 +21,8 @@ export const BandShiftNode = createEffectModule({
     const rng = new SeededRNG(seed);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
     dst.set(bandShift(src, w, h, p.axis, p.bandSize, p.intensity, p.offsetType, p.phase, p.freq, p.noiseScale, noise, rng, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

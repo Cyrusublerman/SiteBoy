@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { truchetTileField2D } from '../../../../../shared/algorithms/patterns/pattern-generators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/truchet.shader.js';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -386,5 +387,8 @@ export const TruchetNode = createEffectModule({
         }
       }
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

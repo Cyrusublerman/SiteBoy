@@ -1,6 +1,7 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { SeededRNG } from '../../core/SeededRNG.js';
 import { lensBubbles } from '../../../../../shared/algorithms/geometry/warp.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/lensbubbles.shader.js';
 
 export const LensBubblesNode = createEffectModule({
   type: 'lensbubbles', name: 'LENS BUBBLES', category: 'REFRACTION',
@@ -17,5 +18,8 @@ export const LensBubblesNode = createEffectModule({
     const minR = p.minRadius;
     const maxR = Math.max(minR, p.maxRadius);
     dst.set(lensBubbles(src, w, h, p.count, minR, maxR, p.magnification, p.edgeSoft, rng, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

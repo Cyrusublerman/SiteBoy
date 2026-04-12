@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { radialBlur } from '../../../../../shared/algorithms/image/blur-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/radialblur.shader.js';
 
 export const RadialBlurNode = createEffectModule({
   type: 'radialblur', name: 'RADIAL BLUR', category: 'BLUR',
@@ -15,5 +16,8 @@ export const RadialBlurNode = createEffectModule({
     const cy = modulate('centreY', 0);
     const am = modulate('amount', 0);
     dst.set(radialBlur(src, w, h, p.type, cx, cy, am, p.samples));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,4 +1,5 @@
 import { createEffectModule } from '../../core/EffectModule.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/chromaticab.shader.js';
 
 function _sampleChannel(src, w, h, fx, fy, ch, edgeMode, nearest) {
   if (nearest) {
@@ -87,5 +88,8 @@ export const ChromaticAbNode = createEffectModule({
       dst[oi + 2] = _sampleChannel(src, w, h, x + nx * offsetB, y + ny * offsetB, 2, p.edgeMode, nearest);
       dst[oi + 3] = src[oi + 3];
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { ditherBayer, ditherFloydSteinberg } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/dither.shader.js';
 
 export const DitherNode = createEffectModule({
   type: 'dither', name: 'DITHER', category: 'COLOUR / TONE',
@@ -15,5 +16,8 @@ export const DitherNode = createEffectModule({
     } else {
       dst.set(ditherFloydSteinberg(src, w, h, p.levels, p.strength));
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

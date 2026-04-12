@@ -2,6 +2,7 @@ import { createEffectModule } from '../../core/EffectModule.js';
 import { capByFrame } from '../../core/frameCap.js';
 import { PerlinNoise } from '../../core/PerlinNoise.js';
 import { advectionWarp } from '../../../../../shared/algorithms/geometry/warp.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/advection.shader.js';
 
 export const AdvectionNode = createEffectModule({
   type: 'advection', name: 'ADVECTION', category: 'WARP',
@@ -22,5 +23,8 @@ export const AdvectionNode = createEffectModule({
     let st = p.steps;
     st = capByFrame(st, p.frame);
     dst.set(advectionWarp(src, w, h, p.velocityType, st, p.speed, p.noiseScale, this._noise, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });
