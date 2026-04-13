@@ -121,115 +121,47 @@ const BlogSection = {
     },
     
     /**
-     * Render blog TOC index
+     * Render blog TOC index — TreeTOC is the PCS (ui-interface-overview §1)
      */
     renderBlogIndex() {
-        console.log('📝 Rendering blog TOC index...');
-        
-        // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('toc-container');
-        
-        // Apply proper body sizing for blog index (no subheader)
-        const contentContainer = this.currentContainer.closest('.content-container');
-        if (contentContainer) {
-            contentContainer.classList.add('toc-container');
-            
-            // Reposition content container for no-subheader layout
-            if (window.MathematicalFoundation) {
-                const layout = window.MathematicalFoundation.computeLayout() || {};
-                const margin = window.MathematicalFoundation.Config?.margin || layout.marginLeft || 14;
-                const headerHeight = layout.headerHeight || 28;
-                const contentTop = margin + headerHeight;
-                contentContainer.style.top = `${contentTop}px`;
-                console.log(`✅ Applied no-subheader layout for blog index: top=${contentTop}px`);
-            }
-        }
-        
-        // Create blog title
-        const title = new ComponentLibrary.Heading({
-            level: 1,
-            content: 'BLOG'
-        });
-        this.componentInstances.push(title);
-        this.currentContainer.appendChild(title.render());
-        
-        const description = new ComponentLibrary.Paragraph({
-            content: 'Select an article to read. Content is organized by category and topic.'
-        });
-        this.componentInstances.push(description);
-        this.currentContainer.appendChild(description.render());
-        
-        // Create blog TOC using proper ComponentLibrary component with collapsible sections
-        const blogTOCData = this.prepareBlogTOCData();
-        const numberedTOC = new ComponentLibrary.NumberedTOC({
-            sections: blogTOCData,
+
+        const toc = new ComponentLibrary.TreeTOC({
+            data: this.prepareBlogTreeData(),
             onItemClick: (item) => this.handleBlogTOCItemClick(item),
             collapsible: true
         }, {
             MF: window.MathematicalFoundation,
             Resize: window.ResizeManager
         });
-        
-        this.componentInstances.push(numberedTOC);
-        this.currentContainer.appendChild(numberedTOC.render());
-        
-        console.log('✅ Blog TOC index rendered using ComponentLibrary');
+
+        this.componentInstances.push(toc);
+        this.currentContainer.appendChild(toc.render());
+        window.debugLog('BLOG', '✅ Blog TOC index rendered with TreeTOC');
     },
 
     /**
-     * Prepare blog TOC data for NumberedTOC component
+     * Convert manifest tree to TreeTOC { label, children?, _data? } format (arbitrary depth).
+     * File nodes carry _data = manifest file object; _data.slug drives navigation.
      */
-    prepareBlogTOCData() {
-        if (!this.manifest || !this.manifest.tree || !Array.isArray(this.manifest.tree.children)) {
-            return [];
+    _manifestNodeToTreeNode(node) {
+        if (node.type === 'file') {
+            return { label: this.formatTitle(node.title || node.name), _data: node };
         }
-        
-        const tocSections = [];
-        
-        this.manifest.tree.children.forEach(rootNode => {
-            if (rootNode.type !== 'root-folder' || !Array.isArray(rootNode.children)) return;
-            
-            const articles = this.mapChildrenToItems(rootNode.children, rootNode.name);
-            if (articles.length) {
-                tocSections.push({
-                    title: this.formatTitle(rootNode.title || rootNode.name),
-                    description: rootNode.name,
-                    articles
-                });
-            }
-        });
-        
-        return tocSections;
+        const children = (node.children || [])
+            .map(c => this._manifestNodeToTreeNode(c))
+            .filter(Boolean);
+        return {
+            label: this.formatTitle(node.title || node.name),
+            ...(children.length ? { children } : {})
+        };
     },
-    
-    mapChildrenToItems(children, categoryKey, parentPath = '') {
-        const items = [];
-        if (!children) return items;
-        
-        children.forEach(child => {
-            const id = parentPath ? `${parentPath}/${child.name || child.slug}` : (child.slug || child.name);
-            
-            if (child.type === 'file') {
-                items.push({
-                    id,
-                    title: this.formatTitle(child.title || child.name),
-                    description: child.relPath || child.slug,
-                    slug: child.slug,
-                    categoryKey
-                });
-            } else if (child.type === 'folder' && Array.isArray(child.children)) {
-                items.push({
-                    id,
-                    title: this.formatTitle(child.title || child.name),
-                    description: child.name,
-                    categoryKey,
-                    children: this.mapChildrenToItems(child.children, categoryKey, id)
-                });
-            }
-        });
-        
-        return items;
+
+    prepareBlogTreeData() {
+        const children = (this.manifest?.tree?.children || [])
+            .filter(n => n.type === 'root-folder')
+            .map(n => this._manifestNodeToTreeNode(n));
+        return { label: 'DOCS', children };
     },
     
     /**
@@ -373,10 +305,6 @@ const BlogSection = {
         
         if (this.currentContainer) {
             this.currentContainer.innerHTML = '';
-            // Remove layout classes
-            this.currentContainer.className = this.currentContainer.className
-                .replace(/toc-container|layout-\w+-\w+/g, '')
-                .trim();
         }
         
         // Destroy tracked components using ComponentLibrary method

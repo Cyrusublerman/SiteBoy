@@ -1170,7 +1170,7 @@ export class NumberedTOC extends BaseComponent {
  * Text measurement: Atkinson Hyperlegible Mono (monospace), font-size F.
  *   Char advance ≈ 0.60 × F.  _tw(str, F) = str.length × F × 0.60
  *
- * No collapse glyphs — interactivity signalled by hover inversion only.
+ * Collapsed parent shows ' +' glyph in var(--c-border); expanded nodes show no indicator.
  * Font size = F (matches header text, per user requirement).
  *
  * Props:
@@ -1188,9 +1188,11 @@ export class TreeTOC extends BaseComponent {
         this.root = options.data
             ? options.data
             : TreeTOC._sectionsToTree(options.sections || [], options.rootLabel || 'TOOLS');
-        this._geoMap = {};  // depth → { labelX, maxW, railX }
-        this._svgEl  = null;
-        this._halfN  = 0;   // n/2 arm length, set in _buildGeo
+        this._geoMap    = {};   // depth → { labelX, textX, maxW, railX }
+        this._svgEl     = null;
+        this._halfN     = 0;    // arm/stub line length (n), set in _buildGeo
+        this._charW     = 0;    // 1 character width (gap between line endpoint and text)
+        this._measureEl = null; // hidden DOM element for accurate text measurement
     }
 
     // ── Legacy adapter ────────────────────────────────────────────────────────
@@ -1211,20 +1213,50 @@ export class TreeTOC extends BaseComponent {
     render() {
         if (!this.element) {
             this.element = this.createElement('div', 'tree-toc component');
+
+            // Hidden measure element (mirrors reference #measure) — accurate rendered widths.
+            // Positioned off-canvas within the component; active once element is in the DOM.
+            this._measureEl = this.createElement('div', 'tree-toc-measure');
+            this._measureEl.setAttribute('aria-hidden', 'true');
+            this._measureEl.style.cssText = `
+                position: absolute; visibility: hidden; white-space: nowrap;
+                font-family: 'Atkinson Hyperlegible Mono', monospace; font-weight: 400;
+                line-height: 1; left: -9999px; top: 0; pointer-events: none;
+            `;
+            this.element.appendChild(this._measureEl);
+
             this._svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             this._svgEl.style.cssText = `
                 position: absolute; top: 0; left: 0;
                 color: var(--c-border);
                 pointer-events: none; overflow: visible;
             `;
+            this._svgEl.setAttribute('shape-rendering', 'crispEdges');
             this.element.appendChild(this._svgEl);
+
+            // Initial draw uses approximation (element not yet in DOM).
+            // Deferred redraw fires after fonts load, using accurate DOM measurements.
             this._draw();
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => { if (this._measureEl) this._draw(); });
+            }
         }
         return this.element;
     }
 
-    // ── Text width (monospace, font-size = F, char advance ≈ 0.60 × F) ───────
-    _tw(str, F) { return str.length * F * 0.60; }
+    // ── Text width ────────────────────────────────────────────────────────────
+    // Uses DOM measurement when mounted (mirrors reference tw()); falls back to
+    // monospace approximation (char advance ≈ 0.60 × F) for the initial off-DOM draw.
+    _tw(str) {
+        const F = this._F();
+        if (this._measureEl) {
+            this._measureEl.style.fontSize = `${F}px`;
+            this._measureEl.textContent = str;
+            const w = this._measureEl.getBoundingClientRect().width;
+            if (w > 0) return w;
+        }
+        return str.length * F * 0.60;
+    }
 
     // ── Pass 1: depth + collapsed init ────────────────────────────────────────
     // Non-root nodes start collapsed. Once set, never overwritten.
@@ -1235,38 +1267,39 @@ export class TreeTOC extends BaseComponent {
     }
 
     // ── Pass 2: max text width per depth (ALL nodes, not just visible) ────────
-    _collectMaxWidths(node, F, map = {}) {
-        const d = node._depth;
-        map[d] = Math.max(map[d] || 0, this._tw(node.label, F));
-        (node.children || []).forEach(c => this._collectMaxWidths(c, F, map));
+    _collectMaxWidths(node, map = {}) {
+        map[node._depth] = Math.max(map[node._depth] || 0, this._tw(node.label));
+        (node.children || []).forEach(c => this._collectMaxWidths(c, map));
         return map;
     }
 
     // ── Pass 3: column geometry ───────────────────────────────────────────────
-    // Layout per column: [n/2 padding] TEXT [buffer] [n/2 arm] rail
-    //   n/2 is the LEFT PADDING inside the label element (not an external offset).
-    //   buffer = maxW - textWidth (variable; absorbs shorter labels within the column).
-    //   n/2 arm runs from column text boundary (textX + maxW) → railX.
+    // Per-column layout (depth d):
+    //   [charW gap] TEXT(actualW) [charW gap] [arm line=n] rail [stub line=n] [charW gap] TEXT(d+1)
     //
-    //   textX[d]     = labelX[d] + n/2          (where text visually starts)
-    //   railX[d]     = textX[d] + maxW[d] + n/2 (= labelX[d] + n + maxW[d])
-    //   labelX[d+1]  = railX[d]                 (next column starts AT the rail)
-    //   textX[d+1]   = labelX[d+1] + n/2        (n/2 padding inside child)
+    //   charW        = 1 character width = F × 0.60     (fixed gap on both sides of every line)
+    //   n            = arm / stub line length = 6 × charW
+    //   textX[d]     = labelX[d] + charW                (text starts 1 char inside element)
+    //   railX[d]     = textX[d] + maxW[d] + charW + n   (for longest label arm = n exactly)
+    //   labelX[d+1]  = railX[d] + n                     (stub of length n, then child element starts)
+    //   textX[d+1]   = labelX[d+1] + charW              (1-char gap before child text)
     //
-    //   Left arm:  textX[d] + maxW[d] → railX[d]        length = n/2 always ✓
-    //   Right stub: railX[d] → textX[d+1]                length = n/2 always ✓
-    //   n/2 = 6 × charWidth (user: "one char space", then "make n 6×")
+    //   Arm (parent):  textX[d] + actualW + charW → railX[d]  (variable; = n for longest word)
+    //   Stub (child):  railX[d] → labelX[d+1] = railX[d] + n  (always n)
+    //   Gap each side: exactly 1 charW — never more, never less
     _buildGeo(maxWidths, F) {
-        const HALF_N = F * 0.60 * 6;     // n/2 = 6 char widths
+        const charW  = F * 0.60;          // 1-character gap
+        const N      = charW * 6;         // arm / stub line length = 6 chars
         const depths = Object.keys(maxWidths).map(Number).sort((a, b) => a - b);
         let labelX = 0;
         this._geoMap = {};
-        this._halfN  = HALF_N;
+        this._halfN  = N;
+        this._charW  = charW;
         for (const d of depths) {
-            const textX = labelX + HALF_N;
-            const railX = textX + maxWidths[d] + HALF_N;
+            const textX = labelX + charW;
+            const railX = textX + maxWidths[d] + charW + N;
             this._geoMap[d] = { labelX, textX, maxW: maxWidths[d], railX };
-            labelX = railX;   // next column element starts AT the rail
+            labelX = railX + N;   // next column starts N (stub) past the rail
         }
     }
 
@@ -1300,29 +1333,49 @@ export class TreeTOC extends BaseComponent {
     }
 
     // ── Render: connectors ────────────────────────────────────────────────────
-    // Left arm:   textX + maxW → railX          length = n/2 for every node ✓
-    // V-rail:     railX, this row → last child row
-    // Right stub: railX → child textX           length = n/2 for every child ✓
+    // Arm:  textX + actualW + charW → railX       variable; 1-char gap after text
+    // Rail: railX, parent row → last child row
+    // Stub: railX → childLabelX                   fixed length N; child DOM element starts charW past here
+    // Cross: vertical SVG line at childLabelX for any collapsed child that has grandchildren
     _drawConnectors(node, ROW_H) {
         const expanded = !node._collapsed && node.children && node.children.length;
         if (!expanded) return;
 
-        const { textX, maxW, railX }  = this._geoMap[node._depth];
-        const childTextX              = this._geoMap[node._depth + 1].textX;
-        const py                      = this._yc(ROW_H, node._row);
+        const { textX, railX } = this._geoMap[node._depth];
+        const childLabelX      = this._geoMap[node._depth + 1].labelX;
+        const actualW          = this._tw(node.label);
+        const py               = this._yc(ROW_H, node._row);
 
-        this._svgLine(textX + maxW, py, railX, py);
-        this._svgLine(railX, this._yc(ROW_H, node._row), railX, this._yc(ROW_H, node._lastChildRow));
+        this._svgLine(textX + actualW + this._charW, py, railX, py);
+        this._svgLine(railX, py, railX, this._yc(ROW_H, node._lastChildRow));
+
         node.children.forEach(child => {
-            this._svgLine(railX, this._yc(ROW_H, child._row), childTextX, this._yc(ROW_H, child._row));
+            const cy = this._yc(ROW_H, child._row);
+            this._svgLine(railX, cy, childLabelX, cy);
+
+            // Collapsed indicator: --- label -+
+            // Drawn to the RIGHT of the child text. Two lines, same weight/colour as all others:
+            //   Horizontal: charW gap after text, then charW segment + charW cross bar (2 chars total, one line)
+            //   Vertical:   charW tall, centred in the cross character (the second charW block)
+            if (child._collapsed && child.children && child.children.length) {
+                const cw        = this._charW;
+                const cTextX    = this._geoMap[child._depth].textX;
+                const cActualW  = this._tw(child.label);
+                const xArm      = cTextX + cActualW + cw;           // arm start (1-char gap after text)
+                const xCross    = xArm + cw / 2;                     // cross left edge (half-char arm)
+                const xCrossC   = xCross + cw / 2;                  // cross centre x
+                this._svgLine(xArm,   cy,        xCross + cw, cy);  // horizontal: segment + cross bar
+                this._svgLine(xCrossC, cy - cw / 2, xCrossC, cy + cw / 2); // vertical: 1 char tall
+            }
+
             this._drawConnectors(child, ROW_H);
         });
     }
 
     // ── Render: labels ────────────────────────────────────────────────────────
-    // Collapsed parent nodes show label + ' +' (right of label — structural glyph).
-    // Expanded parent nodes and leaf nodes show label only.
-    // No fixed width. Font-size = F.
+    // DOM element starts at labelX + charW — the charW gap is occupied by the SVG cross
+    // (for collapsed parents) or is simply dead space (leaf nodes, expanded parents).
+    // No padding-left needed: the charW shift IS the gap between the cross and the text.
     _placeLabel(node, F, ROW_H) {
         const { labelX } = this._geoMap[node._depth];
         const hasKids    = node.children && node.children.length;
@@ -1331,12 +1384,11 @@ export class TreeTOC extends BaseComponent {
         const el = this.createElement('div', 'tree-toc-node');
         el.style.cssText = `
             position: absolute;
-            left: ${labelX}px;
+            left: ${labelX + this._charW}px;
             top: ${node._row * ROW_H}px;
             height: ${ROW_H}px;
             display: flex;
             align-items: center;
-            padding-left: ${this._halfN}px;
             font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: ${F}px;
             text-transform: uppercase;
@@ -1348,19 +1400,9 @@ export class TreeTOC extends BaseComponent {
             cursor: ${canInteract ? 'pointer' : 'default'};
         `;
 
-        // Label span — plain text only (no glyph concatenation)
         const labelSpan = this.createElement('span');
         labelSpan.textContent = node.label;
         el.appendChild(labelSpan);
-
-        // Collapsed indicator: separate glyph span RIGHT of label (semiotics §1 structural)
-        // Only shown when node has children AND is currently collapsed.
-        if (hasKids && this.collapsible && node._collapsed) {
-            const glyph = this.createElement('span');
-            glyph.textContent = ' +';
-            glyph.style.cssText = `flex-shrink: 0; color: var(--c-border);`;
-            el.appendChild(glyph);
-        }
 
         if (canInteract) {
             el.addEventListener('mouseenter', () => {
@@ -1396,7 +1438,7 @@ export class TreeTOC extends BaseComponent {
         while (this._svgEl.firstChild) this._svgEl.removeChild(this._svgEl.firstChild);
 
         this._assignDepths(this.root);
-        const maxWidths = this._collectMaxWidths(this.root, F);
+        const maxWidths = this._collectMaxWidths(this.root);
         this._buildGeo(maxWidths, F);
         const totalRows = this._assignRows(this.root);
 
@@ -1409,7 +1451,7 @@ export class TreeTOC extends BaseComponent {
         walkDepth(this.root);
 
         const lastGeo = this._geoMap[maxVisibleDepth];
-        const totalW  = lastGeo.textX + lastGeo.maxW + this._halfN;
+        const totalW  = lastGeo.labelX + lastGeo.maxW + 2 * this._charW;
         const totalH  = totalRows * ROW_H + 4;
 
         this.element.style.cssText = `
@@ -1440,7 +1482,10 @@ export class TreeTOC extends BaseComponent {
     expandAll()   { this._setAll(this.root, false, true); this._draw(); }
     collapseAll() { this._setAll(this.root, true,  true); this._draw(); }
 
-    destroy() { super.destroy(); }
+    destroy() {
+        this._measureEl = null;
+        super.destroy();
+    }
 }
 
 /**

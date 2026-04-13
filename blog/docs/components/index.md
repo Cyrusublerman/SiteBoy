@@ -67,6 +67,7 @@ Use this as the entry point for all component docs.
 - `content/MarkdownBody.md`
 - `content/SimpleTOC.md`
 - `content/NumberedTOC.md`
+- `content/TreeTOC.md`
 - `content/TOCGallery.md`
 - `content/Table.md`
 - `content/StatusDisplay.md`

@@ -1092,7 +1092,7 @@ export class PageFooter extends BaseComponent {
                 position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
-                border-right: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
+                ${slotIndex > 0 ? 'border-left: 1px solid var(--c-border);' : ''} box-sizing: border-box; cursor: pointer;
             `;
             instagramLink.classList.add('clickable');
             this.element.appendChild(instagramLink);
@@ -1102,12 +1102,11 @@ export class PageFooter extends BaseComponent {
             const contactLink = this.createElement('a', 'footer-item');
             contactLink.href = '#contact';
             contactLink.textContent = 'CONTACT';
-            const contactBorder = hasControls ? 'border-right: 1px solid var(--c-border); ' : '';
             contactLink.style.cssText = `
                 position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
                 display: flex; align-items: center; justify-content: center;
                 text-transform: uppercase; font-size: ${F}px; text-decoration: none; color: inherit;
-                ${contactBorder}box-sizing: border-box; cursor: pointer;
+                border-left: 1px solid var(--c-border); box-sizing: border-box; cursor: pointer;
             `;
             contactLink.classList.add('clickable');
             this.element.appendChild(contactLink);
@@ -1121,7 +1120,7 @@ export class PageFooter extends BaseComponent {
                     position: absolute; top: 0; left: ${slotIndex * itemWidth}%; height: 100%; width: ${itemWidth}%;
                     display: flex; align-items: center; justify-content: center;
                     font-size: ${F}px; font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
-                    box-sizing: border-box;
+                    border-left: 1px solid var(--c-border); box-sizing: border-box;
                 `;
 
                 const controlElements = [];
