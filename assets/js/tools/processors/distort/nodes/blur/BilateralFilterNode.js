@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { bilateralFilter } from '../../../../../shared/algorithms/image/blur-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/bilateral.shader.js';
 
 export const BilateralFilterNode = createEffectModule({
   type: 'bilateral', name: 'BILATERAL', category: 'BLUR',
@@ -11,5 +12,8 @@ export const BilateralFilterNode = createEffectModule({
   apply(src, dst, w, h, p, ctx, modulate) {
     const rangeSigma = modulate ? modulate('rangeSigma', 0, ctx) : p.rangeSigma;
     dst.set(bilateralFilter(src, w, h, p.spatialSigma, rangeSigma));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { channelMix } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/channelmixer.shader.js';
 
 export const ChannelMixerNode = createEffectModule({
   type: 'channelmixer', name: 'CHANNEL MIXER', category: 'COLOUR / TONE',
@@ -16,5 +17,8 @@ export const ChannelMixerNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     dst.set(channelMix(src, w, h, p));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

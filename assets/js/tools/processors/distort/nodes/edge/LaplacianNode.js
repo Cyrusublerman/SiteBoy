@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { laplacianEdge } from '../../../../../shared/algorithms/edge-detection/edge-operators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/laplacian.shader.js';
 
 export const LaplacianNode = createEffectModule({
   type: 'laplacian', name: 'LAPLACIAN', category: 'EDGE',
@@ -13,5 +14,8 @@ export const LaplacianNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     dst.set(laplacianEdge(src, w, h, p.mode, !!p.normalize));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

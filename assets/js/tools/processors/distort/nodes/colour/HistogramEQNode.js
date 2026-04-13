@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { histogramEqualise } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/histogrameq.shader.js';
 
 export const HistogramEQNode = createEffectModule({
   type: 'histogrameq', name: 'HISTOGRAM EQ', category: 'COLOUR / TONE',
@@ -8,5 +9,8 @@ export const HistogramEQNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(histogramEqualise(src, w, h, p.strength));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

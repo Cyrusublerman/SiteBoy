@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { affineTransform } from '../../../../../shared/algorithms/image/spatial-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/affine.shader.js';
 
 export const AffineTransformNode = createEffectModule({
   type: 'affine', name: 'AFFINE XFORM', category: 'TRANSFORM',
@@ -15,5 +16,8 @@ export const AffineTransformNode = createEffectModule({
   apply(src, dst, w, h, p, ctx) {
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
     dst.set(affineTransform(src, w, h, p.translateX, p.translateY, p.rotate, p.scaleX, p.scaleY, p.centreX, p.centreY, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

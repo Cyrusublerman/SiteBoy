@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { gratingBandField2D, combineMoire, thresholdGrating } from '../../../../../shared/algorithms/patterns/pattern-generators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/moire.shader.js';
 
 const DEG = Math.PI / 180;
 
@@ -96,5 +97,8 @@ export const MoireNode = createEffectModule({
         dst[i + 3] = src[i + 3];
       }
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

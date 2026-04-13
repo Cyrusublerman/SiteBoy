@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { buildCurvesLUT, applyCurvesLUT } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/curves.shader.js';
 
 export const CurvesNode = createEffectModule({
   type: 'curves', name: 'CURVES', category: 'COLOUR / TONE',
@@ -15,5 +16,15 @@ export const CurvesNode = createEffectModule({
   apply(src, dst, w, h, p) {
     const lut = buildCurvesLUT(p.shadowIn, p.shadowOut, p.midIn, p.midOut, p.highIn, p.highOut);
     dst.set(applyCurvesLUT(src, w, h, lut));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: p => ({
+      uShadowIn: p.shadowIn, uShadowOut: p.shadowOut,
+      uMidIn: p.midIn, uMidOut: p.midOut,
+      uHighIn: p.highIn, uHighOut: p.highOut,
+    }),
+  },
 });

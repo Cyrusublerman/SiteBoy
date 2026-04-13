@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { unsharpMask } from '../../../../../shared/algorithms/image/spatial-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/unsharpmask.shader.js';
 
 export const UnsharpMaskNode = createEffectModule({
   type: 'unsharpmask', name: 'UNSHARP MASK', category: 'SHARPEN',
@@ -10,5 +11,8 @@ export const UnsharpMaskNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(unsharpMask(src, w, h, p.amount, p.radius, p.threshold));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

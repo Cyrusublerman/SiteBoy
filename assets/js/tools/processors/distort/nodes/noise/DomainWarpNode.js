@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { PerlinNoise } from '../../core/PerlinNoise.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/domainwarp.shader.js';
 
 function _bilerp(src, w, h, fx, fy, dst, oi) {
   const x0 = Math.floor(fx), y0 = Math.floor(fy);
@@ -42,5 +43,8 @@ export const DomainWarpNode = createEffectModule({
       }
       _bilerp(src, w, h, wx, wy, dst, i * 4);
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

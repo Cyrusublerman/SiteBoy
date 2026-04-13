@@ -1,4 +1,5 @@
 import { createEffectModule } from '../../core/EffectModule.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/vignette.shader.js';
 
 export const VignetteNode = createEffectModule({
   type: 'vignette',
@@ -43,5 +44,8 @@ export const VignetteNode = createEffectModule({
         }
       }
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { pixelate } from '../../../../../shared/algorithms/geometry/distortion.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/pixelate.shader.js';
 
 export const PixelateNode = createEffectModule({
   type: 'pixelate', name: 'PIXELATE', category: 'DISTORTION',
@@ -8,5 +9,8 @@ export const PixelateNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(pixelate(src, w, h, p.blockSize));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

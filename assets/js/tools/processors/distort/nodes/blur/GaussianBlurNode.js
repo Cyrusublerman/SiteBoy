@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { gaussianBlurSeparable } from '../../../../../shared/algorithms/image/blur-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/gaussblur.shader.js';
 
 export const GaussianBlurNode = createEffectModule({
   type: 'gaussblur', name: 'GAUSS BLUR', category: 'BLUR',
@@ -9,5 +10,8 @@ export const GaussianBlurNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     dst.set(gaussianBlurSeparable(src, w, h, p.sigma, p.passes));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { gratingBandField2D, thresholdGrating } from '../../../../../shared/algorithms/patterns/pattern-generators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/grating.shader.js';
 
 const DEG = Math.PI / 180;
 
@@ -77,5 +78,8 @@ export const GratingNode = createEffectModule({
         dst[i + 3] = src[i + 3];
       }
     }
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

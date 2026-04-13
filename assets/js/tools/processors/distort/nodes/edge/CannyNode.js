@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { cannyEdge } from '../../../../../shared/algorithms/edge-detection/edge-operators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/canny.shader.js';
 
 export const CannyNode = createEffectModule({
   type: 'canny', name: 'CANNY EDGE', category: 'EDGE',
@@ -11,5 +12,8 @@ export const CannyNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     dst.set(cannyEdge(src, w, h, p.sigma, p.lowThreshold, p.highThreshold));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

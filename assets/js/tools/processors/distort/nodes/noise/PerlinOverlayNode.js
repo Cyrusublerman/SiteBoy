@@ -1,6 +1,7 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { perlinOverlayRGBA } from '../../../../../shared/algorithms/noise/noise-functions.js';
 import { PerlinNoise } from '../../core/PerlinNoise.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/perlinoverlay.shader.js';
 
 /** blendMode: noise layer compositing (not the stack blendMode). */
 export const PerlinOverlayNode = createEffectModule({
@@ -25,5 +26,8 @@ export const PerlinOverlayNode = createEffectModule({
     const octaves  = modulate ? modulate('octaves',  0) : p.octaves;
     const strength = modulate ? modulate('strength', 0) : p.strength;
     dst.set(perlinOverlayRGBA(src, w, h, scale, octaves, strength, p.blendMode.toLowerCase(), this._noiseCache));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { radialRipple } from '../../../../../shared/algorithms/geometry/warp.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/ripple.shader.js';
 
 export const RadialRippleNode = createEffectModule({
   type: 'ripple', name: 'RADIAL RIPPLE', category: 'REFRACTION',
@@ -14,5 +15,8 @@ export const RadialRippleNode = createEffectModule({
   apply(src, dst, w, h, p, ctx) {
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
     dst.set(radialRipple(src, w, h, p.centreX, p.centreY, p.amplitude, p.frequency, p.phase, p.falloff, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

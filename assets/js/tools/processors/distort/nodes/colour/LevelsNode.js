@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { applyLevels } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/levels.shader.js';
 
 export const LevelsNode = createEffectModule({
   type: 'levels', name: 'LEVELS', category: 'COLOUR / TONE',
@@ -13,5 +14,14 @@ export const LevelsNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(applyLevels(src, w, h, p.blackPoint, p.whitePoint, p.midGamma, p.outBlack, p.outWhite));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: p => ({
+      uBlackPoint: p.blackPoint, uWhitePoint: p.whitePoint, uMidGamma: p.midGamma,
+      uOutBlack: p.outBlack, uOutWhite: p.outWhite,
+    }),
+  },
 });

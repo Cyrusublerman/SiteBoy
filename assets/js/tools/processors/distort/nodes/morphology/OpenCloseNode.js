@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { morphologyOpenCloseRGBA } from '../../../../../shared/algorithms/image/morphology.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/openclose.shader.js';
 
 export const OpenCloseNode = createEffectModule({
   type: 'openclose',
@@ -16,5 +17,8 @@ export const OpenCloseNode = createEffectModule({
     let buf = src;
     for (let i = 0; i < iters; i++) buf = morphologyOpenCloseRGBA(buf, w, h, p.mode.toLowerCase(), p.radius);
     dst.set(buf);
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

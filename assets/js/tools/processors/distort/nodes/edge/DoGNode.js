@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { differenceOfGaussiansRGBA } from '../../../../../shared/algorithms/edge-detection/edge-operators.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/dog.shader.js';
 
 export const DoGNode = createEffectModule({
   type: 'dog', name: 'DIFF OF GAUSS', category: 'EDGE',
@@ -13,5 +14,8 @@ export const DoGNode = createEffectModule({
     const s2 = p.sigma2;
     const threshold = modulate ? modulate('threshold', 0, ctx) : p.threshold;
     dst.set(differenceOfGaussiansRGBA(src, w, h, s1, s2, threshold));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

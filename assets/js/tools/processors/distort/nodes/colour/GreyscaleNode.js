@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { greyscale } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/greyscale.shader.js';
 
 export const GreyscaleNode = createEffectModule({
   type: 'greyscale', name: 'GREYSCALE', category: 'COLOUR / TONE',
@@ -10,5 +11,11 @@ export const GreyscaleNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(greyscale(src, w, h, p.wr, p.wg, p.wb));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: p => ({ uWr: p.wr, uWg: p.wg, uWb: p.wb }),
+  },
 });

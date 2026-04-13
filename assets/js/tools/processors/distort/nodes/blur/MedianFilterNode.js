@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { medianFilter } from '../../../../../shared/algorithms/image/blur-filters.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/median.shader.js';
 
 export const MedianFilterNode = createEffectModule({
   type: 'median', name: 'MEDIAN FILTER', category: 'BLUR',
@@ -9,5 +10,8 @@ export const MedianFilterNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(medianFilter(src, w, h, p.radius));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

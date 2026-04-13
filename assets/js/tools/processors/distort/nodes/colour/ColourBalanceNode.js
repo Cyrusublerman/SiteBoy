@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { colourBalance } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/colourbalance.shader.js';
 
 export const ColourBalanceNode = createEffectModule({
   type: 'colourbalance', name: 'COLOUR BALANCE', category: 'COLOUR / TONE',
@@ -16,5 +17,8 @@ export const ColourBalanceNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(colourBalance(src, w, h, p));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

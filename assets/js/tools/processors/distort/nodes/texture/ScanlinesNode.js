@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { scanlines } from '../../../../../shared/algorithms/image/texture-overlays.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/scanlines.shader.js';
 
 export const ScanlinesNode = createEffectModule({
   type: 'scanlines',
@@ -13,5 +14,8 @@ export const ScanlinesNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     dst.set(scanlines(src, w, h, p.spacing, p.thickness, modulate('scOpacity', 0), p.frame));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

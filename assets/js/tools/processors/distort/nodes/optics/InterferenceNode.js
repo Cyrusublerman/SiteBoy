@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { thinFilmInterferenceRGBA } from '../../../../../shared/algorithms/optics/interference.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/interference.shader.js';
 
 export const InterferenceNode = createEffectModule({
   type: 'interference',
@@ -16,5 +17,8 @@ export const InterferenceNode = createEffectModule({
   apply(src, dst, w, h, p, ctx, modulate) {
     const thick = p.filmThickness + p.frame * 2 + (p.thicknessOffset ?? 0);
     dst.set(thinFilmInterferenceRGBA(src, w, h, thick, p.viewAngle, p.couplingStrength, p.blendAmt));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

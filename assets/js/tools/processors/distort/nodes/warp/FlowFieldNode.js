@@ -2,6 +2,7 @@ import { createEffectModule } from '../../core/EffectModule.js';
 import { capByFrame } from '../../core/frameCap.js';
 import { PerlinNoise } from '../../core/PerlinNoise.js';
 import { flowFieldWarp } from '../../../../../shared/algorithms/geometry/warp.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/flowfield.shader.js';
 
 export const FlowFieldNode = createEffectModule({
   type: 'flowfield', name: 'FLOW FIELD', category: 'WARP',
@@ -28,5 +29,8 @@ export const FlowFieldNode = createEffectModule({
     let adv = p.advectSteps;
     adv = capByFrame(adv, p.frame);
     dst.set(flowFieldWarp(src, w, h, p.noiseScale, p.octaves, p.lacunarity, p.gain, str, p.curl, adv, this._noise, interp));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: _gpuBindings,
 });

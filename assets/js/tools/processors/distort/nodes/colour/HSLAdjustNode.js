@@ -1,5 +1,6 @@
 import { createEffectModule } from '../../core/EffectModule.js';
 import { hslAdjust } from '../../../../../shared/algorithms/image/colour-adjustments.js';
+import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/hsladjust.shader.js';
 
 export const HSLAdjustNode = createEffectModule({
   type: 'hsladjust', name: 'HSL ADJUST', category: 'COLOUR / TONE',
@@ -10,5 +11,11 @@ export const HSLAdjustNode = createEffectModule({
   },
   apply(src, dst, w, h, p) {
     dst.set(hslAdjust(src, w, h, p.hue, p.saturation, p.lightness));
-  }
+  },
+  wgsl,
+  glsl,
+  gpuBindings: {
+    ..._gpuBindings,
+    uniformMap: p => ({ uHue: p.hue, uSaturation: p.saturation, uLightness: p.lightness }),
+  },
 });
