@@ -298,3 +298,157 @@ Rollback: every phase is reversible by reverting the deploy. Static build remain
 4. `audit_log` contains a row for every mutation performed during acceptance testing.
 5. A simulated DB outage leaves the public read path serving cached or static-fallback content for at least 1 hour.
 6. A nightly `pg_dump` artefact exists in R2 with a documented restore procedure.
+
+---
+
+# Part B — UI Specification (binding decisions)
+
+This section records the UI decisions captured from the editor questionnaire. It supersedes any conflicting suggestion in §§1–16 above. All visual rules from `.cursorrules` (VGA palette, F-system, Atkinson Hyperlegible, no shadows/gradients/rounded corners) apply unchanged. `.cursorrules` will not be modified until implementation begins.
+
+## B0. Operating principles
+
+- **Same site, two modes.** No separate `/admin/*` URL subtree for content pages. Each public page has an *admin variant* rendered in-place when (a) the editor is authenticated and (b) admin mode is active. URL stays the same. Visual style is identical; only specific elements gain edit affordances.
+- **Generic over bespoke.** Every editor surface (toolbar, dropdown, dialog, list, picker) reuses an existing `ComponentLibrary` / `SpecializedComponents` class. New admin components are only created when no existing component fits.
+- **Sizing parity.** Admin chrome (toolbars, action rows) sized identically to existing `PageHeader` / `Subheader` (same F-multiplier band). Inputs and buttons sized identically to existing `Input` / `Button` from `assets/js/shared/interactive.js`.
+- **GUI-first.** No raw code editing in the default path. JSON/code editing only as an explicit "advanced" toggle inside the relevant editor.
+- **Touch-first responsive.** Every admin control must work on a phone with touch. Drag operations use *long-press (≥1000 ms) → drag → release* as the canonical gesture, mirrored by mouse drag on desktop.
+- **No file-size cap.** Soft warnings only; never block.
+
+## B1. Authentication UI
+
+- **B1.1 Trigger.** Triple-click the existing theme toggle (`☼`/`☾` glyph in `PageHeader`, `assets/js/shared/layout.js` line 960). Three clicks within 600 ms opens the login overlay. Single and double clicks retain current theme-toggle behaviour. Keyboard equivalent: `Ctrl+Shift+L`.
+- **B1.2 Form.** Centred modal overlay. Single password input, submit button, error line. No username (single-tenant). MFA deferred (not in MVP — revisit before public-facing launch; see §6 of Part A and risk R-1).
+- **B1.3 Component basis.** New `LoginOverlay` extends `BaseComponent`, internally composes `Input` (interactive.js:551) for the password field and `Button` (interactive.js:499) for submit. Backdrop dims to `var(--c-bg)` at reduced contrast; no shadow, no rounded corners.
+- **B1.4 Logged-in indicator.** When session is valid, the home-link in `PageHeader` (currently text `AEINODER` at `assets/js/shared/layout.js` line 867) renders the string `I'M AEINODER` instead. Same font, same size, same colour, same target (`#home`). This is the *only* persistent visual signal of admin state on public pages.
+- **B1.5 Logout.** Triple-click theme toggle while authenticated opens a one-button `Log out` overlay (same component as B1.3, no password field).
+- **B1.6 Session.** HTTP-only secure cookie; sliding 12 h expiry; revocation row in `sessions` table (Part A §7). CSRF token fetched on auth and held in memory by the admin module.
+
+## B2. Admin-mode activation and chrome
+
+- **B2.1 Activation.** Authentication alone enables admin mode. There is no separate "enter edit mode" toggle. If the editor wants the public view, they log out (or use a private window).
+- **B2.2 Per-page admin variant.** Each section (`assets/js/sections/*.js`) gains a sibling rendering path (`renderAdmin(...)` alongside the existing `render*` methods). The router (`assets/js/core/router.js`) calls `renderAdmin` if `Auth.isAuthenticated()` is true, else the existing public render. Same URL, same data, different render. Public file ownership unchanged: section files still own their own admin variant.
+- **B2.3 Editor toolbar.** A single horizontal `EditorToolbar` component renders at the top of the content area on every admin-rendered page. Height equals `Subheader` height. Holds page-scoped actions: `Save`, `Hide`/`Show`, `History`, `Insert`, plus context-specific actions per page type. Pushes the content `<div>` down (chosen layout: top banner pushes content, per editor preference).
+- **B2.4 Notification banner.** Errors and notable events render as a single-line banner immediately below the `EditorToolbar`. Dismissable. Pushes content further down while present. New `NoticeBanner` component; reuses `Button` for the dismiss control.
+- **B2.5 Navigation.** Identical to public site. No admin sidebar, no admin landing page. Logging in lands the user on whatever URL they were already on.
+
+## B3. Blog editor
+
+Scope: every page rendered by `blog_section.js`, plus the blog TOC index.
+
+- **B3.1 TOC as file directory.** The blog TOC (the existing tree-style index) is the editor's primary navigation. Clicking a node opens the article in admin mode in place. **Right-click** (desktop) or **long-press** (touch) on a TOC node opens a `NodeActionsMenu` (reuses existing `Menu` from interactive.js:398) with: `Open`, `Move…`, `Rename…`, `Archive`, `Hide` / `Show`, `Duplicate`, `New child page`, `Delete (soft)`. `Move…` opens a `TreePicker` overlay (new component, composes the existing TOC renderer in read-only selectable mode).
+- **B3.2 Article editor body.** Plain markdown text editor. Reuses `Input` (interactive.js:551) configured as a multiline `<textarea>`. No syntax highlighting in MVP. Live preview is *not* split-pane; preview is the page itself behind the editor area, refreshed on `Save`. (Decision: editor preferred GUI-first, not split-pane code; the page already shows the rendered result.)
+- **B3.3 Frontmatter editor.** A `CollapsibleSection` (interactive.js:888) above the markdown body labelled `Page settings`. Form fields for: title, slug (auto from title, editable), category, tags, hidden flag, archive flag, sort order. New `FrontmatterForm` component composes existing `Input`, `Select`, `Button`.
+- **B3.4 Insert toolbar.** Inside the markdown editor, a thin `InsertToolbar` (height = half a `Subheader`) holds buttons that insert structured content at the cursor:
+  - `Image` → opens `ImagePicker` (B5.2), inserts canonical markdown image with R2 URL.
+  - `Gallery` → inserts a `GalleryEmbed` block referencing an existing gallery slug; rendered publicly via existing `MasonryGallery` (`assets/js/shared/masonry-gallery.js`).
+  - `Carousel` → inserts a `CarouselEmbed` block; rendered via `Carousel` (interactive.js:1069).
+  - `Dropdown section` → inserts a `CollapsibleSection`-backed block. Editor sees its title + body inline; public render uses `CollapsibleSection`.
+  - `IFrame` → inserts iframe block; URL field; sandbox flags toggle.
+  - `p5 sketch` → inserts a `P5Embed` block referencing a sketch source (file path or inline); rendered via `P5Canvas` / `P5ControlledSketch` (`assets/js/shared/p5-integration.js`).
+  - `Algorithm widget` → inserts a block that mounts a named export from `assets/js/shared/algorithms/` into a `MathematicalCanvas` host. Picker lists all exported algorithm functions with parameter forms.
+  - `Graph` → inserts a `BarGraph` / `LineGraph` / `PieGraph` (graphs.js) block with inline data-table editor.
+  - `VGA grid` → inserts a `VGAGrid` block (specialized.js:29).
+- **B3.5 Block model.** Every inserted non-text element is a fenced block in the markdown source with shape `:::block <type>\n<json>\n:::`. The renderer parses these and instantiates the matching `ComponentLibrary` class. This keeps blog source human-readable and git-diffable.
+- **B3.6 Save.** Single `Save` action commits to DB, snapshots prior version into `article_versions` (Part A §7), pushes git mirror immediately (per editor decision), invalidates cache.
+- **B3.7 History.** `History` toolbar action opens a `VersionList` overlay: list of prior versions with timestamp + diff summary. Click a version to preview, second button to revert. New `VersionList` and `DiffView` components.
+- **B3.8 No drafts.** `Hide` / `Show` (status flag in DB) replaces drafts entirely. Hidden pages are invisible to anonymous visitors; visible to authenticated editor (rendered with a muted "hidden" badge in the toolbar area).
+
+## B4. Gallery editor
+
+Scope: every page rendered by `art_section.js` and `projects_section.js`. Mirrors the existing folder hierarchy (gallery layer → image-page → assets).
+
+- **B4.1 Three editable scopes.** Each gallery-tree level has its own admin variant:
+  1. **Gallery layer** (e.g. `#art/photography`): grid of child layers and image-pages.
+  2. **Image-page** (single tile in a gallery): cover image + ordered list of media + text.
+  3. **Asset** (a single image/video inside an image-page): metadata only.
+- **B4.2 Layer-level controls.** Toolbar adds: `New folder`, `New image-page`, `Edit description`, `Reorder`, `Hide` / `Show`, `Sort by…`. Long-press / right-click on a tile opens `NodeActionsMenu` (reuses B3.1's component) with `Open`, `Move…`, `Copy to…`, `Hide`, `Show`, `Delete`, `Set as cover`. `Copy to…` opens the `TreePicker` and inserts a reference (not a duplicate file) into the destination layer.
+- **B4.3 Image-page editor.** Cover image picker at top (selects from the page's own assets). Below: ordered list of assets (images/videos) interleaved with text blocks. Reorder by long-press drag. Each asset row exposes inline `alt`, `tags`, `caption`. Text blocks use the same markdown editor as B3.2 (without the full insert toolbar — only `Image`, `IFrame`, `Algorithm widget`).
+- **B4.4 Asset metadata.** Editable: alt text, caption, tags, date, location, hidden flag, sort index. Form composes `Input` + `Select` + tag-chip widget (new `TagChips` component).
+- **B4.5 Upload.** Per-context only. Each layer and each image-page has an `Upload` action in its toolbar.
+  - On a **layer**, upload offers two modes: *one image-page per file* (default, current behaviour), or *upload as collection* (all selected files become a single new image-page).
+  - On an **image-page**, uploaded files are appended as new assets.
+  - Hidden galleries serve as the staging area for uploads-not-yet-published; no separate "drafts" concept.
+- **B4.6 Thumbnail generation.** Server-side (Vercel function). Pipeline: original PUT to R2 → function generates `thumb` / `web` / `zoom` variants → writes manifest URLs (matches existing `urls_jsonb` shape). Decision rationale: server-side is the lowest-effort path for the editor and is consistent with current R2 layout.
+- **B4.7 Video thumbnails.** After a video upload completes, a `FrameScrubber` overlay opens (new component, built on a `<video>` element wrapped in `BaseComponent`, controls reuse `Input`/`Button`). Editor scrubs to a frame and clicks `Use as thumbnail`; server captures that frame and stores it as the asset's thumbnail.
+- **B4.8 No file-size cap.** Soft warning at >500 MB ("this will take a while"); no block. Upload uses chunked PUT to R2 (resumable) so multi-GB uploads survive disconnects.
+
+## B5. Media handling primitives
+
+- **B5.1 Upload progress.** All uploads use the existing `ProgressBar` (interactive.js:717 / specialized `OutputProgressBar`). Below the bar, a single text line names the current stage (`uploading 3/12 — DSCF1234.jpg (47%)`, then `generating thumbnails`, then `writing manifest`, then `done`). Container is a new `UploadQueue` component that manages multiple simultaneous `ProgressBar` instances stacked vertically.
+- **B5.2 Image picker.** Reusable `ImagePicker` overlay shows the gallery tree (left, reusing `Menu`/tree pattern) and a grid of thumbs (right, reusing `MasonryGallery` in selection mode). Used by every "insert image" action. Returns the canonical R2 URL set.
+- **B5.3 Drag-drop.** Long-press initiates drag for: reordering assets within an image-page, reordering image-pages within a layer, moving the corner handle of an embedded `IFrame` block in the blog editor. All other interactions are tap/click.
+
+## B6. Page-block editor (for sections that use JSON blocks)
+
+Scope: `home_section.js`, `contact_section.js`, `qr_section.js`, plus any future section whose body is JSON-driven.
+
+- **B6.1 Render-as-edit.** The page renders normally; each block displays a small `EditorHandle` (a glyph button) on hover/focus. Tapping the handle opens a per-block form in a side panel (reuses `Panel` from layout.js:2070).
+- **B6.2 Insert block.** Between any two blocks, a thin `InsertSlot` (height ≈ ¼ `Subheader`) appears in admin mode. Tap → block-type picker → form for that block's props → inserted in place.
+- **B6.3 Reorder.** Long-press a block to drag-reorder. Drop targets are the `InsertSlot`s.
+- **B6.4 Delete.** `Delete` button in the per-block side panel; confirmation banner via `NoticeBanner`.
+- **B6.5 No raw JSON in default path.** Each block type has a typed form. An `Advanced: edit JSON` toggle in the side panel exposes the underlying object for that one block when needed.
+
+## B7. Save, publish, history
+
+- **B7.1 No drafts.** `Save` is publish. `Hide` flag replaces the draft concept.
+- **B7.2 Cache.** Edge cache purged immediately on save (no TTL waiting). Acceptable cost for a single-editor site.
+- **B7.3 Git mirror.** Immediate. Every save commits the canonical JSON snapshot to a `content/` branch in the repo (Part A D-5 = yes, mode = automatic). Commit message format: `content(<kind>/<slug>): <action> @ <iso-ts>`.
+- **B7.4 Audit log.** Every mutation writes to `audit_log` (Part A §7). Viewable via a future `/admin/audit` page; not in MVP UI.
+- **B7.5 Versioning.** `*_versions` table keeps full prior versions (no pruning in MVP — disk is cheap, undo regret is expensive). `History` action exposes them per item (B3.7).
+- **B7.6 Undo / redo.** Within an open editor session, `Ctrl+Z` / `Ctrl+Shift+Z` (and `Cmd` equivalents) are local-only undo of unsaved edits. Cross-save revert uses `History` (B3.7).
+
+## B8. Notifications
+
+- **B8.1 Banner.** `NoticeBanner` renders top of content area, single line, four levels: `info`, `success`, `warning`, `error`. Dismissable. Auto-dismiss on `success` after 3 s; `warning` and `error` persist until dismissed.
+- **B8.2 No toasts, no modals for non-blocking events.** Modals reserved for: login (B1), confirmations of destructive actions (delete, revert), media pickers (B5.2), version history (B3.7).
+
+## B9. Keyboard
+
+- **B9.1 Standard shortcuts.** `Ctrl/Cmd+S` save, `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo, `Enter` confirm in dialogs, `Esc` close overlay/banner, `Ctrl+Shift+L` open login overlay.
+- **B9.2 No section-jump shortcuts in MVP.**
+
+## B10. Responsive / touch
+
+- **B10.1 Targets.** All admin controls usable down to 360 px viewport width.
+- **B10.2 Hit areas.** Every interactive admin element is at least one F-unit tall (`var(--f)` minimum), regardless of viewport, to satisfy touch-target minimums.
+- **B10.3 Drag gesture.** Long-press ≥1000 ms then drag. Visual feedback (slight outline change, no shadow) on press recognition. Cancel by releasing without movement.
+
+## B11. Accessibility
+
+- **B11.1 Focus order.** All admin overlays trap focus while open and restore focus on close.
+- **B11.2 Keyboard reachability.** Every admin action reachable without a pointer.
+- **B11.3 ARIA.** `NoticeBanner` uses `role="status"` for info/success and `role="alert"` for warning/error.
+
+## B12. Component map (existing → reused; new → to build)
+
+Reused without change:
+- `PageHeader`, `PageFooter`, `Subheader`, `PageContainer`, `Panel` (layout.js)
+- `Button`, `Input`, `Select`, `NumericInput`, `ButtonGroup`, `Menu`, `Breadcrumb`, `Lightbox`, `CollapsibleSection`, `Carousel`, `ProgressBar` (interactive.js)
+- `MasonryGallery`, `GalleryLightbox` (masonry-gallery.js)
+- `BarGraph`, `LineGraph`, `PieGraph` (graphs.js)
+- `VGAGrid`, `MathematicalCanvas`, `SVGDisplay`, `AnimationControls` (specialized.js)
+- `P5Canvas`, `P5ControlledSketch` (p5-integration.js)
+- `Heading`, `Paragraph` (content.js)
+
+New components (proposed owner: `assets/js/admin/`):
+- `LoginOverlay` — modal password form (B1).
+- `EditorToolbar` — top action bar, `Subheader`-sized (B2.3).
+- `NoticeBanner` — top notice line (B2.4, B8).
+- `NodeActionsMenu` — long-press / right-click menu for tree nodes (B3.1, B4.2).
+- `TreePicker` — modal tree-selection picker for move/copy targets (B3.1, B4.2).
+- `FrontmatterForm` — typed metadata form (B3.3).
+- `InsertToolbar` — in-editor insertion bar (B3.4).
+- `ImagePicker` — modal R2 asset picker (B5.2).
+- `UploadQueue` — multi-file upload status container (B5.1).
+- `FrameScrubber` — video thumbnail picker (B4.7).
+- `TagChips` — tag input widget (B4.4).
+- `EditorHandle` — per-block edit affordance (B6.1).
+- `InsertSlot` — between-block insertion target (B6.2).
+- `VersionList` — version history overlay (B3.7).
+- `DiffView` — markdown / JSON diff renderer (B3.7).
+
+All new components extend `BaseComponent`, are registered through `ComponentLibrary` for discoverability, follow VGA / F-system / no-shadow / no-rounded rules, and live exclusively under `assets/js/admin/`.
+
+## B13. Future stage (out of scope here)
+
+A second migration pass will extend admin mode into `assets/js/tools/`: a p5.js-style editor for generators (live JS + GUI panel side-by-side, save deploys the tool). Not designed in this document. Will reuse `P5ControlledSketch`, `Sequencer`, and a code-editor component (CodeMirror 6) added at that time.
