@@ -1,0 +1,300 @@
+# Vercel Dynamic Migration Plan
+
+Status: draft, no code changes proposed yet.
+Owner: site author (single editor).
+Target host: Vercel.
+Companion docs: `vite-integration-plan.md`, `vite-static-hosting-analysis.md`, `js-framework-migration-analysis.md`, `CLOUD_MIGRATION_AND_CLEANUP.md`.
+
+---
+
+## 1. Definitions
+
+- **Static site (current)**: every byte served by GitHub Pages is precomputed at `vite build` time. No request-time logic.
+- **Dynamic site (target)**: same precomputed shell, plus a small server surface that authenticates a single user and mutates persistent content.
+- **Public surface**: every URL reachable without authentication. Read-only.
+- **Authoring surface**: URL subtree under `/admin/*` reachable only with a valid session. Read-write.
+- **Content object**: any persisted unit the editor can mutate. Three kinds:
+  1. `Article` — markdown body + metadata, currently a `.md` file under `blog/`.
+  2. `GalleryItem` — image + metadata, currently a row in `art/manifests/**/*.json`.
+  3. `PageBlocks` — the JSON block array a section renders, currently inlined in `assets/js/sections/*.js` or fetched from a JSON file.
+- **Editor**: the single human with credentials. The system is single-tenant.
+- **Media blob**: the actual image/audio/video file. Stored on Cloudflare R2. Out of scope for the database; only URLs are persisted.
+
+## 2. Goal state (one-paragraph contract)
+
+The site is hosted on Vercel. Anonymous visitors see the same SiteBoy SPA they see today, with content fetched from a Vercel-hosted JSON API (or, where unchanged, from static files in the build). The editor authenticates at `/admin/login`, receives a session cookie, and gains access to `/admin/*` routes that overlay edit affordances on existing sections (blog, art, projects, page blocks). Mutations call API routes that (a) write structured data to a managed database, (b) upload media to the existing R2 bucket, (c) optionally mirror to git for backup. No public route exposes write capability. R2 stays the media store. The Vite/SiteBoy front-end architecture (BaseComponent, MathematicalFoundation, AnimationFoundation, file-ownership rules) is preserved verbatim.
+
+## 3. Why Vercel (versus alternatives)
+
+| Criterion | Vercel | Cloudflare Pages + Workers | Self-hosted Node |
+|---|---|---|---|
+| Static hosting parity with GH Pages | Yes | Yes | Manual |
+| First-class serverless functions for `/api/*` | Yes (Node + Edge runtimes) | Yes (Workers) | Yes |
+| Managed Postgres with zero config | Yes (Vercel Postgres / Neon partner) | Indirect (D1, Hyperdrive) | Manual |
+| Existing R2 integration reusable | Yes (R2 is host-agnostic) | Native | Yes |
+| Preview deployments per branch | Yes | Yes | Manual |
+| Auth ecosystem (NextAuth/Auth.js, Lucia, Clerk) | Mature | Mature | Manual |
+
+Decision: target Vercel as primary, but keep all server logic framework-agnostic (plain `fetch`-style handlers) so that a later move to Cloudflare Workers requires only adapter changes. Media stays on R2 regardless. See §13 open decision D-1.
+
+## 4. Current → Target architecture
+
+### 4.1 Current
+```
+Browser → GitHub Pages (static dist/) → Vite-built SPA
+                                          ├── fetches blog/blog-docs-manifest.json
+                                          ├── fetches art/manifests/**/*.json
+                                          └── fetches media.einoder.net/* (R2)
+Authoring: editor edits files locally, commits, GH Actions rebuilds, GH Pages serves.
+```
+
+### 4.2 Target
+```
+Browser
+ ├── Public                                Authenticated
+ │   GET /              (Vercel static)    /admin/login              (POST → /api/auth/*)
+ │   GET /#blog/...     (Vercel static)    /admin/blog               (overlay UI)
+ │   GET /api/content/* (Vercel function)  /admin/art                (overlay UI)
+ │   GET media.einoder.net/* (R2 CDN)      POST /api/content/*       (writes DB)
+ │                                         POST /api/media/upload    (signs R2 PUT)
+ │                                         POST /api/publish         (optional git mirror)
+ │
+Persistence
+ ├── Postgres (Vercel Postgres / Neon)    structured content, sessions, audit log
+ ├── R2 bucket assetts-einoder            media blobs, unchanged
+ └── Git repo (optional)                  publish-time mirror of canonical JSON
+```
+
+## 5. Component inventory and migration impact
+
+| Concern | Today | After migration | File ownership impact |
+|---|---|---|---|
+| HTML shell | `index.html` served by GH Pages | identical, served by Vercel | none |
+| SPA bundle | Vite build → `dist/` | identical, served by Vercel | none |
+| Routing | `assets/js/core/router.js` (hash) | unchanged for public; new `/admin/*` path-based subtree handled by router extension | router.js owns nav |
+| Sections | `assets/js/sections/*.js` JSON-driven | unchanged read path; an Editor overlay component renders on top in `/admin/*` | sections unchanged |
+| Blog manifest | `blog/blog-docs-manifest.json` regenerated by `blog/refresh-blog-manifest.js` | replaced by `GET /api/content/blog/manifest`; static fallback retained for offline build | new owner: `api/` folder |
+| Art manifests | `art/manifests/**/*.json` regenerated by Python | replaced by `GET /api/content/art/:gallery`; R2 upload path unchanged | new owner: `api/` folder |
+| Page blocks | inline in section JS | optionally moved to DB rows of `PageBlocks`, fetched at runtime | section files become readers |
+| Media | R2, public reads, uploads via local Python scripts | R2 unchanged; uploads via signed PUT from `/admin/*` UI | scripts retained as fallback |
+| Auth | none | session cookie issued by `/api/auth/*` | new |
+| Admin UI | none | new components in `assets/js/admin/`, new section files for editor pages | new ownership entry required in `.cursorrules` |
+
+## 6. Authentication model
+
+Constraints: single editor, no public sign-up, hostile-internet exposure.
+
+Mandatory:
+- Password is never stored in plaintext. Argon2id hash, stored as a single env-injected constant or a single DB row.
+- Second factor required. TOTP (RFC 6238) is sufficient and free.
+- Session is an HTTP-only, `Secure`, `SameSite=Lax` cookie holding an opaque token; token row in DB with `expires_at`, `revoked_at`, `user_agent`, `ip_first_seen`.
+- All `/admin/*` page loads and all mutating `/api/*` routes verify session + CSRF token.
+- Rate-limit `/api/auth/login` to ≤ 5 attempts per IP per 10 min and ≤ 20 globally per hour. Return constant-time response.
+- All mutations write an `audit_log` row: `(actor, action, target, before_hash, after_hash, ip, ts)`.
+
+Library candidates (final pick deferred — see D-2):
+- `Lucia` (framework-agnostic, minimal, fits vanilla JS).
+- `Auth.js` / NextAuth Core (heavier, but ecosystem).
+- Hand-rolled (smallest footprint, requires careful crypto review).
+
+Recommendation: Lucia + `@node-rs/argon2` + `otplib` for TOTP.
+
+## 7. Data model (initial schema)
+
+All tables in a single Postgres database. IDs are ULIDs unless noted.
+
+```
+users            (id, username, password_hash, totp_secret, created_at)
+sessions         (id, user_id, expires_at, revoked_at, ip, ua)
+csrf_tokens      (id, session_id, token_hash, expires_at)
+
+articles         (id, slug UNIQUE, category, title, body_md, frontmatter_jsonb,
+                  status ENUM('draft','published'), published_at, updated_at, version)
+article_versions (id, article_id, body_md, frontmatter_jsonb, editor_id, created_at)
+
+gallery_items    (id, gallery_slug, sort_index, filename, urls_jsonb,
+                  metadata_jsonb, status, created_at, updated_at)
+galleries        (id, slug UNIQUE, kind ENUM('photos','digital','render','book',
+                  'physical','objects','project'), title, description_md, sort_jsonb)
+
+page_blocks      (id, page_slug UNIQUE, blocks_jsonb, version, updated_at)
+page_block_versions (id, page_blocks_id, blocks_jsonb, editor_id, created_at)
+
+media_uploads    (id, r2_key UNIQUE, mime, bytes, sha256, uploaded_by, created_at)
+
+audit_log        (id, actor_id, action, target_kind, target_id,
+                  before_hash, after_hash, ip, ts)
+```
+
+Notes:
+- `urls_jsonb` mirrors the existing manifest shape: `{ thumb, web, zoom }`. Read code in `art_section.js` continues to consume the same shape, only the source moves from file to API.
+- `frontmatter_jsonb` lets blog metadata (tags, date, author) be queried without parsing markdown.
+- `*_versions` tables give cheap undo. Retention: keep 50 most recent per object, prune nightly.
+
+## 8. API surface (read + write contract)
+
+All routes JSON, all mutations require valid session + CSRF header `X-CSRF`.
+
+Public read:
+```
+GET  /api/content/blog/manifest                → Article[] (published only)
+GET  /api/content/blog/:slug                   → Article (published only)
+GET  /api/content/art/:gallery                 → { gallery, items: GalleryItem[] }
+GET  /api/content/page/:slug                   → PageBlocks
+GET  /api/health                               → { ok: true, build, ts }
+```
+
+Auth:
+```
+POST /api/auth/login          { username, password, totp } → Set-Cookie session
+POST /api/auth/logout                                       → 204
+GET  /api/auth/me                                           → { user } | 401
+```
+
+Authoring:
+```
+POST   /api/admin/articles                     → create draft
+PATCH  /api/admin/articles/:id                 → update body/metadata
+POST   /api/admin/articles/:id/publish         → flip status, set published_at
+DELETE /api/admin/articles/:id                 → soft delete
+
+POST   /api/admin/galleries/:slug/items        → add item (after media upload)
+PATCH  /api/admin/galleries/:slug/items/:id    → reorder, edit metadata
+DELETE /api/admin/galleries/:slug/items/:id    → remove (does not delete R2 blob)
+
+PUT    /api/admin/pages/:slug                  → replace blocks_jsonb (creates version)
+
+POST   /api/admin/media/sign                   → returns { url, fields, key } for R2 PUT
+POST   /api/admin/media/confirm                → records media_uploads row after PUT
+
+POST   /api/admin/publish                      → optional: snapshot DB → JSON, commit to git
+```
+
+Versioning:
+- Every PATCH that mutates `articles` or `page_blocks` performs `INSERT INTO *_versions` first, in the same transaction.
+- Optimistic concurrency: client sends `If-Match: <version>`; server rejects on mismatch with 409.
+
+## 9. Front-end changes (high level, no code)
+
+New folders (proposed; subject to file-ownership rules):
+```
+assets/js/admin/              ← new owner of editor-only UI
+assets/js/admin/auth.js       ← session bootstrap, CSRF fetch wrapper
+assets/js/admin/editor-bar.js ← top overlay shown on every /admin/* page
+assets/js/admin/editors/      ← per-content editors (article, gallery, blocks)
+api/                          ← Vercel functions (Node runtime)
+```
+
+Modifications to existing files are limited to:
+- `router.js`: recognise `/admin/*` (path-based, not hash-based) and route to admin section. Keep public `#…` hash routing untouched.
+- Section files (`blog_section.js`, `art_section.js`, etc.): swap their fetch source from static manifest path to `/api/content/...`. Source-of-truth field shapes unchanged.
+- `index.html`: add a `<noscript>` admin-disabled notice; otherwise unchanged.
+
+`.cursorrules` update required: add `assets/js/admin/` and `api/` as new owned concerns; declare that no admin code may live in `assets/js/sections/*` or `assets/js/tools/*`.
+
+## 10. Editor UX scope (what pages get edit affordances)
+
+Phase A — read-API parity (no editor UI yet):
+- Blog list, blog article, all art galleries, projects all read from `/api/content/*` instead of static JSON. Behaviour identical for end-user.
+
+Phase B — minimum viable editor:
+- `/admin/login`, `/admin/logout`.
+- `/admin/blog`: list articles, create draft, edit markdown in a textarea + live preview using existing markdown renderer, set frontmatter, publish.
+- `/admin/art`: list galleries, upload images (drag-drop → signed R2 PUT → confirm), reorder, edit captions.
+- `/admin/audit`: tail of `audit_log`.
+
+Phase C — full editor:
+- `/admin/pages/:slug`: visual block editor for `PageBlocks`. Block types match the existing JSON contract (`SectionDropdown`, `TextBlock`, `ImageBlock`, `Grid`, `Chart`, `CanvasWidget`).
+- Inline edit-in-place: while authenticated, public sections render an "edit this" affordance that deep-links to the relevant `/admin/*` page.
+- Optional: `/admin/publish` button that snapshots all content tables to JSON and commits to a `content/` branch in the git repo, giving a permanent file-based backup.
+
+Out of scope for this plan: multi-user, comments, drafts shared with reviewers, scheduled publishing.
+
+## 11. Content migration (one-shot, scripted)
+
+Performed once, before flipping DNS:
+
+1. Export current `blog/blog-docs-manifest.json` and every referenced `.md` file → `INSERT` into `articles`. Preserve slugs verbatim so existing URLs survive.
+2. Walk `art/manifests/**/*.json` → `INSERT` into `galleries` + `gallery_items`. R2 URLs are copied as-is into `urls_jsonb`; no media moves.
+3. For each section in `assets/js/sections/*.js` whose blocks are inline JS, extract the JSON literal → `INSERT` into `page_blocks`. Sections whose blocks are computed (not literal) stay code-driven; mark as "non-editable" in admin UI.
+4. Validate: for every URL in the live site, the new API returns the same payload shape and content. Diff with `jq` or equivalent.
+
+Migration script lives under `scripts/migration/` (folder already exists).
+
+## 12. Phased delivery (ordered, not time-estimated)
+
+Each phase ships behind a feature flag. The site remains green at every step.
+
+Phase 0 — Decisions locked
+- Resolve all open decisions in §13.
+- Provision Vercel project, Postgres instance, R2 access keys for server-side signing.
+- No code changes to the live site.
+
+Phase 1 — Vercel parity
+- Deploy current static build to Vercel under a preview domain.
+- Verify byte-equivalent behaviour vs GH Pages.
+- DNS not yet flipped.
+
+Phase 2 — Read API
+- Implement `GET /api/content/*` reading from Postgres.
+- Run §11 migration script into the new DB.
+- Switch section fetch sources to API on the preview deployment only.
+- Verify parity. Then flip DNS.
+
+Phase 3 — Auth
+- Implement `/api/auth/*`, session middleware, CSRF, rate limiting, audit log.
+- Ship `/admin/login`. No editors yet.
+
+Phase 4 — MVP editor (Phase B in §10)
+- Blog and gallery editors. Media upload via signed PUT.
+
+Phase 5 — Block editor + publish (Phase C in §10)
+- Page-block editor. Optional git mirror.
+
+Phase 6 — Hardening
+- Backup automation (nightly `pg_dump` to R2).
+- Monitoring (`/api/health`, error reporting, login alert email).
+- Document recovery runbook.
+
+Rollback: every phase is reversible by reverting the deploy. Static build remains valid because it does not depend on the API for first paint of the public read path beyond what is already cached.
+
+## 13. Open decisions (must resolve before Phase 0 exits)
+
+- **D-1. Host commitment.** Vercel-only, or Vercel-now-Cloudflare-later? Affects whether functions are written against Vercel's `Request`/`Response` directly or against a thin adapter.
+- **D-2. Auth library.** Lucia vs Auth.js vs hand-rolled. Affects dependency surface and audit complexity.
+- **D-3. Database provider.** Vercel Postgres (managed Neon), Supabase, or Turso/libSQL. Affects pricing tier and connection-pooling needs.
+- **D-4. Markdown editor.** Plain `<textarea>` + preview, CodeMirror 6, or Milkdown. Affects bundle size on `/admin/*` only.
+- **D-5. Git mirror.** Yes/no. If yes, decide which branch and whether commits are signed.
+- **D-6. Public API caching.** Vercel Edge cache TTL for `GET /api/content/*`. Lower = fresher, higher = cheaper.
+- **D-7. Domain layout.** Same apex domain for `/admin/*`, or separate `admin.einoder.net`. Cookie scope and CSP differ.
+- **D-8. Build-time vs request-time content.** For very stable content (e.g. blog archive index), do we keep generating static JSON at build time and only hit the API for fresh writes? Hybrid is cheapest but adds a cache-invalidation step on publish.
+
+## 14. Risk register
+
+| ID | Risk | Severity | Mitigation |
+|---|---|---|---|
+| R-1 | Credential compromise → site defacement | High | Argon2id + TOTP + IP-rate-limit + audit log + git mirror for fast restore |
+| R-2 | DB outage breaks public read path | Medium | Edge-cache `GET /api/content/*` with stale-while-revalidate; static JSON fallback baked into build |
+| R-3 | R2 cost spike from hot-linked media | Low | Existing R2 setup unchanged; add Cloudflare cache rules if needed |
+| R-4 | Vercel function cold starts hurt admin latency | Low | Admin is single-user; cold starts acceptable. Public reads cached at edge. |
+| R-5 | Schema drift between code and DB | Medium | Single migrations folder, applied in deploy step, verified by smoke test on preview |
+| R-6 | Lock-in to Vercel | Medium | Adapter layer per D-1; keep functions as plain handlers |
+| R-7 | Loss of git as source of truth for content | Medium | D-5: optional publish-time git mirror gives durable, diffable backup |
+| R-8 | CSRF / XSS in admin overlay | High | Strict CSP on `/admin/*`, sanitise all rendered markdown, CSRF token on every mutation |
+
+## 15. Out of scope (explicit non-goals)
+
+- Multi-user collaboration, comments, social features.
+- Server-side rendering of public pages (SPA stays client-rendered).
+- Replacing Vite, the SiteBoy component system, or any file-ownership rule.
+- Migrating media off R2.
+- Search indexing beyond what already exists.
+
+## 16. Acceptance criteria for "migration complete"
+
+1. Public site on Vercel is byte-equivalent in behaviour to the prior GH Pages site for every existing URL.
+2. Editor can, while logged in: create a blog article, upload a gallery image, reorder a gallery, edit a page's blocks, publish, and see changes live within one cache TTL without touching git or the local repo.
+3. All write paths require a valid session and a valid CSRF token; logged-out requests to `/api/admin/*` return 401.
+4. `audit_log` contains a row for every mutation performed during acceptance testing.
+5. A simulated DB outage leaves the public read path serving cached or static-fallback content for at least 1 hour.
+6. A nightly `pg_dump` artefact exists in R2 with a documented restore procedure.
