@@ -118,12 +118,13 @@ export class GenerativeToolHost extends BaseComponent {
             
         } catch (error) {
             console.error('❌ Failed to initialize GenerativeToolHost:', error);
-            this.container.innerHTML = `
-                <div style="padding: 20px; color: var(--c-text);">
-                    <h2>Generator Load Error</h2>
-                    <p style="color: red;">${error.message}</p>
-                </div>
-            `;
+            this.clearElement(this.container);
+            const errorEl = this.createElement('div', 'generative-host-error');
+            const titleEl = this.createElement('h2', '', 'Generator Load Error');
+            const messageEl = this.createElement('p', '', error.message);
+            this.appendElement(errorEl, titleEl);
+            this.appendElement(errorEl, messageEl);
+            this.appendElement(this.container, errorEl);
         }
     }
     
@@ -132,10 +133,10 @@ export class GenerativeToolHost extends BaseComponent {
      */
     _buildContainerLayout() {
         // Clear container
-        this.container.innerHTML = '';
+        this.clearElement(this.container);
         
         // Create wrapper
-        this.wrapperEl = document.createElement('div');
+        this.wrapperEl = this.createElement('div');
         this.wrapperEl.className = 'generative-host-wrapper';
         this.wrapperEl.style.cssText = `
             display: flex;
@@ -155,12 +156,12 @@ export class GenerativeToolHost extends BaseComponent {
             onExport: (format, exportState) => this._handleExport(format, exportState)
         }, this.deps);
         
-        this.wrapperEl.appendChild(this.toolbar.render());
+        this.appendElement(this.wrapperEl, this.toolbar.render());
         this.componentInstances.push(this.toolbar);
         
         // Create tool content area (where ToolBase renders)
         // Must be positioned for ToolBase's absolute positioning to work correctly
-        this.toolContentEl = document.createElement('div');
+        this.toolContentEl = this.createElement('div');
         this.toolContentEl.className = 'generative-host-content';
         this.toolContentEl.style.cssText = `
             flex: 1;
@@ -168,9 +169,32 @@ export class GenerativeToolHost extends BaseComponent {
             overflow: hidden;
             position: relative;
         `;
-        this.wrapperEl.appendChild(this.toolContentEl);
+        this.appendElement(this.wrapperEl, this.toolContentEl);
         
-        this.container.appendChild(this.wrapperEl);
+        this.appendElement(this.container, this.wrapperEl);
+
+        // X-001: Spacebar play/stop — bound to the host wrapper, not the document,
+        // so it only fires when focus is within the generator page.
+        this._onKeyDown = (e) => {
+            if (e.code !== 'Space' || e.repeat) return;
+            // Do not intercept when an input, textarea, select, or contenteditable
+            // element has focus — the user may be typing in a param field.
+            const active = document.activeElement;
+            if (active && (
+                active.tagName === 'INPUT' ||
+                active.tagName === 'TEXTAREA' ||
+                active.tagName === 'SELECT' ||
+                active.isContentEditable
+            )) return;
+            // Only act when an animating generator is loaded
+            if (!this.scriptConfig?.animation || this.scriptConfig.animation.type === 'none') return;
+            e.preventDefault();
+            this.togglePlay();
+        };
+        this.wrapperEl.setAttribute('tabindex', '-1');
+        this.wrapperEl.addEventListener('keydown', this._onKeyDown);
+        // Also listen at document level so focus is not required to be on wrapper
+        document.addEventListener('keydown', this._onKeyDown);
     }
     
     /**
@@ -202,7 +226,7 @@ export class GenerativeToolHost extends BaseComponent {
         }
         
         // Clear content
-        this.toolContentEl.innerHTML = '';
+        this.clearElement(this.toolContentEl);
         
         // Load script config
         this.scriptId = scriptId;
@@ -229,6 +253,10 @@ export class GenerativeToolHost extends BaseComponent {
                     label:     cfg.label ?? this._deriveAnimLabel(key),
                     mode:      cfg.mode  ?? 'phase',
                     rate:      cfg.rate  ?? 1,
+                    // X-002: user-editable modulation fields
+                    waveform:  cfg.waveform ?? 'sine',
+                    strength:  cfg.strength ?? 1,
+                    phase:     cfg.phase    ?? 0,
                     // Explicit min/max wins; fall back to param definition; then ±2π
                     min: cfg.min ?? paramDef?.min ?? -(Math.PI * 2),
                     max: cfg.max ?? paramDef?.max ??  (Math.PI * 2),
@@ -414,6 +442,12 @@ export class GenerativeToolHost extends BaseComponent {
                     } catch (error) {
                         console.error('p5Setup error:', error);
                     }
+                }
+
+                // FIB-03: wire script-level audio emitter into AnimationExport if present
+                if (typeof scriptConfig.getAudioEmitter === 'function' && host.animationExporter) {
+                    const emitter = scriptConfig.getAudioEmitter.call(scriptConfig);
+                    if (emitter) host.animationExporter.setAudioEmitter(emitter);
                 }
                 
                 window.debugLog('TOOLS', '✅ p5.js instance created');
@@ -701,9 +735,9 @@ export class GenerativeToolHost extends BaseComponent {
             const a = this.createElement('a');
             a.href = url;
             a.download = `${this.scriptId}-${Date.now()}.${ext}`;
-            document.body.appendChild(a);
+            this.attachToBody(a);
             a.click();
-            document.body.removeChild(a);
+            this.detachElement(a);
             URL.revokeObjectURL(url);
         }, mime);
     }
@@ -837,6 +871,20 @@ export class GenerativeToolHost extends BaseComponent {
             this.handlePhaseToggles(value);
             return;
         }
+
+        if (key.startsWith('animParam__')) {
+            const paramKey = key.replace(/^animParam__/, '');
+            if (this.phaseAnimationState[paramKey] && value) {
+                Object.assign(this.phaseAnimationState[paramKey], {
+                    enabled:  value.enabled  ?? this.phaseAnimationState[paramKey].enabled,
+                    waveform: value.waveform ?? this.phaseAnimationState[paramKey].waveform,
+                    strength: value.strength ?? this.phaseAnimationState[paramKey].strength,
+                    rate:     value.rate     ?? this.phaseAnimationState[paramKey].rate,
+                    phase:    value.phase    ?? this.phaseAnimationState[paramKey].phase,
+                });
+            }
+            return;
+        }
         
         if (key === 'exportImage') {
             this._exportCurrentFrame();
@@ -850,6 +898,11 @@ export class GenerativeToolHost extends BaseComponent {
 
         if (key === 'canvasBackground') {
             this._handleCanvasBackground(value);
+            return;
+        }
+
+        if (key.startsWith('colourway__')) {
+            this._handleCanvasColourway(key, value);
             return;
         }
 
@@ -876,17 +929,56 @@ export class GenerativeToolHost extends BaseComponent {
         } else if (this.tool?.canvas) {
             this.tool.canvas.width  = this.scriptConfig.canvas.width;
             this.tool.canvas.height = this.scriptConfig.canvas.height;
+            // Re-apply display mode so CSS scaling re-calculates for the new dimensions.
+            this.tool.setCanvasDisplayMode(this.displayMode);
         }
+
+        // X-003: Re-mount sequencer strip if it was detached by a layout rebuild.
+        // This can happen when canvas orientation flips cause the canvasArea to
+        // re-render, detaching the strip element from the live DOM.
+        this._reattachSequencerStrip();
 
         this.draw();
     }
 
     /**
-     * Handle background colour change from CANVAS tab.
+     * Re-attach the sequencer strip to canvasArea if it has been detached.
+     * Preserves current visibility state.
+     */
+    _reattachSequencerStrip() {
+        if (!this._sequencerStripEl || !this.tool?.canvasArea) return;
+        if (!this.tool.canvasArea.contains(this._sequencerStripEl)) {
+            this.appendElement(this.tool.canvasArea, this._sequencerStripEl);
+            this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+        }
+    }
+
+    /**
+     * Handle background colour change from CANVAS tab (legacy single-colour path).
      */
     _handleCanvasBackground(colour) {
         if (!this.scriptConfig?.canvas) return;
         this.scriptConfig.canvas.background = colour;
+        // Also keep colourway[0] in sync if the schema is present
+        if (this.scriptConfig.canvas.colourway?.[0]) {
+            this.scriptConfig.canvas.colourway[0].colour = colour;
+        }
+        this.draw();
+    }
+
+    /**
+     * Handle a per-layer colourway change from the CANVAS tab.
+     * key format: 'colourway__<layerId>'
+     */
+    _handleCanvasColourway(key, colour) {
+        if (!this.scriptConfig?.canvas?.colourway) return;
+        const layerId = key.replace(/^colourway__/, '');
+        const layer = this.scriptConfig.canvas.colourway.find(l => l.id === layerId);
+        if (layer) {
+            layer.colour = colour;
+            // Keep legacy .background in sync when background layer changes
+            if (layerId === 'background') this.scriptConfig.canvas.background = colour;
+        }
         this.draw();
     }
 
@@ -938,18 +1030,37 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Handle reset
+     * Handle reset — rewinds to frame 0, re-runs lifecycle.onInit, restores
+     * default params. Stops animation so the generator starts from a clean state.
      */
     handleReset() {
         window.debugLog('TOOLS', '🔄 Resetting parameters');
-        
+
+        // Stop animation and rewind frame counter
+        if (this.isPlaying) this.stop();
+        this.frame = 0;
+
         this.params = getDefaultParams(this.scriptConfig.parameters);
-        
+
+        // Re-run script lifecycle init if defined (resets any internal state)
+        if (typeof this.scriptConfig.lifecycle?.onInit === 'function') {
+            try {
+                this.scriptConfig.lifecycle.onInit(this.params);
+            } catch (err) {
+                console.warn('lifecycle.onInit error during reset:', err);
+            }
+        }
+
+        // Re-baseline all phase animation states to the new param defaults
+        for (const key in this.phaseAnimationState) {
+            this.phaseAnimationState[key].baseValue = this.params[key] ?? 0;
+        }
+
         // Update UI
         for (const key in this.params) {
             this.tool.setValue(key, this.params[key]);
         }
-        
+
         this.draw();
     }
     
@@ -1139,23 +1250,48 @@ export class GenerativeToolHost extends BaseComponent {
      * The per-param `rate` field scales an individual param relative to global speed.
      */
     updatePhaseAnimations() {
-        const speed = this.tool?.getValue('animSpeed') || 1;
+        const speed  = this.tool?.getValue('animSpeed') || 1;
         const TWO_PI = Math.PI * 2;
-        
+
         for (const key in this.phaseAnimationState) {
             const state = this.phaseAnimationState[key];
             if (!state.enabled) continue;
-            
-            const t = this.frame * speed * (state.rate ?? 1);
-            
+
+            const rate     = state.rate     ?? 1;
+            const strength = state.strength ?? 1;
+            const phase    = state.phase    ?? 0;
+            const waveform = state.waveform ?? 'sine';
+
+            // Normalised time: 0→1 per cycle (cycle length = 240 frames at speed=1, rate=1)
+            const t = (this.frame * speed * rate + phase * 240 / TWO_PI) / 240;
+
+            const center = (state.min + state.max) / 2;
+            const half   = (state.max - state.min) / 2 * strength;
+
+            let delta;
+            if (waveform === 'triangle') {
+                // Triangle: 0→1→0→-1→0 per cycle
+                const tp = t % 1;
+                delta = (tp < 0.5 ? 4 * tp - 1 : 3 - 4 * tp) * half;
+            } else if (waveform === 'saw') {
+                delta = ((t % 1) * 2 - 1) * half;
+            } else if (waveform === 'square') {
+                delta = ((t % 1) < 0.5 ? 1 : -1) * half;
+            } else if (waveform === 'noise') {
+                // Seeded pseudo-random using sin hash — deterministic per frame
+                const n = Math.sin(t * 127.1 + key.length * 311.7) * 43758.5453;
+                delta = (n - Math.floor(n)) * 2 * half - half;
+            } else {
+                // Sine (default and 'phase' compat)
+                delta = Math.sin(t * TWO_PI) * half;
+            }
+
             if (state.mode === 'oscillate') {
-                const center = (state.min + state.max) / 2;
-                const half   = (state.max - state.min) / 2;
-                this.params[key] = center + half * Math.sin(t * TWO_PI / 240);
+                this.params[key] = center + delta;
             } else {
                 // 'phase' — linear increment with wrapping
                 const range = state.max - state.min;
-                let val = state.baseValue + t * TWO_PI / 60;
+                let val = state.baseValue + this.frame * speed * rate * TWO_PI / 60;
                 if (range > 0) {
                     val = ((val - state.min) % range + range) % range + state.min;
                 }
@@ -1210,9 +1346,11 @@ export class GenerativeToolHost extends BaseComponent {
         const ctx = this.tool.ctx;
         const canvas = this.tool.canvas;
         
-        // Clear/background
-        if (this.scriptConfig.canvas.background) {
-            ctx.fillStyle = this.scriptConfig.canvas.background;
+        // Clear/background — prefer new colourway[] schema; fall back to legacy .background
+        const cv = this.scriptConfig.canvas;
+        const bgColour = cv.colourway?.[0]?.colour ?? cv.background ?? null;
+        if (bgColour) {
+            ctx.fillStyle = bgColour;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         
@@ -1287,7 +1425,7 @@ export class GenerativeToolHost extends BaseComponent {
 
         const stripEl = this.sequencerV2.getStripElement();
         if (stripEl && this.tool.canvasArea) {
-            this.tool.canvasArea.appendChild(stripEl);
+            this.appendElement(this.tool.canvasArea, stripEl);
             this._sequencerStripEl      = stripEl;
             this._sequencerStripVisible = false;
             stripEl.style.display = 'none';
@@ -1301,6 +1439,11 @@ export class GenerativeToolHost extends BaseComponent {
      */
     destroy() {
         window.debugLog('TOOLS', `🗑️ Destroying GenerativeToolHost`);
+
+        if (this._onKeyDown) {
+            document.removeEventListener('keydown', this._onKeyDown);
+            this._onKeyDown = null;
+        }
         
         // Cleanup p5 instance
         if (this.p5Instance) {

@@ -49,6 +49,15 @@
 Total: 16/16
 Status: closed — all files at score 2
 
+## 2026-04-28 additions (CYM-01 – CYM-06)
+
+- **CYM-01 First-frame rebuild race:** Cache-stability guard added; `onDestroy` → `destroy()` lifecycle hook rename.
+- **CYM-02 EmitterHandles:** Manual source positions via `EmitterHandles` drag overlay (X-014); `sourceMode` toggle (orbit/manual); up to 8 manual sources; `showSources` toggle controls handle and orbit-mode marker visibility.
+- **CYM-03 Particle appearance:** `particleGlyph` select (dot/square/cross/diamond), `particleSize` slider, `particleShape` select for scatter mode. Hex colour parsing helper `_parseHex` for alpha compositing.
+- **CYM-04 Density mode colour ramp:** Colourway (`background`, `particle`) replacing hardcoded colours; `_lerp` between bg and fg based on normalised intensity; glyph/size/colour applied in radial-dots density path.
+- **CYM-05 Blend mode:** `blendMode` Select (source-over / multiply / screen / lighten / difference) in Display group.
+- **CYM-06 Show-sources:** `showSources` toggle wired to `EmitterHandles` overlay visibility via X-014 host protocol.
+
 ## Notes
 
 - The three frozen parameters (`template`, `chordType`, `particleSpacing`) not being reapplied mid-session is flagged as ERROR [BUG] — the most critical defect in this generator. It affects 3 of 11 parameters.

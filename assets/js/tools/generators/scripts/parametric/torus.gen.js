@@ -6,6 +6,8 @@
  * @version 2.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // ═══════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
@@ -31,15 +33,21 @@ function project3D(x, y, z, cosX, sinX, cosVY, sinVY, cx, cy) {
 }
 
 /**
- * Draw 36 cross-section poloidal rings forming the torus mesh.
+ * Draw poloidal rings forming the torus mesh.
+ * @param {number} numRings  TOR-03: configurable ring count (was hardcoded 36)
+ * @param {string} fillColour  hex colour for disc fill
+ * @param {number} fillAlpha   alpha for disc fill (0–1)
  */
-function drawTorusSpiral(ctx, rotation, cosX, sinX, cosVY, sinVY, cx, cy, R, r) {
-    const numEllipses = 36;
+function drawTorusSpiral(ctx, rotation, cosX, sinX, cosVY, sinVY, cx, cy, R, r, numRings, fillColour, fillAlpha) {
+    // Parse hex colour to rgba for alpha support
+    const hex = fillColour.replace('#', '');
+    const ri = parseInt(hex.substring(0, 2), 16);
+    const gi = parseInt(hex.substring(2, 4), 16);
+    const bi = parseInt(hex.substring(4, 6), 16);
+    ctx.fillStyle = `rgba(${ri},${gi},${bi},${fillAlpha})`;
 
-    ctx.fillStyle = 'rgba(192, 192, 192, 0.25)';
-
-    for (let i = 0; i < numEllipses; i++) {
-        const theta = (i / numEllipses) * Math.PI * 2 + rotation;
+    for (let i = 0; i < numRings; i++) {
+        const theta = (i / numRings) * Math.PI * 2 + rotation;
 
         ctx.beginPath();
 
@@ -64,8 +72,9 @@ function drawTorusSpiral(ctx, rotation, cosX, sinX, cosVY, sinVY, cx, cy, R, r) 
 
 /**
  * Draw one toroidal surface spiral (1001 points) as a polyline.
+ * @param {string} strokeColour  TOR-02 colourway outerLines colour
  */
-function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, reverse, winds, cosVY, sinVY, cx, cy, R, r) {
+function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, reverse, winds, cosVY, sinVY, cx, cy, R, r, strokeColour) {
     const points = 1000;
 
     ctx.beginPath();
@@ -86,7 +95,7 @@ function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, reve
         else ctx.lineTo(p.x, p.y);
     }
 
-    ctx.strokeStyle = '#c0c0c0';
+    ctx.strokeStyle = strokeColour || '#c0c0c0';
     ctx.lineWidth = 1;
     ctx.stroke();
 }
@@ -95,31 +104,40 @@ function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, reve
 // DRAW FUNCTION
 // ═══════════════════════════════════════════════════════════════════
 
-function draw(ctx, canvas, params, frame) {
+function draw(ctx, canvas, params, frame, colourway) {
     const W = canvas.width;
     const H = canvas.height;
     const cx = W / 2;
     const cy = H / 2;
 
-    // Radii computed locally — no module-level state
-    const R = Math.min(W, H) * (params.torusSize || 0.18);
+    // Resolve colourway colours (TOR-02)
+    const cw            = colourway || [];
+    const bgColour      = cw.find(c => c.id === 'background')?.colour     || '#000000';
+    const lineColour    = cw.find(c => c.id === 'outerLines')?.colour     || '#c0c0c0';
+    const meshColour    = cw.find(c => c.id === 'innerMeshLines')?.colour || '#c0c0c0';
+    const discColour    = cw.find(c => c.id === 'shadedDiscs')?.colour    || '#c0c0c0';
+    const discAlpha     = cw.find(c => c.id === 'shadedDiscs')?.alpha     ?? 0.25;
 
-    const viewAngleX   = (params.viewX       || 30)   * Math.PI / 180;
-    const viewAngleY   = (params.viewY       || 22.5) * Math.PI / 180;
-    const cycleFrames  = params.cycleFrames  || 3600;
-    const numSpirals   = params.numSpirals   || 9;
-    const spiralWinds  = params.spiralWinds  || 4;
+    const baseRadius = Math.min(W, H) * (params.torusSize || 0.18);
+    const R = baseRadius * (params.majorRadiusFactor || 1);
+    const r = baseRadius * (params.minorRadiusFactor || 1);
 
-    // Clear
-    ctx.fillStyle = '#000000';
+    const viewAngleX        = (params.viewX            || 30)   * Math.PI / 180;
+    const viewAngleY        = (params.viewY            || 22.5) * Math.PI / 180;
+    const cycleFrames       = params.cycleFrames       || 3600;
+    const numSpirals        = params.numSpirals        || 9;
+    const spiralWinds       = params.spiralWinds       || 4;
+    const meshRingCount     = params.meshRingCount     || 36;        // TOR-03
+    const meshRotationSpeed = params.meshRotationSpeed ?? 1.0;       // TOR-04
+
+    // Clear with background colour
+    ctx.fillStyle = bgColour;
     ctx.fillRect(0, 0, W, H);
 
-    // Rotation angles from frame
     const phase          = (frame / cycleFrames) * Math.PI * 2;
-    const torusRotation  =  phase;
+    const torusRotation  =  phase * meshRotationSpeed;               // TOR-04
     const spiralRotation = -phase;
 
-    // Pre-compute per-frame trig — eliminates ~6 trig calls per project3D invocation
     const totalX = phase + viewAngleX;
     const cosX  = Math.cos(totalX);
     const sinX  = Math.sin(totalX);
@@ -127,13 +145,13 @@ function draw(ctx, canvas, params, frame) {
     const sinVY = Math.sin(viewAngleY);
 
     if (params.showTorusMesh === 'on') {
-        drawTorusSpiral(ctx, torusRotation, cosX, sinX, cosVY, sinVY, cx, cy, R, R);
+        drawTorusSpiral(ctx, torusRotation, cosX, sinX, cosVY, sinVY, cx, cy, R, r, meshRingCount, discColour, discAlpha);
     }
 
     for (let i = 0; i < numSpirals; i++) {
         const offset = (i / numSpirals) * Math.PI * 2;
-        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, false, spiralWinds, cosVY, sinVY, cx, cy, R, R);
-        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, true,  spiralWinds, cosVY, sinVY, cx, cy, R, R);
+        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, false, spiralWinds, cosVY, sinVY, cx, cy, R, r, lineColour);
+        drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, true,  spiralWinds, cosVY, sinVY, cx, cy, R, r, lineColour);
     }
 }
 
@@ -151,7 +169,7 @@ export const SCRIPT_CONFIG = {
     infoSections: [
         {
             heading: 'DESCRIPTION',
-            body: 'Torus renders an animated wireframe 3D torus (surface of revolution) on a fixed 800×800 2D canvas. The torus surface is parameterised by toroidal angle θ and poloidal angle φ: x = (R+r·cos(φ))·cos(θ), y = (R+r·cos(φ))·sin(θ), z = r·sin(φ), where R = r = min(W,H)×torusSize (major and minor radii are locked equal). Two visual layers are rendered each frame: cross-section mesh (36 evenly-spaced poloidal rings as filled paths at 25% alpha, enabled by showTorusMesh) and toroidal surface spirals (numSpirals clockwise + numSpirals counter-clockwise spirals, each 1001 points, winding spiralWinds times around the major circle). Animation: torusRotation, spiralRotation (counter-direction), and xRotation all advance as (frame/cycleFrames)×2π, completing one full revolution per cycle. Projection: standard Ry×Rx orthographic — Y-axis yaw (viewY) first, then combined X-axis rotation (xRotation+viewX). Output is monochrome on black.'
+            body: 'Torus renders an animated wireframe 3D torus (surface of revolution) on a fixed 800×800 2D canvas. The torus surface is parameterised by toroidal angle θ and poloidal angle φ: x = (R+r·cos(φ))·cos(θ), y = (R+r·cos(φ))·sin(θ), z = r·sin(φ), where base = min(W,H)×torusSize, R = base×majorRadiusFactor, r = base×minorRadiusFactor. Two visual layers are rendered each frame: cross-section mesh (36 evenly-spaced poloidal rings as filled paths at 25% alpha, enabled by showTorusMesh) and toroidal surface spirals (numSpirals clockwise + numSpirals counter-clockwise spirals, each 1001 points, winding spiralWinds times around the major circle). Animation: torusRotation, spiralRotation (counter-direction), and xRotation all advance as (frame/cycleFrames)×2π, completing one full revolution per cycle. Projection: standard Ry×Rx orthographic — Y-axis yaw (viewY) first, then combined X-axis rotation (xRotation+viewX). Output is monochrome on black.'
         },
         {
             heading: 'ALGORITHM',
@@ -159,7 +177,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'PARAMETERS',
-            body: 'Torus group — numSpirals: slider, 3→18 step 1, default 9; number of unique spiral indices; total drawn spirals = 2×numSpirals (forward + reverse per index). torusSize: slider, 0.1→0.4 step 0.01, default 0.18; both major radius R and minor radius r = min(W,H)×torusSize; at torusSize ≥ 0.25 the torus approaches a horn torus. spiralWinds: slider, 1→10 step 1, default 4; number of times each spiral winds around the torus major circle. showTorusMesh: radio, on|off, default on; when on, draws 36 filled cross-section ellipses. Rotation group — viewX: slider, 0→360 step 1, default 30; camera X-axis tilt in degrees, combined with frame-driven xRotation. viewY: slider, 0→360 step 1, default 22.5; camera Y-axis yaw in degrees; applied first in the projection chain. cycleFrames: slider, 600→7200 step 60, default 3600; frames per complete animation loop; at 60 FPS, default = 60 s.'
+            body: 'Torus group — numSpirals: slider, 3→18 step 1, default 9; number of unique spiral indices; total drawn spirals = 2×numSpirals (forward + reverse per index). torusSize: slider, 0.1→0.4 step 0.01, default 0.18; base radius scalar from min(W,H). majorRadiusFactor: slider, 0.5→2 step 0.05, default 1; scales R = base×majorRadiusFactor. minorRadiusFactor: slider, 0.5→2 step 0.05, default 1; scales r = base×minorRadiusFactor. spiralWinds: slider, 1→10 step 1, default 4; number of times each spiral winds around the torus major circle. showTorusMesh: radio, on|off, default on; when on, draws 36 filled cross-section ellipses. Rotation group — viewX: slider, 0→360 step 1, default 30; camera X-axis tilt in degrees, combined with frame-driven xRotation. viewY: slider, 0→360 step 1, default 22.5; camera Y-axis yaw in degrees; applied first in the projection chain. cycleFrames: slider, 600→7200 step 60, default 3600; frames per complete animation loop; at 60 FPS, default = 60 s.'
         },
         {
             heading: 'PRESETS',
@@ -175,7 +193,7 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'KNOWN LIMITATIONS',
-            body: 'Major and minor radii are locked equal (R = r = min(W,H)×torusSize); separate majorRadius/minorRadius sliders are not implemented (legacy spec recommended independent ranges). Play/pause control not implemented at script level; host-provided only. If cycleFrames differs from 3600, exported animation will span 3600 frames regardless (loopFrames is fixed). Canvas size is fixed 800×800 and is not user-configurable. Spiral and mesh colours are hardcoded (#c0c0c0 / rgba(192,192,192,0.25)); no colour parameter is exposed.'
+            body: 'Play/pause control not implemented at script level; host-provided only. If cycleFrames differs from 3600, exported animation will span 3600 frames regardless (loopFrames is fixed). Canvas size is fixed 800×800 and is not user-configurable. Spiral and mesh colours are hardcoded (#c0c0c0 / rgba(192,192,192,0.25)); no colour parameter is exposed.'
         },
         {
             heading: 'REFERENCES',
@@ -189,7 +207,14 @@ export const SCRIPT_CONFIG = {
         width: 800,
         height: 800,
         context: '2d',
-        background: '#000000'
+        background: '#000000',
+        // TOR-02: X-007 colourway layers
+        colourway: [
+            { id: 'background',     label: 'Background',   colour: '#000000' },
+            { id: 'outerLines',     label: 'Outer Lines',  colour: '#c0c0c0' },
+            { id: 'innerMeshLines', label: 'Mesh Lines',   colour: '#c0c0c0' },
+            { id: 'shadedDiscs',    label: 'Shaded Discs', colour: '#c0c0c0', alpha: 0.25 }
+        ]
     },
 
     animation: {
@@ -214,6 +239,8 @@ export const SCRIPT_CONFIG = {
             values: {
                 numSpirals: 9,
                 torusSize: 0.18,
+                majorRadiusFactor: 1,
+                minorRadiusFactor: 1,
                 spiralWinds: 4,
                 viewX: 30,
                 viewY: 22.5,
@@ -226,6 +253,8 @@ export const SCRIPT_CONFIG = {
             values: {
                 numSpirals: 18,
                 torusSize: 0.2,
+                majorRadiusFactor: 1.1,
+                minorRadiusFactor: 0.8,
                 spiralWinds: 6,
                 viewX: 45,
                 viewY: 30,
@@ -238,6 +267,8 @@ export const SCRIPT_CONFIG = {
             values: {
                 numSpirals: 3,
                 torusSize: 0.25,
+                majorRadiusFactor: 1.2,
+                minorRadiusFactor: 0.7,
                 spiralWinds: 2,
                 viewX: 20,
                 viewY: 15,
@@ -250,6 +281,8 @@ export const SCRIPT_CONFIG = {
             values: {
                 numSpirals: 9,
                 torusSize: 0.18,
+                majorRadiusFactor: 1,
+                minorRadiusFactor: 1,
                 spiralWinds: 4,
                 viewX: 30,
                 viewY: 22.5,
@@ -283,6 +316,26 @@ export const SCRIPT_CONFIG = {
                     precision: 2
                 },
                 {
+                    key: 'majorRadiusFactor',
+                    type: 'slider',
+                    label: 'Major Radius',
+                    min: 0.5,
+                    max: 2,
+                    step: 0.05,
+                    default: 1,
+                    precision: 2
+                },
+                {
+                    key: 'minorRadiusFactor',
+                    type: 'slider',
+                    label: 'Minor Radius',
+                    min: 0.5,
+                    max: 2,
+                    step: 0.05,
+                    default: 1,
+                    precision: 2
+                },
+                {
                     key: 'spiralWinds',
                     type: 'slider',
                     label: 'Spiral Winds',
@@ -297,6 +350,16 @@ export const SCRIPT_CONFIG = {
                     label: 'Show Mesh',
                     options: ['on', 'off'],
                     default: 'on'
+                },
+                // TOR-03: configurable mesh ring count
+                {
+                    key: 'meshRingCount',
+                    type: 'slider',
+                    label: 'Mesh Rings',
+                    min: 4,
+                    max: 72,
+                    step: 1,
+                    default: 36
                 }
             ]
         },
@@ -330,10 +393,23 @@ export const SCRIPT_CONFIG = {
                     max: 7200,
                     step: 60,
                     default: 3600
+                },
+                // TOR-04: independent mesh rotation speed
+                {
+                    key: 'meshRotationSpeed',
+                    type: 'slider',
+                    label: 'Mesh Rotation Speed',
+                    min: -3,
+                    max: 3,
+                    step: 0.1,
+                    default: 1.0,
+                    precision: 1
                 }
             ]
         }
     ],
 
-    draw
+    draw(ctx, canvas, params, frame) {
+        return draw(ctx, canvas, params, frame, this.canvas.colourway);
+    }
 };

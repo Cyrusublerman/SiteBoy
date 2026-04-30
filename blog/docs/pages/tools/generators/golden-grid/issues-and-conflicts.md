@@ -36,5 +36,28 @@ None.
 *Fix: `_normBounds` removed; `p5Setup` now only calls `colorMode`, `noStroke`, `noSmooth`, `noLoop`.*
 ~~`p5Setup` computes and stores `this._normBounds`. `p5Draw` independently recomputes `bounds` as a local constant. The stored `_normBounds` is never passed to `_subdivide`. Remove from `p5Setup` and `SCRIPT_CONFIG`.~~
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-030] — ui-layout.md Multiple Stale Entries**
+
+(1) Animation Config section documents `animation.loopFrames = 360` as "static; does not reflect params.loopFrames" and flags it as a conflict — RESOLVED (now a getter `get loopFrames() { return _liveLoopFrames ?? 360; }`). (2) Preset format noted as "flat object (non-standard)" — RESOLVED (now `{ name, values }` format). (3) Missing Controls lists "No export block" — RESOLVED (export block added). (4) Animation Config section needs to document the getter mechanism.
+
+---
+
+**[STALE DOC] [DOC-034] — migration-log.md Stale**
+
+Open Items 1–7 describe pre-fix state. Items 1 (loopFrames conflict), 2 (_getRatio cache), 3 (preset format), 4 (export block), 5 (canPrerender), 6 (bounds cache), 7 (_normBounds) confirmed RESOLVED in issues-and-conflicts.md.
+
+---
+
 **[DESIGN] `loopFrames` as a user parameter is unusual**
 All other generators with looping animations derive their loop from `animation.loopFrames` (a fixed constant). Exposing it as a user-facing slider creates the conflict noted above and may confuse users who expect it to be a read-only system property. The getter mechanism resolves the technical conflict but the UX ambiguity remains.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-018 (P1, FIXED):** Live golden-grid imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **PERF-008 (P2, WONTFIX):** Recursive p5 draw path has no worker/GPU acceleration; high `maxDepth` remains frame-budget sensitive.
+- **DOC-025 (P2, FIXED):** `ui-layout.md` refreshed against current loop/preset/export state.
+- **DOC-026 (P2, FIXED):** `migration-log.md` refreshed against live resolved items.

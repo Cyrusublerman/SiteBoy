@@ -14,8 +14,8 @@ alwaysApply: true
 
 ## File Ownership (SSoT)
 Only these files may own the concern. Others must not implement it.
-- Layout math → assets/js/core/mathematical-foundation.js
-- Base OO system → assets/js/core/base-component.js
+- Layout math → split ownership: assets/js/core/config.js, assets/js/shared/layout.js, assets/js/core/app.js
+- Base OO system → assets/js/shared/foundation.js
 - **Animation logic → assets/js/core/animation-foundation.js**
 - **GPU compute (context, detection, shaders, buffers) → assets/js/core/gpu-foundation.js**
 - Routing/nav → assets/js/core/router.js
@@ -124,6 +124,7 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 | Any visual or aesthetic design decision not covered above | `blog/docs/guides/standards/design-law.md` |
 | How to lay out a tool page or what the standard tool structure is | `blog/docs/site/ui-interface-overview.md` |
 | What task phase you are in or what checklist to use | `blog/docs/guides/ai-routing-map.md` |
+| Any compute scheduling, worker tiering, or adaptive resolution decision | `blog/docs/guides/standards/compute-scheduler.md` |
 | Any GPU compute, WebGPU, WebGL2, or shader decision | `blog/docs/guides/standards/gpu-compute.md` |
 | Writing a WGSL or GLSL shader for a distort node | `blog/docs/guides/tools/gpu-shader-authoring.md` |
 

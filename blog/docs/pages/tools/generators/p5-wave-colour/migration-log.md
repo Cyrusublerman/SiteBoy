@@ -1,25 +1,27 @@
 # Wave Colour — Migration Log
 
-## Status
+## Pack Updated
 
-**Implemented.** Port of `Wave_interference_colour` sketch. Complex wave interference with evolving operators, normal-map shading, and HSL colour mapping. Version 1.0.0.
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/wave/p5-wave-colour.gen.js`
 
-## Architectural Notes
+## Current State
 
-- Context: `p5` but uses `p.pixels` (pixel buffer), not P5 shapes.
-- Interface: `p5Setup` / `p5Draw`.
-- Animation: `loop` (declared); actually non-deterministic due to operator randomness.
-- State: `_opStates`, `_lastOpSpeeds` on SCRIPT_CONFIG.
-- All compute is pure arithmetic — no P5 API in the hot path. High Worker feasibility.
+Implemented and live.
 
-## Open Items (priority order)
+Resolved since the original migration:
+- operator evolution made deterministic with seeded hash choice
+- loop metadata synchronised to `cycleFrames`
+- preset format converted to `{ name, values }`
+- export metadata added
+- `_normalAt` reduced from five `_process` calls to three
 
-1. **[HIGH] Fix non-determinism in operator evolution** — replace `Math.random()` in `_pickNextOp` with a seeded PRNG keyed on `frame` and operator index. Enables pre-render, replay, and reproducible export.
-2. **[HIGH] Fix `animation.loopFrames` conflict** — same fix as `golden-grid`: dynamic resolution or remove `loopFrames` from animation block.
-3. **[HIGH] Worker offload for pixel computation** — move `_process`/`_normalAt`/`_toColor` sampling loop to a Web Worker; transfer `Uint8ClampedArray` back and write to `p.pixels`. Expected 4–8× performance improvement, enabling interactive use at `resolution=1`.
-4. **[HIGH] Cache centre sample in `_normalAt`** — reuse the result of `_process(px, py)` from colour computation as the centre value in `_normalAt`, eliminating 1 of 5 `_process` calls per pixel (20% saving with no correctness change).
-5. **[MEDIUM] Fix preset format** — add `values: { ... }` wrapper.
-6. **[MEDIUM] Add `export` block** — `{ png: true }` minimum; GIF/WebM only after non-determinism is fixed.
-7. **[MEDIUM] Move state out of `SCRIPT_CONFIG`** — `_opStates`, `_lastOpSpeeds` to per-invocation scope.
-8. **[LOW] Add flat-shading option** — skip `_normalAt` for ~5× speed increase; expose as `shadingMode: ['normals', 'flat']`.
-9. **[LOW] Smooth `opSpeed` changes** — avoid resetting operator states on `opSpeed` change; update only the `speed` property of each state.
+## 2026-04-28 merger (WIN-06)
+
+**Merged into `wave-interference`.** `p5-wave-colour` is no longer a standalone entry in `ScriptRegistry`. Its complete parameter surface (operator chains, complex-number math, colourMode axis) was integrated into `wave-interference.gen.js` as the `complex-ops` renderer mode. The `wave-interference` script's `interferenceMode` toggle selects between the original canvas2d renderer and the p5 complex-ops and equations renderers. This folder is retained as historical documentation only.
+
+## Residuals (historical)
+
+- Main-thread per-pixel computation remains expensive.
+- No worker/GPU acceleration path is implemented.
+- Operator speed changes reset operator state and can cause visible discontinuity.

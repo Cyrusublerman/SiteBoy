@@ -20,7 +20,7 @@ Each LANDMARK now spreads `_DEFAULTS` and overrides only preset-specific keys: `
 
 ---
 
-**[PARITY] — Binary Thresholding Not Implemented**
+**[WONTFIX] [PARITY] — Binary Thresholding Not Implemented**
 
 Continuous greyscale via min-max normalisation is intentional. Documented in `KNOWN LIMITATIONS`: "This is an intentional design divergence; greyscale provides more visual information." No `threshold` toggle is implemented.
 
@@ -38,7 +38,7 @@ All previously missing parameters now have UI slots: `Or2`, `waveR2`, `prm1`, `p
 
 ---
 
-**[PARITY] — Modulation Formula Diverges From Spec**
+**[WONTFIX] [PARITY] — Modulation Formula Diverges From Spec**
 
 Live formula remains: `M · (safePow(sin(frm1·r), prm1) + safePow(sin(frm2·r), prm2))` — additive two-sin sum. Spec described: `M · safePow(sin(frm1·r), prm1) · safePow(cos(frm2·r), prm2)` — multiplicative cross-modulation with cos. Intentional divergence; documented in `KNOWN LIMITATIONS`.
 
@@ -47,6 +47,20 @@ Live formula remains: `M · (safePow(sin(frm1·r), prm1) + safePow(sin(frm2·r),
 **[PARTIAL] [PARITY] — Checkpoint and Sequence Animation Missing**
 
 `animation.sequencer: true` declared, signalling host support for checkpoint interpolation. The generator itself does not implement checkpoint save/load; host is responsible. Per-parameter animation speed/direction controls are not implemented.
+
+---
+
+## Stale Documentation
+
+**[RESOLVED] [STALE DOC] [DOC-015] — ui-layout.md Multiple Stale Entries**
+
+Fixed: `ui-layout.md` now documents camelCase keys, removed canvas sliders, full parameter surface, full LANDMARK maps, current animatableParams, and SVG export.
+
+---
+
+**[RESOLVED] [STALE DOC] [DOC-016] — migration-log.md Stale**
+
+Fixed: `migration-log.md` rewritten against current v2.1.0 source and old open items closed.
 
 ---
 
@@ -61,3 +75,15 @@ No `console.log` calls present in source.
 **[STANDARDS] — compute.idleDelay Uses Non-Standard Pattern**
 
 `compute: { idleDelay: 200 }` remains. ComputeScheduler hint — silently ignored if unrecognised. Risk: low.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **GEN-010 (P2, WONTFIX):** Binary threshold output from reference contract is not implemented; live intentionally outputs continuous greyscale.
+- **GEN-011 (P2, WONTFIX):** Modulation formula diverges (reference cross-product style vs live additive sin+sin modulation).
+- **EXP-003 (P1, FIXED):** SVG export flag added to live export block.
+- **ARCH-012 (P1, FIXED):** Live wave-interference imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **ARCH-013 (P2, FIXED):** Render hook converted to inline SCRIPT_CONFIG method wrapper.
+- **DOC-015 (P2, FIXED):** `ui-layout.md` synced to live v2.1.0.
+- **DOC-016 (P2, FIXED):** `migration-log.md` rewritten against live v2.1.0.

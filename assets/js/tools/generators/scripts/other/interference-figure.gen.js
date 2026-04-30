@@ -10,6 +10,8 @@
  * @version 1.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 const PI     = Math.PI;
 const TWO_PI = PI * 2;
 
@@ -183,6 +185,9 @@ function _renderSpectral(imageData, params) {
     const axisRadius      = params.axisRadius       || 0.3;
     const axisAngleSpread = (params.axisAngleSpread || 90) * PI / 180;
     const spiralRate      = params.spiralRate       || 2;
+    // IFG-05: seam controls
+    const seamAngleRad    = ((params.seamAngle  || 0) * Math.PI / 180);
+    const seamBlend       = params.seamBlend    || 0;
     const bg              = _parseBg(params.backgroundColor);
 
     const fw  = _blendFamilies(params.patternFamily || 'Rings', params.patternMorph || 0);
@@ -212,11 +217,29 @@ function _renderSpectral(imageData, params) {
             u = ur; v = vr;
 
             const r     = Math.sqrt(u * u + v * v);
-            const theta = Math.atan2(v, u);
+            // IFG-05: seamAngle shifts the ±π seam to a user-specified position
+            const thetaRaw = Math.atan2(v, u);
+            const theta    = thetaRaw - seamAngleRad;
             const mxuv  = Math.max(Math.abs(u), Math.abs(v));
 
+            // IFG-05: spiral OPD with optional seam blending
+            let spiralOPD;
+            if (seamBlend > 0 && spW > 0) {
+                const seamHalfW = seamBlend * 0.3 * Math.PI;
+                const distToSeam = Math.PI - Math.abs(theta);
+                if (distToSeam < seamHalfW) {
+                    const thetaMirror = theta > 0 ? theta - TWO_PI : theta + TWO_PI;
+                    const blend = 0.5 * (1 - distToSeam / seamHalfW);
+                    spiralOPD = spW * r * spiralRate * ((1 - blend) * theta + blend * thetaMirror) / TWO_PI;
+                } else {
+                    spiralOPD = spW * r * (spiralRate * theta / TWO_PI);
+                }
+            } else {
+                spiralOPD = spW * r * (spiralRate * theta / TWO_PI);
+            }
+
             let D = rW  * r * r
-                  + spW * r * (spiralRate * theta / TWO_PI)
+                  + spiralOPD
                   + n2W * Math.sin(2 * theta)
                   + n4W * Math.sin(4 * theta)
                   + n6W * Math.sin(6 * theta)
@@ -272,23 +295,29 @@ function _renderSpectral(imageData, params) {
                 sG = _toSrgb(lg, exposure, gamma);
                 sB = _toSrgb(lb, exposure, gamma);
             } else {
-                // Stylised mode: sin² intensity at green midpoint, hue from OPD cycles
+                // IFG-03: Stylised mode — dispatch to named style
+                const stylisedStyle = params.stylisedStyle || 'rainbow';
                 const s550 = Math.sin(PI * Dnm / 550);
-                const brt  = Math.min(1, s550 * s550 * exposure);
-                const hue  = ((Dnm / 550) % 1 + 1) % 1;
-                const h6   = hue * 6;
-                const hi   = Math.floor(h6) % 6;
-                const f    = h6 - Math.floor(h6);
-                const q_   = brt * (1 - f);
-                const t_   = brt * f;
-                let rr, gg, bb;
-                switch (hi) {
-                    case 0: rr = brt; gg = t_;  bb = 0;   break;
-                    case 1: rr = q_;  gg = brt; bb = 0;   break;
-                    case 2: rr = 0;   gg = brt; bb = t_;  break;
-                    case 3: rr = 0;   gg = q_;  bb = brt; break;
-                    case 4: rr = t_;  gg = 0;   bb = brt; break;
-                    default: rr = brt; gg = 0;  bb = q_;  break;
+                let rr = 0, gg = 0, bb = 0;
+                if (stylisedStyle === 'neon') {
+                    const brt2 = Math.min(1, s550 * s550 * s550 * s550 * exposure);
+                    const hue  = ((Dnm / 550) % 1 + 1) % 1;
+                    const h6   = hue * 6; const hi = Math.floor(h6) % 6; const f = h6 - Math.floor(h6);
+                    const q_ = brt2 * (1 - f); const t_ = brt2 * f;
+                    switch (hi) { case 0: rr=brt2; gg=t_;   bb=0;    break; case 1: rr=q_;   gg=brt2; bb=0;    break; case 2: rr=0;    gg=brt2; bb=t_;   break; case 3: rr=0;    gg=q_;   bb=brt2; break; case 4: rr=t_;   gg=0;    bb=brt2; break; default: rr=brt2; gg=0;    bb=q_;   break; }
+                } else if (stylisedStyle === 'greyscale') {
+                    const brt = Math.min(1, s550 * s550 * exposure);
+                    rr = gg = bb = brt;
+                } else if (stylisedStyle === 'heat') {
+                    const brt = Math.min(1, s550 * s550 * exposure);
+                    rr = Math.min(1, brt * 3); gg = Math.min(1, Math.max(0, brt * 3 - 1)); bb = Math.min(1, Math.max(0, brt * 3 - 2));
+                } else {
+                    // rainbow (classic default)
+                    const brt = Math.min(1, s550 * s550 * exposure);
+                    const hue = ((Dnm / 550) % 1 + 1) % 1;
+                    const h6  = hue * 6; const hi = Math.floor(h6) % 6; const f = h6 - Math.floor(h6);
+                    const q_ = brt * (1 - f); const t_ = brt * f;
+                    switch (hi) { case 0: rr=brt; gg=t_;  bb=0;   break; case 1: rr=q_;  gg=brt; bb=0;   break; case 2: rr=0;   gg=brt; bb=t_;  break; case 3: rr=0;   gg=q_;  bb=brt; break; case 4: rr=t_;  gg=0;   bb=brt; break; default: rr=brt; gg=0;   bb=q_;  break; }
                 }
                 sR = Math.min(255, Math.round(rr * 255));
                 sG = Math.min(255, Math.round(gg * 255));
@@ -408,7 +437,14 @@ export const SCRIPT_CONFIG = {
         background: '#000000'
     },
 
-    animation: { type: 'none' },
+    // IFG-04: ANIMATE tab — sweep plateRotation, patternMorph, spiralRate.
+    animation: {
+        type: 'parametric',
+        animatableParams: ['plateRotation', 'patternMorph', 'spiralRate'],
+        defaultFps: 30,
+        canPrerender: true,
+        sequencer: true
+    },
 
     export: { png: true, gif: false, webm: false },
 
@@ -491,7 +527,10 @@ export const SCRIPT_CONFIG = {
                 { key: 'saddleWeight',   type: 'slider', label: 'Saddle',    min: -1,   max: 1,   step: 0.01, default: 1,   precision: 2 },
                 { key: 'squareWeight',   type: 'slider', label: 'Square',    min: 0,    max: 1,   step: 0.01, default: 1,   precision: 2 },
                 { key: 'plateRotation',  type: 'slider', label: 'Rotation',  min: -180, max: 180, step: 1,    default: 0,   precision: 0 },
-                { key: 'globalScale',    type: 'slider', label: 'Scale',     min: 0.2,  max: 3,   step: 0.05, default: 1,   precision: 2 }
+                { key: 'globalScale',    type: 'slider', label: 'Scale',     min: 0.2,  max: 3,   step: 0.05, default: 1,   precision: 2 },
+                // IFG-05: seam controls — move or blend the ±π angular discontinuity in the spiral term
+                { key: 'seamAngle',      type: 'slider', label: 'Seam Angle (°)', min: -180, max: 180, step: 1,    default: 0,  precision: 0 },
+                { key: 'seamBlend',      type: 'slider', label: 'Seam Blend',     min: 0,    max: 1,   step: 0.05, default: 0,  precision: 2 }
             ]
         },
         {
@@ -507,10 +546,19 @@ export const SCRIPT_CONFIG = {
             group: 'Colour',
             params: [
                 { key: 'backgroundColor', type: 'color',    label: 'Background',  default: '#000000' },
-                { key: 'spectralMode',     type: 'radio',   label: 'Mode',        options: ['Physical', 'Stylised'], default: 'Physical' },
-                { key: 'exposure',         type: 'slider',  label: 'Exposure',    min: 0.5, max: 2,   step: 0.05, default: 1,   precision: 2 },
-                { key: 'gamma',            type: 'slider',  label: 'Gamma',       min: 1.8, max: 2.4, step: 0.05, default: 2.2, precision: 2 },
-                { key: 'saturationBoost',  type: 'slider',  label: 'Saturation',  min: 0.5, max: 1.5, step: 0.05, default: 1,   precision: 2 }
+                { key: 'spectralMode',  type: 'radio',  label: 'Mode',
+                  options: ['Physical', 'Stylised'], default: 'Physical' },
+                // IFG-03: explicit style select for Stylised mode
+                { key: 'stylisedStyle', type: 'select', label: 'Stylised Style',
+                  options: [
+                    { value: 'rainbow',   label: 'Rainbow (classic)' },
+                    { value: 'neon',      label: 'Neon (sharp bands)' },
+                    { value: 'greyscale', label: 'Greyscale fringes' },
+                    { value: 'heat',      label: 'Heat map' }
+                  ], default: 'rainbow' },
+                { key: 'exposure',         type: 'slider', label: 'Exposure',   min: 0.5, max: 2,   step: 0.05, default: 1,   precision: 2 },
+                { key: 'gamma',            type: 'slider', label: 'Gamma',      min: 1.8, max: 2.4, step: 0.05, default: 2.2, precision: 2 },
+                { key: 'saturationBoost',  type: 'slider', label: 'Saturation', min: 0.5, max: 1.5, step: 0.05, default: 1,   precision: 2 }
             ]
         },
         {
@@ -646,6 +694,9 @@ export const SCRIPT_CONFIG = {
         const axisRadius      = params.axisRadius       || 0.3;
         const axisAngleSpread = (params.axisAngleSpread || 90) * PI / 180;
         const spiralRate      = params.spiralRate       || 2;
+        // IFG-05: seam controls
+        const seamAngleRad_w  = ((params.seamAngle  || 0) * PI / 180);
+        const seamBlend_w     = params.seamBlend    || 0;
 
         const bgHex = (params.backgroundColor || '#000000').replace('#', '');
         const bgR   = parseInt(bgHex.slice(0, 2), 16) || 0;
@@ -687,12 +738,30 @@ export const SCRIPT_CONFIG = {
                 const vr = u * sinR + v * cosR;
                 u = ur; v = vr;
 
-                const r     = Math.sqrt(u * u + v * v);
-                const theta = Math.atan2(v, u);
+                const r      = Math.sqrt(u * u + v * v);
+                // IFG-05: apply seam angle shift
+                const thetaRaw_w = Math.atan2(v, u);
+                const theta      = thetaRaw_w - seamAngleRad_w;
                 const mxuv  = Math.max(Math.abs(u), Math.abs(v));
 
+                // IFG-05: spiral OPD with optional seam blending
+                let spiralOPD_w;
+                if (seamBlend_w > 0 && spW > 0) {
+                    const seamHalfW_w = seamBlend_w * 0.3 * PI;
+                    const distToSeam_w = PI - Math.abs(theta);
+                    if (distToSeam_w < seamHalfW_w) {
+                        const thetaMirror_w = theta > 0 ? theta - TWO_PI : theta + TWO_PI;
+                        const blend_w = 0.5 * (1 - distToSeam_w / seamHalfW_w);
+                        spiralOPD_w = spW * r * spiralRate * ((1 - blend_w) * theta + blend_w * thetaMirror_w) / TWO_PI;
+                    } else {
+                        spiralOPD_w = spW * r * (spiralRate * theta / TWO_PI);
+                    }
+                } else {
+                    spiralOPD_w = spW * r * (spiralRate * theta / TWO_PI);
+                }
+
                 let D = rW  * r * r
-                      + spW * r * (spiralRate * theta / TWO_PI)
+                      + spiralOPD_w
                       + n2W * Math.sin(2 * theta)
                       + n4W * Math.sin(4 * theta)
                       + n6W * Math.sin(6 * theta)
@@ -748,22 +817,55 @@ export const SCRIPT_CONFIG = {
                     sG = toSrgb(lg, exposure, gamma);
                     sB = toSrgb(lb, exposure, gamma);
                 } else {
+                    // IFG-03: dispatch to named stylised style
+                    const stylisedStyle = params.stylisedStyle || 'rainbow';
                     const s550 = Math.sin(PI * Dnm / 550);
-                    const brt  = Math.min(1, s550 * s550 * exposure);
-                    const hue  = ((Dnm / 550) % 1 + 1) % 1;
-                    const h6   = hue * 6;
-                    const hi   = Math.floor(h6) % 6;
-                    const f    = h6 - Math.floor(h6);
-                    const q_   = brt * (1 - f);
-                    const t_   = brt * f;
-                    let rr, gg, bb;
-                    switch (hi) {
-                        case 0: rr = brt; gg = t_;  bb = 0;   break;
-                        case 1: rr = q_;  gg = brt; bb = 0;   break;
-                        case 2: rr = 0;   gg = brt; bb = t_;  break;
-                        case 3: rr = 0;   gg = q_;  bb = brt; break;
-                        case 4: rr = t_;  gg = 0;   bb = brt; break;
-                        default: rr = brt; gg = 0;  bb = q_;  break;
+                    let rr = 0, gg = 0, bb = 0;
+
+                    if (stylisedStyle === 'neon') {
+                        // Sharp bands: squared sin² → crisper dark gaps
+                        const brt2 = Math.min(1, s550 * s550 * s550 * s550 * exposure);
+                        const hue  = ((Dnm / 550) % 1 + 1) % 1;
+                        const h6   = hue * 6;
+                        const hi   = Math.floor(h6) % 6;
+                        const f    = h6 - Math.floor(h6);
+                        const q_   = brt2 * (1 - f);
+                        const t_   = brt2 * f;
+                        switch (hi) {
+                            case 0: rr = brt2; gg = t_;   bb = 0;    break;
+                            case 1: rr = q_;   gg = brt2; bb = 0;    break;
+                            case 2: rr = 0;    gg = brt2; bb = t_;   break;
+                            case 3: rr = 0;    gg = q_;   bb = brt2; break;
+                            case 4: rr = t_;   gg = 0;    bb = brt2; break;
+                            default: rr = brt2; gg = 0;   bb = q_;   break;
+                        }
+                    } else if (stylisedStyle === 'greyscale') {
+                        // Pure brightness fringes — monochrome
+                        const brt = Math.min(1, s550 * s550 * exposure);
+                        rr = gg = bb = brt;
+                    } else if (stylisedStyle === 'heat') {
+                        // Heat map: black → red → yellow → white
+                        const brt = Math.min(1, s550 * s550 * exposure);
+                        rr = Math.min(1, brt * 3);
+                        gg = Math.min(1, Math.max(0, brt * 3 - 1));
+                        bb = Math.min(1, Math.max(0, brt * 3 - 2));
+                    } else {
+                        // rainbow (classic default)
+                        const brt = Math.min(1, s550 * s550 * exposure);
+                        const hue = ((Dnm / 550) % 1 + 1) % 1;
+                        const h6  = hue * 6;
+                        const hi  = Math.floor(h6) % 6;
+                        const f   = h6 - Math.floor(h6);
+                        const q_  = brt * (1 - f);
+                        const t_  = brt * f;
+                        switch (hi) {
+                            case 0: rr = brt; gg = t_;  bb = 0;   break;
+                            case 1: rr = q_;  gg = brt; bb = 0;   break;
+                            case 2: rr = 0;   gg = brt; bb = t_;  break;
+                            case 3: rr = 0;   gg = q_;  bb = brt; break;
+                            case 4: rr = t_;  gg = 0;   bb = brt; break;
+                            default: rr = brt; gg = 0;  bb = q_;  break;
+                        }
                     }
                     sR = Math.min(255, Math.round(rr * 255));
                     sG = Math.min(255, Math.round(gg * 255));

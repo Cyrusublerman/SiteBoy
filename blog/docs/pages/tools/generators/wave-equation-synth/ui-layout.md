@@ -1,58 +1,39 @@
 # Wave Equation Synth — UI Layout
 
-**Status: Unimplemented stub.**
+## Parameters
 
-## Live Parameters (Current)
-
-| Group | Key | Type | Default | Range |
+| Group | Key | Type | Default | Range / Options |
 |---|---|---|---|---|
-| Synthesis | `harmonics` | slider | 8 | 1 → 16, step 1 |
+| Core | `baseFrequency` | slider | 220 | 1 → 2000 Hz |
+| Core | `sampleRate` | radio | `44100` | `22050`, `44100` |
+| Core | `duration` | slider | 2 | 0.1 → 30 s, step 0.1 |
+| Equations | `eq1` | dropdown | Sine | Off, Sine, Triangle, Square, Sawtooth, harmonics, FM/Pulse/AM |
+| Equations | `eq2` | dropdown | Off | same as `eq1` |
+| Equations | `eq3` | dropdown | Off | same as `eq1` |
+| Equations | `eq4` | dropdown | Off | same as `eq1` |
+| Visualisation | `mode` | radio | Oscilloscope | Oscilloscope, Segmented, Circular |
+| Visualisation | `cyclesShown` | slider | 4 | 1 → 32 |
+| Visualisation | `strokeWidth` | slider | 2 | 1 → 8 |
+| Visualisation | `lineColor` | color | `#00ff00` | colour control |
+| Visualisation | `bgColor` | color | `#000000` | colour control |
+| Visualisation | `modulationDepth` | slider | 0.3 | 0 → 1 |
+| Audio | `playback` | toggle | `[]` | `Play` |
+| Audio | `volume` | slider | 0.8 | 0 → 1 |
 
-**Total: 1 parameter.** `harmonics` is not read by the draw function.
+**Total: 15 parameters** across 4 groups.
 
-## Intended Parameters (per spec)
+## Canvas
 
-### CONTROLS tab
-
-| Block | Key | Type | Range / Options |
-|---|---|---|---|
-| Core | `baseFrequency` | slider | 1 → 2000 Hz |
-| Core | `sampleRate` | slider | 8000 → 192000 Hz |
-| Core | `duration` | slider | 0.1 → 300 s |
-| Equations | `equationCount` | stepper | 1 → 16 |
-| Equations | `equation1` | textarea | `sin(2*pi*p)` |
-| Equations | `equation2..N` | textarea (dynamic) | — |
-| Behavior | `mode` | dropdown | Oscilloscope / Segmented / Circular Loop |
-| Behavior | `cyclesShown` | stepper | 1 → 64 |
-| Behavior | `segmentStartWave` | stepper | 0 → 100000 |
-| Behavior | `segmentWaveCount` | stepper | 1 → 256 |
-
-### AUDIO tab
-
-| Block | Key | Type |
-|---|---|---|
-| Playback | (play/stop) | button |
-| Playback | `volume` | slider (0 → 1) |
-
-### CANVAS tab
-
-| Block | Key | Type | Range / Options |
-|---|---|---|---|
-| Style | `lineColor` | color | hex |
-| Style | `backgroundColor` | color | hex |
-| Style | `strokeWidth` | slider | 1 → 8 |
-| Style | `modulationDepth` | slider | 0 → 1 |
-
-**Total standard parameters: ~15.** Dynamic `equation2..N` inputs are UI-rendered based on `equationCount`.
-
-## Canvas (per spec)
-
-- 420×420 (spec), 800×800 (live stub). Conflict.
+- 420×420, 2d context.
 
 ## Animation
 
-- `type: 'infinite'` (oscilloscope is live visualization of audio playback).
+- `type: 'infinite'`
+- `sequencer: false`
+- `animationExport: false`
 
-## Export (per spec)
+## Export
 
-- WAV audio, segment WAV, PNG, GIF.
+- PNG enabled.
+- GIF/WebM disabled.
+- WAV encoder exists in source but has no host UI action.

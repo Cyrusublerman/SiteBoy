@@ -47,4 +47,4 @@ The animation uses a double-smoothstep time warp to slow down near the pure inte
 
 Between consecutive intervals, the frequency ratios are linearly interpolated: `a_interp = lerp(a_k, a_{k+1}, t)`, `b_interp = lerp(b_k, b_{k+1}, t)`. Between views, the particle positions are linearly interpolated from the current view to the next.
 
-The animation is driven by wall-clock time (`Date.now()`) rather than the frame counter — see Issues.
+The animation is driven by frame index (`elapsed = frame / fps`), so timing is deterministic for a given frame/parameter set.

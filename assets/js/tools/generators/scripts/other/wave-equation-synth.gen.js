@@ -22,6 +22,8 @@
  * @version 1.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 export const SCRIPT_CONFIG = (() => {
 
     const TWO_PI = Math.PI * 2;

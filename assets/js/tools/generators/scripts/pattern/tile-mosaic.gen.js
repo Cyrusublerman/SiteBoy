@@ -8,6 +8,8 @@
  * @version 1.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // ─── Palette definitions: [hue°, saturation%, lightness%] × 8 ───────────────
 
 const PALETTES = {
@@ -24,9 +26,22 @@ export const SCRIPT_CONFIG = {
     title: 'Tile Mosaic',
     category: 'pattern',
     description: 'Tile-based mosaic with rect packing, offscreen sprite caching, pseudo-3D lighting, and noise overlay. Four animation modes.',
-    version: '1.0.0',
+    version: '1.1.0',
 
-    canvas: { width: 800, height: 800, context: '2d' },
+    canvas: {
+        width: 800, height: 800, context: '2d',
+        // TIL-05: custom palette via colourway — 8 slots mirror PALETTES row structure
+        colourway: [
+            { id: 'c0', label: 'Colour 1', colour: '#c8441a' },
+            { id: 'c1', label: 'Colour 2', colour: '#d4621e' },
+            { id: 'c2', label: 'Colour 3', colour: '#d4882d' },
+            { id: 'c3', label: 'Colour 4', colour: '#b83217' },
+            { id: 'c4', label: 'Colour 5', colour: '#d89a28' },
+            { id: 'c5', label: 'Colour 6', colour: '#c86432' },
+            { id: 'c6', label: 'Colour 7', colour: '#c05220' },
+            { id: 'c7', label: 'Colour 8', colour: '#b04019' }
+        ]
+    },
 
     animation: {
         type: 'infinite',
@@ -52,7 +67,7 @@ export const SCRIPT_CONFIG = {
                 { key: 'layoutMode',  type: 'dropdown', label: 'Layout Mode',
                   options: ['Uniform Grid', 'Packed Rects A', 'Packed Rects B'], default: 'Uniform Grid' },
                 { key: 'tileTypes',   type: 'toggle',   label: 'Tile Types',
-                  options: ['Concentric', 'Wedge', 'Stripe', 'Solid', 'Texture', 'Micro'],
+                  options: ['Concentric', 'Wedge', 'Stripe', 'Solid', 'Texture', 'Micro', 'Truchet', 'Hex', 'Triangle'],
                   default: ['Concentric', 'Wedge', 'Stripe', 'Solid'] },
                 { key: 'randomSeed',  type: 'slider',   label: 'Seed',       min: 0,  max: 999999, step: 1,  default: 42   }
             ]
@@ -68,7 +83,13 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Palette',
             params: [
-                { key: 'paletteSelection', type: 'dropdown', label: 'Palette',
+                // TIL-05: paletteMode — preset built-in or custom via colourway
+                { key: 'paletteMode', type: 'select', label: 'Palette Mode',
+                  options: [
+                    { value: 'preset', label: 'Preset' },
+                    { value: 'custom', label: 'Custom (Canvas colours)' }
+                  ], default: 'preset' },
+                { key: 'paletteSelection', type: 'dropdown', label: 'Preset Palette',
                   options: ['Warm', 'Cool', 'Mixed', 'Earth', 'Pastel', 'High-Contrast'], default: 'Warm' },
                 { key: 'paletteVariance', type: 'slider', label: 'Variance',
                   min: 0, max: 1, step: 0.05, default: 0.3, precision: 2 }
@@ -77,17 +98,37 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Depth',
             params: [
-                { key: 'depthStrength',     type: 'slider', label: 'Depth',      min: 0, max: 1, step: 0.05, default: 0.5, precision: 2 },
-                { key: 'highlightIntensity', type: 'slider', label: 'Highlight',  min: 0, max: 1, step: 0.05, default: 0.4, precision: 2 },
-                { key: 'globalLightAngle',   type: 'slider', label: 'Light Angle',min: 0, max: 360, step: 1,  default: 45  }
+                { key: 'depthStrength',      type: 'slider', label: 'Depth',
+                  min: 0, max: 1, step: 0.05, default: 0.5, precision: 2 },
+                { key: 'highlightIntensity', type: 'slider', label: 'Highlight',
+                  min: 0, max: 1, step: 0.05, default: 0.4, precision: 2 },
+                { key: 'globalLightAngle',   type: 'slider', label: 'Light Angle',
+                  min: 0, max: 360, step: 1, default: 45 },
+                // TIL-03: Z-stack controls
+                { key: 'zStackEnabled',  type: 'toggle', label: 'Z-Stack',  default: false },
+                { key: 'zShadowBlur',    type: 'slider', label: 'Shadow Blur',
+                  min: 0, max: 24, step: 1, default: 6 },
+                { key: 'zShadowSpread', type: 'slider', label: 'Shadow Spread',
+                  min: 0, max: 1, step: 0.05, default: 0.4, precision: 2 }
             ]
         },
         {
             group: 'Texture',
             params: [
-                { key: 'textureStrength', type: 'slider',   label: 'Strength', min: 0, max: 1, step: 0.05, default: 0.3, precision: 2 },
-                { key: 'overlayMode',     type: 'dropdown', label: 'Overlay',
-                  options: ['None', 'Noise', 'Noise+Light'], default: 'None' }
+                { key: 'textureStrength', type: 'slider', label: 'Global Strength',
+                  min: 0, max: 1, step: 0.05, default: 0.3, precision: 2 },
+                { key: 'overlayMode', type: 'dropdown', label: 'Global Overlay',
+                  options: ['None', 'Noise', 'Noise+Light'], default: 'None' },
+                // TIL-04: per-tile texture overlay
+                { key: 'tileTextureOverlay', type: 'select', label: 'Tile Overlay',
+                  options: [
+                    { value: 'none',       label: 'None' },
+                    { value: 'grain',      label: 'Grain' },
+                    { value: 'crosshatch', label: 'Crosshatch' },
+                    { value: 'dots',       label: 'Dots' }
+                  ], default: 'none' },
+                { key: 'tileTextureOpacity', type: 'slider', label: 'Tile Overlay Opacity',
+                  min: 0, max: 1, step: 0.05, default: 0.25, precision: 2 }
             ]
         }
     ],
@@ -181,14 +222,15 @@ export const SCRIPT_CONFIG = {
     ],
 
     // ─── Internal state ───────────────────────────────────────────────────────
-    _spriteCache:   null,
-    _noiseCanvas:   null,
-    _noiseSeed:     -1,
-    _layoutA:       null,
-    _layoutB:       null,
-    _lastLayoutKey: '',
-    _lastStyleKey:  '',
-    _driftOffset:   0,
+    _spriteCache:       null,
+    _noiseCanvas:       null,
+    _noiseSeed:         -1,
+    _layoutA:           null,
+    _layoutB:           null,
+    _lastLayoutKey:     '',
+    _lastStyleKey:      '',
+    _lastTileTexKey:    '',
+    _driftOffset:       0,
 
     // ─── Seeded LCG RNG ───────────────────────────────────────────────────────
     _lcg(seed) {
@@ -230,18 +272,102 @@ export const SCRIPT_CONFIG = {
     },
 
     // ─── Colour from palette ──────────────────────────────────────────────────
+    // TIL-05: when paletteMode === 'custom', use colourway entries instead of preset HSL palettes.
     _tileColor(colorIdx, params) {
-        const pal = PALETTES[params.paletteSelection] || PALETTES['Warm'];
+        if (params.paletteMode === 'custom') {
+            const cw = params.colourway || [];
+            if (cw.length > 0) {
+                const entry = cw[colorIdx % cw.length];
+                return entry ? entry.colour : '#888888';
+            }
+        }
+        const pal  = PALETTES[params.paletteSelection] || PALETTES['Warm'];
         const base = pal[colorIdx % pal.length];
-        const v = params.paletteVariance;
-        const rng = this._lcg(colorIdx * 997 + (params.randomSeed | 0));
+        const v    = params.paletteVariance ?? 0.3;
+        const rng  = this._lcg(colorIdx * 997 + (params.randomSeed | 0));
         const h = ((base[0] + (rng() - 0.5) * 60 * v) + 720) % 360;
         const s = Math.max(5,  Math.min(100, base[1] + (rng() - 0.5) * 40 * v));
         const l = Math.max(10, Math.min(90,  base[2] + (rng() - 0.5) * 30 * v));
         return `hsl(${h.toFixed(1)},${s.toFixed(1)}%,${l.toFixed(1)}%)`;
     },
 
-    // ─── Layout — GEO-016 rectPacker ─────────────────────────────────────────
+    // TIL-04: apply per-tile texture overlay (grain, crosshatch, dots)
+    _applyTileTextureOverlay(ctx, w, h, params) {
+        const mode    = params.tileTextureOverlay || 'none';
+        const opacity = params.tileTextureOpacity ?? 0.25;
+        if (mode === 'none' || opacity < 0.01) return;
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillStyle   = 'rgba(0,0,0,0.8)';
+        if (mode === 'grain') {
+            // Fine noise scatter
+            const seed = (params.randomSeed | 0) * 7 + w + h;
+            const rng  = this._lcg(seed);
+            const count = Math.round(w * h * 0.05);
+            for (let i = 0; i < count; i++) {
+                ctx.fillRect(Math.floor(rng() * w), Math.floor(rng() * h), 1, 1);
+            }
+        } else if (mode === 'crosshatch') {
+            const spacing = Math.max(4, Math.min(w, h) / 6);
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            for (let x = 0; x < w; x += spacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+            for (let y = 0; y < h; y += spacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+            ctx.stroke();
+        } else if (mode === 'dots') {
+            const spacing = Math.max(5, Math.min(w, h) / 5);
+            const r = spacing * 0.15;
+            for (let y = spacing / 2; y < h; y += spacing) {
+                for (let x = spacing / 2; x < w; x += spacing) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        ctx.restore();
+    },
+
+    // ─── Guillotine partition packer — guarantees 0 gap, 0 overlap ───────────
+    // Recursively bisects the canvas until tiles reach minSize. Each leaf is a
+    // tile. Split depth is mapped from gridColumns × gridRows tile-count target.
+    _guillotinePack(x, y, w, h, depth, maxDepth, preferLong, rng, tiles, types) {
+        const atLeaf = depth >= maxDepth || (w < 20 && h < 20);
+        if (atLeaf) {
+            // TIL-03: assign z-layer based on tile area (smaller tiles appear raised)
+            tiles.push({
+                x, y, w, h,
+                type:     types[Math.floor(rng() * types.length)],
+                colorIdx: Math.floor(rng() * 8),
+                zLayer:   Math.floor(rng() * 4)
+            });
+            return;
+        }
+        const splitHoriz = preferLong ? w >= h : rng() >= 0.5;
+        if (splitHoriz && w >= 20) {
+            const minCut = Math.max(1, Math.round(w * 0.2));
+            const maxCut = Math.round(w * 0.8);
+            const cut = minCut + Math.floor(rng() * (maxCut - minCut + 1));
+            this._guillotinePack(x, y, cut, h, depth + 1, maxDepth, preferLong, rng, tiles, types);
+            this._guillotinePack(x + cut, y, w - cut, h, depth + 1, maxDepth, preferLong, rng, tiles, types);
+        } else if (h >= 20) {
+            const minCut = Math.max(1, Math.round(h * 0.2));
+            const maxCut = Math.round(h * 0.8);
+            const cut = minCut + Math.floor(rng() * (maxCut - minCut + 1));
+            this._guillotinePack(x, y, w, cut, depth + 1, maxDepth, preferLong, rng, tiles, types);
+            this._guillotinePack(x, y + cut, w, h - cut, depth + 1, maxDepth, preferLong, rng, tiles, types);
+        } else {
+            tiles.push({
+                x, y, w, h,
+                type:     types[Math.floor(rng() * types.length)],
+                colorIdx: Math.floor(rng() * 8),
+                zLayer:   Math.floor(rng() * 4)
+            });
+        }
+    },
+
+    // ─── Layout — TIL-01/02 MaxRects (guillotine) ─────────────────────────────
     _buildLayout(W, H, params, seedOffset) {
         const rng = this._lcg(params.randomSeed + seedOffset * 1000003);
         const types = (Array.isArray(params.tileTypes) && params.tileTypes.length > 0)
@@ -258,39 +384,17 @@ export const SCRIPT_CONFIG = {
                     tiles.push({
                         x: c * tw, y: r * th, w: tw, h: th,
                         type:     types[Math.floor(rng() * types.length)],
-                        colorIdx: Math.floor(rng() * 8)
+                        colorIdx: Math.floor(rng() * 8),
+                        // TIL-03: z-layer for uniform grid — checkerboard pattern
+                        zLayer: (r + c) % 4
                     });
                 }
             }
         } else {
-            const base    = params.tileSize;
-            const count   = (params.gridColumns | 0) * (params.gridRows | 0);
-            const variance = base * 0.4;
-            const cands   = [];
-            for (let i = 0; i < count; i++) {
-                const tw = Math.max(10, Math.round(base + (rng() - 0.5) * 2 * variance));
-                const th = Math.max(10, Math.round(base * (0.5 + rng())));
-                cands.push({ tw, th });
-            }
-            if (params.layoutMode === 'Packed Rects B') {
-                cands.sort((a, b) => b.th - a.th);
-            }
-            let shelfX = 0, shelfY = 0, shelfH = 0;
-            for (const { tw, th } of cands) {
-                if (shelfX + tw > W) {
-                    shelfY += shelfH;
-                    shelfX = 0;
-                    shelfH = 0;
-                }
-                if (shelfY + th > H) break;
-                tiles.push({
-                    x: shelfX, y: shelfY, w: tw, h: th,
-                    type:     types[Math.floor(rng() * types.length)],
-                    colorIdx: Math.floor(rng() * 8)
-                });
-                shelfX += tw;
-                shelfH = Math.max(shelfH, th);
-            }
+            const targetCount = (params.gridColumns | 0) * (params.gridRows | 0);
+            const maxDepth = Math.max(1, Math.ceil(Math.log2(Math.max(1, targetCount))));
+            const preferLong = params.layoutMode === 'Packed Rects B';
+            this._guillotinePack(0, 0, W, H, 0, maxDepth, preferLong, rng, tiles, types);
         }
         return tiles;
     },
@@ -388,6 +492,83 @@ export const SCRIPT_CONFIG = {
                 }
                 break;
             }
+            // TIL-06: Truchet — two-arc quarter-circle variant per seeded RNG
+            case 'Truchet': {
+                ctx.fillStyle = col2;
+                ctx.fillRect(0, 0, iW, iH);
+                const seed = (params.randomSeed | 0) + colorIdx * 13;
+                const flip = (((seed * 2654435761) >>> 0) % 2) === 0;
+                const rr = Math.min(iW, iH) / 2;
+                ctx.strokeStyle = col;
+                ctx.lineWidth = Math.max(2, rr * 0.35);
+                ctx.lineCap = 'butt';
+                ctx.beginPath();
+                if (flip) {
+                    ctx.arc(0, 0, rr, 0, Math.PI / 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(iW, iH, rr, Math.PI, Math.PI * 1.5);
+                    ctx.stroke();
+                } else {
+                    ctx.arc(iW, 0, rr, Math.PI / 2, Math.PI);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(0, iH, rr, Math.PI * 1.5, Math.PI * 2);
+                    ctx.stroke();
+                }
+                break;
+            }
+            // TIL-06: Hex — hexagonal subdivision (semi-regular aesthetic)
+            case 'Hex': {
+                ctx.fillStyle = col2;
+                ctx.fillRect(0, 0, iW, iH);
+                const cx = iW / 2, cy = iH / 2;
+                const hr = Math.min(iW, iH) * 0.45;
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+                    const x = cx + hr * Math.cos(a), y = cy + hr * Math.sin(a);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = col;
+                ctx.fill();
+                ctx.strokeStyle = col2;
+                ctx.lineWidth = Math.max(1, hr * 0.08);
+                ctx.stroke();
+                // Inner triangle sub-division
+                ctx.strokeStyle = col2;
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 6; i++) {
+                    const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+                    const x = cx + hr * Math.cos(a), y = cy + hr * Math.sin(a);
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+                }
+                break;
+            }
+            // TIL-06: Triangle — isohedral triangle grid within the tile
+            case 'Triangle': {
+                ctx.fillStyle = col2;
+                ctx.fillRect(0, 0, iW, iH);
+                const rows = 3, cols = 3;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const x0 = c * iW / cols, x1 = (c + 1) * iW / cols;
+                        const y0 = r * iH / rows, y1 = (r + 1) * iH / rows;
+                        const parity = (r + c) % 2 === 0;
+                        ctx.beginPath();
+                        if (parity) {
+                            ctx.moveTo(x0, y1); ctx.lineTo(x1, y1); ctx.lineTo((x0 + x1) / 2, y0);
+                        } else {
+                            ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.lineTo((x0 + x1) / 2, y1);
+                        }
+                        ctx.closePath();
+                        ctx.fillStyle = (r + c) % 2 === 0 ? col : col2;
+                        ctx.fill();
+                    }
+                }
+                break;
+            }
             case 'Solid':
             default: {
                 ctx.fillStyle = col;
@@ -397,6 +578,8 @@ export const SCRIPT_CONFIG = {
         }
 
         this._applyLighting(ctx, iW, iH, params);
+        // TIL-04: per-tile texture overlay (grain/crosshatch/dots)
+        this._applyTileTextureOverlay(ctx, iW, iH, params);
         return oc;
     },
 
@@ -456,7 +639,12 @@ export const SCRIPT_CONFIG = {
     },
 
     _styleKey(params) {
-        return `${params.paletteSelection}|${params.paletteVariance}|${params.depthStrength}|${params.highlightIntensity}|${params.globalLightAngle}`;
+        const cwHash = (params.colourway || []).map(c => c.colour).join(',');
+        return `${params.paletteMode}|${params.paletteSelection}|${params.paletteVariance}|${params.depthStrength}|${params.highlightIntensity}|${params.globalLightAngle}|${cwHash}`;
+    },
+
+    _tileTexKey(params) {
+        return `${params.tileTextureOverlay}|${params.tileTextureOpacity}|${params.randomSeed}`;
     },
 
     // ─── Draw — CANVAS-009 spriteBlit ────────────────────────────────────────
@@ -477,6 +665,12 @@ export const SCRIPT_CONFIG = {
         if (sk !== this._lastStyleKey) {
             this._lastStyleKey = sk;
             this._spriteCache  = new Map();
+        }
+
+        const ttk = this._tileTexKey(params);
+        if (ttk !== this._lastTileTexKey) {
+            this._lastTileTexKey = ttk;
+            this._spriteCache    = new Map();
         }
 
         if (!this._spriteCache) this._spriteCache = new Map();
@@ -505,9 +699,19 @@ export const SCRIPT_CONFIG = {
         const tilesA = this._layoutA || [];
         const tilesB = this._layoutB || tilesA;
 
-        for (let i = 0; i < tilesA.length; i++) {
-            const tA = tilesA[i];
-            const tB = i < tilesB.length ? tilesB[i] : tA;
+        // TIL-03: build draw list; sort by zLayer ascending (lower z drawn first → higher z on top)
+        const drawList = tilesA.map((tA, i) => ({ tA, tB: i < tilesB.length ? tilesB[i] : tA }));
+        const useZStack = params.zStackEnabled;
+        if (useZStack) {
+            drawList.sort((a, b) => (a.tA.zLayer || 0) - (b.tA.zLayer || 0));
+        }
+
+        const shadowBlur   = params.zShadowBlur   ?? 6;
+        const shadowSpread = params.zShadowSpread  ?? 0.4;
+        const lightAngRad  = (params.globalLightAngle || 45) * Math.PI / 180;
+
+        for (let i = 0; i < drawList.length; i++) {
+            const { tA, tB } = drawList[i];
 
             const x = useMorph ? tA.x + (tB.x - tA.x) * morphT : tA.x;
             const y = useMorph ? tA.y + (tB.y - tA.y) * morphT : tA.y;
@@ -520,6 +724,20 @@ export const SCRIPT_CONFIG = {
             }
             const sprite = this._spriteCache.get(key);
 
+            // TIL-03: apply drop-shadow for z-stacked tiles
+            if (useZStack && (tA.zLayer || 0) > 0) {
+                const z = (tA.zLayer || 0);
+                const elevation = z * shadowSpread;
+                ctx.shadowBlur    = shadowBlur * z;
+                ctx.shadowColor   = 'rgba(0,0,0,0.4)';
+                ctx.shadowOffsetX = Math.cos(lightAngRad + Math.PI) * elevation * 4;
+                ctx.shadowOffsetY = Math.sin(lightAngRad + Math.PI) * elevation * 4;
+            } else {
+                ctx.shadowBlur    = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+
             if (useBreath) {
                 ctx.save();
                 ctx.translate(x + w / 2, y + h / 2);
@@ -530,6 +748,9 @@ export const SCRIPT_CONFIG = {
                 ctx.drawImage(sprite, x, y, w, h);
             }
         }
+
+        // Reset shadow after tile loop
+        ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
         if (params.overlayMode !== 'None' && this._noiseCanvas && params.textureStrength > 0) {
             ctx.save();

@@ -34,8 +34,31 @@ None.
 
 ## NOTE
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-033] — ui-layout.md Multiple Stale Entries**
+
+(1) `morphSpeed` documented as "`_globalT` increment per frame (frame-rate-dependent)" — RESOLVED; now frame-derived: `const globalT = (frame * morphSpeed) % 1`. Description is stale. (2) Preset format noted as flat object (now `{ name, values }` standard). (3) Export block and animatableParams entries in Missing Controls section — both now added per RESOLVED items.
+
+---
+
+**[STALE DOC] [DOC-034] — migration-log.md Stale**
+
+Open Items 1–7 describe pre-fix state. Items 1 (_globalT frame-derivation), 2 (preset format), 3 (export block), 4 (_samplePerimeter optimisation), 5 (state removal), animatableParams confirmed RESOLVED in issues-and-conflicts.md.
+
+---
+
 **[DESIGN] `circleRes` conflates sampling resolution with circle side count**
 `stages[3] = max(8, circleRes)` links the circle polygon side count to the perimeter sampling resolution. Increasing `circleRes` for smoother interpolation also makes the target "circle" a higher-sided polygon. These concerns could be separated into `circleRes` (sampling) and `maxSides` (circle polygon sides).
 
 **[DESIGN] Line stage (n=2) always closes with `p.endShape(CLOSE)`**
 Closing a 2-point shape draws: v0→v1→v0→close = a degenerate zero-area shape. Visually this appears as a line (the two paths overlap). Correct for the visual intent but may surprise users who inspect the shape structure.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-021 (P1, FIXED):** Live shape-array imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **PERF-011 (P2, WONTFIX):** Geometric grid morph has no worker/GPU acceleration path; high cell/resolution settings remain documented p5 limits.
+- **DOC-031 (P2, FIXED):** `ui-layout.md` refreshed against current frame-derived timing/preset/export state.
+- **DOC-032 (P2, FIXED):** `migration-log.md` refreshed against resolved implementation items.

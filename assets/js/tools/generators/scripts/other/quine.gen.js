@@ -15,6 +15,9 @@
  * @version 1.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+import { FontRegistry } from '../../../shared/typography/font-registry.js';
+
 // Source text rendered by this generator (partial quine - configuration block)
 const _QUINE_TEXT =
 `/** Quine - p5.js Generator
@@ -49,29 +52,37 @@ export const SCRIPT_CONFIG = {
     }
 };`;
 
-// Canvas output colours (used only in canvas draw calls — exempt from UI CSS variable rule per design-law §6.2)
-const _BG          = { r: 242, g: 238, b: 226 };
-const _INK_CODE    = { r: 45,  g: 42,  b: 48  };
-const _INK_COMMENT = { r: 125, g: 88,  b: 82  };
+// QUI-01: default canvas palette (used as fallbacks; colourway overrides at runtime)
+const _DEF_BG      = { r: 242, g: 238, b: 226 };
+const _DEF_CODE    = { r: 45,  g: 42,  b: 48  };
+const _DEF_COMMENT = { r: 125, g: 88,  b: 82  };
 
-const _W = 1080;
-const _H = 1080;
+// QUI-06: dimensions are dynamic — set in p5Setup from canvas config, not hardcoded
+// _W and _H used only in _makeState (passed in); all functions use state.W / state.H
 
 // Per-instance mutable state keyed by p5 instance — isolates state from the SCRIPT_CONFIG singleton
 const _instances = new WeakMap();
 
-function _makeState(imagined) {
-    const total   = _W * _H * 4;
+// QUI-01: hex string to {r,g,b} object
+function _hexToRGB(hex) {
+    const h = (hex || '#000000').replace('#', '');
+    return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) };
+}
+
+// QUI-06: W and H passed in dynamically
+function _makeState(imagined, W, H, bg) {
+    const total   = W * H * 4;
     const residue = new Float32Array(total);
     const echo    = new Float32Array(total);
     for (let i = 0; i < total; i += 4) {
-        residue[i] = _BG.r; residue[i + 1] = _BG.g; residue[i + 2] = _BG.b; residue[i + 3] = 0;
+        residue[i] = bg.r; residue[i + 1] = bg.g; residue[i + 2] = bg.b; residue[i + 3] = 0;
     }
     return {
         imagined,
-        ego:      _QUINE_TEXT,
-        past:     [],
-        present:  '',
+        W, H,
+        ego:         _QUINE_TEXT,
+        past:        [],
+        present:     '',
         charIndex:   0,
         lineIndex:   0,
         dormant:     false,
@@ -80,8 +91,8 @@ function _makeState(imagined) {
         nextFrame:   0,
         residue,
         echo,
-        passDir:     0,          // 0 = forward, 1 = backward — alternates each frame
-        activeX0: _W, activeY0: _H, activeX1: 0, activeY1: 0,
+        passDir:     0,
+        activeX0: W, activeY0: H, activeX1: 0, activeY1: 0,
     };
 }
 
@@ -113,10 +124,11 @@ function _charDelay(charIndex, ch, params) {
 
 // Read darkness from imagined buffer and transfer ink mass to residue.
 // Updates the active bounding box to cover newly inked pixels.
-function _absorbInk(state, urgency) {
-    const { imagined, residue } = state;
+function _absorbInk(state, urgency, inkAbsorption) {
+    const { imagined, residue, W } = state;
     imagined.loadPixels();
     const pixels = imagined.pixels;
+    const absCoeff = inkAbsorption || 1;
     let x0 = state.activeX0, y0 = state.activeY0;
     let x1 = state.activeX1, y1 = state.activeY1;
     for (let i = 0; i < pixels.length; i += 4) {
@@ -124,7 +136,8 @@ function _absorbInk(state, urgency) {
         const darkness = 255 - Math.max(pr, pg, pb);
         if (darkness > 20) {
             const existing = residue[i + 3];
-            const newWet   = Math.min(existing + (darkness / 255) * urgency, 50);
+            // QUI-03: inkAbsorption scales how much wet ink is absorbed
+            const newWet = Math.min(existing + (darkness / 255) * urgency * absCoeff, 50);
             if (existing > 0) {
                 const ratio = urgency / (existing + urgency);
                 residue[i]     = residue[i]     + (pr - residue[i])     * ratio;
@@ -135,7 +148,7 @@ function _absorbInk(state, urgency) {
             }
             residue[i + 3] = newWet;
             const pIdx = i >> 2;
-            const x = pIdx % _W, y = (pIdx / _W) | 0;
+            const x = pIdx % W, y = (pIdx / W) | 0;
             if (x < x0) x0 = x;
             if (y < y0) y0 = y;
             if (x > x1) x1 = x;
@@ -146,49 +159,61 @@ function _absorbInk(state, urgency) {
     state.activeX1 = x1; state.activeY1 = y1;
 }
 
-// Bidirectional diffusion limited to the active bounding box (dirty-region optimisation).
-// Single pass per frame (alternating forward/backward) using echo as a read-snapshot,
-// writing results back to residue. Uses 2 buffers instead of 3 (removes _reflection).
-function _diffuse(state, entropy, gravity) {
+// QUI-02: 8-directional diffusion with roughness-modulated bleed coefficient.
+// Uses state.W / state.H for dynamic canvas dimensions.
+function _diffuse(state, entropy, gravity, paperRoughness) {
     const residue = state.residue;
     const echo    = state.echo;
+    const W = state.W, H = state.H;
+    const roughness = paperRoughness || 0;
 
-    // Expand by 2 to safely capture all bleed targets of border pixels
-    const bx0 = Math.max(1,       state.activeX0 - 2);
-    const by0 = Math.max(1,       state.activeY0 - 2);
-    const bx1 = Math.min(_W - 2,  state.activeX1 + 2);
-    const by1 = Math.min(_H - 2,  state.activeY1 + 2);
+    const bx0 = Math.max(1,     state.activeX0 - 2);
+    const by0 = Math.max(1,     state.activeY0 - 2);
+    const bx1 = Math.min(W - 2, state.activeX1 + 2);
+    const by1 = Math.min(H - 2, state.activeY1 + 2);
 
     if (bx0 > bx1 || by0 > by1) { state.passDir = 1 - state.passDir; return; }
 
-    // Snapshot: copy residue → echo (read-only reference for this pass)
     for (let y = by0; y <= by1; y++) {
         for (let x = bx0; x <= bx1; x++) {
-            const i = (x + y * _W) * 4;
+            const i = (x + y * W) * 4;
             echo[i] = residue[i]; echo[i + 1] = residue[i + 1];
             echo[i + 2] = residue[i + 2]; echo[i + 3] = residue[i + 3];
         }
     }
 
-    let nx0 = _W, ny0 = _H, nx1 = 0, ny1 = 0;
+    let nx0 = W, ny0 = H, nx1 = 0, ny1 = 0;
     const fwd = state.passDir === 0;
-
     const y0i = fwd ? by0 : by1, y1i = fwd ? by1 : by0, yd = fwd ? 1 : -1;
     const x0i = fwd ? bx0 : bx1, x1i = fwd ? bx1 : bx0, xd = fwd ? 1 : -1;
 
+    // QUI-02: 8-directional neighbour offsets [dx, dy, weight]
+    // Cardinal = 1.0, diagonal = 0.5; downward gets +0.15 gravity bias
+    const DIRS = [
+        [1, 0, 1.0], [-1, 0, 1.0], [0, 1, 1.15], [0, -1, 0.85],
+        [1, 1, 0.5], [-1, 1, 0.5], [1, -1, 0.5], [-1, -1, 0.5]
+    ];
+
     for (let y = y0i; fwd ? y <= y1i : y >= y1i; y += yd) {
         for (let x = x0i; fwd ? x <= x1i : x >= x1i; x += xd) {
-            const here = (x + y * _W) * 4;
+            const here = (x + y * W) * 4;
             const vit  = echo[here + 3];
             if (vit > gravity) {
                 residue[here + 3] = vit - gravity * 0.5;
-                for (const n of [here + 4, here - 4, here + _W * 4, here - _W * 4]) {
+                for (const [dx, dy, dw] of DIRS) {
+                    const nx = x + dx, ny = y + dy;
+                    if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+                    const n = (nx + ny * W) * 4;
                     if (echo[n + 3] < vit) {
-                        const d = 0.15; // 0.3 * 0.5
+                        // QUI-03: roughness modulates bleed coefficient
+                        const rMod = roughness > 0
+                            ? 1 + roughness * (_pseudoNoise((x * 7 + y * 13 + n) & 0x7fffffff) - 0.5)
+                            : 1;
+                        const d = 0.15 * dw * rMod;
                         residue[n]     = residue[n]     + (echo[here]     - residue[n])     * d;
                         residue[n + 1] = residue[n + 1] + (echo[here + 1] - residue[n + 1]) * d;
                         residue[n + 2] = residue[n + 2] + (echo[here + 2] - residue[n + 2]) * d;
-                        residue[n + 3] = Math.min(echo[n + 3] + 0.3, vit * 0.8);
+                        residue[n + 3] = Math.min(echo[n + 3] + 0.3 * dw, vit * 0.8);
                     }
                 }
             }
@@ -200,8 +225,8 @@ function _diffuse(state, entropy, gravity) {
         }
     }
 
-    state.activeX0 = nx0 < _W ? nx0 : _W;
-    state.activeY0 = ny0 < _H ? ny0 : _H;
+    state.activeX0 = nx0 < W ? nx0 : W;
+    state.activeY0 = ny0 < H ? ny0 : H;
     state.activeX1 = nx1;
     state.activeY1 = ny1;
     state.passDir  = 1 - state.passDir;
@@ -209,12 +234,12 @@ function _diffuse(state, entropy, gravity) {
 
 // Cheaper entropy-only decay used during clearing and dormant phases (no neighbourhood bleed)
 function _decayResidue(state, entropy) {
-    const { residue, activeX0, activeY0, activeX1, activeY1 } = state;
+    const { residue, activeX0, activeY0, activeX1, activeY1, W, H } = state;
     if (activeX0 > activeX1 || activeY0 > activeY1) return;
-    let nx0 = _W, ny0 = _H, nx1 = 0, ny1 = 0;
+    let nx0 = W, ny0 = H, nx1 = 0, ny1 = 0;
     for (let y = activeY0; y <= activeY1; y++) {
         for (let x = activeX0; x <= activeX1; x++) {
-            const ai = (x + y * _W) * 4 + 3;
+            const ai = (x + y * W) * 4 + 3;
             const a  = Math.max(0, residue[ai] - entropy);
             residue[ai] = a;
             if (a > 0) {
@@ -234,43 +259,69 @@ export const SCRIPT_CONFIG = {
     description: 'A self-referential sketch that types its own source code onto simulated paper, with ink that bleeds and diffuses into the fibres.',
     version: '1.0.0',
 
-    canvas: { width: 1080, height: 1080, context: 'p5' },
+    canvas: {
+        width: 1080, height: 1080, context: 'p5',
+        // QUI-01: colourway for paper/code/comment colours
+        colourway: [
+            { id: 'paper',      label: 'Paper',        colour: '#f2ede2' },
+            { id: 'ink-code',   label: 'Ink (code)',   colour: '#2d2a30' },
+            { id: 'ink-comment',label: 'Ink (comment)',colour: '#7d5852' }
+        ]
+    },
 
     parameters: [
         {
             group: 'Ink',
             params: [
-                { key: 'entropy',    type: 'slider', label: 'Entropy',    min: 0.01, max: 0.5,  step: 0.01, default: 0.15 },
-                { key: 'urgency',    type: 'slider', label: 'Urgency',    min: 1,    max: 20,   step: 1,    default: 8 },
-                { key: 'gravity',    type: 'slider', label: 'Gravity',    min: 0.5,  max: 10,   step: 0.5,  default: 2 }
+                { key: 'entropy',       type: 'slider', label: 'Entropy',       min: 0.01, max: 0.5,  step: 0.01, default: 0.15 },
+                { key: 'urgency',       type: 'slider', label: 'Urgency',       min: 1,    max: 20,   step: 1,    default: 8 },
+                { key: 'gravity',       type: 'slider', label: 'Gravity',       min: 0.5,  max: 10,   step: 0.5,  default: 2 },
+                // QUI-03: ink absorption and paper texture
+                { key: 'inkAbsorption', type: 'slider', label: 'Ink Absorption', min: 0.2, max: 2, step: 0.1, default: 1, precision: 1 },
+                { key: 'paperRoughness',type: 'slider', label: 'Paper Roughness', min: 0,  max: 2, step: 0.1, default: 0, precision: 1 },
+                { key: 'paperTexture',  type: 'select', label: 'Paper Texture',
+                  options: [
+                    { value: 'none',  label: 'None (smooth)' },
+                    { value: 'grain', label: 'Grain' },
+                    { value: 'laid',  label: 'Laid (lines)' }
+                  ], default: 'none' }
             ]
         },
         {
             group: 'Typing',
             params: [
-                { key: 'delayScale', type: 'slider', label: 'Delay Scale',        min: 0.5, max: 4,  step: 0.1, default: 1 },
-                { key: 'pauseDelay', type: 'slider', label: 'Pause Delay (frames)', min: 5, max: 60, step: 5,   default: 20 }
+                { key: 'delayScale', type: 'slider', label: 'Delay Scale',          min: 0.5, max: 4,  step: 0.1, default: 1 },
+                { key: 'pauseDelay', type: 'slider', label: 'Pause Delay (frames)', min: 5,   max: 60, step: 5,   default: 20 }
             ]
         },
         {
             group: 'Text',
             params: [
-                { key: 'fontSize',   type: 'slider', label: 'Font Size',   min: 10, max: 28, step: 1, default: 16 },
-                { key: 'lineHeight', type: 'slider', label: 'Line Height', min: 14, max: 40, step: 1, default: 24 },
-                { key: 'margin',     type: 'slider', label: 'Margin',      min: 20, max: 80, step: 5, default: 50 }
+                // QUI-01: font selector via FontRegistry
+                { key: 'fontId',     type: 'select', label: 'Font',
+                  options: [{ value: 'monospace', label: 'System Monospace' },
+                            ...(() => {
+                                try { return FontRegistry.listFonts().filter(f => f.category === 'monospace').map(f => ({ value: f.id, label: f.family })); }
+                                catch(e) { return []; }
+                            })()], default: 'monospace' },
+                { key: 'fontSize',   type: 'slider', label: 'Font Size',   min: 8,  max: 36, step: 1, default: 16 },
+                { key: 'lineHeight', type: 'slider', label: 'Line Height', min: 10, max: 50, step: 1, default: 24 },
+                // QUI-07: margin as fraction of canvas width (0.02–0.1)
+                { key: 'marginFrac', type: 'slider', label: 'Margin (%)',  min: 0.02, max: 0.12, step: 0.01, default: 0.046, precision: 3 }
             ]
         }
     ],
 
     presets: [
-        { name: 'Classic',    values: { entropy: 0.15, urgency: 8,  gravity: 2, delayScale: 1,   pauseDelay: 20, fontSize: 16, lineHeight: 24, margin: 50 } },
-        { name: 'Fast',       values: { entropy: 0.2,  urgency: 6,  gravity: 3, delayScale: 0.5, pauseDelay: 10, fontSize: 16, lineHeight: 24, margin: 50 } },
-        { name: 'Slow Bleed', values: { entropy: 0.05, urgency: 12, gravity: 1, delayScale: 2,   pauseDelay: 30, fontSize: 14, lineHeight: 22, margin: 40 } }
+        { name: 'Classic',    values: { entropy: 0.15, urgency: 8,  gravity: 2, delayScale: 1,   pauseDelay: 20, fontSize: 16, lineHeight: 24, marginFrac: 0.046, inkAbsorption: 1,   paperRoughness: 0,   paperTexture: 'none' } },
+        { name: 'Fast',       values: { entropy: 0.2,  urgency: 6,  gravity: 3, delayScale: 0.5, pauseDelay: 10, fontSize: 16, lineHeight: 24, marginFrac: 0.046, inkAbsorption: 0.8, paperRoughness: 0,   paperTexture: 'none' } },
+        { name: 'Slow Bleed', values: { entropy: 0.05, urgency: 12, gravity: 1, delayScale: 2,   pauseDelay: 30, fontSize: 14, lineHeight: 22, marginFrac: 0.037, inkAbsorption: 1.5, paperRoughness: 0.8, paperTexture: 'grain' } }
     ],
 
+    // QUI-05: Cap at 30 FPS — O(W×H) diffusion on main thread; 60fps exceeds budget.
     animation: {
         type:             'infinite',
-        defaultFps:       60,
+        defaultFps:       30,
         animatableParams: ['entropy', 'urgency', 'gravity', 'delayScale'],
         sequencer:        false,
         animationExport:  false,
@@ -322,26 +373,60 @@ export const SCRIPT_CONFIG = {
     p5Setup(p, params) {
         p.pixelDensity(1);
         p.noLoop();
-        const imagined = p.createGraphics(_W, _H);
+        // QUI-06: use actual canvas dimensions, not hardcoded 1080
+        const W = p.width  || this.canvas.width  || 1080;
+        const H = p.height || this.canvas.height || 1080;
+        // QUI-01: resolve bg from colourway
+        const cw  = params.colourway || [];
+        const bgH = (cw.find(c => c.id === 'paper') || {}).colour || '#f2ede2';
+        const bg  = _hexToRGB(bgH);
+        // QUI-01: load all canvas fonts for font selector
+        FontRegistry.ensureLoaded();
+        const imagined = p.createGraphics(W, H);
         imagined.pixelDensity(1);
-        imagined.textFont('monospace');
         imagined.noStroke();
-        _instances.set(p, _makeState(imagined));
+        _instances.set(p, _makeState(imagined, W, H, bg));
     },
 
     p5Draw(p, params, frame) {
         let state = _instances.get(p);
+        const W = p.width  || this.canvas.width  || 1080;
+        const H = p.height || this.canvas.height || 1080;
+        // QUI-01: resolve palette from colourway
+        const cw = params.colourway || [];
+        const bgH  = (cw.find(c => c.id === 'paper')       || {}).colour || '#f2ede2';
+        const cdH  = (cw.find(c => c.id === 'ink-code')    || {}).colour || '#2d2a30';
+        const ccH  = (cw.find(c => c.id === 'ink-comment') || {}).colour || '#7d5852';
+        const BG      = _hexToRGB(bgH);
+        const INK_CODE    = _hexToRGB(cdH);
+        const INK_COMMENT = _hexToRGB(ccH);
+
         // Guard: re-initialise if p5Setup was not called before first p5Draw
-        if (!state) {
-            const imagined = p.createGraphics(_W, _H);
+        if (!state || state.W !== W || state.H !== H) {
+            if (state && state.imagined) state.imagined.remove();
+            // QUI-01: inject fonts
+            FontRegistry.ensureLoaded();
+            const imagined = p.createGraphics(W, H);
             imagined.pixelDensity(1);
-            imagined.textFont('monospace');
             imagined.noStroke();
-            state = _makeState(imagined);
+            state = _makeState(imagined, W, H, BG);
             _instances.set(p, state);
         }
 
-        const { entropy, urgency, gravity, fontSize, lineHeight, margin, pauseDelay } = params;
+        // QUI-07: margin as fraction of canvas width
+        const marginFrac = params.marginFrac ?? 0.046;
+        const margin     = Math.round(W * marginFrac);
+
+        const { entropy, urgency, gravity, fontSize, lineHeight, pauseDelay,
+                inkAbsorption, paperRoughness, paperTexture } = params;
+
+        // QUI-01: resolve font family from FontRegistry
+        const fontId = params.fontId || 'monospace';
+        let fontFamily = 'monospace';
+        if (fontId !== 'monospace') {
+            const entry = FontRegistry.listFonts().find(f => f.id === fontId);
+            if (entry) fontFamily = `'${entry.family}', monospace`;
+        }
 
         // Advance text state
         if (frame >= state.nextFrame) {
@@ -390,35 +475,37 @@ export const SCRIPT_CONFIG = {
         const im = state.imagined;
         im.clear();
         im.background(255);
+        im.textFont(fontFamily); // QUI-01: use resolved font family
         im.textSize(fontSize);
-        const maxLines = Math.floor((_H - margin * 2) / lineHeight);
+        // QUI-06: use dynamic H for maxLines calc; QUI-07: use computed margin
+        const maxLines = Math.floor((H - margin * 2) / lineHeight);
         const visible  = state.past.slice(-maxLines);
         for (let i = 0; i < visible.length; i++) {
             const yPos = margin + i * lineHeight;
-            const col  = _isComment(visible[i]) ? _INK_COMMENT : _INK_CODE;
+            const col  = _isComment(visible[i]) ? INK_COMMENT : INK_CODE;
             im.fill(col.r, col.g, col.b);
             im.text(visible[i], margin, yPos);
         }
         const curY = margin + visible.length * lineHeight;
-        if (curY < _H - margin && !state.clearing && !state.dormant) {
-            const col = _isComment(state.present) ? _INK_COMMENT : _INK_CODE;
+        if (curY < H - margin && !state.clearing && !state.dormant) {
+            const col = _isComment(state.present) ? INK_COMMENT : INK_CODE;
             im.fill(col.r, col.g, col.b);
             im.text(state.present + '_', margin, curY);
         }
 
         // Absorb ink from imagined into residue (also calls im.loadPixels())
-        _absorbInk(state, urgency);
+        _absorbInk(state, urgency, inkAbsorption);
 
-        // Diffuse or decay depending on phase
+        // QUI-02: diffuse with roughness; QUI-03: pass paperRoughness
         if (state.clearing) {
             _decayResidue(state, entropy);
         } else {
-            _diffuse(state, entropy, gravity);
+            _diffuse(state, entropy, gravity, paperRoughness);
         }
 
         // Composite
         const { residue } = state;
-        const imPixels = im.pixels; // already loaded by _absorbInk
+        const imPixels = im.pixels;
         p.loadPixels();
         for (let i = 0; i < p.pixels.length; i += 4) {
             const sR = imPixels[i], sG = imPixels[i + 1], sB = imPixels[i + 2];
@@ -429,11 +516,24 @@ export const SCRIPT_CONFIG = {
             } else if (wet > 0.5) {
                 const bR = residue[i], bG = residue[i + 1], bB = residue[i + 2];
                 const inf = Math.min(wet / 30, 0.6);
-                p.pixels[i]     = _BG.r + (bR - _BG.r) * inf;
-                p.pixels[i + 1] = _BG.g + (bG - _BG.g) * inf;
-                p.pixels[i + 2] = _BG.b + (bB - _BG.b) * inf;
+                // QUI-01: use colourway BG for composite base
+                p.pixels[i]     = BG.r + (bR - BG.r) * inf;
+                p.pixels[i + 1] = BG.g + (bG - BG.g) * inf;
+                p.pixels[i + 2] = BG.b + (bB - BG.b) * inf;
             } else {
-                p.pixels[i] = _BG.r; p.pixels[i + 1] = _BG.g; p.pixels[i + 2] = _BG.b;
+                let pr = BG.r, pg = BG.g, pb = BG.b;
+                // QUI-03: apply paper texture to background pixels
+                if (paperTexture === 'grain') {
+                    const n = _pseudoNoise(i >> 2) * 8 - 4;
+                    pr = Math.max(0, Math.min(255, pr + n));
+                    pg = Math.max(0, Math.min(255, pg + n));
+                    pb = Math.max(0, Math.min(255, pb + n));
+                } else if (paperTexture === 'laid') {
+                    // Horizontal laid lines: every 6 pixels darken slightly
+                    const row = ((i >> 2) / W) | 0;
+                    if (row % 6 === 0) { pr = pr - 8; pg = pg - 8; pb = pb - 8; }
+                }
+                p.pixels[i] = pr; p.pixels[i + 1] = pg; p.pixels[i + 2] = pb;
             }
             p.pixels[i + 3] = 255;
         }

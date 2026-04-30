@@ -8,6 +8,8 @@
  * @version 2.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // ═══════════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
@@ -51,37 +53,36 @@ function smoothstep(edge0, edge1, x) {
 // GRATING COMPUTATION
 // ═══════════════════════════════════════════════════════════════════
 
-function computeGratings(x, y, wavelength, angularFreq, phase, 
-                        centreOffset, weightA, weightB, count, mode) {
+// MOI-04: axA/ayA and axB/ayB are polar-resolved centres for gratings A and B.
+function computeGratings(x, y, wavelength, angularFreq, phase,
+                        axA, ayA, axB, ayB, weightA, weightB, count, mode) {
     const values = [];
-    
-    // Centre A (origin)
-    let gA = radialGrating(x, y, 0, 0, wavelength, phase - 0.25) * weightA;
+
+    // Centre A
+    let gA = radialGrating(x, y, axA, ayA, wavelength, phase - 0.25) * weightA;
     if (angularFreq > 0) {
-        gA *= angularGrating(x, y, 0, 0, angularFreq, -Math.PI / 2);
+        gA *= angularGrating(x, y, axA, ayA, angularFreq, -Math.PI / 2);
     }
     values.push(gA);
-    
-    // Centre B (offset)
-    if (count >= 2 && centreOffset > 0) {
-        let gB = radialGrating(x, y, centreOffset, 0, wavelength, phase - 0.25) * weightB;
+
+    // Centre B (active when count >= 2 and B is offset from A)
+    if (count >= 2 && (Math.abs(axB - axA) > 0.001 || Math.abs(ayB - ayA) > 0.001)) {
+        let gB = radialGrating(x, y, axB, ayB, wavelength, phase - 0.25) * weightB;
         if (angularFreq > 0) {
-            gB *= angularGrating(x, y, centreOffset, 0, angularFreq, -Math.PI / 2);
+            gB *= angularGrating(x, y, axB, ayB, angularFreq, -Math.PI / 2);
         }
         values.push(gB);
     }
-    
-    // Additional gratings with rotation
+
+    // Additional gratings with coordinate rotation (centres 2–3)
     for (let i = 2; i < count; i++) {
         const angle = (i - 1) * Math.PI / count;
-        const cosA = Math.cos(angle);
-        const sinA = Math.sin(angle);
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
         const xR = x * cosA + y * sinA;
         const yR = -x * sinA + y * cosA;
         values.push(radialGrating(xR, yR, 0, 0, wavelength, phase - 0.25 + i * 0.1));
     }
-    
-    // Combine
+
     let intensity = values[0];
     for (let i = 1; i < values.length; i++) {
         intensity = combineMoire(intensity, values[i], mode.toLowerCase());
@@ -134,69 +135,71 @@ function parseColor(hex) {
 // DRAW FUNCTION
 // ═══════════════════════════════════════════════════════════════════
 
-function draw(ctx, canvas, params, frame) {
+function draw(ctx, canvas, params, frame, colourway) {
     const w = canvas.width;
     const h = canvas.height;
     const imageData = ctx.createImageData(w, h);
     const data = imageData.data;
-    
-    // Parse colors
-    const fg = parseColor(params.fgColor || '#ffffff');
-    const bg = parseColor(params.bgColor || '#000000');
+
+    // MOI-02: read colours from colourway (X-007), fall back to legacy params
+    const cw  = colourway || [];
+    const fg  = parseColor(cw.find(c => c.id === 'foreground')?.colour || params.fgColor || '#ffffff');
+    const bg  = parseColor(cw.find(c => c.id === 'background')?.colour || params.bgColor || '#000000');
     const invert = params.invert === 'on';
-    
-    // Animation time
+
     const speed = params.phaseSpeed || 0.1;
     const animationTime = (frame / 60) * speed;
-    
-    // Grating parameters
-    const wavelength = params.wavelength || 0.02;
+
+    const wavelength  = params.wavelength  || 0.02;
     const angularFreq = params.angularFreq || 0;
-    const phase = (params.phaseOffset || 0) + animationTime;
+    const phase       = (params.phaseOffset || 0) + animationTime;
     const gratingCount = params.gratingCount || 2;
     const combineMode = params.combineMode || 'sum';
-    const threshold = params.threshold || 0.5;
-    
-    // Multi-centre
-    const centreOsc = params.centreOsc || 0;
-    const centreOffset = (params.centreOffset || 0) + Math.sin(animationTime * 2) * centreOsc;
-    const weightA = params.weightA || 1;
-    const weightB = params.weightB || 1;
-    
-    // Mask
-    const maskType = (params.maskType || 'none').toLowerCase();
-    const maskSize = params.maskSize || 1;
+    const threshold   = params.threshold   || 0.5;
+    const weightA     = params.weightA     || 1;
+    const weightB     = params.weightB     || 1;
+
+    // MOI-04: polar grating centres
+    const gAPolarR = params.gratingAPolarR || 0;
+    const gATheta  = (params.gratingAPolarTheta || 0) * Math.PI / 180;
+    const axA = gAPolarR * Math.cos(gATheta);
+    const ayA = gAPolarR * Math.sin(gATheta);
+
+    // Centre B — prefer new polar params; fall back to legacy centreOffset
+    const gBPolarR = params.gratingBPolarR != null ? params.gratingBPolarR : (params.centreOffset || 0);
+    const gBTheta  = (params.gratingBPolarTheta || 0) * Math.PI / 180;
+    const centreOscVal = (params.centreOsc || 0) * Math.sin(animationTime * 2);
+    const bR = gBPolarR + centreOscVal;
+    const axB = bR * Math.cos(gBTheta);
+    const ayB = bR * Math.sin(gBTheta);
+
+    const maskType    = (params.maskType    || 'none').toLowerCase();
+    const maskSize    = params.maskSize     || 1;
     const maskSoftness = params.maskSoftness || 0;
-    
+
     for (let py = 0; py < h; py++) {
         for (let px = 0; px < w; px++) {
-            // Normalize to [-1, 1]
             const x = (px / w) * 2 - 1;
             const y = (py / h) * 2 - 1;
-            
-            // Compute gratings
+
             let intensity = computeGratings(
                 x, y, wavelength, angularFreq, phase,
-                centreOffset, weightA, weightB, gratingCount, combineMode
+                axA, ayA, axB, ayB, weightA, weightB, gratingCount, combineMode
             );
-            
-            // Apply mask
+
             const mask = computeMask(x, y, maskType, maskSize, maskSoftness);
             intensity *= mask;
-            
-            // Threshold
+
             let on = intensity > threshold;
             if (invert) on = !on;
-            
+
             const color = on ? fg : bg;
             const i = (py * w + px) * 4;
-            data[i] = color.r;
-            data[i + 1] = color.g;
-            data[i + 2] = color.b;
-            data[i + 3] = 255;
+            data[i] = color.r; data[i + 1] = color.g;
+            data[i + 2] = color.b; data[i + 3] = 255;
         }
     }
-    
+
     ctx.putImageData(imageData, 0, 0);
 }
 
@@ -246,19 +249,178 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
-    // ComputeScheduler hints — Tier 2 only (per-pixel imageData draw mode).
-    // Reduces pixel count by 75% during slider interaction.
+    // ComputeScheduler — Tiers 1+2+3 (per-pixel imageData draw mode).
+    // Tier 2: 50% linear scale during interaction (−75% pixels).
+    // Tier 3: worker offload so UI thread is never blocked. PERF-003.
     compute: {
         cost: 'per-pixel',
         interactionScale: 0.5,
         idleDelay: 200,
+        worker: true,
+    },
+
+    /**
+     * Tier-3 worker function — self-contained; no module-scope references.
+     * Receives an empty ImageData (buffer transferred). Returns filled ImageData.
+     * Colors read from params._fgColor / params._bgColor injected by draw() fallback.
+     */
+    computePixels(imageData, params, frame) {
+        const W = imageData.width;
+        const H = imageData.height;
+        const data = imageData.data;
+
+        // ── Inline constants ──────────────────────────────────────────────────
+        const TWO_PI = Math.PI * 2;
+
+        // ── Inline helpers ────────────────────────────────────────────────────
+        function radialGrating(x, y, cx, cy, wavelength, phase) {
+            const dx = x - cx;
+            const dy = y - cy;
+            const r  = Math.sqrt(dx * dx + dy * dy);
+            return 0.5 + 0.5 * Math.sin(TWO_PI * (r / wavelength + phase));
+        }
+
+        function angularGrating(x, y, cx, cy, freq, offset) {
+            const dx    = x - cx;
+            const dy    = y - cy;
+            const angle = Math.atan2(dy, dx);
+            return 0.5 + 0.5 * Math.sin(freq * angle + offset);
+        }
+
+        function combineMoire(a, b, mode) {
+            switch (mode) {
+                case 'sum':     return (a + b) / 2;
+                case 'product': return a * b;
+                case 'min':     return Math.min(a, b);
+                case 'max':     return Math.max(a, b);
+                default:        return (a + b) / 2;
+            }
+        }
+
+        function smoothstep(edge0, edge1, x) {
+            const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+            return t * t * (3 - 2 * t);
+        }
+
+        function computeGratings(x, y, wavelength, angularFreq, phase,
+                                 axA, ayA, axB, ayB, weightA, weightB, count, mode) {
+            const values = [];
+            let gA = radialGrating(x, y, axA, ayA, wavelength, phase - 0.25) * weightA;
+            if (angularFreq > 0) {
+                gA *= angularGrating(x, y, axA, ayA, angularFreq, -Math.PI / 2);
+            }
+            values.push(gA);
+            if (count >= 2 && (Math.abs(axB - axA) > 0.001 || Math.abs(ayB - ayA) > 0.001)) {
+                let gB = radialGrating(x, y, axB, ayB, wavelength, phase - 0.25) * weightB;
+                if (angularFreq > 0) {
+                    gB *= angularGrating(x, y, axB, ayB, angularFreq, -Math.PI / 2);
+                }
+                values.push(gB);
+            }
+            for (let i = 2; i < count; i++) {
+                const angle = (i - 1) * Math.PI / count;
+                const cosA  = Math.cos(angle);
+                const sinA  = Math.sin(angle);
+                const xR    = x * cosA + y * sinA;
+                const yR    = -x * sinA + y * cosA;
+                values.push(radialGrating(xR, yR, 0, 0, wavelength, phase - 0.25 + i * 0.1));
+            }
+            let intensity = values[0];
+            for (let i = 1; i < values.length; i++) {
+                intensity = combineMoire(intensity, values[i], mode.toLowerCase());
+            }
+            return intensity;
+        }
+
+        function computeMask(x, y, type, size, softness) {
+            if (type === 'none') return 1;
+            let d;
+            switch (type) {
+                case 'circle':   d = Math.sqrt(x * x + y * y); break;
+                case 'triangle': d = Math.max(Math.abs(x) * 0.866 + y * 0.5, -y); break;
+                case 'square':   d = Math.max(Math.abs(x), Math.abs(y)); break;
+                default:         return 1;
+            }
+            if (softness > 0) return smoothstep(size + softness, size - softness, d);
+            return d < size ? 1 : 0;
+        }
+
+        function parseHex(hex) {
+            if (!hex || hex.length < 7) return { r: 128, g: 128, b: 128 };
+            const v = parseInt(hex.slice(1), 16);
+            return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
+        }
+
+        // ── Resolve colors (injected by draw() fallback; defaults to B&W) ─────
+        const fg     = parseHex(params._fgColor || '#ffffff');
+        const bg     = parseHex(params._bgColor || '#000000');
+        const invert = params.invert === 'on';
+
+        // ── Unpack params ─────────────────────────────────────────────────────
+        const speed        = params.phaseSpeed    || 0.1;
+        const animTime     = (frame / 60) * speed;
+        const wavelength   = params.wavelength    || 0.02;
+        const angularFreq  = params.angularFreq   || 0;
+        const phase        = (params.phaseOffset  || 0) + animTime;
+        const gratingCount = params.gratingCount  || 2;
+        const combineMode  = params.combineMode   || 'sum';
+        const threshold    = params.threshold     || 0.5;
+        const weightA      = params.weightA       || 1;
+        const weightB      = params.weightB       || 1;
+
+        const gAPolarR = params.gratingAPolarR     || 0;
+        const gATheta  = (params.gratingAPolarTheta || 0) * Math.PI / 180;
+        const axA      = gAPolarR * Math.cos(gATheta);
+        const ayA      = gAPolarR * Math.sin(gATheta);
+
+        const gBPolarR     = params.gratingBPolarR != null ? params.gratingBPolarR : (params.centreOffset || 0);
+        const gBTheta      = (params.gratingBPolarTheta || 0) * Math.PI / 180;
+        const centreOscVal = (params.centreOsc || 0) * Math.sin(animTime * 2);
+        const bR           = gBPolarR + centreOscVal;
+        const axB          = bR * Math.cos(gBTheta);
+        const ayB          = bR * Math.sin(gBTheta);
+
+        const maskType     = (params.maskType    || 'none').toLowerCase();
+        const maskSize     = params.maskSize     || 1;
+        const maskSoftness = params.maskSoftness || 0;
+
+        // ── Pixel loop ────────────────────────────────────────────────────────
+        for (let py = 0; py < H; py++) {
+            for (let px = 0; px < W; px++) {
+                const x = (px / W) * 2 - 1;
+                const y = (py / H) * 2 - 1;
+
+                let intensity = computeGratings(
+                    x, y, wavelength, angularFreq, phase,
+                    axA, ayA, axB, ayB, weightA, weightB, gratingCount, combineMode
+                );
+                intensity *= computeMask(x, y, maskType, maskSize, maskSoftness);
+
+                let on = intensity > threshold;
+                if (invert) on = !on;
+
+                const color = on ? fg : bg;
+                const i = (py * W + px) * 4;
+                data[i]     = color.r;
+                data[i + 1] = color.g;
+                data[i + 2] = color.b;
+                data[i + 3] = 255;
+            }
+        }
+
+        return imageData;
     },
 
     canvas: {
         width: 420,
         height: 420,
         context: '2d',
-        background: '#000000'
+        background: '#000000',
+        // MOI-02: X-007 colourway
+        colourway: [
+            { id: 'background',  label: 'Background',  colour: '#000000' },
+            { id: 'foreground',  label: 'Foreground',  colour: '#ffffff' }
+        ]
     },
     
     animation: {
@@ -280,60 +442,45 @@ export const SCRIPT_CONFIG = {
         {
             name: 'Classic',
             values: {
-                gratingCount: 2,
-                wavelength: 0.02,
-                angularFreq: 0,
-                phaseOffset: 0,
-                combineMode: 'sum',
-                threshold: 0.5,
-                centreOffset: 0.3,
-                weightA: 1,
-                weightB: 1,
-                phaseSpeed: 0.1,
-                maskType: 'none',
-                fgColor: '#ffffff',
-                bgColor: '#000000',
-                invert: 'off'
+                gratingCount: 2, wavelength: 0.02, angularFreq: 0, phaseOffset: 0,
+                combineMode: 'sum', threshold: 0.5,
+                gratingAPolarR: 0, gratingAPolarTheta: 0,
+                gratingBPolarR: 0.3, gratingBPolarTheta: 0,
+                weightA: 1, weightB: 1, phaseSpeed: 0.1, centreOsc: 0,
+                maskType: 'none', maskSize: 1, maskSoftness: 0, invert: 'off'
             }
         },
         {
             name: 'Angular',
             values: {
-                gratingCount: 2,
-                wavelength: 0.03,
-                angularFreq: 12,
-                phaseOffset: 0,
-                combineMode: 'product',
-                threshold: 0.4,
-                centreOffset: 0.2,
-                weightA: 1,
-                weightB: 1,
-                phaseSpeed: 0.05,
-                maskType: 'circle',
-                maskSize: 0.9,
-                fgColor: '#ffffff',
-                bgColor: '#000000',
-                invert: 'off'
+                gratingCount: 2, wavelength: 0.03, angularFreq: 12, phaseOffset: 0,
+                combineMode: 'product', threshold: 0.4,
+                gratingAPolarR: 0, gratingAPolarTheta: 0,
+                gratingBPolarR: 0.2, gratingBPolarTheta: 0,
+                weightA: 1, weightB: 1, phaseSpeed: 0.05, centreOsc: 0,
+                maskType: 'circle', maskSize: 0.9, maskSoftness: 0, invert: 'off'
             }
         },
         {
             name: 'Hypnotic',
             values: {
-                gratingCount: 3,
-                wavelength: 0.015,
-                angularFreq: 0,
-                phaseOffset: 0,
-                combineMode: 'min',
-                threshold: 0.3,
-                centreOffset: 0.4,
-                centreOsc: 0.2,
-                weightA: 1,
-                weightB: 0.8,
-                phaseSpeed: 0.2,
-                maskType: 'none',
-                fgColor: '#ffffff',
-                bgColor: '#000000',
-                invert: 'off'
+                gratingCount: 3, wavelength: 0.015, angularFreq: 0, phaseOffset: 0,
+                combineMode: 'min', threshold: 0.3,
+                gratingAPolarR: 0, gratingAPolarTheta: 0,
+                gratingBPolarR: 0.4, gratingBPolarTheta: 0,
+                weightA: 1, weightB: 0.8, phaseSpeed: 0.2, centreOsc: 0.2,
+                maskType: 'none', maskSize: 1, maskSoftness: 0, invert: 'off'
+            }
+        },
+        {
+            name: 'Offset Duo',
+            values: {
+                gratingCount: 2, wavelength: 0.025, angularFreq: 0, phaseOffset: 0,
+                combineMode: 'sum', threshold: 0.5,
+                gratingAPolarR: 0.2, gratingAPolarTheta: 45,
+                gratingBPolarR: 0.2, gratingBPolarTheta: 225,
+                weightA: 1, weightB: 1, phaseSpeed: 0.1, centreOsc: 0,
+                maskType: 'none', maskSize: 1, maskSoftness: 0, invert: 'off'
             }
         }
     ],
@@ -497,20 +644,19 @@ export const SCRIPT_CONFIG = {
             ]
         },
         {
-            group: 'Colors',
+            group: 'Grating Positions',
+            defaultCollapsed: true,
             params: [
-                {
-                    key: 'fgColor',
-                    type: 'color',
-                    label: 'Foreground',
-                    default: '#ffffff'
-                },
-                {
-                    key: 'bgColor',
-                    type: 'color',
-                    label: 'Background',
-                    default: '#000000'
-                },
+                // MOI-04: polar positions for gratings A and B
+                { key: 'gratingAPolarR',     type: 'slider', label: 'Grating A Radius',     min: 0, max: 1, step: 0.01, default: 0,   precision: 2 },
+                { key: 'gratingAPolarTheta', type: 'slider', label: 'Grating A Angle (°)',   min: 0, max: 360, step: 1, default: 0 },
+                { key: 'gratingBPolarR',     type: 'slider', label: 'Grating B Radius',     min: 0, max: 1, step: 0.01, default: 0.3, precision: 2 },
+                { key: 'gratingBPolarTheta', type: 'slider', label: 'Grating B Angle (°)',   min: 0, max: 360, step: 1, default: 0 }
+            ]
+        },
+        {
+            group: 'Display',
+            params: [
                 {
                     key: 'invert',
                     type: 'radio',
@@ -519,8 +665,14 @@ export const SCRIPT_CONFIG = {
                     default: 'off'
                 }
             ]
-        },
+        }
     ],
-    
-    draw: draw
+
+    draw(ctx, canvas, params, frame) {
+        // Sync colourway into params so subsequent worker dispatches get current colors.
+        const cw = this.canvas.colourway ?? [];
+        params._fgColor = cw.find(c => c.id === 'foreground')?.colour ?? '#ffffff';
+        params._bgColor = cw.find(c => c.id === 'background')?.colour ?? '#000000';
+        return draw(ctx, canvas, params, frame, cw);
+    }
 };

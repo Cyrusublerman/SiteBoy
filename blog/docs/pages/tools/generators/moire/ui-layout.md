@@ -1,32 +1,17 @@
 # Moiré — UI Layout
 
-## Parameter Groups
+## Parameter Groups (Live)
 
-| Group | Key | Type | Default | Range / Options |
-|---|---|---|---|---|
-| Gratings | `gratingCount` | slider | 2 | 1 → 4, step 1 |
-| Gratings | `wavelength` | slider | 0.02 | 0.005 → 0.1, step 0.001 |
-| Gratings | `angularFreq` | slider | 0 | 0 → 24, step 1 |
-| Gratings | `phaseOffset` | slider | 0 | 0 → 1, step 0.01 |
-| Combination | `combineMode` | dropdown | sum | sum / product / min / max |
-| Combination | `threshold` | slider | 0.5 | 0 → 1, step 0.01 |
-| Multi-Centre | `centreOffset` | slider | 0 | 0 → 1, step 0.01 |
-| Multi-Centre | `weightA` | slider | 1 | 0 → 1, step 0.01 |
-| Multi-Centre | `weightB` | slider | 1 | 0 → 1, step 0.01 |
-| Motion | `phaseSpeed` | slider | 0.1 | 0 → 1, step 0.01 |
-| Motion | `centreOsc` | slider | 0 | 0 → 1, step 0.01 |
-| Mask | `maskType` | dropdown | none | none / circle / triangle / square |
-| Mask | `maskSize` | slider | 1 | 0 → 1, step 0.01 |
-| Mask | `maskSoftness` | slider | 0 | 0 → 0.2, step 0.01 |
-| Colors | `fgColor` | color | #ffffff | hex colour picker |
-| Colors | `bgColor` | color | #000000 | hex colour picker |
-| Colors | `invert` | toggle | false | boolean |
-| Canvas | `canvasWidth` | slider | 420 | 256 → 1024, step 64 |
-| Canvas | `canvasHeight` | slider | 420 | 256 → 1024, step 64 |
+| Group | Keys |
+|---|---|
+| Gratings | `gratingCount`, `wavelength`, `angularFreq`, `phaseOffset` |
+| Combination | `combineMode` (radio), `threshold` |
+| Multi-Centre | `centreOffset`, `weightA`, `weightB` |
+| Motion | `phaseSpeed`, `centreOsc` |
+| Mask | `maskType` (radio), `maskSize`, `maskSoftness` |
+| Colors | `fgColor` (color), `bgColor` (color), `invert` (radio off/on) |
 
-**Total parameters: 19** across 7 groups.
-
-**Non-standard parameter types:** `color`, `toggle`, `dropdown` — these are used in the source but may not be supported by all host versions (see Issues).
+Canvas width/height sliders are not part of live parameter declarations.
 
 ## Presets
 
@@ -43,13 +28,12 @@ Presets use a nested `{ name, values: {...} }` format — full parameter maps, n
 - `type: 'infinite'` — runs continuously via `frame`-driven phase.
 - `defaultFps: 30`
 - `canPrerender: true`
-- **No `animatableParams` declared.** Animation is implicit — the `draw` function internally computes `animationTime` from `frame`. The host cannot identify which parameters drive animation for UI purposes.
+- `animatableParams` declared: `phaseOffset`, `threshold`, `centreOffset`, `wavelength`.
 
 ## Canvas
 
-- Fixed: 420×420, 2d context, black background.
-- `canvasWidth`/`canvasHeight` parameters declared but `draw` uses `canvas.width`/`canvas.height` — sliders are inert.
+- Fixed `420x420`, `2d`, black background.
 
 ## Export
 
-`png: true, gif: true, webm: true, sequence: true` (no SVG export).
+`png: true, gif: true, webm: true, sequence: true` (SVG not implemented).

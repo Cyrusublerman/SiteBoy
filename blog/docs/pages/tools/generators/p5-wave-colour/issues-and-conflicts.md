@@ -27,6 +27,20 @@ Reduced to 3-point forward-difference scheme: `_process` result at `(x,y)` is re
 **[PERFORMANCE] Main-thread pixel computation is too slow for 60fps**
 No Worker offload implemented. At `resolution=2`, ~79M arithmetic ops/frame; expected 5–15 fps. Documented in PERFORMANCE infoSection; resolution parameter and Tier 2 adaptive resolution are the primary mitigations.
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-024] — ui-layout.md Multiple Stale Entries**
+
+(1) Missing Controls table lists "No export block" — RESOLVED (export block added). (2) Missing Controls lists "animatableParams: Not declared" — check live source; issues-and-conflicts.md marks this resolved. (3) Preset format noted as "flat object (non-standard)" — RESOLVED (now `{ name, values }` format). (4) Animation section says "loopFrames conflict" is open — RESOLVED (p5Setup now syncs `animation.loopFrames = params.cycleFrames`).
+
+---
+
+**[STALE DOC] [DOC-025] — migration-log.md Stale**
+
+Open Items 1–9 describe pre-fix state. Items 1 (non-determinism), 2 (loopFrames), 4 (normalAt cache), 5 (preset format), 6 (export block) confirmed RESOLVED in issues-and-conflicts.md.
+
+---
+
 ## NOTE
 
 **[DESIGN] `opSpeed` change triggers full `_initOpStates` reset**
@@ -37,3 +51,12 @@ The triangle `{(540,54), (1026,1026), (54,1026)}` maps canvas coordinates to sph
 
 **[CORRECTNESS] `_normalAt` output formula**
 `_normalAt` returns `(2×nz×nx, 2×nz×ny, 2×nz²−1)` — this is a reflection of the unit normal about the Z axis, equivalent to the half-vector formula in Phong shading. Not a standard surface normal. The intended use in `_toColor` (`normal.dot(ref)`) treats it as a dot-product shading factor, which is consistent, but the naming is misleading.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-015 (P1, FIXED):** Live p5-wave-colour imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **PERF-005 (P2, WONTFIX):** Heavy p5 per-pixel pipeline has no Worker/GPU acceleration path; retained as documented performance limit.
+- **DOC-019 (P2, FIXED):** `ui-layout.md` refreshed against deterministic/loop/export/preset state.
+- **DOC-020 (P2, FIXED):** `migration-log.md` refreshed against resolved v1.1.0 live items.

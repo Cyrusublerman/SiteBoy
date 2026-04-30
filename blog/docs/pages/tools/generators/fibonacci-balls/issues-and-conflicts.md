@@ -36,5 +36,28 @@ When `fibIndexForCanvas = 15`, the actual canvas size becomes 987×987, but `SCR
 *Fix: Dead `_fibSeq: null` property removed from `SCRIPT_CONFIG`; only the module-level function `_fibSeq(n)` remains.*
 ~~The module-level pure function `_fibSeq(n)` and `SCRIPT_CONFIG._fibSeq: null` (unused property) coexist. `SCRIPT_CONFIG._fibSeq` is never assigned and never read; it appears to be a stale placeholder from an earlier design. Dead property.~~
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-035] — ui-layout.md Multiple Stale Entries**
+
+(1) Preset format noted as "flat object (non-standard)" — RESOLVED (now `{ name, values }` standard). (2) Missing Controls: "No export block; no PNG/GIF/WebM" — RESOLVED (export block added). (3) `velocityGrowth` notes column says "Per-frame velocity multiplier (unbounded growth)" — RESOLVED (speed cap added; growth is now bounded).
+
+---
+
+**[STALE DOC] [DOC-036] — migration-log.md Stale**
+
+Open Items 1 (velocity cap), 2 (preset format), 3 (export block), 6 (_fibSeq dead property) confirmed RESOLVED in issues-and-conflicts.md. Log needs updating.
+
+---
+
 **[PERFORMANCE] `_packFrontChain` fallback (36-angle scan) iterates all existing circles**
 At `N = 10`, the outer loop is 10 circles × 36 angles per failed primary placement — at most one fallback per circle. Minor, but the fallback is O(N × 36 × N) for the overlap check. At N = 10 this is 3600 ops, still acceptable.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-022 (P1, FIXED):** Live fibonacci-balls imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **PERF-012 (P2, WONTFIX):** Particle collision simulation has no worker/GPU path; high collision-pass settings remain a documented p5 limit.
+- **DOC-033 (P2, FIXED):** `ui-layout.md` refreshed against current preset/export/runtime state.
+- **DOC-034 (P2, FIXED):** `migration-log.md` refreshed against resolved implementation items.

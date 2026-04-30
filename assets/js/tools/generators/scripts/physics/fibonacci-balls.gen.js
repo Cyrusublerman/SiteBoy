@@ -13,6 +13,9 @@
  * @version 1.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+import { AudioOutput } from '../../../../shared/components/output/AudioOutput.js';
+
 // =====================================================
 // Fibonacci & Geometry helpers (module-level, shared)
 // =====================================================
@@ -167,7 +170,7 @@ export const SCRIPT_CONFIG = {
             group: 'Circles',
             params: [
                 { key: 'fibIndexForCanvas', type: 'slider', label: 'Fib Canvas Index', min: 10, max: 15, step: 1, default: 14 },
-                { key: 'maxFibIndex',       type: 'slider', label: 'Max Fib Index',    min: 4,  max: 12, step: 1, default: 12 }
+                { key: 'maxFibIndex',       type: 'slider', label: 'Max Fib Index',    min: 4,  max: 16, step: 1, default: 12 }
             ]
         },
         {
@@ -195,6 +198,16 @@ export const SCRIPT_CONFIG = {
             params: [
                 { key: 'trailLength',     type: 'slider', label: 'Trail Length',     min: 0,  max: 15,  step: 1,    default: 5 },
                 { key: 'trailAlphaDecay', type: 'slider', label: 'Trail Alpha Decay', min: 0.3, max: 0.95, step: 0.05, default: 0.6 }
+            ]
+        },
+        {
+            group: 'Sound',
+            collapsed: true,
+            params: [
+                { key: 'soundEnabled',  type: 'toggle', label: 'Collision Sound', default: false },
+                { key: 'soundGain',     type: 'slider', label: 'Gain',     min: 0,   max: 1,    step: 0.05, default: 0.3 },
+                { key: 'soundDuration', type: 'slider', label: 'Duration', min: 0.02, max: 0.5, step: 0.01, default: 0.12 },
+                { key: 'soundBaseFreq', type: 'slider', label: 'Base Freq (Hz)', min: 100, max: 1000, step: 10, default: 300 }
             ]
         }
     ],
@@ -232,20 +245,21 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
-    export: { png: true, gif: false, webm: false },
+    export: { png: true, gif: false, webm: true },
 
     animation: {
         type: 'infinite',
         defaultFps: 60,
         animatableParams: [],
         sequencer: false,
-        animationExport: false
+        animationExport: true
     },
 
     // State
     _circles: null,
     _canvasSize: 610,
     _lastCfgKey: null,
+    _audioOutput: null,
 
     _cfgKey(params) {
         return `${params.fibIndexForCanvas}|${params.maxFibIndex}`;
@@ -273,6 +287,18 @@ export const SCRIPT_CONFIG = {
         c2.l = this._colorMod(c2.l - lShift, 100);
         if (c1.l < 25) c1.l += 50; if (c1.l > 85) c1.l -= 30;
         if (c2.l < 25) c2.l += 50; if (c2.l > 85) c2.l -= 30;
+
+        // FIB-02: collision sound pitched by radius (larger ball → lower pitch)
+        if (params.soundEnabled && this._audioOutput) {
+            const maxR = Math.max(c1.r, c2.r);
+            // Inversely proportional to radius; anchor: r=89 → ~300 Hz at soundBaseFreq=300
+            const pitch = params.soundBaseFreq * (89 / Math.max(maxR, 1));
+            this._audioOutput.trigger(
+                Math.max(40, Math.min(pitch, 4000)),
+                params.soundDuration,
+                params.soundGain
+            );
+        }
     },
 
     _separate(c1, c2, params) {
@@ -317,6 +343,11 @@ export const SCRIPT_CONFIG = {
 
     _buildCircles(params) {
         const { fibIndexForCanvas, maxFibIndex, outerSpeed, innerSpeed } = params;
+        // FIB-01: perf-budget warning above 14 circles (O(N²) collision loop)
+        const expectedN = Math.max(0, maxFibIndex - 2);
+        if (expectedN > 14) {
+            console.warn(`fibonacci-balls: maxFibIndex=${maxFibIndex} yields ~${expectedN} circles; collision cost is O(N²) — expect frame drops on slow hardware.`);
+        }
         const seq  = _fibSeq(fibIndexForCanvas + 1);
         const size = seq[fibIndexForCanvas];
 
@@ -422,10 +453,26 @@ export const SCRIPT_CONFIG = {
         }
     },
 
+    // FIB-03: expose audio emitter for host to wire into AnimationExport
+    getAudioEmitter() {
+        return this._audioOutput;
+    },
+
+    destroy() {
+        if (this._audioOutput) {
+            this._audioOutput.destroy();
+            this._audioOutput = null;
+        }
+    },
+
     p5Setup(p, params) {
         p.colorMode(p.HSL, 360, 100, 100, 1);
         p.noStroke();
         p.noLoop();
+
+        // FIB-02: create audio emitter for collision sounds
+        if (this._audioOutput) this._audioOutput.destroy();
+        this._audioOutput = new AudioOutput({ waveform: 'sine', gain: params.soundGain ?? 0.3 }, {});
 
         const seq  = _fibSeq(params.fibIndexForCanvas + 1);
         this._canvasSize = seq[params.fibIndexForCanvas];

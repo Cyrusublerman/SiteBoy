@@ -34,12 +34,12 @@ Presets use full `{ name, values: {...} }` format.
 - `canPrerender: true`
 - `animatableParams: []` (explicitly empty)
 
-**Note:** The declared `loopFrames: 43200` is fixed in SCRIPT_CONFIG, but the actual cycle duration is `passDuration × 8` seconds (reconfigurable). Changing `passDuration` to 30 s produces a 240 s cycle, not 720 s — `loopFrames` is therefore inaccurate when `passDuration ≠ 90`. The animation runs on wall-clock time (not frame count), so `loopFrames` is used only by the host for export planning.
+**Note:** `loopFrames` is synchronised in `draw` from `passDuration × 8 × fps`, so export planning matches runtime timing.
 
 ## Canvas
 
-- Fixed: 800×800, 2d context. No background key (default transparent or unset).
-- `canvasWidth`/`canvasHeight` declared but `draw` reads `canvas.width`/`canvas.height` — sliders are inert.
+- Host canvas is 800×800 (`2d` context) by default.
+- `canvasWidth`/`canvasHeight` are active generator parameters and define the harmonics virtual drawing space centred inside the host canvas.
 
 ## Export
 

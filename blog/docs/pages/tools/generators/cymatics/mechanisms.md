@@ -6,13 +6,13 @@ Mathematical model class: two-dimensional scalar wave superposition with musical
 
 ## State Model
 
-All persistent state is held in module-level variables. This is a standards violation (see `issues-and-conflicts.md`). The `onDestroy` hook on SCRIPT_CONFIG resets these.
+All persistent state is held in module-level variables and reset via `destroy()` / `onDestroy()` compatibility hook on `SCRIPT_CONFIG`.
 
 | Variable | Type | Holds | Initialised | Mutates | Reset trigger |
 | --- | --- | --- | --- | --- | --- |
-| `sources` | Array of WaveSource | Active wave source objects; each holds position, frequency, amplitude | First `draw()` call via `setupSources()` | `amp`, `baseFreq`, `noteFreq`, `freq` updated live each frame; position and semitone immutable after setup | `onDestroy`: set to `[]` |
-| `particles` | Array of `{x, y, ox, oy}` | Grid of particle probes; `ox/oy` = rest position (immutable after setup); `x/y` = displaced position (updated per frame) | First `draw()` call via `initParticles()` | `x, y` updated every frame in `drawParticle()` | `onDestroy`: set to `[]` |
-| `t` | number | Time accumulator; advances as `t = frame × speed`; argument to wave phase: `sin(... − t)` | 0 at module load; set on first `draw()` call | Every frame: `t = frame × speed` | `onDestroy`: reset to 0 |
+| `sources` | Array of WaveSource | Active wave source objects; each holds position, frequency, amplitude | First `draw()` call via `setupSources()` | `amp`, `baseFreq`, `noteFreq`, `freq` updated live each frame; position and semitone immutable after setup | `destroy/onDestroy`: set to `[]` |
+| `particles` | Array of `{x, y, ox, oy}` | Grid of particle probes; `ox/oy` = rest position (immutable after setup); `x/y` = displaced position (updated per frame) | First `draw()` call via `initParticles()` | `x, y` updated every frame in `drawParticle()` | `destroy/onDestroy`: set to `[]` |
+| `t` | number | Time accumulator; advances as `t = frame × speed`; argument to wave phase: `sin(... − t)` | 0 at module load; set on first `draw()` call | Every frame: `t = frame × speed` | `destroy/onDestroy`: reset to 0 |
 
 ### WaveSource instance fields
 
@@ -139,10 +139,10 @@ where:
 
 ## Rebuild Mechanism
 
-There is no formal rebuild mechanism. The generator uses lazy initialisation: `particles.length === 0 || sources.length === 0`.
+Rebuild logic is explicit in `draw()`:
 
-**Critical limitation:** `setupSources()` and `initParticles()` are called only once per module load (until `onDestroy` fires). Parameters `template`, `chordType`, and `particleSpacing` set at first call determine layout forever. Subsequent param changes to these three parameters have no effect on the visual output. This is a bug — see `issues-and-conflicts.md`.
+- `template` or `chordType` change -> `setupSources()` + `buildPixelDistCache()` + particle rebuild
+- `particleSpacing` change -> `initParticles()` + `buildParticleDistCache()`
 
-**Live parameters** (take effect immediately): `rootNote`, `amplitude`, `speed`, `boost`, `vizMode`, `showSources`.
-
-**Frozen parameters** (only effective at first frame): `template`, `chordType`, `particleSpacing`.
+**Live parameters** (take effect immediately): `rootNote`, `amplitude`, `speed`, `boost`, `vizMode`, `showSources`.  
+**Rebuild parameters**: `template`, `chordType`, `particleSpacing`.

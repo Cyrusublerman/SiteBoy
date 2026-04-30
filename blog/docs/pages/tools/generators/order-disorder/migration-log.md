@@ -1,26 +1,35 @@
 # Order and Disorder — Migration Log
 
-## Status
+## Pack Updated
 
-**Implemented.** Port of `order_and_disorder` sketch. Influence-field point-grid animation with Perlin noise. Version 1.0.0.
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/pattern/order-disorder.gen.js`
 
-## Architectural Notes
+## Current State
 
-- Context: `p5`. Uses P5.js API including `p.noise()`.
-- Interface: `p5Setup` / `p5Draw` hooks.
-- Animation: `loop` declared but noise time is non-looping — effectively `infinite`.
-- Canvas: hardcoded 1080×1080.
-- State: `_points`, `_lastParams` on SCRIPT_CONFIG.
-- Rebuild guard: `gridSpacing | gridMargin` change detection.
+Implemented and live.
 
-## Open Items (priority order)
+Resolved since the original migration:
+- animation changed to infinite for non-looping noise
+- hardcoded canvas dimensions removed from point builder
+- static loopFrames conflict removed
+- `animatableParams` moved inside animation block
+- preset format converted to `{ name, values }`
+- export metadata added
+- point rendering batched
 
-1. **[HIGH] Fix noise looping** — change `t = frame × noiseTimeScale` to a modular form or switch `animation.type` to `'infinite'`. Either fix the loop claim or make the noise cycle match the frame cycle.
-2. **[HIGH] Fix `animation.loopFrames` conflict** — same fix needed as `golden-grid`.
-3. **[HIGH] Replace hardcoded canvas dimensions** — use `p.width`, `p.height` in `_buildPoints`; compute centre as `(p.width/2, p.height/2)` dynamically.
-4. **[HIGH] Batch `p.point` calls** — wrap in `p.beginShape(p.POINTS) / p.endShape()` for significant rendering performance improvement at high point counts.
-5. **[MEDIUM] Fix preset format** — add `values: { ... }` wrapper to all 3 presets.
-6. **[MEDIUM] Add `export` block** — at minimum `{ png: true }`.
-7. **[MEDIUM] Move state out of `SCRIPT_CONFIG`** — refactor `_points`, `_lastParams` to per-invocation scope.
-8. **[LOW] Replace raw colour values** — `background(255)`, `stroke(0)` → CSS-variable-derived values.
-9. **[LOW] Expose `radialCurve` parameter** — the hardcoded `^1` exponent for radial falloff could be a user-facing slider, consistent with the CCW curve exponent already implemented.
+## 2026-04-28 additions (ORD-01 – ORD-04)
+
+- **ORD-01 Canvas fit:** Default canvas fit corrected to `'fit'`; previously defaulted to a non-standard value causing misalignment with host layout.
+- **ORD-02 Noise type selector:** `NoiseTypeSelect` (X-010) integrated — `noiseType` param with Perlin/value/fBm options; dispatches to appropriate p5 noise call or custom implementation per selection.
+- **ORD-03 Worker path verification:** Worker offload path verified via X-011 cross-cutting audit; result: infeasible (see PERF-009). PERF-009 reopened for assessment.
+- **ORD-04 Colourway:** `colourway` wired into draw path via X-007 — `background`, `ordered`, `disordered` colour slots; draw path resolves RGB from these entries.
+
+## 2026-04-30 assessment (PERF-009)
+
+- **PERF-009 Worker offload: WONTFIX accepted limit.** `p.noise()` and `p.vertex()` require the p5 instance; the particle positions accumulate per-frame state incompatible with stateless worker dispatch. Documented in the `compute` block comment in source. Tier 1 RAF coalesce is the maximum applicable optimisation per `compute-scheduler.md` decision tree. PERF-009 closed.
+
+## Residuals
+
+- Dense grids remain expensive.
+- Radial curve exponent remains hardcoded.

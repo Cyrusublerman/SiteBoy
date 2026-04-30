@@ -117,6 +117,32 @@ Evidence: `params.canvasWidth` and `params.canvasHeight` are never referenced in
 
 ---
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-045] — ui-layout.md Multiple Stale Entries**
+
+(1) `canvasWidth`/`canvasHeight` still listed in parameter table with "not read in draw()" note — RESOLVED in v5.0.0 (parameters removed entirely). (2) Preset format note says "non-standard format" — the `{ name, values }` format is the correct current standard (all other generators were fixed FROM flat TO nested); the "non-standard" annotation is incorrect.
+
+---
+
+**[STALE DOC] [DOC-046] — migration-log.md Stale**
+
+Migration log written at original migration time. Module-level state, render hook, canvasWidth/canvasHeight, font, asteroid cache issues all confirmed RESOLVED in v5.0.0.
+
+---
+
+**[WRONG ANNOTATION] [DOC-047] — issues-and-conflicts.md Compliance Check Preset Format FAIL**
+
+Compliance check Standard says: "Standard contract: `{ name: '...', distanceScale: ..., ... }` (keys at top level per build-page.md §1.3)." However, all other generators were fixed FROM flat format TO `{ name, values: {} }` nested format as the correct standard. The FAIL annotation in this file describes the correct format as wrong. This is a documentation error in the compliance check, not a code defect.
+
+---
+
+**[OPEN] [GEN-002] — External Fetch to ipapi.co**
+
+`_requestLocation()` makes `fetch('https://ipapi.co/json/')` on every page load, sending user IP to a third-party geolocation service. Standards violation (generator must communicate only via render hook/`this`/`params`). Privacy implication: user IP disclosed without consent. Direction: user decision (remove geolocation, replace with browser Geolocation API, or document as intentional behaviour).
+
+---
+
 ## Escalation Issues
 
 **[NOTE] [ESCALATION] Algorithm candidate: Kepler equation solver**
@@ -130,3 +156,11 @@ Location: `computePlanetPosition(planet, T)` in `solar-system.gen.js`
 Description: Computes heliocentric ecliptic (x, y) coordinates from the six Keplerian orbital elements at time T, including the 3D rotation to ecliptic frame.
 Candidate library location: `assets/js/shared/algorithms/astronomy/kepler.js`
 Reason: non-trivial; named algorithm (NASA JPL method); reusable for any astronomical generator; not in shared library
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-027 (P1, FIXED):** Live solar-system imports no modules from `assets/js/shared/` (`zero-shared-imports`) despite reusable Kepler helpers.
+- **DOC-045 (P2, FIXED):** `ui-layout.md` refreshed against removed canvas controls and current animation/export semantics.
+- **DOC-046 (P2, FIXED):** `migration-log.md` refreshed against v5.0.0 architecture cleanup.

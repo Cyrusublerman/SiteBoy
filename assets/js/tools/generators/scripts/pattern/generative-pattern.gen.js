@@ -14,6 +14,8 @@
  * @version 1.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // SDF grid resolution: 80×80 cells → 10 px/cell on 800×800 canvas.
 // Chosen so SDF rebuild cost (O(SDF_RES² × E)) stays < 30 ms at max params.
 const SDF_RES = 80;

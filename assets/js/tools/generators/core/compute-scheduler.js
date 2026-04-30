@@ -305,12 +305,14 @@ export class ComputeScheduler {
 
         this._workerPending = false;
 
-        // Discard stale results
+        // Discard stale results (generation mismatch or size mismatch on resize)
         if (gen !== this._generation) return;
 
-        // Paint result
-        const ctx = this._getCtx();
-        if (ctx && imageData) {
+        // Paint result — guard dimension mismatch from rapid resize
+        const ctx    = this._getCtx();
+        const canvas = this._getCanvas();
+        if (ctx && imageData && canvas &&
+            imageData.width === canvas.width && imageData.height === canvas.height) {
             ctx.putImageData(imageData, 0, 0);
         }
 

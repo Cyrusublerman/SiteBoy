@@ -1,39 +1,36 @@
 # Wave Equation Synth — Description
 
-**Status: Unimplemented stub.** The live script produces only a black canvas. This description documents the intended design per the legacy specification.
-
-## Intended Design (per spec)
-
-Wave Equation Synth is an audio synthesis and visualisation tool. Users write mathematical equations that describe audio waveforms; the tool evaluates them to produce audio buffers, plays them via Web Audio API, and visualises them on canvas in one of three modes.
+Wave Equation Synth compiles predefined waveform equations into an audio buffer, plays the buffer through Web Audio, and visualises the waveform on a 420×420 canvas.
 
 ## Core Concept
 
-An equation is a mathematical expression in terms of variables `p`, `w`, `u`, `t`, `g`:
-- `p` — phase within a single wave cycle: [0, 1].
-- `w` — integer wave index (0-based).
-- `u` — normalised wave index: [0, 1] over the full duration.
-- `t` — time in seconds: `w / baseFrequency`.
-- `g` — global progress: [0, 1] over the full buffer.
+Each equation receives five index variables plus `Math`:
+- `p` — phase within one cycle, `[0,1)`.
+- `w` — integer wave index.
+- `u` — normalised wave index.
+- `t` — time in seconds.
+- `g` — global buffer progress.
 
-Example: `sin(2*pi*p)` produces a pure sine wave. `sin(2*pi*p) + 0.5*sin(4*pi*p)` adds a second harmonic. Up to 16 equations can be summed (one per stepper position).
+The live UI exposes four dropdown equation slots (`eq1`–`eq4`) rather than free-text entry.
 
 ## Audio Pipeline
 
-1. **Equation compilation (AUDIO-004):** Each equation string is safely compiled to a JavaScript function via a sandboxed `new Function(...)` construct. Safety constraints prevent DOM access.
-2. **Wave indexing (AUDIO-005):** For each sample `i` in the buffer (`sampleRate × duration` total samples), compute `p`, `w`, `u`, `t`, `g`.
-3. **Evaluation (AUDIO-006):** Evaluate all equations at each index; sum results.
-4. **AudioBuffer (AUDIO-007):** Write samples to a Web Audio API `AudioBuffer`; attach to an `AudioBufferSourceNode` for playback.
+1. Compile selected predefined expressions with restricted `new Function` scope.
+2. Generate a `Float32Array` buffer from `sampleRate × duration`.
+3. Sum active equations per sample, normalise by active count, and clamp to `[-1,1]`.
+4. Wrap the buffer in a mono Web Audio `AudioBuffer`.
+5. Start/stop looping playback through a `GainNode` when `playback` changes.
 
 ## Visualisation Modes
 
-- **Oscilloscope:** Plot the waveform as a polyline (amplitude vs phase) for `cyclesShown` complete cycles.
-- **Segmented:** Plot a segment of the buffer starting at `segmentStartWave`, showing `segmentWaveCount` waves.
-- **Circular Loop:** Map a waveform segment to polar coordinates: `r = R₀ × (1 + modulationDepth × y_i)`, producing a circular/Lissajous-type loop.
+- **Oscilloscope:** Plot the waveform as a polyline for `cyclesShown` complete cycles.
+- **Segmented:** Currently equivalent to Oscilloscope; segment-start controls are not exposed.
+- **Circular:** Map samples to polar coordinates: `r = R0 × (1 + modulationDepth × y_i)`.
 
 ## Export
 
-- WAV audio file (AUDIO-008): binary-encoded PCM.
-- PNG and GIF visual exports.
-- Segment WAV: export a sub-range of the buffer.
+- PNG visual export is enabled.
+- GIF/WebM export is disabled because animation is infinite with no loop point.
+- WAV encoding exists programmatically but is not host-exposed.
 
-Algorithm origin: additive sound synthesis (Fourier/Helmholtz); Web Audio API; oscilloscope visualisation; WAV PCM encoding (RIFF format).
+Known constraints: no free-text equations, no WAV UI action, CSPs that block `new Function` will block equation compilation.

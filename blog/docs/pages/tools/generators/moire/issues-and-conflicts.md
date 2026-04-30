@@ -58,6 +58,26 @@ Only CPU ImageData path available. Performance at resolutions above 420×420 lim
 
 ---
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-018] — ui-layout.md Multiple Stale Entries**
+
+(1) `combineMode` documented as `type: 'dropdown'` — live source uses `type: 'radio'` (RESOLVED in issues-and-conflicts.md but not reflected in ui-layout.md). (2) `maskType` documented as `type: 'dropdown'` — live: `type: 'radio'`. (3) `invert` documented as `type: 'toggle'`, `default: false` — live: `type: 'radio'`, `options: ['off', 'on']`, `default: 'off'`. (4) `canvasWidth`/`canvasHeight` still listed (removed). (5) Animation section says "No `animatableParams` declared" — live: `animatableParams: ['phaseOffset', 'threshold', 'centreOffset', 'wavelength']`.
+
+---
+
+**[STALE DOC] [DOC-019] — migration-log.md Stale**
+
+Open Items 1–10 describe pre-v2.0.0 state; many resolved. Items 1 (triangle mask fix), 3 (toggle→radio), 4 (animatableParams), 8 (canvasWidth), 9 (console.log) are confirmed RESOLVED in issues-and-conflicts.md.
+
+---
+
+**[RESOLVED] [ARCH] [ARCH-002] — draw: draw External Function Reference**
+
+Resolved by replacing the property assignment with an inline `draw(ctx, canvas, params, frame)` method on `SCRIPT_CONFIG`.
+
+---
+
 ## NOTE
 
 **[STANDARDS] — parseColor Called Every Frame**
@@ -69,3 +89,14 @@ Only CPU ImageData path available. Performance at resolutions above 420×420 lim
 **[STANDARDS] — weightA / weightB Sliders Capped at 1**
 
 `weightA` max=1, `weightB` max=1. Prevents asymmetric amplification; deliberate design choice, now documented in infoSections KNOWN LIMITATIONS.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **GEN-009 (P2, WONTFIX):** Reference parameter contract diverges where live removes canvas controls and keeps reduced mask/angle modulation options.
+- **EXP-002 (P1, WONTFIX):** SVG export absent for moire workflow requiring vector output parity.
+- **ARCH-011 (P1, FIXED):** Live moire imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **PERF-003 (P2, WONTFIX):** Per-pixel CPU path has no worker/GPU acceleration path despite heavy interference-field loops.
+- **DOC-013 (P2, FIXED):** `ui-layout.md` stale on control types (`dropdown`/`toggle`), removed canvas params, and animatable params.
+- **DOC-014 (P2, FIXED):** `migration-log.md` stale; open items still describe pre-v2.0.0 state already resolved in code.

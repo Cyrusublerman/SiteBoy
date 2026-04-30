@@ -1,48 +1,54 @@
 # Tile Mosaic — UI Layout
 
-**Status: Unimplemented stub.**
+Canvas: 800×800, `canvas2d`. Export: PNG.
 
-## Live Parameters (Current)
+## Parameters
 
-| Group | Key | Type | Default | Range |
-|---|---|---|---|---|
-| Tiles | `tileSize` | slider | 40 | 10 → 100, step 5 |
-
-**Total: 1 parameter.** `tileSize` is not read by the draw function.
-
-## Intended Parameters (per spec)
-
-### CONTROLS tab
-
-| Block | Key | Type | Range / Options |
+### Grid
+| Key | Type | Range | Default |
 |---|---|---|---|
-| Grid | `gridColumns` | slider | 4 → 80 |
-| Grid | `gridRows` | slider | 4 → 80 |
-| Grid | `tileSize` | slider | 10 → 80 |
-| Layout | `layoutMode` | dropdown | Uniform Grid / Packed Rects A / Packed Rects B |
-| Layout | `tileTypes` | toggle (multi) | Concentric / Wedge / Stripe / Solid / Texture / Micro |
-| Layout | `randomSeed` | number | 0 → 999999 |
-| Behavior | `animationMode` | dropdown | Static / Morph Layouts / Breathing / Texture Drift / All |
-| Behavior | `animationSpeed` | slider | 0.1 → 5 |
+| `gridColumns` | slider | 4–40 | 10 |
+| `gridRows` | slider | 4–40 | 10 |
+| `tileSize` | slider | 10–80 | 40 |
 
-### STYLE tab
-
-| Block | Key | Type | Range / Options |
+### Layout
+| Key | Type | Options | Default |
 |---|---|---|---|
-| Palette | `paletteSelection` | dropdown | Warm / Cool / Mixed / Earth / Pastel / High-Contrast |
-| Palette | `paletteVariance` | slider | 0 → 1 |
-| Depth | `depthStrength` | slider | 0 → 1 |
-| Depth | `highlightIntensity` | slider | 0 → 1 |
-| Depth | `globalLightAngle` | slider | 0 → 360 |
-| Texture | `textureStrength` | slider | 0 → 1 |
-| Texture | `overlayMode` | dropdown | None / Noise / Noise+Light |
+| `layoutMode` | dropdown | Uniform Grid / Packed Rects A / Packed Rects B | Uniform Grid |
+| `tileTypes` | toggle (multi) | Concentric / Wedge / Stripe / Solid / Texture / Micro / Truchet / Hex / Triangle | Concentric, Wedge, Stripe, Solid |
+| `randomSeed` | slider | 0–999999 | 42 |
 
-**Total intended: 15 parameters.**
+### Behaviour
+| Key | Type | Options | Default |
+|---|---|---|---|
+| `animationMode` | dropdown | Static / Morph Layouts / Breathing / Texture Drift / All | Static |
+| `animationSpeed` | slider | 0.1–5 | 1.0 |
 
-## Canvas (per spec)
+### Palette
+| Key | Type | Options | Default |
+|---|---|---|---|
+| `paletteMode` | select | Preset / Custom (Canvas colours) | Preset |
+| `paletteSelection` | dropdown | Warm / Cool / Mixed / Earth / Pastel / High-Contrast | Warm |
+| `paletteVariance` | slider | 0–1 | 0.3 |
 
-- 900×900 (spec), 800×800 (live stub). Conflict.
+### Depth
+| Key | Type | Range | Default |
+|---|---|---|---|
+| `depthStrength` | slider | 0–1 | 0.5 |
+| `highlightIntensity` | slider | 0–1 | 0.4 |
+| `globalLightAngle` | slider | 0–360° | 45 |
+| `zStackEnabled` | toggle | — | off |
+| `zShadowBlur` | slider | 0–24 | 6 |
+| `zShadowSpread` | slider | 0–1 | 0.4 |
 
-## Export (per spec)
+### Texture
+| Key | Type | Options | Default |
+|---|---|---|---|
+| `textureStrength` | slider | 0–1 | 0.3 |
+| `overlayMode` | dropdown | None / Noise / Noise+Light | None |
+| `tileTextureOverlay` | select | none / grain / crosshatch / dots | none |
+| `tileTextureOpacity` | slider | 0–1 | 0.25 |
 
-- PNG, SVG, GIF.
+## Presets
+
+Geometric · Organic · Neon Grid · Mosaic Flow · Pastel Dream

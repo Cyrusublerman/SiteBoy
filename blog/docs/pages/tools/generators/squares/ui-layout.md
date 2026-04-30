@@ -1,62 +1,24 @@
 # Squares — UI Layout
 
-## Parameters
+## Current State
 
-### Group: Grid (1 param)
+Squares is implemented as a 2D canvas card/grid illusion animation.
 
-| key | type | min | max | step | default | notes |
-|---|---|---|---|---|---|---|
-| `gridSize` | slider | 20 | 80 | 5 | 50 | Active — drives GRID and spiralPath rebuild |
+## Controls
 
-### Group: Timeline (2 params)
+The live UI exposes grid size, speed, seek, card geometry, transition settings, and visual controls.
 
-| key | type | min | max | step | default | notes |
-|---|---|---|---|---|---|---|
-| `speed` | slider | 0.5 | 3 | 0.1 | 1 | Active — scales time from frame |
-| `seek` | slider | 0 | 240 | 1 | 0 | **INERT** — declared but not read in `draw` |
+Removed: `canvasWidth` and `canvasHeight` sliders.
 
-### Group: Canvas (2 params)
+## Animation
 
-| key | type | min | max | step | default | notes |
-|---|---|---|---|---|---|---|
-| `canvasWidth` | slider | 400 | 1600 | 100 | 800 | **INERT** — host does not forward to canvas |
-| `canvasHeight` | slider | 400 | 1600 | 100 | 800 | **INERT** — host does not forward to canvas |
+- `seek` is wired into time: `t = (frame / 60) * speed + seek`.
+- `loopFrames` is accurate only at `speed = 1`; this remains a documented limitation.
 
-**Total: 5 parameters.** 3 are functional, 2 are inert.
+## Export
 
-## Animation Config
+PNG/GIF/WebM/sequence metadata exists according to the live export block, with loop-duration caveat at non-default speed.
 
-```js
-animation: {
-  type: 'loop',
-  loopDuration: 240,       // seconds
-  loopFrames: 240 * 60,    // 14400 (valid only at speed=1)
-  defaultFps: 60,
-  defaultSpeed: 1,
-  canPrerender: true
-}
-```
+## Performance Note
 
-`loopFrames` is accurate only when `speed = 1`. At other speeds, the effective loop is `14400 / speed` frames.
-
-## Presets
-
-| Name | gridSize | speed |
-|---|---|---|
-| Default | 50 | 1 |
-| Fine Grid | 80 | 1 |
-| Coarse Grid | 25 | 1 |
-| Fast | 50 | 2 |
-| Slow | 50 | 0.5 |
-
-Presets use the partial-object `{ values: {...} }` format. No `animatableParams` declared (animation is fully timeline-driven with no per-param interpolation).
-
-## Missing from Legacy Recommendations
-
-| Feature | Status |
-|---|---|
-| Play/Pause | Provided by host transport |
-| Restart | Provided by host transport |
-| Keyboard controls (Space, R, H) | Not implemented |
-| Info hide toggle | Not implemented |
-| Seek sync during playback | Seek inert |
+`spiralUnwind` uses O(1) index-map lookup instead of O(GRID⁴) linear scans. High grid settings still remain a transition hotspot with no worker/GPU path.

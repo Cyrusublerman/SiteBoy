@@ -46,6 +46,17 @@
 Total: 16/16
 Status: closed — all files at score 2
 
+## 2026-04-28 additions (CLK-01 – CLK-03, CLK-05)
+
+- **CLK-01 Reset:** `RESET` action rewinds to frame 0 and re-runs `p5Setup` init via X-016 host protocol.
+- **CLK-02 Param boundary:** Param updates are applied at frame boundary; simulation is not advanced on a param change (prevents physics glitch on mid-run adjustment).
+- **CLK-03 Modulation matrix:** `g1ToG2`, `g2ToG1`, and coupling channel params surfaced in `Coupling` group; previously hardcoded. Cross-field coupling between physics fields now user-configurable.
+- **CLK-05 Step symmetry:** `p5Draw` update order audited; symmetry-preserving update confirmed — both fields advance with the same stale reads, avoiding first-field bias.
+
+## 2026-04-29 additions (CLK-04)
+
+- **CLK-04 Trail + modulator animation:** `Trail` param group (`trailLength 0–30`, `trailDecay 5–95%`). `p.colorMode` initialised with alpha channel (100 range). `p5Draw` background fill uses semi-transparent black derived from `trailDecay`, accumulating persistence trails. `g1ToG2`, `g2ToG1`, `hueCycleRate` added to `animatableParams` for LFO modulation via `AnimateParamControl`.
+
 ## Notes
 
 - The one-frame rendering lag bug (render reads post-swap `next1`/`next2` instead of `grid1`/`grid2`) was identified during mechanisms analysis and is flagged as WARN [BUG] in issues-and-conflicts.md.

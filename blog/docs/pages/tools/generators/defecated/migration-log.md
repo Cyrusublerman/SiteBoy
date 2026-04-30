@@ -2,34 +2,37 @@
 
 ## Status
 
-**Not implemented** in generator system. Live script is a placeholder stub. Full implementation exists as `defecated-tool.js` (ToolBase, iframe-based P5 WebGL). Three architectural host extensions are required before migration is possible.
+**Live: v2.0.0.** The generator is fully implemented in `assets/js/tools/generators/scripts/other/defecated.gen.js`. It does not use the legacy `defecated-tool.js` ToolBase/iframe architecture; that file is superseded.
 
-## Source of Truth for Intended Behaviour
+## Live Implementation Summary
 
-- `assets/js/tools/generators/defecated-tool.js` — complete implementation reference
-- TOOL_CONFIG contains all parameter definitions, timing, and shader logic
+- Canvas: 800×600, `context: 'p5'` (P5 WebGL mode)
+- Animation: `infinite`, 60 fps; no sequencer; no GIF/WebM export
+- GLSL shader: ink-bleed effect with directional spread and noise-warped edges (DEF-02)
+- Font cycling: `FontRegistry.listFonts()` — all canvas fonts, display/handwriting priority first (DEF-01)
+- Text input: `textMode` radio (Preset/Custom); preset dropdowns for line1/line2/line3; free-text `customText` field for custom mode (DEF-04)
+- Parameter groups: Text, Layout, Timing, Effect, Display
 
-## Architectural Prerequisites (must complete before migration)
+## Architecture Resolution (vs. original blockers)
 
-1. **[BLOCKER] Add `context: 'webgl'` support to generative-tool-host** — host must create a WebGL canvas and pass `gl` context (or a P5 WebGL instance) to the draw function. Current 2D and P5 2D contexts are insufficient.
-2. **[BLOCKER] Add `text` input type to SCRIPT_CONFIG parameter system** — free-text inputs required for `line1`, `line2`, `line3`. Alternatively, expose a set of preset strings via `dropdown`.
-3. **[BLOCKER] Resolve non-determinism** — decide whether to accept infinite/non-deterministic output (no pre-render, no export beyond PNG) or redesign font selection as seeded/parameterised.
+| Original blocker | Resolution |
+|---|---|
+| Host WebGL context | Resolved via `context: 'p5'` with P5 WEBGL mode — P5 creates and manages WebGL context internally |
+| Text input type | Resolved: `type: 'text'` + `type: 'dropdown'` for preset mode; `type: 'radio'` for mode switch |
+| Non-determinism | Accepted: font sequence advances per animation tick; PNG snapshot only |
 
-## Migration Steps (after prerequisites)
+## Parameters (live v2.0.0)
 
-1. Port GLSL shader from template string in `defecated-tool.js` to a `draw` function using the WebGL context.
-2. Port `calculateSizes`, `drawTextToGraphics` to the generator context.
-3. Port font queue management (shuffle, advance, swap buffers).
-4. Define SCRIPT_CONFIG parameters: text lines, layout sliders, timing sliders.
-5. Decide on font set: embedded subset vs external CDN (offline viability).
-6. Remove iframe/ToolBase architecture.
-7. Add `export: { png: true }` — static snapshot only; GIF/WebM not viable without pre-render.
-8. Test with host P5 WebGL or raw WebGL context.
+| Group | Key | Type |
+|---|---|---|
+| Text | `textMode` | radio (Preset/Custom) |
+| Text | `customText` | text |
+| Text | `line1`, `line2`, `line3` | dropdown |
+| Layout | `targetWidth`, `maxHeight`, `lineGap` | slider |
+| Timing | `morphTime`, `power` | slider |
+| Effect | `blurMax` | slider |
+| Display | `displayOptions` | toggle |
 
-## Open Items
+## Closed Items
 
-1. **[BLOCKER] Host WebGL context** — see prerequisites.
-2. **[BLOCKER] Text input type** — see prerequisites.
-3. **[HIGH] Decide font delivery** — CDN vs bundled subset vs CSS-variable-selected system fonts.
-4. **[MEDIUM] Offline-first design** — replace Google Fonts CDN dependency.
-5. **[LOW] Deterministic font sequence** — optional; use param-seeded shuffle for reproducibility.
+All original architectural blockers resolved in v2.0.0. Stale "Not implemented" migration-log overwritten 2026-04-30.

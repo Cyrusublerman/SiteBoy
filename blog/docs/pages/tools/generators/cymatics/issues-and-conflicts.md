@@ -75,6 +75,26 @@ No Web Audio API in live source. Audio feedback feature documented and expected 
 
 ---
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-015] — mechanisms.md Multiple Stale Entries**
+
+(1) State model references `onDestroy` hook as the reset trigger — RESOLVED; now `destroy()` method on SCRIPT_CONFIG. (2) Render Loop step 1 describes pre-fix lazy-init (`particles.length === 0 || sources.length === 0` fires only once) — live source now includes change detection for `template`/`chordType`/`particleSpacing`. (3) Function inventory missing `buildPixelDistCache` and `buildParticleDistCache` (added as performance mitigation). (4) Rebuild Mechanism section describes frozen params as a current bug — bug is fixed in v1.0.1.
+
+---
+
+**[STALE DOC] [DOC-016] — ui-layout.md Multiple Stale Entries**
+
+(1) `canvasWidth`/`canvasHeight` still listed in parameter table and sidebar structure (Canvas group removed in v1.0.1). (2) `chordType`, `template`, `particleSpacing` Controls column notes say "Applied only at first frame; changing after first frame has no effect" — bug fixed; change detection now handles all three. (3) Preset format note says "non-standard" — now standard `{ name, values }` format. (4) Sidebar structure includes Canvas group (removed).
+
+---
+
+**[MISSING DOC] [DOC-017] — migration-log.md Stale + source-reference.md Absent**
+
+Migration log Open Items all describe pre-v1.0.1 state; many are resolved. Claims `source-reference.md` was produced with compliance score 2, but the file does not exist in the folder.
+
+---
+
 ## Escalation Issues
 
 **[NOTE] [ESCALATION] Algorithm candidate: 2D wave interference computation**
@@ -82,3 +102,16 @@ No Web Audio API in live source. Audio feedback feature documented and expected 
 
 **[NOTE] [ESCALATION] Algorithm candidate: semitone-to-frequency mapping**
 `this.noteFreq = baseFreq * Math.pow(2, semitone / 12)` remains a candidate for `assets/js/shared/algorithms/music/temperament.js`.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **GEN-008 (P2, FIXED):** Added `onDestroy()` compatibility hook delegating to `destroy()` so reference lifecycle contract is honoured.
+- **ARCH-009 (P1, FIXED):** Live cymatics imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **ARCH-010 (P1, SKIPPED-PHASE-3):** Full BaseComponent conversion is a structural refactor beyond this batch scope; queued as `Q-mid-fix-ARCH-010`.
+- **PERF-001 (P1, FIXED):** Added Tier-3 worker compute path (`compute.worker` + `computePixels`) for per-pixel density workloads.
+- **PERF-002 (P2, FIXED):** Added offscreen render staging for density/radial modes and worker-backed pixel compute fallback.
+- **DOC-010 (P2, FIXED):** `description.md` updated to reflect live rebuild-on-change behaviour.
+- **DOC-011 (P2, FIXED):** `ui-layout.md` updated to remove stale inert/frozen canvas and rebuild claims.
+- **DOC-012 (P2, FIXED):** `mechanisms.md` updated for destroy/onDestroy lifecycle and rebuild flow.

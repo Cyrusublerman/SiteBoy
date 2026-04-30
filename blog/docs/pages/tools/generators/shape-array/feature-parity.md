@@ -33,3 +33,90 @@ No legacy specification. Parity analysis is internal self-consistency and standa
 | State on SCRIPT_CONFIG | PASS | `_globalT` removed; no persistent state on config object |
 | `_globalT` frame-rate-dependent | PASS | Fixed to `(frame × morphSpeed) % 1` v1.1.0 |
 | Raw P5 colour values | NON-STANDARD | Conditional literals 20/245 |
+
+---
+
+## v4 Review (2026-04-23)
+
+### Reference Capability Table
+
+| cap_id | kind | name | evidence | notes |
+|---|---|---|---|---|
+| R-01 | behaviour | staged shape morph engine | reference/generators/shape-array/source/shape-array.gen.js:119-129 | 2->3->4->circle stages |
+| R-02 | behaviour | grid ripple phase propagation | reference/generators/shape-array/source/shape-array.gen.js:149-153 | `(col+row)*phaseOffset` |
+| R-03 | behaviour | perimeter sampling interpolation | reference/generators/shape-array/source/shape-array.gen.js:84-117 | equal-perimeter sampling |
+| R-04 | behaviour | centered grid render with stroke style | reference/generators/shape-array/source/shape-array.gen.js:142-164 | grid offsets + draw |
+| R-05 | param | grid/shape/animation/style controls | reference/generators/shape-array/source/shape-array.gen.js:21-50 | 9 controls |
+| R-06 | interaction | presets + infinite animation | reference/generators/shape-array/source/shape-array.gen.js:53-72 | 3 presets |
+
+### Function Coverage Map
+
+| unit_id | unit_kind | name | lines | mapped_to |
+|---|---|---|---|---|
+| F-01 | method | _polygon/_samplePerimeter/_lerpShape | 75-117 | R-03 |
+| F-02 | method | _getShape | 119-129 | R-01 |
+| F-03 | method | p5Draw (phase logic) | 149-153 | R-02 |
+| F-04 | method | p5Draw (draw path) | 142-164 | R-04 |
+| F-05 | top-level-stmt | parameters block | 21-50 | R-05 |
+| F-06 | top-level-stmt | presets/animation block | 53-72 | R-06 |
+
+### Live Capability Table
+
+| cap_id | kind | name | evidence | notes |
+|---|---|---|---|---|
+| L-01 | behaviour | staged shape morph engine | assets/js/tools/generators/scripts/pattern/shape-array.gen.js:186-214 | equivalent stage mapping |
+| L-02 | behaviour | grid ripple phase propagation | assets/js/tools/generators/scripts/pattern/shape-array.gen.js:205-211 | same diagonal phase model |
+| L-03 | behaviour | perimeter sampling interpolation | assets/js/tools/generators/scripts/pattern/shape-array.gen.js:133-170 | cumulative-length + binary search |
+| L-04 | behaviour | centered grid render with stroke style | assets/js/tools/generators/scripts/pattern/shape-array.gen.js:182-226 | same draw path |
+| L-05 | param | grid/shape/animation/style controls | assets/js/tools/generators/scripts/pattern/shape-array.gen.js:58-88 | unchanged control surface |
+| L-06 | interaction | presets + infinite animation | assets/js/tools/generators/scripts/pattern/shape-array.gen.js:90-123 | wrapper presets + export flags |
+
+### Diff Table
+
+| cap_id | ref_name | live_match | status | live_evidence | flow_divergence | decision | severity |
+|---|---|---|---|---|---|---|---|
+| R-01 | staged morph | L-01 | present | shape-array.gen.js:186-214 | deterministic frame-based timing | none | — |
+| R-02 | phase ripple | L-02 | present | shape-array.gen.js:205-211 | unchanged | none | — |
+| R-03 | perimeter sampling | L-03 | present | shape-array.gen.js:133-170 | accelerated sampling path | none | — |
+| R-04 | centered render | L-04 | present | shape-array.gen.js:182-226 | unchanged | none | — |
+| R-05 | parameter surface | L-05 | present | shape-array.gen.js:58-88 | unchanged | none | — |
+| R-06 | preset/animation surface | L-06 | present | shape-array.gen.js:90-123 | standards metadata added | none | — |
+
+### Library Hygiene Report
+
+**Check 1 — Shared algorithm imports**
+- Imports found: none from `assets/js/shared/*`
+- Inlined reusable candidates: polygon sampling and shape interpolation helpers
+
+**Check 2 — Foundation usage**
+- AnimationFoundation: no raw RAF/interval APIs
+- GPUFoundation: no raw GPU APIs
+
+**Check 3 — BaseComponent / MathematicalFoundation**
+- BaseComponent: procedural SCRIPT_CONFIG module
+- MathematicalFoundation: grid-offset maths inlined
+
+**Check 4 — State scope smells**
+- no persistent cross-frame SCRIPT_CONFIG state (improved vs reference)
+
+**Issues logged:** ARCH-021
+
+### Performance Tier Audit
+
+**Primary workload:** geometric/p5  
+**Workload size estimate:** O(cols * rows * circleRes) with optimised shared stage sampling
+
+**Tier 1 (RAF coalesce):** implicit via host  
+**Tier 2 (Adaptive resolution):** absent  
+**Tier 3 (Worker offload):** absent  
+**Tier 4 (GPU):** absent
+
+**Issues logged:** PERF-011
+
+### v4 issues logged
+
+- ARCH-021, PERF-011, DOC-031, DOC-032
+
+### v4 questions queued
+
+- none (shape-array turn)

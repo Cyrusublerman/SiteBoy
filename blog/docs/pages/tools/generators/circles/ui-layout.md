@@ -1,45 +1,23 @@
 # Circles — UI Layout
 
-## Parameter Groups
+## Current State
 
-| Group | Key | Type | Default | Range / Options |
-|---|---|---|---|---|
-| Display | `displayMode` | radio | Lines | Lines / B/W / Gradient |
-| Animation | `circleCount` | slider | 100 | 10 → 200, step 1 |
-| Animation | `cycleFrames` | slider | 3600 | 600 → 7200, step 60 |
+Circles is implemented as a lightweight 2D canvas loop.
 
-**Total parameters: 3** across 2 groups.
+## Controls
 
-**Missing from legacy spec recommendations:**
-- `largestRadius` (outer radius) slider — outer radius is derived from canvas size only.
-- Line width slider — hardcoded to 1.
-- Colour customisation — hardcoded white.
-- Play/pause button.
-- Speed multiplier.
-
-## Presets
-
-No presets in SCRIPT_CONFIG.
+The live controls cover circle count, display mode, cycle timing, and visual behaviour. `displayMode` is guarded with a default so missing values do not throw.
 
 ## Animation
 
-- `type: 'loop'`
-- `loopFrames: 3600` (hardcoded)
-- `defaultFps: 60`
-- No `animatableParams`.
-- No `canPrerender`.
-
-**Note:** `loopFrames: 3600` is hardcoded, but `cycleFrames` is configurable (600–7200). If `cycleFrames` ≠ 3600, the declared loop period doesn't match the animation period.
-
-## Canvas
-
-- Fixed: 800×800, 2d context, black background.
-- No `canvasWidth`/`canvasHeight` parameters (not present — unlike most other generators).
+- Loop animation is frame-driven.
+- `animatableParams: []` is declared.
+- `loopFrames` remains static; if `cycleFrames` changes, export loop length may not match the visual cycle. This is a known limitation.
 
 ## Export
 
-`png: true, gif: true, webm: true, sequence: true`
+Static PNG is available through the host export path. Loop export follows the static `loopFrames` metadata.
 
-## Shared Import
+## Performance Note
 
-`TWO_PI` is imported from `assets/js/tools/generators/scripts/shared/evaluation.js`. This is the only generator in the documented set that imports from a shared internal module.
+The workload is low risk. No worker/GPU path is implemented or required for normal settings.

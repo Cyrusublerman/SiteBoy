@@ -1,54 +1,24 @@
 # Quine — UI Layout
 
-## Parameter Groups
+## Current State
 
-### Ink (3 params)
+Quine is implemented as a p5 pixel-buffer animation with per-instance state stored in a `WeakMap` keyed by p5 instance.
 
-| key | type | range | step | default | description |
-|---|---|---|---|---|---|
-| entropy | slider | 0.01–0.5 | 0.01 | 0.15 | decay rate of ink wetness per diffusion step |
-| urgency | slider | 1–20 | 1 | 8 | ink mass added per frame per dark pixel |
-| gravity | slider | 0.5–10 | 0.5 | 2 | minimum wetness threshold for a pixel to bleed to neighbours |
+## Controls
 
-### Typing (2 params)
+The live UI exposes entropy, urgency, gravity, delay scale, and visual behaviour controls. Presets use `{ name, values }`.
 
-| key | type | range | step | default | description |
-|---|---|---|---|---|---|
-| delayScale | slider | 0.5–4 | 0.1 | 1 | global multiplier for per-character delay |
-| pauseDelay | slider | 5–60 | 5 | 20 | base delay (frames) for punctuation pauses |
+## Animation
 
-### Text (3 params)
+- Infinite animation.
+- Character delays use deterministic hash timing.
+- `animatableParams`: `entropy`, `urgency`, `gravity`, `delayScale`.
 
-| key | type | range | step | default | description |
-|---|---|---|---|---|---|
-| fontSize | slider | 10–28 | 1 | 16 | font size in px |
-| lineHeight | slider | 14–40 | 1 | 24 | vertical line spacing in px |
-| margin | slider | 20–80 | 5 | 50 | canvas margin in px |
+## Export
 
-Total: **8 parameters** across 3 groups. `animatableParams` not declared.
+- PNG enabled.
+- GIF/WebM disabled because the animation is not a clean frame-indexed loop.
 
-## Presets (3, flat format)
+## Performance Note
 
-| name | entropy | urgency | gravity | delayScale | pauseDelay | fontSize | lineHeight | margin |
-|---|---|---|---|---|---|---|---|---|
-| Classic | 0.15 | 8 | 2 | 1 | 20 | 16 | 24 | 50 |
-| Fast | 0.2 | 6 | 3 | 0.5 | 10 | 16 | 24 | 50 |
-| Slow Bleed | 0.05 | 12 | 1 | 2 | 30 | 14 | 22 | 40 |
-
-**Non-standard**: presets use flat object format. Standard requires `{ name, values: { ... } }`.
-
-## Animation Config
-
-```js
-animation: { type: 'infinite', defaultFps: 60 }
-```
-
-`type: 'infinite'` — no loop frame count. No export options declared.
-
-## Canvas
-
-1080×1080 px, P5.js context. `p.pixelDensity(1)` enforced in setup. Offscreen graphics buffer (`_imagined`) also 1080×1080.
-
-## Colour Parameters
-
-No colour parameters exposed to UI. Paper and ink colours are hardcoded constants on `SCRIPT_CONFIG` (`_BG`, `_INK_CODE`, `_INK_COMMENT`). These use raw RGB objects rather than CSS variables.
+Diffusion is clipped to an active bounding box and uses two float buffers. Full-canvas diffusion and the removed third reflection buffer are no longer live behaviour.

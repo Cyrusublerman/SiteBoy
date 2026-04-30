@@ -41,8 +41,31 @@ None.
 
 ## NOTE
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-031] — ui-layout.md Multiple Stale Entries**
+
+(1) Animation Config shows `type: 'loop', loopFrames: 360` — RESOLVED (type changed to 'infinite', loopFrames removed). (2) loopFrames conflict described as open — RESOLVED. (3) Preset format noted as "flat object (non-standard)" — RESOLVED. (4) Missing Controls lists "No export block" — RESOLVED. (5) Missing Controls lists "No animatableParams" — RESOLVED (`animatableParams: []` added inside animation block).
+
+---
+
+**[STALE DOC] [DOC-034] — migration-log.md Stale**
+
+Open Items 1–9 describe pre-fix state. Items 1 (noise looping → infinite type), 2 (loopFrames conflict), 3 (hardcoded canvas dims), 4 (point batching), 5 (preset format), 6 (export block), 7 (animatableParams) confirmed RESOLVED in issues-and-conflicts.md.
+
+---
+
 **[PERFORMANCE] `_normalizeAngle` while-loop**
 While loop to normalize angle to (−π, π]. For typical inputs (difference between two atan2 values), at most one iteration is needed. Could be replaced with `((theta + Math.PI) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI) - Math.PI` but correctness is identical.
 
 **[DESIGN] `curvedR` exponent hardcoded to 1**
 `curvedR = clamp(normR, 0, 1)^1` — the exponent is 1, making it linear. The comment structure (`1`) suggests it was intended to be a configurable sharpness parameter but was left as a literal. Exposing it as `radialCurve` would give users control over radial falloff shape, similar to how `ccw` uses `0.7`.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-019 (P1, FIXED):** Live order-disorder imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **PERF-009 (P2, WONTFIX):** Particle-heavy p5 path has no worker/GPU acceleration; high-density settings remain expensive.
+- **DOC-027 (P2, FIXED):** `ui-layout.md` refreshed against current loop/export/preset/animatable behaviour.
+- **DOC-028 (P2, FIXED):** `migration-log.md` refreshed against resolved live items.

@@ -1,6 +1,6 @@
 # Generative Pattern — Performance
 
-**Status: Unimplemented stub.** No performance analysis of live code is possible — the draw function is O(1). This file analyses the expected performance of the intended algorithm per spec.
+**[DOC-022 DEFERRED — 2026-04-30]** Live script is v1.0.0 (fully implemented — Gray-Scott + SDF pipeline). This file analyses stub/spec intent only. Do not use as implementation reference. Full rewrite deferred; see `issues.md` DOC-022.
 
 ## Expected Complexity (when implemented)
 

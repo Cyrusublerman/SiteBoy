@@ -36,3 +36,18 @@ Equations implemented as dropdown selections from a predefined list (EQUATION_MA
 
 **[RESOLVED]** **[RESEARCH] WAV Format Binary Encoding**
 `wavExporter()` implements 16-bit PCM RIFF/WAVE format: RIFF header, fmt chunk (PCM, mono, 16-bit), data chunk. Sample encoding: `round(clamp(y,−1,1) × 32767)` as signed Int16LE. Not UI-accessible (no action button type in parameter system); documented as known limitation.
+
+**[RESOLVED] [STALE DOC]** **DOC-048** `migration-log.md` stated "Generator is not implemented" — fixed by rewriting against live v1.0.0.
+
+**[RESOLVED] [STALE DOC]** **DOC-049** Stub/spec docs reconciled with live v1.0.0 source.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **GEN-025 (P1, WONTFIX):** Reference source is a placeholder stub; strict source parity against live implementation is not meaningful.
+- **GEN-026 (P1, WONTFIX):** Reference single-parameter stub contract diverges from live synthesis/visual/audio parameter surface by design.
+- **GEN-027 (P1, WONTFIX):** Reference minimal script skeleton diverges from live audio lifecycle, presets, and export/animation contracts by design.
+- **ARCH-028 (P1, FIXED):** Live wave-equation-synth imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **DOC-048 (P2, FIXED):** `migration-log.md` rewritten against live v1.0.0.
+- **DOC-049 (P2, FIXED):** Docs reconciled with live audio/visual/export/performance behaviour.

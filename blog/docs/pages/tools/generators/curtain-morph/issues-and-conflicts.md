@@ -46,6 +46,10 @@ No guard or warning is presented to the user when these combinations are selecte
 **[NON-CONFIGURABLE] Parallel extrusion direction hardcoded `(0, 1)`**
 `direction: { x: 0, y: 1 }` is set in the `extrusionCfg` construction. Direction is always downward regardless of parallel mode. The `vpX/vpY` params are irrelevant in `parallel` mode; consider exposing `directionAngle` instead. Documented in KNOWN LIMITATIONS.
 
+**[RESOLVED] [STALE DOC]** **DOC-052** `ui-layout.md` refreshed against current loopFrames/preset/export metadata.
+
+**[RESOLVED] [STALE DOC]** **DOC-053** `migration-log.md` refreshed against current code state.
+
 **[NON-CONFIGURABLE] Three wave components hardcoded**
 `_getWaves()` returns fixed `(cycles, w, loops, phase)` triplets. Users cannot change wave frequency, count, or base phase. Exposing even one or two wave frequency/speed parameters would significantly increase expressiveness. Documented in KNOWN LIMITATIONS.
 
@@ -54,3 +58,13 @@ No guard or warning is presented to the user when these combinations are selecte
 **[PERFORMANCE] At `resolution = 2000`, rings have 2001 points each** (`j <= resolution` inclusive). The `<=` makes the last point duplicate the first (closing the ring). This is intentional for closed shapes but adds one redundant oscillation and segment-split calculation per ring.
 
 **[DESIGN] `invertSides` parameter**: toggling this effectively swaps lighting polarity (what was shaded dark becomes light). Useful for exploring alternative light configurations without manually adjusting `lightX/lightY`.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-030 (P1, FIXED):** Live curtain-morph imports no modules from `assets/js/shared/` (`zero-shared-imports`) and keeps geometry/timing/extrusion helpers inline.
+- **PERF-015 (P2, WONTFIX):** High-vertex gradient path has no adaptive interaction scale or worker path; retained as documented p5 performance limit.
+- **DOC-052 (P2, FIXED):** `ui-layout.md` refreshed against current loopFrames/preset/export metadata.
+- **DOC-053 (P2, FIXED):** `migration-log.md` refreshed against current code state.
+- **DOC-054 (P2, FIXED):** `feature-parity.md` annotated with current Phase 3 state.

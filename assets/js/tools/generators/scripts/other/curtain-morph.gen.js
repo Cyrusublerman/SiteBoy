@@ -13,6 +13,8 @@
  * @version 1.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // =====================================================
 // Math aliases
 // =====================================================
@@ -303,9 +305,18 @@ function _buildCurtainSegments(pointSets, extrusionCfg, normalSide, mod, t, inve
 // F3: Draw curtain segments
 // =====================================================
 
+// CUR-01: helper to parse a hex colour into [r,g,b] array
+function _hexToArr(hex) {
+    const h = (hex || '#000000').replace('#', '');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+
 function _drawCurtainSegments(p, allSegments, extrusionCfg) {
     if (allSegments.length === 0) return;
-    const { mode = 'parallel', vanishingPoint: vp, direction, distance = 100, factor = 0.4, shadingMode = 'gradient', gradientSteps = 30 } = extrusionCfg;
+    const { mode = 'parallel', vanishingPoint: vp, direction, distance = 100, factor = 0.4,
+            shadingMode = 'gradient', gradientSteps = 30,
+            // CUR-01: colourway colours passed through cfg
+            colFront = [255,255,255], colBack = [0,0,0], colMid = [128,128,128] } = extrusionCfg;
 
     let globalEHat = null;
     if (mode === 'parallel') {
@@ -314,7 +325,6 @@ function _drawCurtainSegments(p, allSegments, extrusionCfg) {
         globalEHat = { x: dir.x / eMag, y: dir.y / eMag };
     }
 
-    // Sort
     if (mode === 'vanishing') {
         allSegments.sort((a, b) => {
             const d = b.ringAvgDist - a.ringAvgDist;
@@ -334,25 +344,36 @@ function _drawCurtainSegments(p, allSegments, extrusionCfg) {
 
         if (shadingMode === 'gradient') {
             p.noStroke();
+            // CUR-01: gradient blends between colFront and colBack
             for (let step = 0; step < gradientSteps; step++) {
                 const t0 = step / gradientSteps, t1 = (step + 1) / gradientSteps;
                 const tMid = (t0 + t1) / 2;
-                const shade = isFront ? _lerp(255, 0, tMid) : _lerp(0, 255, tMid);
-                p.fill(shade);
+                const from = isFront ? colFront : colBack;
+                const to   = isFront ? colBack  : colFront;
+                const r = Math.round(_lerp(from[0], to[0], tMid));
+                const g = Math.round(_lerp(from[1], to[1], tMid));
+                const b = Math.round(_lerp(from[2], to[2], tMid));
+                p.fill(r, g, b);
                 p.beginShape();
                 for (const pt of seg.pts) { const ep = extrudePoint(pt, t0); p.vertex(ep.x, ep.y); }
                 for (let j = seg.pts.length - 1; j >= 0; j--) { const ep = extrudePoint(seg.pts[j], t1); p.vertex(ep.x, ep.y); }
                 p.endShape(p.CLOSE);
             }
         } else {
-            const shade = shadingMode === 'solid-grey' ? (isFront ? 255 : 128) : (isFront ? 255 : 0);
+            // CUR-01: use colourway colours instead of hardcoded 255/128/0
+            let fCol;
+            if (shadingMode === 'solid-grey') {
+                fCol = isFront ? colFront : colMid;
+            } else {
+                fCol = isFront ? colFront : colBack;
+            }
             p.noStroke();
-            p.fill(shade);
+            p.fill(fCol[0], fCol[1], fCol[2]);
             p.beginShape();
             for (const pt of seg.pts) p.vertex(pt.x, pt.y);
             for (let j = extrPts.length - 1; j >= 0; j--) p.vertex(extrPts[j].x, extrPts[j].y);
             p.endShape(p.CLOSE);
-            p.stroke(0); p.strokeWeight(1); p.noFill();
+            p.stroke(colBack[0], colBack[1], colBack[2]); p.strokeWeight(1); p.noFill();
             p.beginShape(); seg.pts.forEach(pt => p.vertex(pt.x, pt.y)); p.endShape();
             p.beginShape(); extrPts.forEach(pt => p.vertex(pt.x, pt.y)); p.endShape();
         }
@@ -370,9 +391,10 @@ let _cachedRingKey = null;
 
 function _tmKey(p) { return `${p.minSides}|${p.maxSides}|${p.loopFrames}`; }
 
-function _getWaves() {
+// CUR-01: wave1Cycles and wave1Loops are now user-configurable
+function _getWaves(wave1Cycles, wave1Loops) {
     return [
-        { cycles: 50.0, w: 0.70, loops: 200, phase: 0.0 },
+        { cycles: wave1Cycles || 50.0, w: 0.70, loops: wave1Loops !== undefined ? wave1Loops : 200, phase: 0.0 },
         { cycles: 23.0, w: 0.50, loops: -40, phase: 1.2 },
         { cycles: 10.0, w: 0.40, loops: 7,   phase: 2.4 }
     ];
@@ -424,7 +446,16 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
-    canvas: { width: 1080, height: 1080, context: 'p5' },
+    canvas: {
+        width: 1080, height: 1080, context: 'p5',
+        // CUR-01: colourway for background/front face/back face shading colours
+        colourway: [
+            { id: 'background', label: 'Background',      colour: '#000000' },
+            { id: 'front',      label: 'Front Face',      colour: '#ffffff' },
+            { id: 'back',       label: 'Back Face',       colour: '#000000' },
+            { id: 'midgrey',    label: 'Mid (solid-grey)', colour: '#808080' }
+        ]
+    },
 
     compute: { cost: 'geometric', interactionScale: 0.5, idleDelay: 200 },
 
@@ -444,22 +475,28 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Waves',
             params: [
-                { key: 'waveAmplitude',    type: 'slider', label: 'Amplitude',        min: 0,    max: 50, step: 1, default: 10 },
-                { key: 'ampVariation',     type: 'slider', label: 'Amp Variation',    min: 0,    max: 2,  step: 0.1, default: 0.5 },
-                { key: 'weightVariation',  type: 'slider', label: 'Weight Variation', min: 0,    max: 2,  step: 0.1, default: 1 },
-                { key: 'phaseVariation',   type: 'slider', label: 'Phase Variation',  min: 0,    max: 1,  step: 0.05, default: 0 }
+                { key: 'waveAmplitude',   type: 'slider', label: 'Amplitude',        min: 0, max: 50, step: 1,    default: 10 },
+                { key: 'ampVariation',    type: 'slider', label: 'Amp Variation',    min: 0, max: 2,  step: 0.1,  default: 0.5 },
+                { key: 'weightVariation', type: 'slider', label: 'Weight Variation', min: 0, max: 2,  step: 0.1,  default: 1 },
+                { key: 'phaseVariation',  type: 'slider', label: 'Phase Variation',  min: 0, max: 1,  step: 0.05, default: 0 },
+                // CUR-01: expose wave component 1 tuning (cycles = spatial freq, loops = time freq)
+                { key: 'wave1Cycles',  type: 'slider', label: 'Wave 1 Cycles',   min: 5,   max: 120, step: 5,  default: 50,  precision: 0 },
+                { key: 'wave1Loops',   type: 'slider', label: 'Wave 1 Speed',    min: -400, max: 400, step: 20, default: 200, precision: 0 }
             ]
         },
         {
             group: 'Extrusion',
             params: [
-                { key: 'extrusionMode',   type: 'dropdown', label: 'Mode',         options: ['vanishing', 'parallel'], default: 'vanishing' },
-                { key: 'extrusionFactor', type: 'slider',   label: 'VP Factor',    min: 0, max: 1,   step: 0.05, default: 0.4 },
-                { key: 'extrusionDist',   type: 'slider',   label: 'Parallel Dist', min: 10, max: 300, step: 10, default: 100 },
-                { key: 'vpX',             type: 'slider',   label: 'VP X Offset',  min: -540, max: 540, step: 20, default: 0 },
-                { key: 'vpY',             type: 'slider',   label: 'VP Y Offset',  min: -540, max: 540, step: 20, default: 0 },
-                { key: 'lightX',          type: 'slider',   label: 'Light X',      min: -540, max: 540, step: 20, default: 0 },
-                { key: 'lightY',          type: 'slider',   label: 'Light Y',      min: -540, max: 540, step: 20, default: -300 }
+                { key: 'extrusionMode',   type: 'dropdown', label: 'Mode',          options: ['vanishing', 'parallel'], default: 'vanishing' },
+                { key: 'extrusionFactor', type: 'slider',   label: 'VP Factor',     min: 0, max: 1,    step: 0.05, default: 0.4 },
+                { key: 'extrusionDist',   type: 'slider',   label: 'Parallel Dist', min: 10, max: 300, step: 10,   default: 100 },
+                // CUR-01: expose parallel direction angle
+                { key: 'directionAngle',  type: 'slider',   label: 'Direction Angle (°)',
+                  min: 0, max: 360, step: 5, default: 90, precision: 0 },
+                { key: 'vpX',    type: 'slider', label: 'VP X',    min: -540, max: 540, step: 20, default: 0 },
+                { key: 'vpY',    type: 'slider', label: 'VP Y',    min: -540, max: 540, step: 20, default: 0 },
+                { key: 'lightX', type: 'slider', label: 'Light X', min: -540, max: 540, step: 20, default: 0 },
+                { key: 'lightY', type: 'slider', label: 'Light Y', min: -540, max: 540, step: 20, default: -300 }
             ]
         },
         {
@@ -548,8 +585,17 @@ export const SCRIPT_CONFIG = {
         const { ringCount: count, outerRadius, polySpacing, resolution,
                 minSides, maxSides, loopFrames,
                 waveAmplitude: amplitude, ampVariation, weightVariation, phaseVariation,
-                extrusionMode, extrusionFactor, extrusionDist, vpX, vpY, lightX, lightY,
+                wave1Cycles, wave1Loops,
+                extrusionMode, extrusionFactor, extrusionDist, directionAngle,
+                vpX, vpY, lightX, lightY,
                 shadingMode, gradientSteps, invertSides, normalSide } = params;
+
+        // CUR-01: resolve colourway colours for rendering
+        const cw = params.colourway || [];
+        const colFront = _hexToArr((cw.find(c => c.id === 'front')     || {}).colour || '#ffffff');
+        const colBack  = _hexToArr((cw.find(c => c.id === 'back')      || {}).colour || '#000000');
+        const colMid   = _hexToArr((cw.find(c => c.id === 'midgrey')   || {}).colour || '#808080');
+        const colBg    = _hexToArr((cw.find(c => c.id === 'background')|| {}).colour || '#000000');
 
         const sc = { count, outerRadius, resolution, polySpacing, minSides, maxSides };
         const state = _getTimingState(_timingState, frame);
@@ -571,25 +617,30 @@ export const SCRIPT_CONFIG = {
 
         pointSets = _translateShapes(pointSets, 540, 540);
 
+        // CUR-01: configurable parallel direction angle
+        const dirRad = ((directionAngle || 90) * _PI / 180);
         const extrusionCfg = {
-            mode:            extrusionMode,
-            direction:       { x: 0, y: 1 },
-            distance:        extrusionDist,
-            factor:          extrusionFactor,
-            vanishingPoint:  { x: 540 + vpX,   y: 540 + vpY },
-            lightSource:     { x: 540 + lightX, y: 540 + lightY },
+            mode:           extrusionMode,
+            direction:      { x: _cos(dirRad), y: _sin(dirRad) },
+            distance:       extrusionDist,
+            factor:         extrusionFactor,
+            vanishingPoint: { x: 540 + vpX,   y: 540 + vpY },
+            lightSource:    { x: 540 + lightX, y: 540 + lightY },
             shadingMode,
-            gradientSteps
+            gradientSteps,
+            // CUR-01: pass resolved colourway to renderer
+            colFront, colBack, colMid
         };
 
         const mod = {
             loopFrames, amplitude, ampVariation, weightVariation, phaseVariation,
-            waves: _getWaves()
+            waves: _getWaves(wave1Cycles, wave1Loops)
         };
 
         const t = frame % loopFrames;
 
-        p.background(255);
+        // CUR-01: use colourway background colour
+        p.background(colBg[0], colBg[1], colBg[2]);
         const segments = _buildCurtainSegments(
             pointSets, extrusionCfg, normalSide,
             mod, t, invertSides === 'on'

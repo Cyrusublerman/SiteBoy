@@ -48,6 +48,20 @@ Declared in `parameters` and presets but the host does not forward them to the c
 
 *Status: Not structurally fixed. Behaviour acknowledged and documented in `SCRIPT_CONFIG.infoSections` KNOWN LIMITATIONS: "GIF and WebM loop duration declared as 14400 frames; accurate only when speed=1."*
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-041] — ui-layout.md Multiple Stale Entries**
+
+(1) `seek` parameter labelled "INERT" — RESOLVED in v2.1.0 (now wired: `t = (frame / 60) * speed + seek`). (2) `canvasWidth`/`canvasHeight` still listed in Canvas group — RESOLVED in v2.1.0 (removed from `parameters` and presets).
+
+---
+
+**[STALE DOC] [DOC-042] — migration-log.md Stale**
+
+Open Items 1 (seek fix), 2 (spiralUnwind O(1)), 6 (roundRect fallback), 7 (console.log removal), 8 (canvasWidth removal) confirmed RESOLVED in v2.1.0. Item 3 (loopFrames at speed≠1) documented as known limitation.
+
+---
+
 ## NOTE
 
 **[PARITY] Keyboard controls absent**
@@ -58,3 +72,12 @@ Original reference had Space (play/pause), R (restart), H (hide info). Documente
 
 **[PARITY] `gridSize` range narrowed**
 Spec recommended 10–100; live implementation uses 20–80. At `gridSize = 10` the visual is coarse but valid. Lower bound of 20 is a minor arbitrary restriction.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-025 (P1, FIXED):** Live squares imports no modules from `assets/js/shared/` (`zero-shared-imports`) and remains outside BaseComponent architecture.
+- **PERF-014 (P2, WONTFIX):** Transition hotspot risk remains documented; no worker/GPU path for high-grid settings.
+- **DOC-041 (P2, FIXED):** `ui-layout.md` refreshed against current seek/canvas/export/performance state.
+- **DOC-042 (P2, FIXED):** `migration-log.md` refreshed against v2.1.0 resolved items.

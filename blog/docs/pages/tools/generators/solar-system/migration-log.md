@@ -1,62 +1,38 @@
 # Solar System — Migration Log
 
-## Date
+## Pack Updated
 
-2026-03-10
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/other/solar-system.gen.js` v5.0.0
 
-## Inputs Used
+## Current State
 
-- live script: `assets/js/tools/generators/scripts/other/solar-system.gen.js` — classification: `functional source/reference tool`
-- `reference/generators/solar-system/legacy-docs/solar-system.md` — classification: `mixed bundle`
-- `reference/generators/solar-system/legacy-docs/solar-system-audit.md` — classification: `audit only`
-- `reference/generators/solar-system/legacy-docs/SOLAR-SYSTEM-TOOL-README.md` — classification: `page doc`
+Implemented and live.
 
-## Archive Outputs
+Resolved since the original migration:
+- module-level mutable state moved to `SCRIPT_CONFIG` properties
+- render hook and helpers converted to inline methods
+- inert canvas size parameters removed
+- font updated
+- asteroid belt rendering cached and batched through ImageData
+- non-prerenderable animation/export semantics documented
 
-- `reference/generators/solar-system/source/solar-system.gen.js` — present (pre-existing)
-- `reference/generators/solar-system/legacy-docs/solar-system.md` — present
-- `reference/generators/solar-system/legacy-docs/solar-system-audit.md` — present
-- `reference/generators/solar-system/legacy-docs/SOLAR-SYSTEM-TOOL-README.md` — present
+## 2026-04-28 additions (SOL-01 – SOL-03, SOL-06)
 
-## Pack Files Produced
+- **SOL-01 Size mode:** `sizeMode` param (proportional / logarithmic / exaggerated) — controls how planet radius maps to canvas pixels. Proportional uses true relative radii; logarithmic compresses the range; exaggerated applies a floor to ensure all planets are visible.
+- **SOL-02 Terminator shading:** Per-planet terminator shading via sun-vector — each planet disc has a dark hemisphere facing away from the Sun, computed from the Sun's canvas-space bearing.
+- **SOL-03 Time controls:** `timeRate` param (realtime / day / week / month / year / decade / century) and `animRange` param (none / day / week / year / decade / century) added; time-lapse and bounded animation window configurable.
+- **SOL-06 Canvas hit-test:** Canvas hit-test restored; hovering over a planet displays a tooltip with name, distance (AU), angle (°), and velocity (km/s).
 
-- source-reference.md
-- description.md
-- mechanisms.md
-- ui-layout.md
-- performance.md
-- feature-parity.md
-- issues-and-conflicts.md
-- migration-log.md (this file)
+## 2026-04-29 additions (SOL-04, SOL-05, SOL-07)
 
-## Classification Summary
+- **SOL-04 Moons:** `MOON_DATA` table (8 bodies: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Titan) with simplified Keplerian circular orbits. Rendered in `_drawMoons()` after planets; `showMoons` toggle; labels respect `showLabels`.
+- **SOL-05 Viewer reticle:** `_drawViewerReticle()` draws outer ring + crosshairs + local solar-time label (HH:MM) at viewer position. Replaces bare dot when `showReticle: true`. FOV cone retained.
+- **SOL-07 Time panel:** `assets/js/shared/algorithms/astronomy/time-anchors.js` built — 55 anchor events across 11 scale tiers (seconds → gigayears), all verifiable to that precision. `_drawTimePanel()` renders top-right overlay with elapsed-label column and event-name column. `showTimePanel` + `timePanelScale` params.
 
-- live script: `functional source/reference tool`
-- solar-system.md: `mixed bundle`
-- solar-system-audit.md: `audit only`
-- SOLAR-SYSTEM-TOOL-README.md: `page doc`
+## Residuals
 
-## Compliance Score
-
-| File | Score | Notes |
-| --- | --- | --- |
-| source-reference.md | 2 | All paths and classifications present |
-| description.md | 2 | Keplerian orbital mechanics model; visual output; algorithm origin (NASA JPL); scope boundary; >150 words |
-| mechanisms.md | 2 | State model table (6 module-level variables documented); function inventory (11 functions with roles, inputs, complexity); 14 formulas with variable definitions; numbered render loop (13 steps); rebuild mechanism described |
-| ui-layout.md | 2 | All 10 parameters in table including inert canvasWidth/Height with notes; 3 presets with all values; sidebar structure; 7 UX notes |
-| performance.md | 2 | Dominant op named (asteroid belt fillRect); O(count) with count defined; extreme params analysed; frame budget (1000ms); worker feasibility; mitigation candidates |
-| feature-parity.md | 2 | Feature inventory against all 3 legacy docs; host feature audit; 7 parity holes explicitly listed |
-| issues-and-conflicts.md | 2 | Full build-page.md §8 checklist with pass/fail and evidence; 5 WARN bugs/standards; 2 NOTE standards; 1 NOTE performance; 5 NOTE parity; 2 NOTE escalation — all in correct issue format |
-| migration-log.md | 2 | Date, all inputs with classifications, archive outputs, pack files, compliance score table |
-
-Total: 16/16
-Status: closed — all files at score 2
-
-## Notes
-
-- The `draw` function is a module-level function assigned to SCRIPT_CONFIG rather than an inline method. All state is module-level. Both are flagged as WARN [STANDARDS].
-- The `fetch` to ipapi.co is flagged as WARN [STANDARDS] — external network side effect from a generator script.
-- `canvasWidth`/`canvasHeight` parameters are present in the UI but inert — flagged as WARN [BUG].
-- Non-standard preset format (`values: {}` nesting) is flagged as WARN [STANDARDS].
-- The `frame` argument is unused — the generator uses `Date.now()` directly, making it non-deterministic with respect to frame count.
-- Audit-identified missing features (trails, measurements, date selection) are confirmed absent and recorded as NOTE [PARITY] issues.
+- Custom date navigation (future/past seek by exact date) not implemented.
+- Moon orbital inclinations treated as zero (ecliptic-plane approximation).
+- Phobos/Deimos orbital radii are below the rendering threshold at default `distanceScale`; visible only at high `planetScale + distanceScale` combinations.
+- External geolocation fetch remains a separate user-decision issue.

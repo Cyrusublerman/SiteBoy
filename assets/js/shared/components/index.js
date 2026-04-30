@@ -19,7 +19,13 @@ export {
     ColorInput,
     EquationEditor,
     DropZone,
-    FilamentPicker
+    FilamentPicker,
+    NoiseTypeSelect,
+    NOISE_TYPES,
+    AnimateParamControl,
+    WAVEFORMS,
+    EasingCurveInput,
+    HSLRangeInput,
 } from './input/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -31,8 +37,14 @@ export {
     SVG,
     Media,
     ProgressBar,
-    AudioOutput
+    AudioOutput,
+    OverlayText,
 } from './output/index.js';
+
+export {
+    DrawCanvas,
+    EmitterHandles,
+} from './drawing/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONTAINER COMPONENTS
@@ -70,6 +82,7 @@ import * as Input from './input/index.js';
 import * as Output from './output/index.js';
 import * as Container from './container/index.js';
 import * as Tool from './tool/index.js';
+import * as Drawing from './drawing/index.js';
 
 export const Components = {
     // Input
@@ -83,7 +96,11 @@ export const Components = {
     ColorInput: Input.ColorInput,
     EquationEditor: Input.EquationEditor,
     DropZone: Input.DropZone,
-    
+    NoiseTypeSelect: Input.NoiseTypeSelect,
+    AnimateParamControl: Input.AnimateParamControl,
+    EasingCurveInput: Input.EasingCurveInput,
+    HSLRangeInput: Input.HSLRangeInput,
+
     // Output
     Text: Output.Text,
     Canvas: Output.Canvas,
@@ -91,6 +108,11 @@ export const Components = {
     Media: Output.Media,
     ProgressBar: Output.ProgressBar,
     AudioOutput: Output.AudioOutput,
+    OverlayText: Output.OverlayText,
+
+    // Drawing
+    DrawCanvas: Drawing.DrawCanvas,
+    EmitterHandles: Drawing.EmitterHandles,
     
     // Container
     Grid: Container.Grid,

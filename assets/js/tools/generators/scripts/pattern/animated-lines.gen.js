@@ -13,6 +13,8 @@
  * @version 1.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 export const SCRIPT_CONFIG = {
     id: 'animated-lines',
     title: 'Animated Lines',

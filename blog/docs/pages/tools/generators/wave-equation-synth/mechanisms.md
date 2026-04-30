@@ -1,102 +1,44 @@
 # Wave Equation Synth — Mechanisms
 
-**Status: Unimplemented stub.** The live `draw` function fills the canvas black. This file documents intended mechanisms from the legacy spec and audit.
+## Algorithm Class
 
-## Live Script State
+Additive audio synthesis with canvas waveform visualisation.
 
-| Item | Value |
-|---|---|
-| `draw` function | Fills canvas black, returns |
-| Parameters | 1 slider: `harmonics` (1–16) — unused |
-| Animation | Not declared |
-| State | None |
+## Audio Model
 
-## Intended Algorithm
-
-### Equation Compilation (AUDIO-004)
-
-Sandboxed safe compilation:
-```javascript
-function compileEquation(exprStr) {
-    const fn = new Function('p', 'w', 'u', 't', 'g', 'Math', `return ${exprStr};`);
-    return fn;
-}
-```
-
-Safety: restrict access to global scope by only injecting the `Math` object and index variables. No `document`, `window`, or `eval` access.
-
-### Wave Indexing (AUDIO-005)
-
-For sample `i` of `N_total = floor(sampleRate × duration)` total samples:
+For each sample `i`:
 
 ```
 framesPerCycle = sampleRate / baseFrequency
-w = floor(i / framesPerCycle)          // integer wave index
-p = (i % framesPerCycle) / framesPerCycle   // phase in [0, 1]
-u = w / totalCycles                     // normalised wave index
-t = w / baseFrequency                   // time in seconds
-g = i / N_total                         // global progress
+w = floor(i / framesPerCycle)
+p = (i - w * framesPerCycle) / framesPerCycle
+u = w / totalCycles
+t = w / baseFrequency
+g = i / totalSamples
 ```
 
-### Buffer Generation (AUDIO-006)
-
-```javascript
-for (let i = 0; i < N_total; i++) {
-    const { p, w, u, t, g } = indexVars(i);
-    let y = 0;
-    for (const fn of equations) {
-        y += fn(p, w, u, t, g, Math);
-    }
-    buffer[i] = clamp(y, -1, 1);
-}
-```
-
-### AudioBuffer Playback (AUDIO-007)
-
-```javascript
-const audioBuffer = audioContext.createBuffer(1, N_total, sampleRate);
-audioBuffer.copyToChannel(buffer, 0);
-const source = audioContext.createBufferSource();
-source.buffer = audioBuffer;
-source.connect(audioContext.destination);
-source.start();
-```
-
-### Oscilloscope Renderer (CANVAS-014)
+Active equations evaluate `(p,w,u,t,g,Math)` and are averaged:
 
 ```
-For each pixel px in [0, W]:
-    p = px / W × cyclesShown
-    sample_index = floor(p × framesPerCycle)
-    y_pixel = H/2 - buffer[sample_index] × H/2 × amplitude
-    draw polyline point (px, y_pixel)
+y = sum(fn_k(...)) / activeCount
+sample = clamp(y, -1, 1)
 ```
 
-### Circular Loop Renderer (CANVAS-015)
+## Renderers
 
-Polar mapping for a segment starting at `segmentStartWave`:
-```
-θ_i = 2π × i / segmentLength
-r_i = R₀ × (1 + modulationDepth × y_i)
-x = cx + r_i × cos(θ_i)
-y = cy + r_i × sin(θ_i)
-```
+- Oscilloscope: maps buffer amplitude to vertical canvas position across width.
+- Segmented: currently calls the oscilloscope renderer.
+- Circular: maps samples to polar points and closes the path.
 
-### WAV Export (AUDIO-008)
+## Lifecycle
 
-PCM WAV encoding: RIFF header + 16-bit signed integer samples.
+- Buffer regenerated only when synthesis params change.
+- Audio context and gain node are created lazily on Play.
+- Source nodes are replaced when playback or synthesis changes.
+- Volume updates live without buffer regeneration.
 
-## Function Inventory (intended)
+## Export
 
-| Function | Module | Status |
-|---|---|---|
-| `safeEquationCompiler` | AUDIO-004 | Not implemented |
-| `waveIndexing` | AUDIO-005 | Not implemented |
-| `equationEvaluator` | AUDIO-006 | Not implemented |
-| `audioBufferSource` | AUDIO-007 | Not implemented |
-| `wavExporter` | AUDIO-008 | Not implemented |
-| `oscilloscopeRenderer` | CANVAS-014 | Not implemented |
-| `circularLoopRenderer` | CANVAS-015 | Not implemented |
-| `gifExporter` | CANVAS-016 | Not implemented |
-| `clamp` | MATH-002 | Inline (not extracted) |
-| `wrap` | MATH-004 | Inline (not extracted) |
+- PNG through host export path.
+- WAV encoder writes 16-bit PCM RIFF/WAVE but has no UI trigger.
+- GIF/WebM suppressed because there is no finite loop contract.

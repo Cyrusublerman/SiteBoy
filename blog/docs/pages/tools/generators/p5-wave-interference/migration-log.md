@@ -2,23 +2,25 @@
 
 ## Status
 
-**Implemented.** Version 1.0.0. Port of `wave_interference` sketch. Fully deterministic.
+Implemented. Version 1.1.0. Port of `wave_interference` sketch. Deterministic and frame-driven.
 
 ## Architectural Changes from Original Sketch
 
 - Wrapped into `SCRIPT_CONFIG` module format with `p5Setup`/`p5Draw` hooks.
-- Parameters exposed via slider UI (`amplitude`, `frequency`, `speed`, `s1–s4Loops`, `resolution`, `cycleFrames`).
+- Parameters exposed via slider UI (`amplitude`, `frequency`, `speed`, `s1–s4Loops`, `resolution`).
 - Pixel block-replication controlled by `resolution` parameter.
 - 3 presets added (Classic, High Freq, Low Detail).
+- `animation.loopFrames` fixed at 3600.
+- `animatableParams` declared.
+- export block declared.
 
-## Open Items
+## 2026-04-28 merger (WIN-03)
+
+**Merged into `wave-interference`.** `p5-wave-interference` is no longer a standalone entry in `ScriptRegistry`. Its full parameter surface was unified with `wave-interference.gen.js` under an `interferenceMode` toggle (`equations` / `normal-map` / `complex-ops`). The `equations` renderer corresponds to this script's original p5 pixel path. This folder is retained as historical documentation only.
+
+## Open Items (historical — superseded by merger)
 
 | priority | id | description | severity |
 |---|---|---|---|
-| 1 | loopframes-conflict | Fix `animation.loopFrames` / `cycleFrames` mismatch | WARN [BUG] |
-| 2 | worker-offload | Offload pixel computation to Web Worker | WARN [PERFORMANCE] |
-| 3 | perimeter-hardcode | Replace `_perimeter = 4320` with `2*(W+H)` at draw time | WARN [ARCHITECTURE] |
-| 4 | cache-ref-atan2 | Cache 3 reference `atan2` values outside pixel loop | WARN [PERFORMANCE] |
-| 5 | preset-format | Convert presets to `{ name, values: {...} }` format | WARN [STANDARDS] |
-| 6 | animatable-params | Declare `animatableParams` | WARN [STANDARDS] |
-| 7 | export-options | Add export options block | WARN [STANDARDS] |
+| 1 | worker-offload | Offload pixel computation to Worker/GPU path — assessed WONTFIX 2026-04-30 (p5-instance-bound) | WARN [PERFORMANCE] |
+| 2 | fixed-cycle-constraint | runtime cycle control not exposed; loopFrames is fixed | NOTE [PARITY] |

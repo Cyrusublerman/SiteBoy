@@ -10,10 +10,46 @@
  */
 
 import { safePow, TWO_PI } from '../../shared/evaluation.js';
+import '../../../../shared/algorithms/core/math-utils.js';
 
 function signedPow(v, p) {
     if (Math.abs(p - 1) < 1e-9) return v;
     return Math.sign(v) * safePow(Math.abs(v), p);
+}
+
+// LIS-01: Build a compact equation string from live params.
+function buildEquationLines(p) {
+    function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ''); }
+    function term(A, fn, w, phi, pw) {
+        if (Math.abs(A) < 0.001) return '';
+        const aStr   = Math.abs(A) === 1 ? '' : fmt(Math.abs(A)) + '·';
+        const sign   = A < 0 ? '−' : '+';
+        const phiStr = Math.abs(phi) > 0.001 ? (phi > 0 ? ' + ' : ' − ') + fmt(Math.abs(phi)) : '';
+        const wStr   = w === 1 ? '' : fmt(w) + '·';
+        const pwStr  = Math.abs(pw - 1) > 0.01 ? '^' + fmt(pw) : '';
+        return `${sign} ${aStr}${fn}${pwStr}(${wStr}t${phiStr})`;
+    }
+    function modTerm(M, fn1, w1, phi1, p1, fn2, w2, phi2, p2) {
+        if (Math.abs(M) < 0.001) return '';
+        const pw1 = Math.abs(p1 - 1) > 0.01 ? '^' + fmt(p1) : '';
+        const pw2 = Math.abs(p2 - 1) > 0.01 ? '^' + fmt(p2) : '';
+        const ph1 = Math.abs(phi1) > 0.001 ? (phi1 > 0 ? '+' : '−') + fmt(Math.abs(phi1)) : '';
+        const ph2 = Math.abs(phi2) > 0.001 ? (phi2 > 0 ? '+' : '−') + fmt(Math.abs(phi2)) : '';
+        const sign = M < 0 ? '−' : '+';
+        const M2 = Math.abs(M) === 1 ? '' : fmt(Math.abs(M)) + '·';
+        return `${sign} ${M2}${fn1}${pw1}(${w1}t${ph1})·${fn2}${pw2}(${w2}t${ph2})`;
+    }
+
+    const x1 = term(p.Ax1, 'cos', p.wx1,  p.phiX1,  p.px1);
+    const x2 = term(p.Ax2, 'cos', p.wx2,  p.phiX2,  p.px2);
+    const xm = modTerm(p.Mx, 'cos', p.wxm1, p.phiXm1, p.pxm1, 'sin', p.wxm2, p.phiXm2, p.pxm2);
+    const y1 = term(p.Ay1, 'sin', p.wy1,  p.phiY1,  p.py1);
+    const y2 = term(p.Ay2, 'sin', p.wy2,  p.phiY2,  p.py2);
+    const ym = modTerm(p.My, 'sin', p.wym1, p.phiYm1, p.pym1, 'cos', p.wym2, p.phiYm2, p.pym2);
+
+    const xEq = ('x(t) = ' + [x1, x2, xm].filter(Boolean).join(' ')).replace(/= \+/, '= ').trim();
+    const yEq = ('y(t) = ' + [y1, y2, ym].filter(Boolean).join(' ')).replace(/= \+/, '= ').trim();
+    return [xEq, yEq];
 }
 
 function preset(name, overrides) {
@@ -187,6 +223,16 @@ export const SCRIPT_CONFIG = {
                 { key: 'rotation', type: 'slider', label: 'Rotation (°)', min: 0,  max: 360, step: 1,    default: 0 },
                 { key: 'points',   type: 'slider', label: 'Points',       min: 1000, max: 80000, step: 1000, default: 20000 },
             ]
+        },
+        // LIS-01: equation overlay controls
+        {
+            group: 'Equation Overlay',
+            defaultCollapsed: true,
+            params: [
+                { key: 'showEquation',    type: 'radio',  label: 'Show Equation',   options: ['off', 'on'],   default: 'off' },
+                { key: 'equationSize',    type: 'slider', label: 'Font Size',        min: 10, max: 28, step: 1, default: 16 },
+                { key: 'equationOpacity', type: 'slider', label: 'Opacity',          min: 0.1, max: 1, step: 0.05, default: 0.75, precision: 2 }
+            ]
         }
     ],
 
@@ -214,7 +260,7 @@ export const SCRIPT_CONFIG = {
 
     export: {
         png: true,
-        svg: false,
+        svg: true,
         gif: true,
         webm: true,
         sequence: true
@@ -277,5 +323,27 @@ export const SCRIPT_CONFIG = {
         }
 
         ctx.stroke();
+
+        // LIS-01: equation overlay — bottom-centre, EB Garamond
+        if (params.showEquation === 'on') {
+            const fontSize = params.equationSize || 16;
+            const opacity  = params.equationOpacity ?? 0.75;
+            const lines    = buildEquationLines(params);
+            const margin   = 24;
+            const lineH    = Math.round(fontSize * 1.5);
+
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.font        = `${fontSize}px 'EB Garamond', Garamond, Georgia, serif`;
+            ctx.fillStyle   = '#ffffff';
+            ctx.textAlign   = 'center';
+            ctx.textBaseline = 'alphabetic';
+
+            const baseY = H - margin - (lines.length - 1) * lineH;
+            lines.forEach((line, i) => {
+                ctx.fillText(line, centerX, baseY + i * lineH);
+            });
+            ctx.restore();
+        }
     }
 };

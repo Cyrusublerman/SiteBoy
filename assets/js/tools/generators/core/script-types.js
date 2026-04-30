@@ -8,12 +8,27 @@
  */
 
 /**
+ * A single paintable layer in the generator's colourway.
+ * @typedef {Object} ColourwayLayer
+ * @property {string} id     - Unique layer identifier (camelCase, e.g. 'background', 'outerLines')
+ * @property {string} label  - Human-readable label shown in CANVAS tab
+ * @property {string} colour - Current colour value (hex, e.g. '#000000')
+ * @property {number} [alpha] - Optional opacity 0-1 (default 1)
+ */
+
+/**
  * Canvas configuration
  * @typedef {Object} CanvasConfig
- * @property {number} width - Canvas width in pixels
- * @property {number} height - Canvas height in pixels
+ * @property {number} width    - Canvas width in pixels
+ * @property {number} height   - Canvas height in pixels
  * @property {'2d'|'webgl'|'p5'} context - Rendering context type
- * @property {string} [background] - Optional background color (CSS or VGA)
+ * @property {ColourwayLayer[]} [colourway] - Ordered array of paintable layers.
+ *   Index 0 is conventionally the background layer (id: 'background').
+ *   The HOST renders one ColorInput per entry and routes updates via
+ *   _handleCanvasColourway(). Read in draw() as colourway[i].colour.
+ * @property {string} [background] - Legacy single-colour background (CSS or VGA hex).
+ *   Deprecated in favour of colourway[]. Kept for backward compat — scripts that
+ *   have not migrated to colourway[] still work.
  */
 
 /**

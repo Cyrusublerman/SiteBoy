@@ -9,6 +9,8 @@
  * @version 2.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // ═══════════════════════════════════════════════════════════════════
 // EASING FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
@@ -343,7 +345,28 @@ function getTileState(col, row, nx, ny, t, spiralPath, spiralIndexMap) {
 // TILE DRAW
 // ═══════════════════════════════════════════════════════════════════
 
-function drawCard(ctx, x, y, size, scaleX, scaleY, rotation, roundness, offsetX, offsetY, isWhite) {
+/**
+ * SQU-01: Position / index-based colour lookup.
+ * colourMode: 'mono' | 'position' | 'index'
+ * Returns [fill, stroke] CSS colour strings.
+ */
+function _squareColours(isWhite, nx, ny, spiralIndex, totalTiles, colourMode, t) {
+    if (colourMode === 'position') {
+        const hue    = Math.round(((nx + ny * 0.5 + t * 0.1) % 1 + 1) % 1 * 360);
+        const light  = isWhite ? 70 : 30;
+        return [`hsl(${hue},70%,${light}%)`, `hsl(${(hue + 180) % 360},70%,${100 - light}%)`];
+    }
+    if (colourMode === 'index') {
+        const norm   = spiralIndex / Math.max(1, totalTiles - 1);
+        const hue    = Math.round(((norm + t * 0.05) % 1 + 1) % 1 * 360);
+        const light  = isWhite ? 65 : 35;
+        return [`hsl(${hue},65%,${light}%)`, `hsl(${(hue + 120) % 360},65%,${100 - light}%)`];
+    }
+    // mono (default)
+    return [isWhite ? '#ffffff' : '#000000', isWhite ? '#000000' : '#ffffff'];
+}
+
+function drawCard(ctx, x, y, size, scaleX, scaleY, rotation, roundness, offsetX, offsetY, isWhite, fillCol, strokeCol) {
     ctx.save();
     ctx.translate(x + offsetX * size, y + offsetY * size);
     ctx.rotate(rotation * Math.PI / 180);
@@ -351,8 +374,8 @@ function drawCard(ctx, x, y, size, scaleX, scaleY, rotation, roundness, offsetX,
     const w = size * scaleX;
     const h = size * scaleY;
 
-    ctx.fillStyle   = isWhite ? '#ffffff' : '#000000';
-    ctx.strokeStyle = isWhite ? '#000000' : '#ffffff';
+    ctx.fillStyle   = fillCol   ?? (isWhite ? '#ffffff' : '#000000');
+    ctx.strokeStyle = strokeCol ?? (isWhite ? '#000000' : '#ffffff');
     ctx.lineWidth   = 0.5;
 
     if (roundness > 0.01) {
@@ -490,6 +513,19 @@ export const SCRIPT_CONFIG = {
             ]
         },
         {
+            // SQU-01: position / index colour mode
+            group: 'Colour',
+            params: [
+                {
+                    key:     'colourMode',
+                    type:    'toggle',
+                    label:   'Colour Mode',
+                    options: ['mono', 'position', 'index'],
+                    default: 'mono'
+                }
+            ]
+        },
+        {
             group: 'Timeline',
             params: [
                 {
@@ -519,6 +555,7 @@ export const SCRIPT_CONFIG = {
         const grid  = params.gridSize || 50;
         const speed = params.speed    || 1;
         const seek  = params.seek     || 0;
+        const colourMode = params.colourMode ?? 'mono';
 
         // Rebuild spiral and indexMap when gridSize changes or on first draw.
         if (grid !== this._GRID || this._spiralPath.length === 0) {
@@ -539,6 +576,8 @@ export const SCRIPT_CONFIG = {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, W, H);
 
+        const totalTiles = this._spiralPath.length;
+
         for (let row = 0; row < this._GRID; row++) {
             for (let col = 0; col < this._GRID; col++) {
                 const nx   = col / this._GRID;
@@ -548,9 +587,14 @@ export const SCRIPT_CONFIG = {
                 const x = offsetX + col * cellSize + cellSize / 2;
                 const y = offsetY + row * cellSize + cellSize / 2;
 
+                // SQU-01: compute per-cell colours
+                const spiralIdx = this._spiralIndexMap.get(col * 100 + row) ?? 0;
+                const [fillCol, strokeCol] = _squareColours(tile.isWhite, nx, ny, spiralIdx, totalTiles, colourMode, t);
+
                 drawCard(ctx, x, y, cellSize,
                     tile.scaleX, tile.scaleY, tile.rotation,
-                    tile.roundness, tile.offsetX, tile.offsetY, tile.isWhite);
+                    tile.roundness, tile.offsetX, tile.offsetY, tile.isWhite,
+                    fillCol, strokeCol);
             }
         }
     }

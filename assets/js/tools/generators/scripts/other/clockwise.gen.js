@@ -8,6 +8,8 @@
  * @version 1.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 export const SCRIPT_CONFIG = {
     id: 'clockwise',
     title: 'Clockwise',
@@ -56,27 +58,53 @@ export const SCRIPT_CONFIG = {
         {
             group: 'System',
             params: [
-                { key: 'numSquares',  type: 'slider', label: 'Squares',       min: 2, max: 12, step: 1,    default: 8 },
-                { key: 'orbitRadius', type: 'slider', label: 'Orbit Radius',  min: 100, max: 540, step: 20, default: 540 }
+                { key: 'numSquares',  type: 'slider', label: 'Squares',      min: 2, max: 12, step: 1,    default: 8 },
+                { key: 'orbitRadius', type: 'slider', label: 'Orbit Radius', min: 100, max: 540, step: 20, default: 540 }
             ]
         },
         {
             group: 'Motion',
             params: [
-                { key: 'orbitSpeed', type: 'slider', label: 'Orbit Speed (°/frame)', min: 0.1, max: 5, step: 0.1, default: 1 },
-                { key: 'spinSpeed',  type: 'slider', label: 'Spin Speed (°/frame)',  min: 0.1, max: 5, step: 0.1, default: 1 },
+                { key: 'orbitSpeed', type: 'slider',   label: 'Orbit Speed (°/frame)', min: 0.1, max: 5, step: 0.1, default: 1 },
+                { key: 'spinSpeed',  type: 'slider',   label: 'Spin Speed (°/frame)',  min: 0.1, max: 5, step: 0.1, default: 1 },
                 { key: 'orbitDir',   type: 'dropdown', label: 'Orbit Direction', options: ['CW', 'CCW'], default: 'CCW' }
             ]
         },
         {
             group: 'Physics',
             params: [
-                { key: 'growthFactor',  type: 'slider', label: 'Growth Factor',   min: 0.5, max: 5,    step: 0.1,  default: 2.0 },
-                { key: 'damping',       type: 'slider', label: 'Damping',         min: 0.01, max: 0.5,  step: 0.01, default: 0.15 },
-                { key: 'waveDecay',     type: 'slider', label: 'Wave Decay',      min: 0.8,  max: 0.99, step: 0.01, default: 0.96 },
-                { key: 'identityForce', type: 'slider', label: 'Identity Force',  min: 0,    max: 0.1,  step: 0.005, default: 0.01 },
-                { key: 'swapCooldown',  type: 'slider', label: 'Swap Cooldown',   min: 5,    max: 60,   step: 5,    default: 20 },
+                { key: 'growthFactor',  type: 'slider',   label: 'Growth Factor',  min: 0.5, max: 5,    step: 0.1,   default: 2.0 },
+                { key: 'damping',       type: 'slider',   label: 'Damping',        min: 0.01, max: 0.5,  step: 0.01,  default: 0.15 },
+                { key: 'waveDecay',     type: 'slider',   label: 'Wave Decay',     min: 0.8,  max: 0.99, step: 0.01,  default: 0.96 },
+                { key: 'identityForce', type: 'slider',   label: 'Identity Force', min: 0,    max: 0.1,  step: 0.005, default: 0.01 },
+                { key: 'swapCooldown',  type: 'slider',   label: 'Swap Cooldown',  min: 5,    max: 60,   step: 5,     default: 20 },
                 { key: 'wrapAround',    type: 'dropdown', label: 'Wrap Around', options: ['on', 'off'], default: 'on' }
+            ]
+        },
+        // CLK-03: modulation matrix — cross-field coupling + autonomous cycle rates
+        {
+            group: 'Modulation',
+            defaultCollapsed: true,
+            params: [
+                { key: 'g1ToG2',      type: 'slider', label: 'Pulse → Hue Coupling',
+                  min: 0, max: 1, step: 0.01, default: 0, precision: 2 },
+                { key: 'g2ToG1',      type: 'slider', label: 'Hue → Pulse Coupling',
+                  min: 0, max: 1, step: 0.01, default: 0, precision: 2 },
+                { key: 'pulseFloor',  type: 'slider', label: 'Pulse Floor',
+                  min: 0, max: 0.5, step: 0.01, default: 0, precision: 2 },
+                { key: 'hueCycleRate', type: 'slider', label: 'Hue Cycle Rate (/frame)',
+                  min: 0, max: 0.01, step: 0.0005, default: 0, precision: 4 }
+            ]
+        },
+        // CLK-04: trail + time-based modulation
+        {
+            group: 'Trail',
+            defaultCollapsed: true,
+            params: [
+                { key: 'trailLength', type: 'slider', label: 'Trail Length',
+                  min: 0, max: 30, step: 1, default: 0 },
+                { key: 'trailDecay',  type: 'slider', label: 'Trail Decay (%)',
+                  min: 5, max: 95, step: 5, default: 50 }
             ]
         }
     ],
@@ -108,7 +136,11 @@ export const SCRIPT_CONFIG = {
     animation: {
         type: 'infinite',
         defaultFps: 30,
-        animatableParams: ['orbitSpeed', 'spinSpeed', 'growthFactor', 'damping', 'waveDecay', 'identityForce'],
+        animatableParams: [
+            'orbitSpeed', 'spinSpeed', 'growthFactor', 'damping', 'waveDecay', 'identityForce',
+            // CLK-04 / X-002: modulation matrix params now animatable
+            'g1ToG2', 'g2ToG1', 'hueCycleRate'
+        ],
         sequencer: true,
     },
 
@@ -127,6 +159,10 @@ export const SCRIPT_CONFIG = {
     _globalOrbitAngle: 0,
     _globalSpinAngle: 0,
     _lastParams: null,
+    // CLK-02: snapshot of params used during current frame (snapped at frame start)
+    _activeParams: null,
+    // CLK-05: staging buffer for deferred collision swaps
+    _pendingSwaps: null,
 
     _needsRebuild(params) {
         if (!this._lastParams) return true;
@@ -208,7 +244,14 @@ export const SCRIPT_CONFIG = {
     },
 
     _updatePhysics(sq, params) {
-        const { growthFactor, damping, waveDecay, identityForce, wrapAround } = params;
+        // CLK-02: use _activeParams snapshot so mid-frame slider drags don't affect this call
+        const p = params;
+        const { growthFactor, damping, waveDecay, identityForce, wrapAround } = p;
+        // CLK-03: cross-field coupling
+        const g1ToG2     = p.g1ToG2      || 0;
+        const g2ToG1     = p.g2ToG1      || 0;
+        const pulseFloor = p.pulseFloor   || 0;
+        const hueCycle   = p.hueCycleRate || 0;
         const res  = sq.resolution;
         const wrap = wrapAround === 'on';
         const cohesion = 0.1;
@@ -218,13 +261,19 @@ export const SCRIPT_CONFIG = {
                 const v1 = sq.grid1[x][y];
                 const d1 = this._sampleDiff(sq.grid1, x, y, res, wrap);
                 const a1 = this._getAvg(sq.grid1, x, y, res, wrap);
-                const raw1 = (v1 + (a1 - v1) * cohesion + d1 * growthFactor * damping) * waveDecay;
-                sq.next1[x][y] = raw1 < 0 ? 0 : raw1 > 1 ? 1 : raw1;
+                // CLK-03: hue→pulse cross-coupling term
+                const v2Cross = sq.grid2[x][y];
+                const raw1 = (v1 + (a1 - v1) * cohesion + (d1 + v2Cross * g2ToG1) * growthFactor * damping) * waveDecay;
+                const clamped1 = raw1 < pulseFloor ? pulseFloor : raw1 > 1 ? 1 : raw1;
+                sq.next1[x][y] = clamped1;
 
                 const v2 = sq.grid2[x][y];
                 const d2 = this._sampleDiff(sq.grid2, x, y, res, wrap);
                 const a2 = this._getAvg(sq.grid2, x, y, res, wrap);
-                const phys = ((v2 + (a2 - v2) * cohesion + d2 * growthFactor * damping) % 1.0 + 1.0) % 1.0;
+                // CLK-03: pulse→hue cross-coupling + autonomous hue cycle
+                const v1Cross = sq.grid1[x][y];
+                const hueAdv  = v2 + hueCycle + v1Cross * g1ToG2 * 0.01;
+                const phys = ((hueAdv + (a2 - v2) * cohesion + d2 * growthFactor * damping) % 1.0 + 1.0) % 1.0;
                 sq.next2[x][y] = phys + (sq.bias - phys) * identityForce;
             }
         }
@@ -233,39 +282,48 @@ export const SCRIPT_CONFIG = {
     },
 
     p5Setup(p, params) {
-        p.colorMode(p.HSB, 360, 100, 100);
+        // CLK-04: include alpha channel in HSB mode for trail fade effect
+        p.colorMode(p.HSB, 360, 100, 100, 100);
         p.noStroke();
         p.noSmooth();
         p.noLoop();
         this._squares = this._buildSquares(p, params);
         this._collisionMap = new Map();
+        this._pendingSwaps  = [];
         this._globalOrbitAngle = 0;
         this._globalSpinAngle  = 0;
-        this._lastParams = { ...params };
+        this._lastParams   = { ...params };
+        this._activeParams = { ...params };
     },
 
     p5Draw(p, params, frame) {
-        if (this._needsRebuild(params)) {
-            this._squares = this._buildSquares(p, params);
+        // CLK-02: snapshot params at frame boundary so mid-frame slider drags are deferred
+        this._activeParams = { ...params };
+        const ap = this._activeParams;
+
+        if (this._needsRebuild(ap)) {
+            this._squares = this._buildSquares(p, ap);
             this._collisionMap = new Map();
+            this._pendingSwaps  = [];
             this._globalOrbitAngle = 0;
             this._globalSpinAngle  = 0;
-            this._lastParams = { ...params };
+            this._lastParams = { ...ap };
         }
 
-        const { orbitSpeed, spinSpeed, orbitDir, swapCooldown } = params;
-        const orbitDirMul = orbitDir === 'CCW' ? -1 : 1;
+        const orbitDirMul = ap.orbitDir === 'CCW' ? -1 : 1;
+        this._globalSpinAngle  += p.radians(ap.spinSpeed);
+        this._globalOrbitAngle += p.radians(ap.orbitSpeed) * orbitDirMul;
 
-        this._globalSpinAngle  += p.radians(spinSpeed);
-        this._globalOrbitAngle += p.radians(orbitSpeed) * orbitDirMul;
-
-        const map = this._collisionMap;
+        const map    = this._collisionMap;
+        const swaps  = this._pendingSwaps;
         map.clear();
+        swaps.length = 0;
 
+        // CLK-05: geometry pass — collect collisions into pending swap list (no immediate swap)
         for (const sq of this._squares) {
             const curAngle = sq.startAngle + this._globalOrbitAngle;
-            const cx = 540 + params.orbitRadius * Math.cos(curAngle);
-            const cy = 540 + params.orbitRadius * Math.sin(curAngle);
+            const cx  = 540 + ap.orbitRadius * Math.cos(curAngle);
+            const cy  = 540 + ap.orbitRadius * Math.sin(curAngle);
             const res = sq.resolution;
 
             for (let x = 0; x < res; x++) {
@@ -284,18 +342,17 @@ export const SCRIPT_CONFIG = {
                         } else {
                             const other = map.get(idx);
                             if (other.sq.id !== sq.id) {
-                                const now = frame;
                                 const p1 = sq.matrix[x][y];
                                 const p2 = other.sq.matrix[other.gx][other.gy];
-                                if (now - p1.lastSwap > swapCooldown && now - p2.lastSwap > swapCooldown) {
-                                    const t1g1 = sq.grid1[x][y];
-                                    sq.grid1[x][y] = other.sq.grid1[other.gx][other.gy];
-                                    other.sq.grid1[other.gx][other.gy] = t1g1;
-                                    const t1g2 = sq.grid2[x][y];
-                                    sq.grid2[x][y] = other.sq.grid2[other.gx][other.gy];
-                                    other.sq.grid2[other.gx][other.gy] = t1g2;
-                                    p1.lastSwap = now;
-                                    p2.lastSwap = now;
+                                if (frame - p1.lastSwap > ap.swapCooldown &&
+                                    frame - p2.lastSwap > ap.swapCooldown) {
+                                    // CLK-05: queue swap atomically — do not mutate grids yet
+                                    swaps.push({ sq1: sq, x1: x, y1: y,
+                                                 sq2: other.sq, x2: other.gx, y2: other.gy,
+                                                 p1, p2 });
+                                    // Prevent duplicate swap for this pair in same frame
+                                    p1.lastSwap = frame;
+                                    p2.lastSwap = frame;
                                 }
                             }
                         }
@@ -304,18 +361,31 @@ export const SCRIPT_CONFIG = {
             }
         }
 
-        p.background(0);
+        // CLK-05: apply all pending swaps atomically after geometry pass
+        for (const sw of swaps) {
+            const tg1 = sw.sq1.grid1[sw.x1][sw.y1];
+            sw.sq1.grid1[sw.x1][sw.y1] = sw.sq2.grid1[sw.x2][sw.y2];
+            sw.sq2.grid1[sw.x2][sw.y2] = tg1;
+            const tg2 = sw.sq1.grid2[sw.x1][sw.y1];
+            sw.sq1.grid2[sw.x1][sw.y1] = sw.sq2.grid2[sw.x2][sw.y2];
+            sw.sq2.grid2[sw.x2][sw.y2] = tg2;
+        }
+
+        // CLK-04: trail — fade background proportionally to trailDecay
+        const trailLen   = ap.trailLength | 0;
+        const trailAlpha = trailLen > 0 ? Math.max(5, Math.min(95, 100 - (ap.trailDecay ?? 50))) : 100;
+        p.background(0, 0, 0, trailAlpha);
         for (const sq of this._squares) {
-            this._updatePhysics(sq, params);
+            // CLK-02: pass active snapshot to physics — insulates from live param changes
+            this._updatePhysics(sq, ap);
             const res = sq.resolution;
             for (let x = 0; x < res; x++) {
                 for (let y = 0; y < res; y++) {
-                    const ent = sq.matrix[x][y];
+                    const ent   = sq.matrix[x][y];
                     const pulse = Math.max(0, Math.min(1, sq.grid1[x][y]));
                     const hue   = sq.grid2[x][y];
-                    const H = hue * 360;
                     const B = p.map(pulse, 0, 1, 100, 50);
-                    p.fill(H, 90, B);
+                    p.fill(hue * 360, 90, B);
                     p.rect(
                         ent.cartesian.x - ent.drawSize * 0.5,
                         ent.cartesian.y - ent.drawSize * 0.5,

@@ -1,6 +1,6 @@
 # Generative Pattern — UI Layout
 
-**Status: Unimplemented stub.**
+**[DOC-022 DEFERRED — 2026-04-30]** Live script is v1.0.0 (fully implemented, 18+ params). This file was written against the stub-era spec. Do not use as implementation reference. Full rewrite deferred; see `issues.md` DOC-022.
 
 ## Live Parameters (Current)
 

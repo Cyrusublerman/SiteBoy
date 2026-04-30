@@ -1,40 +1,36 @@
 # Interference Figure — Migration Log
 
-## Pack Generated
+## Pack Updated
 
-Date: 2026-03-10
-Source analysed: `assets/js/tools/generators/scripts/other/interference-figure.gen.js` v(none — stub)
-Legacy docs: `interference-figure-spec.md` (mixed bundle), `interference-figure-audit.md` (audit only)
+Date: 2026-04-23  
+Source analysed: `assets/js/tools/generators/scripts/other/interference-figure.gen.js` v1.0.0
 
-## Summary of Migration State
+## Current State
 
-**Generator is not implemented.** Both live and archive sources are identical stubs. All 10 required subsystems (per audit) are missing.
+Generator is implemented and live.
 
-## Architecture Gap Summary
+Implemented:
+- 10 OPD basis fields
+- 8 pattern families with `patternMorph`
+- CIE 1931 spectral integration (31 samples)
+- Physical + Stylised colour modes
+- fractal noise perturbation
+- multi-axis field augmentation
+- worker compute path via `computePixels`
+- static export contract (`animation.type: none`, `png: true`)
 
-| Step | Subsystem | Module | Status |
-|---|---|---|---|
-| 1 | Normalised coordinate grid | GEO-026 | Missing |
-| 2 | Polar transform | GEO-027 | Missing |
-| 3 | OPD basis fields | PHYS-006 | Missing |
-| 4 | Fractal noise | PAT-017 | Missing |
-| 5 | OPD perturbation | PHYS-007 | Missing |
-| 6 | Phase retardation | PHYS-008 | Missing |
-| 7 | Interference intensity | PHYS-009 | Missing |
-| 8 | Polarisation factor | PHYS-010 | Missing |
-| 9 | Spectral to RGB | COLOR-009 | Missing |
-| 10 | Tone mapper | COLOR-010 | Missing |
+## 2026-04-28 additions (IFG-01 – IFG-04)
 
-## Implementation Roadmap
+- **IFG-01 Resize debounce:** Resize debounce + stale-token guard added; rapid resize events no longer trigger multiple concurrent worker dispatches.
+- **IFG-02 Worker path:** Worker compute path verified via X-011 cross-cutting audit; `computePixels` contract confirmed correct.
+- **IFG-03 Stylised styles:** `stylisedStyle` Select param added — 4 rendering styles (film-layer / crystal / soap-bubble / metallic); each modifies colour tone-mapping applied to the raw CIE XYZ output.
+- **IFG-04 Animation block:** `animation` block added to SCRIPT_CONFIG — `rotation`, `patternMorph`, `spiralRate` animatable params with sequencer support.
 
-1. Embed CIE 1931 CMF table (31 wavelengths, 400–700 nm) — HIGH priority prerequisite.
-2. Implement OPD basis fields with all 10 components (PHYS-006) — HIGH priority.
-3. Implement `sin²(Δ/2)` intensity per wavelength (PHYS-008, PHYS-009).
-4. Implement spectral-to-XYZ-to-RGB conversion (COLOR-009).
-5. Implement tone mapper with exposure/gamma (COLOR-010).
-6. Implement fractal noise (PAT-017) — MEDIUM priority.
-7. Implement OPD perturbation (PHYS-007).
-8. Implement polarisation factor (PHYS-010) — MEDIUM priority.
-9. Implement coordinate system and polar transform (GEO-026, GEO-027).
-10. Build full SCRIPT_CONFIG with all 26 parameters, 6 presets, `animation: { type: 'none' }`, export block.
-11. Resolve canvas size: adopt 420×420 per spec.
+## 2026-04-29 additions (IFG-05)
+
+- **IFG-05 Seam controls:** `seamAngle` (−180°→+180°) and `seamBlend` (0–1) params in `Transform` group. `theta = atan2(v,u) − seamAngleRad` shifts the branch-cut seam to a user-specified position. When `seamBlend > 0`, pixels within `seamBlend × 0.3π` of the new seam interpolate between nominal and wrap-around `theta` values, smoothing the spiral OPD discontinuity. Applied consistently in both main-thread and worker `computePixels` paths.
+
+## Residuals
+
+- Polarisation factor intentionally excluded (legacy formula incomplete)
+- SVG export unsupported (pixel renderer)

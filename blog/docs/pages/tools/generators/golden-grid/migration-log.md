@@ -1,23 +1,33 @@
 # Golden Grid — Migration Log
 
-## Status
+## Pack Updated
 
-**Implemented.** Port of `pulsing_recursive_grid` sketch. Recursive golden-ratio subdivision with animated colour. Noted as reference implementation for P5 generators in the unified system. Version 1.0.0.
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/pattern/golden-grid.gen.js`
 
-## Architectural Notes
+## Current State
 
-- Context: `p5`. Uses P5.js API.
-- Interface: `p5Setup` / `p5Draw` hooks.
-- Animation: `loop`, `loopFrames: 360` (static; conflicts with param).
-- Colour mode: HSL [0,1] — unusual but valid.
-- `noSmooth()`: aliased rendering (intentional).
+Implemented and live.
 
-## Open Items (priority order)
+Resolved since the original migration:
+- `loopFrames` export conflict resolved with live getter
+- preset format converted to `{ name, values }`
+- export metadata added
+- per-frame ratio recomputation removed
+- bounds cached by `maxDepth`
+- dead `_normBounds` state removed
 
-1. **[HIGH] Fix `animation.loopFrames` conflict** — either make host read `params.loopFrames` dynamically, or remove `loopFrames` from the `animation` block and document that pre-render uses `params.loopFrames`.
-2. **[HIGH] Cache `_getRatio` per frame** — compute once at top of `p5Draw`; pass to `_subdivide` as a parameter instead of recomputing per node. Critical at `maxDepth ≥ 14`.
-3. **[MEDIUM] Fix preset format** — add `values: { ... }` wrapper to all 4 presets.
-4. **[MEDIUM] Add `export` block** — at minimum `{ png: true }`. With loop type, `{ gif: true, webm: true }` are also appropriate.
-5. **[MEDIUM] Set `canPrerender: true`** — animation is deterministic and frame-based; eligible.
-6. **[MEDIUM] Cache bounds computation** — add `_lastMaxDepth` guard; recompute `wMax/wMin/hMax/hMin/aMax/aMin` only when `maxDepth` changes.
-7. **[LOW] Remove dead `_normBounds`** — remove `_normBounds: null` from SCRIPT_CONFIG and the bounds computation in `p5Setup`. `p5Setup` can be reduced to `p.colorMode(p.HSL, 1, 1, 1); p.noStroke(); p.noSmooth(); p.noLoop()`.
+## 2026-04-28 additions (GOL-01, GOL-02, GOL-04)
+
+- **GOL-01 Loop cap removed:** `loopFrames` cap lifted via X-015; animation runs continuously without hard cut-off.
+- **GOL-02 HSL range input:** `HSLRangeInput` (X-009) added — `hueMin`/`hueMax`, `satMin`/`satMax`, `litMin`/`litMax` sliders. Per-cell colour mapping function restricts final HSL output to the user-defined sub-range.
+- **GOL-04 Positional + depth modulation:** `positionModulation` and `depthModulation` channels added; HSL values shifted by normalised cell XY position and recursion depth respectively, creating spatial colour variation independent of time.
+
+## 2026-04-29 additions (GOL-03)
+
+- **GOL-03 Easing control:** `_EASING` map (17 presets) + `_applyEasing(t, id)` helper. `easingCurve` param (`type: 'easing-curve'`, routed to `EasingCurveInput`). Primary animation time variable `t` passed through `_applyEasing` before driving the phi-power sinusoidal ratio. `easing-curve` param type registered in `generative-tool-host.js` `COMPONENT_TYPES` and `parameter-builder.js`.
+
+## Residuals
+
+- High-depth recursion remains CPU-bound with no worker/GPU path.
+- User-facing `loopFrames` remains unusual but technically synchronised.

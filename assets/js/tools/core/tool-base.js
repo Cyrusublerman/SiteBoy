@@ -59,6 +59,9 @@ const COMPONENT_TYPES = {
     'navdropdown': 'NavigationDropdown',
     'canvas-tabs': 'CanvasTabs',
     'seed': 'NumericInput',  // Seed inputs are numeric
+    'animate-param': 'AnimateParamControl',
+    'noise-type': 'NoiseTypeSelect',
+    'easing-curve': 'EasingCurveInput',
 
     // Outputs
     'label': 'Text',
@@ -1096,6 +1099,17 @@ export class ToolBase extends BaseComponent {
                     key: extraOptions.key ?? this._makeKey(args[0]),
                 };
                 break;
+
+            case 'easing-curve': {
+                const ecKey = extraOptions.key ?? this._makeKey(args[0]);
+                options = {
+                    label:    args[0],
+                    value:    extraOptions.value ?? 'ease-in-out',
+                    key:      ecKey,
+                    onChange: (id, _fn) => this._handleChange(ecKey, id),
+                };
+                break;
+            }
 
             case 'equation':
                 // For equation, the params object IS the extraOptions (after pop)

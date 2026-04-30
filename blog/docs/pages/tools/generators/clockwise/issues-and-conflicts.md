@@ -88,8 +88,20 @@ Impact: The reported broken fit/fill/actual and zoom behaviour is a defect in th
 
 ## Escalation Issues
 
+**[STALE DOC]** **DOC-050** `mechanisms.md` documents pre-v1.1.0 render loop (reads next1/next2; fixed to grid1/grid2), pre-clamp physics step, and flat collision array (changed to sparse Map). → fix doc
+
+**[STALE DOC]** **DOC-051** `ui-layout.md` UX notes state "Grid1 values not clamped in physics step; unclamped values feed back" (RESOLVED v1.1.0); animatableParams not shown in Animation Config (now `['orbitSpeed','spinSpeed','growthFactor','damping','waveDecay','identityForce']`). → fix doc
+
 **[NOTE] [ESCALATION] Algorithm candidate: two-field cellular diffusion with identity restoration**
 Location: `_updatePhysics` in `clockwise.gen.js`
 Description: Advances two coupled scalar field grids (pulse and hue) using neighbourhood averaging, weighted difference amplification, per-step decay, modular wrapping, and an identity bias pull — a discrete reaction-diffusion variant.
 Candidate library location: `assets/js/shared/algorithms/physics/reaction-diffusion.js`
 Reason: non-trivial (20+ lines, named algorithm class); the neighbourhood scan + diffusion pattern is reusable in any cellular automata or wave generator; not currently in the shared library
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-029 (P1, FIXED):** Live clockwise imports no modules from `assets/js/shared/` (`zero-shared-imports`) and keeps diffusion/collision helpers inline.
+- **DOC-050 (P2, FIXED):** `mechanisms.md` refreshed against current buffer, clamp, and sparse-map implementation.
+- **DOC-051 (P2, FIXED):** `ui-layout.md` refreshed with current controls and animation metadata.

@@ -102,6 +102,22 @@ export class BaseComponent {
         if (content) element.textContent = content;
         return element;
     }
+
+    /**
+     * Clear child nodes without exposing innerHTML to component subclasses.
+     */
+    clearElement(element) {
+        if (!element) return;
+        element.replaceChildren();
+    }
+
+    /**
+     * Append a child element through the foundation DOM boundary.
+     */
+    appendElement(parent, child) {
+        if (!parent || !child) return;
+        parent.appendChild(child);
+    }
     
     /**
      * Set text content of the component's element
@@ -221,6 +237,15 @@ export class BaseComponent {
     attachToBody(element) {
         if (!element) return;
         document.body.appendChild(element);
+    }
+
+    /**
+     * Remove an element through the foundation DOM boundary.
+     */
+    detachElement(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
     }
 }
 
