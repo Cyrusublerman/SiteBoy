@@ -59,13 +59,14 @@ const COMPONENT_TYPES = {
     'navdropdown': 'NavigationDropdown',
     'canvas-tabs': 'CanvasTabs',
     'seed': 'NumericInput',  // Seed inputs are numeric
-    'animate-param': 'AnimateParamControl',
+
     'noise-type': 'NoiseTypeSelect',
     'easing-curve': 'EasingCurveInput',
 
     // Outputs
     'label': 'Text',
     'markdown': 'Text',
+    'markdown-fetch': 'MarkdownBody',
     'value': 'Text',
     'imageviewport': 'ImageViewport',
     'image-viewport': 'ImageViewport',
@@ -80,7 +81,14 @@ const COMPONENT_TYPES = {
     'section': 'Section',
     'grid': 'Grid',
     'tabs': 'Tabs',
-    'file-table': 'FileTable'
+    'file-table': 'FileTable',
+
+    // Generator modulation + animation
+    'modulator-chip':         'ModulatorChip',
+    'modulator-panel':        'ModulatorPanel',
+    'palette-row':            'PaletteRow',
+    'gradient-stops':         'GradientStops',
+    'transport-strip':        'GeneratorTransportStrip',
 };
 
 // Component access helper - uses deps instead of globals
@@ -171,6 +179,9 @@ export class ToolBase extends BaseComponent {
         
         // Loading state (component-based)
         this.loadingOverlayComponent = null;
+
+        /** @type {{ destroy?: Function, render?: Function, isDestroyed?: boolean } | null} */
+        this.floatingOverlayComponent = null;
         
         // Advanced tab configs
         this.categoryTabsConfig = config.categoryTabs ?? null;
@@ -227,6 +238,27 @@ export class ToolBase extends BaseComponent {
             this.loadingOverlayComponent.destroy();
             this.loadingOverlayComponent = null;
         }
+    }
+
+    /**
+     * Full-tool modal / error layer (covers sidebar + canvas). Single slot.
+     */
+    showFloatingOverlay(component) {
+        this.hideFloatingOverlay();
+        if (!this.element || !component || typeof component.render !== 'function') return;
+        this.floatingOverlayComponent = component;
+        const el = component.render();
+        if (el) this.element.appendChild(el);
+    }
+
+    hideFloatingOverlay() {
+        if (!this.floatingOverlayComponent) return;
+        try {
+            if (!this.floatingOverlayComponent.isDestroyed) {
+                this.floatingOverlayComponent.destroy?.();
+            }
+        } catch (_) {}
+        this.floatingOverlayComponent = null;
     }
     
     /**
@@ -1002,6 +1034,7 @@ export class ToolBase extends BaseComponent {
                     items: args[1] ?? [],
                     exclusive: typeLower === 'radio',
                     layout: extraOptions.layout ?? 'list',
+                    gridColumns: extraOptions.gridColumns ?? 2,
                     selectedValues: extraOptions.selectedValues ?? [],
                     selectedValue: extraOptions.selectedValue ?? null,
                     key: extraOptions.key ?? this._makeKey(args[0]),
@@ -1072,10 +1105,20 @@ export class ToolBase extends BaseComponent {
                 break;
             }
 
+            case 'markdown-fetch':
+                options = {
+                    fetchPath: args[0] ?? extraOptions.fetchPath ?? '',
+                    markdownText: extraOptions.markdownText ?? '',
+                    className: extraOptions.className ?? 'markdown-body',
+                    ...(extraOptions.key ? { key: extraOptions.key } : {}),
+                };
+                break;
+
             case 'markdown':
                 options = {
                     variant: 'markdown',
                     content: args[0],
+                    ...(extraOptions.key ? { key: extraOptions.key } : {}),
                 };
                 break;
 
@@ -1083,11 +1126,13 @@ export class ToolBase extends BaseComponent {
             case 'value':
                 options = {
                     variant: extraOptions.variant ?? (typeLower === 'value' ? 'value' : 'body'),
-                    content: args[0],
+                    content: extraOptions.value ?? args[0],
                     label: extraOptions.label,
                     unit: extraOptions.unit,
                     level: extraOptions.level,
                     status: extraOptions.status,
+                    // Allow key so setValue() can find and update label/value components
+                    ...(extraOptions.key ? { key: extraOptions.key } : {}),
                 };
                 break;
 
@@ -1600,8 +1645,11 @@ export class ToolBase extends BaseComponent {
     _handleChange(key, value) {
         // Handle displayMode radio button
         if (key === 'displayMode') {
-            const modeMap = { 'Fit': 'fit', 'Fill': 'fill', 'Actual': 'actual' };
-            const mode = modeMap[value] || 'fit';
+            const raw = String(value || '').trim().toLowerCase();
+            const mode =
+                raw === 'fill' ? 'fill' :
+                raw === 'actual' ? 'actual' :
+                'fit';
             this.setCanvasDisplayMode(mode);
             // Don't store in values or call onUpdate for internal controls
             return;
@@ -1849,6 +1897,9 @@ export class ToolBase extends BaseComponent {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;
         }
+
+        this.hideFloatingOverlay();
+        this.hideLoading();
 
         this.componentInstances.forEach(c => c.destroy && c.destroy());
         this.componentInstances = [];

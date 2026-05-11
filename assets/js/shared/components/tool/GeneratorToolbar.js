@@ -66,7 +66,7 @@ export class GeneratorToolbar extends BaseComponent {
         dropdownCell.style.cssText = `
             display: flex;
             align-items: center;
-            width: ${F * 30}px;
+            width: var(--subheader-title-width, ${F * 30}px);
             flex-shrink: 0;
             height: 100%;
             position: relative;
@@ -198,7 +198,7 @@ export class GeneratorToolbar extends BaseComponent {
             background: var(--c-bg);
             color: var(--c-text);
             font-family: 'Atkinson Hyperlegible', sans-serif;
-            font-size: ${F * 0.75}px;
+            font-size: ${F}px;
             text-transform: uppercase;
             cursor: pointer;
         `;
@@ -267,7 +267,7 @@ export class GeneratorToolbar extends BaseComponent {
                 background: var(--c-border);
                 color: var(--c-text);
                 font-family: 'Atkinson Hyperlegible', sans-serif;
-                font-size: ${F * 0.75}px;
+                font-size: ${F}px;
                 text-transform: uppercase;
             `;
             menu.appendChild(header);
@@ -284,7 +284,7 @@ export class GeneratorToolbar extends BaseComponent {
                     background: ${isActive ? 'var(--c-text)' : 'var(--c-bg)'};
                     color: ${isActive ? 'var(--c-bg)' : 'var(--c-text)'};
                     font-family: 'Atkinson Hyperlegible', sans-serif;
-                    font-size: ${F * 0.75}px;
+                    font-size: ${F}px;
                     cursor: pointer;
                     border-top: 1px solid var(--c-border);
                 `;

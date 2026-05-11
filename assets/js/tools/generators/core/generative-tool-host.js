@@ -23,13 +23,17 @@
 import { BaseComponent } from '../../../shared/foundation.js';
 import { ToolBase } from '../../core/tool-base.js';
 import ScriptRegistry from './script-registry.js';
-import { buildSidebarConfig } from './parameter-builder.js';
+import { buildSidebarConfig, buildTransportConfig } from './parameter-builder.js';
 import { getDefaultParams, applyPreset, randomizeParams } from '../shared/presets.js';
 import { AnimationLoop } from '../../../core/animation-foundation.js';
 import { GeneratorToolbar } from '../../../shared/components/tool/GeneratorToolbar.js';
+import { GeneratorTransportStrip } from '../../../shared/components/tool/TransportStrip.js';
 import { P5Canvas } from '../../../shared/p5-integration.js';
 import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
 import { ComputeScheduler } from './compute-scheduler.js';
+import { evaluateModulators } from './modulation-engine.js';
+import { buildContext } from './expression-context.js';
+import { _migrateScriptConfig } from './script-types.js';
 
 export class GenerativeToolHost extends BaseComponent {
     constructor(container, initialScriptId = null, deps = {}) {
@@ -61,7 +65,6 @@ export class GenerativeToolHost extends BaseComponent {
         this.animator = null;
         this.frame = 0;
         this.isPlaying = false;
-        this.phaseAnimationState = {};
         this.displayMode = 'fit';
         this.p5Instance = null;  // p5.js instance for context: 'p5'
         this.isP5Context = false; // Flag for p5 mode
@@ -170,7 +173,17 @@ export class GenerativeToolHost extends BaseComponent {
             position: relative;
         `;
         this.appendElement(this.wrapperEl, this.toolContentEl);
-        
+
+        // Transport region — below the canvas, outside the sidebar
+        // TransportStrip and SequencerV2 strip both mount here
+        this.transportRegionEl = this.createElement('div');
+        this.transportRegionEl.className = 'generative-host-transport';
+        this.transportRegionEl.style.cssText = `
+            flex-shrink: 0;
+            width: 100%;
+        `;
+        this.appendElement(this.wrapperEl, this.transportRegionEl);
+
         this.appendElement(this.container, this.wrapperEl);
 
         // X-001: Spacebar play/stop — bound to the host wrapper, not the document,
@@ -230,39 +243,14 @@ export class GenerativeToolHost extends BaseComponent {
         
         // Load script config
         this.scriptId = scriptId;
-        this.scriptConfig = await ScriptRegistry.load(scriptId);
+        const rawConfig = await ScriptRegistry.load(scriptId);
+        this.scriptConfig = _migrateScriptConfig(rawConfig);
         
         // Get default parameter values
         this.params = getDefaultParams(this.scriptConfig.parameters);
         
-        // Initialize animation state for each animatable param.
-        // Each entry in animatableParams may be either a plain string (key)
-        // or an object: { key, label?, mode?, rate?, min?, max? }
-        //   mode: 'phase'     — linear phase increment, wraps at param range
-        //   mode: 'oscillate' — sinusoidal between min/max, period ~4s at speed=1
-        //   rate: multiplier applied on top of the global speed slider (default 1)
-        this.phaseAnimationState = {};
-        if (this.scriptConfig.animation?.animatableParams) {
-            for (const entry of this.scriptConfig.animation.animatableParams) {
-                const cfg = typeof entry === 'string' ? { key: entry } : entry;
-                const key = cfg.key;
-                const paramDef = this._findParamDef(key);
-                this.phaseAnimationState[key] = {
-                    enabled:   false,
-                    baseValue: this.params[key] ?? 0,
-                    label:     cfg.label ?? this._deriveAnimLabel(key),
-                    mode:      cfg.mode  ?? 'phase',
-                    rate:      cfg.rate  ?? 1,
-                    // X-002: user-editable modulation fields
-                    waveform:  cfg.waveform ?? 'sine',
-                    strength:  cfg.strength ?? 1,
-                    phase:     cfg.phase    ?? 0,
-                    // Explicit min/max wins; fall back to param definition; then ±2π
-                    min: cfg.min ?? paramDef?.min ?? -(Math.PI * 2),
-                    max: cfg.max ?? paramDef?.max ??  (Math.PI * 2),
-                };
-            }
-        }
+        // Build modulators array from new schema (post-migration)
+        this.modulators = this.scriptConfig.animation?.modulators ?? [];
         
         // Check if this is a p5 context script
         this.isP5Context = this.scriptConfig.canvas.context === 'p5';
@@ -289,10 +277,25 @@ export class GenerativeToolHost extends BaseComponent {
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
 
+        // Mount TransportStrip in the transport region (below canvas)
+        if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
+        }
+        if (this.scriptConfig.animation && this.scriptConfig.animation.type !== 'none') {
+            const transportConfig = buildTransportConfig(this.scriptConfig);
+            this.transportStrip = new GeneratorTransportStrip({
+                ...transportConfig,
+                onChange: (key, value) => this._handleTransportChange(key, value),
+            }, this.deps);
+            this.clearElement(this.transportRegionEl);
+            this.appendElement(this.transportRegionEl, this.transportStrip.render());
+            this.componentInstances.push(this.transportStrip);
+        } else {
+            this.clearElement(this.transportRegionEl);
+        }
+
         // Inject SequencerV2 + AnimationExport UI — only for generators that animate.
-        // type: 'none' generators have no ANIMATE/EXPORT tabs so injection targets don't exist.
-        // Set animation.sequencer = false to suppress SequencerV2.
-        // Set animation.animationExport = false to suppress AnimationExport.
         const animType = this.scriptConfig.animation?.type;
         if (this.scriptConfig.animation && animType !== 'none') {
             setTimeout(() => {
@@ -873,16 +876,26 @@ export class GenerativeToolHost extends BaseComponent {
         }
 
         if (key.startsWith('animParam__')) {
-            const paramKey = key.replace(/^animParam__/, '');
-            if (this.phaseAnimationState[paramKey] && value) {
-                Object.assign(this.phaseAnimationState[paramKey], {
-                    enabled:  value.enabled  ?? this.phaseAnimationState[paramKey].enabled,
-                    waveform: value.waveform ?? this.phaseAnimationState[paramKey].waveform,
-                    strength: value.strength ?? this.phaseAnimationState[paramKey].strength,
-                    rate:     value.rate     ?? this.phaseAnimationState[paramKey].rate,
-                    phase:    value.phase    ?? this.phaseAnimationState[paramKey].phase,
-                });
+            // Legacy animParam__ events — no-op; modulator state now managed via mod__ keys
+            return;
+        }
+
+        // New modulation engine — mod__<targetKey> updates a ModulatorDescriptor
+        if (key.startsWith('mod__')) {
+            const targetKey = key.replace(/^mod__/, '');
+            const modIdx = this.modulators.findIndex(m => m.targetKey === targetKey);
+            if (modIdx >= 0) {
+                this.modulators[modIdx] = { ...this.modulators[modIdx], ...value };
+            } else if (value) {
+                this.modulators.push({ targetKey, ...value });
             }
+            return;
+        }
+
+        // Palette row — palette__<id>: { colour, alpha, lineWidth }
+        if (key.startsWith('palette__')) {
+            const layerId = key.replace(/^palette__/, '');
+            this._handlePaletteLayerUpdate(layerId, value);
             return;
         }
         
@@ -950,6 +963,41 @@ export class GenerativeToolHost extends BaseComponent {
         if (!this.tool.canvasArea.contains(this._sequencerStripEl)) {
             this.appendElement(this.tool.canvasArea, this._sequencerStripEl);
             this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+        }
+    }
+
+    /**
+     * Handle palette row update (OUTPUT tab new-schema path).
+     * value: { colour?, alpha?, lineWidth? }
+     */
+    _handlePaletteLayerUpdate(layerId, value) {
+        if (!this.scriptConfig?.canvas?.colourway) return;
+        const layer = this.scriptConfig.canvas.colourway.find(l => l.id === layerId);
+        if (!layer) return;
+        if (value.colour    !== undefined) layer.colour    = value.colour;
+        if (value.alpha     !== undefined) layer.alpha     = value.alpha;
+        if (value.lineWidth !== undefined) layer.lineWidth = value.lineWidth;
+        this.scheduleRedraw();
+    }
+
+    /**
+     * Handle transport strip events (play/pause/stop/speed/timeline).
+     * Mirrors the sidebar handleUpdate branches but routes to TransportStrip.
+     */
+    _handleTransportChange(key, value) {
+        if (key === 'playPause')      { this.togglePlay(); return; }
+        if (key === 'stopReset')      { this.stop();       return; }
+        if (key === 'animSpeed')      {
+            // Store speed so updatePhaseAnimations and the modulation engine can read it
+            this._animSpeed = value;
+            return;
+        }
+        if (key === 'toggleTimeline') {
+            if (this._sequencerStripEl) {
+                this._sequencerStripVisible = !this._sequencerStripVisible;
+                this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+            }
+            return;
         }
     }
 
@@ -1051,11 +1099,6 @@ export class GenerativeToolHost extends BaseComponent {
             }
         }
 
-        // Re-baseline all phase animation states to the new param defaults
-        for (const key in this.phaseAnimationState) {
-            this.phaseAnimationState[key].baseValue = this.params[key] ?? 0;
-        }
-
         // Update UI
         for (const key in this.params) {
             this.tool.setValue(key, this.params[key]);
@@ -1089,27 +1132,6 @@ export class GenerativeToolHost extends BaseComponent {
     }
 
     /**
-     * Handle phase animation toggles.
-     * selectedLabels is the list of label strings currently toggled on.
-     */
-    handlePhaseToggles(selectedLabels) {
-        if (!this.scriptConfig.animation?.animatableParams) return;
-        
-        for (const key in this.phaseAnimationState) {
-            const state = this.phaseAnimationState[key];
-            const nowEnabled = selectedLabels.includes(state.label);
-            
-            if (nowEnabled && !state.enabled) {
-                // Capture the live value as base when first enabling
-                state.baseValue = this.params[key] ?? 0;
-            }
-            state.enabled = nowEnabled;
-        }
-        
-        window.debugLog('TOOLS', `🎬 Phase animation: ${selectedLabels.length} params enabled`);
-    }
-    
-    /**
      * Toggle play/pause animation
      */
     togglePlay() {
@@ -1128,6 +1150,10 @@ export class GenerativeToolHost extends BaseComponent {
      * restoring to the default idle colours.
      */
     _syncPlayButton() {
+        // Update transport strip (new path)
+        this.transportStrip?.setPlaying(this.isPlaying);
+
+        // Update legacy sidebar button (kept during transition period)
         const btn = this.tool?.getComponent?.('playPause');
         if (!btn?.element) return;
         const playing = this.isPlaying;
@@ -1215,89 +1241,24 @@ export class GenerativeToolHost extends BaseComponent {
             this.animator.stop();
         }
         
-        // Reset animated params to their rest position
-        for (const key in this.phaseAnimationState) {
-            const state = this.phaseAnimationState[key];
-            if (!state.enabled) continue;
-            if (state.mode === 'oscillate') {
-                // Oscillate rests at center of range
-                this.params[key] = (state.min + state.max) / 2;
-            } else {
-                this.params[key] = state.baseValue;
-            }
-        }
-        
         this.draw();
         window.debugLog('TOOLS', '⏹️ Animation stopped');
     }
     
     /**
-     * Update all enabled param animations each frame.
-     *
-     * Two modes are supported:
-     *
-     *   'phase'     — Continuously increments the value and wraps it within
-     *                 the param's min/max range.  Good for phases (φ) and any
-     *                 parameter where you want perpetual drift.
-     *                 Formula: value = baseValue + frame × globalSpeed × rate × 2π/60
-     *
-     *   'oscillate' — Sinusoidally bounces between the param's min and max.
-     *                 Good for amplitudes, frequencies, and modulation amounts.
-     *                 Formula: value = center + half × sin(frame × globalSpeed × rate × 2π / 240)
-     *                 (240 frames ≈ 4 s per cycle at speed=1, rate=1)
-     *
-     * The global speed slider scales both modes uniformly.
-     * The per-param `rate` field scales an individual param relative to global speed.
+     * Evaluate all declared modulators for the current frame, writing output into params.
      */
     updatePhaseAnimations() {
-        const speed  = this.tool?.getValue('animSpeed') || 1;
-        const TWO_PI = Math.PI * 2;
-
-        for (const key in this.phaseAnimationState) {
-            const state = this.phaseAnimationState[key];
-            if (!state.enabled) continue;
-
-            const rate     = state.rate     ?? 1;
-            const strength = state.strength ?? 1;
-            const phase    = state.phase    ?? 0;
-            const waveform = state.waveform ?? 'sine';
-
-            // Normalised time: 0→1 per cycle (cycle length = 240 frames at speed=1, rate=1)
-            const t = (this.frame * speed * rate + phase * 240 / TWO_PI) / 240;
-
-            const center = (state.min + state.max) / 2;
-            const half   = (state.max - state.min) / 2 * strength;
-
-            let delta;
-            if (waveform === 'triangle') {
-                // Triangle: 0→1→0→-1→0 per cycle
-                const tp = t % 1;
-                delta = (tp < 0.5 ? 4 * tp - 1 : 3 - 4 * tp) * half;
-            } else if (waveform === 'saw') {
-                delta = ((t % 1) * 2 - 1) * half;
-            } else if (waveform === 'square') {
-                delta = ((t % 1) < 0.5 ? 1 : -1) * half;
-            } else if (waveform === 'noise') {
-                // Seeded pseudo-random using sin hash — deterministic per frame
-                const n = Math.sin(t * 127.1 + key.length * 311.7) * 43758.5453;
-                delta = (n - Math.floor(n)) * 2 * half - half;
-            } else {
-                // Sine (default and 'phase' compat)
-                delta = Math.sin(t * TWO_PI) * half;
-            }
-
-            if (state.mode === 'oscillate') {
-                this.params[key] = center + delta;
-            } else {
-                // 'phase' — linear increment with wrapping
-                const range = state.max - state.min;
-                let val = state.baseValue + this.frame * speed * rate * TWO_PI / 60;
-                if (range > 0) {
-                    val = ((val - state.min) % range + range) % range + state.min;
-                }
-                this.params[key] = val;
-            }
-        }
+        if (!this.modulators || this.modulators.length === 0) return;
+        const speed      = this._animSpeed ?? 1;
+        const loopFrames = this.scriptConfig.animation?.loopFrames || 360;
+        const fps        = this.scriptConfig.animation?.defaultFps || 60;
+        const t          = loopFrames > 0 ? (this.frame % loopFrames) / loopFrames : 0;
+        const ctx = buildContext({
+            t, frame: this.frame, fps, loop: loopFrames, speed,
+            params: this.params, mods: {},
+        });
+        evaluateModulators(this.modulators, this.params, this.frame, ctx);
     }
     
     /**
@@ -1396,29 +1357,11 @@ export class GenerativeToolHost extends BaseComponent {
                 for (const key in cpParams) {
                     this.tool.setValue(key, cpParams[key]);
                 }
-                // Align phase baseValues so animation resumes relative to loaded state
-                for (const key in this.phaseAnimationState) {
-                    if (cpParams[key] !== undefined) {
-                        this.phaseAnimationState[key].baseValue = cpParams[key];
-                    }
-                }
                 this.draw();
             },
             onFrame: (interpolated) => {
                 // Set checkpoint-interpolated base values
                 Object.assign(this.params, interpolated);
-                // Track phase baseValue to the sequencer position so offsets stay relative
-                for (const key in this.phaseAnimationState) {
-                    if (key in interpolated && this.phaseAnimationState[key].mode === 'phase') {
-                        this.phaseAnimationState[key].baseValue = interpolated[key];
-                    }
-                }
-                // Apply phase animation on top if it is active
-                const phaseActive = Object.values(this.phaseAnimationState).some(s => s.enabled);
-                if (phaseActive && this.isPlaying) {
-                    this.frame++;
-                    this.updatePhaseAnimations();
-                }
                 this.draw();
             }
         }, {});

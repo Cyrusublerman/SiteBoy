@@ -16,7 +16,7 @@
  */
 
 import '../../../../shared/algorithms/core/math-utils.js';
-import { FontRegistry } from '../../../shared/typography/font-registry.js';
+import { FontRegistry } from '../../../../shared/typography/font-registry.js';
 
 // Source text rendered by this generator (partial quine - configuration block)
 const _QUINE_TEXT =
@@ -263,9 +263,9 @@ export const SCRIPT_CONFIG = {
         width: 1080, height: 1080, context: 'p5',
         // QUI-01: colourway for paper/code/comment colours
         colourway: [
-            { id: 'paper',      label: 'Paper',        colour: '#f2ede2' },
-            { id: 'ink-code',   label: 'Ink (code)',   colour: '#2d2a30' },
-            { id: 'ink-comment',label: 'Ink (comment)',colour: '#7d5852' }
+            { id: 'paper',      label: 'Paper',        colour: '#f2ede2', kind: 'fill' },
+            { id: 'ink-code',   label: 'Ink (code)',   colour: '#2d2a30', kind: 'fill' },
+            { id: 'ink-comment',label: 'Ink (comment)',colour: '#7d5852', kind: 'fill' }
         ]
     },
 

@@ -22,8 +22,6 @@ export {
     FilamentPicker,
     NoiseTypeSelect,
     NOISE_TYPES,
-    AnimateParamControl,
-    WAVEFORMS,
     EasingCurveInput,
     HSLRangeInput,
 } from './input/index.js';
@@ -97,7 +95,6 @@ export const Components = {
     EquationEditor: Input.EquationEditor,
     DropZone: Input.DropZone,
     NoiseTypeSelect: Input.NoiseTypeSelect,
-    AnimateParamControl: Input.AnimateParamControl,
     EasingCurveInput: Input.EasingCurveInput,
     HSLRangeInput: Input.HSLRangeInput,
 

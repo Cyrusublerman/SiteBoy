@@ -450,10 +450,10 @@ export const SCRIPT_CONFIG = {
         width: 1080, height: 1080, context: 'p5',
         // CUR-01: colourway for background/front face/back face shading colours
         colourway: [
-            { id: 'background', label: 'Background',      colour: '#000000' },
-            { id: 'front',      label: 'Front Face',      colour: '#ffffff' },
-            { id: 'back',       label: 'Back Face',       colour: '#000000' },
-            { id: 'midgrey',    label: 'Mid (solid-grey)', colour: '#808080' }
+            { id: 'background', label: 'Background',      colour: '#000000', kind: 'fill'   },
+            { id: 'front',      label: 'Front Face',      colour: '#ffffff', kind: 'fill'   },
+            { id: 'back',       label: 'Back Face',       colour: '#000000', kind: 'fill'   },
+            { id: 'midgrey',    label: 'Mid (solid-grey)', colour: '#808080', kind: 'fill'  }
         ]
     },
 

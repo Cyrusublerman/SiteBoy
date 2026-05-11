@@ -6,8 +6,7 @@ https://dev.to/andrewcknight/a-beginners-guide-to-minimalist-design-50mc
 
 https://docs.mew.design/blog/minimalism-graphic-design-style/
 
-https://www.figma.com/resource-library/graphic-design-principles/
-
+e
 https://www.portotheme.com/the-art-of-print-design-principles-and-best-practices/
 
 https://smartpress.com/blog/features/principles-of-design?srsltid=AfmBOoqSeQdIXM7-BSVS99HAqj7jDHYFDN5TqSHqh1oVqlw36ZWw7Tqa
@@ -149,3 +148,6 @@ https://bbs.boingboing.net/t/guidelines-for-brutalist-web-design/124230/41?page=
 http://khalilstemmler.com/blogs/thoughts/brutalist-websites/
 
 https://carder.market/threads/the-2025-web-design-paradigm-a-symphony-of-purpose-performance-and-personality.175752/
+
+https://typride.github.io/blogs/a-year-of-cursor.html
+

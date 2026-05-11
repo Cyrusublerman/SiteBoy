@@ -197,42 +197,88 @@ export class MarkdownBody extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'markdown' }, deps);
         this.markdownText = options.markdownText || '';
+        this.fetchPath = options.fetchPath || '';
         this.className = options.className || 'markdown-body';
         this.enableTOC = options.enableTOC || false;
         this.componentInstances = []; // Track embedded components for cleanup
     }
-    
+
     render() {
         if (!this.element) {
             this.element = this.createElement('div', this.className);
-            
-            const htmlContent = this.parseMarkdown(this.markdownText);
-            this.element.innerHTML = htmlContent;
-
-            this.executeScripts(this.element);
-
-            // Process p5.js components
-            this.processP5Components(this.element);
-            
-            // Apply syntax highlighting to code blocks
-            this.applySyntaxHighlighting(this.element);
-
-            // Render LaTeX with MathJax (with better error handling and timing)
-            this.renderMath();
-
-            // Enable zoom on inline images using Lightbox if available
-            if (window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
-                const imgs = Array.from(this.element.querySelectorAll('img'));
-                imgs.forEach(img => {
-                    img.style.cursor = 'zoom-in';
-                    img.addEventListener('click', () => {
-                        const lb = new window.ComponentLibrary.Lightbox({ src: img.src }, this.deps);
-                        lb.open(img.src);
-                    });
-                });
+            if (this.fetchPath) {
+                const p = this.createElement('p', 'markdown-body-loading');
+                p.textContent = 'Loading…';
+                this.element.appendChild(p);
+                void this._loadFromFetch();
+            } else {
+                this._finalizeMarkdownDom();
             }
         }
         return this.element;
+    }
+
+    /**
+     * Hydrate element from markdownText after parse/post-process pipeline.
+     */
+    _finalizeMarkdownDom() {
+        if (!this.element || this.isDestroyed) return;
+
+        while (this.element.firstChild) {
+            this.element.removeChild(this.element.firstChild);
+        }
+
+        const htmlContent = this.parseMarkdown(this.markdownText);
+        this.element.innerHTML = htmlContent;
+
+        this.executeScripts(this.element);
+
+        // Process p5.js components
+        this.processP5Components(this.element);
+
+        // Apply syntax highlighting to code blocks
+        this.applySyntaxHighlighting(this.element);
+
+        // Render LaTeX with MathJax (with better error handling and timing)
+        void this.renderMath();
+
+        // Enable zoom on inline images using Lightbox if available
+        if (window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
+            const imgs = Array.from(this.element.querySelectorAll('img'));
+            imgs.forEach(img => {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', () => {
+                    const lb = new window.ComponentLibrary.Lightbox({ src: img.src }, this.deps);
+                    lb.open(img.src);
+                });
+            });
+        }
+    }
+
+    /** @private */
+    async _loadFromFetch() {
+        if (!this.fetchPath || !this.element || this.isDestroyed) return;
+
+        try {
+            const response = await fetch(this.fetchPath, { cache: 'no-cache' });
+            if (!response.ok) throw new Error(String(response.status));
+            const body = await response.text();
+            if (this.isDestroyed || !this.element) return;
+
+            this.markdownText = body;
+            this._finalizeMarkdownDom();
+        } catch (e) {
+            if (this.isDestroyed || !this.element) return;
+            if (typeof window.debugLog === 'function') {
+                window.debugLog('TOOLS', '[MarkdownBody] fetch failed:', e);
+            }
+            while (this.element.firstChild) {
+                this.element.removeChild(this.element.firstChild);
+            }
+            const p = this.createElement('p', 'markdown-body-error');
+            p.textContent = `Docs unavailable (${e?.message || String(e)})`;
+            this.element.appendChild(p);
+        }
     }
     
     parseMarkdown(markdown) {

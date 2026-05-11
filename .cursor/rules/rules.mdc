@@ -26,6 +26,17 @@ Only these files may own the concern. Others must not implement it.
 - All styling → assets/css/styles.css
 - Distort GPU dispatch → assets/js/tools/processors/distort/core/GPURenderPath.js
 - Distort node shaders → assets/js/tools/processors/distort/shaders/*.shader.js
+- **Generator UI structure (tab layout for all 22 generators) → assets/js/tools/generators/core/parameter-builder.js**
+- **Generator schema + validation → assets/js/tools/generators/core/script-types.js**
+- **Modulation engine (driver→shape→range→combine pipeline) → assets/js/tools/generators/core/modulation-engine.js**
+- **Driver registry (lfo/linear/expression/etc.) → assets/js/tools/generators/core/driver-registry.js**
+- **Expression context (cheat-sheet variables/helpers) → assets/js/tools/generators/core/expression-context.js**
+
+## Tab Limit
+- At most 4 tabs in ToolBase sidebar (ceiling, not target)
+- Use the minimum number of tabs that map to genuinely distinct user concerns
+- Reaching the cap is a smell — consolidate into blocks within tabs
+- NEVER exceed 4 tabs
 
 ## Mandatory Patterns
 - All UI classes extend `BaseComponent`.

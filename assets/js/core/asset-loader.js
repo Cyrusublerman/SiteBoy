@@ -182,6 +182,11 @@ const AssetLoader = {
             script: '/assets/js/tools/utilities/media-manager.js',
             className: 'MediaManagerTool',
             dependencies: []
+        },
+        'cursive-glyph-builder': {
+            script: '/assets/js/tools/utilities/cursive-glyph-builder.js',
+            className: 'CursiveGlyphBuilderTool',
+            dependencies: []
         }
     },
     

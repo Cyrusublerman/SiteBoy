@@ -32,14 +32,14 @@ export const SCRIPT_CONFIG = {
         width: 800, height: 800, context: '2d',
         // TIL-05: custom palette via colourway — 8 slots mirror PALETTES row structure
         colourway: [
-            { id: 'c0', label: 'Colour 1', colour: '#c8441a' },
-            { id: 'c1', label: 'Colour 2', colour: '#d4621e' },
-            { id: 'c2', label: 'Colour 3', colour: '#d4882d' },
-            { id: 'c3', label: 'Colour 4', colour: '#b83217' },
-            { id: 'c4', label: 'Colour 5', colour: '#d89a28' },
-            { id: 'c5', label: 'Colour 6', colour: '#c86432' },
-            { id: 'c6', label: 'Colour 7', colour: '#c05220' },
-            { id: 'c7', label: 'Colour 8', colour: '#b04019' }
+            { id: 'c0', label: 'Colour 1', colour: '#c8441a', kind: 'fill' },
+            { id: 'c1', label: 'Colour 2', colour: '#d4621e', kind: 'fill' },
+            { id: 'c2', label: 'Colour 3', colour: '#d4882d', kind: 'fill' },
+            { id: 'c3', label: 'Colour 4', colour: '#b83217', kind: 'fill' },
+            { id: 'c4', label: 'Colour 5', colour: '#d89a28', kind: 'fill' },
+            { id: 'c5', label: 'Colour 6', colour: '#c86432', kind: 'fill' },
+            { id: 'c6', label: 'Colour 7', colour: '#c05220', kind: 'fill' },
+            { id: 'c7', label: 'Colour 8', colour: '#b04019', kind: 'fill' }
         ]
     },
 

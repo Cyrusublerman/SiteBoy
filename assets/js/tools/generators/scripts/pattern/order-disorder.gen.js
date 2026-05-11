@@ -23,9 +23,9 @@ export const SCRIPT_CONFIG = {
         width: 1080, height: 1080, context: 'p5',
         // ORD-04: colourway — background and point colours
         colourway: [
-            { id: 'background', label: 'Background', colour: '#ffffff' },
-            { id: 'ordered',    label: 'Ordered',    colour: '#000000' },
-            { id: 'disordered', label: 'Disordered', colour: '#000000' }
+            { id: 'background', label: 'Background', colour: '#ffffff', kind: 'fill'   },
+            { id: 'ordered',    label: 'Ordered',    colour: '#000000', kind: 'stroke', lineWidth: 1 },
+            { id: 'disordered', label: 'Disordered', colour: '#000000', kind: 'stroke', lineWidth: 1 }
         ]
     },
 

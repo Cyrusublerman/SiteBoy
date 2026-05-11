@@ -234,12 +234,12 @@ export const SCRIPT_CONFIG = (() => {
             background: '#000000',
             // CIR-02: colourway — background + per-layer stroke/fill control
             colourway: [
-                { id: 'background', label: 'Background',  colour: '#000000' },
-                { id: 'layer0',     label: 'Layer 1',     colour: '#ffffff' },
-                { id: 'layer1',     label: 'Layer 2',     colour: '#cccccc' },
-                { id: 'layer2',     label: 'Layer 3',     colour: '#999999' },
-                { id: 'layer3',     label: 'Layer 4',     colour: '#666666' },
-                { id: 'layer4',     label: 'Layer 5',     colour: '#444444' }
+                { id: 'background', label: 'Background',  colour: '#000000', kind: 'fill'   },
+                { id: 'layer0',     label: 'Layer 1',     colour: '#ffffff', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer1',     label: 'Layer 2',     colour: '#cccccc', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer2',     label: 'Layer 3',     colour: '#999999', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer3',     label: 'Layer 4',     colour: '#666666', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer4',     label: 'Layer 5',     colour: '#444444', kind: 'stroke', lineWidth: 1 }
             ]
         },
 

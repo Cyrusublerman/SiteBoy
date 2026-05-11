@@ -418,8 +418,8 @@ export const SCRIPT_CONFIG = {
         background: '#000000',
         // MOI-02: X-007 colourway
         colourway: [
-            { id: 'background',  label: 'Background',  colour: '#000000' },
-            { id: 'foreground',  label: 'Foreground',  colour: '#ffffff' }
+            { id: 'background',  label: 'Background',  colour: '#000000', kind: 'fill' },
+            { id: 'foreground',  label: 'Foreground',  colour: '#ffffff', kind: 'fill' }
         ]
     },
     

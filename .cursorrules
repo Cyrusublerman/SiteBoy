@@ -15,6 +15,11 @@ Only these files may own the concern. Others must not implement it.
 - Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
 - Sections/page composition → assets/js/sections/*.js
 - All styling → assets/css/styles.css
+- **Generator UI structure (tab layout for all 22 generators) → assets/js/tools/generators/core/parameter-builder.js**
+- **Generator schema + validation → assets/js/tools/generators/core/script-types.js**
+- **Modulation engine (driver→shape→range→combine pipeline) → assets/js/tools/generators/core/modulation-engine.js**
+- **Driver registry (lfo/linear/expression/etc.) → assets/js/tools/generators/core/driver-registry.js**
+- **Expression context (cheat-sheet variables/helpers) → assets/js/tools/generators/core/expression-context.js**
 
 ## ═══════════════════════════════════════════════════════════════════
 ## ABSOLUTE PROHIBITIONS — STOP AND CHECK BEFORE WRITING CODE
@@ -128,9 +133,10 @@ new AnimationFoundation.IntervalAnimator({ interval: ms, onTick: fn })
 - Use math/tokens for dimensions (no ad-hoc px for layout logic).
 
 ## Tab Limit
-- Maximum 4 tabs in ToolBase sidebar (hard limit - this is all that fits)
-- If more organization needed, use blocks within tabs
-- NEVER exceed 4 tabs - consolidate into blocks instead
+- At most 4 tabs in ToolBase sidebar (ceiling, not target)
+- Use the minimum number of tabs that map to genuinely distinct user concerns
+- Reaching the cap is a smell — consolidate into blocks within tabs
+- NEVER exceed 4 tabs
 
 ## Build Chronology (observable path)
 app → router → destroy → section → subheader → JSON → blocks → render → URL

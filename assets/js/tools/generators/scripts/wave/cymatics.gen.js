@@ -439,8 +439,8 @@ export const SCRIPT_CONFIG = {
         background: '#000000',
         // CYM-04: colourway layers — background and particle foreground
         colourway: [
-            { id: 'background', label: 'Background', colour: '#000000' },
-            { id: 'particle',   label: 'Particle',   colour: '#c0c0c0' }
+            { id: 'background', label: 'Background', colour: '#000000', kind: 'fill'   },
+            { id: 'particle',   label: 'Particle',   colour: '#c0c0c0', kind: 'stroke', lineWidth: 1 }
         ]
     },
 

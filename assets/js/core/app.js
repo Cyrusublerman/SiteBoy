@@ -622,10 +622,9 @@ const SiteBoyApp = {
                 // Tools fill the entire content container with no padding
                 this.contentContainer.style.padding = '0';
                 
-                // Don't set explicit height - let top/bottom positioning from layout.js handle it
-                // This ensures no gap between content container and footer
-                this.contentContainer.style.height = 'auto';
-                this.contentContainer.style.minHeight = 'auto';
+                // top/bottom from layout.js define the box; do not force height:auto — ToolBase uses height:100% on children.
+                this.contentContainer.style.height = '';
+                this.contentContainer.style.minHeight = '';
                 // Tools manage their own scrolling
                 this.contentContainer.style.overflow = 'hidden';
                 window.debugLog('LAYOUT', '📐 Tool page detected - applied tool layout mode');

@@ -50,12 +50,27 @@ export const SCRIPT_CONFIG = {
     animation: {
         type: 'parametric|infinite|sequence',
         loopFrames: 360,
-        animatableParams: ['param1', 'param2'],
-        defaultFps: 60
+        defaultFps: 60,
+        // Modulator descriptors — preferred format
+        modulators: [
+            {
+                targetKey: 'speed',
+                enabled: false,
+                driver: { type: 'lfo', config: { waveform: 'sine', rate: 1 } },
+                shape:   { easing: 'linear', invert: false },
+                range:   { depth: 1, bias: 0, bipolar: true },
+                combine: 'add',
+                sync:    { clock: 'loop', rateMul: 1 }
+            }
+        ],
+        // Legacy format — still accepted, migrated to modulators[] by shim
+        animatableParams: ['param1', 'param2']
     },
     export: { png: true, gif: true, webm: false }
 }
 ```
+
+`animatableParams` (array of strings or `{ key, mode, rate }` objects) is accepted for backward compatibility. The schema shim in `script-types.js` migrates it to `modulators[]` automatically before validation. Do not use it in new scripts.
 
 ---
 
@@ -88,20 +103,22 @@ p5Draw(p, params, frame) {
     p.background(0);
     
     const { amplitude, frequency, phase } = params;
+    // phase is driven by a modulator — draw() reads params only
     
     for (let i = 0; i < 100; i++) {
         const x = p.map(i, 0, 100, 0, p.width);
-        const y = p.height/2 + amplitude * p.sin(frequency * x + phase + frame * 0.01);
+        const y = p.height/2 + amplitude * p.sin(frequency * x + phase);
         p.point(x, y);
     }
 }
 ```
 
 **Rules:**
-- Params object contains current UI values
-- Frame is integer counter (0, 1, 2, ...)
-- Do NOT call `loop()` or manage animation internally
-- All drawing per frame - no persistent state between frames unless via `this`
+- Params object contains current UI values (including values written by modulators).
+- Frame is integer counter (0, 1, 2, …).
+- Do NOT call `loop()` or manage animation internally.
+- All drawing per frame — no persistent state between frames unless via `this`.
+- **Frame purity (required):** `p5Draw` reads `params.<key>` only for time-driven motion. Do NOT derive animation from `frame` directly (e.g. `frame * speed` to drive rotation). Declare that motion as a `linear` or `lfo` modulator targeting the param instead. `frame` may only be used as an opaque deterministic seed or index (e.g. `p.noiseSeed(frame)`).
 
 ---
 
@@ -258,6 +275,8 @@ p5Draw(p, params, frame) {
 | `loadImage()` async | Timing issues | Preload in separate system |
 | DOM manipulation | BaseComponent rule | Use ComponentLibrary |
 | Global mode | Conflicts | Instance mode only |
+| `frame * speed` for rotation/motion | Breaks frame-purity | Declare a `linear` modulator on the param |
+| `animatableParams` in new scripts | Legacy format | Use `animation.modulators[]` |
 
 ---
 

@@ -104,41 +104,47 @@ function drawToroidalSurfaceSpiral(ctx, spiralRotation, offset, cosX, sinX, reve
 // DRAW FUNCTION
 // ═══════════════════════════════════════════════════════════════════
 
-function draw(ctx, canvas, params, frame, colourway) {
+/**
+ * Pure draw function — reads params only, no frame arithmetic.
+ * Rotation state is provided by:
+ *   params.meshRotation   — toroidal mesh rotation angle (radians, driven by linear modulator)
+ *   params.spiralAngle    — spiral rotation angle (radians, driven by linear modulator, negative rate)
+ *   params.xRotation      — frame-driven X-axis offset (radians, driven by linear modulator)
+ * Frame-purity: no `frame` argument used for any visually animated quantity.
+ */
+function draw(ctx, canvas, params, _frame, colourway) {
     const W = canvas.width;
     const H = canvas.height;
     const cx = W / 2;
     const cy = H / 2;
 
     // Resolve colourway colours (TOR-02)
-    const cw            = colourway || [];
-    const bgColour      = cw.find(c => c.id === 'background')?.colour     || '#000000';
-    const lineColour    = cw.find(c => c.id === 'outerLines')?.colour     || '#c0c0c0';
-    const meshColour    = cw.find(c => c.id === 'innerMeshLines')?.colour || '#c0c0c0';
-    const discColour    = cw.find(c => c.id === 'shadedDiscs')?.colour    || '#c0c0c0';
-    const discAlpha     = cw.find(c => c.id === 'shadedDiscs')?.alpha     ?? 0.25;
+    const cw         = colourway || [];
+    const bgColour   = cw.find(c => c.id === 'background')?.colour     || '#000000';
+    const lineColour = cw.find(c => c.id === 'outerLines')?.colour     || '#c0c0c0';
+    const discColour = cw.find(c => c.id === 'shadedDiscs')?.colour    || '#c0c0c0';
+    const discAlpha  = cw.find(c => c.id === 'shadedDiscs')?.alpha     ?? 0.25;
 
     const baseRadius = Math.min(W, H) * (params.torusSize || 0.18);
     const R = baseRadius * (params.majorRadiusFactor || 1);
     const r = baseRadius * (params.minorRadiusFactor || 1);
 
-    const viewAngleX        = (params.viewX            || 30)   * Math.PI / 180;
-    const viewAngleY        = (params.viewY            || 22.5) * Math.PI / 180;
-    const cycleFrames       = params.cycleFrames       || 3600;
-    const numSpirals        = params.numSpirals        || 9;
-    const spiralWinds       = params.spiralWinds       || 4;
-    const meshRingCount     = params.meshRingCount     || 36;        // TOR-03
-    const meshRotationSpeed = params.meshRotationSpeed ?? 1.0;       // TOR-04
+    const viewAngleX    = (params.viewX || 30)   * Math.PI / 180;
+    const viewAngleY    = (params.viewY || 22.5) * Math.PI / 180;
+    const numSpirals    = params.numSpirals    || 9;
+    const spiralWinds   = params.spiralWinds   || 4;
+    const meshRingCount = params.meshRingCount || 36;
 
-    // Clear with background colour
+    // Rotation state — driven by modulators, NOT computed from frame
+    const meshRotationSpeed = params.meshRotationSpeed ?? 1.0;
+    const torusRotation  = (params.meshRotation  ?? 0) * meshRotationSpeed;
+    const spiralRotation =  params.spiralAngle   ?? 0;
+    const xRotation      =  params.xRotation     ?? 0;
+
     ctx.fillStyle = bgColour;
     ctx.fillRect(0, 0, W, H);
 
-    const phase          = (frame / cycleFrames) * Math.PI * 2;
-    const torusRotation  =  phase * meshRotationSpeed;               // TOR-04
-    const spiralRotation = -phase;
-
-    const totalX = phase + viewAngleX;
+    const totalX = xRotation + viewAngleX;
     const cosX  = Math.cos(totalX);
     const sinX  = Math.sin(totalX);
     const cosVY = Math.cos(viewAngleY);
@@ -208,12 +214,12 @@ export const SCRIPT_CONFIG = {
         height: 800,
         context: '2d',
         background: '#000000',
-        // TOR-02: X-007 colourway layers
+        // TOR-02: X-007 colourway layers — explicit kind + lineWidth
         colourway: [
-            { id: 'background',     label: 'Background',   colour: '#000000' },
-            { id: 'outerLines',     label: 'Outer Lines',  colour: '#c0c0c0' },
-            { id: 'innerMeshLines', label: 'Mesh Lines',   colour: '#c0c0c0' },
-            { id: 'shadedDiscs',    label: 'Shaded Discs', colour: '#c0c0c0', alpha: 0.25 }
+            { id: 'background',     label: 'Background',   colour: '#000000', kind: 'fill'   },
+            { id: 'outerLines',     label: 'Outer Lines',  colour: '#c0c0c0', kind: 'stroke', lineWidth: 1 },
+            { id: 'innerMeshLines', label: 'Mesh Lines',   colour: '#c0c0c0', kind: 'stroke', lineWidth: 1 },
+            { id: 'shadedDiscs',    label: 'Shaded Discs', colour: '#c0c0c0', kind: 'fill',   alpha: 0.25 }
         ]
     },
 
@@ -222,8 +228,40 @@ export const SCRIPT_CONFIG = {
         loopFrames: 3600,
         defaultFps: 60,
         canPrerender: true,
-        animatableParams: ['viewX', 'viewY'],
         sequencer: true,
+        // Declarative modulators — replace inline frame arithmetic in draw().
+        // rate: one full revolution (2π) per 3600 frames (default cycleFrames).
+        modulators: [
+            {
+                targetKey: 'meshRotation',
+                enabled:   true,
+                driver:    { type: 'linear', config: { rate: 6.283185307 / 3600 } },
+                shape:     { easing: 'linear', invert: false },
+                range:     { depth: 1, bias: 0, bipolar: false },
+                combine:   'replace',
+                sync:      { clock: 'free', rateMul: 1 },
+            },
+            {
+                targetKey: 'spiralAngle',
+                enabled:   true,
+                driver:    { type: 'linear', config: { rate: -6.283185307 / 3600 } },
+                shape:     { easing: 'linear', invert: false },
+                range:     { depth: 1, bias: 0, bipolar: false },
+                combine:   'replace',
+                sync:      { clock: 'free', rateMul: 1 },
+            },
+            {
+                targetKey: 'xRotation',
+                enabled:   true,
+                driver:    { type: 'linear', config: { rate: 6.283185307 / 3600 } },
+                shape:     { easing: 'linear', invert: false },
+                range:     { depth: 1, bias: 0, bipolar: false },
+                combine:   'replace',
+                sync:      { clock: 'free', rateMul: 1 },
+            },
+        ],
+        // Legacy — kept for back-compat during transition; migrated to modulators[] by shim
+        animatableParams: ['viewX', 'viewY'],
     },
 
     export: {
@@ -404,6 +442,37 @@ export const SCRIPT_CONFIG = {
                     step: 0.1,
                     default: 1.0,
                     precision: 1
+                },
+                // Rotation state params — driven by linear modulators (frame-purity migration)
+                {
+                    key: 'meshRotation',
+                    type: 'slider',
+                    label: 'Mesh Rotation',
+                    min: 0,
+                    max: 6.283185307,
+                    step: 0.001,
+                    default: 0,
+                    precision: 3
+                },
+                {
+                    key: 'spiralAngle',
+                    type: 'slider',
+                    label: 'Spiral Angle',
+                    min: -6.283185307,
+                    max: 6.283185307,
+                    step: 0.001,
+                    default: 0,
+                    precision: 3
+                },
+                {
+                    key: 'xRotation',
+                    type: 'slider',
+                    label: 'X Rotation',
+                    min: 0,
+                    max: 6.283185307,
+                    step: 0.001,
+                    default: 0,
+                    precision: 3
                 }
             ]
         }

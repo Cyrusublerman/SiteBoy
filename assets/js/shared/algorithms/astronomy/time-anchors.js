@@ -64,9 +64,9 @@ export const TIME_ANCHORS = [
     // ── years ─────────────────────────────────────────────────────────────────
     { id: 'gutenbergPress',          label: 'Gutenberg press operational',          ms: iso('1450-01-01T00:00:00Z'), scale: 'years'    },
     { id: 'galileoTelescope',        label: 'Galileo first telescopic sky survey',  ms: iso('1610-01-01T00:00:00Z'), scale: 'years'    },
-    { id: 'newtonPrincipia',         label: 'Newton's Principia published',         ms: iso('1687-07-05T00:00:00Z'), scale: 'years'    },
-    { id: 'darwinOriginPublished',   label: 'Darwin's Origin of Species published', ms: iso('1859-11-24T00:00:00Z'), scale: 'years'    },
-    { id: 'einsteinsSpecialRel',     label: 'Einstein's special relativity paper',  ms: iso('1905-06-30T00:00:00Z'), scale: 'years'    },
+    { id: 'newtonPrincipia',         label: "Newton's Principia published",         ms: iso('1687-07-05T00:00:00Z'), scale: 'years'    },
+    { id: 'darwinOriginPublished',   label: "Darwin's Origin of Species published", ms: iso('1859-11-24T00:00:00Z'), scale: 'years'    },
+    { id: 'einsteinsSpecialRel',     label: "Einstein's special relativity paper",  ms: iso('1905-06-30T00:00:00Z'), scale: 'years'    },
 
     // ── decades ───────────────────────────────────────────────────────────────
     { id: 'frenchRevolution',        label: 'French Revolution',                    ms: iso('1789-07-14T00:00:00Z'), scale: 'decades'  },

@@ -148,8 +148,8 @@ export * as DSPEvaluator from './audio/dsp-evaluator.js';
 // Animation
 export * as Animation from './animation/animation-utils.js';
 
-// Export utilities
-export * as ExportUtils from './export/export-utils.js';
+// Export utilities (named object — callers use ExportUtils.exportCanvasPNG, etc.)
+export { ExportUtils } from './export/export-utils.js';
 
 // Rendering
 export * as Rendering from './rendering/rendering-utils.js';

@@ -16,7 +16,7 @@ export { EquationEditor } from './EquationEditor.js';
 export { DropZone } from './DropZone.js';
 export { FilamentPicker } from './FilamentPicker.js';
 export { NoiseTypeSelect, NOISE_TYPES } from './NoiseTypeSelect.js';
-export { AnimateParamControl, WAVEFORMS } from './AnimateParamControl.js';
+
 export { EasingCurveInput } from './EasingCurveInput.js';
 export { HSLRangeInput } from './HSLRangeInput.js';
 

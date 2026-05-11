@@ -55,7 +55,7 @@ const Router = {
      *   #home:full             → { section: 'home', subsection: null, isFullMode: true }
      */
     parseRoute() {
-        let hash = window.location.hash.slice(1); // Remove #
+        let hash = window.location.hash.slice(1).replace(/^\/+/, ''); // Remove # and any leading slashes
         console.log(`🔍 Router.parseRoute() - raw hash: "${hash}"`);
 
         // Check for :full modifier

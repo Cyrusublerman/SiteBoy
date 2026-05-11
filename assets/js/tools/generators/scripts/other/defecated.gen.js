@@ -7,7 +7,7 @@
  */
 
 import '../../../../shared/algorithms/core/math-utils.js';
-import { FontRegistry } from '../../../shared/typography/font-registry.js';
+import { FontRegistry } from '../../../../shared/typography/font-registry.js';
 
 // DEF-01: build font list from FontRegistry — all canvas fonts, display/handwriting first
 function _buildFontList() {
