@@ -452,3 +452,421 @@ All new components extend `BaseComponent`, are registered through `ComponentLibr
 ## B13. Future stage (out of scope here)
 
 A second migration pass will extend admin mode into `assets/js/tools/`: a p5.js-style editor for generators (live JS + GUI panel side-by-side, save deploys the tool). Not designed in this document. Will reuse `P5ControlledSketch`, `Sequencer`, and a code-editor component (CodeMirror 6) added at that time.
+
+---
+
+# Part C — Implementation Plan
+
+This section translates Parts A and B into ordered work units. Each unit is a single branch / single PR. Units list explicit prerequisites; if a prerequisite is unmet, the unit cannot start.
+
+## C0. Conventions
+
+- **Unit ID**: `Sxx` (S = step). Stable across edits to this document.
+- **Branch**: `cursor/<short-slug>-f564` per existing convention.
+- **PR scope**: one unit per PR. PR title prefix `[Sxx]`.
+- **Done = merged + verification passes**.
+- **Feature flag**: each unit that touches the live site ships behind a flag (`window.AdminFlags.<flagName>`) that defaults `false` and is flipped only after verification.
+- **Rollback**: every unit must be reversible by a single revert without leaving stranded data; units that cannot meet this are flagged.
+
+## C1. Dependency graph (high level)
+
+```
+S00 Reconciliation (doc) ──┐
+S01 Decisions locked       ├─► S02 Provisioning ─► S03 Vercel parity ─► S08 DNS flip
+                           │                                            │
+S04 Schema tooling ─► S05 Migration script ─► S06 Read API ─► S07 Read-source swap ─┘
+                                                                       │
+S09 Auth core ─► S10 Login overlay UI ─► S11 Admin router/delegation pattern
+                                                       │
+                                  ┌────────────────────┼────────────────────┐
+                                  │                    │                    │
+                          S12 Editor chrome     S13 Audit+version infra   S14 :::block parser
+                                  │                    │                    │
+                          S15 Blog admin (read) ─► S16 InsertToolbar/ImagePicker ─► S15b Blog admin (write)
+                                  │
+                          S17 Gallery admin ─► S18 Media multipart pipeline ─► S19 Video frame scrubber
+                                  │
+                          S20 Page-block editor
+                                  │
+                          S21 History/DiffView
+                                  │
+                          S22 Git mirror automation
+                                  │
+                          S23 MFA enablement ─► S24 Hardening
+```
+
+## C2. Units
+
+### S00 — Reconciliation pass (document only)
+
+- **Goal**: edit Parts A and B in place to eliminate the contradictions identified in the review (sections 1, 2 of review).
+- **Inputs**: this document.
+- **Outputs**: revised Part A with `/admin/*` content URLs removed, draft→hidden schema rename, MFA marked deferred, multipart media endpoints, closed D-4/D-5/D-6, new D-9/D-10/D-11/D-12, new R-9/R-10. Revised Part B §B2.2 moving admin renderers to `assets/js/admin/sections/`, §B3.5 naming the markdown extension, §B12 splitting "reuse" from "extend".
+- **Files**: `blog/docs/site/vercel-dynamic-migration-plan.md`.
+- **Verification**: every internal cross-reference resolves; no two sections give conflicting answers to the same question.
+- **Rollback**: trivial (revert commit).
+
+### S01 — Decisions locked
+
+- **Goal**: produce a single dated decisions log appended to Part A §13 with binary answers to D-1..D-12.
+- **Inputs**: S00.
+- **Outputs**: decisions table with: host commitment (D-1), auth library (D-2), DB provider (D-3), domain layout (D-7), build-time-vs-request-time (D-8), migration tool (D-9), video pipeline (D-10), public CSP policy (D-11), local-dev story (D-12).
+- **Files**: `blog/docs/site/vercel-dynamic-migration-plan.md` (Part A §13).
+- **Verification**: each decision is one of {chosen value, explicit defer with trigger condition}. No "TBD".
+- **Rollback**: trivial.
+
+### S02 — Provisioning (no code committed to repo)
+
+- **Goal**: stand up the runtime accounts and secrets the implementation will rely on.
+- **Tasks**:
+  1. Create Vercel project linked to the GitHub repo. Disable production auto-deploy from `main` initially; preview deploys only.
+  2. Provision the chosen Postgres provider (per D-3). Create two databases: `siteboy_prod`, `siteboy_preview`.
+  3. Create R2 access key with `PutObject`, `GetObject`, `DeleteObject`, `ListBucket` on `assetts-einoder`. Server-side use only.
+  4. Create a GitHub deploy key or fine-scoped PAT for the `content` branch (per D-5 already = yes). Repo-scoped, write-only to `content` branch ideally (or repo-write if branch-scope unavailable).
+  5. Add the following to Vercel project env (Production + Preview): `DATABASE_URL`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `GIT_MIRROR_TOKEN`, `GIT_MIRROR_REPO`, `GIT_MIRROR_BRANCH=content`, `SESSION_SECRET`, `ADMIN_PASSWORD_HASH` (argon2id), `CSRF_SECRET`.
+- **Files**: none in repo.
+- **Verification**: a manual `curl` from a Vercel function stub can read/write the DB and PUT to R2. (Stub deleted after verification.)
+- **Rollback**: revoke keys, delete Vercel project.
+- **Risk**: secrets management. Mitigation: secrets only in Vercel + Cursor Cloud Agent secrets store. No `.env` committed.
+
+### S03 — Vercel parity deploy (no functional change)
+
+- **Goal**: prove the current static build runs identically on Vercel preview as on GH Pages.
+- **Inputs**: S02.
+- **Tasks**:
+  1. Add `vercel.json` with rewrites for the SPA hash-routed paths (none should be needed; static `index.html` + `404.html` already cover it).
+  2. Add `.vercelignore` mirroring `.gitignore-production`.
+  3. Connect Vercel to deploy on push to a dedicated preview branch (e.g. `cursor/s03-vercel-parity-f564`).
+- **Files**: `vercel.json` (new), `.vercelignore` (new).
+- **Verification**:
+  - Every existing URL on Vercel preview returns the same HTML/JS/CSS hashes as the live GH Pages site (allowing for Vercel CDN headers).
+  - Manual smoke: home, blog index, blog article, art gallery layer, projects, contact, qr.
+- **Rollback**: revert PR; no live impact.
+
+### S04 — Schema tooling
+
+- **Goal**: introduce DB schema as code, choose the migration tool (per D-9).
+- **Inputs**: S01.
+- **Tasks**:
+  1. Add chosen migration tool (recommended: Drizzle for schema-as-TS or raw `node-pg-migrate` for SQL — locked in S01).
+  2. Create initial migration matching Part A §7 with the reconciled status rename (`hidden`/`visible`).
+  3. Add `npm run db:migrate` script.
+- **Files**: `db/migrations/0001_init.sql` (or `.ts`), `db/schema.ts` (if Drizzle), `package.json`.
+- **Verification**:
+  - `npm run db:migrate` against `siteboy_preview` succeeds twice (idempotent).
+  - `psql` shows all tables and constraints.
+- **Rollback**: drop schema; revert PR.
+
+### S05 — Migration script (one-shot, idempotent)
+
+- **Goal**: transform existing repo content into rows.
+- **Inputs**: S04.
+- **Tasks**:
+  1. `scripts/migration/import-blog.js`: walk `blog/docs/**/*.md`, parse frontmatter, `INSERT … ON CONFLICT (slug) DO UPDATE` into `articles`. Slugs preserved verbatim.
+  2. `scripts/migration/import-art.js`: walk `art/manifests/**/*.json`, upsert `galleries` + `gallery_items`. Copy `urls_jsonb` from existing manifest leaves.
+  3. `scripts/migration/import-pages.js`: extract JSON literals from the three editable sections (home/contact/qr) into `page_blocks`. Sections without literal JSON blocks are skipped and logged.
+  4. `scripts/migration/verify.js`: for every URL in the current site, diff the prospective API response against the current static fetch response. Exit non-zero on any mismatch.
+- **Files**: under `scripts/migration/`.
+- **Verification**: `verify.js` passes against the preview DB.
+- **Rollback**: truncate the four content tables; rerun later.
+
+### S06 — Read API
+
+- **Goal**: ship `GET /api/content/*` and `GET /api/health`.
+- **Inputs**: S04, S05.
+- **Tasks**:
+  1. Vercel functions for: `/api/content/blog/manifest`, `/api/content/blog/:slug`, `/api/content/art/:gallery`, `/api/content/page/:slug`, `/api/health`.
+  2. Edge cache headers per D-6 (default: `s-maxage=300, stale-while-revalidate=86400`; on save, explicit purge — wired in S22).
+  3. Visibility filter: `WHERE hidden = false` for unauthenticated reads.
+  4. Static-fallback build (per reconciled R-2 decision in S00): build step writes JSON snapshots of all four read endpoints to `dist/content/*.json` for offline first paint.
+- **Files**: `api/content/*.ts`, `api/health.ts`, build step in `vite.config.js`.
+- **Verification**: parity test from S05 verify.js, re-run against the live API instead of file system; same diff result.
+- **Rollback**: routes return 410; section files keep using static manifests until S07.
+
+### S07 — Read-source swap (preview only)
+
+- **Goal**: switch `blog_section.js` / `art_section.js` / `projects_section.js` / `home_section.js` etc. fetches from static files to `/api/content/*`. Behind flag `useApiReads`.
+- **Inputs**: S06.
+- **Tasks**:
+  1. Introduce `assets/js/core/content-source.js` (new owner: content-source abstraction; **proposed file-ownership entry**, to be added to `.cursorrules` only at implementation start). Reads from API when `useApiReads` is on, falls back to static path otherwise.
+  2. Replace direct `fetch('blog/blog-docs-manifest.json')` and equivalents with calls into `ContentSource`.
+- **Files**: `assets/js/core/content-source.js` (new), modifications to four section files.
+- **Verification**: end-to-end smoke on preview deploy with flag on, then with flag off; identical UX both ways.
+- **Rollback**: flag off.
+
+### S08 — DNS flip
+
+- **Goal**: production traffic on Vercel.
+- **Inputs**: S03, S06, S07 verified on preview.
+- **Tasks**:
+  1. Update DNS `CNAME` to Vercel.
+  2. Configure Vercel production deploy from `main`.
+  3. Turn `useApiReads` on for production.
+- **Files**: none (DNS only).
+- **Verification**: production smoke; cache hit-rate sanity check after 24 h.
+- **Rollback**: DNS reverts to GH Pages (TTL-bound).
+
+### S09 — Auth core
+
+- **Goal**: server-side session, CSRF, rate-limit, password verify, audit-log writer.
+- **Inputs**: S04, S08.
+- **Tasks**:
+  1. `api/auth/login`, `api/auth/logout`, `api/auth/me`.
+  2. Session middleware (`api/_lib/session.ts`): reads cookie, verifies, attaches `req.user`.
+  3. CSRF middleware: double-submit cookie pattern; reject mutating requests missing `X-CSRF`.
+  4. Rate limiter: IP + global, in-DB (cheap counters with TTL) — keeps Vercel-host-agnostic.
+  5. `audit_log` writer helper consumed by every future write endpoint.
+  6. Password verification against `ADMIN_PASSWORD_HASH` env var (argon2id).
+  7. **MFA stubbed but disabled.** `totp_secret` column accepted; verification path returns success when secret is null. Re-enabled in S23.
+- **Files**: `api/auth/*`, `api/_lib/session.ts`, `api/_lib/csrf.ts`, `api/_lib/rate-limit.ts`, `api/_lib/audit.ts`.
+- **Verification**: integration tests against preview DB. Login flow returns session cookie. CSRF rejection works. Five failed logins from one IP trip the limiter.
+- **Rollback**: routes return 410.
+
+### S10 — Login overlay UI
+
+- **Goal**: ship the triple-click login overlay and the `AEINODER → I'M AEINODER` swap.
+- **Inputs**: S09.
+- **Tasks**:
+  1. `assets/js/admin/auth.js`: client-side session bootstrap (calls `GET /api/auth/me` on app init), CSRF fetch wrapper, triple-click and `Ctrl+Shift+L` listeners.
+  2. `assets/js/admin/login-overlay.js`: `LoginOverlay` component (extends `BaseComponent`; composes `Input` and `Button`).
+  3. Modify `assets/js/shared/layout.js` `PageHeader`: when `Auth.isAuthenticated()` is true, render home-link text as `I'M AEINODER`; reserve max-width for the longer string so layout does not reflow.
+  4. Ensure triple-click does not fire the theme toggle's single-click handler when the third click occurs within 600 ms.
+- **Files**: `assets/js/admin/auth.js` (new), `assets/js/admin/login-overlay.js` (new), `assets/js/shared/layout.js` (modify).
+- **Verification**: manual on mobile and desktop. Triple-click opens overlay; correct password → cookie set; home-link swap visible. Theme toggle still works on single click.
+- **Rollback**: revert PR; `auth.js` flag-guarded so it no-ops if API absent.
+
+### S11 — Admin section delegation pattern
+
+- **Goal**: establish the per-page admin variant mechanism without yet implementing any editor.
+- **Inputs**: S10.
+- **Tasks**:
+  1. Create `assets/js/admin/sections/` (new ownership). Each public section file gets a sibling admin file (initially empty: `renderAdmin = (...) => publicSection.render(...)` delegate).
+  2. Modify `assets/js/core/router.js`: after route resolution, if `Auth.isAuthenticated()` and an admin sibling exists, call `renderAdmin` instead of `render`.
+  3. Add `assets/js/admin/index.js` to register admin sections.
+- **Files**: `assets/js/admin/sections/{blog,art,projects,home,contact,qr,tools}_admin.js` (stubs), `assets/js/admin/index.js` (new), `assets/js/core/router.js` (modify).
+- **Verification**: logged in, every page still renders identically to logged-out (because stubs delegate). Logged out, no admin code is loaded (verify via dev tools network panel).
+- **Rollback**: revert PR; router branch is the only invasive change.
+
+### S12 — Editor chrome (`EditorToolbar`, `NoticeBanner`)
+
+- **Goal**: ship the top toolbar and banner used by every editor; visible whenever any admin section renders.
+- **Inputs**: S11.
+- **Tasks**:
+  1. `assets/js/admin/editor-toolbar.js`: `EditorToolbar` component, `Subheader`-sized; slot-based action API so each admin section injects its own buttons.
+  2. `assets/js/admin/notice-banner.js`: `NoticeBanner` component, four levels, `role="status"`/`role="alert"`, dismissable, pushes content down.
+  3. Wire both into the admin-section render path (via `assets/js/admin/index.js`).
+- **Files**: under `assets/js/admin/`.
+- **Verification**: every admin-rendered page shows the toolbar; clicking dismiss on the banner restores layout exactly.
+- **Rollback**: revert PR.
+
+### S13 — Audit log + versioning infrastructure (server)
+
+- **Goal**: every future write endpoint can record a version and an audit row in one transaction.
+- **Inputs**: S09.
+- **Tasks**:
+  1. `api/_lib/versioning.ts`: helper that wraps `mutate(table, id, mutator)` and, inside a single transaction, snapshots the prior row into `*_versions`, applies the mutation, and writes to `audit_log`.
+  2. Optimistic concurrency: helper accepts an `If-Match` version and rejects 409 on mismatch.
+- **Files**: `api/_lib/versioning.ts`.
+- **Verification**: unit test with two concurrent updates; second one returns 409.
+- **Rollback**: helper unused → no effect.
+
+### S14 — `:::block` markdown parser + sanitiser
+
+- **Goal**: a single shared parser used by both the public renderer and the admin editor, plus a sanitisation pass for the public render.
+- **Inputs**: S03 (or earlier — no DB dependency).
+- **Tasks**:
+  1. Add markdown parser dependency (`markdown-it` plus a small custom plugin, or a hand-rolled tokenizer; choice locked in S01 if not earlier).
+  2. Implement `:::block <type>\n<json>\n:::` extension. JSON parsed strictly; unknown `<type>` rendered as a visible warning, never as HTML.
+  3. Per-block allowlist of types maps to existing `ComponentLibrary` classes plus the new embed blocks (Gallery, Carousel, IFrame, P5, Algorithm, Graph, VGAGrid).
+  4. Server-side sanitisation pass after HTML expansion (DOMPurify in JSDOM context inside a function, or equivalent). Strip everything outside the allowlist.
+  5. CSP policy on public pages tightened per D-11.
+- **Files**: `assets/js/shared/markdown/` (new shared owner for the parser, exposed via ComponentLibrary), `api/_lib/sanitise.ts`.
+- **Verification**: fuzz test: feed malicious markdown (script tags, `javascript:` URLs, hostile iframe `src`) → output contains none. Known-good blocks render byte-identical to existing render where applicable.
+- **Rollback**: revert PR; admin editor cannot ship without this.
+
+### S15 — Blog admin variant (read-only)
+
+- **Goal**: editor sees the blog in admin mode with TOC enriched by `NodeActionsMenu` (no write actions wired yet).
+- **Inputs**: S11, S12, S14.
+- **Tasks**:
+  1. Implement `assets/js/admin/sections/blog_admin.js` based on `blog_section.js`, sharing the rendering path but inserting hover/long-press handlers on TOC nodes.
+  2. `NodeActionsMenu` component (extends `Menu`).
+  3. Right-click default browser context menu suppressed on TOC nodes only.
+- **Files**: under `assets/js/admin/`.
+- **Verification**: TOC clickable in admin mode; long-press / right-click on a node opens the menu; "Open" works; all other actions are stubs returning a notice "not yet implemented".
+- **Rollback**: revert PR; stub blog admin falls back to delegation from S11.
+
+### S16 — InsertToolbar + ImagePicker
+
+- **Goal**: cross-cutting insertion UI usable by S15b and S20.
+- **Inputs**: S14.
+- **Tasks**:
+  1. `InsertToolbar` component (`assets/js/admin/insert-toolbar.js`) with buttons for each block type from §B3.4.
+  2. `ImagePicker` overlay (`assets/js/admin/image-picker.js`) composing `MasonryGallery` in selection mode (extension; S12-component-map note applies).
+  3. Per-block insertion forms: thin per-type wrappers that produce a valid `:::block` payload.
+- **Files**: under `assets/js/admin/`.
+- **Verification**: in a sandbox admin page, every block type can be inserted and round-trips through the S14 parser without loss.
+- **Rollback**: revert PR.
+
+### S15b — Blog admin variant (write)
+
+- **Goal**: full blog editor: markdown body, frontmatter form, insert toolbar, save, hide/show.
+- **Inputs**: S13, S15, S16.
+- **Tasks**:
+  1. `FrontmatterForm` component.
+  2. Server: `POST /api/admin/articles`, `PATCH /api/admin/articles/:id`, `POST /api/admin/articles/:id/hide`, `POST /api/admin/articles/:id/show`, `DELETE /api/admin/articles/:id` (soft).
+  3. Client: editor compose, save flow, hide/show flow.
+  4. `Move…`, `Rename…`, `Archive`, `Duplicate`, `New child page` server endpoints and wiring to `NodeActionsMenu`.
+- **Files**: `api/admin/articles/*.ts`, additional admin client files.
+- **Verification**: full CRUD on a test article; verify version row inserted on every save; verify hidden article not returned by public read.
+- **Rollback**: revert PR; data stays in DB but write endpoints disappear.
+
+### S17 — Gallery admin variants (three scopes)
+
+- **Goal**: editor for gallery layers, image-pages, and individual assets per §B4.
+- **Inputs**: S13, S16.
+- **Tasks**:
+  1. `assets/js/admin/sections/art_admin.js` + `projects_admin.js` rendering each scope based on the current URL depth.
+  2. Server: `POST /api/admin/galleries`, `PATCH /api/admin/galleries/:slug`, `POST /api/admin/galleries/:slug/items`, `PATCH /api/admin/galleries/:slug/items/:id`, `DELETE …`, `POST /api/admin/galleries/:slug/items/:id/copy-to`.
+  3. `TagChips` component.
+  4. Long-press drag reorder backed by `sort_index` PATCH.
+- **Files**: under `assets/js/admin/`, `api/admin/galleries/*`.
+- **Verification**: end-to-end on a test gallery: create layer, create image-page, add assets via the placeholder upload (real upload arrives in S18), reorder, hide, copy-to-other-gallery, set-as-cover.
+- **Rollback**: revert PR.
+
+### S18 — Media multipart upload pipeline
+
+- **Goal**: real uploads, no file-size cap, with server-side variant generation for images (per D-10 for video).
+- **Inputs**: S09, S17.
+- **Tasks**:
+  1. Server: `POST /api/admin/media/multipart-init`, `POST /api/admin/media/multipart-sign-part`, `POST /api/admin/media/multipart-complete` (S3-compat against R2).
+  2. Image variant generator: Vercel function with Sharp, generates `thumb`/`web`/`zoom` and writes `urls_jsonb`. Function returns `202` on accept and uses a background fetch for completion (or synchronously for small images).
+  3. Video pipeline: per D-10 decision. If "client-side": browser extracts a poster frame and uploads it as a separate asset; transcoding deferred. If "managed service": integrate Cloudflare Stream / Mux.
+  4. Client: `UploadQueue` component, `ProgressBar` reused with stage text below.
+- **Files**: `api/admin/media/*`, `assets/js/admin/upload-queue.js`.
+- **Verification**: upload a 2 GB file successfully; variants appear in R2; manifest reflects URLs; resume after dropped connection works (multipart parts retry).
+- **Rollback**: revert PR; multipart endpoints disappear; uploads-in-flight may orphan parts in R2 (acceptable cost).
+- **Risks**: function memory ceilings; D-10 must already be resolved.
+
+### S19 — Video frame scrubber
+
+- **Goal**: pick a video thumbnail from a frame.
+- **Inputs**: S18.
+- **Tasks**:
+  1. `FrameScrubber` component (new) wrapping `<video>` with scrub controls.
+  2. Server: `POST /api/admin/media/video-thumb` accepts a video R2 key + timestamp; runs ffmpeg-via-function (or managed-service equivalent per D-10) to extract the frame; stores it as the asset's thumbnail.
+- **Files**: `assets/js/admin/frame-scrubber.js`, `api/admin/media/video-thumb.ts`.
+- **Verification**: uploaded video gets a custom poster frame; public render uses it.
+- **Rollback**: revert PR.
+
+### S20 — Page-block editor (home, contact, qr)
+
+- **Goal**: in-place editing of JSON block arrays for the three listed sections.
+- **Inputs**: S13, S16.
+- **Tasks**:
+  1. `EditorHandle` and `InsertSlot` components.
+  2. Per-block-type forms (reuse the form library from S16).
+  3. Server: `GET /api/admin/pages/:slug`, `PUT /api/admin/pages/:slug` (with `If-Match`).
+  4. Long-press drag reorder of blocks.
+- **Files**: under `assets/js/admin/`, `api/admin/pages/*`.
+- **Verification**: edit a block on the home page, save, refresh anonymous: new content visible.
+- **Rollback**: revert PR.
+
+### S21 — History + DiffView
+
+- **Goal**: per-item version list and revert.
+- **Inputs**: S13, plus any of S15b/S17/S20.
+- **Tasks**:
+  1. Server: `GET /api/admin/<kind>/:id/versions`, `POST /api/admin/<kind>/:id/revert/:version`.
+  2. Client: `VersionList` overlay, `DiffView` component (word diff for markdown, JSON-tree diff for blocks).
+- **Files**: under `assets/js/admin/`, `api/admin/*/versions.ts`.
+- **Verification**: revert restores prior content exactly; a new version row records the revert event.
+- **Rollback**: revert PR.
+
+### S22 — Git mirror automation + cache purge
+
+- **Goal**: every write commits a JSON snapshot to the `content` branch and purges the relevant Vercel edge cache key.
+- **Inputs**: S15b/S17/S20 (any one).
+- **Tasks**:
+  1. `api/_lib/git-mirror.ts`: opens an in-function clone (shallow) of the `content` branch, writes the canonical JSON for the mutated object, commits with the message format from §B7.3, pushes via `GIT_MIRROR_TOKEN`.
+  2. Tied into the S13 versioning helper so every successful write triggers a mirror push and a `purge` call.
+  3. Failure to mirror does **not** roll back the DB write; it raises a banner-level warning to the editor with a retry button (and a row in `audit_log`).
+- **Files**: `api/_lib/git-mirror.ts`, `api/_lib/cache-purge.ts`.
+- **Verification**: edit an article → commit visible on GitHub `content` branch within 10 s of save; anonymous fetch returns the new content immediately (no TTL wait).
+- **Rollback**: disable feature flag `gitMirrorEnabled`; mirror stops; DB remains source of truth.
+
+### S23 — MFA enablement
+
+- **Goal**: re-enable the TOTP path stubbed in S09, before any public announcement.
+- **Inputs**: S22 (or any time after S09 — gating on S22 only because it should happen before "v1 announced").
+- **Tasks**:
+  1. Generate TOTP secret for the editor; show QR + manual code; persist `totp_secret`.
+  2. Login overlay extended to accept the second field (only shown when a secret exists on the user row, so initial bootstrap can occur with password alone).
+  3. Server-side `verify(totp)` step.
+- **Files**: `api/auth/totp/*`, modify `LoginOverlay`.
+- **Verification**: login without code fails; correct code succeeds; replayed code within the same step fails.
+- **Rollback**: clear the `totp_secret` field; system falls back to password-only.
+
+### S24 — Hardening
+
+- **Goal**: backups, monitoring, recovery.
+- **Inputs**: S23 (or earlier).
+- **Tasks**:
+  1. Nightly `pg_dump` to R2 via a scheduled function; restore procedure documented.
+  2. Vercel + Sentry (or equivalent) error reporting on `api/*`.
+  3. Login alert: send an email or push notification on every successful and every failed-then-locked login.
+  4. Recovery runbook documented in `blog/docs/site/`: how to reset the admin password from a direct DB connection; how to restore the DB from a `pg_dump` artefact; how to revert all content to a prior `content`-branch commit.
+- **Files**: `api/cron/backup.ts`, `blog/docs/site/recovery-runbook.md`.
+- **Verification**: dry-run a restore into `siteboy_preview`; verify byte-equivalent state.
+- **Rollback**: not applicable (purely additive).
+
+## C3. Sequencing constraints
+
+- S00, S01 are doc-only and gate everything.
+- S02 must precede any code touching DB or R2 (S04, S05, S06, S09, S18+).
+- S03 can run in parallel with S04–S05.
+- S07 must not precede S06 and must precede S08.
+- S08 (DNS flip) is the last unit before any admin work; admin features should not ship on the GH Pages site.
+- S09, S14 are foundation units consumed by everything in the editor block.
+- S15, S17, S20 are independent of each other once their shared foundations exist.
+- S22 must precede S23 announcement, but S22 can technically ship after S15b/S17/S20.
+- S23 must ship before the site is publicly known to be writable. Until S23, do not publicise the existence of admin mode.
+
+## C4. Feature flags (canonical list)
+
+All default `false` in production until verification passes; toggled in `assets/js/admin/index.js` keyed off env-injected globals.
+
+| Flag | Introduced in | Gates |
+|---|---|---|
+| `useApiReads` | S07 | API-vs-static reads |
+| `useStaticFallback` | S06 | Build-time JSON shipped in `dist/` |
+| `adminEnabled` | S10 | Whether `auth.js` even attaches listeners |
+| `blogAdmin`, `galleryAdmin`, `pageBlocksAdmin` | S15/S17/S20 | Per-domain editor visibility |
+| `gitMirrorEnabled` | S22 | Per-save git push |
+| `mfaRequired` | S23 | TOTP required at login |
+
+## C5. Verification matrix per unit
+
+Each unit's PR description must list:
+1. **Functional checks** — explicit click-paths and CLI commands that produce a pass/fail.
+2. **Regression checks** — at minimum: anonymous load of home, blog index, one blog article, one art gallery, one project. No JS errors. No visible UI change unless the unit is the one that introduces a visible UI change.
+3. **Security checks** (for units S09, S14, S18, S22, S23): explicit negative cases (CSRF missing → 403; iframe src outside allowlist → stripped; multipart PUT without session → 403; mirror token leaked into client bundle → grep verification).
+
+## C6. Risks specific to the implementation order
+
+- **Cost of S02 stretching**. Decisions D-3, D-9, D-10 if left ambiguous will block S04, S05, S18. Force them closed in S01.
+- **S08 DNS flip is irreversible within TTL**. Schedule when the editor is available to monitor.
+- **S18 video pipeline depends on D-10**. If D-10 is "client-side", S19 collapses to a small component. If "managed service", S18/S19 grow to include service integration. Confirm before starting S18.
+- **S22 git mirror inside a function**. Cloning + pushing per write can hit function timeouts. If observed, switch to a queue: write a "mirror job" row, process from a single cron job at high frequency.
+- **S23 MFA bootstrap**. The editor must enrol TOTP from a logged-in session that was created with password only. If the password is leaked before S23 ships, the attacker can enrol their own TOTP and lock the editor out. Document this and ship S23 promptly after S22.
+
+## C7. Definition of "v1 done"
+
+All of the following must hold:
+1. Units S00–S23 merged.
+2. Acceptance criteria §16 of Part A satisfied.
+3. Recovery runbook (S24 task 4) exists and has been dry-run once.
+4. The editor has used the system for at least one full content cycle (create, edit, hide, revert, publish-equivalent) without engineer assistance.
+
+S24 backups and monitoring may continue after v1; they are required for sustained operation but not for the v1 milestone.
+
