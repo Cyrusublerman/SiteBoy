@@ -1,0 +1,4 @@
+;T0 switch to extruder T0 (any G-code macro can be passed here)
+
+M106 S80 ;  fan speed out of 255 = 100%
+; FEATURE: Outer wall

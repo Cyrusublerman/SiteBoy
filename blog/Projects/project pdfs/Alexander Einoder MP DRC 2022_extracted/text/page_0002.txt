@@ -1,0 +1,27 @@
+Index
+Abstract 3
+Introduction 4
+Design Goal 6
+Buildings Brain and Behaviour 8
+Biophilia and Neuroscience 12
+Research to Design 15
+Aesthetics of Nature 16
+Fractals 17
+Natural Patterns: Local Symmetry 18
+Phyllotaxis 20
+Biophilic Design Precedents 22
+Design Methodology 24
+Initial Experiments 26
+Creation of a Phyllotactic Dome Part 1 28
+Creation of a Phyllotactic Dome Part 1 36
+Lattice Combinations 42
+Joints 50
+Negative Space 52
+Leaves 54
+Algorithm Flexibility and Use 56
+Blender Geometry Nodes and Python 58
+Outcomes 68
+Reflection 78
+References 80
+Appendices 84
+2

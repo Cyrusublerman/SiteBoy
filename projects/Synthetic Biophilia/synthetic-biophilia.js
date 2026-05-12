@@ -60,6 +60,20 @@
                 };
             };
 
+            // Title
+            const titleEl = new ComponentLibrary.Heading({ level: 1, content: 'SYNTHETIC BIOPHILIA' }, deps);
+            this.componentInstances.push(titleEl);
+            container.appendChild(titleEl.render());
+
+            // Hero image
+            const heroImg = new ComponentLibrary.Image({
+                src: 'https://media.einoder.net/projects/synthetic-biophilia/web/169 sidey4k1 no fill just lattice.jpg',
+                size: 'full',
+                enableZoom: true
+            }, deps);
+            this.componentInstances.push(heroImg);
+            container.appendChild(heroImg.render());
+
             // Define the sections for the project page
             const sectionConfigs = [
                 { title: 'ABSTRACT', contentLoader: createMarkdownLoader('projects/Synthetic Biophilia/md/abstract.md'), defaultOpen: true },
@@ -89,16 +103,11 @@
         },
 
         addBackLink(container, F) {
-            const backLink = new ComponentLibrary.Paragraph({
-                content: '← Back to Projects',
-                isClickable: true,
-                onClick: () => {
-                if (window.location.hash.startsWith('#projects/')) {
-                    window.location.hash = '#projects';
-                    }
-                }
+            const backLink = new ComponentLibrary.Button({
+                text: '← BACK TO PROJECTS',
+                onClick: () => { window.location.hash = '#projects'; }
             });
-            
+
             this.componentInstances.push(backLink);
             const backLinkElement = backLink.render();
             backLinkElement.style.marginTop = `${F * 2}px`;

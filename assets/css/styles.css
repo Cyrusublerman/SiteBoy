@@ -2437,57 +2437,138 @@ body.with-subheader .content-container.tool-viewport {
    ================================================================= */
 
 /* TOC Gallery Component */
-.toc-gallery.component {
-    /* Mathematical foundation spacing already applied in component */
-    scrollbar-width: none; /* Hide by default */
-    -ms-overflow-style: none;
+/* =================================================================
+   IMAGE GRID — card-based 2-col browse grid
+   ================================================================= */
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: var(--f);
+    row-gap: calc(var(--f) * 2);
+    box-sizing: border-box;
 }
 
-.toc-gallery.component::-webkit-scrollbar {
-    display: none; /* Hide by default */
+@media (max-width: 768px) {
+    .image-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .art-gallery-wrap {
+        --gallery-tile-gap: calc(var(--f) / 2) !important;
+    }
+
+    .art-gallery-wrap .image-grid {
+        column-gap: var(--gallery-tile-gap) !important;
+        row-gap: var(--gallery-tile-gap) !important;
+    }
 }
 
-.toc-gallery.component:hover {
-    scrollbar-width: thin; /* Show on hover */
-    -ms-overflow-style: auto;
+.image-grid-card {
+    border: 1px solid var(--c-border);
+    padding: var(--f);
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
 }
 
-.toc-gallery.component:hover::-webkit-scrollbar {
+.image-grid-card:hover {
+    border-color: var(--c-text);
+}
+
+.image-grid-card-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
     display: block;
-    width: 8px;
-    height: 8px;
+    /* max-height set dynamically by _makeWrap to cap card size */
 }
 
-.toc-gallery.component:hover::-webkit-scrollbar-track {
-    background: var(--vga-black);
+.image-grid-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.15s;
 }
 
-.toc-gallery.component:hover::-webkit-scrollbar-thumb {
-    background: var(--vga-white);
-    border-radius: 0;
+.image-grid-card:hover .image-grid-card-img img {
+    opacity: 0.85;
 }
 
-.toc-gallery.component:hover::-webkit-scrollbar-button {
-    display: none;
+.image-grid-card-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: calc(var(--f) * 2);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-.toc-gallery-grid {
-    /* Flex layout handled by component JS for mathematical precision */
+.image-grid-card-name {
+    color: var(--c-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
 }
 
-.toc-gallery-thumbnail {
-    /* Individual thumbnail styling */
-    transition: background-color 0.2s ease, color 0.2s ease;
+.image-grid-card-count {
+    color: var(--c-border);
+    flex-shrink: 0;
+    transition: color 0.15s;
 }
 
-.toc-gallery-thumbnail:hover {
-    /* Site-wide hover pattern: background/color inversion */
-    background: var(--c-text) !important;
-    color: var(--c-bg) !important;
+.image-grid-card:hover .image-grid-card-name,
+.image-grid-card:hover .image-grid-card-count {
+    color: var(--c-text);
 }
 
-.toc-gallery-show-more {
-    /* Show more link styling handled by component */
+/* =================================================================
+   ARTWORK PAGE — vertical block stack for a single artwork's page
+   ================================================================= */
+
+.artwork-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Inner scroll column — keeps scrollbar inside the framed border */
+.artwork-page-inner {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.artwork-page-image-block {
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.artwork-page-image-block img {
+    max-height: calc(100vh - var(--header-height) * 2 - calc(var(--f) * 4));
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    cursor: zoom-in;
+}
+
+.artwork-page-md-block {
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    color: var(--c-text);
+    line-height: 1.5;
+    box-sizing: border-box;
 }
 
 /* Art TOC specific styles */
@@ -2859,200 +2940,12 @@ body.with-subheader .content-container.tool-viewport {
    Simple, fast, native browser layout (no JS calculations)
    ================================================================= */
 
-/* Gallery container */
-.masonry-gallery {
-    width: 100%;
-    min-height: 100vh;
-    background: var(--c-bg);
-    padding: 0;
-    margin: 0;
-}
+/* masonry-gallery and toc-gallery CSS removed — replaced by .image-grid and .gallery-viewer above.
+   MasonryGallery and GalleryLightbox JS classes are preserved for backward compat. */
 
-/* The grid - actually a list using CSS columns */
-.masonry-gallery__grid {
-    column-count: 1; /* Mobile: 1 column */
-    column-gap: 0; /* NO gap between images */
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-/* Responsive columns */
-@media (min-width: 768px) {
-    .masonry-gallery__grid {
-        column-count: 2; /* Tablet: 2 columns */
-    }
-}
-
-@media (min-width: 1200px) {
-    .masonry-gallery__grid {
-        column-count: 3; /* Desktop: 3 columns */
-    }
-}
-
-@media (min-width: 1800px) {
-    .masonry-gallery__grid {
-        column-count: 4; /* Wide: 4 columns */
-    }
-}
-
-/* Masonry item - each image in the grid */
-.masonry-item {
-    break-inside: avoid; /* CRITICAL: Don't split across columns */
-    page-break-inside: avoid; /* Older browsers */
-    margin: 0;
-    padding: 0;
-    position: relative;
-    cursor: pointer;
-    background: var(--c-bg);
-}
-
-/* Image - natural height, full width */
-.masonry-item__img {
-    width: 100%;
-    height: auto; /* NATURAL HEIGHT - key to masonry */
-    display: block;
-    object-fit: cover;
-    opacity: 0; /* Start hidden */
-    transition: opacity 0.3s ease; /* Fade in */
-    margin: 0;
-    padding: 0;
-    border: none;
-}
-
-/* Loaded state - fade in */
-.masonry-item__img.loaded {
-    opacity: 1;
-}
-
-/* Hover effect */
-.masonry-item:hover .masonry-item__img {
-    opacity: 0.85;
-}
-
-/* Label overlay - minimal VGA style */
-.masonry-item__label {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: calc(var(--f) * 0.5);
-    background: rgba(0, 0, 0, 0.8);
-    border: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
-    font-size: calc(var(--f) * 0.75);
-    color: var(--c-text);
-    text-transform: uppercase;
-}
-
-.masonry-item:hover .masonry-item__label {
-    opacity: 1;
-}
-
-/* Old image-gallery styles removed - now using masonry-gallery */
-
-/* =================================================================
-   GALLERY LIGHTBOX - FULL-SCREEN ZOOM/PAN VIEWER
-   ================================================================= */
-
-.gallery-lightbox__overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background: var(--c-bg);
-    display: flex;
-    flex-direction: column;
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
-}
-
-/* Top control bar */
-.gallery-lightbox__bar {
-    display: flex;
-    align-items: stretch;
-    height: calc(var(--f) * 4);
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--c-border);
-}
-
-.gallery-lightbox__btn {
-    width: calc(var(--f) * 8);
-    flex-shrink: 0;
-    background: var(--c-bg);
-    color: var(--c-text);
-    border: none;
-    cursor: pointer;
-    font-size: var(--f);
-    font-family: 'Atkinson Hyperlegible Mono', monospace;
-}
-
-.gallery-lightbox__btn--sep {
-    border-left: 1px solid var(--c-border);
-}
-
-.gallery-lightbox__btn:hover {
-    background: var(--c-text);
-    color: var(--c-bg);
-}
-
-.gallery-lightbox__counter {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--f);
-    color: var(--c-text);
-    opacity: 0.6;
-    border-left: 1px solid var(--c-border);
-    border-right: 1px solid var(--c-border);
-    letter-spacing: 0.1em;
-}
-
-/* Image area */
-.gallery-lightbox__wrap {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    position: relative;
-    cursor: zoom-in;
-}
-
-.gallery-lightbox__img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    user-select: none;
-    pointer-events: none;
-    transform-origin: center center;
-    transition: opacity 0.15s;
-    display: block;
-}
-
-.gallery-lightbox__loading {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--f);
-    color: var(--c-text);
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-@media (max-width: 1023px) {
-    .gallery-lightbox__btn {
-        width: calc(var(--f) * 6);
-    }
-
-    .gallery-item__label {
-        opacity: 1;
-    }
-}
+/* GALLERY LIGHTBOX styles relocated to assets/css/components.css
+   (.gallery-lightbox__* — owned by GalleryLightbox in masonry-gallery.js).
+   styles.css is not imported by index.css; component CSS belongs in components.css. */
 
 /* =================================================================
    GENERATIVE ANIMATIONS - Standard Container Pattern
@@ -3418,7 +3311,9 @@ body.full-mode .page-header {
 body.full-mode #footer,
 body.full-mode .page-footer,
 body.tools-section #footer,
-body.tools-section .page-footer {
+body.tools-section .page-footer,
+body.projects-section #footer,
+body.projects-section .page-footer {
     display: none !important;
 }
 

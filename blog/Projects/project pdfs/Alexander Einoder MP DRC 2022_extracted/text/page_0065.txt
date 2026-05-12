@@ -1,0 +1,38 @@
+#========= make border====
+radiusX=0.005
+radiusY=0.005
+print(verts)
+for i in range (len(verts)):
+start = verts[order[i]]
+if i == len(verts)-1:
+end = verts[order[0]]
+else:
+end = verts[order[i+1]]
+print(i)
+frameName =”frame {}”.format(name)
+makeLine(start, end, radiusX, radiusY,frameName, “leaf”)
+mesh = bpy.data.meshes.new(name)
+mesh.from_pydata(verts, edges, faces)
+mesh.update()
+o = bpy.data.objects.new(name, mesh)
+bpy.data.collections[“leaf”].objects.link(o)
+mod = o.modifiers.new(“Solidify”, ‘SOLIDIFY’)
+mod.offset = 0
+mod.thickness = 0.0002
+deselect()
+leafNumber+=1
+#bpy.data.collections[“leafVert”].objects.unlink(leaf)
+for obj in bpy.data.collections[“leaf”].objects:
+if “frame” in obj.name:
+obj.select_set(True)
+print(obj.name)
+bpy.context.view_layer.objects.active =o
+setMat(“Brass”)
+deselect()
+else:
+obj.select_set(True)
+print(obj.name)
+bpy.context.view_layer.objects.active =o
+setMat(“Smudged Glass”)
+deselect()
+65

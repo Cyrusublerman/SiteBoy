@@ -1,0 +1,19 @@
+B O D Y S T O R M I N G
+To understand how the CHAT device is to be interacted with and what affordances are
+needed in its design, the method of bodystorming was implemented. This is the act of
+using roleplay to walkthrough the user interaction of the device.
+The CHAT team began with a small cube that was the approximate size needed to contain
+the components of the device.
+We then ran with the narrative of coming home and seeing the device. What would be
+our intent when we first see it? How would we know if we have a message? How visible
+should it be?
+After walking over to the device what do we do? From the roleplaying, it was apparent
+that some of us had the urge to pick up the device to inspect it. After inspecting CHAT, it
+was observed that there was a significant need to see what was the front and back of the
+device before we were able to continue the interaction.
+The box was then modified to have a visible camera at the front.
+After many runthroughs it was deduced that the optimal structure of the device would
+have all initial interfaces visible on the front, the EMF sensor on the top and the printer
+on the underside. This was to establish a visible hierachy and order of interaction with
+the interfaces.
+30

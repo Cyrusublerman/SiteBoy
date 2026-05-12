@@ -14,6 +14,7 @@
  */
 
 import R2Helper from '../shared/r2-url-helper.js';
+import { GalleryLightbox, MasonryGallery, ImageGrid, ArtworkPage } from '../shared/masonry-gallery.js';
 
 const R2_BASE = 'https://media.einoder.net';
 
@@ -182,6 +183,10 @@ const ArtSection = {
         } else if (subsection === 'physical/small/all') {
             await this.renderAllForSection('physical', 'small');
 
+        // ── Artwork page (imageId within a gallery — deepest level) ──
+        } else if (this._isArtworkRoute(subsection)) {
+            await this.renderArtworkPage(subsection);
+
         // ── Physical ──
         } else if (subsection === 'physical') {
             await this.renderSectionIndex('physical');
@@ -244,143 +249,230 @@ const ArtSection = {
         return found ? found.title : subId.toUpperCase();
     },
 
-    /** Fetch manifest images and map to { thumb, src, zoom, title, caption }. */
-    async _manifestImages(galleryType, galleryName, labelPrefix) {
-        const manifest = await R2Helper.fetchManifest(galleryType, galleryName);
-        return manifest.images.map(img => ({
-            thumb:   img.urls.thumb,
-            src:     img.urls.web,
-            zoom:    img.urls.zoom,
-            title:   `${labelPrefix} - ${img.id}`,
-            caption: `${galleryName}`,
-        }));
+    /**
+     * Returns true if subsection is a per-artwork path (imageId as final segment).
+     * physical/small/{sub}/{imageId} → 4 segments (physical/small/* are galleries at depth 3)
+     * {cat}/{gallery}/{imageId}      → 3 segments for all other categories
+     * photography/* never has artwork pages (photos go straight to lightbox).
+     */
+    _isArtworkRoute(subsection) {
+        if (!subsection) return false;
+        const parts = subsection.split('/');
+        if (parts[0] === 'photography') return false;
+        // physical/small/{sub} is itself a gallery (3 segs); depth-4 is artwork
+        if (parts[0] === 'physical' && parts[1] === 'small') return parts.length === 4;
+        return parts.length >= 3;
     },
 
-    // ── Art index (TOC of all 5 sections) ────────────────────────────────────
+    /**
+     * Render a per-artwork page or fall back to the gallery masonry + lightbox.
+     * Parses the final path segment as imageId; everything before it is the gallery path.
+     */
+    async renderArtworkPage(subsection) {
+        const parts       = subsection.split('/');
+        const imageId     = parts[parts.length - 1];
+        const galleryType = parts[0];
+        const galleryName = parts.slice(1, -1).join('/');
+        const galleryTitle = this._galleryTitle(galleryType, parts[parts.length - 2]);
+
+        let manifest, allImages;
+        try {
+            manifest  = await R2Helper.fetchManifest(galleryType, galleryName);
+            allImages = await this._manifestImages(galleryType, galleryName, galleryTitle);
+        } catch {
+            this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}`);
+            return;
+        }
+
+        const rawImage     = (manifest.images || []).find(img => img.id === imageId);
+        const resolvedIdx  = allImages.findIndex(img => img.title === imageId);
+        const resolvedImg  = allImages[resolvedIdx];
+
+        if (!rawImage || !resolvedImg) {
+            this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}`);
+            return;
+        }
+
+        if (!rawImage.page?.length) {
+            // No page content — render the gallery masonry and open lightbox immediately
+            await this._renderImageGallery(galleryType, galleryName, galleryTitle);
+            const lb = new GalleryLightbox(
+                { images: allImages, index: Math.max(0, resolvedIdx) },
+                { MF: window.MathematicalFoundation }
+            );
+            this.componentInstances.push(lb);
+            lb.open();
+            return;
+        }
+
+        // Resolve page blocks: image ids → URLs from the manifest
+        const rawById  = Object.fromEntries((manifest.images || []).map(img => [img.id, img]));
+        const resById  = Object.fromEntries(allImages.map(img => [img.title, img]));
+        const blocks   = rawImage.page.map(block => {
+            if (block.type === 'image') {
+                const res = resById[block.id] || resolvedImg;
+                return { type: 'image', src: res.src || '', zoom: res.zoom || '', thumb: res.thumb || '', title: block.id };
+            }
+            if (block.type === 'md') return { type: 'md', text: block.text };
+            return block; // unknown types passed through for forward compat
+        });
+
+        this.currentContainer.innerHTML = '';
+        this.currentContainer.style.padding = '0';
+
+        const page = new ArtworkPage({ blocks, title: imageId }, { MF: window.MathematicalFoundation });
+        this.componentInstances.push(page);
+        this.currentContainer.appendChild(page.render());
+        page.mount();
+
+        this._setupSubheaderArtwork(galleryType, galleryName, imageId, allImages);
+    },
+
+    _setupSubheaderArtwork(galleryType, galleryName, imageId, allImages) {
+        if (!window.Subheader) return;
+        const sh           = window.Subheader;
+        const galleryLabel = this._galleryTitle(galleryType, galleryName.split('/').pop());
+
+        sh.updateTitle(imageId);
+
+        const dropItems = [
+            { label: `← BACK TO ${galleryLabel}`, path: `#art/${galleryType}/${galleryName}`, isCurrent: false },
+            ...allImages.map(img => ({
+                label:     img.title || img.id,
+                path:      `#art/${galleryType}/${galleryName}/${img.title}`,
+                isCurrent: img.title === imageId,
+            })),
+        ];
+        sh.setDropdownContent(dropItems, item => {
+            if (item.path) this.navigateToPage(item.path);
+        });
+
+        const navItems = allImages.map(img => ({
+            id:    img.title,
+            path:  `#art/${galleryType}/${galleryName}/${img.title}`,
+            title: img.title,
+            isTOC: false,
+        }));
+        sh.updateNavigation({
+            section:    'art',
+            subsection: `${galleryName}/${imageId}`,
+            items:      navItems,
+            navigate:   (sec, sub) => this.navigationCallbacks?.navigateToSection?.(sec, sub),
+        });
+
+        sh.show();
+        window.SiteBoyApp?.setSubheaderState?.(true);
+    },
+
+    /** Fetch manifest images and map to { thumb, src, zoom, title, caption }. */
+    /**
+     * Fetch manifest and return an array of project groups.
+     * If manifest has a `groups` array each entry becomes one project (card + viewer slot).
+     * Otherwise all images are one implicit group.
+     * Group schema: { id, title?, images: [imgId,...], text? }
+     * Returns: [{ id, title, images: [{thumb,src,zoom,title}], text }]
+     */
+    async _manifestGroups(galleryType, galleryName, labelPrefix) {
+        const manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+        const allImages = manifest.images || [];
+
+        // Deduplicate by id
+        const seen = new Set();
+        const deduped = allImages.filter(img => !seen.has(img.id) && seen.add(img.id));
+
+        const toImg = (img, size = 'full') => {
+            const s = size === 'half' || size === 'double' ? size : 'full';
+            return {
+                thumb:   img.urls?.thumb,
+                src:     img.urls?.web,
+                zoom:    img.urls?.zoom,
+                title:   img.id,
+                size:    s,
+                hasPage: Array.isArray(img.page) && img.page.length > 0,
+            };
+        };
+
+        const resolveCover = (cover, byId, fallbackThumb) => {
+            if (cover == null || cover === '') return fallbackThumb;
+            const key = String(cover);
+            const base = key.replace(/\.(jpe?g|png|webp)$/i, '');
+            const row  = byId[key] || byId[base];
+            return row?.urls?.thumb ?? fallbackThumb;
+        };
+
+        if (manifest.groups?.length) {
+            const byId = Object.fromEntries(deduped.map(img => [img.id, img]));
+            return manifest.groups.map(g => {
+                const resolvedImages = (g.images || []).map((entry) => {
+                    const id = typeof entry === 'string' ? entry : entry?.id;
+                    if (!id) return null;
+                    const raw = byId[id];
+                    if (!raw) return null;
+                    let size = typeof entry === 'object' && entry?.size ? String(entry.size) : 'full';
+                    if (size !== 'half' && size !== 'double') size = 'full';
+                    return toImg(raw, size);
+                }).filter(Boolean);
+
+                const firstThumb = resolvedImages[0]?.thumb ?? null;
+                const thumb = resolveCover(g.cover, byId, firstThumb);
+
+                return {
+                    id:     g.id || g.title || String(Math.random()),
+                    title:  g.title || labelPrefix,
+                    images: resolvedImages,
+                    text:   g.text || null,
+                    thumb,
+                };
+            });
+        }
+
+        // No groups — single implicit default group (legacy flat manifest)
+        return [{
+            id:     'default',
+            title:  labelPrefix,
+            images: deduped.map(img => toImg(img, 'full')),
+            text:   null,
+            thumb:  deduped[deduped.length - 1]?.urls?.thumb || null,
+        }];
+    },
+
+    // Legacy flat image array (used by renderAllForSection)
+    async _manifestImages(galleryType, galleryName, labelPrefix) {
+        const groups = await this._manifestGroups(galleryType, galleryName, labelPrefix);
+        return groups.flatMap(g => g.images);
+    },
+
+    // ── Art index (card grid of all categories) ───────────────────────────────
     async renderArtIndex() {
         if (window.Subheader) window.Subheader.hide();
         if (window.SiteBoyApp?.setSubheaderState) window.SiteBoyApp.setSubheaderState(false);
 
         this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('toc-container');
-
-        const contentContainer = this.currentContainer.closest('.content-container');
-        if (contentContainer) {
-            contentContainer.classList.add('toc-container');
-            if (window.MathematicalFoundation) {
-                const layout = window.MathematicalFoundation.computeLayout() || {};
-                const margin = window.MathematicalFoundation.Config?.margin || layout.marginLeft || 14;
-                const headerHeight = layout.headerHeight || 28;
-                contentContainer.style.top = `${margin + headerHeight}px`;
-            }
-        }
-
-        await this.createArtTOCWithGalleries();
-
+        this.currentContainer.style.padding = '0';
         const F = window.MathematicalFoundation?.F || 14;
-        const pad = this.createElement('div', 'toc-bottom-padding');
-        pad.style.cssText = `height:${F * 4}px;width:100%;`;
-        this.currentContainer.appendChild(pad);
-    },
 
-    async createArtTOCWithGalleries() {
-        const entries = Object.entries(this.galleryStructure);
-        const total = entries.length;
-        for (let i = 0; i < total; i++) {
-            const [key, gallery] = entries[i];
-            await this.createArtTOCItem(gallery, key, i + 1, i === total - 1);
-        }
-    },
+        // Build card items — one per category
+        const items = await Promise.all(
+            Object.entries(this.galleryStructure).map(async ([key, gallery]) => {
+                const r2Type = key === 'photography' ? 'photos' : key;
+                const firstSub = (gallery.subsections || [])[0];
+                let image = null;
+                if (firstSub) image = await this._resolvePreviewImage(r2Type, firstSub.id, firstSub);
+                const total = (gallery.subsections || []).reduce((s, sub) => s + (sub.count || 0), 0);
+                return {
+                    image,
+                    label: gallery.title,
+                    count: total || null,
+                    onClick: () => this.navigateToGallery(key),
+                };
+            })
+        );
 
-    async createArtTOCItem(gallery, galleryKey, itemIndex, isLast = false) {
-        const F = window.MathematicalFoundation?.F || 14;
-        const headerH = F * 4;
-        const galleryH = F * 24;
-
-        const tocItem = this.createElement('div', 'toc-item art-toc-item');
-        tocItem.style.cssText = `
-            height:${headerH + galleryH}px;cursor:pointer;display:flex;flex-direction:column;
-            border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:1px solid var(--c-border);
-            border-bottom:${isLast ? '1px solid var(--c-border)' : 'none'};
-            font-family:'Atkinson Hyperlegible Mono',monospace;background:var(--c-bg);
-        `;
-
-        // Top row — owns the dividing border via border-bottom (border-system §8)
-        const topHalf = this.createElement('div', 'toc-item-top');
-        topHalf.style.cssText = `
-            height:${headerH}px;display:flex;align-items:stretch;
-            border-bottom:1px solid var(--c-border);box-sizing:border-box;
-        `;
-
-        const numBox = this.createElement('div', 'toc-number');
-        numBox.textContent = String(itemIndex).padStart(2, '0');
-        numBox.style.cssText = `
-            width:${headerH}px;height:${headerH}px;background:var(--c-text);color:var(--c-bg);
-            display:flex;align-items:center;justify-content:center;font-size:${F}px;flex-shrink:0;
-        `;
-
-        const content = this.createElement('div', 'toc-content');
-        content.style.cssText = `
-            flex:1;padding:${F}px;display:flex;flex-direction:column;
-            justify-content:center;border-left:1px solid var(--c-border);
-        `;
-        const titleDiv = this.createElement('div');
-        titleDiv.textContent = gallery.title;
-        titleDiv.style.cssText = `margin:0 0 ${F * 0.5}px 0;text-transform:uppercase;font-size:${F}px;line-height:1.5;`;
-        const descDiv = this.createElement('div');
-        descDiv.textContent = gallery.description;
-        descDiv.style.cssText = `margin:0;font-size:${F * 0.75}px;color:var(--c-border);line-height:1.5;`;
-        content.appendChild(titleDiv);
-        content.appendChild(descDiv);
-
-        const arrow = this.createElement('div', 'toc-arrow');
-        arrow.textContent = '→';
-        arrow.style.cssText = `
-            width:${headerH}px;height:${headerH}px;display:flex;align-items:center;
-            justify-content:center;font-size:${F}px;border-left:1px solid var(--c-border);flex-shrink:0;
-        `;
-
-        topHalf.appendChild(numBox);
-        topHalf.appendChild(content);
-        topHalf.appendChild(arrow);
-
-        // Preview gallery row — no border-top; topHalf owns the divider (border-system §8)
-        const bottomHalf = this.createElement('div', 'toc-item-bottom');
-        bottomHalf.style.cssText = `
-            height:${galleryH}px;display:flex;align-items:stretch;padding:0;margin:0;
-        `;
-
-        const previewItems = await this.getGalleryPreviewItems(galleryKey, gallery);
-        const galleryPreview = new ComponentLibrary.TOCGallery({
-            items: previewItems.slice(0, 4),
-            cols: 4,
-            showMore: true,
-            showMoreText: '→',
-            onItemClick: () => this.navigateToGallery(galleryKey),
-            onShowMoreClick: () => this.navigateToGallery(galleryKey),
-        }, { MF: window.MathematicalFoundation });
-        this.componentInstances.push(galleryPreview);
-        bottomHalf.appendChild(galleryPreview.render());
-
-        tocItem.appendChild(topHalf);
-        tocItem.appendChild(bottomHalf);
-
-        topHalf.addEventListener('mouseenter', () => {
-            tocItem.style.background = 'var(--c-text)';
-            tocItem.style.color = 'var(--c-bg)';
-            numBox.style.background = 'var(--c-bg)';
-            numBox.style.color = 'var(--c-text)';
-        });
-        topHalf.addEventListener('mouseleave', () => {
-            tocItem.style.background = '';
-            tocItem.style.color = '';
-            numBox.style.background = 'var(--c-text)';
-            numBox.style.color = 'var(--c-bg)';
-        });
-        topHalf.addEventListener('click', () => this.navigateToGallery(galleryKey));
-
-        this.currentContainer.appendChild(tocItem);
+        const wrap = this._makeWrap(F);
+        const grid = new ImageGrid({ items }, { MF: window.MathematicalFoundation });
+        this.componentInstances.push(grid);
+        wrap.appendChild(grid.render());
+        this.currentContainer.appendChild(wrap);
     },
 
     async getGalleryPreviewItems(galleryKey, gallery) {
@@ -428,7 +520,7 @@ const ArtSection = {
         this.navigationCallbacks?.navigateToSection?.('art', galleryKey);
     },
 
-    // ── Generic section index (TOC for one top-level category) ───────────────
+    // ── Generic section index (card grid for one top-level category) ──────────
     /**
      * @param {string} sectionKey  - key in galleryStructure (or a slash-path for nested)
      * @param {Object} [opts]
@@ -443,24 +535,32 @@ const ArtSection = {
         const r2Type   = opts.r2Type       || (sectionKey.split('/')[0] === 'photography' ? 'photos' : sectionKey.split('/')[0]);
         const basePath = opts.basePath     ?? '';
         const navKey   = opts.parentNavKey || sectionKey;
+        const F        = window.MathematicalFoundation?.F || 14;
 
         this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('toc-container');
+        this.currentContainer.style.padding = '0';
 
-        const F = window.MathematicalFoundation?.F || 14;
         const subsections = gallery.subsections || [];
 
-        // View-all button at top
-        this._appendViewAllButton(navKey, gallery, subsections);
+        const items = await Promise.all(subsections.map(async (sub) => {
+            const subPath = basePath ? `${basePath}/${sub.id}` : sub.id;
+            let image = null;
+            try { image = await this._resolvePreviewImage(r2Type, subPath, sub); } catch { /* no image */ }
+            return {
+                image,
+                label: sub.title,
+                count: sub.count || null,
+                onClick: (_item, _idx, cardEl) => {
+                    this.navigationCallbacks?.navigateToSection?.('art', `${navKey}/${sub.id}`);
+                },
+            };
+        }));
 
-        const total = subsections.length;
-        for (let i = 0; i < total; i++) {
-            await this.createSectionTOCItemWithPreview(navKey, r2Type, basePath, subsections[i], i + 1, i === 0, i === total - 1);
-        }
-
-        const pad = this.createElement('div');
-        pad.style.cssText = `height:${F * 4}px;width:100%;`;
-        this.currentContainer.appendChild(pad);
+        const wrap = this._makeWrap(F);
+        const grid = new ImageGrid({ items }, { MF: window.MathematicalFoundation });
+        this.componentInstances.push(grid);
+        wrap.appendChild(grid.render());
+        this.currentContainer.appendChild(wrap);
 
         this._setupSubheader(gallery.title, navKey, subsections);
     },
@@ -470,11 +570,8 @@ const ArtSection = {
         const total = subsections.reduce((sum, s) => sum + (s.count || 0), 0);
         const label = `VIEW ALL ${gallery.title}${total ? ` (${total})` : ''}`;
 
-        const wrap = this.createElement('div', 'view-all-container');
-        wrap.style.cssText = `
-            height:${F * 6}px;display:flex;align-items:stretch;
-            border:1px solid var(--c-border);margin:0;padding:0;
-        `;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `height:${F * 6}px;display:flex;align-items:stretch;border:1px solid var(--c-border);margin:0 ${F}px ${F}px;`;
         const btn = new ComponentLibrary.Button({
             text: label,
             onClick: () => this.navigationCallbacks?.navigateToSection?.('art', `${navKey}/all`),
@@ -484,106 +581,6 @@ const ArtSection = {
         btnEl.style.cssText += 'width:100%;height:100%;margin:0;border:none;border-radius:0;';
         wrap.appendChild(btnEl);
         this.currentContainer.appendChild(wrap);
-    },
-
-    async createSectionTOCItemWithPreview(navKey, r2Type, basePath, subsection, itemIndex, isFirst = false, isLast = false) {
-        const F = window.MathematicalFoundation?.F || 14;
-        const headerH = F * 4;
-        const galleryH = F * 24;
-
-        const tocItem = this.createElement('div', 'toc-item art-toc-item');
-        // view-all button above owns the top separator via its border-bottom;
-        // first item has no border-top. Middle items own their separator via border-top.
-        // Last item closes the stack with border-bottom (§3).
-        tocItem.style.cssText = `
-            height:${headerH + galleryH}px;cursor:pointer;display:flex;flex-direction:column;
-            border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:${isFirst ? 'none' : '1px solid var(--c-border)'};
-            border-bottom:${isLast ? '1px solid var(--c-border)' : 'none'};
-            font-family:'Atkinson Hyperlegible Mono',monospace;background:var(--c-bg);
-        `;
-
-        // Top row — owns the dividing border via border-bottom (border-system §8)
-        const topHalf = this.createElement('div', 'toc-item-top');
-        topHalf.style.cssText = `
-            height:${headerH}px;display:flex;align-items:stretch;
-            border-bottom:1px solid var(--c-border);box-sizing:border-box;
-        `;
-
-        const numBox = this.createElement('div', 'toc-number');
-        numBox.textContent = String(itemIndex).padStart(2, '0');
-        numBox.style.cssText = `
-            width:${headerH}px;height:${headerH}px;background:var(--c-text);color:var(--c-bg);
-            display:flex;align-items:center;justify-content:center;font-size:${F}px;flex-shrink:0;
-        `;
-
-        const content = this.createElement('div', 'toc-content');
-        content.style.cssText = `
-            flex:1;padding:${F}px;display:flex;flex-direction:column;
-            justify-content:center;border-left:1px solid var(--c-border);
-        `;
-        const titleDiv = this.createElement('div');
-        titleDiv.textContent = subsection.title;
-        titleDiv.style.cssText = `margin:0 0 ${F * 0.5}px 0;text-transform:uppercase;font-size:${F}px;line-height:1.5;`;
-        const meta = this.createElement('div');
-        const countLabel = subsection.count > 0 ? `${subsection.count} works` : '';
-        const subLabel   = subsection.subsections?.length ? `${subsection.subsections.length} series` : '';
-        meta.textContent = [countLabel, subLabel].filter(Boolean).join(' — ');
-        meta.style.cssText = `margin:0;font-size:${F * 0.75}px;color:var(--c-border);line-height:1.5;`;
-        content.appendChild(titleDiv);
-        content.appendChild(meta);
-
-        const arrow = this.createElement('div', 'toc-arrow');
-        arrow.textContent = '→';
-        arrow.style.cssText = `
-            width:${headerH}px;height:${headerH}px;display:flex;align-items:center;
-            justify-content:center;font-size:${F}px;border-left:1px solid var(--c-border);flex-shrink:0;
-        `;
-
-        topHalf.appendChild(numBox);
-        topHalf.appendChild(content);
-        topHalf.appendChild(arrow);
-
-        // Preview gallery row — no border-top; topHalf owns the divider (border-system §8)
-        const bottomHalf = this.createElement('div', 'toc-item-bottom');
-        bottomHalf.style.cssText = `
-            height:${galleryH}px;display:flex;align-items:stretch;padding:0;margin:0;
-        `;
-
-        const subPath = basePath ? `${basePath}/${subsection.id}` : subsection.id;
-        const previewItems = await this._subsectionPreviewImages(r2Type, subPath, subsection);
-
-        const galleryPreview = new ComponentLibrary.TOCGallery({
-            items: previewItems.slice(0, 4),
-            cols: 4,
-            showMore: true,
-            showMoreText: '→',
-            onItemClick:    () => this.navigationCallbacks?.navigateToSection?.('art', `${navKey}/${subsection.id}`),
-            onShowMoreClick: () => this.navigationCallbacks?.navigateToSection?.('art', `${navKey}/${subsection.id}`),
-        }, { MF: window.MathematicalFoundation });
-        this.componentInstances.push(galleryPreview);
-        bottomHalf.appendChild(galleryPreview.render());
-
-        tocItem.appendChild(topHalf);
-        tocItem.appendChild(bottomHalf);
-
-        topHalf.addEventListener('mouseenter', () => {
-            tocItem.style.background = 'var(--c-text)';
-            tocItem.style.color = 'var(--c-bg)';
-            numBox.style.background = 'var(--c-bg)';
-            numBox.style.color = 'var(--c-text)';
-        });
-        topHalf.addEventListener('mouseleave', () => {
-            tocItem.style.background = '';
-            tocItem.style.color = '';
-            numBox.style.background = 'var(--c-text)';
-            numBox.style.color = 'var(--c-bg)';
-        });
-        topHalf.addEventListener('click', () => {
-            this.navigationCallbacks?.navigateToSection?.('art', `${navKey}/${subsection.id}`);
-        });
-
-        this.currentContainer.appendChild(tocItem);
     },
 
     /**
@@ -643,6 +640,7 @@ const ArtSection = {
      */
     async renderAllForSection(sectionKey, relBase) {
         this.currentContainer.innerHTML = '';
+        this.currentContainer.style.padding = '0';
         const r2Type = sectionKey === 'photography' ? 'photos' : sectionKey;
 
         // Resolve gallery + subsections (supports nested, e.g. physical/small)
@@ -684,89 +682,69 @@ const ArtSection = {
         this._setupSubheaderGallery(`ALL ${gallery.title}`, sectionKey, sectionKey);
     },
 
-    // ── Masonry gallery (physical, digital) ──────────────────────────────────
+    // ── Image gallery — MasonryGallery of all images (flat) ──────────────────
     async renderMasonryGallery(galleryType, galleryName, title) {
-        this.currentContainer.innerHTML = '';
+        await this._renderImageGallery(galleryType, galleryName, title);
+    },
 
-        let images = [];
+    async renderScrollGallery(galleryType, galleryName, title) {
+        await this._renderImageGallery(galleryType, galleryName, title);
+    },
+
+    async _renderImageGallery(galleryType, galleryName, title) {
+        this.currentContainer.innerHTML = '';
+        this.currentContainer.style.padding = '0';
+        const F = window.MathematicalFoundation?.F || 14;
+
+        let allImages = [];
         try {
-            images = await this._manifestImages(galleryType, galleryName, title);
+            allImages = await this._manifestImages(galleryType, galleryName, title);
         } catch {
-            console.warn(`No manifest for art/${galleryType}/${galleryName} — showing empty gallery`);
+            console.warn(`No manifest for art/${galleryType}/${galleryName}`);
         }
 
-        const gallery = new ComponentLibrary.MasonryGallery({
-            images,
-            gap: 0,
-            columnsMobile: 1,
-            columnsTablet: 2,
+        if (allImages.length === 0) {
+            this.currentContainer.appendChild(this._renderEmptyState(
+                'NO IMAGES YET',
+                `BACK TO ${galleryType.toUpperCase()}`,
+                `#art/${galleryType}`,
+            ));
+            this._setupSubheaderGallery(title, galleryType, galleryName);
+            return;
+        }
+
+        const gallery = new MasonryGallery({
+            images:         allImages,
+            gap:            0,
+            columnsMobile:  1,
+            columnsTablet:  2,
             columnsDesktop: 3,
-            columnsWide: 4,
-            loadBuffer: 200,
-        }, {
-            MF: window.MathematicalFoundation,
-            Resize: window.ResizeManager,
-        });
+            columnsWide:    4,
+            loadBuffer:     200,
+            onItemClick:    (img, idx) => this._handleArtworkClick(galleryType, galleryName, img, idx, allImages),
+        }, { MF: window.MathematicalFoundation });
         this.componentInstances.push(gallery);
         this.currentContainer.appendChild(gallery.render());
 
         this._setupSubheaderGallery(title, galleryType, galleryName);
     },
 
-    // ── Scroll gallery (objects, render — each folder = scrollable image sequence)
-    async renderScrollGallery(galleryType, galleryName, title) {
-        this.currentContainer.innerHTML = '';
-
-        let images = [];
-        try {
-            images = await this._manifestImages(galleryType, galleryName, title);
-        } catch {
-            console.warn(`No manifest for art/${galleryType}/${galleryName} — showing empty gallery`);
-        }
-
-        const F = window.MathematicalFoundation?.F || 14;
-
-        // Horizontal scroll strip container
-        const strip = this.createElement('div', 'scroll-gallery-strip');
-        strip.style.cssText = `
-            display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;
-            width:100%;gap:0;align-items:stretch;
-            scrollbar-width:thin;scrollbar-color:var(--c-border) var(--c-bg);
-        `;
-
-        if (images.length === 0) {
-            const empty = this.createElement('div', 'gallery-empty');
-            empty.textContent = 'No images yet.';
-            empty.style.cssText = `padding:${F * 4}px;color:var(--c-border);font-size:${F * 0.75}px;`;
-            strip.appendChild(empty);
+    /**
+     * Called when a card is clicked in the leaf masonry gallery.
+     * Routes to the artwork page if the image declares page content,
+     * otherwise opens GalleryLightbox directly (overlay over the masonry).
+     */
+    _handleArtworkClick(galleryType, galleryName, img, idx, allImages) {
+        if (img.hasPage) {
+            this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}/${img.title}`);
         } else {
-            images.forEach((img, idx) => {
-                const cell = this.createElement('div', 'scroll-gallery-cell');
-                cell.style.cssText = `
-                    flex-shrink:0;height:${F * 36}px;position:relative;
-                    border-right:1px solid var(--c-border);cursor:pointer;
-                    overflow:hidden;
-                `;
-                const imgEl = document.createElement('img');
-                imgEl.src = img.thumb;
-                imgEl.alt = img.title;
-                imgEl.style.cssText = `height:100%;width:auto;display:block;object-fit:cover;`;
-                imgEl.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const lb = new ComponentLibrary.GalleryLightbox(
-                        { images, index: idx },
-                        { MF: window.MathematicalFoundation }
-                    );
-                    this.componentInstances.push(lb);
-                    lb.open();
-                });
-                cell.appendChild(imgEl);
-                strip.appendChild(cell);
-            });
+            const lb = new GalleryLightbox(
+                { images: allImages, index: idx },
+                { MF: window.MathematicalFoundation }
+            );
+            this.componentInstances.push(lb);
+            lb.open();
         }
-
-        this.currentContainer.appendChild(strip);
-        this._setupSubheaderGallery(title, galleryType, galleryName);
     },
 
     // ── Subheader helpers ────────────────────────────────────────────────────
@@ -774,7 +752,8 @@ const ArtSection = {
         if (!window.Subheader) return;
         window.Subheader.updateTitle(title);
 
-        const items = [
+        // Dropdown: back link + all subsections
+        const dropItems = [
             { label: '← BACK TO ART', path: '#art', isCurrent: false },
             ...subsections.map(s => ({
                 label: `${s.title}${s.count ? ` (${s.count})` : ''}`,
@@ -782,9 +761,29 @@ const ArtSection = {
                 isCurrent: false,
             })),
         ];
-        window.Subheader.setDropdownContent(items, item => {
+        window.Subheader.setDropdownContent(dropItems, item => {
             if (item.path) this.navigateToPage(item.path);
         });
+
+        // PREV/NEXT: navigate between top-level categories
+        const topKeys   = Object.keys(this.galleryStructure);
+        const currentTopKey = sectionKey.split('/')[0];
+        const topIdx    = topKeys.indexOf(currentTopKey);
+        const prevKey   = topKeys[topIdx - 1];
+        const nextKey   = topKeys[topIdx + 1];
+        const navItems  = topKeys.map(k => ({
+            id:    k,
+            path:  `#art/${k}`,
+            title: this.galleryStructure[k].title,
+            isTOC: false,
+        }));
+        window.Subheader.updateNavigation({
+            section:    'art',
+            subsection: sectionKey,
+            items:      navItems,
+            navigate:   (sec, sub) => this.navigationCallbacks?.navigateToSection?.(sec, sub),
+        });
+
         window.Subheader.show();
         window.SiteBoyApp?.setSubheaderState?.(true);
     },
@@ -792,163 +791,100 @@ const ArtSection = {
     _setupSubheaderGallery(title, galleryType, galleryName) {
         if (!window.Subheader) return;
         window.Subheader.updateTitle(title);
-        const section = this.galleryStructure[galleryType];
+
+        const section  = this.galleryStructure[galleryType];
         const siblings = section?.subsections || [];
-        const items = [
-            { label: `<- BACK TO ${galleryType.toUpperCase()}`, path: `#art/${galleryType}`, isCurrent: false },
+
+        // Dropdown: back link + sibling galleries
+        const dropItems = [
+            { label: `← BACK TO ${galleryType.toUpperCase()}`, path: `#art/${galleryType}`, isCurrent: false },
             ...siblings.map(s => ({
                 label: s.title + (s.count ? ` (${s.count})` : ''),
                 path: `#art/${galleryType}/${s.id}`,
                 isCurrent: s.id === galleryName,
             })),
         ];
-        window.Subheader.setDropdownContent(items, item => {
+        window.Subheader.setDropdownContent(dropItems, item => {
             if (item.path) this.navigateToPage(item.path);
         });
+
+        // PREV/NEXT: navigate between sibling galleries within this section
+        const navItems = siblings.map(s => ({
+            id:    s.id,
+            path:  `#art/${galleryType}/${s.id}`,
+            title: s.title,
+            isTOC: false,
+        }));
+        window.Subheader.updateNavigation({
+            section:    'art',
+            subsection: galleryName,
+            items:      navItems,
+            navigate:   (sec, sub) => this.navigationCallbacks?.navigateToSection?.(sec, sub),
+        });
+
         window.Subheader.show();
         window.SiteBoyApp?.setSubheaderState?.(true);
     },
 
-    // ── Photography (existing behaviour preserved) ────────────────────────────
+    // ── Photography ───────────────────────────────────────────────────────────
     renderPhotographyIndex() {
         this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('toc-container');
-
+        this.currentContainer.style.padding = '0';
+        const F = window.MathematicalFoundation?.F || 14;
         const photography = this.galleryStructure.photography;
-        const F = window.MathematicalFoundation?.F || 14;
 
-        const subs = photography.subsections;
-        subs.forEach((sub, i) => {
-            this.createPhotoArtTOCItem(sub, i + 1, i === subs.length - 1);
+        const items = photography.subsections.map(sub => {
+            const sampleImages = this.getPhotographyImages(sub.id);
+            const image = sampleImages[0]?.thumb || sampleImages[0]?.src || null;
+            return {
+                image,
+                label: sub.title,
+                count: sub.count || null,
+                onClick: () => this.navigationCallbacks?.navigateToSection?.('art', `photography/${sub.id}`),
+            };
         });
 
-        // view-all owns the top separator (§3 — lower element owns boundary via border-top)
-        const viewAllContainer = this.createElement('div', 'view-all-container');
-        viewAllContainer.style.cssText = `
-            height:${F * 6}px;display:flex;align-items:stretch;justify-content:stretch;
-            border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:1px solid var(--c-border);border-bottom:1px solid var(--c-border);margin:0;padding:0;
-        `;
-        const viewAllBtn = new ComponentLibrary.Button({
-            text: 'VIEW ALL PHOTOS (128)',
-            onClick: () => this.navigationCallbacks?.navigateToSection?.('art', 'photography/all'),
-        }, { MF: window.MathematicalFoundation });
-        this.componentInstances.push(viewAllBtn);
-        const btnEl = viewAllBtn.render();
-        btnEl.style.cssText += 'width:100%;height:100%;margin:0;border:none;border-radius:0;';
-        viewAllContainer.appendChild(btnEl);
-        this.currentContainer.appendChild(viewAllContainer);
-
-        const pad = this.createElement('div');
-        pad.style.cssText = `height:${F * 4}px;width:100%;`;
-        this.currentContainer.appendChild(pad);
-    },
-
-    createPhotoArtTOCItem(subsection, itemIndex, isLast = false) {
-        const F = window.MathematicalFoundation?.F || 14;
-        const headerH = F * 4;
-        const galleryH = F * 24;
-
-        const tocItem = this.createElement('div', 'toc-item art-toc-item');
-        tocItem.style.cssText = `
-            height:${headerH + galleryH}px;cursor:pointer;display:flex;flex-direction:column;
-            border-left:1px solid var(--c-border);border-right:1px solid var(--c-border);
-            border-top:1px solid var(--c-border);
-            border-bottom:none;
-            font-family:'Atkinson Hyperlegible Mono',monospace;background:var(--c-bg);
-        `;
-
-        // Top row — owns the dividing border via border-bottom (border-system §8)
-        const topHalf = this.createElement('div', 'toc-item-top');
-        topHalf.style.cssText = `
-            height:${headerH}px;display:flex;align-items:stretch;
-            border-bottom:1px solid var(--c-border);box-sizing:border-box;
-        `;
-
-        const numBox = this.createElement('div', 'toc-number');
-        numBox.textContent = String(itemIndex).padStart(2, '0');
-        numBox.style.cssText = `
-            width:${headerH}px;height:${headerH}px;background:var(--c-text);color:var(--c-bg);
-            display:flex;align-items:center;justify-content:center;font-size:${F}px;flex-shrink:0;
-        `;
-
-        const content = this.createElement('div', 'toc-content');
-        content.style.cssText = `
-            flex:1;padding:${F}px;display:flex;flex-direction:column;
-            justify-content:center;border-left:1px solid var(--c-border);
-        `;
-        const titleDiv = this.createElement('div');
-        titleDiv.textContent = subsection.title;
-        titleDiv.style.cssText = `margin:0 0 ${F * 0.5}px 0;text-transform:uppercase;font-size:${F}px;line-height:1.5;`;
-        const countDiv = this.createElement('div');
-        countDiv.textContent = `${subsection.count} photographs`;
-        countDiv.style.cssText = `margin:0;font-size:${F * 0.75}px;color:var(--c-border);line-height:1.5;`;
-        content.appendChild(titleDiv);
-        content.appendChild(countDiv);
-
-        const arrow = this.createElement('div', 'toc-arrow');
-        arrow.textContent = '→';
-        arrow.style.cssText = `
-            width:${headerH}px;height:${headerH}px;display:flex;align-items:center;
-            justify-content:center;font-size:${F}px;border-left:1px solid var(--c-border);flex-shrink:0;
-        `;
-
-        topHalf.appendChild(numBox);
-        topHalf.appendChild(content);
-        topHalf.appendChild(arrow);
-
-        // Preview gallery row — no border-top; topHalf owns the divider (border-system §8)
-        const bottomHalf = this.createElement('div', 'toc-item-bottom');
-        bottomHalf.style.cssText = `
-            height:${galleryH}px;display:flex;align-items:stretch;padding:0;margin:0;
-        `;
-
-        const sampleImages = this.getPhotographyImages(subsection.id);
-        const galleryPreview = new ComponentLibrary.TOCGallery({
-            items: sampleImages.slice(0, 4).map(img => ({
-                id: img.title, title: img.title, image: img.thumb || img.src,
-            })),
-            cols: 4, showMore: true, showMoreText: '→',
-            onItemClick: () => this.navigationCallbacks?.navigateToSection?.('art', `photography/${subsection.id}`),
-            onShowMoreClick: () => this.navigationCallbacks?.navigateToSection?.('art', `photography/${subsection.id}`),
-        }, { MF: window.MathematicalFoundation });
-        this.componentInstances.push(galleryPreview);
-        bottomHalf.appendChild(galleryPreview.render());
-
-        tocItem.appendChild(topHalf);
-        tocItem.appendChild(bottomHalf);
-
-        topHalf.addEventListener('mouseenter', () => {
-            tocItem.style.background = 'var(--c-text)';
-            tocItem.style.color = 'var(--c-bg)';
-            numBox.style.background = 'var(--c-bg)';
-            numBox.style.color = 'var(--c-text)';
-        });
-        topHalf.addEventListener('mouseleave', () => {
-            tocItem.style.background = '';
-            tocItem.style.color = '';
-            numBox.style.background = 'var(--c-text)';
-            numBox.style.color = 'var(--c-bg)';
-        });
-        topHalf.addEventListener('click', () => {
-            this.navigationCallbacks?.navigateToSection?.('art', `photography/${subsection.id}`);
-        });
-
-        this.currentContainer.appendChild(tocItem);
+        const wrap = this._makeWrap(F);
+        const grid = new ImageGrid({ items }, { MF: window.MathematicalFoundation });
+        this.componentInstances.push(grid);
+        wrap.appendChild(grid.render());
+        this.currentContainer.appendChild(wrap);
     },
 
     renderPhotographyGallery(photoSection) {
         this.currentContainer.innerHTML = '';
+        this.currentContainer.style.padding = '0';
+        const F = window.MathematicalFoundation?.F || 14;
         const images = this.getPhotographyImages(photoSection);
-        const gallery = new ComponentLibrary.MasonryGallery({
+
+        if (images.length === 0) {
+            this.currentContainer.appendChild(this._renderEmptyState(
+                'NO IMAGES YET',
+                'BACK TO PHOTOGRAPHY',
+                '#art/photography',
+            ));
+            this.setupSubheaderForPhotography(photoSection);
+            return;
+        }
+
+        // Photos go straight to lightbox — no page route for photography
+        const gallery = new MasonryGallery({
             images,
-            gap: 0,
-            columnsMobile: 1,
-            columnsTablet: 2,
+            gap:            0,
+            columnsMobile:  1,
+            columnsTablet:  2,
             columnsDesktop: 3,
-            columnsWide: 4,
-            loadBuffer: 200,
-        }, { MF: window.MathematicalFoundation, Resize: window.ResizeManager });
+            columnsWide:    4,
+            loadBuffer:     200,
+            onItemClick: (img, idx) => {
+                const lb = new GalleryLightbox(
+                    { images, index: idx },
+                    { MF: window.MathematicalFoundation }
+                );
+                this.componentInstances.push(lb);
+                lb.open();
+            },
+        }, { MF: window.MathematicalFoundation });
         this.componentInstances.push(gallery);
         this.currentContainer.appendChild(gallery.render());
         this.setupSubheaderForPhotography(photoSection);
@@ -1055,11 +991,85 @@ const ArtSection = {
     createElement(tag, className = '') {
         const el = document.createElement(tag);
         if (className) el.className = className;
-        el.style.fontFamily = '"Atkinson Hyperlegible Mono", monospace';
-        el.style.fontSize = '12px';
-        el.style.lineHeight = '1.5';
-        el.style.padding = '12px';
         return el;
+    },
+
+    /**
+     * Render an empty-state element per design-law §14.2 (uninitiated state
+     * must include an affordance for the next action) and text-treatment §1
+     * (UPPERCASE state labels in controls; canonical font stack).
+     *
+     * @param {string} message    UPPERCASE state label (e.g. 'NO IMAGES YET').
+     * @param {string} backLabel  UPPERCASE button label (without the `←` glyph).
+     * @param {string} backPath   Hash path the back affordance navigates to.
+     * @returns {HTMLElement}
+     */
+    _renderEmptyState(message, backLabel, backPath) {
+        const F = window.MathematicalFoundation?.F || 14;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: ${F}px;
+            padding: ${F * 4}px ${F}px;
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            color: var(--c-border);
+        `;
+
+        const label = document.createElement('div');
+        label.textContent = message;
+        wrap.appendChild(label);
+
+        const btn = new ComponentLibrary.Button({
+            text:    `← ${backLabel}`,
+            onClick: () => this.navigateToPage(backPath),
+        }, { MF: window.MathematicalFoundation });
+        this.componentInstances.push(btn);
+        wrap.appendChild(btn.render());
+
+        return wrap;
+    },
+
+    /**
+     * Create the standard grid wrapper. Mobile CSS reduces its gap token so
+     * the outer tile margin and inter-tile spacing stay equal.
+     * Card size is capped so at least one card is always visible:
+     *   maxCardDim = min(containerW, containerH) - active gallery gap
+     * Re-measures via ResizeObserver on the current container, plus a
+     * single-shot rAF for the initial post-paint reading.
+     */
+    _makeWrap(F) {
+        const wrap = document.createElement('div');
+        wrap.className = 'art-gallery-wrap';
+        wrap.style.cssText = `--gallery-tile-gap:${F * 2}px;padding:var(--gallery-tile-gap);box-sizing:border-box;`;
+
+        const recomputeCardCap = () => {
+            const cc = this.currentContainer;
+            if (!cc) return;
+            const wrapStyle = window.getComputedStyle(wrap);
+            const padX = parseFloat(wrapStyle.paddingLeft) + parseFloat(wrapStyle.paddingRight);
+            const padY = parseFloat(wrapStyle.paddingTop) + parseFloat(wrapStyle.paddingBottom);
+            const gap = parseFloat(wrapStyle.paddingLeft) || F;
+            const cw = cc.clientWidth  - padX;
+            const ch = cc.clientHeight - padY;
+            const maxDim = Math.max(100, Math.min(cw, ch) - gap);
+            wrap.querySelectorAll('.image-grid-card-img').forEach(imgWrap => {
+                imgWrap.style.maxHeight = `${maxDim}px`;
+            });
+        };
+
+        const observer = new ResizeObserver(recomputeCardCap);
+        observer.observe(this.currentContainer);
+        this._wrapObservers = this._wrapObservers || [];
+        this._wrapObservers.push(observer);
+
+        // Initial reading after first paint with cards present.
+        requestAnimationFrame(recomputeCardCap);
+
+        return wrap;
     },
 
     getAllArtPages() {
@@ -1088,8 +1098,13 @@ const ArtSection = {
     },
 
     cleanup() {
+        if (this._wrapObservers) {
+            this._wrapObservers.forEach(o => { try { o.disconnect(); } catch (_) { /* no-op */ } });
+            this._wrapObservers = [];
+        }
         if (this.currentContainer) {
             this.currentContainer.innerHTML = '';
+            this.currentContainer.style.padding = '';
             this.currentContainer.className = this.currentContainer.className
                 .replace(/toc-container|layout-\w+-\w+/g, '').trim();
             const cc = this.currentContainer.closest('.content-container') ||
@@ -1098,8 +1113,6 @@ const ArtSection = {
         }
         ComponentLibrary.destroyTracked(this.componentInstances);
     },
-
-    init() { console.log(`Art Section v${this.version} initialized`); },
 
     render(subsection) {
         const container = document.createElement('div');

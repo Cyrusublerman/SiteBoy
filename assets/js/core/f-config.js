@@ -33,8 +33,8 @@
  * 
  * What changes when you modify F:
  * - Header height = F × 2
- * - Desktop margins = F × 4  
- * - Mobile margins = 1px (fixed)
+ * - Desktop margins = 1px (fixed, window-border gap)
+ * - Mobile margins = 1px (fixed, window-border gap)
  * - All typography scales proportionally
  * - All component dimensions scale proportionally
  * - All spacing scales proportionally

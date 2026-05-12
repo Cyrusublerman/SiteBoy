@@ -1,0 +1,35 @@
+P R E C E DE N T S
+LITTLE PRINTER
+BERG
+2012
+Little Printer was a small thermal printer that was connected to the internet
+and able to print out web articles, social content, and certain images. This
+printer used Berg’s cloud infrastructure to organize content and format it to
+be printed from the thermal printer (Nord Projects n.d.).
+After Berg closed their servers, this project was resuscitated by Nord Projects and
+was given the ability to connect to many people who can send content directly to
+a printer. It was also given the ability to print images sent from a phone after an
+Atkinson Dithering process was applied to allow for 1bit printing.
+PROSODIC FONT
+TARA MICHELLE GRABER ROSENBERGER
+1998
+This thesis details the issues with written text in comparison to the spoken
+word. Specifically focussing on the prosody of language and its lack of
+representation in writing. It aims to create a method of converting the
+spoken word into a moving font that illustrates how a speaker said the words that
+are being presented (Rosenberger & MacNeil 1999).
+By using computationally derived values from speech analysis, the author dictated
+the creation of a new font that is systematically constructed, letter by letter using a
+variation in four key components of the letters.
+ETCH-A-SKETCH THEREMIN
+LOOK MUM NO COMPUTER
+2019
+The youtuber/inventor Sam Battle, under his moniker LOOK MUM NO
+COMPUTER, used an amalgamation of vintage audio test equipment, a
+Moog Etherwave theremin and a vintage scientific X-Y plotter to create a
+hands-free drawing device that resembles an Etch-a-Sketch (Battle 2019).
+The Bruel and Kjaer frequency analyser receives the audio from the theremin and
+converts it into two signals, one for pitch and one for amplitude. These two signals
+are sent via control voltage to the X-Y plotter which draws a line on paper, moving
+in response to the X-Y commands it receives via the control voltage.
+7

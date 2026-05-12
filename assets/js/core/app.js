@@ -448,61 +448,30 @@ const SiteBoyApp = {
         window.debugLog('NAVIGATION', `🧭 Route change: ${section}${subsection ? '/' + subsection : ''}${modeStr}`);
         console.log(`🔍 FULL MODE DEBUG: isFullMode=${isFullMode}, type=${typeof isFullMode}`);
 
-        // Apply full-mode class to body BEFORE building page structure
-        // This ensures CSS calculations happen with correct layout mode
-        if (isFullMode) {
-            document.body.classList.add('full-mode');
-            window.debugLog('NAVIGATION', '🖼️ Full-page mode enabled (header/footer hidden)');
-            console.log(`🔍 Body classes after adding full-mode: "${document.body.className}"`);
-            
-            // DIRECT MANIPULATION as fallback to ensure elements are hidden
-            // CSS should handle this, but this ensures it works even if CSS fails
-            requestAnimationFrame(() => {
-                const header = document.getElementById('header');
-                const footer = document.getElementById('footer');
-                const subheader = document.getElementById('subheader');
-                
-                if (header) {
-                    header.style.display = 'none';
-                    console.log(`🔍 Header forced hidden`);
-                }
-                if (footer) {
-                    footer.style.display = 'none';
-                    console.log(`🔍 Footer forced hidden`);
-                }
-                if (subheader) {
-                    subheader.style.display = 'none';
-                    console.log(`🔍 Subheader forced hidden`);
-                }
-                
-                console.log(`🔍 Header display: ${header?.style.display}, computed: ${header ? window.getComputedStyle(header).display : 'N/A'}`);
-                console.log(`🔍 Footer display: ${footer?.style.display}, computed: ${footer ? window.getComputedStyle(footer).display : 'N/A'}`);
-                console.log(`🔍 Subheader display: ${subheader?.style.display}, computed: ${subheader ? window.getComputedStyle(subheader).display : 'N/A'}`);
-            });
+        // Home mode body class — read by setSubheaderState to branch positioning/visibility
+        if (section === 'home') {
+            document.body.classList.add('home-mode');
         } else {
-            document.body.classList.remove('full-mode');
-            
-            // Restore header/footer visibility; subheader is managed by sections via Subheader.show()/hide()
-            requestAnimationFrame(() => {
-                const header = document.getElementById('header');
-                const footer = document.getElementById('footer');
-                
-                if (header) header.style.display = '';
-                if (footer) footer.style.display = section === 'tools' ? 'none' : '';
-            });
-            
-            console.log(`🔍 Full mode disabled, body classes: "${document.body.className}"`);
+            document.body.classList.remove('home-mode');
         }
 
-        // Hide footer for tools section (regardless of full-mode)
+        // Full-mode (:full URL modifier) for tool embedding
+        if (isFullMode) {
+            document.body.classList.add('full-mode');
+        } else {
+            document.body.classList.remove('full-mode');
+        }
+
+        // Body class controls footer visibility and content bottom offset via setSubheaderState
         if (section === 'tools') {
             document.body.classList.add('tools-section');
-            requestAnimationFrame(() => {
-                const footer = document.getElementById('footer');
-                if (footer) footer.style.display = 'none';
-            });
+            document.body.classList.remove('projects-section');
+        } else if (section === 'projects') {
+            document.body.classList.add('projects-section');
+            document.body.classList.remove('tools-section');
         } else {
             document.body.classList.remove('tools-section');
+            document.body.classList.remove('projects-section');
         }
 
         // Update app state
@@ -617,24 +586,11 @@ const SiteBoyApp = {
             this.state.currentSectionModule = SectionModule;
             this.state.currentSectionName = sectionName;
             
-            // FIX: Tool pages need special layout - they manage their own sizing/scrolling
+            // Tool detail pages manage their own scrolling; padding handled by setSubheaderState
             if (isToolDetailPage) {
-                // Tools fill the entire content container with no padding
-                this.contentContainer.style.padding = '0';
-                
-                // Don't set explicit height - let top/bottom positioning from layout.js handle it
-                // This ensures no gap between content container and footer
-                this.contentContainer.style.height = 'auto';
-                this.contentContainer.style.minHeight = 'auto';
-                // Tools manage their own scrolling
+                this.contentContainer.style.padding  = '0';
                 this.contentContainer.style.overflow = 'hidden';
                 window.debugLog('LAYOUT', '📐 Tool page detected - applied tool layout mode');
-            } else {
-                // Restore default styling for non-tool pages
-                this.contentContainer.style.padding = '';
-                this.contentContainer.style.height = '';
-                this.contentContainer.style.minHeight = '';
-                this.contentContainer.style.overflow = '';
             }
             
             // App coordinates the section building (async support)

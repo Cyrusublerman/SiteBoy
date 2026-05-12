@@ -34,13 +34,24 @@ OUTPUT_ROOT    = Path(__file__).parent / "output" / "_bulk2"
 MANIFEST_ROOT  = REPO_ROOT / "art" / "manifests"   # committed to repo (no CORS)
 
 # ── R2 config ──────────────────────────────────────────────────────────────────
+# Secrets MUST come from environment. No defaults: a missing env var aborts the run
+# with an explicit message rather than silently falling back to a checked-in value.
+
+_REQUIRED_ENV = ("R2_ACCOUNT_ID", "R2_BUCKET_NAME", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY")
+_missing = [k for k in _REQUIRED_ENV if not os.getenv(k)]
+if _missing:
+    raise SystemExit(
+        "Missing required R2 environment variables: "
+        + ", ".join(_missing)
+        + ". Set them (e.g. via a local .env loader) before running."
+    )
 
 R2 = {
-    "account_id": os.getenv("R2_ACCOUNT_ID",      "584a79f3f79fa20395a998af9170d670"),
-    "bucket":     os.getenv("R2_BUCKET_NAME",      "assetts-einoder"),
-    "access_key": os.getenv("R2_ACCESS_KEY_ID",    "327779b3bbcaa50676f262ca6ec4c473"),
-    "secret_key": os.getenv("R2_SECRET_ACCESS_KEY","a11a0212f21268f4340a4ebd9ab1b4d2411c538cabcfc7a216fe7f54750d8f70"),
-    "public_url": os.getenv("R2_PUBLIC_URL",        "https://media.einoder.net"),
+    "account_id": os.environ["R2_ACCOUNT_ID"],
+    "bucket":     os.environ["R2_BUCKET_NAME"],
+    "access_key": os.environ["R2_ACCESS_KEY_ID"],
+    "secret_key": os.environ["R2_SECRET_ACCESS_KEY"],
+    "public_url": os.getenv("R2_PUBLIC_URL", "https://media.einoder.net"),
 }
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}

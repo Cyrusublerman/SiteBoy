@@ -1,0 +1,10 @@
+asonic
+Scattering Performance of Asonic Wave-Tile, Carlo Holden 2021.
+Analysis of the sound mitigating effects of the Wave-Tiles showed
+significant functionality (see above). The waved surface dispersed over
+half the energy of the high frequency (>4kHz). It also showed a large
+amount of scattering of the lower frequencies (<400Hz).
+This is of high value to the hospital environment as extraneous noise in
+these frequency ranges are indicative of synthetic sound, whether it be
+from motors, air conditioning or electronic beeping.
+74 Ali Einoder

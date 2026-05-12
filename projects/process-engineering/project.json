@@ -1,0 +1,14 @@
+{
+  "id": "process-engineering",
+  "title": "PROCESS ENGINEERING",
+  "sections": [
+    { "title": "ABSTRACT",                  "src": "projects/process-engineering/md/abstract.md",                "open": true },
+    { "title": "IDEA-TO-LIBRARY PIPELINE",  "src": "projects/process-engineering/md/idea-to-library-pipeline.md" },
+    { "title": "AGENTIC RESEARCH",          "src": "projects/process-engineering/md/agentic-research.md"          },
+    { "title": "AI WORKFLOW GOVERNANCE",    "src": "projects/process-engineering/md/ai-workflow-governance.md"    },
+    { "title": "COMPLIANCE AND AUDIT",      "src": "projects/process-engineering/md/compliance-and-audit.md"      },
+    { "title": "MODULE TAXONOMY",           "src": "projects/process-engineering/md/module-taxonomy.md"           },
+    { "title": "APPLIED EXAMPLES",          "src": "projects/process-engineering/md/applied-examples.md"          },
+    { "title": "REFERENCES",                "src": "projects/process-engineering/md/references.md"                }
+  ]
+}

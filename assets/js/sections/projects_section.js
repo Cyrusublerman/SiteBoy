@@ -14,59 +14,33 @@ const ProjectsSection = {
     componentInstances: [],
     navigationCallbacks: null,
     
-    // Simple page list for navigation
-    pages: [
-        '#projects',
-        '#projects/siteboy',
-        '#projects/synthetic-biophilia',
-        '#projects/pixel-tiler',
-        '#projects/typography',
-        '#projects/color-quantizer',
-        '#projects/music-tools',
-        '#projects/audio-processor'
+    // Project registry - single source of truth for the projects index.
+    // - 'bespoke' projects render via a pre-loaded module on window
+    // - 'manifest' projects render via the generic ProjectPage engine
+    PROJECT_REGISTRY: [
+        { id: 'siteboy',              title: 'SITEBOY FRAMEWORK',              description: 'Owned-concern framework: BaseComponent, foundations, router, design system', kind: 'manifest', src: 'projects/siteboy/project.json' },
+        { id: 'synthetic-biophilia',  title: 'SYNTHETIC BIOPHILIA',            description: 'Phyllotaxis-driven dome architecture from theory to fabricable geometry',     kind: 'bespoke',  global: 'SyntheticBiophiliaProject' },
+        { id: 'distort',              title: 'DISTORT',                        description: '69-module GPU image-processing pipeline with deterministic export',         kind: 'manifest', src: 'projects/distort/project.json' },
+        { id: 'generative-art',       title: 'GENERATIVE ART',                 description: 'Parametric, harmonic, phyllotactic and wave-field generative pieces',       kind: 'manifest', src: 'projects/generative-art/project.json' },
+        { id: 'image-processing',     title: 'IMAGE PROCESSING',               description: 'Pixel-buffer pipeline algebra: quantisation, dithering, ASCII, tiling',     kind: 'manifest', src: 'projects/image-processing/project.json' },
+        { id: 'colour-quantizer',     title: 'COLOUR QUANTIZER',               description: 'LAB-space palette reduction with Delta E 76 and blue-noise dithering',     kind: 'manifest', src: 'projects/colour-quantizer/project.json' },
+        { id: 'pixel-tiler',          title: 'PIXEL TILER',                    description: '2x2 mosaic composition over a combinatorial frame-addressable mode space',  kind: 'manifest', src: 'projects/pixel-tiler/project.json' },
+        { id: 'multifilament-print',  title: 'MULTIFILAMENT PRINT CALIBRATION', description: 'Source/scan/quantize/export pipeline for measured multi-filament prints',   kind: 'manifest', src: 'projects/multifilament-print/project.json' },
+        { id: 'typography',           title: 'TYPOGRAPHY SYSTEM',              description: 'Canvas TextMetrics-driven font metrics, ratios and visual diagnostics',     kind: 'manifest', src: 'projects/typography/project.json' },
+        { id: 'music-audio',          title: 'MUSIC + AUDIO',                  description: 'Cymatics: chord templates as wave sources; visual + Web Audio playback',    kind: 'manifest', src: 'projects/music-audio/project.json' },
+        { id: 'process-engineering',  title: 'PROCESS ENGINEERING',            description: 'Idea-to-library pipeline, AI workflow governance and compliance audit',     kind: 'manifest', src: 'projects/process-engineering/project.json' }
     ],
-    
-    // Unified navigation config - clean and beautiful
-    navigationConfig: {
-        type: 'flat',
-        indexTitle: 'PROJECTS',
-        structure: [
-            {
-                id: 'siteboy',
-                title: 'SITEBOY FRAMEWORK',
-                description: 'Modular web framework with mathematical precision and VGA aesthetics'
-            },
-            {
-                id: 'synthetic-biophilia',
-                title: 'SYNTHETIC BIOPHILIA',
-                description: 'Phyllotaxis-driven architectural system (methods, galleries, reproducibility)'
-            },
-            {
-                id: 'pixel-tiler',
-                title: 'PIXEL TILER',
-                description: 'Pixel art creation and tiling pattern generator'
-            },
-            {
-                id: 'typography',
-                title: 'TYPOGRAPHY SYSTEM',
-                description: 'Monospace typography testing and validation tools'
-            },
-            {
-                id: 'color-quantizer',
-                title: 'COLOR QUANTIZER',
-                description: 'Image color reduction and VGA palette extraction'
-            },
-            {
-                id: 'music-tools',
-                title: 'MUSIC THEORY TOOLS',
-                description: 'Chord progression analysis and musical composition utilities'
-            },
-            {
-                id: 'audio-processor',
-                title: 'AUDIO PROCESSOR',
-                description: 'Audio analysis and digital signal processing tools'
-            }
-        ]
+
+    get pages() {
+        return ['#projects', ...this.PROJECT_REGISTRY.map(p => `#projects/${p.id}`)];
+    },
+
+    get navigationConfig() {
+        return {
+            type: 'flat',
+            indexTitle: 'PROJECTS',
+            structure: this.PROJECT_REGISTRY.map(({ id, title, description }) => ({ id, title, description }))
+        };
     },
     
     /**
@@ -183,53 +157,37 @@ const ProjectsSection = {
     },
     
     /**
-     * Get dropdown items for subheader
+     * Get dropdown items for subheader (derived from PROJECT_REGISTRY).
      * @param {string} currentSubsection - Current subsection ID
      * @returns {Array} Dropdown items with current selection marked
      */
     getDropdownItems(currentSubsection) {
-        const allProjects = [
-            { label: 'PROJECTS INDEX', path: '#projects', isTOC: true },
-            { label: 'SITEBOY FRAMEWORK', path: '#projects/siteboy' },
-            { label: 'SYNTHETIC BIOPHILIA', path: '#projects/synthetic-biophilia' },
-            { label: 'PIXEL TILER', path: '#projects/pixel-tiler' },
-            { label: 'TYPOGRAPHY SYSTEM', path: '#projects/typography' },
-            { label: 'COLOR QUANTIZER', path: '#projects/color-quantizer' },
-            { label: 'MUSIC TOOLS', path: '#projects/music-tools' },
-            { label: 'AUDIO PROCESSOR', path: '#projects/audio-processor' }
-        ];
-        
         const currentPath = `#projects/${currentSubsection}`;
-        
-        return allProjects.map(project => ({
-            ...project,
-            value: project.path,
-            isCurrent: project.path === currentPath
-        }));
+        const indexItem = { label: 'PROJECTS INDEX', path: '#projects', isTOC: true, value: '#projects', isCurrent: false };
+        const projectItems = this.PROJECT_REGISTRY.map(({ id, title }) => {
+            const path = `#projects/${id}`;
+            return { label: title, path, value: path, isCurrent: path === currentPath };
+        });
+        return [indexItem, ...projectItems];
     },
-    
+
     /**
-     * Get navigation context for subheader
+     * Get navigation context for subheader (derived from PROJECT_REGISTRY).
      * @param {string} currentSubsection - Current subsection ID
      * @param {Object} callbacks - Navigation callbacks
      * @returns {Object} Navigation context
      */
     getNavigationContext(currentSubsection, callbacks) {
-        // Define all available projects in order for navigation
-        const allProjects = [
-            { id: 'siteboy', title: 'SiteBoy Framework', path: '#projects/siteboy' },
-            { id: 'synthetic-biophilia', title: 'Synthetic Biophilia', path: '#projects/synthetic-biophilia' },
-            { id: 'pixel-tiler', title: 'Pixel Tiler', path: '#projects/pixel-tiler' },
-            { id: 'typography', title: 'Typography System', path: '#projects/typography' },
-            { id: 'color-quantizer', title: 'Color Quantizer', path: '#projects/color-quantizer' },
-            { id: 'music-tools', title: 'Music Tools', path: '#projects/music-tools' },
-            { id: 'audio-processor', title: 'Audio Processor', path: '#projects/audio-processor' }
-        ];
-        
+        const items = this.PROJECT_REGISTRY.map(({ id, title }) => ({
+            id,
+            title,
+            path: `#projects/${id}`
+        }));
+
         return {
             section: 'projects',
             subsection: currentSubsection,
-            items: allProjects,
+            items,
             navigate: (section, subsection) => {
                 if (callbacks && callbacks.navigateToSection) {
                     callbacks.navigateToSection(section, subsection);
@@ -239,114 +197,76 @@ const ProjectsSection = {
     },
     
     /**
-     * Render individual project
+     * Render individual project via the registry.
+     * - bespoke entries call a pre-loaded module on window
+     * - manifest entries fetch JSON and render via the generic ProjectPage engine
+     * - unknown ids render a minimal not-found placeholder via ComponentLibrary
      */
     async renderProject(projectId) {
         console.log(`🚀 Rendering project: ${projectId}`);
 
-        // Lazy load Synthetic Biophilia project module when needed
-        if (projectId === 'synthetic-biophilia') {
-            if (!window.SyntheticBiophiliaProject) {
-                try {
-                    console.log('📦 Lazy loading Synthetic Biophilia project...');
-                    // await import('../../projects/Synthetic Biophilia/synthetic-biophilia.js'); // Temporarily disabled due to path issues
-                    console.log('✅ Synthetic Biophilia project loaded successfully');
-                } catch (err) {
-                    console.warn('⚠️ Failed to lazy load Synthetic Biophilia project:', err.message);
-                    // Fall through to mock rendering below
-                }
-            }
+        const entry = this.PROJECT_REGISTRY.find(p => p.id === projectId);
 
-            if (window.SyntheticBiophiliaProject) {
-                this.currentContainer.innerHTML = '';
-                window.SyntheticBiophiliaProject.render(this.currentContainer);
-                // Back link is handled within the SyntheticBiophiliaProject module
-                return;
-            }
+        if (!entry) {
+            this.renderUnknownProject(projectId);
+            return;
         }
 
-        // Mock project data - in real implementation, this would be loaded from JSON
-        const projects = {
-            'siteboy': {
-                title: 'SiteBoy Framework',
-                status: 'In Development',
-                tech: 'JavaScript, CSS, HTML',
-                description: 'A minimal F=12px component framework for building mathematical precision web interfaces.',
-                features: ['F=12px Typography System', 'Component-based Architecture', 'VGA Color Palette', 'Mathematical Layout']
-            },
-            'pixel-tiler': {
-                title: 'Pixel Tiler',
-                status: 'Complete',
-                tech: 'Rust, WebAssembly, JavaScript',
-                description: 'High-performance pixel manipulation tool for creating tiled patterns and textures.',
-                features: ['WebAssembly Performance', 'Real-time Preview', 'Pattern Generation', 'Export Options']
-            },
-            'music-tools': {
-                title: 'Music Theory Tools',
-                status: 'In Development',
-                tech: 'JavaScript, Web Audio API',
-                description: 'Interactive tools for music theory, composition, and analysis.',
-                features: ['Chord Analysis', 'Scale Generation', 'Frequency Calculator', 'Interactive Piano']
+        this.currentContainer.innerHTML = '';
+
+        if (entry.kind === 'bespoke') {
+            const module = entry.global ? window[entry.global] : null;
+            if (module && typeof module.render === 'function') {
+                module.render(this.currentContainer);
+                return;
             }
-        };
-        
-        const project = projects[projectId] || {
-            title: projectId.replace('-', ' ').toUpperCase(),
-            status: 'Planned',
-            tech: 'To be determined',
-            description: 'Project details to be implemented.',
-            features: ['Feature planning in progress']
-        };
-        
-        const projectContent = this.createElement('div', 'project-detail');
-        projectContent.innerHTML = `
-            <h1>${project.title}</h1>
-            
-            <div style="margin: 24px 0;">
-                <p><strong>Status:</strong> ${project.status}</p>
-                <p><strong>Technology:</strong> ${project.tech}</p>
-            </div>
-            
-            <h2>DESCRIPTION</h2>
-            <p>${project.description}</p>
-            
-            <h2>KEY FEATURES</h2>
-            <ul>
-                ${project.features.map(feature => `<li>${feature}</li>`).join('')}
-            </ul>
-            
-            <div style="
-                width: 100%; height: 200px; margin: 24px 0;
-                border: 1px solid var(--c-border);
-                display: flex; align-items: center; justify-content: center;
-                background: var(--c-bg);
-            ">
-                <p>PROJECT DEMO/SCREENSHOT PLACEHOLDER</p>
-            </div>
-            
-            <p><a href="#projects">← Back to Projects</a></p>
-        `;
-        
-        this.currentContainer.appendChild(projectContent);
+            console.warn(`⚠️ Bespoke project '${projectId}' module not available on window.${entry.global}`);
+            this.renderUnknownProject(projectId);
+            return;
+        }
+
+        if (entry.kind === 'manifest') {
+            if (!window.ProjectPage) {
+                console.warn('⚠️ ProjectPage engine not loaded; cannot render manifest project.');
+                this.renderUnknownProject(projectId);
+                return;
+            }
+            try {
+                await window.ProjectPage.loadAndRender(this.currentContainer, entry.src);
+            } catch (err) {
+                console.warn(`⚠️ Failed to render manifest project '${projectId}':`, err.message);
+                this.renderUnknownProject(projectId);
+            }
+            return;
+        }
+
+        this.renderUnknownProject(projectId);
     },
 
-    
     /**
-     * Create DOM element with F=12px styling
+     * Minimal placeholder for ids that have no registry entry or fail to load.
      */
-    createElement(tag, className = '') {
-        const element = document.createElement(tag);
-        if (className) element.className = className;
-        
-        // Apply F=12px styling
-        element.style.fontFamily = '"Atkinson Hyperlegible Mono", monospace';
-        element.style.fontSize = '12px';
-        element.style.lineHeight = '1.5';
-        element.style.padding = '12px';
-        
-        return element;
+    renderUnknownProject(projectId) {
+        const deps = { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
+        const heading = new ComponentLibrary.Heading({
+            level: 1,
+            content: (projectId || 'UNKNOWN').toUpperCase().replace(/-/g, ' ')
+        }, deps);
+        const body = new ComponentLibrary.Paragraph({
+            content: 'This project page is not yet available.'
+        });
+        const back = new ComponentLibrary.Paragraph({
+            content: '← Back to Projects',
+            isClickable: true,
+            onClick: () => { window.location.hash = '#projects'; }
+        });
+        this.componentInstances.push(heading, body, back);
+        this.currentContainer.appendChild(heading.render());
+        this.currentContainer.appendChild(body.render());
+        this.currentContainer.appendChild(back.render());
     },
-    
+
+
     /**
      * Cleanup section
      */
@@ -358,9 +278,15 @@ const ProjectsSection = {
                 .replace(/toc-container|layout-\w+-\w+/g, '')
                 .trim();
         }
-        
+
         // Destroy tracked components using ComponentLibrary method
         ComponentLibrary.destroyTracked(this.componentInstances);
+        this.componentInstances = [];
+
+        // Engine-level component teardown for the JSON-driven project pages
+        if (window.ProjectPage && typeof window.ProjectPage.cleanup === 'function') {
+            window.ProjectPage.cleanup(null);
+        }
     },
     
     /**

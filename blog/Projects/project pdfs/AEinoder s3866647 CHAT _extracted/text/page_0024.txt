@@ -1,0 +1,14 @@
+S P E E C H T O T E X T
+For the speech to be converted into text, a speech to text engine is needed.
+There are several available to use including Google Speech-To-Text, Microsoft-
+Cognitive-Services and IBM Watson. The one chosen however, is CMU Sphinx's
+Pocketsphinx. This is an open source toolkit for speech to text recognition and has easily
+accesible code for implementation in private projects such as CHAT.
+This speech to text toolkit can be used both for live speech recognition as well as reading
+a previously recorded audio file. For this project, an audio file is preferable as it would
+enable a seemless recording of the audio and other variables such as body movement
+(Prazdnichov 2018).
+Pocketsphinx also has the ability to show the start and end times of the words. This
+means that it is possible to determine how long each word took to say as well as when
+they were said.
+24

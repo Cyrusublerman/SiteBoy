@@ -1,0 +1,2526 @@
+{
+  "name": "build spiral extrude.002",
+  "iface": [
+    {
+      "name": "Mesh",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "spirel hight",
+      "io": "OUTPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "total segments",
+      "io": "OUTPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Resolution",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 338
+    },
+    {
+      "name": "layer hight",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "edge curve",
+      "io": "INPUT",
+      "type": "NodeSocketObject",
+      "default": null
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "LAYER HIGHT",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.008",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "object hight",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.012",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.016",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.003",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.004",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.007",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.015",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.042",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Object Info",
+      "t": "OBJECT_INFO",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.046",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve Length",
+      "t": "CURVE_LENGTH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "number of layers",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.047",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.049",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Resample Curve",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh.002",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.001",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Spiral.002",
+      "t": "CURVE_PRIMITIVE_SPIRAL",
+      "lbl": "hight Spiral",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Set Position.003",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.001",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Integer Math",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.002",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ.001",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Frame.004",
+      "t": "FRAME",
+      "lbl": "BUILD A SPIREL LAYER",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh.003",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Merge by Distance.001",
+      "t": "MERGE_BY_DISTANCE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Extrude Mesh.001",
+      "t": "EXTRUDE_MESH",
+      "lbl": "Extrude spiral mesh",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector.001",
+      "t": "INPUT_VECTOR",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.050",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.048",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.053",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "For Each Geometry Element Input.001",
+      "t": "FOREACH_GEOMETRY_ELEMENT_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "For Each Geometry Element Output.001",
+      "t": "FOREACH_GEOMETRY_ELEMENT_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Math.005",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Index",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Integer",
+      "t": "INPUT_INT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Position.001",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.003",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ.002",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Spiral.003",
+      "t": "CURVE_PRIMITIVE_SPIRAL",
+      "lbl": "hight Spiral",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Set Position.004",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.003",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Position.002",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.054",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Join Geometry.001",
+      "t": "JOIN_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Frame.005",
+      "t": "FRAME",
+      "lbl": "SELECT ALL BUT FIRST LAYER",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.055",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.056",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Frame.006",
+      "t": "FRAME",
+      "lbl": "FIRST LAYER SPIREL",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.051",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.052",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.057",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.058",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Frame.007",
+      "t": "FRAME",
+      "lbl": "GET STARTING POSITION OF SPIRAL",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Frame.008",
+      "t": "FRAME",
+      "lbl": "GET ENDING POSITION OF SPIRAL",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.059",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Reroute.060",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Reroute.062",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Reroute.063",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.061",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Reroute.064",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Reroute.065",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.066",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.067",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.068",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.069",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.070",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Frame.009",
+      "t": "FRAME",
+      "lbl": "MAIN SPIREL BUILD",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.071",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.072",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Reroute.073",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.074",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.075",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.076",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.077",
+      "t": "REROUTE",
+      "lbl": "number of layers",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.078",
+      "t": "REROUTE",
+      "lbl": "number of layers",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.080",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Frame.010",
+      "t": "FRAME",
+      "lbl": "BRING IN CURVE AND RESAMPLE TO THE NUMBER OF LAYERS NEEDED",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.079",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.081",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.082",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Frame.011",
+      "t": "FRAME",
+      "lbl": "SPIREL BUILDER",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store_Height.002",
+      "t": "GROUP",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": "Store_Height.003"
+    },
+    {
+      "n": "Reroute.011",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "total  number of segments",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh.004",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Mesh to Curve",
+      "t": "MESH_TO_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh.005",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.001",
+      "t": "INTEGER_MATH",
+      "lbl": "multiplyed by no. of layers",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Index.001",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Compare",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.003",
+      "t": "INTEGER_MATH",
+      "lbl": "segments per rev +1",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.004",
+      "t": "INTEGER_MATH",
+      "lbl": "- 1 layer",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.005",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.084",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.085",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Frame",
+      "t": "FRAME",
+      "lbl": "select all but the top most vert to join",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.086",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.087",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.088",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.089",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.090",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.083",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.091",
+      "t": "REROUTE",
+      "lbl": "resolution",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.092",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.093",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.002",
+      "t": "INTEGER_MATH",
+      "lbl": "multiplyed by no. of layers",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Index.002",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Compare.001",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.006",
+      "t": "INTEGER_MATH",
+      "lbl": "segments per rev +1",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.007",
+      "t": "INTEGER_MATH",
+      "lbl": "- 1 layer",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Reroute.095",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Reroute.096",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Frame.012",
+      "t": "FRAME",
+      "lbl": "select TOP LOOP",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.097",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Reroute.098",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.008",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.009",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Set Position.002",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Reroute.017",
+      "t": "REROUTE",
+      "lbl": "LAYER HIGHT",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Resample Curve.001",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.010",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Trim Curve",
+      "t": "TRIM_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Duplicate Elements",
+      "t": "DUPLICATE_ELEMENTS",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Compare.003",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Set Position",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Compare.004",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Set Position.001",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Trim Curve.001",
+      "t": "TRIM_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Math.006",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.002",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.006",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Merge by Distance",
+      "t": "MERGE_BY_DISTANCE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Mesh to Curve.001",
+      "t": "MESH_TO_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh.006",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.011",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reverse Curve",
+      "t": "REVERSE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Delete Geometry",
+      "t": "DELETE_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.014",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Index.004",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Compare.005",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Resample Curve.002",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh.007",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Mesh to Curve.002",
+      "t": "MESH_TO_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Viewer",
+      "t": "VIEWER",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Reroute.016",
+      "fs": "Output",
+      "tn": "Reroute.008",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.017",
+      "fs": "Output",
+      "tn": "Reroute.016",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.008",
+      "fs": "Output",
+      "tn": "Reroute.004",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Reroute.007",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Reroute.015",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.015",
+      "fs": "Output",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.046",
+      "fs": "Output",
+      "tn": "Object Info",
+      "ts": "Object"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "edge curve",
+      "tn": "Reroute.046",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.075",
+      "fs": "Output",
+      "tn": "Curve Length",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Reroute.080",
+      "fs": "Output",
+      "tn": "Reroute.047",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.049",
+      "fs": "Output",
+      "tn": "Reroute.003",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.047",
+      "fs": "Output",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Curve Length",
+      "fs": "Length",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.078",
+      "fs": "Output",
+      "tn": "Reroute.049",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.077",
+      "fs": "Output",
+      "tn": "Resample Curve",
+      "ts": "Count"
+    },
+    {
+      "fn": "Resample Curve",
+      "fs": "Curve",
+      "tn": "Curve to Mesh.002",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Sample Index.001",
+      "fs": "Value",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Spiral.002",
+      "fs": "Curve",
+      "tn": "Set Position.003",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.058",
+      "fs": "Output",
+      "tn": "Spiral.002",
+      "ts": "Start Radius"
+    },
+    {
+      "fn": "Reroute.063",
+      "fs": "Output",
+      "tn": "Combine XYZ.001",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.051",
+      "fs": "Output",
+      "tn": "Set Position.003",
+      "ts": "Offset"
+    },
+    {
+      "fn": "Integer Math",
+      "fs": "Value",
+      "tn": "Sample Index.002",
+      "ts": "Index"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Sample Index.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.059",
+      "fs": "Output",
+      "tn": "Sample Index.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Sample Index.002",
+      "fs": "Value",
+      "tn": "Separate XYZ.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Separate XYZ.001",
+      "fs": "Z",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.062",
+      "fs": "Output",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Spiral.002",
+      "ts": "Height"
+    },
+    {
+      "fn": "Vector.001",
+      "fs": "Vector",
+      "tn": "Extrude Mesh.001",
+      "ts": "Offset"
+    },
+    {
+      "fn": "Join Geometry.001",
+      "fs": "Geometry",
+      "tn": "Extrude Mesh.001",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Reroute.050",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Group Output",
+      "ts": "spirel hight"
+    },
+    {
+      "fn": "Reroute.061",
+      "fs": "Output",
+      "tn": "Spiral.002",
+      "ts": "End Radius"
+    },
+    {
+      "fn": "Reroute.011",
+      "fs": "Output",
+      "tn": "Reroute.048",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.071",
+      "fs": "Output",
+      "tn": "Reroute.053",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.066",
+      "fs": "Output",
+      "tn": "For Each Geometry Element Input.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Set Position.003",
+      "fs": "Geometry",
+      "tn": "For Each Geometry Element Output.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "For Each Geometry Element Input.001",
+      "fs": "Element",
+      "tn": "Sample Index.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store_Height.002",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "For Each Geometry Element Input.001",
+      "fs": "Index",
+      "tn": "Integer Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.053",
+      "fs": "Output",
+      "tn": "Spiral.002",
+      "ts": "Resolution"
+    },
+    {
+      "fn": "Index",
+      "fs": "Index",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.005",
+      "fs": "Value",
+      "tn": "For Each Geometry Element Input.001",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Integer",
+      "fs": "Integer",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Position.001",
+      "fs": "Position",
+      "tn": "Sample Index.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index.003",
+      "fs": "Value",
+      "tn": "Separate XYZ.002",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Spiral.003",
+      "fs": "Curve",
+      "tn": "Set Position.004",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.054",
+      "fs": "Output",
+      "tn": "Spiral.003",
+      "ts": "Start Radius"
+    },
+    {
+      "fn": "Separate XYZ.002",
+      "fs": "Z",
+      "tn": "Combine XYZ.003",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.056",
+      "fs": "Output",
+      "tn": "Set Position.004",
+      "ts": "Offset"
+    },
+    {
+      "fn": "Position.002",
+      "fs": "Position",
+      "tn": "Sample Index.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.088",
+      "fs": "Output",
+      "tn": "Sample Index.003",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.055",
+      "fs": "Output",
+      "tn": "Reroute.054",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.054",
+      "fs": "Output",
+      "tn": "Spiral.003",
+      "ts": "End Radius"
+    },
+    {
+      "fn": "Reroute.068",
+      "fs": "Output",
+      "tn": "Spiral.003",
+      "ts": "Resolution"
+    },
+    {
+      "fn": "Curve to Mesh.005",
+      "fs": "Mesh",
+      "tn": "Join Geometry.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Separate XYZ.002",
+      "fs": "X",
+      "tn": "Reroute.055",
+      "ts": "Input"
+    },
+    {
+      "fn": "Combine XYZ.003",
+      "fs": "Vector",
+      "tn": "Reroute.056",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.065",
+      "fs": "Output",
+      "tn": "Reroute.051",
+      "ts": "Input"
+    },
+    {
+      "fn": "Combine XYZ.001",
+      "fs": "Vector",
+      "tn": "Reroute.052",
+      "ts": "Input"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "X",
+      "tn": "Reroute.057",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.057",
+      "fs": "Output",
+      "tn": "Reroute.058",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.060",
+      "fs": "Output",
+      "tn": "Reroute.059",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.072",
+      "fs": "Output",
+      "tn": "Reroute.060",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.063",
+      "fs": "Output",
+      "tn": "Reroute.062",
+      "ts": "Input"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Reroute.063",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.064",
+      "fs": "Output",
+      "tn": "Reroute.061",
+      "ts": "Input"
+    },
+    {
+      "fn": "Separate XYZ.001",
+      "fs": "X",
+      "tn": "Reroute.064",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.052",
+      "fs": "Output",
+      "tn": "Reroute.065",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.067",
+      "fs": "Output",
+      "tn": "Reroute.066",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.069",
+      "fs": "Output",
+      "tn": "Reroute.067",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.070",
+      "fs": "Output",
+      "tn": "Reroute.068",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.087",
+      "fs": "Output",
+      "tn": "Reroute.069",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.048",
+      "fs": "Output",
+      "tn": "Reroute.070",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.048",
+      "fs": "Output",
+      "tn": "Reroute.071",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.069",
+      "fs": "Output",
+      "tn": "Reroute.072",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.075",
+      "fs": "Output",
+      "tn": "Reroute.074",
+      "ts": "Input"
+    },
+    {
+      "fn": "Object Info",
+      "fs": "Geometry",
+      "tn": "Reroute.075",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.074",
+      "fs": "Output",
+      "tn": "Reroute.076",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Reroute.077",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.077",
+      "fs": "Output",
+      "tn": "Reroute.073",
+      "ts": "Input"
+    },
+    {
+      "fn": "Integer Math.011",
+      "fs": "Value",
+      "tn": "Reroute.078",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.017",
+      "fs": "Output",
+      "tn": "Reroute.080",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.082",
+      "fs": "Output",
+      "tn": "Reroute.079",
+      "ts": "Input"
+    },
+    {
+      "fn": "For Each Geometry Element Output.001",
+      "fs": "Geometry",
+      "tn": "Reroute.081",
+      "ts": "Input"
+    },
+    {
+      "fn": "Set Position.004",
+      "fs": "Geometry",
+      "tn": "Reroute.082",
+      "ts": "Input"
+    },
+    {
+      "fn": "Extrude Mesh.001",
+      "fs": "Mesh",
+      "tn": "Store_Height.002",
+      "ts": "Geometary "
+    },
+    {
+      "fn": "Reroute.091",
+      "fs": "Output",
+      "tn": "Reroute.011",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Resolution",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.049",
+      "fs": "Output",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Group Output",
+      "ts": "total segments"
+    },
+    {
+      "fn": "Reroute.081",
+      "fs": "Output",
+      "tn": "Curve to Mesh.003",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Reroute.079",
+      "fs": "Output",
+      "tn": "Curve to Mesh.004",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Curve to Mesh.004",
+      "fs": "Mesh",
+      "tn": "Join Geometry.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Mesh to Curve",
+      "fs": "Curve",
+      "tn": "Curve to Mesh.005",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Extrude Mesh.001",
+      "fs": "Top",
+      "tn": "Store_Height.002",
+      "ts": "Top"
+    },
+    {
+      "fn": "Index.001",
+      "fs": "Index",
+      "tn": "Compare",
+      "ts": "A"
+    },
+    {
+      "fn": "Compare",
+      "fs": "Result",
+      "tn": "Merge by Distance.001",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Reroute.093",
+      "fs": "Output",
+      "tn": "Integer Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.003",
+      "fs": "Value",
+      "tn": "Integer Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.086",
+      "fs": "Output",
+      "tn": "Integer Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.085",
+      "fs": "Output",
+      "tn": "Integer Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.001",
+      "fs": "Value",
+      "tn": "Integer Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.004",
+      "fs": "Value",
+      "tn": "Integer Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.005",
+      "fs": "Value",
+      "tn": "Compare",
+      "ts": "B"
+    },
+    {
+      "fn": "Integer Math.003",
+      "fs": "Value",
+      "tn": "Reroute.084",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.084",
+      "fs": "Output",
+      "tn": "Reroute.085",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.083",
+      "fs": "Output",
+      "tn": "Reroute.086",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Reroute.087",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.087",
+      "fs": "Output",
+      "tn": "Reroute.088",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.078",
+      "fs": "Output",
+      "tn": "Reroute.089",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.089",
+      "fs": "Output",
+      "tn": "Reroute.090",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.090",
+      "fs": "Output",
+      "tn": "Reroute.083",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Resolution",
+      "tn": "Reroute.091",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.068",
+      "fs": "Output",
+      "tn": "Reroute.092",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.092",
+      "fs": "Output",
+      "tn": "Reroute.093",
+      "ts": "Input"
+    },
+    {
+      "fn": "Index.002",
+      "fs": "Index",
+      "tn": "Compare.001",
+      "ts": "A"
+    },
+    {
+      "fn": "Integer Math.006",
+      "fs": "Value",
+      "tn": "Integer Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.097",
+      "fs": "Output",
+      "tn": "Integer Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.096",
+      "fs": "Output",
+      "tn": "Integer Math.007",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.002",
+      "fs": "Value",
+      "tn": "Integer Math.007",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.006",
+      "fs": "Value",
+      "tn": "Reroute.095",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.095",
+      "fs": "Output",
+      "tn": "Reroute.096",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.098",
+      "fs": "Output",
+      "tn": "Reroute.097",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.093",
+      "fs": "Output",
+      "tn": "Integer Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.090",
+      "fs": "Output",
+      "tn": "Reroute.098",
+      "ts": "Input"
+    },
+    {
+      "fn": "Integer Math.008",
+      "fs": "Value",
+      "tn": "Compare.001",
+      "ts": "B"
+    },
+    {
+      "fn": "Reroute.095",
+      "fs": "Output",
+      "tn": "Integer Math.009",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.007",
+      "fs": "Value",
+      "tn": "Integer Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.009",
+      "fs": "Value",
+      "tn": "Integer Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Compare.001",
+      "fs": "Result",
+      "tn": "Set Position.002",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Merge by Distance.001",
+      "fs": "Geometry",
+      "tn": "Mesh to Curve",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Curve to Mesh.003",
+      "fs": "Mesh",
+      "tn": "Set Position.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Set Position.002",
+      "fs": "Geometry",
+      "tn": "Merge by Distance.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "layer hight",
+      "tn": "Reroute.017",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.073",
+      "fs": "Output",
+      "tn": "Reroute",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Integer Math.010",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    },
+    {
+      "fn": "Integer Math.010",
+      "fs": "Value",
+      "tn": "Resample Curve.001",
+      "ts": "Count"
+    },
+    {
+      "fn": "Resample Curve.001",
+      "fs": "Curve",
+      "tn": "Duplicate Elements",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Duplicate Elements",
+      "fs": "Duplicate Index",
+      "tn": "Compare.003",
+      "ts": "A"
+    },
+    {
+      "fn": "Duplicate Elements",
+      "fs": "Geometry",
+      "tn": "Set Position",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Compare.003",
+      "fs": "Result",
+      "tn": "Set Position",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Compare.004",
+      "fs": "Result",
+      "tn": "Set Position.001",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Set Position",
+      "fs": "Geometry",
+      "tn": "Set Position.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Duplicate Elements",
+      "fs": "Duplicate Index",
+      "tn": "Compare.004",
+      "ts": "A"
+    },
+    {
+      "fn": "Set Position.001",
+      "fs": "Geometry",
+      "tn": "Trim Curve",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Reroute.006",
+      "fs": "Output",
+      "tn": "Trim Curve",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Trim Curve",
+      "fs": "Curve",
+      "tn": "Trim Curve.001",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Compare.003",
+      "fs": "Result",
+      "tn": "Trim Curve.001",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Integer Math.010",
+      "fs": "Value",
+      "tn": "Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Trim Curve",
+      "ts": "Start"
+    },
+    {
+      "fn": "Math.006",
+      "fs": "Value",
+      "tn": "Reroute.002",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Trim Curve.001",
+      "ts": "End"
+    },
+    {
+      "fn": "Trim Curve.001",
+      "fs": "Curve",
+      "tn": "Resample Curve",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Compare.004",
+      "fs": "Result",
+      "tn": "Reroute.006",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.006",
+      "fs": "Output",
+      "tn": "Resample Curve",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Curve to Mesh.002",
+      "fs": "Mesh",
+      "tn": "Merge by Distance",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.073",
+      "fs": "Output",
+      "tn": "Integer Math.011",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.050",
+      "fs": "Output",
+      "tn": "Extrude Mesh.001",
+      "ts": "Offset Scale"
+    },
+    {
+      "fn": "Merge by Distance",
+      "fs": "Geometry",
+      "tn": "Mesh to Curve.001",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Reverse Curve",
+      "fs": "Curve",
+      "tn": "Curve to Mesh.006",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Index.004",
+      "fs": "Index",
+      "tn": "Compare.005",
+      "ts": "A"
+    },
+    {
+      "fn": "Curve to Mesh.006",
+      "fs": "Mesh",
+      "tn": "Reroute.014",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.076",
+      "fs": "Output",
+      "tn": "Resample Curve.002",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Reroute.077",
+      "fs": "Output",
+      "tn": "Resample Curve.002",
+      "ts": "Count"
+    },
+    {
+      "fn": "Resample Curve.002",
+      "fs": "Curve",
+      "tn": "Curve to Mesh.007",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Curve to Mesh.007",
+      "fs": "Mesh",
+      "tn": "Delete Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Compare.005",
+      "fs": "Result",
+      "tn": "Delete Geometry",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Delete Geometry",
+      "fs": "Geometry",
+      "tn": "Mesh to Curve.002",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Mesh to Curve.002",
+      "fs": "Curve",
+      "tn": "Resample Curve.001",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Mesh to Curve.001",
+      "fs": "Curve",
+      "tn": "Reverse Curve",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Join Geometry.001",
+      "fs": "Geometry",
+      "tn": "Viewer",
+      "ts": "Geometry"
+    }
+  ],
+  "frames": [
+    {
+      "n": "Frame.004",
+      "lbl": "BUILD A SPIREL LAYER",
+      "ch": [
+        "Spiral.002",
+        "Set Position.003",
+        "Reroute.051",
+        "Reroute.065"
+      ]
+    },
+    {
+      "n": "Frame.005",
+      "lbl": "SELECT ALL BUT FIRST LAYER",
+      "ch": [
+        "Math.005",
+        "Index",
+        "Integer"
+      ]
+    },
+    {
+      "n": "Frame.006",
+      "lbl": "FIRST LAYER SPIREL",
+      "ch": [
+        "Sample Index.003",
+        "Separate XYZ.002",
+        "Spiral.003",
+        "Set Position.004",
+        "Combine XYZ.003",
+        "Position.002",
+        "Reroute.054",
+        "Reroute.055",
+        "Reroute.056",
+        "Reroute.068",
+        "Reroute.070",
+        "Reroute.092"
+      ]
+    },
+    {
+      "n": "Frame.007",
+      "lbl": "GET STARTING POSITION OF SPIRAL",
+      "ch": [
+        "Sample Index.001",
+        "Separate XYZ",
+        "Combine XYZ.001",
+        "For Each Geometry Element Input.001",
+        "Position.001",
+        "Reroute.057",
+        "Reroute.058",
+        "Reroute.063"
+      ]
+    },
+    {
+      "n": "Frame.008",
+      "lbl": "GET ENDING POSITION OF SPIRAL",
+      "ch": [
+        "Position",
+        "Integer Math",
+        "Sample Index.002",
+        "Separate XYZ.001",
+        "Math.004",
+        "Reroute.059",
+        "Reroute.060",
+        "Reroute.062",
+        "Reroute.061",
+        "Reroute.064"
+      ]
+    },
+    {
+      "n": "Frame.009",
+      "lbl": "MAIN SPIREL BUILD",
+      "ch": [
+        "Frame.004",
+        "Reroute.053",
+        "For Each Geometry Element Output.001",
+        "Frame.005",
+        "Reroute.052",
+        "Frame.007",
+        "Frame.008",
+        "Reroute.066",
+        "Reroute.067",
+        "Reroute.069",
+        "Reroute.071",
+        "Reroute.072"
+      ]
+    },
+    {
+      "n": "Frame.010",
+      "lbl": "BRING IN CURVE AND RESAMPLE TO THE NUMBER OF LAYERS NEEDED",
+      "ch": [
+        "Object Info",
+        "Curve Length",
+        "Math.001",
+        "Reroute.047",
+        "Math.003",
+        "Resample Curve",
+        "Curve to Mesh.002",
+        "Reroute.073",
+        "Reroute.074",
+        "Reroute.075",
+        "Reroute.076",
+        "Reroute.077",
+        "Reroute.078",
+        "Reroute.080",
+        "Resample Curve.001",
+        "Integer Math.010",
+        "Reroute",
+        "Reroute.001",
+        "Trim Curve",
+        "Duplicate Elements",
+        "Compare.003",
+        "Set Position",
+        "Compare.004",
+        "Set Position.001",
+        "Trim Curve.001",
+        "Math.006",
+        "Reroute.002",
+        "Reroute.006",
+        "Merge by Distance",
+        "Mesh to Curve.001",
+        "Curve to Mesh.006",
+        "Integer Math.011",
+        "Reverse Curve",
+        "Delete Geometry",
+        "Reroute.014",
+        "Index.004",
+        "Compare.005",
+        "Resample Curve.002",
+        "Curve to Mesh.007",
+        "Mesh to Curve.002"
+      ]
+    },
+    {
+      "n": "Frame.011",
+      "lbl": "SPIREL BUILDER",
+      "ch": [
+        "Curve to Mesh.003",
+        "Merge by Distance.001",
+        "Reroute.048",
+        "Join Geometry.001",
+        "Frame.006",
+        "Frame.009",
+        "Reroute.079",
+        "Reroute.081",
+        "Reroute.082",
+        "Curve to Mesh.004",
+        "Mesh to Curve",
+        "Curve to Mesh.005",
+        "Frame",
+        "Reroute.087",
+        "Reroute.088",
+        "Reroute.089",
+        "Reroute.090",
+        "Reroute.093",
+        "Frame.012",
+        "Set Position.002"
+      ]
+    },
+    {
+      "n": "Frame",
+      "lbl": "select all but the top most vert to join",
+      "ch": [
+        "Integer Math.001",
+        "Index.001",
+        "Compare",
+        "Integer Math.003",
+        "Integer Math.004",
+        "Integer Math.005",
+        "Reroute.084",
+        "Reroute.085",
+        "Reroute.086",
+        "Reroute.083"
+      ]
+    },
+    {
+      "n": "Frame.012",
+      "lbl": "select TOP LOOP",
+      "ch": [
+        "Integer Math.002",
+        "Index.002",
+        "Compare.001",
+        "Integer Math.006",
+        "Integer Math.007",
+        "Reroute.095",
+        "Reroute.096",
+        "Reroute.097",
+        "Reroute.098",
+        "Integer Math.008",
+        "Integer Math.009"
+      ]
+    }
+  ],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": [
+    "Store_Height.003"
+  ]
+}

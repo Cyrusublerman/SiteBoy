@@ -79,9 +79,10 @@ export const Config = {
         gap: 1  // Always 1px gap
     },
 
-    // SINGLE MARGIN SYSTEM - no desktop/mobile split
+    // SINGLE MARGIN SYSTEM - 1px gap between window border and frame on all sides
+    // (B/S mode preserved for API compatibility but no longer affects gap size).
     get margin() {
-        return this.F * MARGIN_PRESETS[this.marginMode]; // 2F for B, 4F for S
+        return 1;
     },
 
     /**
@@ -205,19 +206,18 @@ export const LayoutCalculator = {
             Math.min(width, document.documentElement.clientWidth) : width;
 
         const F = Config.F;
-        const isMobile = actualWidth < Config.breakpoints.desktop;
-        const margin = isMobile ? 1 : Config.margin;
+        const margin = Config.margin; // Always 1px on all sides (desktop and mobile)
         const headerHeight = Config.sizing.header; // Always 2F
 
-        // SINGLE FRAME CALCULATION - F-snapped for mathematical precision
+        // SINGLE FRAME CALCULATION
+        // Frame fills the viewport minus 1px gap on each side. No horizontal F-snapping:
+        // F-snapping would centre the frame and add up to F-1 px per side, breaking the strict 1px gap.
         const availableWidth = actualWidth - 2 * margin;           // Viewport minus margins
-        const frameWidth = isMobile
-            ? availableWidth                                        // No F-snapping on mobile; use full available width
-            : Math.floor(availableWidth / F) * F;                  // Snap to F multiple on desktop
+        const frameWidth = availableWidth;                          // Exact 1px gap on left/right
         const availableHeight = height - 2 * margin;               // Viewport minus margins
-        const frameHeight = Math.floor(availableHeight / F) * F;   // Snap to F multiple
-        const marginLeft = (actualWidth - frameWidth) / 2;         // Center the frame
-        const marginRight = marginLeft;                             // Symmetric margins
+        const frameHeight = Math.floor(availableHeight / F) * F;   // Vertical still F-snapped; vertical gap fixed by margin
+        const marginLeft = margin;                                  // Frame is left-aligned at exactly margin px
+        const marginRight = margin;                                 // Symmetric 1px gap on right
 
         // SIMPLE HEADER/SUBHEADER SPLITS - 50% title, 2F toggle, remainder sections
         // Account for 2px of borders: title-right(1px) + nav-right(1px)

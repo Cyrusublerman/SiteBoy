@@ -1,0 +1,352 @@
+--- Page 1 ---
+BELLOWING BOY
+Designed and finished
+by Ali Einoder - 2020
+
+--- Page 2 ---
+
+
+--- Page 3 ---
+TT HH EE II DD EE AA
+This object is the speaker. An object
+that has become an almost necessity
+in modern life and has replaced a func-
+Most of the objects we use in every tion that was once an intrinsic human
+day life are underwhelming. Simple service.
+shapes, solid colours, forgettable.
+Why not return to listening to stories
+The items we have in our houses could and songs and lectures from the mouth
+look like a multitude of different of an abstract humanoid.
+things like lions or elephants or trees Why not stare into his perfectly circu-
+or planets or spaceships or anything lar mouth and exotropic eyes?
+really but most people instead settle
+for things that at a minimum look And while we are getting funky, we
+95% like every other object of that might as well Jackson Pollock him in
+function. Why is that? paint, or graffiti him in Keith Haring
+doodles. This is an object that isn’t
+Is is that we are afraid of the stim- planning to blend in like your nervous
+ulation? Or maybe we are just afraid friend but is instead demanding atten-
+of taking the chance to see the world tion.
+as a child would, with the surreal
+“what-if” leaps of imagination and the You want every guest to be fixated,
+embracement of pareidolia. shocked, surprised and utterly exhil-
+arated at the beautiful absurdity of
+Maybe it is too drastic a leap to this seemingly grotesque yet tanta-
+change our environment into one in the lizing figure. This boy crouching like
+vein of The Flintstones or Beauty and the Sphinx, propelling whatever track
+the Beast but it should be possible or podcast you have been throttling
+to sneak a little bit of that enjoy- lately right into the faces of its
+ment into our lives. audience.
+A simple start is an object that is This will be the Yelling Boy, the
+brought in and out of our attention boy who dares to change the world,
+by nature of it’s function. An item bringing back blatant aestheticism and
+that is easy to anthropomorphize and reference for the mere sake of it. A
+one that can indulge this experiment functional art-piece that can’t help
+without negating its usefulness. but stimulate you.
+
+--- Page 4 ---
+
+
+--- Page 5 ---
+TTHHEE DDEESSIIGGNN
+To create a functional and heavily To be affordable and easy to print, the
+anthropomorphic speaker, several design needed to fit within an 8L cube,
+conditions need to be met for it to with no dimension greater than 20cm.
+be considered a success. Firstly, it It also needs to have the smallest
+must resemble a humanoid creature, weight possible without compromising
+secondly it needs to have uncompro- any of the previously stated require-
+mised audio quality and projection, ments.
+thirdly it needs to be effortlessly
+interacted with. To achieve this, the creature was to be
+mostly hollow, with walls of approxi-
+An additional condition needs to be mately 3mm thick. The more spherical
+met considering I - the creator, main body seemed particularly useful as
+need to make a prototype, This it was the most efficient use of space.
+condition is that it is plausible to This shape also allows for one other
+make using resources and finances function that - especially for prototyp-
+I am easily able to access. These ing and development - is needed: The
+resources include a 3D printing ability to open the device easily and
+facility, approximately 200 dollars, access the inside. By having a large
+some paint I found in a parking lot, central body, a subsection of it can be
+an audio driver able to be bought removed to show all extra components
+online and shipped within a week and inside such as the circuitry and the
+the circuitry of a Google Home Mini audio driver.
+I dissected out of curiosity.
+The last factor in the initial design
+The basics of the design were was the size of the audio driver and
+almost intuitive, instantaneously circuitry that will be housed within. A
+coming to me as I decided on the driver that I have been needing to test
+theme. The creature speaker was to out was the Dayton Audio ps95 which
+bellow the sound out of its mouth is a 3-1/2" mid range driver, perfect
+and it was to either stand on its for this project. The circuitry was, as
+feet or crouch. stated previously, that of a Google
+home Mini.
+
+--- Page 6 ---
+1
+N
+O
+I
+S
+R
+E
+V
+L
+E
+D
+O
+M
+
+--- Page 7 ---
+AA CCTT UU AA LLLLYY MM AA KKII NN GG II TT //
+JJ AA MM MM II NN GG
+The first step in the 3D design was
+to map out the mounting of the audio
+driver (see image right), as it is an
+independent variable that the other
+structures must be designed around.
+The second step was to create a
+spherical chamber around the driver
+to aid acoustics.
+The first version of the speaker
+(see images right) was created by
+adding the aesthetic features onto
+the outside of the central sphere.
+Muscular legs were added to the
+back and abstract skinny legs were
+attached to the front. Wings were
+added to the back both to visually
+balance the weight and also to make
+this creature resemble some sort of
+of the requirements, failed one quite vital
+abstract cherub. The features were
+necessity; the size was far too large. The
+created cartoonishly and playfully,
+inefficient adding of solid bodies to the out-
+with the inclusion of solid pectoral
+side of the chamber created a large addition
+muscles and 6-pack as well as small
+in weight which in turn lead to the cost of
+genitals reminiscent of Romantic and
+printing becoming far too high. Also, the
+Classical sculpture.
+size of this device was nearing 30cm in each
+As to allow airflow for the audio
+dimension which is way too big.
+driver, an outlet was created in the
+rectum of the creature which also
+Thus a new design was needed. This new
+aids in the immature humour of its
+design was to be more compact, with the
+form.
+aesthetic features being more integrated.
+This design, though meeting many
+1
+N
+O
+I
+S
+R
+E
+V
+L
+E
+D
+O
+M
+DAYTON AUDIO PS95
+© 2019 Dayton Audio. All Rights Reserved.
+
+--- Page 8 ---
+179.15
+56.222
+81.371
+7.491
+90
+89
+93.461
+09
+R
+3
+7
+.5
+5
+.
+9
+R
+179.15
+147.8
+100.78
+99.38
+49.39
+R25
+179.15
+23.01
+20.74 2
+9
+0.
+2
+R
+R2
+R1.5
+R1.5
+52
+38.142
+14.822
+199.51
+86.511
+29.36
+174.67
+136.57
+41.34
+161.16
+174.22
+89
+148.36
+153.33
+212.64
+11.891 45.781
+72.161
+160.57
+78.65
+34.45
+39.13
+61.55
+29.36
+8.37
+37.67
+68.97
+REVISED MODEL
+
+--- Page 9 ---
+turn your head
+
+--- Page 10 ---
+This new design maintained the inner
+chamber being mostly spherical, how-
+ever the top half was now a bubbly
+afro instead of solid spiky hair and
+wings. Whilst still being aesthetically
+grounded it is able to double as a
+removable lid. The legs were made
+smaller than that of the previous
+design but also staying relatively
+in proportion to the new form. The
+stance is that of a frog, with the
+mouth facing the flies. The eyes
+staying exotropic and upwards facing
+to accentuate the playful absurdity
+
+--- Page 11 ---
+of the design. To minimise cost,
+the central body has thin walls
+and detaches from the limbs and
+hair and is able to be split in
+two. This splitting of components
+greatly reduces the support
+structures needed during the
+printing process and thus reduces
+the cost dramatically.
+The overall size of this design
+was reduced to a fraction of the
+previous with greater efficiency of
+the structures and a more unified
+form.
+
+--- Page 12 ---
+Removing the hair exposes the degrees to ensure stability, reliability
+mounting area for the Google Home and the extra ability to hold the rest of
+Mini circuitry (see above) and the the construction in place. This function
+Dayton Audio ps95 (see below). The is a key example of the multifaceted
+hair itself contains finger like inte- functioning of the components. The hair
+grated dowls that insert themselves in total, works as a buttress for the
+into the main body. This holds itself face, helping to support the weight of
+in place at an angle of forty five the audio driver whilst in addition aiding
+
+--- Page 13 ---
+the acoustic qualities of the speaker supportive filament needed. This compo-
+and providing access to the internals. nent, as well as the limbs, are attached
+with some super heavy duty smelly quick
+The face of the Bellowing Boy also drying super glue. To aid the attachment,
+removes (see bellow). This is a one time the joints were given teeth and slots,
+function merely implemented to aid the increasing the total surface area of the
+printing process and greatly reducing connection and providing protection from
+cost by decreasing the total amount of greater angular stress.
+
+--- Page 14 ---
+COMPONENTS POST-PRINT
+
+--- Page 15 ---
+PPOOSSTT--PPRRIINNTT
+PPRROOCCEESSSSIINNGG
+With the assembly printed and delivered, the
+most tedious process begins. Each part needs
+to be sanded, the wrinkles and contours of
+the prints must be smoothed into a slippery
+surface. Each of the joining components
+need special care to connect to their full
+extent. The components need to be tested
+and adjusted, in this case using a file, brute
+force and fire. Heating the plastic allows for
+speedy adjustment of components that other-
+wise would be impossible to reform.
+The parts sans the hair were glued together
+using super glue and high heat while being
+pressed together with force.
+After joining, the components were let to rest
+for several hours so I could lie down and
+watch some Netflix.
+
+--- Page 16 ---
+
+
+--- Page 17 ---
+TT HH EE PP AA II NN TT II NN GG
+The painting was a key component to the overall design as
+I find an incessant need to cover my creations in paint. This,
+paired with a liking of bold primaries and rough abstract com-
+position leads to a personalisation and giving of character to
+the product.
+The reclaimed, post-trash paints demanded to be poured and
+dripped with a Pollock spirit, covering the Bellowing Boy like
+multicoloured pigeon poop in a surreal Italian Piazza. This
+aggressive painting serves as a practical first composition as
+it allows for further mutations through graffiti and wear and
+tear.
+An additional, hidden benefit of the heavy paint is that it fur-
+ther covers the lumpy, bumpy washing-board curves left by the
+3D printer as well; as the burnt and glued joints.
+The final step of the painting required burning the paint, forc-
+ing it to bubble and swell. This causes the different colours to
+scatter throughout each other without mixing, it also creates
+a weathering, stripping the product of its sterile newness and
+adding depth to the colours.
+TTTTTT HHHHHH EEEEEE PPPPPP AAAAAA IIIIII NNNNNN TTTTTT IIIIII NNNNNN GGGGGG
+
+--- Page 18 ---
+
+
+--- Page 19 ---
+TTHHEE RREESSUULLTT
+Due to the precision of measurement in the 3D modeling
+process as well as the heavy effort in post-processing
+and adjustment, the parts all fit together effortlessly.
+The circuit board can attach to the mounting holes of
+the base of the inside. The hair is easily removed and
+connected whilst still holding tightly. The Audio Driver
+mounts perfectly and tightly, not moving a micrometer
+even when thumping hard bass.
+The weight is high enough to suggest quality but it is
+light enough to easily move around. The Google Home
+Mini brain is able to be communicated with, even with its
+encapsulation and its close proximity to the speaker. Its
+cord effortlessly passes through the rectum and can be
+attached and reattached if the device is opened.
+In time when the paint dries completely, additional
+detailing and graffiti will be applied. The circuitry may
+be replaced with a more conventional Bluetooth amplifier.
+But for the time being the Bellowing Boy crouches proud.
+Gleefully scaring unsuspecting interlopers and small dogs
+that come sniffing.
+
+--- Page 20 ---

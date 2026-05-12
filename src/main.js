@@ -22,6 +22,7 @@ import '../assets/js/sections/blog_section.js';
 import '../assets/js/sections/art_section.js';
 import '../assets/js/sections/tools_section.js';
 import '../assets/js/sections/projects_section.js';
+import '../assets/js/sections/project-page.js';  // Generic JSON-driven project page renderer
 import '../assets/js/sections/contact_section.js';
 import '../assets/js/sections/qr_section.js';
 import '../projects/Synthetic Biophilia/synthetic-biophilia.js';

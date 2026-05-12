@@ -1,0 +1,60 @@
+Python Script: Main Generator
+import bpy, bmesh
+import numpy as np
+import math
+import os
+import pprint
+#=========================================== ######### FUNCTION TO MAKE LINES ###########
+################## INPUT ################### def makeLine(start, end, radiusX, radiusY, name, collection,
+# standard measurement is meters mat):
+radius = 3
+height = 3 startLocation = start
+pointNumber = 610 endLocation = end
+jointDiam = 0.015 C = bpy.context
+jointLength = jointDiam*4 line = bpy.data.meshes.new(name)
+poleRad=0.01 bm = bmesh.new()
+vertNum = 21 v1 = bm.verts.new( startLocation )
+horizNum =34 v2 = bm.verts.new( endLocation )
+leafGen=0 e = bm.edges.new([v1,v2])
+topPoint = [0.0, 0.0, height]
+# top line or flat dictates whether the top poles are a flat piece or bm.to_mesh(line)
+as a bordered ring
+topLineOrFlat = 0 o = bpy.data.objects.new( name, line )
+armReduction = jointLength/3 bpy.data.collections[collection].objects.link(o)
+# ==========================================
+pp=pprint.pprint bpy.context.view_layer.objects.active = o
+#=======JOIN============== o.select_set(True)
+context = bpy.context o.modifiers.new(“Skin”, “SKIN”)
+scene = context.scene o.modifiers.new(“Bevel”, “BEVEL”)
+def join(names): setMat(mat)
+obs = list(filter(None, (scene.objects.get(n) for n in names))) bpy.context.object.modifiers[“Bevel”].width = radiusX/1.5
+obs[0].select_set(True) bpy.context.object.modifiers[“Bevel”].segments = 3
+bpy.ops.object.join(
+{“active_object” : obs[0], for v in o.data.skin_vertices[0].data:
+“object” : obs[0], v.radius = radiusX, radiusY
+“selected_objects” : obs,
+“selected_editable_objects” : obs #def sphereAtJoint(location, name, collection, mat):
+}) # bpy.ops.mesh.primitive_uv_sphere_add(radius=joint-
+#=========== function to change material========== Diam,location=location,scale=(1.2, 1.2, 1.2))
+def setMat(matName): # o=
+mat = bpy.data.materials.get(matName) # bpy.data.objects.name=name
+for o in bpy.context.selected_objects: # bpy.data.collections[collection].objects.link(o)
+if o.data.materials: # setMat(mat)
+o.data.materials[0] = mat #
+else: def sphereAtJoint(location, name, collection, mat, scale):
+o.data.materials.append(mat)
+bpy.ops.mesh.primitive_uv_sphere_add(
+# deselect object function segments=32,
+def deselect(): ring_count=16,
+for obj in bpy.data.objects: radius=jointDiam*scale,
+obj.select_set(False) location=location)
+current_name = bpy.context.selected_objects[0].name
+def distanceFromCenter(coord): sphere = bpy.data.objects[current_name]
+x=coord[0] sphere.name = name
+y=coord[1] setMat(mat)
+z=coord[2] sphere.data.name = name
+bpy.data.collections[“joints2”].objects.link(sphere)
+xyDistance=np.sqrt(x**2+y**2) #bpy.data.collections[collection].objects.link(sphere)
+return xyDistance return
+Figure 35-42: Python based phyllotactic dome algorithm. Author’s Own 2022.
+60

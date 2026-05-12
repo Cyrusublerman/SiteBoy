@@ -1,0 +1,16 @@
+asonic
+The tiles are needed to be mounted in a fashion which removes the
+need for gravity to hold the tile to the surface it is mounted on. The
+tile must also be firm against the wall to allow for the transference of
+sound-based energy into the wall. Also, to allow for ease of cleaning
+and maintenance of the tile, the mounting mechanism must be
+simple to detach and reattach.
+Two designs were created to address these requirements. First was
+the formation in which a loop is connected to a wall mounted hook
+(see left). Additional padding pushes against the surface and creates
+tension on the hook maximising stability.
+The second design was that of push tabs that the outer plastic layer
+snaps onto. This uses the natural elasticity of the structure to provide
+omnidirectional support.
+Wave-Tile wall mounting mechanism, Lezhou Shen
+S3866647 71

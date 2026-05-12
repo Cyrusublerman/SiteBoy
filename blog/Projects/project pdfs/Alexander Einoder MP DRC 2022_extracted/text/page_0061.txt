@@ -1,0 +1,61 @@
+Python Script: Main Generator
+# == CARTESIAN TO SPHERICAL and back v+=1
+def asCartesian(rthetaphi): while h<=horizNum:
+#takes list rthetaphi (single coord) if (point+h)%(horizNum)==0:
+r = rthetaphi[0] horizSet[h].append(vector)
+theta = rthetaphi[1]* np.pi/180 # to radian h+=1
+phi = rthetaphi[2]* np.pi/180 point+=1
+x = r * np.sin( theta ) * np.cos( phi ) #=========== joint finder ===============#
+y = r * np.sin( theta ) * np.sin( phi ) h=0
+z = r * np.cos( theta ) h2=0
+return [x,y,z] v=0
+def asSpherical(xyz): v2=0
+#takes list xyz (single coord) donePC=0
+x = xyz[0] while v<len(vertSet):
+y = xyz[1] while v2<(len(vertSet[v])):
+z = xyz[2] while h<len(horizSet):
+r = np.sqrt(x*x + y*y + z*z) while h2<(len(horizSet[h])):
+theta = np.arccos(z/r)*180/ np.pi #to degrees if horizSet[h][h2] == [0.0, 0.0, height] == vertSet[v]
+phi = np.arctan2(y,x)*180/ np.pi [v2]:
+return [r,theta,phi] joints.append([[0.0, 0.0, height],[0.0, 0.0,
+#+++++++++++ BEGINNING ++++++++++++++++ height],[0.0, 0.0, height]])
+points = []
+vertSet = [] elif horizSet[h][h2] == vertSet[v][v2]:
+horizSet = [] jointOrigin=horizSet[h][h2]
+joints = []
+polesVert=[] if (h2+1)<len(horizSet[h]):
+polesHoriz=[] horizForward=horizSet[h][h2+1]
+polesV=[] else:
+polesH=[] horizForward=[horizSet[h][h2][0], horizSet[h]
+bottomJoints=[] [h2][1], 0]
+holeLeaves=[] horizBackward=horizSet[h][h2-1]
+#======== make vert and horiz set size === #
+v=0 if (v2+1)<len(vertSet[v]):
+while v<=vertNum: vertForward=vertSet[v][v2+1]
+vertSet.append([[0.0, 0.0, height]]) else:
+v+=1 vertForward=[vertSet[v][v2][0], vertSet[v][v2]
+[1], 0]
+h=0 vertBackward=vertSet[v][v2-1]
+while h<=horizNum:
+horizSet.append([[0.0, 0.0, height]]) if vertForward==horizForward:
+h+=1 bottomJoints.append([jointOrigin, horizBack-
+#=========== set phyllo base ==========# ward, vertBackward])
+point = 1
+cspread = radius/(math.sqrt(pointNumber)) polesH.append([horizBackward, jointOrigin])
+angle = math.pi*(3-math.sqrt(5)) #golden angle polesV.append([vertBackward, jointOrigin])
+#========== make phyllo points ========# jointVector=[jointOrigin,horizForward,horizBack-
+while point<=pointNumber: ward,vertForward,vertBackward]
+theta = point*angle joints.append(jointVector)
+r = cspread * np.sqrt(point) h2+=1
+x = r*np.cos(theta)
+y = r*np.sin(theta) h+=1
+z= (point/pointNumber*(-height))+height h2=1
+vector = [x, y, z] v2+=1
+points.append(vector) h=1
+#find denominators for set v+=1
+v=1 v2=1
+h=1
+while v<=vertNum:
+if (point+v)%(vertNum)==0:
+vertSet[v].append(vector)
+61

@@ -1,0 +1,15 @@
+{
+  "id": "music-audio",
+  "title": "MUSIC AND AUDIO",
+  "sections": [
+    { "title": "ABSTRACT",                        "src": "projects/music-audio/md/abstract.md",                        "open": true },
+    { "title": "EQUAL TEMPERAMENT",               "src": "projects/music-audio/md/equal-temperament.md"                            },
+    { "title": "SOURCE PLACEMENT TEMPLATES",      "src": "projects/music-audio/md/source-placement-templates.md"                   },
+    { "title": "WAVE INTERFERENCE LAW",           "src": "projects/music-audio/md/wave-interference-law.md"                        },
+    { "title": "WEB AUDIO SYNTHESIS",             "src": "projects/music-audio/md/web-audio-synthesis.md"                         },
+    { "title": "CYMATICS", "type": "embed",       "src": "/#tools/cymatics", "height": 720                                        },
+    { "title": "WAVE INTERFERENCE", "type": "embed", "src": "/#tools/wave-interference", "height": 720                            },
+    { "title": "WAVE EQUATION SYNTH", "type": "embed", "src": "/#tools/wave-equation-synth", "height": 720                        },
+    { "title": "REFERENCES",                      "src": "projects/music-audio/md/references.md"                                  }
+  ]
+}

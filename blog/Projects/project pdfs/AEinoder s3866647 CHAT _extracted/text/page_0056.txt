@@ -1,0 +1,18 @@
+Recording function (BEGINNING)
+The recording function (called later by will be created to be filled.
+reading the switch as being ON) begins by
+The recording will then continue while the
+calibrating the audio input to the sample
+toggle switch (GPIO.input(10)) is still in
+rate and chanel number that is ideal for
+the ON (==True) position.
+the speech to text processing. The input
+device is set to device 2 which is the usb
+microphone, and the recording filename is
+set to that which was created earlier.
+The pyaudio system is started so that these
+calibrations can be implemented and the
+recording begun. A recording stream can
+now be started with the calibrations and
+an array of recorded audio values (frames)
+56

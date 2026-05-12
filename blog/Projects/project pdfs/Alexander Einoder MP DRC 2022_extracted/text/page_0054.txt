@@ -1,0 +1,13 @@
+Leaves
+While creating the joints it is possible to create attachments for outer components I have called “leaves”
+for obvious reasons.
+These leaves are in essence the main aesthetic feature of the dome and will exaggerate the geometry’s
+plant-like shape (see above).
+The angle of protrusion is created when the polar coordinates of the joint arm are created and can be
+linked to other variables of the algorithm.
+For instance, if wanted, the leaves can begin almost flat with the dome and become more horizontal as
+they are generated further down. They may also be twisted and transformed in other ways generatively.
+Alteration of the shape, size and relations of these leaves can result in a variety of different structural
+aesthetics.
+This manipulation can be of great use if the generation is to mimic a specific plant or form.
+54

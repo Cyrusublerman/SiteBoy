@@ -999,6 +999,25 @@ export class CollapsibleSection extends BaseComponent {
             if (contentElement instanceof HTMLElement) {
                 this.content.appendChild(contentElement);
                 this._executeScripts(contentElement);
+                // Trigger MathJax on newly inserted content if available, then apply sizing
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([contentElement]).then(() => {
+                        const F = window.Config?.F || 14;
+                        contentElement.querySelectorAll('mjx-container').forEach(el => {
+                            const isDisplay = el.getAttribute('display') === 'true';
+                            if (isDisplay) {
+                                el.style.fontSize = `${Math.round(F * 1.2)}px`;
+                                el.style.margin = `${F}px 0`;
+                                el.style.display = 'block';
+                                el.style.textAlign = 'center';
+                            } else {
+                                el.style.fontSize = `${Math.round(F * 1.05)}px`;
+                                el.style.margin = '0 2px';
+                                el.style.verticalAlign = 'middle';
+                            }
+                        });
+                    }).catch(() => {});
+                }
             } else {
                 throw new Error('contentLoader did not return a valid HTML element.');
             }

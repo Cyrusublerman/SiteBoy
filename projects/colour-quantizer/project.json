@@ -1,0 +1,15 @@
+{
+  "id": "colour-quantizer",
+  "title": "COLOUR QUANTIZER",
+  "sections": [
+    { "title": "ABSTRACT",                   "src": "projects/colour-quantizer/md/abstract.md",                   "open": true },
+    { "title": "COLOUR SCIENCE BACKGROUND",  "src": "projects/colour-quantizer/md/colour-science-background.md"  },
+    { "title": "PERCEPTUAL DISTANCE",        "src": "projects/colour-quantizer/md/perceptual-distance.md"        },
+    { "title": "PIPELINE",                   "src": "projects/colour-quantizer/md/pipeline.md"                   },
+    { "title": "PALETTE MODEL",              "src": "projects/colour-quantizer/md/palette-model.md"              },
+    { "title": "DITHERING THEORY",           "src": "projects/colour-quantizer/md/dithering-theory.md"           },
+    { "title": "LIVE TOOL",  "type": "embed", "src": "/#tools/colour-quantizer", "height": 720                   },
+    { "title": "IMPLEMENTATION",             "src": "projects/colour-quantizer/md/implementation.md"             },
+    { "title": "REFERENCES",                 "src": "projects/colour-quantizer/md/references.md"                 }
+  ]
+}

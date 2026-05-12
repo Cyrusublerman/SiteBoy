@@ -1,0 +1,33 @@
+TTHHEE DDEESSIIGGNN
+To create a functional and heavily To be affordable and easy to print, the
+anthropomorphic speaker, several design needed to fit within an 8L cube,
+conditions need to be met for it to with no dimension greater than 20cm.
+be considered a success. Firstly, it It also needs to have the smallest
+must resemble a humanoid creature, weight possible without compromising
+secondly it needs to have uncompro- any of the previously stated require-
+mised audio quality and projection, ments.
+thirdly it needs to be effortlessly
+interacted with. To achieve this, the creature was to be
+mostly hollow, with walls of approxi-
+An additional condition needs to be mately 3mm thick. The more spherical
+met considering I - the creator, main body seemed particularly useful as
+need to make a prototype, This it was the most efficient use of space.
+condition is that it is plausible to This shape also allows for one other
+make using resources and finances function that - especially for prototyp-
+I am easily able to access. These ing and development - is needed: The
+resources include a 3D printing ability to open the device easily and
+facility, approximately 200 dollars, access the inside. By having a large
+some paint I found in a parking lot, central body, a subsection of it can be
+an audio driver able to be bought removed to show all extra components
+online and shipped within a week and inside such as the circuitry and the
+the circuitry of a Google Home Mini audio driver.
+I dissected out of curiosity.
+The last factor in the initial design
+The basics of the design were was the size of the audio driver and
+almost intuitive, instantaneously circuitry that will be housed within. A
+coming to me as I decided on the driver that I have been needing to test
+theme. The creature speaker was to out was the Dayton Audio ps95 which
+bellow the sound out of its mouth is a 3-1/2" mid range driver, perfect
+and it was to either stand on its for this project. The circuitry was, as
+feet or crouch. stated previously, that of a Google
+home Mini.

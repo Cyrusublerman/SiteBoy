@@ -1,0 +1,13 @@
+{
+  "id": "pixel-tiler",
+  "title": "PIXEL TILER",
+  "sections": [
+    { "title": "ABSTRACT",                   "src": "projects/pixel-tiler/md/abstract.md",                   "open": true },
+    { "title": "PIXEL CORRESPONDENCE MODEL", "src": "projects/pixel-tiler/md/pixel-correspondence-model.md"               },
+    { "title": "COMBINATORICS",              "src": "projects/pixel-tiler/md/combinatorics.md"                            },
+    { "title": "FRAME-INDEXED PLAYBACK",     "src": "projects/pixel-tiler/md/frame-indexed-playback.md"                   },
+    { "title": "LIVE TOOL", "type": "embed", "src": "/#tools/pixel-tiler", "height": 720                                  },
+    { "title": "IMPLEMENTATION",             "src": "projects/pixel-tiler/md/implementation.md"                           },
+    { "title": "REFERENCES",                 "src": "projects/pixel-tiler/md/references.md"                               }
+  ]
+}

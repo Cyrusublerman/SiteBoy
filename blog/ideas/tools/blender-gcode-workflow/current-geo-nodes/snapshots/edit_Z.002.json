@@ -1,0 +1,101 @@
+{
+  "name": "edit_Z.002",
+  "iface": [
+    {
+      "name": "Vector",
+      "io": "OUTPUT",
+      "type": "NodeSocketVector",
+      "default": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "Z",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Separate XYZ",
+      "fs": "Y",
+      "tn": "Combine XYZ",
+      "ts": "Y"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "X",
+      "tn": "Combine XYZ",
+      "ts": "X"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Group Output",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Z",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

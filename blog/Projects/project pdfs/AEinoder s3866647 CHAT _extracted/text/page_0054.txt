@@ -1,0 +1,23 @@
+Code Setup
+The code begins with the importing of The communication is then configured and
+needed libraries and functions (see above). the specific library of communications to
+To simply access the GPIO pins on the the printer is imported.
+Raspberry Pi so that the toggle switch can
+The audio file is then configured by firstly
+be used, the RPi.GPIO library is called. The
+importing the pyaudio and wave libraries
+subsection of the pocketsphinx speech to
+which then allow for an audio file to be
+text library is imported. Time is imported
+created in a specific folder thanks to the
+so that the time and date can be added
+help of os. This file is then opened and able
+to the printout. The picamera library is
+to be edited within the Python code.
+imported and then os which allows for easy
+Now a variable is set to be the time and
+file management. The printer is then setup
+date.
+by importing serial which allows for serial-
+port communication to the printer.
+54

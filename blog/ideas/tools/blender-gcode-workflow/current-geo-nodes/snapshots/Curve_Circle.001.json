@@ -1,0 +1,135 @@
+{
+  "name": "Curve Circle.001",
+  "iface": [
+    {
+      "name": "Position",
+      "io": "OUTPUT",
+      "type": "NodeSocketVector",
+      "default": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "Radius",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.40000003576278687
+    },
+    {
+      "name": "Turns",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Spline Parameter",
+      "t": "SPLINE_PARAMETER",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Sample Curve",
+      "t": "SAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve Circle.003",
+      "t": "CURVE_PRIMITIVE_CIRCLE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Curve Circle.003",
+      "fs": "Curve",
+      "tn": "Sample Curve",
+      "ts": "Curves"
+    },
+    {
+      "fn": "Spline Parameter",
+      "fs": "Factor",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Sample Curve",
+      "ts": "Factor"
+    },
+    {
+      "fn": "Sample Curve",
+      "fs": "Position",
+      "tn": "Group Output",
+      "ts": "Position"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Radius",
+      "tn": "Curve Circle.003",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Turns",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

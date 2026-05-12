@@ -1,0 +1,14 @@
+of the design. To minimise cost,
+the central body has thin walls
+and detaches from the limbs and
+hair and is able to be split in
+two. This splitting of components
+greatly reduces the support
+structures needed during the
+printing process and thus reduces
+the cost dramatically.
+The overall size of this design
+was reduced to a fraction of the
+previous with greater efficiency of
+the structures and a more unified
+form.

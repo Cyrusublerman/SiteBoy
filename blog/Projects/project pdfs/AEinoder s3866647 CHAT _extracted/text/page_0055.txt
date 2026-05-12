@@ -1,0 +1,15 @@
+Camera Function
+A function is created for the camera
+module. This is so that whenever needed,
+this section of the code can be called and
+an image will be taken at the needed
+resolution. It uses the previously imported
+picamera library and accesses the camera
+through the camera module port on the
+pi. The camera's resolution is 1024 by 768
+pixels however the printout will be only
+384 pixels wide so when the image is taken
+it will be resized to 320 by 240 pixels. The
+image is simply named selfie.bmp and will
+be called later in the code.
+55

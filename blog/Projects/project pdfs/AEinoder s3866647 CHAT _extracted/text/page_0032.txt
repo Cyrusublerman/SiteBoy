@@ -1,0 +1,11 @@
+STORYBOARD
+The CHAT device is planned to be used as follows. The user enters the room and
+sees the device. They then either see a printed message or just the device itself.
+If there is a printed message they will then read and flick the switch to begin the
+message recording process. If there is no message then they will just flick the switch to
+begin.
+After switching the device on, the user will pose for their photo and the recording will
+begin. The user will speak until they have finished their mesage, moving freely and
+naturally throughout. They will then flick the switch off and the device will print their
+message and send it to the recipient.
+32

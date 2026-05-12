@@ -1,0 +1,109 @@
+{
+  "name": "import_curve.001",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometry",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "vertical subdivisions",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 29
+    },
+    {
+      "name": "Object",
+      "io": "INPUT",
+      "type": "NodeSocketObject",
+      "default": "Profile Curve.001"
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Object Info",
+      "t": "OBJECT_INFO",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Resample Curve",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Curve to Mesh",
+      "fs": "Mesh",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Resample Curve",
+      "fs": "Curve",
+      "tn": "Curve to Mesh",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Object Info",
+      "fs": "Geometry",
+      "tn": "Resample Curve",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "vertical subdivisions",
+      "tn": "Resample Curve",
+      "ts": "Count"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Object",
+      "tn": "Object Info",
+      "ts": "Object"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

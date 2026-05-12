@@ -1,0 +1,1642 @@
+--- Page 1 ---
+D e s i g n R e s e a r c h C o m pe n d i u m b y A l e x a n d e r E i n o d e r
+s
+3
+8
+6
+6
+6
+4
+7
+MDIT
+2021
+
+--- Page 2 ---
+asonic
+The Asonic team comprised Lezhou Shen, Carlo Holden and myself Ali Einoder.
+We worked on this project as part of a Master of Design Innovation Technology
+studio under the guidance of Olivier Cotsaftis.
+2 Ali Einoder
+
+--- Page 3 ---
+asonic
+Contents
+Abstract 5
+Initial Research 7
+Preliminary Ideas 22
+More Research 25
+Wave-Tile 40
+Parametric Design 52
+Tile Variations 61
+Materials 62
+Mounting 70
+Analysis of Sound Diffusion 72
+Summary of Outcomes 76
+Summary of Contribution 82
+S3866647 3
+
+--- Page 4 ---
+asonic
+4 Ali Einoder
+
+--- Page 5 ---
+asonic
+Abstract
+Hospitals exist to provide care to vulnerable people and increase the health
+and wellbeing of society, but does the environment within facilitate this?
+Often visually unappealing and overtly synthetic, the sterile walls and lack
+of beneficial stimuli, coupled with high levels of extraneous noise may act to
+exacerbate stress and decrease mental wellbeing.
+Modifying the hospital medical outcomes appearance of a moving
+environment, increasing and recovery times of sea, the waves diffuse
+the natural aesthetics, patients (Takeuchi, Enzo and absorb extraneous
+and reducing the & Minamitani 2001). noise whilst connecting
+ambient noise level has viewers to the natural
+Through researching
+the potential improve world they might
+these concepts, the
+the wellbeing of those otherwise be alienated
+Asonic team has
+within (Zhou et al. from. The biophilic
+developed the Wave-
+2020). The reduction imagery and the new
+Tile. This tile (or series
+of aggravating noise found clarity of sound
+of tiles) is a synergism
+alone has been shown will elevate the hospital
+of biophilic and fractal
+to significantly improve environment to one that
+imagery and effect noise
+mental clarity, mood is more conducive to the
+mediation technologies.
+and alertness of hospital institution’s purpose and
+Formed in the
+staff as well as improve goals.
+S3866647 5
+
+--- Page 6 ---
+asonic
+How do
+we
+use
+the
+environment
+to
+passively
+maximise
+mental
+wellbeing in a
+hospital
+setting?
+Illustration by Ali Einoder
+6 Ali Einoder
+
+--- Page 7 ---
+asonic
+I N I T I A L
+R E S E A R C H
+The hospital environment is one supportive work environment
+which is designed with specific (Yang, Qiu & He 2021).
+purposes and in accordance with
+budgetary guidelines. Whether it be through altering
+the physical background, or
+Typically the design is focused through subconscious stimuli
+on the health and wellbeing that guide the mental state, to
+of the patients and consumers providing an employee a chance
+(Connellan et al. 2013). While to detach and temporarily
+the physical spaces may support disassociate to refresh their mind,
+patients through their health the changes we can make to the
+care trajectories, they may hospital environment can be of
+however be detrimental to the great benefit. Human Centric
+health and wellbeing of staff (Van Lighting, acoustic treatment,
+Bogaert et al. 2017). and the introduction of simple
+biophilic design elements could
+As the world modernises and
+be considered reasonable to
+knowledge grows, it has become
+implement and cater to a variety
+apparent there is a requirement
+of budgets.
+to consider the mental wellbeing
+of the hospital staff. Through These concepts have the
+exploration of the physiological potential to be worked into a
+basis of mental wellbeing and larger and synergistic support
+the psychological and physical network for the modern hospital
+effects of the environment, employee, assisting to reduce
+it should be possible to find their stress, increase their energy
+innovative ways to promote levels and help maximise their
+an emotionally and mentally emotional and psychological
+wellbeing.
+S3866647 7
+
+--- Page 8 ---
+asonic
+The state of our mind is the state of our Mental wellbeing has risen to the
+being. When our mental wellbeing is forefront of public awareness and
+diminished, our physical and long-term there is no shortage of challenges to
+health quickly follows. These affronts overcome in the modern workplace
+to our mental health and wellbeing can (Gritzka et al .2020; Connellan et al.
+be obvious and conscious or subtle and 2013).
+subconscious, as can the factors that
+lead to the changes (Cooper, Boyko &
+Codinhoto 2009; Yerbury & Lukey 2021).
+Work related stress is one of the largest causes of illness world-wide.
+8 Ali Einoder
+
+--- Page 9 ---
+asonic
+Illustrations by Ali Einoder
+Stress can be broken 2017; Çalışkan, Müller & release of chemicals such
+into two main groups: Albrecht 2020; Wu et al. as cortisol in our bodies.
+psychological stress and 2020). This can lead certain
+physiological stress. Both functions and balances
+In modern life however,
+systems are intertwined to become unstable
+the stressors that occur
+and work to protect and and damaging (McEwen
+are often not that which
+react to threats within the 2016).
+our bodies were adapted
+environment.
+to react to, and thus The constant challenging
+By beginning an array of sometimes reactions are of these systems can
+physiological procedures, inappropriate (Owens et lead to long term health
+the stress response al. 2016). issues such as anxiety
+can cause changes in and depression and thus
+One of the main issues
+our bodies that allow burden society greatly
+is the common array
+us to adapt and survive (Czéh et al. 2008).
+of long-term stressors
+stressful situations
+which cause consistent
+(Van Bogaert et al.
+S3866647 9
+
+--- Page 10 ---
+asonic
+Interoception & Empathy
+The body monitors and responds This system also facilitates the
+to its internal state (both physical transference of physical experience
+and emotional) by using the to emotional, converting the spaces
+interoceptive system (Domschke and actions of or on a person to
+et al. 2010). This system facilitates a mood, feeling or acute emotion
+the body’s fusion with the mind, (Czéh et al. 2008). This - though
+allowing the cognitive state to practical for many occasions -
+affect the physical and vis versa can be the means in which our
+(Owens et al. 2016). This linking environment affects our mood. The
+of mind and body helps humans lighting, noise levels, smell and
+predict and prepare for future even taste of the environment can
+physical events, allowing for a have a drastic impact on our mental
+honing of physiological responses. and emotional state.
+This mechanism is what leads us to
+have physical responses to movies,
+tv shows and stories (Schleip &
+Jäger 2012).
+Light Sound Nature
+Environment and Mental Wellbeing
+The environment that surrounds a person shapes their emotional and physical
+state in many ways. From the emotional significance and stimulation of objects
+and features to the subtleties of shape and form, the composition of our
+surroundings change the way we think and feel (Gritzka et al. 2020).
+Many different key attributes have been shown to have a direct effect on certain
+aspects of mental wellbeing. Particularly that of stress and cognitive load
+(Cooper, Boyko & Codinhoto 2009).
+Illustrations by Ali Einoder
+10 Ali Einoder
+
+--- Page 11 ---
+asonic
+Feelings: Sensations perceived as emanating from
+inside the body
+Emotion: A neurological response that changes activity
+Mood: A persisting state of being tied with long
+presentations of specific feelings and emotions
+Interoception: The sense of the body’s internal state
+Homeostasis: A physiological tendency towards the
+maintenance of an ideal stable state
+S3866647 11
+
+--- Page 12 ---
+asonic
+LIGHT
+Humans developed to live in an
+environment in which darkness
+and light alternate in a 24hr cycle
+(Connellan et al. 2013; Gomes &
+Preto 2015).
+The brain (specifically the
+this system. The changes in light
+suprachiasmatic nuclei) uses
+stimulation over the day, both in
+this cycle to regulate the body’s
+amplitude and duration, lead to
+internal rhythms that dictate
+alterations in the body’s regulatory
+aspects such as hormone release
+rhythms (Bertani et al. 2021).
+and blood flow (Bauer et al. 2018).
+Large changes in the patterns and
+Disruption of this cycle through the
+trends of light exposure have been
+alteration of light quality, duration
+linked to increases in mental strain
+and timing can cause certain
+and the emergence of disorders
+systems of the brain and body to
+such as seasonal affective disorder
+malfunction, leading to an array of
+(SAD) which is associated with the
+psychological and physiological
+reduction of natural light following
+disorders (Takeuchi, Enzo &
+reduced daylight hours due to
+Minamitani 2001).
+seasonal changes (Li et al. 2020).
+The most prominent theme
+Certain studies have also shown
+in the papers analysed was
+that short term changes in light
+the relationship between light
+exposure have lead to reduced pain
+mediated circadian rhythm and
+and stress (Cupkova et al. 2019).
+mental health.
+There is also an association
+The circadian rhythm’s regulation
+between light exposure and mental
+of melatonin secretion influences
+acuity and awareness (Li et al. 2020;
+a wide variety of hormonal and
+Blume, Garbazza & Spitschan 2019;
+biochemical system rhythms.
+Cain et al. 2020).
+The exposure of light to certain
+photoreceptors in the eye as
+well as to the skin can influence
+Illustration by Ali Einoder
+12 Ali Einoder
+
+--- Page 13 ---
+asonic
+A lack of natural light has been linked to:
+Decreased Immune Response
+Decreased Self Control
+Decreased Awareness
+Poor Sleep Quality
+Increase in Stress
+Eating Disorders
+Negative Mood
+Depression
+(Deguchi & Sato 1992)
+S3866647 13
+O e i s
+r
+n x
+e
+l p e
+l
+y
+e
+o n 1 s o
+a
+5 u u
+s
+m r g
+e
+e h
+o
+i n t
+f
+o t u o
+e
+t n
+n
+e a t
+d
+r s t i
+o
+u g o
+r
+r g
+p
+f a e
+h
+l r
+i
+i l t
+n
+g h
+s
+h e t
+
+--- Page 14 ---
+asonic
+Sound
+Long term noise exposure has been linked to mental health
+issues such as anxiety and depression (Zhou et al. 2020).
+Studies have shown a significant correlation between ambient
+noise levels and heightened stress (Liu et al. 2007).
+Access to quiet spaces reduces annoyance to noise by
+10-20% (Zoontjens & Cockings 2014).
+Natural environments have been shown to reduce the
+stress response to ambient noise (Thoma, Mewes &
+Nater 2018).
+Ambient Noise
+High levels of ambient WHO’s guidelines suggest This strain on the cognitive
+noise can cause a that the ambient sound load can decrease the
+decrease in productivity of hospitals should not ability to focus, remember
+and performance. This exceed 40dB indoors in the and process information
+is especially true when day and 30dB in the night. (Hahad et al. 2019). These
+the tasks involve higher Extraneous noise has been effects can last even
+reliance and load on demonstrated to have a after the noise has been
+working memory. These significant effect on both reduced.
+tasks are common within the staff and the patients
+health care practice (Van (See guidelines right) (WHO
+Kamp & Davies 2008). 1999).
+14 Ali Einoder
+
+--- Page 15 ---
+asonic
+(WHO 1999)
+S3866647 15
+
+--- Page 16 ---
+asonic
+NOISE & STRESS
+Illustration by Ali Einoder
+16 Ali Einoder
+
+--- Page 17 ---
+asonic
+Along with disruption of Hospital environments often
+concentration and annoyance lack quite spaces, especially for
+to the listener, ongoing noise patients. The inability to escape
+may also increase the level of the cacophony, even at night, be
+cortisol in the body. This promotes of great detriment to the mental
+the development of illnesses wellbeing of patients and staff
+associated with chronic stress (de Lima Andrade et al. 2021). This
+such as anxiety and heart disease increasing anxiety, stress and
+(Clarke 2005; Zhou et al. 2020). agitation builds, exacerbating the
+Additionally, excess ambient incidents of aggravation.
+sound has also been shown to
+alter the dopamine levels within
+the prefrontal cortex, potentially
+decreasing higher brain function,
+learning and memory. Potentially,
+this detriment to working
+memory may be responsible
+for the correlation between
+ambient noise and worse medical
+outcomes (Jensen et al. 2019).
+Listening to the sounds of nature has been shown
+to quicken the physiological recovery from acute
+stress (Alvarsson, Wiens & Nilsson 2010).
+S3866647 17
+
+--- Page 18 ---
+asonic
+Illustration by Ali Einoder
+18 Ali Einoder
+
+--- Page 19 ---
+asonic
+NATURE
+Two main theories of stress
+mediation - attention restoration
+Exposure to nature (trees, theory (ART) and stress restoration
+water, wind) has been shown theory (SRT) indicate a significant
+to decrease stress and connection between nature and
+replenish cognitive energy mental wellbeing (Scopelliti, Carrus
+(Hunter et al. 2015). & Bonaiuto 2019).
+Access to a garden area has With ART, nature provides a means
+been linked to a reduction in for the natural stimuli to provide
+workplace stress and anxiety a mental interest and thus enable
+(Connellan et al. 2013). restoration through directed focus
+(Wells & Evans 2003).
+Access to shared gardens are
+also beneficial for community With SRT, a person subconsciously
+connection which in turn connects with their natural
+improves mental wellbeing environment and is restored
+(Totaforti 2018). through a balancing of their
+hedonic wellbeing (Kaplan 1995).
+S3866647 19
+
+--- Page 20 ---
+asonic
+Illustration by Ali Einoder
+20 Ali Einoder
+
+--- Page 21 ---
+asonic
+Inclusion of plants, art resembling nature
+and looking at nature through windows
+has been shown to increase productivity,
+mental wellbeing, attention, concentration
+and perceived energy levels of workers
+within an environment (Gritzka et al. 2020).
+S3866647 21
+
+--- Page 22 ---
+asonic
+Preliminary Ideas
+Illustration by Ali Einoder
+How do
+Natural lighting?
+we use the
+environment
+to passively Biophilic design elements?
+maximise
+mental
+Acoustic treatment?
+wellbeing
+in a hospital
+setting? Olfactory stimulation?
+22 Ali Einoder
+
+--- Page 23 ---
+asonic
+S3866647 23
+
+--- Page 24 ---
+asonic
+24 Ali Einoder
+R
+M
+E S
+OE
+A
+R
+R
+E
+C H
+Illustration by Ali Einoder
+
+--- Page 25 ---
+asonic
+S3866647 25
+R
+M
+E S
+OE
+A
+R
+R
+E
+C H
+The sonic environment directly affects the
+Many mechanisms of acoustic treatment have been
+mental wellbeing of those within it. With the
+established to reduce unwanted noise. Ones of focus
+ambient noise levels, sound frequencies and sound
+are absorption, diffusion, masking and vibration
+sources all playing a part in how a person thinks,
+control (Przyborowski, Loboda & Bialik 2018).
+feels and behaves (Alvarsson, Wiens & Nilsson
+These functions can be harnessed by the careful
+2010). In aa high stress environment such as a
+design of the shape of a structure and utilisation
+hospital, the ambient noise levels can catalyse and
+of the physical qualities of certain materials.
+intensify the effect of other stressors and may
+cause long term, damaging effects on the staff, The following research aims to illuminate
+patients and their family members (Zhou et al. mechanisms of reducing the impact of ambient
+2020). noise by utilising contemporary formations of
+established sound treatment practices. These
+Extraneous noise within a hospital originates from
+formations are to both reduce the ambient noise
+many sources such as people, equipment, and air-
+and utilise natural shapes by deconstructing nature
+conditioning (Darbyshire et al. 2019). Removing
+into its mathematical elements. This is then re-
+these sound sources would be a complex and
+imagined within a hospital context to further
+difficult endeavour, thus it seems more logical to
+reduce stress and increase wellbeing.
+instead prevent the spread and compounding of
+unwanted noise.
+
+--- Page 26 ---
+asonic
+Illustration by Ali Einoder
+26 Ali Einoder
+
+--- Page 27 ---
+asonic
+Effects of extraneous noise on autonomic activity, Ali Einoder
+High noise environments are detrimental to working
+memory especially when paired with high perceptual,
+linguistic, and cognitive demands.
+Chronic noise exposure, even at moderate intensity,
+can hamper psychomotor, intellectual, attention, and
+memory functions (Thimmegowda et al. 2015).
+S3866647 27
+
+--- Page 28 ---
+asonic
+“The indoor daytime L values in
+eq
+hospitals ranged from 37 dBA to
+88.6 dBA , while the night-time lev-
+els varied from 38.7 dBA to 68.8
+dBA” (Filus et al. 2015).
+28 Ali Einoder
+
+--- Page 29 ---
+asonic
+Graphic by Ali Einoder
+In one study, 84% of anesthetists reported that the
+noise levels in their operating rooms negatively
+affected their work (Katz 2014).
+Patient safety and comfort can be adversely affected
+by noise pollution, this can alter the required dosage
+of anaesthetic agent.
+A correlation has been identified between increased
+sound levels during surgery and surgical-site
+infections (Mcleod et al. 2021).
+S3866647 29
+
+--- Page 30 ---
+asonic
+Operating Room Suite
+Staff-related activities and conversations are a major
+component of operating room noise and can produce
+noise levels as high as 78 dBA .
+Equipment-related noises as great as 120 dBA are
+caused by movement of equipment, clanging, and
+dropping of metal instruments, use of electric or air-
+powered surgical instruments, hammers, suction
+apparatus, anaesthetic monitors, and alarms (Mcleod
+et al. 2021).
+Forced air warming units alone add as much as 84 dBA
+to the background noise.
+Music can be up to 87dBA.
+In one study conducted during cardiac surgery, there
+was an average of 359 ± 158 alarms (1.2 min−1), 80% of
+which had no therapeutic significance (Katz 2014).
+30 Ali Einoder
+
+--- Page 31 ---
+asonic
+Illustration by Ali Einoder
+ICU Delivery Room
+Intensive Care Units are Delivery rooms often exceed
+commonly some of the noisiest 90dBA due to the crying of both
+areas within a hospital with mothers and babies, dropping
+the sound pressure levels of instruments, and slamming of
+of neonatal ICUs averaging cupboard doors.
+between 48 and 61dBA over 95%
+Higher exposure to noise (both
+of the time (Jung et al. 2020).
+in duration and amplitude) has
+A common source of noise been linked to lower clinical
+are the patient alarms which performance (Jensen et al.
+have a frequency range that is 2019).
+equivalent to a human scream
+or a baby’s cry (2.5-3.15kHz)
+(Darbyshire et al. 2019).
+S3866647 31
+
+--- Page 32 ---
+asonic
+Biophilia, Patterns and
+Wellbeing
+The environments which Analysis of the mathematical
+facilitate optimum wellbeing composition of nature has shown
+and mental ability seem to be insight into what forms an ideal
+those which reproduce and environment. Mimicking the
+present the mathematical key components and relations
+and structural properties of natural forms can bring the
+and relations of those which natural elements into otherwise
+encompassed ancestral purely synthetic environments
+humanity. (Salingaros 2012).
+The core aspects of the These mathematical compositions
+environments which facilitated and patterns have a direct
+the development of homo influence on the neurology of the
+sapiens may still be needed for experiencer, potentially though
+ideal cognitive and emotional the modulation of pleasure-
+function, even in today’s hyper- regulating μ-opioid receptors
+synthetic world (Kellert, 2008). (Biederman and Vessel 2006).
+32 Ali Einoder
+
+--- Page 33 ---
+asonic
+Fractals
+Fractal patterns and geometry The prevalence of simple
+are those which contain structures in synthetic
+repeating shapes and patterns environments and the excess
+that reduce in size with each in mental stress may be due to
+iteration. This property of being the antithesis of fractal
+self-similarity is prevalent environments. This non-optimal
+throughout nature as it is the D can exacerbate anxiety and
+outcome of hyper-irrational depressive behaviour.
+mathematical relations that
+Harnessing the use of fractal
+allow for repeating structures to
+imagery and structures within
+result in high integrity structures.
+an environment has been shown
+The fractal arrangement of
+to improve mental acuity and
+structure can also lead to
+reduce stress-related detriment
+maximisation of surface area in a
+to mental wellbeing. This is
+given area (Williams 2017).
+possibly a mechanism to the
+The unique qualities of fractal relationship between natural
+patterns and geometries have environments and mental
+a been shown to have calming, health.
+anxiolytic effects on viewers
+(Salingaros 2012).
+The relationship between the
+fracticality of a pattern or shape
+and the psychological effect
+on the viewer is related to
+the “fractal dimension” of the
+structure (D). Humans respond
+ideally when the D value is
+between 1.3 and 1.5, regardless
+of what the actual shape or
+structure looks like.
+S3866647 33
+
+--- Page 34 ---
+asonic
+Sound Treatment
+Illustration by Ali Einoder
+34 Ali Einoder
+
+--- Page 35 ---
+asonic
+Sound mediation plan for Wave-Tile, Ali Einoder
+Absorption
+A material’s ability to absorb sound is measured with the sound absorbtion
+coefficient. This is the percentage of the sound wave’s energy that is
+transferred to the material. This coefficient is related to the frequencies of the
+sound and the incidence direction of the sound (Dunne, Desai & Sadiku 2017).
+The efficiency of sound absorption is related to a series of factors:
+1. The material’s mass density: The material’s mass density is inversely
+correlated to the preferred frequency of absorption. The higher the mass
+density, the higher the absorption of low frequencies and lower the
+absorption of high frequencies (Abdi et al. 2021).
+2. The thickness of a material: Higher thickness is associated with higher
+absorption of lower frequencies of sound. It has however, low impact on
+the absorption of higher frequencies (Koruk & Genc 2018).
+3. The features of a material’s pores: Smaller pores in higher number will
+yield the greatest sound absorption.
+S3866647 35
+
+--- Page 36 ---
+asonic
+Diffusion
+A key and important characteristic of picture of normal shape). These
+the sound environment of a space is tilings of small square pyramids
+the diffusion of sound. The diffusion break apart the soundwaves as the
+is the way in which the sound sound hits the four presented faces
+reflects off surfaces and disperses of each pyramid. An alternate style
+(‘The Geometry of Sound Diffusion - of diffuser as such as maximum
+Payette’ n.d.). length sequence (MLS) diffuser is
+composed of strips with two different
+Mitigation of ambient noise
+depths. These created grooves trap
+requires that the diffusion of sound
+sound and cause it to reflect multiple
+maximises the reduction of energy.
+times, losing much of its energy. The
+This can be achieved by utilising
+variation in groove width preferences
+complex shaped structures that
+different frequency ranges. A high
+disperse the sound in a variety of
+variety of groove width thus has a
+patterns that cause the sound wave
+higher range of ability regarding
+to lose the unity of their alignment
+soundwave diffusion (Strube 1981).
+and direction. This mechanism
+is optimised in the conventional A third common type of sound
+implementation of sound diffusing diffuser is the previously mentioned
+objects such as Quadratic Residue QRD. This sound diffusing structure
+Diffusers (QRD) which shift the features a curved surface which
+timing/phase of the reflected sound alters the timing and phase
+(Schroeder 1979). alignment of the sounds that hit it.
+With the curved surface preventing
+These sound diffusers can be
+the parallel and reinforced
+constructed into many different
+soundwaves from reflecting in the
+shapes, from many different
+same arrangement that they were
+materials and in many different sizes.
+initially traveling in (Schroeder 1979).
+As the sound hits a diffuser, some
+The size of the diffusing surface in
+of the sound is reflected into the
+the x and y dimensions only effect
+environment. These soundwaves
+the area that the sound is mitigated.
+will reflect at angles and directions
+However, the size of the surface in
+related to the angle that they hit the
+the z dimension (how far it protrudes
+diffuser and the angle of the surface
+into the space) can alter the sound
+that they hit. By alternating the angle
+diffusion properties dramatically.
+of the diffusing surface in patterns
+This is co-dependent on the shape
+such as waves or spikes, the once
+and structure of the surface. High
+parallel waves are now split into
+variance in the surface protrusion
+many different directions. This lack of
+can lead to a higher variation in
+unity in the array of wave directions
+the angles of reflectance, as well
+causes the waves to lose energy and
+as increase the probability of the
+to become asynchronous when they
+soundwaves being “trapped” on
+hit an observer’s ears (Strube 1981).
+the surface and reflecting/diffusing
+There are several varying trends with multiple times. This array thus results
+the shape of the diffusing surface. in a higher diffusion of sound and a
+Most common are variations in a higher reduction of ambient noise.
+spiked/triangular surface [insert
+36 Ali Einoder
+
+--- Page 37 ---
+asonic
+Illustration by Ali Einoder
+S3866647 37
+
+--- Page 38 ---
+asonic
+HOW MIGHT
+WE USE
+BIOPHILIC
+FORMS AND
+MATERIALS
+TO REDUCE
+THE AMBIENT
+38 Ali Einoder
+
+--- Page 39 ---
+asonic
+NOISE OF THE
+HOSPITAL
+AND
+IMPROVE THE
+WELLBEING
+OF THOSE
+WITHIN IT?
+S3866647 39
+
+--- Page 40 ---
+asonic
+40 Ali Einoder
+
+--- Page 41 ---
+asonic
+WAVE-TILE
+Wave-Tile render in hospital environment, Ali Einoder
+S3866647 41
+
+--- Page 42 ---
+asonic
+42 Ali Einoder
+
+--- Page 43 ---
+asonic
+Illustration of design progression and development , Ali Einoder
+Creation of the Wave-Tile culminated from researching many topics and
+forms, beginning with the fundamentals of sound treatment as well as
+natural shapes and patterns. A set of design rules were determined to ensure
+that the final form balanced the physical and aesthetic functions so that the
+tiles will be of most benefit to those around them.
+S3866647 43
+
+--- Page 44 ---
+asonic
+Surface Structure
+The surface of wavy water has
+fundamental aspects that calm
+and sooth the psychological state
+of those who view it. The fractal
+nature of the curves, valleys and
+patterns of local minimums and
+maximums create non-repeating
+patterns that ride the line between
+infinitely complex and intrinsically
+understandable. This perfectly
+natural form has been shown to
+reduce stress, especially related to
+noise-induced stress.
+The waved surface breaks the
+parallelity of the sound waves
+as the variety of curved, waved
+surfaces refract and reflect the
+sound irregularly. This irregularity
+causes the sound waves’ energy to
+dissipate as they lose phase and
+temporal alignment.
+A spreading of phase causes the
+sound waves to cancel each other
+out and lose energy.
+Wave-Tile sound diffusion, Ali Einoder Wave-Tile render, Ali Einoder
+44 Ali Einoder
+
+--- Page 45 ---
+asonic
+S3866647 45
+
+--- Page 46 ---
+asonic
+Wave-Tile render, Ali Einoder
+46 Ali Einoder
+
+--- Page 47 ---
+asonic
+The surface of the tile has potential to improve wellbeing through
+several mechanisms. The functional aesthetics use the psychological
+and neurological benefits of fractal imagery to reduce stress of
+those within the environments. This is maximised by creating waved
+structures with optimal fractal D values using parametric design.
+The transparent, reflective nature of the outside material allows for
+a dynamic modulation of the environmental light. These dynamics
+reduce the stagnant sterility of the environment in a natural manner
+that can aid in reducing fatigue and cognitive burden through light
+subconscious stimulation.
+As described previously, the tiles have the ability to reduce extraneous
+noise, preventing the washing of reflected soundwaves by both
+absorbing the energy of soundwaves and diffusing the sound that is
+reflected.
+The overall appearance and visual connection with the ocean has
+the added benefit of structuring the emotional connection one has to
+the environment. With the washing of oceans and seemingly moving
+water over the walls, the novel environment and the tiles’ psychological
+support will fuse into a more calming and positive memory of the
+location. This, in conjunction with the other aspects of the design, will
+elevate the ability of the space to promote wellbeing of all those within.
+S3866647 47
+
+--- Page 48 ---
+asonic
+<- Sketches of tiling mechanisms and wave aesthetics, Ali Einoder
+48 Ali Einoder
+
+--- Page 49 ---
+asonic
+Tiling
+Fundamental to the functional qualities of the Wave-Tiles is the ability to be
+arranged to make a larger cohesive pattern all whilst retaining the fractal
+and water-like qualities of the surface. Achieving this took a considerable
+amount of time and subsequent development of the tile.
+The primary obstacle was the ability of the waves’ peaks and troughs to flow
+seamlessly from one tile to another.
+A novel solution to this problem is the regulation of tile border patterns.
+By determining template edge waves that are complementary, the central
+wave surface may be randomised.
+Though initially proven to be effective, the previously stated methodology
+created a new issue. The corners of each tile had consistent and
+recognisable z-axis positions, impeding the wanted creation of larger,
+cohesive and seamless pieces when multiple tiles combined.
+Addressing this challenge required the creation of a checker-board styled
+sequencing of tiles, with the “black” tiles having one set of predetermined
+edges and the “white” tiles having another. This allows for a variation in
+corner heights which reduce the sense of a repeating pattern when multiple
+tiles are placed together.
+Unfortunately, this solution does reduce the possible combinations with a
+given set of tiles, as the order and placement now has restrictions.
+<- Sketches of tiling mechanisms and wave aesthetics, Ali Einoder
+S3866647 49
+
+--- Page 50 ---
+asonic
+50 Ali Einoder
+
+--- Page 51 ---
+asonic
+Sketches of tiling mechanisms and wave aesthetics, Ali Einoder
+S3866647 51
+
+--- Page 52 ---
+asonic
+Parametric design:
+The Wave
+Using the Rhino plugin Grasshopper, After much experimentation and
+the waves that were generated consultation with the design aims,
+were able to embody certain it was deemed necessary that
+predetermined aspects of form. generation must begin with creating
+These aspects were able to remain the outside boundaries. This is
+constant even as other aspects were because the outside border of a
+changed. This is a fundamental value tile must be complementary and
+of parametric design. seamless with those that sit next to
+this border.
+To create this generative algorithm,
+the team worked to first determine Following is the generation of the
+the order/hierarchy of the form inside wave structure.
+characteristics’ creation.
+52 Ali Einoder
+
+--- Page 53 ---
+asonic
+Image of Grasshopper Algorithm for Wave-Tile, Lezhou Shen
+To achieve a seemingly non-repeating The generated xyz points are then
+pattern and allow for more seamless collated and organised so that
+tiling, two separate edge arrays are they can be further processed.
+created. These categories of edges are The fundamental processing is
+then used to create two categories of the formation of smooth curved
+tiles that are required to be placed in an connections between these points.
+alternating, checkerboard array.
+This, when finished, leaves us with
+The algorithm has within it two sections an ocean-like surface of pseudo-
+that generate the fractal, wavelike directional wave-like patterns of
+nature of the tile’s surface. This is the peaks and troughs that will form the
+creation of the x and y axis, with their foundation of the Wave-Tile.
+respective variations of z-axis points.
+S3866647 53
+
+--- Page 54 ---
+asonic
+Parametric design:
+The Components
+After creating the algorithm responsible for the wave surface, further
+processing was needed to create the composition of the tiles. As shown
+above, there are four separate functions, one to create the cellulose inside,
+one to create ceiling tiles, one to form the struts that hold the ceiling tiles and
+one that creates an array of varying tiles to be placed on a wall.
+54 Ali Einoder
+
+--- Page 55 ---
+asonic
+Image of Grasshopper Algorithm for Wave-Tile, Lezhou Shen
+Adjusting the parameters within each of these functions allow one to create a
+tile for a multitude of areas. There are options to adjust size, wave depth and
+fractal D value, number of tiles needed and more.
+This highlights again the benefit of parametric design.
+S3866647 55
+
+--- Page 56 ---
+asonic
+Above is an image showing what was perhaps the most influential
+prototype created. By converting a hand-drawn sketch into a
+3-dimensional wave pattern, several epiphanies emerged. First is that
+the core idea was possible. Second however, is that an even number
+of waves on all edges creates a chaotic wave pattern that lacks the
+wanted emotion. This lead to the development of a more linear wave
+pattern that has significantly more peaks and valleys on two opposing
+edges than the other two perpendicular to them.
+The special sauce of the design is the creation of the tile edges (see
+above). The ability to match up tiles seamlessly is imperative to the tiles
+aesthetic function. Without the flowing of the waves from one section
+to another, the tiles will fail to create the mesmerizing visual of an
+ocean.
+56 Ali Einoder
+
+--- Page 57 ---
+asonic
+The alternating wave density on the edges leads the wave generating
+algorithm to create the appearance of directional movement. Like
+water slowly lapping the shore the smooth parallel waves only slightly
+disform and angle. Reducing the perpendicular wave number fewer
+than three proved to remove the realism of the wave and moved the
+shape further away from its needed fractal identity.
+After forming the structure of the edges the inside waves can be
+generated to create a smooth variety of peaks and troughs that flow
+from one edge to the other, crossing over and fluctuating in height. As
+long as the edge requirement is met then this inner wave structure can
+have infinite possibilities.
+S3866647 57
+
+--- Page 58 ---
+asonic
+To optimise the waves’ form and function it was necessary to analyse
+the potential installation locations (see above). This breakdown
+of the hospital environment illustrated the need for high levels of
+modulation and variability in the design.
+58 Ali Einoder
+
+--- Page 59 ---
+asonic
+Sketches of possible Wave-Tile locations, Ali Einoder
+The forms that the tiles can take vary from roof panels to corner
+pieces to the wrapping of benches.
+S3866647 59
+
+--- Page 60 ---
+asonic
+Ceiling Wave-Tiles, Lezhou Shen
+Careful processing of the research and design goals
+illuminated that three compositions were of most
+importance. Firstly is the ceiling tile (see above). This
+tile can replace the usual ceiling panels throughout the
+hospital environment requiring relatively low cost of
+installation and providing a high level of effect.
+The second wave form is the corner piece (see below).
+This corner wave is necessary to maximise the reduction
+of low frequency noise in the environment.
+Finally, the most iconic and highly important piece is
+the standard wall tile (see across). This tile can work
+seamlessly in conjunction with the other two forms and
+can allow for an up-close and personal effect on those
+within the hospital.
+Corner Wave-Tile, Carlo Holden
+60 Ali Einoder
+
+--- Page 61 ---
+asonic
+Tile Variations
+Multiple Wave-Tiles, Carlo Holden
+S3866647 61
+
+--- Page 62 ---
+asonic
+Materials
+Outer Shell
+The outer shell is required to be hard enough to hold the wave-tile’s structure,
+without the porosity to absorb water and microbiota, and transparent enough to
+allow for the light to pass through and simulate light’s interaction with water.
+This outer-shell material must also have the least environmental impact as
+possible whilst meeting the previously stated goals as well as maintaining a
+relatively low cost.
+These requirements would suggest the use of a transparent bioplastic. Made
+from a range of renewable sources such as corn starch, many bioplastics can
+be synthesised to have the necessary requirements and beneficially can return
+to the manufacturing process or be broken down to environmentally safe
+materials.
+62 Ali Einoder
+
+--- Page 63 ---
+asonic
+Exploded View of Wave-Tile, Ali Einoder
+Inner Material
+The inner material will absorb most of the non-reflected sound. To achieve the
+optimum absorbance, the material will require certain properties.
+Firstly, the inner material needs to have high absorptive properties with varying
+preferences in frequency spectra. Meeting these requirements in a sustainable
+way would suggest the use of insulation materials created from either cellulose
+or recycled cotton.
+These two materials are formed in a sustainable way from renewable sources,
+allowing for a relatively low impact in the manufacturing process. They are also
+easily dyed to the bluish colour required for the water-like optical effect.
+S3866647 63
+
+--- Page 64 ---
+asonic
+Bioplastics
+As consumers become more Bioplastics are mostly created from
+environmentally focused, product organic or plant based sources,
+designers and producers have often created from waste biological
+sought more sustainable materials to material. The resulting product
+shape their creations. This, along with is recyclable, compostable and
+substantial innovation in material commonly biodegradable drastically
+science and biochemistry, has lead reducing the environmental impact
+to the proliferation of bioplastics in comparison to fossil fuel based
+(Rai et al. 2011). plastics (Rudnik 2019).
+Degradable Biodegradable Compostable
+All plastics, whether To be considered Compostability
+bio-based or as biodegradable, is the breakdown
+petroleum-based a plastic will need of the plastic into
+are degradable in to be able to be compost by bacteria
+some form. The deconstructed by or other microbiota.
+conditions and time organisms such as In contrast to other
+periods needed for bacteria. This process biodegradable
+the degradation of can be divided plastics,
+oil-based plastics into three stages: compostable bio-
+can however, biodeterioration, plastics require
+be undesirable biofragmentation and environments that
+requiring either assimilation (Vasile are easily found and
+extreme conditions 2020). are less specialised
+or enormous (Rudnik 2019).
+amounts of time
+(Vasile 2020).
+64 Ali Einoder
+
+--- Page 65 ---
+asonic
+Starch- Cellulose- Bio-derived
+Based based Polyethylene
+Derived primarily These are created Fermenting certain
+from corn or potato by cellulose esters biological materials
+starch and may be and other cellulose such as sugarcane
+mixed with other derivatives. This can can result in the
+biodegradable also be added to formation of
+polyesters (Imam, starch increasing its polyethylene (Rai et
+Glenn & Chiellini mechanical properties al. 2011).
+2012). and making it more
+resistant to water (Li et
+al. 2014).
+PHA Aliphatic Polyesters
+Polyhydroxyalkanoates or Derived from compounds
+PHAs are linear polyesters such as lactide, glycolide and
+produced in nature by ecaprolactone.
+bacterial fermentation of
+These degrade chemically by
+sugar or lipids. More than
+hydrolytic cleavage. This can
+150 different monomers
+be catalysed by both acids
+can be combined to yield
+and bases.
+different properties.
+If synthesised from lactic
+These are biodegradable
+acids, it is by the process of
+and can be either
+condensation but if from a
+thermoplastic or
+cyclic lactide monomer it is by
+elastomeric materials. In a
+ring opening polymerization
+pure unblended form the
+(Rai et al. 2011).
+melting point of PHA ranges
+from 40-180 degrees
+Celsius. This allows for easy
+formation of structures
+(Rai et al. 2011).
+S3866647 65
+
+--- Page 66 ---
+asonic
+Poly(3-hydroxybutyrate-co-3-hydroxyvalerate)(PHBV)
+A plastic in the family of polyhydroxyalkanoates (PHAs), poly(3-
+hydroxybutyrate-co-3-hydroxyvalerate) (PHBV) has been the focus of manifold
+research. The structural and physicochemical properties of PHBV have proven
+to be of high value in many industries including medicine (Tebaldi et al. 2019).
+PHBV is much less prone to biodegradation than other PHA biopolymers
+and can be synthesised to have more hydrophobic properties. Though this
+is often seen as a negative composition when purposed for specific medical
+applications such as cell interaction through drug therapy, this is of high benefit
+when creating an object that will need to withstand microbial proliferation
+within a hospital environment (Figueroa-Lopez et al. 2020.
+PHBV may be synthesised within the cytoplasm of both gram-negative and
+gram-positive bacteria. Each of these bacterial groups, however, pose their own
+issues. Synthesis of PHBV by gram-positive bacteria have proven to be far more
+costly as the purification processes are excessively difficult. Gram-negative
+bacterial synthesis can lead to the co-production of specific endotoxins that
+that may cause inflammatory reactions. This potential toxic reaction may not be
+an issue when the material is used in the creation of a non-ingested product.
+Table 1- Minimum Inhibitory concentration and minimum bactericidal
+concentation of oregano essential oil and zinc oxide nanoparticles
+against S.aureus and E.coli (Figueroa-Lopez et al. 2020).
+66 Ali Einoder
+
+--- Page 67 ---
+asonic
+Visual transparency of the electrospun biopapers
+of PHBV:
+(a) NeatPHBV,
+(b) PHBV +10wt% OEO,
+(c) PHBV +3%wt% ZnONPs,
+(d) PHBV + 7.5wt% OEO +0.75wt% ZnONPs,
+(e) PHBV +5wt% OEO +1.5wt% ZnONPs,
+(f) PHBV + 2.5wt% OEO + 2.25wt% ZnONPs
+(Figueroa-Lopez et al. 2020).
+The created material is relatively rigid and thermally stable in comparison to
+many PHA bioplastics especially if increasing the side group length of the HV
+units on the PHBV molecules (Tebaldi et al. 2019).
+Blending of other polymers is common in the manufacturing process of
+PHBV. Materials blended with this bioplastic vary from polymers such as
+polylactic acid or natural fibres such as bamboo. This blending improves the
+physicochemical properties of the structure and can be utilised to create
+tailored products suitable to their end purpose (Figueroa-Lopez et al. 2020.
+A novel means of creating a transparent composition of PHBV is the
+electrospinning of fibre-based films of PHBV which were derived from
+the fermentation of fruit waste. As modifiers of this compound, zinc-oxide
+nanoparticles (ZnONPs) and oregano essential oil (OEO) were added. These
+two products were added to the polymer before the electrospinning process.
+This addition provides antimicrobial properties to the blend and greatly
+improve the crystallinity and thus transparency. A paper thin composition of the
+final compound has been shown to resist over 48 days of inundation of both
+Escherichia coli and Staphylococcus Aureus (Figueroa-Lopez et al. 2020.
+Table 2- Mechanical properties of the electrospun biopapers of PHBV containing OEO and
+ZnONP in terms of tensile modulus (E), tensile strength at yield (σ ) elongation at break (ε )
+γ b
+and toughness (Figueroa-Lopez et al. 2020).
+Presence of ZnONPs has been shown to increase the opaqueness of the PHBV
+blend when compared to non-blended or OEO blends. 10 wt% OEO in opposition,
+improved the transparency of the biopolymer. The blends also show increases in
+the toughness (mJ/mm3) with both ZnONP and OEO increasing the toughness of
+the compound dramatically, OEO especially so (Figueroa-Lopez et al. 2020.
+S3866647 67
+
+--- Page 68 ---
+asonic
+Cellulose Fibre
+Cellulose fibre is a common insulative material often used
+in house insulation, treating attics and floors, It’s popularity
+and proliferation is rising due to being one of the most
+sustainable options for insulation (Arenas et al. 2014).
+Cellulose fibre can be created from a multitude of sources
+including recycled paper and food waste. At the product’s
+end of life, the cellulose fibre can be recycled into more
+cellulose-based products or it can be degraded into simple,
+eco-friendly compounds (Li et al. 2014).
+The properties that facilitate cellulose fibre excellence
+in heat insulation also lend themselves to the process of
+sound absorbance. The porosity of the structure force
+encountered sound-waves to transfer their energy, as they
+travel through varying molecular densities. This vibration
+of the pores converts the energy into heat and physical
+movement, lessening the remaining energy of the sound
+(Zhang et al. 2014).
+The porous cellulose fibre performs optimally in typical loud
+anthrophonic environments with thicknesses >50mm (see
+right). Increasing this thickness further does increase the
+absorbance of lower frequencies. This paradigm may be
+exploited in the formation of sound mediation structures if
+needed (Arenas et al. 2014).
+68 Ali Einoder
+
+--- Page 69 ---
+asonic
+Sound absorption for different thicknesses of cellulose material
+samples, (-) 0% relative humidity, (--) 69% relative humidity
+(Arenas et al. 2014).
+S3866647 69
+
+--- Page 70 ---
+asonic
+Mounting
+The material backing/
+mounting plate has
+fewer requirements
+than that of the other
+components. It is
+however, required to be
+a solid and structurally
+rigid material that
+can be easily drilled
+and mounted to the
+surfaces. For this, either
+a bioplastic such as the
+one used for the outer
+shell could be used as
+it will have adequate
+rigidity and easily be
+able to hold the weight
+of the structure.
+Wave-Tile wall mounting mechanism, Ali Einoder
+70 Ali Einoder
+
+--- Page 71 ---
+asonic
+The tiles are needed to be mounted in a fashion which removes the
+need for gravity to hold the tile to the surface it is mounted on. The
+tile must also be firm against the wall to allow for the transference of
+sound-based energy into the wall. Also, to allow for ease of cleaning
+and maintenance of the tile, the mounting mechanism must be
+simple to detach and reattach.
+Two designs were created to address these requirements. First was
+the formation in which a loop is connected to a wall mounted hook
+(see left). Additional padding pushes against the surface and creates
+tension on the hook maximising stability.
+The second design was that of push tabs that the outer plastic layer
+snaps onto. This uses the natural elasticity of the structure to provide
+omnidirectional support.
+Wave-Tile wall mounting mechanism, Lezhou Shen
+S3866647 71
+
+--- Page 72 ---
+asonic
+Analysis of Sound Diffusion
+Using Grasshopper, team
+member Carlo Holden
+was able to simulate
+the movement of sound
+energy through a space
+with and without the
+Wave-Tile.
+These simulations
+highlight the increased
+diffusion of reflected
+sound particles and
+overall reduced sound
+energy levels
+Increased numbers
+of Wave-Tiles have
+compounding effects on
+the reduction of reflected
+noise energy.
+72 Ali Einoder
+
+--- Page 73 ---
+asonic
+Sound diffusion simulations of Asonic Wave-Tile, Carlo Holden 2021.
+S3866647 73
+
+--- Page 74 ---
+asonic
+Scattering Performance of Asonic Wave-Tile, Carlo Holden 2021.
+Analysis of the sound mitigating effects of the Wave-Tiles showed
+significant functionality (see above). The waved surface dispersed over
+half the energy of the high frequency (>4kHz). It also showed a large
+amount of scattering of the lower frequencies (<400Hz).
+This is of high value to the hospital environment as extraneous noise in
+these frequency ranges are indicative of synthetic sound, whether it be
+from motors, air conditioning or electronic beeping.
+74 Ali Einoder
+
+--- Page 75 ---
+asonic
+Absorption Coefficient of Asonic Wave-Tile, Carlo Holden 2021.
+The absorption of sound by the tiles also proved to be of significant
+value, especially when paired with the diffusing properties of the tile.
+Frequencies above 1000Hz easily passed though the plastic outer shell
+and was absorbed into the cellulose foam.
+Noticeable however is the lack of sound reduction between 400Hz
+and 1000Hz. This is actually beneficial to the environment as it
+allows for the first wave of human voice to travel, allowing for easy
+communication between staff.
+S3866647 75
+
+--- Page 76 ---
+asonic
+Summary of Outcomes
+The final Wave-Tile is a functional The construction of the tile facilitates
+amalgamation of biophilic imagery ease of installation and maintenance
+and noise reduction mechanics. as well as allowing for the meeting
+These tiles will not only improve of hygiene requirements. This will be
+the acoustic environment but will elevated further by the introduction
+also bring those near, closer to of zinc oxide nanoparticles or
+nature in a calming and soothing oregano essential oil into the PHBV
+way. The tiles will shimmer as one outer shell.
+walks by as the light refracts and
+The outer shell’s smooth curves will
+reflects off the wave surface. This
+also prevent any physical injury if
+will create the illusion that the
+collided with and the light weight of
+static wave is in fact moving.
+the structure will further increase its
+The sound analyses of the Wave- safety.
+Tiles suggest that their sonic
+These factors add to create a
+interactions are well suited to the
+product that has the ability to
+hospital environment, minimising
+increase the overall wellbeing of all
+the washing and compounding of
+within the hospital, reducing stress,
+unwanted noise.
+anxiety and aggression.
+76 Ali Einoder
+
+--- Page 77 ---
+asonic
+Render of Wave-Tile AEinoder 2021
+S3866647 77
+
+--- Page 78 ---
+asonic
+78 Ali Einoder
+
+--- Page 79 ---
+asonic
+Render of Wave-Tile in Hospital Environment AEinoder 2021
+S3866647 79
+
+--- Page 80 ---
+asonic
+80 Ali Einoder
+
+--- Page 81 ---
+asonic
+Render of Wave-Tile in Hospital Environment AEinoder 2021
+S3866647 81
+
+--- Page 82 ---
+asonic
+Summary of Contributions
+Render of Wave-Tile in Hospital Environment AEinoder 2021
+82 Ali Einoder
+
+--- Page 83 ---
+asonic
+Throughout the semester I did however
+provide additional assistance and
+guidance, when necessary, with both
+my group members’ tasks, researching
+The Asonic team comprised three
+algorithmic creation processes and
+members with varied backgrounds
+formulating the defined variables for
+and skillsets. As my background was in
+sound analysis.
+neuroscience and pharmacy, I began
+the semester collecting, collating and
+Responsibilities that I had as an
+distilling the scientific research related
+individual included the development
+to psychology, neurology, and sociology.
+of the material composition of the tile,
+Using the research as well as my previous
+development of our primary renders/
+two semesters in MDIT, I guided my team
+virtual prototypes and illustrations
+through the initial project development
+needed for communicating the design.
+phase, focussing the group’s direction
+and management of teamwork. This initial In summary, the team worked
+leadership role followed throughout synergistically in a highly productive
+the semester, being responsible for manner which allowed for a smooth
+management of overall workflow and design process. By focusing our talents
+monitoring design progression. on suitable roles, we were able to
+maximise our output and achieve
+Using the group’s research in fractal
+greater than the sum of our parts.
+imagery and biophilic design, I created a
+multitude of sketches and plans for how The experience of working with
+to create the initial tile. This included the the team as well as with the tutor
+development of the design requirements and clients was a pleasure that
+such as the complementary borders truly encouraged engagement. The
+and overall composition of the tile. By motivation of the group to produce
+being involved in the development of the the best possible outcome, along
+core ideas, I was able to delegate tasks with feedback provided throughout
+amongst the group members to facilitate the semester ensured we remained
+optimum productivity, with Leo being focussed on the task at hand. From my
+responsible for the generation of the perspective it was rewarding to be able
+parametric algorithm and Carlo in charge to draw and build on previous academic
+of the analysis of the tiles’ interactions studies and develop a product that
+with sound. could positively impact the lives of
+others.
+S3866647 83
+
+--- Page 84 ---
+asonic
+84 Ali Einoder
+
+--- Page 85 ---
+asonic
+Renders of Wave-Tile in Hospital Environment AEinoder 2021
+S3866647 85
+
+--- Page 86 ---
+asonic
+Renders of Wave-Tile in Hospital Environment AEinoder 2021
+86 Ali Einoder
+
+--- Page 87 ---
+asonic
+S3866647 87
+
+--- Page 88 ---
+asonic
+References Behavioural Brain Research, vol. 190, no. 1, pp. 1–13.
+Darbyshire, JL, Müller-Trapet, M, Cheer, J, Fazi, FM & Young,
+JD 2019, ‘Mapping sources of noise in an intensive care unit’,
+Anaesthesia, vol. 74, no. 8, pp. 1018–1025.
+Deguchi, T & Sato, M 1992, ‘The effect of color temperature
+Abdi, DD, Monazzam, M, Taban, E, Putra, A, Golbabaei, F & of lighting sources on mental activity level.’, The Annals of
+Khadem, M 2021, ‘Sound absorption performance of natural fiber physiological anthropology = Seiri Jinruigaku Kenkyūkai kaishi, vol.
+composite from chrome shave and coffee silver skin’, Applied 11, no. 1.
+Acoustics, vol. 182.
+Domschke, K, Stevens, S, Pfleiderer, B & Gerlach, AL 2010,
+Alvarsson, JJ, Wiens, S & Nilsson, ME 2010, ‘Stress recovery during ‘Interoceptive sensitivity in anxiety and anxiety disorders: An
+exposure to nature sound and environmental noise’, International overview and integration of neurobiological findings’, Clinical
+Journal of Environmental Research and Public Health, vol. 7, no. 3, Psychology Review, vol. 30, no. 1, pp. 1–11.
+pp. 1036–1046.
+Dunne, R, Desai, D & Sadiku, R 2017, ‘A Review of the Factors
+Arenas, JP, Rebolledo, J, del Rey, R & Alba, J 2014, ‘Sound that Influence Sound Absorption and the Available Empirical
+absorption properties of unbleached cellulose loose-fill insulation Models for Fibrous Materials’, Acoustics Australia, vol. 45, no. 2, pp.
+material’, BioResources, vol. 9, no. 4, pp. 6227–6240. 453–469.
+Bauer, M, Glenn, T, Monteith, S, Gottlieb, JF, Ritter, PS, Geddes, J Figueroa-Lopez, KJ, Torres-Giner, S, Enescu, D, Cabedo, L,
+& Whybrow, PC 2018, ‘The potential influence of LED lighting on Cerqueira, MA, Pastrana, LM & Lagaron, JM 2020, ‘Electrospun
+mental illness’, World Journal of Biological Psychiatry, vol. 19, no. 1, active biopapers of food waste derived poly(3-hydroxybutyrate-
+pp. 59–73. co-3-hydroxyvalerate) with short-term and long-term
+antimicrobial performance’, Nanomaterials, vol. 10, no. 3.
+Bertani, DE, De Novellis, AMP, Farina, R, Latella, E, Meloni, M, Scala,
+C, Valeo, L, Galeazzi, GM & Ferrari, S 2021, ‘“Shedding Light on Gomes, CC & Preto, S 2015, ‘Should the Light be Static or
+Light”: A Review on the Effects on Mental Health of Exposure to Dynamic?’, Procedia Manufacturing, vol. 3, pp. 4635–4642.
+Optical Radiation’, International Journal of Environmental Research
+and Public Health, vol. 18, no. 4, pp. 1–16. Gritzka, S, MacIntyre, TE, Dörfel, D, Baker-Blanc, JL & Calogiuri, G
+2020, ‘The Effects of Workplace Nature-Based Interventions on
+Biederman, I & Vessel, E 2006, ‘Perceptual Pleasure and the Brain: the Mental Health and Well-Being of Employees: A Systematic
+A novel theory explains why the brain craves information and Review’, Frontiers in Psychiatry, vol. 0, p. 323.
+seeks it through the senses’, American Scientist, vol. 94, no. 3.
+Gulagi, A, Bogdanov, D & Breyer, C 2017, ‘A cost optimized fully
+Blume, C, Garbazza, C & Spitschan, M 2019, ‘Effects of light on sustainable power system for Southeast Asia and the Pacific Rim’,
+human circadian rhythms, sleep and mood’, Somnologie, vol. 23, Energies, vol. 10, no. 5.
+no. 3.
+Hahad, O, Prochaska, JH, Daiber, A & Muenzel, T 2019,
+Van Bogaert, P, Peremans, L, Van Heusden, D, Verspuy, M, ‘Environmental Noise-Induced Effects on Stress Hormones,
+Kureckova, V, Van de Cruys, Z & Franck, E 2017, ‘Predictors of Oxidative Stress, and Vascular Dysfunction: Key Factors in the
+burnout, work engagement and nurse reported job outcomes and Relationship between Cerebrocardiovascular and Psychological
+quality of care: A mixed method study’, BMC Nursing, vol. 16, no. 1, Disorders’, Oxidative Medicine and Cellular Longevity, vol. 2019.
+pp. 1–14.
+Hunter, AM, Grese, R, Kaplan, R, Larsen, AL, Sullivan, WC
+Bourke, P ‘Fractals, Chaos, Self Similarity’, viewed 27 August 2021, & Champaign, U 2015, ‘NEARBY NATURE AND MENTAL
+<http://paulbourke.net/fractals/>. WELLBEING : A DESIGNER ’ S PERSPECTIVE by’,.
+Cain, SW, McGlashan, EM, Vidafar, P, Mustafovska, J, Curran, SPN, Imam, SH, Glenn, GM & Chiellini, E 2012, ‘Utilization of biobased
+Wang, X, Mohamed, A, Kalavally, V & Phillips, AJK 2020, ‘Evening polymers in food packaging: assessment of materials, production
+home lighting adversely impacts the circadian system and sleep’, and commercialization * *Names are necessary to report factually
+Scientific Reports, vol. 10, no. 1. on available data; however, the United States Department of
+Agriculture (USDA) neither guarantees nor ’, in Emerging Food
+Çalışkan, G, Müller, A & Albrecht, A 2020, ‘Long-term impact
+Packaging Technologies, Elsevier, pp. 435–468.
+of early-life stress on hippocampal plasticity: Spotlight on
+astrocytes’, International Journal of Molecular Sciences, vol. 21, no. Jensen, KR, Hvidman, L, Kierkegaard, O, Gliese, H, Manser, T,
+14, pp. 1–19. Uldbjerg, N & Brogaard, L 2019, ‘Noise as a risk factor in the
+delivery room: A clinical study’, PLoS ONE, vol. 14, no. 8, pp. 1–10.
+Clarke, S 2005, ‘Acoustic design approach for hospitals’, , vol. 112.
+Van Kamp, I & Davies, H 2008, ‘Environmental noise and mental
+Connellan, K, Gaardboe, M, Riggs, D, Due, C, Reinschmidt, A &
+health: Five year review and future directions’,.
+Mustillo, L 2013, ‘Stressed spaces: Mental health and architecture’,
+Health Environments Research and Design Journal, vol. 6, no. 4, Kaplan, S 1995, ‘The restorative benefits of nature: Toward an
+pp. 127–168. integrative framework’, Journal of Environmental Psychology, vol.
+15, no. 3, pp. 169–182.
+Cooper, R, Boyko, C & Codinhoto, Ri 2009, ‘The effect of the
+physical environment on mental wellbeing’, Mental Capital and Katz, JD 2014, ‘Noise in the operating room’, Anesthesiology, vol.
+Wellbeing, no. February 2014, pp. 967–1006. 121, no. 4, pp. 894–898.
+Cupkova, D, Kajati, E, Mocnej, J, Papcun, P, Koziorek, J & Zolotova, Kellert, SR 2008, ‘Dimensions, Elements, and Attributes of
+I 2019, ‘Intelligent human-centric lighting for mental wellbeing Biophilic Design’, in Biophilic Design: The Theory, Science and
+improvement’, International Journal of Distributed Sensor Practice of Bringing Buildings to Life, pp. 3–19.
+Networks, vol. 15, no. 9.
+King, EW, Jr., PHK & Kellert, SR 2003, ‘Children and Nature:
+Czéh, B, Perez-Cruz, C, Fuchs, E & Flügge, G 2008, ‘Chronic stress- Psychological, Sociocultural, and Evolutionary Investigations’,
+induced cellular changes in the medial prefrontal cortex and their Contemporary Sociology, vol. 32, no. 6, p. 733.
+potential clinical implications: Does hemisphere location matter?’,
+88 Ali Einoder
+
+--- Page 89 ---
+asonic
+Koruk, H & Genc, G 2018, ‘Acoustic and mechanical properties of AG, Van Den Boogaard, M & De Jager, CPC 2018, ‘Noise in the
+luffa fiber-reinforced biocomposites’, in Mechanical and Physical intensive care unit and its influence on sleep quality: A multicenter
+Testing of Biocomposites, Fibre-Reinforced Composites and observational study in Dutch intensive care units’, Critical Care, vol.
+Hybrid Composites, Elsevier, pp. 325–341. 22, no. 1, pp. 4–11.
+Li, C, Sun, C, Sun, M, Yuan, Y & Li, P 2020, ‘Effects of brightness Strube, HW 1981, ‘More on the diffraction theory of Schroeder
+levels on stress recovery when viewing a virtual reality forest with diffusors’, Journal of the Acoustical Society of America, vol. 70, no.
+simulated natural light’, Urban Forestry and Urban Greening, vol. 2, pp. 633–635.
+56.
+Takeuchi, H, Enzo, A & Minamitani, H 2001, ‘Circadian rhythm
+Li, S, Bashline, L, Lei, L & Gu, Y 2014, ‘Cellulose Synthesis and Its changes in heart rate variability during chronic sound stress’,
+Regulation’, The Arabidopsis Book / American Society of Plant Medical and Biological Engineering and Computing, vol. 39, no. 1.
+Biologists, vol. 12, p. e0169.
+Tebaldi, ML, Maia, ALC, Poletto, F, de Andrade, FV & Soares,
+de Lima Andrade, E, da Cunha e Silva, DC, de Lima, EA, de Oliveira, DCF 2019, ‘Poly(-3-hydroxybutyrate-co-3-hydroxyvalerate)
+RA, Zannin, PHT & Martins, ACG 2021, ‘Environmental noise in (PHBV): Current advances in synthesis methodologies, antitumor
+hospitals: a systematic review’, Environmental Science and applications and biocompatibility’, Journal of Drug Delivery
+Pollution Research, vol. 28, no. 16, pp. 19629–19642. Science and Technology, vol. 51, pp. 115–126.
+Liu, X, Iwanaga, K, Shimomura, Y & Katsuura, T 2007, ‘Comparison ‘The Geometry of Sound Diffusion - Payette’, viewed 27 August
+of stress responses between mental tasks and white noise 2021, <https://www.payette.com/research-innovation/the-
+exposure’, Journal of Physiological Anthropology, vol. 26, no. 2, pp. geometry-of-sound-diffusion/>.
+165–171.
+Thimmegowda, GG, Mullen, S, Sottilare, K, Sharma, A, Mohanta,
+Mcleod, RWJ, Myint-Wilks, L, Davies, SE & Elhassan, HA 2021, ‘The SS, Brockmann, A, Dhandapany, PS & Olsson, SB 2020, ‘A field-
+impact of noise in the operating theatre: A review of the evidence’, based quantitative analysis of sublethal effects of air pollution on
+Annals of the Royal College of Surgeons of England, vol. 103, no. 2, pollinators’, Proceedings of the National Academy of Sciences of
+pp. 83–87. the United States of America, vol. 117, no. 34, pp. 20653–20661.
+Owens, AP, Low, DA, Iodice, V, Mathias, CJ & Critchley, HD 2016, Thoma, MV, Mewes, R & Nater, UM 2018, ‘Preliminary evidence:
+‘Emotion and the autonomic nervous system-a two-way street: The stress-reducing effect of listening to water sounds depends
+Insights from affective, autonomic and dissociative disorders’, on somatic complaints’, Medicine (United States), vol. 97, no. 8.
+in The Curated Reference Collection in Neuroscience and
+Biobehavioral Psychology, Elsevier Science Ltd. Totaforti, S 2018, ‘Applying the benefits of biophilic theory to
+hospital design’, City, Territory and Architecture, vol. 5, no. 1, pp.
+Pandey, SP, Shukla, T, Dhote, VK, Mishra, DK, Maheshwari, R & 1–9.
+Tekade, RK 2018, ‘Use of polymers in controlled release of active
+agents’, in Basic Fundamentals of Drug Delivery, Elsevier, pp. Vasile, C 2020, ‘Environmentally Degradable Materials based
+113–172. on Multicomponent Polymeric Systems: Biocomposites and
+Bioblends’, in Environmentally Degradable Materials based on
+Przyborowski, Ł, Loboda, AM & Bialik, RJ 2018, ‘Experimental Multicomponent Polymeric Systems, Brill, pp. 518–535.
+investigations of interactions between sand wave movements,
+flow structure, and individual aquatic plants in natural rivers: A Wells, NM & Evans, GW 2003, ‘Nearby Nature: A Buffer of Life
+case study of Potamogeton Pectinatus L.’, Water (Switzerland), vol. Stress Among Rural Children’, Environment and Behavior, vol. 35,
+10, no. 9, pp. 1–18. no. 3, pp. 311–330.
+Rai, R, Keshavarz, T, Roether, JA, Boccaccini, AR & Roy, I 2011, WHO 1999, ‘4 . Guideline Values’, Guidelines for Community Noise,
+‘Medium chain length polyhydroxyalkanoates, promising new pp. 55–65.
+biomedical materials for the future’, Materials Science and
+Engineering R: Reports, vol. 72, no. 3, pp. 29–47. Williams, F 2017, ‘Feel-good Fractals: From Ocean Waves to
+Jackson Pollock’s Art | Scribd’, Aeon.
+Rudnik, E 2019, Compostable polymer materials, Elsevier.
+Yang, S, Qiu, Y & He, J 2021, ‘Meta-analysis of the impact of
+Salingaros, NA 2012, ‘Fractal Art and Architecture Reduce role stress on the turnover intention of medical staff in tertiary
+Physiological Stress’, Journal of Biourbanism, vol. 2, pp. 11–28. hospitals’, Annals of Palliative Medicine, vol. 10, no. 1, pp. 469–478.
+Schleip, R & Jäger, H 2012, ‘Interoception’, Fascia: The Tensional Yerbury, RM & Lukey, SJ 2021, ‘Human–animal interactions:
+Network of the Human Body, pp. 89–94. Expressions of wellbeing through a “nature language”’, Animals,
+vol. 11, no. 4.
+Schmidt, N, Gerber, SM, Zante, B, Gawliczek, T, Chesham, A,
+Gutbrod, K, Müri, RM, Nef, T, Schefold, JC & Jeitziner, M-M 2020, Zhang, T, Mahgsoudy-Louyeh, S, Tittmann, B & Cosgrove, DJ 2014,
+‘Effects of intensive care unit ambient sounds on healthcare ‘Visualization of the nanoscale pattern of recently-deposited
+professionals: results of an online survey and noise exposure in an cellulose microfibrils and matrix materials in never-dried primary
+experimental setting’, Intensive Care Medicine Experimental, vol. walls of the onion epidermis’, Cellulose, vol. 21, no. 2, pp. 853–862.
+8, no. 1.
+Zhou, T, Wu, Y, Meng, Q & Kang, J 2020, ‘Influence of the Acoustic
+Schroeder, MR 1979, ‘Binaural dissimilarity and optimum ceilings Environment in Hospital Wards on Patient Physiological and
+for concert halls: More lateral sound diffusion’, Journal of the Psychological Indices’, Frontiers in Psychology, vol. 0, p. 1600.
+Acoustical Society of America, vol. 65, no. 4, pp. 958–963.
+Zoontjens, L & Cockings, T 2014, ‘Review of design approaches
+Scopelliti, M, Carrus, G & Bonaiuto, M 2019, ‘Is it Really Nature That to acoustics in Australian hospitals’, INTERNOISE 2014 - 43rd
+Restores People? A Comparison With Historical Sites With High International Congress on Noise Control Engineering: Improving
+Restorative Potential’, Frontiers in Psychology, vol. 0, no. JAN, p. the World Through Noise Control, pp. 1–11.
+2742.
+Simons, KS, Verweij, E, Lemmens, PMC, Jelfs, S, Park, M, Spronk,
+PE, Sonneveld, JPC, Feijen, HM, Van Der Steen, MS, Kohlrausch,
+S3866647 89
+
+--- Page 90 ---
+asonic
+90 Ali Einoder

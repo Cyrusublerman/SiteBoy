@@ -1,0 +1,46 @@
+P R O G R A M M I N G
+C H A T
+OVERVIEW
+For the CHAT device to convert the speech extracting the words from the speech with
+to a modulated typographical printout, their start and end time.
+the programming language Python was
+These start and end times are then used to
+chosen. This was because the language has
+break the EMF reading and audio file into
+a large level of support for the Raspberry Pi
+segments which then have their average
+as well as speech to text libraries.
+amplitudes extracted.
+It was also determined, that for simplicity
+The word is then given attributes from the
+of function, as well as the optimisation of
+extracted values with the time taken for a
+processing resources, the programming
+word to be said becomming the word width
+will be contained within one continuously
+variable. The EMF reading will become the
+running script.
+height variable and the audio amplitude of
+This program needed to first react to the the audio recording will become the weight
+change of switch state, so that it knows of the text.
+whether CHAT is set to send or receive
+The next step is to use the words and their
+signals. This changing of state to ON will
+variables to create an HTML string using
+initiate the taking of a photo which will
+CSS styling to create the typography.
+be saved for later use. After this image is
+taken, the device will begin recording both Firstly however, the HTML file will be
+the audio input and the input signals from created, the image previously taken will be
+the electromagnetic field (EMF) sensor. added to the beginning of the file, then the
+These will continue recording until the time and date as well as the sender name
+user flicks the toggle switch into the OFF will be added underneath. The speech
+position. will then be created with the variables
+modulating typographical parameters.
+Once the switch is flicked, the recording
+of the EMF and audio finishes and the The HTML file is then rendered as a BMP
+readings are saved to be used in the next image file which can then be sent to the
+steps. thermal printer.
+The speech to text engine (CMU Sphinx)
+begins and analyses the audio file,
+52

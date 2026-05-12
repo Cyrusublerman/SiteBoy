@@ -1,0 +1,325 @@
+{
+  "name": "Store_Height.004",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometary ",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Top",
+      "io": "INPUT",
+      "type": "NodeSocketBool",
+      "default": false
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Boolean Math",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Edge Vertices",
+      "t": "MESH_EDGE_VERTICES",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Sample Index",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.001",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.002",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.003",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Frame.001",
+      "t": "FRAME",
+      "lbl": "find verticla edges",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.009",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.010",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.015",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.016",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.017",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.024",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.003",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Sample Index.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.010",
+      "fs": "Output",
+      "tn": "Reroute.002",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.009",
+      "fs": "Output",
+      "tn": "Reroute.003",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Sample Index.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index.001",
+      "fs": "Value",
+      "tn": "Boolean Math",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Reroute.017",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.017",
+      "fs": "Output",
+      "tn": "Reroute.010",
+      "ts": "Input"
+    },
+    {
+      "fn": "Edge Vertices",
+      "fs": "Vertex Index 2",
+      "tn": "Sample Index.001",
+      "ts": "Index"
+    },
+    {
+      "fn": "Reroute.016",
+      "fs": "Output",
+      "tn": "Reroute.009",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Sample Index",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Sample Index",
+      "fs": "Value",
+      "tn": "Boolean Math",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Reroute.015",
+      "fs": "Output",
+      "tn": "Store Named Attribute.003",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Boolean Math",
+      "fs": "Boolean",
+      "tn": "Reroute.015",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Store Named Attribute.003",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Sample Index",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Reroute",
+      "ts": "Input"
+    },
+    {
+      "fn": "Edge Vertices",
+      "fs": "Vertex Index 1",
+      "tn": "Sample Index",
+      "ts": "Index"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Top",
+      "tn": "Reroute.016",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Geometary ",
+      "tn": "Reroute.024",
+      "ts": "Input"
+    },
+    {
+      "fn": "Store Named Attribute.003",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    }
+  ],
+  "frames": [
+    {
+      "n": "Frame.001",
+      "lbl": "find verticla edges",
+      "ch": [
+        "Boolean Math",
+        "Edge Vertices",
+        "Sample Index",
+        "Sample Index.001",
+        "Reroute.002",
+        "Reroute.003",
+        "Reroute.009",
+        "Reroute.010"
+      ]
+    }
+  ],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [
+    {
+      "node": "Store Named Attribute.003",
+      "attr": "True",
+      "dt": "BOOLEAN",
+      "dom": "EDGE"
+    }
+  ],
+  "switches": [],
+  "child_groups": []
+}

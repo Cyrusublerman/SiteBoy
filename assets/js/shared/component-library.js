@@ -6,7 +6,7 @@
  * COMPONENT ORGANIZATION:
  * - foundation.js    → BaseComponent, BaseNavigationDropdown
  * - layout.js        → PageContainer, PageHeader, Subheader, PageFooter, Grid, Spacing
- * - content.js       → Heading, Paragraph, Quote, Image, Video, Audio, MarkdownBody, SimpleTOC, NumberedTOC, TOCGallery
+ * - content.js       → Heading, Paragraph, Quote, Image, Video, Audio, MarkdownBody, SimpleTOC, NumberedTOC
  * - interactive.js   → CollapsibleBase, Menu, Breadcrumb, Button, Input, Select, ButtonGroup
  * - graphs.js        → BarGraph, LineGraph, PieGraph
  * - specialized.js   → VGAGrid, MathematicalCanvas, ProgressBar
@@ -41,7 +41,6 @@ import {
     SimpleTOC,
     NumberedTOC,
     TreeTOC,
-    TOCGallery,
     Table,
     StatusDisplay,
     AsciiNavWord,
@@ -97,7 +96,7 @@ import LoadingOverlay from './components/feedback/LoadingOverlay.js';
 import { P5Canvas, P5EmbeddedSketch, P5ControlledSketch } from './p5-integration.js';
 
 // Import gallery components
-import { MasonryGallery, GalleryLightbox } from './masonry-gallery.js';
+import { MasonryGallery, GalleryLightbox, ImageGrid, ArtworkPage, HorizontalImageStrip } from './masonry-gallery.js';
 
 // Import output components
 import { AnimationExport } from './components/output/AnimationExport.js';
@@ -226,7 +225,6 @@ const ComponentLibrary = {
             'simple-toc': SimpleTOC,
             'numbered-toc': NumberedTOC,
             'tree-toc': TreeTOC,
-            'toc-gallery': TOCGallery,
             'table': Table,
             'status-display': StatusDisplay,
 
@@ -268,6 +266,9 @@ const ComponentLibrary = {
 
             // Gallery
             'masonry-gallery': MasonryGallery,
+            'image-grid': ImageGrid,
+            'artwork-page': ArtworkPage,
+            'horizontal-image-strip': HorizontalImageStrip,
 
             // Tool components
             'tool-container': ToolContainer,
@@ -378,7 +379,6 @@ ComponentLibrary.MarkdownBody = MarkdownBody;
 ComponentLibrary.SimpleTOC = SimpleTOC;
 ComponentLibrary.NumberedTOC = NumberedTOC;
 ComponentLibrary.TreeTOC = TreeTOC;
-ComponentLibrary.TOCGallery = TOCGallery;
 ComponentLibrary.Table = Table;
 ComponentLibrary.StatusDisplay = StatusDisplay;
 ComponentLibrary.AsciiNavWord  = AsciiNavWord;
@@ -432,8 +432,11 @@ ComponentLibrary.P5EmbeddedSketch = P5EmbeddedSketch;
 ComponentLibrary.P5ControlledSketch = P5ControlledSketch;
 
 // Assign gallery components to ComponentLibrary immediately
-ComponentLibrary.MasonryGallery   = MasonryGallery;
-ComponentLibrary.GalleryLightbox  = GalleryLightbox;
+ComponentLibrary.MasonryGallery        = MasonryGallery;
+ComponentLibrary.GalleryLightbox       = GalleryLightbox;
+ComponentLibrary.ImageGrid             = ImageGrid;
+ComponentLibrary.ArtworkPage          = ArtworkPage;
+ComponentLibrary.HorizontalImageStrip = HorizontalImageStrip;
 
 // Assign output components to ComponentLibrary immediately
 ComponentLibrary.AnimationExport = AnimationExport;
@@ -535,7 +538,6 @@ export {
     SimpleTOC,
     NumberedTOC,
     TreeTOC,
-    TOCGallery,
     Table,
     StatusDisplay,
     AsciiNavWord,
@@ -582,6 +584,9 @@ export {
     // Gallery
     MasonryGallery,
     GalleryLightbox,
+    ImageGrid,
+    ArtworkPage,
+    HorizontalImageStrip,
 
     // Tool Components
     ToolContainer,

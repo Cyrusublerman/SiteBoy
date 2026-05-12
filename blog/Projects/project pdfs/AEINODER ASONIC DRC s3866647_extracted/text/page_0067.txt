@@ -1,0 +1,37 @@
+asonic
+Visual transparency of the electrospun biopapers
+of PHBV:
+(a) NeatPHBV,
+(b) PHBV +10wt% OEO,
+(c) PHBV +3%wt% ZnONPs,
+(d) PHBV + 7.5wt% OEO +0.75wt% ZnONPs,
+(e) PHBV +5wt% OEO +1.5wt% ZnONPs,
+(f) PHBV + 2.5wt% OEO + 2.25wt% ZnONPs
+(Figueroa-Lopez et al. 2020).
+The created material is relatively rigid and thermally stable in comparison to
+many PHA bioplastics especially if increasing the side group length of the HV
+units on the PHBV molecules (Tebaldi et al. 2019).
+Blending of other polymers is common in the manufacturing process of
+PHBV. Materials blended with this bioplastic vary from polymers such as
+polylactic acid or natural fibres such as bamboo. This blending improves the
+physicochemical properties of the structure and can be utilised to create
+tailored products suitable to their end purpose (Figueroa-Lopez et al. 2020.
+A novel means of creating a transparent composition of PHBV is the
+electrospinning of fibre-based films of PHBV which were derived from
+the fermentation of fruit waste. As modifiers of this compound, zinc-oxide
+nanoparticles (ZnONPs) and oregano essential oil (OEO) were added. These
+two products were added to the polymer before the electrospinning process.
+This addition provides antimicrobial properties to the blend and greatly
+improve the crystallinity and thus transparency. A paper thin composition of the
+final compound has been shown to resist over 48 days of inundation of both
+Escherichia coli and Staphylococcus Aureus (Figueroa-Lopez et al. 2020.
+Table 2- Mechanical properties of the electrospun biopapers of PHBV containing OEO and
+ZnONP in terms of tensile modulus (E), tensile strength at yield (σ ) elongation at break (ε )
+γ b
+and toughness (Figueroa-Lopez et al. 2020).
+Presence of ZnONPs has been shown to increase the opaqueness of the PHBV
+blend when compared to non-blended or OEO blends. 10 wt% OEO in opposition,
+improved the transparency of the biopolymer. The blends also show increases in
+the toughness (mJ/mm3) with both ZnONP and OEO increasing the toughness of
+the compound dramatically, OEO especially so (Figueroa-Lopez et al. 2020.
+S3866647 67

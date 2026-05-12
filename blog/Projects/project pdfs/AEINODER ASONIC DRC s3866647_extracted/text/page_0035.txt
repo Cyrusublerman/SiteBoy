@@ -1,0 +1,18 @@
+asonic
+Sound mediation plan for Wave-Tile, Ali Einoder
+Absorption
+A material’s ability to absorb sound is measured with the sound absorbtion
+coefficient. This is the percentage of the sound wave’s energy that is
+transferred to the material. This coefficient is related to the frequencies of the
+sound and the incidence direction of the sound (Dunne, Desai & Sadiku 2017).
+The efficiency of sound absorption is related to a series of factors:
+1. The material’s mass density: The material’s mass density is inversely
+correlated to the preferred frequency of absorption. The higher the mass
+density, the higher the absorption of low frequencies and lower the
+absorption of high frequencies (Abdi et al. 2021).
+2. The thickness of a material: Higher thickness is associated with higher
+absorption of lower frequencies of sound. It has however, low impact on
+the absorption of higher frequencies (Koruk & Genc 2018).
+3. The features of a material’s pores: Smaller pores in higher number will
+yield the greatest sound absorption.
+S3866647 35

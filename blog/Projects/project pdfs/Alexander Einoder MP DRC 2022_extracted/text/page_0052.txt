@@ -1,0 +1,40 @@
+Negative Space
+The creation of the framework
+in turn creates negative spaces
+between the joints. These spaces
+are a main aesthetic component
+of the resulting dome and can be
+utilised to maximise function.
+For these spaces to be used the
+dimensions are to be discovered.
+As each space is unique, this is
+necessary to be calculated during
+the point’s genesis.
+Similar to the calculation of the
+joints, the surrounding joint
+locations are needed to be
+assessed. For the identification
+of the negative spaces’ corners, a
+different variation of points are
+needed.
+The origin will form the topmost
+point, two points will be derived
+from the subsequent points on
+both the origin joint’s curves. The
+final “bottom” corner is discovered
+by transposing one of the previous
+two joints down one of their
+denominators.
+Once these points are
+discovered the inner trapezoid
+can be calculated. Each side
+Figure 32: Python script to calculate area between dome joints. Author’s Own 2022.
+length between point 1 and
+point two is calculated by:
+With each inner angle being:
+These calculated trapezoids can be
+used to create inner fillings for the
+negative space, allowing for the
+creation of glass panes.
+Figure 33: Sketch of area between dome joints. Author’s Own 2022.
+52

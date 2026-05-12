@@ -1,0 +1,16 @@
+{
+  "id": "distort",
+  "title": "DISTORT",
+  "sections": [
+    { "title": "ABSTRACT",            "src": "projects/distort/md/abstract.md",               "open": true },
+    { "title": "HOST CONTRACT",       "src": "projects/distort/md/host-contract.md"            },
+    { "title": "MODULE CONTRACT",     "src": "projects/distort/md/module-contract.md"          },
+    { "title": "EXECUTION MODEL",     "src": "projects/distort/md/execution-model.md"          },
+    { "title": "PIPELINE CACHING",    "src": "projects/distort/md/pipeline-caching.md"         },
+    { "title": "GPU COMPUTE",         "src": "projects/distort/md/gpu-compute.md"              },
+    { "title": "EFFECTS CORPUS",      "src": "projects/distort/md/effects-corpus.md"           },
+    { "title": "TEMPORAL TIERS & EXPORTS", "src": "projects/distort/md/temporal-tiers-exports.md" },
+    { "title": "LIVE TOOL", "type": "embed", "src": "/#tools/processors/distort", "height": 720 },
+    { "title": "REFERENCES",          "src": "projects/distort/md/references.md"               }
+  ]
+}

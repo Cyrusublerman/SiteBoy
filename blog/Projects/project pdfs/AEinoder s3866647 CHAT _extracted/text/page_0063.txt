@@ -1,0 +1,44 @@
+Bulletin, vol. 100, no. 1, pp. 78–100.
+Luangrath, AW, Peck, J & Barger, VA 2017, ‘Textual paralanguage and its
+implications for marketing communications’, Journal of Consumer Psychology,
+vol. 27, no. 1, pp. 98–107.
+Marmpena, M, Lim, A & Dahl, TS 2018, ‘How does the robot feel? Perception of
+valence and arousal in emotional body language’, Paladyn, vol. 9, no. 1, pp. 168–
+182.
+Mehndiratta, P, Sachdeva, S & Soni, D 2017, ‘Detection of sarcasm in text data
+using deep convolutional neural networks’, Scalable Computing, vol. 18, no. 3, pp.
+219–228.
+Nord Projects ‘Little Printers’, viewed 14 June 2021, <https://nordprojects.co/
+projects/littleprinters/>.
+Pennycook, A 1985, ‘Actions Speak Louder Than Words: Paralanguage,
+Communication, and Education’, TESOL Quarterly, vol. 19, no. 2, p. 259.
+Prazdnichov, D 2018, ‘Pocketsphinx Python’, PyPi, viewed 13 June 2021, <https://
+pypi.org/project/pocketsphinx/>.
+Rheindorf, M & Wodak, R 2019, ‘Genre-related language change: Discourse- and
+corpus-linguistic perspectives on Austrian German 1970-2010’, Folia Linguistica,
+vol. 53, no. 1, pp. 125–167.
+Rosenberger, T & MacNeil, RL 1999, ‘Prosodic font’, in p. 252.
+Shany-Ur, T, Poorzand, P, Grossman, SN, Growdon, ME, Jang, JY, Ketelle, RS,
+Miller, BL & Rankin, KP 2012, ‘Comprehension of insincere communication in
+neurodegenerative disease: Lies, sarcasm, and theory of mind’, Cortex, vol. 48, no.
+10, pp. 1329–1341.
+Spitzmüller, J 2019, A Sociolinguistics of Typography, St. Petersburg, viewed 10
+June 2021, <www.spitzmueller.orgPetertheGreatSt.PetersburgPolytechnicUnivers
+ity>.
+Toolan, M 2007, ‘Trust and text, text as trust’, International Journal of Corpus
+Linguistics, vol. 12, no. 2, pp. 269–288.
+Tsonos, D & Kouroupetroglou, G 2008, ‘A Methodology for the Extraction of
+Reader’s Emotional State Triggered from Text Typography’, in Tools in Artificial
+Intelligence, InTech.
+Vgalin ‘html2image’, PyPi, viewed 10 June 2021, <https://pypi.org/project/
+html2image/>.
+Walther, JB & Tidwell, LC 1995, ‘Nonverbal cues in computer mediated
+communication, and the effect of chronemics on relational communication’,
+Journal of Organizational Computing, vol. 5, no. 4, pp. 355–378.
+Wang, Y, Shen, Y, Liu, Z, Liang, PP, Zadeh, A & Morency, LP 2019, ‘Words can
+shift: Dynamically adjusting word representations using nonverbal behaviors’,
+in 33rd AAAI Conference on Artificial Intelligence, AAAI 2019, 31st Innovative
+Applications of Artificial Intelligence Conference, IAAI 2019 and the 9th AAAI
+Symposium on Educational Advances in Artificial Intelligence, EAAI 2019, AAAI
+Press, pp. 7216–7223.
+63

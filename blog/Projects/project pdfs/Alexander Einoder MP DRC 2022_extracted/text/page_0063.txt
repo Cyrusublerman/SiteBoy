@@ -1,0 +1,58 @@
+Python Script: Main Generator
+mesh.update()
+obj = bpy.data.objects.new(“topob”, mesh)
+bpy.context.collection.objects.link(obj) obj = bpy.data.objects.new(name, mesh)
+bpy.data.collections[“leafVert”].objects.link(obj)
+deselect()
+deselect()
+bpy.context.view_layer.objects.active = bpy.data.ob-
+jects[“topob”] leafNumber+=1
+setMat(“pole1”) #+++++++++++++ make joints ++++++++++++++[
+jointNum=1
+o=bpy.context.active_object
+o.modifiers.new(‘Solidify’, ‘SOLIDIFY’) for j in joints2Angles:
+bpy.context.object.modifiers[“Solidify”].offset = 0.7
+bpy.context.object.modifiers[“Solidify”].thickness = 0.05 origin = j[0]
+ji=1
+#=========== make hole leaves ==============#
+leafNumber=0 deselect()
+vertMod=0.1
+for leaf in holeLeaves: toJoin=[]
+if len(leaf)>3: while ji<len(j):
+if distanceFromCenter(leaf[3])<distanceFromCenter(-
+leaf[0]): r=0.1
+leaf.pop(0) radiusX = jointDiam
+leaf.pop(0) radiusY=radiusX
+leaf.append(topPoint)
+start = origin
+vert=leaf end=j[ji]
+end= asCartesian(end)
+if leafGen>0:
+end[0]+=start[0]
+edges = [[i, i+1] for i in range(len(leaf)-1)] end[1]+=start[1]
+lastEdge=[0,len(edges)-1] end[2]+=start[2]
+edges.append(lastEdge) name = “join {}”.format(jointNum)
+name2 = “join {} {}”.format(jointNum, ji)
+faces =[[i for i in range(len(leaf))]] toJoin.append(name2)
+makeLine(start, end, radiusX, radiusY, name2, “joints”,
+name = “leaf {}”.format(leafNumber) “Brass”)
+ji+=1
+mesh = bpy.data.meshes.new(name) joinName=”join {} c”.format(jointNum)
+sphereAtJoint(origin, joinName, “joints”, “Brass”, 1.2)
+mesh.from_pydata(vert, edges, faces) deselect()
+mesh.update() #sphereAtJoint(origin, joinName, “points”, “Brass”, 2)
+toJoin.append(joinName)
+obj = bpy.data.objects.new(name, mesh)
+bpy.data.collections[“leaf”].objects.link(obj)
+# ============== BOTTOM BITS =============
+else: bj=0
+vert.sort(key=takeX) #sort by z for b in bottomJoints:
+edges = [] start = b[0]
+end = [start[0], start[1], 0]
+faces =[] name=”bottom pole {}”.format(bj)
+makeLine(start, end, poleRad, poleRad, name, “bottom”,
+name = “leaf Vert {}”.format(leafNumber) “Stainless Steel”)
+bj+=1
+mesh = bpy.data.meshes.new(name)
+mesh.from_pydata(vert, edges, faces)
+63

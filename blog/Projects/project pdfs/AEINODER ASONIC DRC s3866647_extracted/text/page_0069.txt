@@ -1,0 +1,5 @@
+asonic
+Sound absorption for different thicknesses of cellulose material
+samples, (-) 0% relative humidity, (--) 69% relative humidity
+(Arenas et al. 2014).
+S3866647 69

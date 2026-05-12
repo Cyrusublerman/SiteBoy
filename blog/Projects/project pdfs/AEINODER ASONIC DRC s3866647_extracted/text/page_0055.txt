@@ -1,0 +1,7 @@
+asonic
+Image of Grasshopper Algorithm for Wave-Tile, Lezhou Shen
+Adjusting the parameters within each of these functions allow one to create a
+tile for a multitude of areas. There are options to adjust size, wave depth and
+fractal D value, number of tiles needed and more.
+This highlights again the benefit of parametric design.
+S3866647 55

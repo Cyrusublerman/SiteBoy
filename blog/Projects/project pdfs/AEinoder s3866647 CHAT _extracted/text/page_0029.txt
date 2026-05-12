@@ -1,0 +1,7 @@
+CAMERA
+Due to the selection of a Raspberry Pi as the computer of choice, the optimum camera
+module would be the Pi Camera. This camera has a large level of support for software and
+hardware development. Libraries are easily available for the Python language and access to
+the camera's controls are embedded into the default Rasberry Pi software. The Raspberry Pi also
+has a specific port that allows for direct connection to the camera module.
+29

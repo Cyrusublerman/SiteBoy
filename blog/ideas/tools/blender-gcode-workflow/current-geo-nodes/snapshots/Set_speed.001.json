@@ -1,0 +1,496 @@
+{
+  "name": "Set_speed.001",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometary",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Edge Vertices.001",
+      "t": "MESH_EDGE_VERTICES",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.006",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Named Attribute",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.001",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Map Range",
+      "t": "MAP_RANGE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Attribute Statistic",
+      "t": "ATTRIBUTE_STATISTIC",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.007",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.008",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.002",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.013",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.014",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.018",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.019",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.020",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.021",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.022",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.031",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.032",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.033",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.029",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.023",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Boolean Math.001",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.001",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.011",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Float Curve",
+      "t": "CURVE_FLOAT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Reroute.008",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.011",
+      "fs": "Output",
+      "tn": "Store Named Attribute",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Edge Vertices.001",
+      "fs": "Position 1",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Reroute.020",
+      "fs": "Output",
+      "tn": "Map Range",
+      "ts": "From Min"
+    },
+    {
+      "fn": "Vector Math",
+      "fs": "Value",
+      "tn": "Store Named Attribute",
+      "ts": "Value"
+    },
+    {
+      "fn": "Store Named Attribute",
+      "fs": "Geometry",
+      "tn": "Reroute.006",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.032",
+      "fs": "Output",
+      "tn": "Reroute.031",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Reroute.021",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.033",
+      "fs": "Output",
+      "tn": "Reroute.007",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.029",
+      "fs": "Output",
+      "tn": "Attribute Statistic",
+      "ts": "Attribute"
+    },
+    {
+      "fn": "Attribute Statistic",
+      "fs": "Min",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Boolean Math.001",
+      "fs": "Boolean",
+      "tn": "Store Named Attribute",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Reroute.006",
+      "fs": "Output",
+      "tn": "Reroute.023",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.031",
+      "fs": "Output",
+      "tn": "Attribute Statistic",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Edge Vertices.001",
+      "fs": "Position 2",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Reroute.013",
+      "fs": "Output",
+      "tn": "Store Named Attribute.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.022",
+      "fs": "Output",
+      "tn": "Map Range",
+      "ts": "From Max"
+    },
+    {
+      "fn": "Reroute.019",
+      "fs": "Output",
+      "tn": "Reroute.020",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.008",
+      "fs": "Output",
+      "tn": "Store Named Attribute.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.033",
+      "fs": "Output",
+      "tn": "Reroute.029",
+      "ts": "Input"
+    },
+    {
+      "fn": "Attribute Statistic",
+      "fs": "Max",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.018",
+      "fs": "Output",
+      "tn": "Reroute.022",
+      "ts": "Input"
+    },
+    {
+      "fn": "Named Attribute",
+      "fs": "Attribute",
+      "tn": "Reroute.033",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.023",
+      "fs": "Output",
+      "tn": "Reroute.032",
+      "ts": "Input"
+    },
+    {
+      "fn": "Store Named Attribute.002",
+      "fs": "Geometry",
+      "tn": "Reroute.014",
+      "ts": "Input"
+    },
+    {
+      "fn": "Attribute Statistic",
+      "fs": "Max",
+      "tn": "Reroute.018",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.021",
+      "fs": "Output",
+      "tn": "Map Range",
+      "ts": "Value"
+    },
+    {
+      "fn": "Named Attribute.001",
+      "fs": "Attribute",
+      "tn": "Boolean Math.001",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Reroute.032",
+      "fs": "Output",
+      "tn": "Reroute.013",
+      "ts": "Input"
+    },
+    {
+      "fn": "Attribute Statistic",
+      "fs": "Min",
+      "tn": "Reroute.019",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Geometary",
+      "tn": "Reroute.011",
+      "ts": "Input"
+    },
+    {
+      "fn": "Store Named Attribute.001",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Map Range",
+      "fs": "Result",
+      "tn": "Float Curve",
+      "ts": "Value"
+    },
+    {
+      "fn": "Float Curve",
+      "fs": "Value",
+      "tn": "Store Named Attribute.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Store Named Attribute.002",
+      "ts": "Value"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [
+    {
+      "node": "Store Named Attribute",
+      "attr": "True",
+      "dt": "FLOAT",
+      "dom": "EDGE"
+    },
+    {
+      "node": "Store Named Attribute.001",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.002",
+      "attr": "True",
+      "dt": "FLOAT",
+      "dom": "FACE"
+    }
+  ],
+  "switches": [],
+  "child_groups": []
+}

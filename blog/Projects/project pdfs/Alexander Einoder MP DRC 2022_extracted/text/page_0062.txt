@@ -1,0 +1,59 @@
+Python Script: Main Generator
+# ============== JOINTS =================== # deselect()
+joints2=[] while pV<len(polesV):
+joints2Angles=[] start = polesV[pV][0]
+for group in joints: end = polesV[pV][1]
+origin = group[0]
+x1=origin[0] if start == [0.0, 0.0, height]:
+y1=origin[1] topPieces.append(asSpherical(end))
+z1=origin[2] else:
+v=0 name = “poleV{}, {} , {}”.format(pV, start, end)
+#set join origin coordinates radiusX = poleRad
+joinArms=[origin] radiusY=poleRad
+joinAngles=[origin]
+while v<len(group): makeLine(start, end, radiusX, radiusY, name, “polesV”,
+vector=group[v] “Stainless Steel”)
+x2=vector[0] pV+=1
+y2=vector[1] #========= top con ==============#
+z2=vector[2] vP=0
+#coordinate difference # take third element for sort (phi angle)
+def takeX(elem):
+x4=x2-x1 return elem[2]
+y4=y2-y1
+z4=z2-z1 topPieces.sort(key=takeX)
+#xyz to r theta phi (theta is xy phi is zx) top2=[]
+polarCo=asSpherical([x4, y4, z4]) t=0
+polarCoAdjusted=polarCo while t<(len(topPieces)-1):
+polarCoAdjusted[0]=jointLength
+joinAngle =polarCoAdjusted start=asCartesian(topPieces[t])
+joinAngles.append(joinAngle) top2.append(start)
+joinArmAngle = [[x2, y2, z2,],[polarCoAdjusted]]
+end=asCartesian(topPieces[t+1])
+v+=1 name = “poleTop {}”.format(vP)
+joints2Angles.append(joinAngles) radiusX=poleRad
+joints2.append(joinArms) radiusy=poleRad
+#++++++++++++++++ make poles ++++++++++++++++#
+pH=0 if not topLineOrFlat:
+pV=0 makeLine(start, [0, 0, height] , radiusX, radiusY, name,
+topPieces=[] “topLine”, “Stainless Steel”)
+holeLeaves.append([polesH[pH][0],polesH[pH][1],topPoint])
+while pH<len(polesH): t+=1
+start = polesH[pH][0] vP+=1
+end = polesH[pH][1]
+top2.append(end)
+if pH<(len(polesH)-1): if top2 and topLineOrFlat:
+holeLeaves.append([polesH[pH][0],polesH[pH]
+[1],polesH[pH+1][1],polesH[pH+1][0]]) edges = [[i, i+1] for i in range(len(top2)-1)]
+lastEdge=[edges[-1][1], edges[0][0]]
+if start == [0.0, 0.0, height]: edges.append(lastEdge)
+topPieces.append(asSpherical(end))
+else: vert=top2
+name = “poleH{} {} , {}”.format(pH, start, end) vert.append([0,0,height])
+radiusX=poleRad
+radiusY=poleRad faces =[[i, i+1, (len(top2)-1)] for i in range(len(top2))]
+faces.append([(len(vert)-1), (len(vert)-2), 0])
+makeLine(start, end, radiusX, radiusY, name, “polesH”,
+“Iron brushed”) mesh = bpy.data.meshes.new(“topmesh”)
+mesh.from_pydata(vert, edges, faces)
+pH+=1 mesh.update()
+62

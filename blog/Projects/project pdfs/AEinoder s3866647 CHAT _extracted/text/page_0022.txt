@@ -1,0 +1,21 @@
+T E C H N O L O G Y
+To create a text based analogue of speech, it would be ideal to first
+start with the audio recording of the speech itself. This could then
+be translated into the typographical form.
+The speech would also have to become the written text so that there is
+only a need for one input of information. This will require a microphone
+input and computing hardware that can perform speech to text
+conversion.
+As stated in the previous section, it would be ideal to have an image taken,
+therefore a camera that can easily be intergrated into the computing
+hardware is required.
+There is also a need to measure the participant's body movements around
+the device because many of the non-verbal characteristics of interpersonal
+communication are related to a person's overall position in space and
+movement within their environment.
+Finally, the device will need to a have a thermal printer to print off the
+message "receipts".
+[Not included in this prototype is the means of sending the message.
+It could either be through radio via an adafruit feather or through
+traditional internet communications via wifi.]
+22

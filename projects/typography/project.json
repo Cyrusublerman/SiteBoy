@@ -1,0 +1,13 @@
+{
+  "id": "typography",
+  "title": "TYPOGRAPHY TOOLS",
+  "sections": [
+    { "title": "ABSTRACT",                          "src": "projects/typography/md/abstract.md",                          "open": true },
+    { "title": "CANVAS TEXTMETRICS AUTHORITY",      "src": "projects/typography/md/canvas-textmetrics-authority.md"                    },
+    { "title": "METRIC DEFINITIONS",                "src": "projects/typography/md/metric-definitions.md"                               },
+    { "title": "RATIO MODEL",                       "src": "projects/typography/md/ratio-model.md"                                     },
+    { "title": "FONT LOADING",                      "src": "projects/typography/md/font-loading.md"                                    },
+    { "title": "LIVE TOOL", "type": "embed",        "src": "/#tools/font-analysis", "height": 720                                      },
+    { "title": "REFERENCES",                        "src": "projects/typography/md/references.md"                                      }
+  ]
+}

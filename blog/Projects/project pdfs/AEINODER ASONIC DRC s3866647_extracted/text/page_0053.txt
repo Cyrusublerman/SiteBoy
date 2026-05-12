@@ -1,0 +1,16 @@
+asonic
+Image of Grasshopper Algorithm for Wave-Tile, Lezhou Shen
+To achieve a seemingly non-repeating The generated xyz points are then
+pattern and allow for more seamless collated and organised so that
+tiling, two separate edge arrays are they can be further processed.
+created. These categories of edges are The fundamental processing is
+then used to create two categories of the formation of smooth curved
+tiles that are required to be placed in an connections between these points.
+alternating, checkerboard array.
+This, when finished, leaves us with
+The algorithm has within it two sections an ocean-like surface of pseudo-
+that generate the fractal, wavelike directional wave-like patterns of
+nature of the tile’s surface. This is the peaks and troughs that will form the
+creation of the x and y axis, with their foundation of the Wave-Tile.
+respective variations of z-axis points.
+S3866647 53

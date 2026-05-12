@@ -1,0 +1,159 @@
+{
+  "name": "Cartesian to Polar",
+  "iface": [
+    {
+      "name": "Radius",
+      "io": "OUTPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Theta",
+      "io": "OUTPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Phi",
+      "io": "OUTPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "XYZ",
+      "io": "INPUT",
+      "type": "NodeSocketVector",
+      "default": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Vector Math",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "XYZ",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Y",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "XYZ",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "X",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Vector Math",
+      "fs": "Value",
+      "tn": "Group Output",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Group Output",
+      "ts": "Theta"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Group Output",
+      "ts": "Phi"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

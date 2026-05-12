@@ -1,0 +1,21 @@
+asonic
+Analysis of Sound Diffusion
+Using Grasshopper, team
+member Carlo Holden
+was able to simulate
+the movement of sound
+energy through a space
+with and without the
+Wave-Tile.
+These simulations
+highlight the increased
+diffusion of reflected
+sound particles and
+overall reduced sound
+energy levels
+Increased numbers
+of Wave-Tiles have
+compounding effects on
+the reduction of reflected
+noise energy.
+72 Ali Einoder

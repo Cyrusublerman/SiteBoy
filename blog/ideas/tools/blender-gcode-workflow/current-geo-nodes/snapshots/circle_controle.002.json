@@ -1,0 +1,154 @@
+{
+  "name": "circle_controle.002",
+  "iface": [
+    {
+      "name": "Value",
+      "io": "OUTPUT",
+      "type": "NodeSocketFloat",
+      "default": -82.59999084472656
+    },
+    {
+      "name": "Output",
+      "io": "OUTPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    },
+    {
+      "name": "Input",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Input",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Compare",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Switch",
+      "t": "SWITCH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Compare",
+      "ts": "A"
+    },
+    {
+      "fn": "Compare",
+      "fs": "Result",
+      "tn": "Switch",
+      "ts": "Switch"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Switch",
+      "ts": "False"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Switch",
+      "ts": "True"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Group Output",
+      "ts": "Value"
+    },
+    {
+      "fn": "Switch",
+      "fs": "Output",
+      "tn": "Group Output",
+      "ts": "Output"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Input",
+      "tn": "Reroute",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Input",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [
+    {
+      "node": "Switch",
+      "type": "INT"
+    }
+  ],
+  "child_groups": []
+}

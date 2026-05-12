@@ -1,0 +1,17 @@
+{
+  "id": "generative-art",
+  "title": "GENERATIVE ART",
+  "sections": [
+    { "title": "ABSTRACT",                "src": "projects/generative-art/md/abstract.md",                "open": true },
+    { "title": "GENERATOR HOST CONTRACT", "src": "projects/generative-art/md/generator-host-contract.md"              },
+    { "title": "ANIMATION FOUNDATION",    "src": "projects/generative-art/md/animation-foundation.md"                },
+    { "title": "PIECES",                  "src": "projects/generative-art/md/pieces.md"                              },
+    { "title": "LISSAJOUS",               "type": "embed", "src": "/#tools/lissajous",       "height": 720           },
+    { "title": "HARMONICS",               "type": "embed", "src": "/#tools/harmonics",        "height": 720           },
+    { "title": "PHYLLO SPIRAL",           "type": "embed", "src": "/#tools/phyllo-spiral",    "height": 720           },
+    { "title": "TORUS",                   "type": "embed", "src": "/#tools/torus",            "height": 720           },
+    { "title": "SQUARES",                 "type": "embed", "src": "/#tools/squares",          "height": 720           },
+    { "title": "EXPORT MODEL",            "src": "projects/generative-art/md/export-model.md"                        },
+    { "title": "REFERENCES",             "src": "projects/generative-art/md/references.md"                          }
+  ]
+}

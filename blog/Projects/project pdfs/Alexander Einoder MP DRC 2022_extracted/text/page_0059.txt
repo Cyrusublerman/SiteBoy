@@ -1,0 +1,10 @@
+Figure 34: Geometry node based phyllotactic dome algorithm. Author’s Own 2022.
+The central section is the primary generation of phyllotactic points. This then connects to the upper
+section as well as to another collection that creates small spheres that are used to illustrate the point
+locations.
+The bottom most section creates a text output that is present at the bottom of each image render. This
+simplifies the assessment process and allows for faster processing of algorithmic changes.
+For the generation of two curve sets the upper section is duplicated and a second denominator is
+connected as an input. This curve set and the previous can be used to create the entire lattice.
+59
+The following pages show the functional Python script that was developed from the geometry nodes.

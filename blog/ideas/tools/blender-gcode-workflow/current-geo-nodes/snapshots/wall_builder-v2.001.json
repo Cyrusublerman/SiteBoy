@@ -1,0 +1,2560 @@
+{
+  "name": "wall_builder-v2.001",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometry",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "number of layers",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 40
+    },
+    {
+      "name": "width",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 40.0
+    },
+    {
+      "name": "width 2",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "layer height",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 1.5
+    },
+    {
+      "name": "scale",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 1.0
+    },
+    {
+      "name": "segments per rev",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 200
+    },
+    {
+      "name": "starting level",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 3
+    },
+    {
+      "name": "height",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 57
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.002",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Set Position",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Math.005",
+      "t": "MATH",
+      "lbl": "total segments",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Set Position.001",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Node",
+      "t": "GROUP",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": "build spiral extrude.004"
+    },
+    {
+      "n": "Group.002",
+      "t": "GROUP",
+      "lbl": "move Z position",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": "edit_Z.002"
+    },
+    {
+      "n": "Group.003",
+      "t": "GROUP",
+      "lbl": "move Z position",
+      "mut": false,
+      "fr": "Frame",
+      "cg": "edit_Z.002"
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Set Position.002",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Value",
+      "t": "VALUE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Clamp",
+      "t": "CLAMP",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.013",
+      "t": "REROUTE",
+      "lbl": "layer hight",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Set Position.003",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.017",
+      "t": "REROUTE",
+      "lbl": "layer hight",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.001",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Frame",
+      "t": "FRAME",
+      "lbl": "leaval out the top line",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.001",
+      "t": "FRAME",
+      "lbl": "second from bottom  to be flat and down a bit ",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.002",
+      "t": "FRAME",
+      "lbl": "then move the whole thing up by one layer",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Frame.003",
+      "t": "FRAME",
+      "lbl": "move the botom of the spirel to zero",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.002",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.004",
+      "t": "REROUTE",
+      "lbl": "segments per rev",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.005",
+      "t": "REROUTE",
+      "lbl": "layer hight",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.006",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.011",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.012",
+      "t": "REROUTE",
+      "lbl": "select second from botom line",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.014",
+      "t": "REROUTE",
+      "lbl": "select second from botom line",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.015",
+      "t": "REROUTE",
+      "lbl": "layer hight",
+      "mut": true,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.016",
+      "t": "REROUTE",
+      "lbl": "layer hight",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.018",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.007",
+      "t": "REROUTE",
+      "lbl": "total segments",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.008",
+      "t": "REROUTE",
+      "lbl": "total segments",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.009",
+      "t": "REROUTE",
+      "lbl": "segments per rev",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.010",
+      "t": "REROUTE",
+      "lbl": "segments per rev",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.019",
+      "t": "REROUTE",
+      "lbl": "segments per rev",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.020",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.008",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Value.001",
+      "t": "VALUE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Reroute.022",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Compare.002",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Compare.004",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Index.002",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Boolean Math.001",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Index.003",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.023",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Math.010",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Integer Math",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.021",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.024",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.025",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Frame.004",
+      "t": "FRAME",
+      "lbl": "select top leval",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.026",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.027",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.028",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.029",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.030",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.032",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.033",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Compare.003",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Index.001",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Frame.006",
+      "t": "FRAME",
+      "lbl": "select everything above the total number of points and one row",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.034",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.035",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.001",
+      "t": "INTEGER_MATH",
+      "lbl": "ADD A BIT",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.041",
+      "t": "REROUTE",
+      "lbl": "total segmanmts",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Frame.007",
+      "t": "FRAME",
+      "lbl": "select second from bottom layer",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Boolean Math.003",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.036",
+      "t": "REROUTE",
+      "lbl": "segments per rev",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.002",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.003",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.004",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Compare.005",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Index.004",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Frame.008",
+      "t": "FRAME",
+      "lbl": "select everything below the total  number of points and one row",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.005",
+      "t": "INTEGER_MATH",
+      "lbl": "ADD A BIT",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.006",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.007",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.008",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Group.004",
+      "t": "GROUP",
+      "lbl": "move Z position",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": "edit_Z.002"
+    },
+    {
+      "n": "Reroute.003",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Frame.005",
+      "t": "FRAME",
+      "lbl": "amout  to move down start of second layer",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Compare.006",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Index.005",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.009",
+      "t": "INTEGER_MATH",
+      "lbl": "ADD A BIT",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.011",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Frame.009",
+      "t": "FRAME",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.031",
+      "t": "REROUTE",
+      "lbl": "segments per rev",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Evaluate on Domain",
+      "t": "FIELD_ON_DOMAIN",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Set Position.004",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.037",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.038",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.039",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.040",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Frame.010",
+      "t": "FRAME",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.042",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.043",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.044",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.045",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.046",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.047",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.048",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Linear Gizmo",
+      "t": "GIZMO_LINEAR",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.015",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.002",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.015",
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.015",
+      "cg": null
+    },
+    {
+      "n": "Reroute.049",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.050",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.001",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.002",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.051",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.052",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.053",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.003",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Index",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Evaluate on Domain.001",
+      "t": "FIELD_ON_DOMAIN",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Compare",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.010",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Boolean Math",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.011",
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.004",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.005",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.011",
+      "t": "FRAME",
+      "lbl": "mark bottme layer as minimum speed",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.006",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Set Material",
+      "t": "SET_MATERIAL",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.007",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.001",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Index.006",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Evaluate on Domain.002",
+      "t": "FIELD_ON_DOMAIN",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Compare.001",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.012",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Frame.012",
+      "t": "FRAME",
+      "lbl": "set second from bottom to speed up ",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.012",
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.008",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.002",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Index.007",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Evaluate on Domain.003",
+      "t": "FIELD_ON_DOMAIN",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Compare.007",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.013",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Frame.013",
+      "t": "FRAME",
+      "lbl": "mark 3rd layer as even faster",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.013",
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute.009",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.003",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Index.008",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Evaluate on Domain.004",
+      "t": "FIELD_ON_DOMAIN",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Compare.008",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.014",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Boolean Math.002",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.014",
+      "cg": null
+    },
+    {
+      "n": "Frame.014",
+      "t": "FRAME",
+      "lbl": "mark bottme layer for tool 1 (no Fan)",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.054",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.015",
+      "cg": null
+    },
+    {
+      "n": "Reroute.055",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.015",
+      "cg": null
+    },
+    {
+      "n": "Frame.015",
+      "t": "FRAME",
+      "lbl": "control gizmo",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Node",
+      "ts": "Resolution"
+    },
+    {
+      "fn": "Reroute.028",
+      "fs": "Output",
+      "tn": "Set Position.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.020",
+      "fs": "Output",
+      "tn": "Node",
+      "ts": "number of layers"
+    },
+    {
+      "fn": "Reroute.030",
+      "fs": "Output",
+      "tn": "Set Position",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Reroute.026",
+      "fs": "Output",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.029",
+      "fs": "Output",
+      "tn": "Set Position",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.027",
+      "fs": "Output",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Value",
+      "fs": "Value",
+      "tn": "Clamp",
+      "ts": "Value"
+    },
+    {
+      "fn": "Clamp",
+      "fs": "Result",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group.003",
+      "fs": "Vector",
+      "tn": "Set Position.001",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Set Position.003",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.005",
+      "fs": "Output",
+      "tn": "Reroute.017",
+      "ts": "Input"
+    },
+    {
+      "fn": "Combine XYZ.001",
+      "fs": "Vector",
+      "tn": "Set Position.003",
+      "ts": "Offset"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Group.003",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.012",
+      "fs": "Output",
+      "tn": "Reroute",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.022",
+      "fs": "Output",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.015",
+      "fs": "Output",
+      "tn": "Reroute.005",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.043",
+      "fs": "Output",
+      "tn": "Reroute.006",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.015",
+      "fs": "Output",
+      "tn": "Reroute.011",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.012",
+      "fs": "Output",
+      "tn": "Reroute.014",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.051",
+      "fs": "Output",
+      "tn": "Reroute.015",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.013",
+      "fs": "Output",
+      "tn": "Reroute.016",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.016",
+      "fs": "Output",
+      "tn": "Node",
+      "ts": "layer hight"
+    },
+    {
+      "fn": "Reroute.008",
+      "fs": "Output",
+      "tn": "Reroute.007",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.005",
+      "fs": "Value",
+      "tn": "Reroute.008",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Reroute.009",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.009",
+      "fs": "Output",
+      "tn": "Reroute.010",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.010",
+      "fs": "Output",
+      "tn": "Reroute.019",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.009",
+      "fs": "Output",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.020",
+      "fs": "Output",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "layer height",
+      "tn": "Reroute.013",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "number of layers",
+      "tn": "Reroute.020",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.052",
+      "fs": "Output",
+      "tn": "Node",
+      "ts": "Width"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "width 2",
+      "tn": "Node",
+      "ts": "width 2"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "scale",
+      "tn": "Node",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.045",
+      "fs": "Output",
+      "tn": "Reroute.022",
+      "ts": "Input"
+    },
+    {
+      "fn": "Compare.004",
+      "fs": "Result",
+      "tn": "Boolean Math.001",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Index.002",
+      "fs": "Index",
+      "tn": "Compare.004",
+      "ts": "A"
+    },
+    {
+      "fn": "Index.003",
+      "fs": "Index",
+      "tn": "Compare.002",
+      "ts": "A"
+    },
+    {
+      "fn": "Boolean Math.001",
+      "fs": "Boolean",
+      "tn": "Set Position.001",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Reroute.021",
+      "fs": "Output",
+      "tn": "Compare.004",
+      "ts": "B"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Reroute.023",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.010",
+      "fs": "Value",
+      "tn": "Compare.002",
+      "ts": "B"
+    },
+    {
+      "fn": "Compare.002",
+      "fs": "Result",
+      "tn": "Boolean Math.001",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Math.010",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math",
+      "fs": "Value",
+      "tn": "Math.010",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.023",
+      "fs": "Output",
+      "tn": "Integer Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.023",
+      "fs": "Output",
+      "tn": "Reroute.021",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.025",
+      "fs": "Output",
+      "tn": "Reroute.024",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.019",
+      "fs": "Output",
+      "tn": "Reroute.025",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.006",
+      "fs": "Output",
+      "tn": "Reroute.026",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.011",
+      "fs": "Output",
+      "tn": "Reroute.027",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.018",
+      "fs": "Output",
+      "tn": "Reroute.028",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Reroute.029",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Reroute.030",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.046",
+      "fs": "Output",
+      "tn": "Reroute.032",
+      "ts": "Input"
+    },
+    {
+      "fn": "Set Position.001",
+      "fs": "Geometry",
+      "tn": "Reroute.033",
+      "ts": "Input"
+    },
+    {
+      "fn": "Set Position",
+      "fs": "Geometry",
+      "tn": "Reroute.018",
+      "ts": "Input"
+    },
+    {
+      "fn": "Index.001",
+      "fs": "Index",
+      "tn": "Compare.003",
+      "ts": "A"
+    },
+    {
+      "fn": "Reroute.036",
+      "fs": "Output",
+      "tn": "Reroute.034",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.041",
+      "fs": "Output",
+      "tn": "Reroute.035",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.008",
+      "fs": "Output",
+      "tn": "Reroute.041",
+      "ts": "Input"
+    },
+    {
+      "fn": "Integer Math.004",
+      "fs": "Value",
+      "tn": "Compare.003",
+      "ts": "B"
+    },
+    {
+      "fn": "Integer Math.003",
+      "fs": "Value",
+      "tn": "Integer Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Compare.003",
+      "fs": "Result",
+      "tn": "Boolean Math.003",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Reroute.010",
+      "fs": "Output",
+      "tn": "Reroute.036",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.035",
+      "fs": "Output",
+      "tn": "Integer Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.034",
+      "fs": "Output",
+      "tn": "Integer Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.002",
+      "fs": "Value",
+      "tn": "Integer Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.001",
+      "fs": "Value",
+      "tn": "Integer Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Index.004",
+      "fs": "Index",
+      "tn": "Compare.005",
+      "ts": "A"
+    },
+    {
+      "fn": "Integer Math.008",
+      "fs": "Value",
+      "tn": "Compare.005",
+      "ts": "B"
+    },
+    {
+      "fn": "Integer Math.007",
+      "fs": "Value",
+      "tn": "Integer Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.006",
+      "fs": "Value",
+      "tn": "Integer Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.005",
+      "fs": "Value",
+      "tn": "Integer Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.041",
+      "fs": "Output",
+      "tn": "Integer Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.036",
+      "fs": "Output",
+      "tn": "Integer Math.007",
+      "ts": "Value"
+    },
+    {
+      "fn": "Compare.005",
+      "fs": "Result",
+      "tn": "Boolean Math.003",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Boolean Math.003",
+      "fs": "Boolean",
+      "tn": "Reroute.012",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group.002",
+      "fs": "Vector",
+      "tn": "Set Position",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.046",
+      "fs": "Output",
+      "tn": "Group.004",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Reroute.003",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.008",
+      "fs": "Value",
+      "tn": "Combine XYZ.001",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.017",
+      "fs": "Output",
+      "tn": "Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Evaluate on Domain",
+      "fs": "Value",
+      "tn": "Compare.006",
+      "ts": "A"
+    },
+    {
+      "fn": "Integer Math.011",
+      "fs": "Value",
+      "tn": "Integer Math.009",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.019",
+      "fs": "Output",
+      "tn": "Reroute.031",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.031",
+      "fs": "Output",
+      "tn": "Integer Math.011",
+      "ts": "Value"
+    },
+    {
+      "fn": "Index.005",
+      "fs": "Index",
+      "tn": "Evaluate on Domain",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.009",
+      "fs": "Value",
+      "tn": "Compare.006",
+      "ts": "B"
+    },
+    {
+      "fn": "Reroute.048",
+      "fs": "Output",
+      "tn": "Set Position.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Compare.006",
+      "fs": "Result",
+      "tn": "Set Position.004",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Reroute.040",
+      "fs": "Output",
+      "tn": "Set Position.004",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Set Position.004",
+      "ts": "Offset"
+    },
+    {
+      "fn": "Reroute.038",
+      "fs": "Output",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    },
+    {
+      "fn": "Group.004",
+      "fs": "Vector",
+      "tn": "Set Position.002",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.047",
+      "fs": "Output",
+      "tn": "Set Position.002",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Set Position.004",
+      "fs": "Geometry",
+      "tn": "Reroute.002",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.042",
+      "fs": "Output",
+      "tn": "Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.032",
+      "fs": "Output",
+      "tn": "Reroute.037",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.037",
+      "fs": "Output",
+      "tn": "Reroute.038",
+      "ts": "Input"
+    },
+    {
+      "fn": "Set Position.002",
+      "fs": "Geometry",
+      "tn": "Reroute.039",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.039",
+      "fs": "Output",
+      "tn": "Reroute.040",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.038",
+      "fs": "Output",
+      "tn": "Reroute.042",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.044",
+      "fs": "Output",
+      "tn": "Reroute.043",
+      "ts": "Input"
+    },
+    {
+      "fn": "Node",
+      "fs": "spirel hight",
+      "tn": "Reroute.044",
+      "ts": "Input"
+    },
+    {
+      "fn": "Value.001",
+      "fs": "Value",
+      "tn": "Reroute.046",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Reroute.047",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.033",
+      "fs": "Output",
+      "tn": "Reroute.048",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "segments per rev",
+      "tn": "Reroute.004",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "segments per rev",
+      "tn": "Store Named Attribute",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.049",
+      "fs": "Output",
+      "tn": "Store Named Attribute",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store Named Attribute.001",
+      "fs": "Geometry",
+      "tn": "Reroute.045",
+      "ts": "Input"
+    },
+    {
+      "fn": "Combine XYZ.002",
+      "fs": "Vector",
+      "tn": "Linear Gizmo",
+      "ts": "Position"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "number of layers",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "layer height",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Combine XYZ.002",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.055",
+      "fs": "Output",
+      "tn": "Linear Gizmo",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.050",
+      "fs": "Output",
+      "tn": "Reroute.049",
+      "ts": "Input"
+    },
+    {
+      "fn": "Node",
+      "fs": "Mesh",
+      "tn": "Reroute.050",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.051",
+      "fs": "Output",
+      "tn": "Store Named Attribute.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.016",
+      "fs": "Output",
+      "tn": "Reroute.051",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "width",
+      "tn": "Reroute.052",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.053",
+      "fs": "Output",
+      "tn": "Store Named Attribute.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Store Named Attribute",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store Named Attribute.002",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.052",
+      "fs": "Output",
+      "tn": "Reroute.053",
+      "ts": "Input"
+    },
+    {
+      "fn": "Index",
+      "fs": "Index",
+      "tn": "Evaluate on Domain.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.010",
+      "fs": "Value",
+      "tn": "Compare",
+      "ts": "A"
+    },
+    {
+      "fn": "Named Attribute",
+      "fs": "Attribute",
+      "tn": "Compare",
+      "ts": "B"
+    },
+    {
+      "fn": "Compare",
+      "fs": "Result",
+      "tn": "Store Named Attribute.003",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Set Material",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Evaluate on Domain.001",
+      "fs": "Value",
+      "tn": "Integer Math.010",
+      "ts": "Value"
+    },
+    {
+      "fn": "Compare",
+      "fs": "Result",
+      "tn": "Boolean Math",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Store Named Attribute.003",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.005",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store Named Attribute.005",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.006",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Index.006",
+      "fs": "Index",
+      "tn": "Evaluate on Domain.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.012",
+      "fs": "Value",
+      "tn": "Compare.001",
+      "ts": "A"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Compare.001",
+      "ts": "B"
+    },
+    {
+      "fn": "Compare.001",
+      "fs": "Result",
+      "tn": "Store Named Attribute.007",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Evaluate on Domain.002",
+      "fs": "Value",
+      "tn": "Integer Math.012",
+      "ts": "Value"
+    },
+    {
+      "fn": "Set Position.003",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.004",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store Named Attribute.007",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.003",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Named Attribute.001",
+      "fs": "Attribute",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Index.007",
+      "fs": "Index",
+      "tn": "Evaluate on Domain.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.013",
+      "fs": "Value",
+      "tn": "Compare.007",
+      "ts": "A"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Compare.007",
+      "ts": "B"
+    },
+    {
+      "fn": "Compare.007",
+      "fs": "Result",
+      "tn": "Store Named Attribute.008",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Evaluate on Domain.003",
+      "fs": "Value",
+      "tn": "Integer Math.013",
+      "ts": "Value"
+    },
+    {
+      "fn": "Named Attribute.002",
+      "fs": "Attribute",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Store Named Attribute.004",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.008",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store Named Attribute.008",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.007",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Index.008",
+      "fs": "Index",
+      "tn": "Evaluate on Domain.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.014",
+      "fs": "Value",
+      "tn": "Compare.008",
+      "ts": "A"
+    },
+    {
+      "fn": "Named Attribute.003",
+      "fs": "Attribute",
+      "tn": "Compare.008",
+      "ts": "B"
+    },
+    {
+      "fn": "Compare.008",
+      "fs": "Result",
+      "tn": "Store Named Attribute.009",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Evaluate on Domain.004",
+      "fs": "Value",
+      "tn": "Integer Math.014",
+      "ts": "Value"
+    },
+    {
+      "fn": "Compare.008",
+      "fs": "Result",
+      "tn": "Boolean Math.002",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Store Named Attribute.006",
+      "fs": "Geometry",
+      "tn": "Store Named Attribute.009",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Store Named Attribute.009",
+      "fs": "Geometry",
+      "tn": "Set Material",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Reroute.054",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.054",
+      "fs": "Output",
+      "tn": "Reroute.055",
+      "ts": "Input"
+    }
+  ],
+  "frames": [
+    {
+      "n": "Frame",
+      "lbl": "leaval out the top line",
+      "ch": [
+        "Math.002",
+        "Set Position.001",
+        "Group.003",
+        "Math.004",
+        "Value",
+        "Clamp",
+        "Reroute.006",
+        "Reroute.011",
+        "Reroute.018",
+        "Frame.004",
+        "Reroute.026",
+        "Reroute.027",
+        "Reroute.028"
+      ]
+    },
+    {
+      "n": "Frame.001",
+      "lbl": "second from bottom  to be flat and down a bit ",
+      "ch": [
+        "Set Position.002",
+        "Reroute.032",
+        "Reroute.033",
+        "Group.004",
+        "Reroute.003",
+        "Frame.005",
+        "Reroute.046",
+        "Reroute.047",
+        "Reroute.048"
+      ]
+    },
+    {
+      "n": "Frame.002",
+      "lbl": "then move the whole thing up by one layer",
+      "ch": [
+        "Set Position.003",
+        "Combine XYZ.001",
+        "Reroute.002",
+        "Math.008"
+      ]
+    },
+    {
+      "n": "Frame.003",
+      "lbl": "move the botom of the spirel to zero",
+      "ch": [
+        "Set Position",
+        "Group.002",
+        "Reroute",
+        "Reroute.001",
+        "Reroute.029",
+        "Reroute.030"
+      ]
+    },
+    {
+      "n": "Frame.004",
+      "lbl": "select top leval",
+      "ch": [
+        "Compare.002",
+        "Compare.004",
+        "Index.002",
+        "Boolean Math.001",
+        "Index.003",
+        "Reroute.023",
+        "Math.010",
+        "Integer Math",
+        "Reroute.021",
+        "Reroute.024",
+        "Reroute.025"
+      ]
+    },
+    {
+      "n": "Frame.006",
+      "lbl": "select everything above the total number of points and one row",
+      "ch": [
+        "Compare.003",
+        "Index.001",
+        "Reroute.034",
+        "Reroute.035",
+        "Integer Math.001",
+        "Integer Math.002",
+        "Integer Math.003",
+        "Integer Math.004"
+      ]
+    },
+    {
+      "n": "Frame.007",
+      "lbl": "select second from bottom layer",
+      "ch": [
+        "Frame.006",
+        "Reroute.041",
+        "Boolean Math.003",
+        "Reroute.036",
+        "Frame.008"
+      ]
+    },
+    {
+      "n": "Frame.008",
+      "lbl": "select everything below the total  number of points and one row",
+      "ch": [
+        "Compare.005",
+        "Index.004",
+        "Integer Math.005",
+        "Integer Math.006",
+        "Integer Math.007",
+        "Integer Math.008"
+      ]
+    },
+    {
+      "n": "Frame.005",
+      "lbl": "amout  to move down start of second layer",
+      "ch": [
+        "Value.001"
+      ]
+    },
+    {
+      "n": "Frame.009",
+      "lbl": "",
+      "ch": [
+        "Compare.006",
+        "Index.005",
+        "Integer Math.009",
+        "Integer Math.011",
+        "Evaluate on Domain"
+      ]
+    },
+    {
+      "n": "Frame.010",
+      "lbl": "",
+      "ch": [
+        "Frame.009",
+        "Set Position.004",
+        "Combine XYZ",
+        "Reroute.039",
+        "Reroute.040"
+      ]
+    },
+    {
+      "n": "Frame.011",
+      "lbl": "mark bottme layer as minimum speed",
+      "ch": [
+        "Store Named Attribute.003",
+        "Named Attribute",
+        "Index",
+        "Evaluate on Domain.001",
+        "Compare",
+        "Integer Math.010",
+        "Boolean Math"
+      ]
+    },
+    {
+      "n": "Frame.012",
+      "lbl": "set second from bottom to speed up ",
+      "ch": [
+        "Store Named Attribute.007",
+        "Named Attribute.001",
+        "Index.006",
+        "Evaluate on Domain.002",
+        "Compare.001",
+        "Integer Math.012",
+        "Math.001"
+      ]
+    },
+    {
+      "n": "Frame.013",
+      "lbl": "mark 3rd layer as even faster",
+      "ch": [
+        "Store Named Attribute.008",
+        "Named Attribute.002",
+        "Index.007",
+        "Evaluate on Domain.003",
+        "Compare.007",
+        "Integer Math.013",
+        "Math.003"
+      ]
+    },
+    {
+      "n": "Frame.014",
+      "lbl": "mark bottme layer for tool 1 (no Fan)",
+      "ch": [
+        "Store Named Attribute.009",
+        "Named Attribute.003",
+        "Index.008",
+        "Evaluate on Domain.004",
+        "Compare.008",
+        "Integer Math.014",
+        "Boolean Math.002"
+      ]
+    },
+    {
+      "n": "Frame.015",
+      "lbl": "control gizmo",
+      "ch": [
+        "Linear Gizmo",
+        "Combine XYZ.002",
+        "Math",
+        "Reroute.054",
+        "Reroute.055"
+      ]
+    }
+  ],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [
+    {
+      "node": "Store Named Attribute",
+      "attr": "True",
+      "dt": "INT",
+      "dom": "FACE"
+    },
+    {
+      "node": "Store Named Attribute.001",
+      "attr": "True",
+      "dt": "FLOAT",
+      "dom": "FACE"
+    },
+    {
+      "node": "Store Named Attribute.002",
+      "attr": "True",
+      "dt": "FLOAT",
+      "dom": "FACE"
+    },
+    {
+      "node": "Store Named Attribute.003",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.004",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.005",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.006",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.007",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.008",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    },
+    {
+      "node": "Store Named Attribute.009",
+      "attr": "True",
+      "dt": "BYTE_COLOR",
+      "dom": "CORNER"
+    }
+  ],
+  "switches": [],
+  "child_groups": [
+    "build spiral extrude.004",
+    "edit_Z.002"
+  ]
+}

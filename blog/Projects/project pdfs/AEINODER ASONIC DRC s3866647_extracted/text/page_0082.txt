@@ -1,0 +1,4 @@
+asonic
+Summary of Contributions
+Render of Wave-Tile in Hospital Environment AEinoder 2021
+82 Ali Einoder

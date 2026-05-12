@@ -1,0 +1,13 @@
+{
+  "id": "siteboy",
+  "title": "SITEBOY",
+  "sections": [
+    { "title": "ABSTRACT",                      "src": "projects/siteboy/md/abstract.md",                      "open": true },
+    { "title": "DESIGN LAW",                    "src": "projects/siteboy/md/design-law.md"                     },
+    { "title": "COMPONENT ARCHITECTURE",        "src": "projects/siteboy/md/component-architecture.md"         },
+    { "title": "BORDER AND TYPOGRAPHY SYSTEMS", "src": "projects/siteboy/md/border-and-typography-systems.md"  },
+    { "title": "ROUTING AND APP BOOTSTRAP",     "src": "projects/siteboy/md/routing-and-app-bootstrap.md"      },
+    { "title": "STATE AND LABELLING",           "src": "projects/siteboy/md/state-and-labelling.md"            },
+    { "title": "REFERENCES",                    "src": "projects/siteboy/md/references.md"                     }
+  ]
+}

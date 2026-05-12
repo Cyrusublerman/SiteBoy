@@ -477,7 +477,7 @@ export class PageContainer extends BaseComponent {
             
             // Apply F-based Layout & Sizing Guide calculations  
             this.applyLayoutGuideCalculations();
-            
+
             // Create header with restored split layout
             this.headerComponent = new PageHeader({
                 navigationItems: this.navigationItems.filter(item => 
@@ -485,47 +485,31 @@ export class PageContainer extends BaseComponent {
                 ),
                 onNavigate: this.onNavigate
             }, this.deps);
-            
             const headerEl = this.headerComponent.render();
             this.element.appendChild(headerEl);
-            
+
             // Create subheader (hidden by default)
             this.subheaderComponent = new Subheader({
                 sectionTitle: 'SECTION'
             }, this.deps);
-            
             const subheaderEl = this.subheaderComponent.render();
             document.body.appendChild(subheaderEl);
-            
-            // Make globally accessible
             window.Subheader = this.subheaderComponent;
-            
-            // Create content container using same deterministic method as headers/footers
+
+            // Create content container
             const container = this.createElement('div', 'content-container');
             container.id = 'container';
-
-            // Apply deterministic positioning like PageHeader/PageFooter
-            // Position fixed to match header/footer positioning system
-            // Note: border-top and border-bottom set to none for normal mode
-            // Full mode will override these via CSS with !important
+            // Base styles — top/bottom/left/width/borders are set by setSubheaderState per route
             container.style.cssText = `
                 position: fixed;
-                left: var(--layout-margin);
-                width: var(--layout-width);
                 background: var(--c-bg);
-                border-left: 1px solid var(--c-border);
-                border-right: 1px solid var(--c-border);
                 box-sizing: border-box;
-                overflow-y: auto;
-                padding: calc(var(--f) * 4);
                 z-index: 100;
             `;
+            this.contentBody = container;
+            document.body.appendChild(container);
 
-            // Content container becomes the direct parent for content (no content-body wrapper)
-            this.contentBody = container; // Point to container directly
-            document.body.appendChild(container); // Append to body like header/footer
-
-            // Create footer - positioned via CSS variables
+            // Create footer
             this.footerComponent = new PageFooter({
                 onMarginChange: (value) => this.setMarginMode(value),
                 getMarginOverride: () => this.marginOverride,
@@ -534,7 +518,7 @@ export class PageContainer extends BaseComponent {
             const footerEl = this.footerComponent.render();
             document.body.appendChild(footerEl);
 
-            // Set initial layout state (no subheader by default) - this will position the content container
+            // Set initial layout state (no subheader by default)
             this.setSubheaderState(false);
             
             // Subscribe to resize
@@ -624,91 +608,111 @@ export class PageContainer extends BaseComponent {
     }
     
     /**
-     * Set subheader state and apply corresponding layout
-     * @param {boolean} hasSubheader - Whether subheader should be shown
+     * Set subheader state and apply corresponding layout to the content container.
+     * Three modes (checked in priority order):
+     *   1. home-mode  — full-bleed, no chrome visible, centred flex container
+     *   2. full-mode  — margined with top/bottom borders (tool embedding)
+     *   3. normal     — framed under header/subheader/footer
+     * @param {boolean} hasSubheader
      */
     setSubheaderState(hasSubheader) {
-        // Check if we're in full-page mode (no header/footer)
-        const isFullMode = document.body.classList.contains('full-mode');
-        
+        const isHomeMode   = document.body.classList.contains('home-mode');
+        const isFullMode   = document.body.classList.contains('full-mode');
+
         if (hasSubheader) {
             document.body.classList.add('has-subheader');
             document.body.classList.remove('no-subheader');
             this.subheaderComponent?.show();
-            // Reposition content container below subheader
-            if (this.contentBody) {
-                if (isFullMode) {
-                    // Full mode: position from top margin only (subheader hidden in full mode)
-                    const layout = this.deps.MF?.computeLayout() || {};
-                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
-                    const contentTop = margin; // Just margin (no header, no subheader)
-                    const bottomOffset = margin; // Just margin at bottom
-                    
-                    this.contentBody.style.top = `${contentTop}px`;
-                    this.contentBody.style.bottom = `${bottomOffset}px`;
-                    this.contentBody.style.height = 'auto';
-                    
-                    // Add borders for full mode
-                    this.contentBody.style.borderTop = '1px solid var(--c-border)';
-                    this.contentBody.style.borderBottom = '1px solid var(--c-border)';
-                } else {
-                    // Normal mode: position below header and subheader
-                    const layout = this.deps.MF?.computeLayout() || {};
-                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
-                    const headerHeight = layout.headerHeight || 28;
-                    const isToolsSection = document.body.classList.contains('tools-section');
-                    const contentTop = margin + (2 * headerHeight) - 1; // Account for border overlap
-                    const bottomOffset = isToolsSection ? margin : headerHeight + margin;
-
-                    this.contentBody.style.top = `${contentTop}px`;
-                    this.contentBody.style.bottom = `${bottomOffset}px`;
-                    this.contentBody.style.height = 'auto';
-                    
-                    this.contentBody.style.borderTop = 'none';
-                    this.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
-                }
-            }
         } else {
             document.body.classList.add('no-subheader');
             document.body.classList.remove('has-subheader');
             this.subheaderComponent?.hide();
-            // Reposition content container below header
-            if (this.contentBody) {
-                if (isFullMode) {
-                    // Full mode: position from top margin only (no header)
-                    const layout = this.deps.MF?.computeLayout() || {};
-                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
-                    const contentTop = margin; // Just margin
-                    const bottomOffset = margin; // Just margin at bottom
-                    
-                    this.contentBody.style.top = `${contentTop}px`;
-                    this.contentBody.style.bottom = `${bottomOffset}px`;
-                    this.contentBody.style.height = 'auto';
-                    
-                    // Add borders for full mode
-                    this.contentBody.style.borderTop = '1px solid var(--c-border)';
-                    this.contentBody.style.borderBottom = '1px solid var(--c-border)';
-                } else {
-                    // Normal mode: position below header
-                    const layout = this.deps.MF?.computeLayout() || {};
-                    const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
-                    const headerHeight = layout.headerHeight || 28;
-                    const isToolsSection = document.body.classList.contains('tools-section');
-                    const contentTop = margin + headerHeight;
-                    const bottomOffset = isToolsSection ? margin : headerHeight + margin;
-
-                    this.contentBody.style.top = `${contentTop}px`;
-                    this.contentBody.style.bottom = `${bottomOffset}px`;
-                    this.contentBody.style.height = 'auto';
-                    
-                    this.contentBody.style.borderTop = 'none';
-                    this.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
-                }
-            }
         }
 
-        const modeStr = isFullMode ? ' [FULL MODE]' : '';
-        console.log(`📐 PageContainer: Layout state set to ${hasSubheader ? 'with' : 'no'} subheader${modeStr}`);
+        if (!this.contentBody) return;
+
+        const layout     = this.deps.MF?.computeLayout() || {};
+        const margin     = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
+        const headerH    = layout.headerHeight || 28;
+        const noFooter   = document.body.classList.contains('tools-section') ||
+                           document.body.classList.contains('projects-section');
+        const frameWidth = layout.frameWidth || (window.innerWidth - 2 * margin);
+        const marginLeft = layout.marginLeft  || margin;
+
+        if (isHomeMode) {
+            // Hide header, subheader, footer — same pattern as subheader.hide()
+            this.headerComponent?.hide();
+            this.subheaderComponent?.hide();
+            this.footerComponent?.hide();
+
+            // Full-bleed container — block flow so overflow:auto scrolls correctly.
+            // Centering is handled by the home-section child div (min-height:100%, flex).
+            this.contentBody.style.top          = `${margin}px`;
+            this.contentBody.style.bottom       = `${margin}px`;
+            this.contentBody.style.left         = `${marginLeft}px`;
+            this.contentBody.style.width        = `${frameWidth}px`;
+            this.contentBody.style.height       = 'auto';
+            this.contentBody.style.padding      = '0';
+            this.contentBody.style.overflow     = 'auto';
+            this.contentBody.style.overflowY    = '';
+            this.contentBody.style.display      = '';
+            this.contentBody.style.alignItems   = '';
+            this.contentBody.style.justifyContent = '';
+            this.contentBody.style.borderTop    = '1px solid var(--c-border)';
+            this.contentBody.style.borderBottom = '1px solid var(--c-border)';
+            this.contentBody.style.borderLeft   = '1px solid var(--c-border)';
+            this.contentBody.style.borderRight  = '1px solid var(--c-border)';
+        } else if (isFullMode) {
+            // Restore header/footer in case we came from home
+            this.headerComponent?.show();
+            this.footerComponent?.show();
+
+            // Tool-embedding full mode — margined, with borders, header/footer hidden via CSS
+            this.contentBody.style.top          = `${margin}px`;
+            this.contentBody.style.bottom       = `${margin}px`;
+            this.contentBody.style.left         = `${marginLeft}px`;
+            this.contentBody.style.width        = `${frameWidth}px`;
+            this.contentBody.style.height       = 'auto';
+            this.contentBody.style.padding      = '';
+            this.contentBody.style.overflow     = '';
+            this.contentBody.style.overflowY    = 'auto';
+            this.contentBody.style.display      = '';
+            this.contentBody.style.alignItems   = '';
+            this.contentBody.style.justifyContent = '';
+            this.contentBody.style.borderTop    = '1px solid var(--c-border)';
+            this.contentBody.style.borderBottom = '1px solid var(--c-border)';
+            this.contentBody.style.borderLeft   = '1px solid var(--c-border)';
+            this.contentBody.style.borderRight  = '1px solid var(--c-border)';
+        } else {
+            // Restore header/footer in case we came from home
+            this.headerComponent?.show();
+            this.footerComponent?.show();
+
+            // Normal framed mode — under header, subheader, footer
+            const contentTop = hasSubheader
+                ? margin + (2 * headerH) - 1
+                : margin + headerH;
+            const bottomOffset = noFooter ? margin : headerH + margin;
+
+            this.contentBody.style.top          = `${contentTop}px`;
+            this.contentBody.style.bottom       = `${bottomOffset}px`;
+            this.contentBody.style.left         = `${marginLeft}px`;
+            this.contentBody.style.width        = `${frameWidth}px`;
+            this.contentBody.style.height       = 'auto';
+            this.contentBody.style.padding      = `calc(var(--f) * 4)`;
+            this.contentBody.style.overflow     = '';
+            this.contentBody.style.overflowY    = 'auto';
+            this.contentBody.style.display      = '';
+            this.contentBody.style.alignItems   = '';
+            this.contentBody.style.justifyContent = '';
+            this.contentBody.style.borderTop    = 'none';
+            this.contentBody.style.borderBottom = noFooter ? '1px solid var(--c-border)' : 'none';
+            this.contentBody.style.borderLeft   = '1px solid var(--c-border)';
+            this.contentBody.style.borderRight  = '1px solid var(--c-border)';
+        }
+
+        const modeLabel = isHomeMode ? 'home' : isFullMode ? 'full' : 'normal';
+        window.debugLog('LAYOUT', `📐 Container: ${modeLabel}, sub=${hasSubheader}`);
     }
     
     /**
@@ -753,49 +757,10 @@ export class PageContainer extends BaseComponent {
      * Handle resize event - recalculate layout
      */
     onResize() {
-        // Recalculate layout on resize
         this.applyLayoutGuideCalculations();
-
-        // Update content container positioning like header/footer
-        if (this.contentBody) {
-            const hasSubheader = document.body.classList.contains('has-subheader');
-            const isFullMode = document.body.classList.contains('full-mode');
-            const layout = this.deps.MF?.computeLayout() || {};
-            const margin = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
-            const headerHeight = layout.headerHeight || 28;
-
-            if (isFullMode) {
-                // Full mode positioning (no header/footer/subheader - all hidden)
-                const contentTop = margin; // Just margin
-                const bottomOffset = margin;
-                this.contentBody.style.top = `${contentTop}px`;
-                this.contentBody.style.bottom = `${bottomOffset}px`;
-                this.contentBody.style.height = 'auto';
-                
-                // Add borders for full mode
-                this.contentBody.style.borderTop = '1px solid var(--c-border)';
-                this.contentBody.style.borderBottom = '1px solid var(--c-border)';
-            } else {
-                // Normal mode positioning (with header/footer)
-                const isToolsSection = document.body.classList.contains('tools-section');
-                const bottomOffset = isToolsSection ? margin : headerHeight + margin;
-                if (hasSubheader) {
-                    const contentTop = margin + (2 * headerHeight) - 1; // Account for border overlap
-                    this.contentBody.style.top = `${contentTop}px`;
-                    this.contentBody.style.bottom = `${bottomOffset}px`;
-                    this.contentBody.style.height = 'auto';
-                } else {
-                    const contentTop = margin + headerHeight;
-                    this.contentBody.style.top = `${contentTop}px`;
-                    this.contentBody.style.bottom = `${bottomOffset}px`;
-                    this.contentBody.style.height = 'auto';
-                }
-                
-                this.contentBody.style.borderTop = 'none';
-                this.contentBody.style.borderBottom = isToolsSection ? '1px solid var(--c-border)' : 'none';
-            }
-        }
-
+        // Re-apply full container positioning for current mode
+        const hasSubheader = document.body.classList.contains('has-subheader');
+        this.setSubheaderState(hasSubheader);
         window.debugLog('LAYOUT', '📐 PageContainer: Layout recalculated for new viewport size');
     }
     
@@ -883,9 +848,8 @@ export class PageHeader extends BaseComponent {
             `;
 
             if (this.onNavigate) {
-                homeLink.addEventListener('click', () => {
-                    this.onNavigate({ title: 'HOME' });
-                });
+                this._homeHandler = () => this.onNavigate({ title: 'HOME' });
+                homeLink.addEventListener('click', this._homeHandler);
                 homeLink.classList.add('clickable');
             }
 
@@ -973,7 +937,8 @@ export class PageHeader extends BaseComponent {
                 font-family: 'Atkinson Hyperlegible Mono', monospace;
             `;
 
-            headerToggle.addEventListener('click', () => this.toggleTheme());
+            this._toggleHandler = () => this.toggleTheme();
+            headerToggle.addEventListener('click', this._toggleHandler);
             headerToggle.classList.add('clickable');
 
             this.element.appendChild(headerToggle);
@@ -1015,6 +980,14 @@ export class PageHeader extends BaseComponent {
         if (toggle) {
             toggle.textContent = this.getThemeIcon();
         }
+    }
+
+    show() {
+        if (this.element) this.element.style.display = '';
+    }
+
+    hide() {
+        if (this.element) this.element.style.display = 'none';
     }
 
     destroy() {
@@ -1333,6 +1306,14 @@ export class PageFooter extends BaseComponent {
         if (this.fControllerContainer) {
             this.fControllerContainer.style.fontSize = `${newF}px`;
         }
+    }
+
+    show() {
+        if (this.element) this.element.style.display = '';
+    }
+
+    hide() {
+        if (this.element) this.element.style.display = 'none';
     }
 }
 

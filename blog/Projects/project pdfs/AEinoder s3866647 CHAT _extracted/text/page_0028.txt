@@ -1,0 +1,28 @@
+THERMAL PRINTER
+The printing of the message "receipt"
+was chosen to be from a thermal
+receipt printer. This is for many
+reasons:
+Firstly, a receipt printer has the ability
+to print out long rolls of monochromatic
+content. This creates a shape of text and
+imagery that is visually similar to that of a
+modern digital text message such as that
+from a SMS or Facebook message.
+Secondly, the printer itself uses no ink and
+instead has paper that reacts to a heating
+element inside the printer. This minimises
+involvement in upkeep and maintenance
+of the device as well as reducing the cost of
+continued function.
+The printer also has a iconic performative
+aspect as it audibly prints line by line,
+jutting the paper out in small bursts. This
+combination of sound and movement can
+aid in the emotional connection with the
+device and the artifact that it creates.
+The specific printer chosen was the Adafruit
+Mini Thermal Printer. This printer has
+preexisting libraries and code for use with a
+Raspberry Pi.
+28

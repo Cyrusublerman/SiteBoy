@@ -1,0 +1,15 @@
+asonic
+Materials
+Outer Shell
+The outer shell is required to be hard enough to hold the wave-tile’s structure,
+without the porosity to absorb water and microbiota, and transparent enough to
+allow for the light to pass through and simulate light’s interaction with water.
+This outer-shell material must also have the least environmental impact as
+possible whilst meeting the previously stated goals as well as maintaining a
+relatively low cost.
+These requirements would suggest the use of a transparent bioplastic. Made
+from a range of renewable sources such as corn starch, many bioplastics can
+be synthesised to have the necessary requirements and beneficially can return
+to the manufacturing process or be broken down to environmentally safe
+materials.
+62 Ali Einoder

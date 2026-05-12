@@ -1,0 +1,25 @@
+E L E C T R O -
+M A G N E T I C
+F I E L D S E N S O R
+Omnidirectionally sensing a body is an uncommon need in modern
+technological devices. There is not a wide variety of technologies
+and methods available to sense from a distance how a person moves
+in three-dimensional space.
+There is however, a musical instrument which is controlled in a manner that
+mimics many of the gestural movements of a speaker in conversation. This
+instrument is the theremin.
+Invented in the 1920's by celloist and physicist León Theremin whilst he
+was developing proximity sensors, the instrument is able to detect and react
+to the human body when it was near two radio antennas, resulting in an
+alien-like violin sound.
+This instrument has been developed since, with many iterations, fine tuning
+and simplification.
+Though the theremin uses two antenna to control pitch and amplitude of
+the sound, the CHAT device will only need to monitor one overall body
+instead of the user's hands. This reduces the needed antenna by half and
+greatly simplifies the circuit.
+From the now simplified circuit, a prototype was able to be built that can
+send the measurements of a person's movements to the Raspberry Pi.
+A circular antenna design proved to yield optimum results and could
+respond to movements up to 2m away.
+27

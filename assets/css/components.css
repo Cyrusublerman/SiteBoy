@@ -335,6 +335,153 @@
     text-transform: uppercase;
 }
 
+/* =================================================================
+   GALLERY LIGHTBOX - FULL-SCREEN ZOOM/PAN VIEWER
+   Owner: assets/js/shared/masonry-gallery.js → GalleryLightbox
+   Bar layout follows component-patterns.md §3.1 / §6.2 (toolbar):
+     - height 2F, status cell flex:1 min-width:30F left, action cells 6F right
+     - horizontal-stack borders per border-system.md §4 (border-left only)
+     - text per text-treatment.md §2 (UPPERCASE, F×0.75, var(--c-text))
+   ================================================================= */
+
+.gallery-lightbox__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: var(--c-bg);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+}
+
+.gallery-lightbox__bar {
+    display: flex;
+    align-items: stretch;
+    height: calc(var(--f) * 2);
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.gallery-lightbox__counter {
+    flex: 1;
+    min-width: calc(var(--f) * 30);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--f);
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-text);
+    text-transform: uppercase;
+    text-align: left;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.gallery-lightbox__btn {
+    width: calc(var(--f) * 6);
+    flex-shrink: 0;
+    height: 100%;
+    padding: 0;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: none;
+    border-left: 1px solid var(--c-border);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.gallery-lightbox__btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.gallery-lightbox__wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    cursor: zoom-in;
+}
+
+.gallery-lightbox__wrap--actual {
+    overflow: auto;
+    cursor: grab;
+}
+
+.gallery-lightbox__img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+    transform-origin: center center;
+    transition: opacity 0.15s;
+    display: block;
+}
+
+.gallery-lightbox__img--fill {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gallery-lightbox__img--actual {
+    max-width: none;
+    max-height: none;
+    object-fit: none;
+}
+
+.gallery-lightbox__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-border);
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.gallery-lightbox__loading--error {
+    color: var(--c-accent);
+}
+
+@media (max-width: 1023px) {
+    .gallery-lightbox__counter {
+        min-width: 0;
+    }
+    .gallery-lightbox__btn {
+        width: calc(var(--f) * 5);
+    }
+}
+
+/* =================================================================
+   HORIZONTAL IMAGE STRIP
+   Owner: assets/js/shared/masonry-gallery.js → HorizontalImageStrip
+   The transition is declared here (not in inline JS strings) so the
+   strip's animation logic is state-driven via class toggling.
+   ================================================================= */
+
+.his-strip {
+    transition: transform 0.2s ease-out;
+}
+
+.his-strip--no-transition {
+    transition: none;
+}
+
 /* Carousel - Minimalist image carousel */
 .carousel {
     width: 100%;
@@ -877,7 +1024,7 @@ figure.image-full { max-width: 100%; }
     padding: var(--f);
     margin: var(--f) 0;
     overflow-x: auto;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
     line-height: calc(var(--f) * 1.5);
 }
@@ -886,7 +1033,7 @@ figure.image-full { max-width: 100%; }
     background: transparent;
     color: var(--c-text);
     padding: 0;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
@@ -894,155 +1041,271 @@ figure.image-full { max-width: 100%; }
     background: var(--c-border);
     color: var(--c-bg);
     padding: calc(var(--f) / 4) calc(var(--f) / 2);
-    font-family: 'Space Mono', monospace;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
     font-size: var(--f);
 }
 
-/* Prism.js VGA Theme Override */
-/* Reset Prism defaults to match SiteBoy aesthetic */
-code[class*="language-"],
-pre[class*="language-"] {
-    color: var(--c-text) !important;
-    background: var(--c-bg) !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: var(--f) !important;
-    text-align: left !important;
-    white-space: pre !important;
-    word-spacing: normal !important;
-    word-break: normal !important;
-    word-wrap: normal !important;
-    line-height: calc(var(--f) * 1.5) !important;
-    tab-size: 4 !important;
-    hyphens: none !important;
+.markdown-body h2 {
+    text-transform: uppercase;
+    font-size: calc(var(--f) * 1.25);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin: calc(var(--f) * 1.5) 0 calc(var(--f) / 2) 0;
+    padding-bottom: calc(var(--f) / 2);
+    border-bottom: 1px solid var(--c-border);
 }
 
-/* Code blocks */
-pre[class*="language-"] {
-    padding: var(--f) !important;
-    margin: var(--f) 0 !important;
-    overflow: auto !important;
-    border: 1px solid var(--c-border) !important;
+.markdown-body h3 {
+    text-transform: uppercase;
+    font-size: var(--f);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: var(--f) 0 calc(var(--f) / 2) 0;
 }
 
-/* Inline code */
-:not(pre) > code[class*="language-"] {
-    padding: calc(var(--f) / 4) calc(var(--f) / 2) !important;
-    border-radius: 0 !important;
-    white-space: normal !important;
+.markdown-body h4 {
+    font-size: var(--f);
+    font-weight: 700;
+    margin: var(--f) 0 calc(var(--f) / 2) 0;
 }
 
-/* VGA Color Palette for Syntax Tokens - Maximum Specificity */
-/* Comments and metadata */
-code[class*="language-"] .token.comment,
-pre[class*="language-"] .token.comment,
-code[class*="language-"] .token.prolog,
-pre[class*="language-"] .token.prolog,
-code[class*="language-"] .token.doctype,
-pre[class*="language-"] .token.doctype,
-code[class*="language-"] .token.cdata,
-pre[class*="language-"] .token.cdata {
-    color: var(--vga-dark-gray) !important;
-    font-style: italic;
+.markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--f) 0;
+    font-size: calc(var(--f) * 0.875);
+    border: 1px solid var(--c-border);
 }
 
-/* Punctuation */
-code[class*="language-"] .token.punctuation,
-pre[class*="language-"] .token.punctuation {
-    color: var(--c-text) !important;
+.markdown-body table th,
+.markdown-body table td {
+    border: 1px solid var(--c-border);
+    padding: calc(var(--f) / 2) var(--f);
+    text-align: left;
+    vertical-align: top;
 }
 
-/* Numbers, booleans, constants */
-code[class*="language-"] .token.property,
-pre[class*="language-"] .token.property,
-code[class*="language-"] .token.tag,
-pre[class*="language-"] .token.tag,
-code[class*="language-"] .token.boolean,
-pre[class*="language-"] .token.boolean,
-code[class*="language-"] .token.number,
-pre[class*="language-"] .token.number,
-code[class*="language-"] .token.constant,
-pre[class*="language-"] .token.constant,
-code[class*="language-"] .token.symbol,
-pre[class*="language-"] .token.symbol {
-    color: var(--vga-cyan) !important;
+.markdown-body table th {
+    background: var(--c-border);
+    color: var(--c-bg);
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.04em;
 }
 
-/* Strings and selectors */
-code[class*="language-"] .token.selector,
-pre[class*="language-"] .token.selector,
-code[class*="language-"] .token.attr-name,
-pre[class*="language-"] .token.attr-name,
-code[class*="language-"] .token.string,
-pre[class*="language-"] .token.string,
-code[class*="language-"] .token.char,
-pre[class*="language-"] .token.char,
-code[class*="language-"] .token.builtin,
-pre[class*="language-"] .token.builtin,
-code[class*="language-"] .token.inserted,
-pre[class*="language-"] .token.inserted {
-    color: var(--vga-green) !important;
+.markdown-body table tr:nth-child(even) td {
+    background: rgba(127, 127, 127, 0.04);
 }
 
-/* Operators and entities */
-code[class*="language-"] .token.operator,
-pre[class*="language-"] .token.operator,
-code[class*="language-"] .token.entity,
-pre[class*="language-"] .token.entity,
-code[class*="language-"] .token.url,
-pre[class*="language-"] .token.url,
-code[class*="language-"] .language-css .token.string,
-pre[class*="language-"] .language-css .token.string,
-code[class*="language-"] .style .token.string,
-pre[class*="language-"] .style .token.string {
-    color: var(--vga-yellow) !important;
+.markdown-body ul,
+.markdown-body ol {
+    margin: var(--f) 0;
+    padding-left: calc(var(--f) * 2);
 }
 
-/* Keywords */
-code[class*="language-"] .token.atrule,
-pre[class*="language-"] .token.atrule,
-code[class*="language-"] .token.attr-value,
-pre[class*="language-"] .token.attr-value,
-code[class*="language-"] .token.keyword,
-pre[class*="language-"] .token.keyword {
-    color: var(--vga-magenta) !important;
+.markdown-body li {
+    margin: calc(var(--f) / 4) 0;
+}
+
+.markdown-body p {
+    line-height: 1.6;
+}
+
+.markdown-body hr {
+    border: none;
+    border-top: 1px solid var(--c-border);
+    margin: calc(var(--f) * 2) 0;
+}
+
+.markdown-body a {
+    color: var(--c-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+}
+
+.markdown-body a:hover {
+    text-decoration-thickness: 2px;
+}
+
+.markdown-body strong {
     font-weight: 700;
 }
 
-/* Functions and class names */
-code[class*="language-"] .token.function,
-pre[class*="language-"] .token.function,
-code[class*="language-"] .token.class-name,
-pre[class*="language-"] .token.class-name {
-    color: var(--vga-bright-blue) !important;
+.markdown-body em {
+    font-style: italic;
 }
 
-/* Variables and regex */
-code[class*="language-"] .token.regex,
-pre[class*="language-"] .token.regex,
-code[class*="language-"] .token.important,
-pre[class*="language-"] .token.important,
-code[class*="language-"] .token.variable,
-pre[class*="language-"] .token.variable {
-    color: var(--vga-bright-red) !important;
+.markdown-body blockquote {
+    margin: var(--f) 0;
+    padding: calc(var(--f) / 2) var(--f);
+    border-left: 2px solid var(--c-border);
+    color: var(--c-text);
+    font-style: italic;
 }
 
-/* Deleted */
-code[class*="language-"] .token.deleted,
-pre[class*="language-"] .token.deleted {
-    color: var(--vga-red) !important;
+/* ── Prism.js VGA Syntax Theme ─────────────────────────────────────────────
+   Dark mode (default): dark bg, bright VGA token colours.
+   Light mode (.inverted): white bg, dark VGA token colours.
+   Only --vga-* vars defined in base.css are used here.
+   ─────────────────────────────────────────────────────────────────────── */
+
+code[class*="language-"],
+pre[class*="language-"] {
+    color: var(--c-text);
+    background: var(--c-bg);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    line-height: calc(var(--f) * 1.5);
+    tab-size: 4;
+    hyphens: none;
 }
 
-/* Bold and italic */
-code[class*="language-"] .token.important,
-pre[class*="language-"] .token.important,
-code[class*="language-"] .token.bold,
-pre[class*="language-"] .token.bold {
-    font-weight: 700 !important;
+pre[class*="language-"] {
+    padding: var(--f);
+    margin: var(--f) 0;
+    overflow: auto;
+    border: 1px solid var(--c-border);
 }
 
-code[class*="language-"] .token.italic,
-pre[class*="language-"] .token.italic {
-    font-style: italic !important;
+:not(pre) > code[class*="language-"] {
+    padding: calc(var(--f) / 4) calc(var(--f) / 2);
+    white-space: normal;
+}
+
+/* ── Dark mode tokens ── */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+    color: var(--vga-gray);
+    font-style: italic;
+}
+
+.token.punctuation {
+    color: var(--vga-silver);
+}
+
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+    color: var(--vga-yellow);
+}
+
+.token.string,
+.token.char,
+.token.inserted,
+.token.attr-value {
+    color: var(--vga-lime);
+}
+
+.token.builtin,
+.token.selector,
+.token.attr-name {
+    color: var(--vga-green);
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+    color: var(--vga-silver);
+}
+
+.token.keyword,
+.token.atrule {
+    color: var(--vga-aqua);
+}
+
+.token.function,
+.token.class-name {
+    color: var(--vga-fuchsia);
+}
+
+.token.property,
+.token.tag {
+    color: var(--vga-teal);
+}
+
+.token.regex,
+.token.variable,
+.token.important {
+    color: var(--vga-red);
+}
+
+.token.deleted {
+    color: var(--vga-maroon);
+}
+
+.token.bold { font-weight: 700; }
+.token.italic { font-style: italic; }
+
+/* ── Light mode token overrides ── */
+html.inverted .token.comment,
+html.inverted .token.prolog,
+html.inverted .token.doctype,
+html.inverted .token.cdata {
+    color: var(--vga-gray);
+    font-style: italic;
+}
+
+html.inverted .token.punctuation {
+    color: var(--vga-black);
+}
+
+html.inverted .token.boolean,
+html.inverted .token.number,
+html.inverted .token.constant,
+html.inverted .token.symbol {
+    color: var(--vga-olive);
+}
+
+html.inverted .token.string,
+html.inverted .token.char,
+html.inverted .token.inserted,
+html.inverted .token.attr-value {
+    color: var(--vga-maroon);
+}
+
+html.inverted .token.builtin,
+html.inverted .token.selector,
+html.inverted .token.attr-name {
+    color: var(--vga-green);
+}
+
+html.inverted .token.operator,
+html.inverted .token.entity,
+html.inverted .token.url {
+    color: var(--vga-black);
+}
+
+html.inverted .token.keyword,
+html.inverted .token.atrule {
+    color: var(--vga-navy);
+}
+
+html.inverted .token.function,
+html.inverted .token.class-name {
+    color: var(--vga-purple);
+}
+
+html.inverted .token.property,
+html.inverted .token.tag {
+    color: var(--vga-teal);
+}
+
+html.inverted .token.regex,
+html.inverted .token.variable,
+html.inverted .token.important {
+    color: var(--vga-red);
+}
+
+html.inverted .token.deleted {
+    color: var(--vga-maroon);
 }
 
 .markdown-body blockquote {
@@ -1052,15 +1315,15 @@ pre[class*="language-"] .token.italic {
     font-style: italic;
 }
 
-/* MathJax styling - F system integration with better control */
+/* MathJax sizing: inline 1.05F, display 1.2F */
 mjx-container {
-    font-size: var(--f) !important;
-    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace !important;
+    font-size: calc(var(--f) * 1.05) !important;
+    vertical-align: middle;
 }
 
-/* Display math */
 mjx-container[display="true"] {
-    font-size: calc(var(--f) * 0.9) !important;
+    font-size: calc(var(--f) * 1.2) !important;
+    display: block !important;
     margin: var(--f) 0 !important;
     text-align: center !important;
 }
@@ -1389,6 +1652,12 @@ mjx-container mjx-assistive-mml * {
     box-sizing: border-box;
     z-index: 100;
     display: flex;
+}
+
+body.full-mode .page-footer,
+body.tools-section .page-footer,
+body.projects-section .page-footer {
+    display: none !important;
 }
 
 .footer-item {

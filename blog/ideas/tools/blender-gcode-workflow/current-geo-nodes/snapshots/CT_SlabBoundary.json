@@ -1,0 +1,293 @@
+{
+  "name": "CT_SlabBoundary",
+  "iface": [
+    {
+      "name": "Curve",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Mesh",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "SliceZ",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "SliceStep",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate Geometry",
+      "t": "SEPARATE_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position.001",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ.001",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Set Position",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Edge Neighbors",
+      "t": "MESH_EDGE_NEIGHBORS",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh to Curve",
+      "t": "MESH_TO_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceStep",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Mesh",
+      "tn": "Separate Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Separate Geometry",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Position.001",
+      "fs": "Position",
+      "tn": "Separate XYZ.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Separate XYZ.001",
+      "fs": "X",
+      "tn": "Combine XYZ",
+      "ts": "X"
+    },
+    {
+      "fn": "Separate XYZ.001",
+      "fs": "Y",
+      "tn": "Combine XYZ",
+      "ts": "Y"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    },
+    {
+      "fn": "Separate Geometry",
+      "fs": "Selection",
+      "tn": "Set Position",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Set Position",
+      "ts": "Position"
+    },
+    {
+      "fn": "Edge Neighbors",
+      "fs": "Face Count",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Set Position",
+      "fs": "Geometry",
+      "tn": "Mesh to Curve",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Mesh to Curve",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Mesh to Curve",
+      "fs": "Curve",
+      "tn": "Group Output",
+      "ts": "Curve"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

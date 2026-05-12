@@ -609,6 +609,82 @@ export class ThrottledLoop extends BaseAnimator {
 }
 
 /**
+ * Tween - One-shot scalar or 2D value interpolator
+ *
+ * Use for: Animating a single value or {x,y} pair from `from` to `to`
+ *          over a fixed `duration` with an easing function.
+ *
+ * Options:
+ *   from       number | {x,y}   Start value
+ *   to         number | {x,y}   End value
+ *   duration   number (ms)      Default 200
+ *   easing     (t:0..1)=>0..1   Default easeOutCubic
+ *   onUpdate   (value) => void  Called each frame with interpolated value
+ *   onComplete () => void       Called once when duration elapses
+ *
+ * Example:
+ *   const t = new Tween({ from: {x:0,y:0}, to: {x:300,y:0}, duration: 200,
+ *       onUpdate: v => el.style.transform = `translate(${v.x}px,${v.y}px)` });
+ *   t.start();
+ *   // later, to interrupt:
+ *   t.destroy();
+ */
+export class Tween extends BaseAnimator {
+    constructor(options = {}) {
+        super(options);
+        this.from     = options.from     ?? 0;
+        this.to       = options.to       ?? 1;
+        this.duration = options.duration ?? 200;
+        this.easing   = options.easing   || (t => 1 - Math.pow(1 - t, 3));
+        this.onUpdate   = options.onUpdate   || null;
+        this.onComplete = options.onComplete || null;
+        this._loop      = null;
+        this._startTime = null;
+    }
+
+    _is2D() {
+        return this.from !== null && typeof this.from === 'object';
+    }
+
+    _lerp(a, b, t) {
+        if (this._is2D()) {
+            return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        }
+        return a + (b - a) * t;
+    }
+
+    start() {
+        if (this.isDestroyed) return this;
+        this._startTime = null;
+        this._loop = new AnimationLoop({
+            onFrame: (_dt, _fc, elapsed) => {
+                if (this._startTime === null) this._startTime = elapsed;
+                const raw = Math.min(1, (elapsed - this._startTime) / this.duration);
+                const t   = this.easing(raw);
+                const val = this._lerp(this.from, this.to, t);
+                if (this.onUpdate) this.onUpdate(val);
+                if (raw >= 1) {
+                    this._loop.stop();
+                    if (this.onComplete) this.onComplete();
+                }
+            }
+        });
+        this._loop.start();
+        return this;
+    }
+
+    stop() {
+        if (this._loop) { this._loop.stop(); }
+        super.stop();
+    }
+
+    destroy() {
+        if (this._loop) { this._loop.destroy(); this._loop = null; }
+        super.destroy();
+    }
+}
+
+/**
  * AnimationConfig - Common animation configuration and state
  * 
  * Use for: Sharing animation settings across multiple animators
@@ -669,7 +745,8 @@ if (typeof window !== 'undefined') {
         IntervalAnimator,
         FrameSequencer,
         ThrottledLoop,
-        AnimationConfig
+        AnimationConfig,
+        Tween
     };
 
     window.debugLog('INIT', '🎬 Animation Foundation v1.0.0 ready - Unified animation system loaded');

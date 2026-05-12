@@ -1,0 +1,7 @@
+Blender, Geometry Nodes and Python
+Above is an image of the primary geometry nodes used to generate the array of possible curves and
+point distributions. The left of the node map shows the inputs into this node-based algorithm. This
+then begins several parallel branches. The upper third creates and connects the subset of points that
+becomes the lattice curves. These are formed by generating a line and mapping the points to a modulo of
+a denominator.
+58

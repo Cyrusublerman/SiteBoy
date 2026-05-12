@@ -240,30 +240,42 @@ export class MarkdownBody extends BaseComponent {
         if (!markdown || markdown.trim() === '') {
             return '<p><em>No content available.</em></p>';
         }
-        
-        // Check for LaTeX content for debugging
-        const hasLaTeX = markdown.includes('$') || markdown.includes('\\(') || markdown.includes('\\[');
-        if (hasLaTeX) {
-            console.log('🔍 LaTeX detected in markdown - will render after parsing');
-        }
-        
+
+        // Protect math blocks from marked.js by stashing them as placeholder tokens.
+        // marked mangles backslashes and treats $ as punctuation; we extract all math
+        // spans first, replace with safe sentinels, parse markdown, then restore.
+        const mathStash = [];
+        const stash = (src) => {
+            const idx = mathStash.length;
+            mathStash.push(src);
+            return `\x02MATH${idx}\x03`;
+        };
+
+        // Order matters: display before inline to avoid partial matches.
+        // Display: $$...$$ and \[...\]
+        markdown = markdown.replace(/\$\$([\s\S]+?)\$\$/g, (_, inner) => stash(`$$${inner}$$`));
+        markdown = markdown.replace(/\\\[([\s\S]+?)\\\]/g, (_, inner) => stash(`\\[${inner}\\]`));
+        // Inline: $...$ (single, non-empty, not spanning newlines) and \(...\)
+        markdown = markdown.replace(/\$([^\n$]+?)\$/g, (_, inner) => stash(`$${inner}$`));
+        markdown = markdown.replace(/\\\((.+?)\\\)/g, (_, inner) => stash(`\\(${inner}\\)`));
+
+        this._hasMath = mathStash.length > 0;
+
+        let html;
         try {
-            // Use marked.js if available
             if (typeof marked !== 'undefined') {
-                // Simple, clean markdown parsing - let MathJax handle LaTeX naturally
-                return marked.parse(markdown, {
-                    breaks: true,
-                    gfm: true,
-                    sanitize: false // Allow HTML and LaTeX
-                });
+                html = marked.parse(markdown, { breaks: true, gfm: true });
             } else {
-                // Fallback: basic markdown parsing
-                return this.basicMarkdownParse(markdown);
+                html = this.basicMarkdownParse(markdown);
             }
         } catch (error) {
             console.error('❌ Markdown parsing failed:', error);
             return `<p>Error parsing markdown: ${error.message}</p><pre>${markdown}</pre>`;
         }
+
+        // Restore math blocks
+        html = html.replace(/\x02MATH(\d+)\x03/g, (_, i) => mathStash[Number(i)]);
+        return html;
     }
     
     stripFrontmatter(markdown) {
@@ -381,6 +393,7 @@ export class MarkdownBody extends BaseComponent {
     
     updateContent(markdownText) {
         this.markdownText = markdownText;
+        this._hasMath = false;
         if (this.element) {
             const htmlContent = this.parseMarkdown(markdownText);
             this.element.innerHTML = htmlContent;
@@ -423,13 +436,18 @@ export class MarkdownBody extends BaseComponent {
     }
     
     applySyntaxHighlighting(element) {
-        // Apply Prism.js syntax highlighting to code blocks
-        if (window.Prism) {
+        const run = () => {
             const codeBlocks = element.querySelectorAll('pre code[class*="language-"]');
-            console.log(`🎨 Applying syntax highlighting to ${codeBlocks.length} code blocks`);
-            codeBlocks.forEach(block => {
-                window.Prism.highlightElement(block);
-            });
+            codeBlocks.forEach(block => window.Prism.highlightElement(block));
+        };
+        if (window.Prism) {
+            run();
+        } else {
+            // Prism loads async via CDN — retry once it arrives
+            const interval = setInterval(() => {
+                if (window.Prism) { clearInterval(interval); run(); }
+            }, 50);
+            setTimeout(() => clearInterval(interval), 5000);
         }
     }
     
@@ -641,29 +659,11 @@ export class MarkdownBody extends BaseComponent {
      * Render LaTeX math with MathJax - Simple and reliable
      */
     async renderMath() {
+        if (!this._hasMath) return;
         try {
-            // Wait for MathJax to be available
             await this.waitForMathJax();
-            
-            // Check if there's LaTeX content in the rendered HTML
-            const renderedHTML = this.element.innerHTML || '';
-            const hasLaTeX = renderedHTML.includes('$') || renderedHTML.includes('\\(') || renderedHTML.includes('\\[');
-            
-            if (!hasLaTeX) {
-                console.log('📝 No LaTeX content detected in rendered HTML');
-                return;
-            }
-
-            console.log('🧮 Rendering LaTeX with MathJax...');
-            
-            // MathJax typeset
             await window.MathJax.typesetPromise([this.element]);
-            
-            console.log('✅ LaTeX rendering complete with MathJax');
-            
-            // Apply SiteBoy styling
             this.styleMathElements();
-            
         } catch (error) {
             console.error('❌ MathJax rendering failed:', error);
         }
@@ -696,16 +696,16 @@ export class MarkdownBody extends BaseComponent {
             
             // Force styling on each element
             mathElements.forEach(mathEl => {
-                mathEl.style.fontFamily = '"Atkinson Hyperlegible", "Atkinson Hyperlegible Mono", monospace';
-                
                 const isDisplayMath = mathEl.getAttribute('display') === 'true';
                 if (isDisplayMath) {
-                    mathEl.style.fontSize = `${Math.round(currentF * 0.9)}px`;
+                    mathEl.style.fontSize = `${Math.round(currentF * 1.2)}px`;
                     mathEl.style.margin = `${currentF}px 0`;
+                    mathEl.style.display = 'block';
                     mathEl.style.textAlign = 'center';
                 } else {
-                    mathEl.style.fontSize = `${currentF}px`;
+                    mathEl.style.fontSize = `${Math.round(currentF * 1.05)}px`;
                     mathEl.style.margin = '0 2px';
+                    mathEl.style.verticalAlign = 'middle';
                 }
             });
         }
@@ -1183,8 +1183,14 @@ export class NumberedTOC extends BaseComponent {
 export class TreeTOC extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'tree-toc' }, deps);
-        this.onItemClick = options.onItemClick || null;
-        this.collapsible = options.collapsible !== false;
+        this.onItemClick           = options.onItemClick           || null;
+        this.onBranchDoubleClick   = options.onBranchDoubleClick   || null;
+        this.onBranchAuxClick      = options.onBranchAuxClick      || null;
+        this.onExpand              = options.onExpand              || null;
+        this.onCollapseAll         = options.onCollapseAll         || null;
+        this.collapsible        = options.collapsible !== false;
+        this._noAutoScroll      = options.noAutoScroll       || false;
+        this._defaultCollapsed  = options.defaultCollapsed !== false;
         this.root = options.data
             ? options.data
             : TreeTOC._sectionsToTree(options.sections || [], options.rootLabel || 'TOOLS');
@@ -1193,6 +1199,12 @@ export class TreeTOC extends BaseComponent {
         this._halfN     = 0;    // arm/stub line length (n), set in _buildGeo
         this._charW     = 0;    // 1 character width (gap between line endpoint and text)
         this._measureEl = null; // hidden DOM element for accurate text measurement
+        this._totalW    = 0;
+        this._totalH    = 0;
+        // Manual double-click detection (native dblclick is unreliable when first
+        // click rebuilds the DOM before the second click can fire on the same element).
+        this._pendingClickTimer = null;
+        this._pendingClickNode  = null;
     }
 
     // ── Legacy adapter ────────────────────────────────────────────────────────
@@ -1225,6 +1237,9 @@ export class TreeTOC extends BaseComponent {
             `;
             this.element.appendChild(this._measureEl);
 
+            // SVG layer for connector lines: pragmatic BaseComponent exception.
+            // createElement() doesn't support namespaced elements; createElementNS is required for SVG.
+            // This is the only DOM method outside BaseComponent allowed in TreeTOC.
             this._svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             this._svgEl.style.cssText = `
                 position: absolute; top: 0; left: 0;
@@ -1258,18 +1273,24 @@ export class TreeTOC extends BaseComponent {
         return str.length * F * 0.60;
     }
 
+
     // ── Pass 1: depth + collapsed init ────────────────────────────────────────
     // Non-root nodes start collapsed. Once set, never overwritten.
     _assignDepths(node, d = 0) {
         node._depth = d;
-        if (node._collapsed === undefined) node._collapsed = d > 0;
+        if (node._collapsed === undefined) node._collapsed = d > 0 && this._defaultCollapsed;
         (node.children || []).forEach(c => this._assignDepths(c, d + 1));
     }
 
-    // ── Pass 2: max text width per depth (ALL nodes, not just visible) ────────
-    _collectMaxWidths(node, map = {}) {
-        map[node._depth] = Math.max(map[node._depth] || 0, this._tw(node.label));
-        (node.children || []).forEach(c => this._collectMaxWidths(c, map));
+    // ── Pass 2: max text width per depth (VISIBLE nodes only) ────────────────
+    // Only counts widths for nodes that are currently visible (all ancestors expanded).
+    // Collapsed subtrees do not influence column geometry; columns tighten on collapse.
+    _collectMaxWidths(node, map = {}, visible = true) {
+        if (visible) {
+            map[node._depth] = Math.max(map[node._depth] || 0, this._tw(node.label));
+        }
+        const childrenVisible = visible && !node._collapsed;
+        (node.children || []).forEach(c => this._collectMaxWidths(c, map, childrenVisible));
         return map;
     }
 
@@ -1305,7 +1326,11 @@ export class TreeTOC extends BaseComponent {
 
     // ── Pass 4: row assignment ────────────────────────────────────────────────
     // Parent row = first child row. Subsequent children stack below.
-    _assignRows(node, cursor = 0) {
+    // Expanded nodes with a description reserve enough rows so the wrapped
+    // description (placed below the title row) doesn't overlap the next sibling.
+    _assignRows(node, cursor = 0, F = null, ROW_H = null) {
+        if (F === null)     F     = this._F();
+        if (ROW_H === null) ROW_H = F * 2;
         node._row = cursor;
         const expanded = !node._collapsed && node.children && node.children.length;
         if (!expanded) {
@@ -1313,9 +1338,51 @@ export class TreeTOC extends BaseComponent {
             return cursor + 1;
         }
         let cur = cursor;
-        node.children.forEach(c => { cur = this._assignRows(c, cur); });
+        node.children.forEach(c => { cur = this._assignRows(c, cur, F, ROW_H); });
         node._lastChildRow = node.children[node.children.length - 1]._row;
+
+        // If this node has a description, ensure the description (placed below title row)
+        // has enough vertical space before the next sibling lands.
+        if (node.description && this._geoMap[node._depth] && this._geoMap[node._depth + 1]) {
+            const { railX }     = this._geoMap[node._depth];
+            const parentRailX   = node._depth > 0 && this._geoMap[node._depth - 1]
+                ? this._geoMap[node._depth - 1].railX
+                : this._geoMap[node._depth].labelX;
+            const charW         = this._charW;
+            const descW         = (railX - charW) - (parentRailX + charW);
+            if (descW > 0) {
+                const descH     = this._measureDescHeight(node.description, descW, F);
+                const descRows  = Math.ceil(descH / ROW_H);
+                // Description occupies rows node._row+1 … node._row+descRows.
+                // Minimum end row = node._row + 1 + descRows (title row + desc rows).
+                const minEnd    = node._row + 1 + descRows;
+                if (cur < minEnd) cur = minEnd;
+            }
+        }
         return cur;
+    }
+
+    // ── Description height measurement ────────────────────────────────────────
+    // Uses _measureEl to measure the rendered height of wrapped text at given width.
+    _measureDescHeight(text, width, F) {
+        if (!this._measureEl || !this._measureEl.isConnected) {
+            // Fallback: approximate using line count at ~60% char advance
+            const charsPerLine = Math.max(1, Math.floor(width / (F * 0.75 * 0.60)));
+            const lines = Math.ceil(text.length / charsPerLine);
+            return lines * (F * 0.75 * 1.4);
+        }
+        const orig = this._measureEl.style.cssText;
+        this._measureEl.style.cssText = `
+            position: absolute; visibility: hidden;
+            font-family: 'Atkinson Hyperlegible Mono', monospace; font-weight: 400;
+            font-size: ${F * 0.75}px; line-height: 1.4;
+            width: ${width}px; white-space: normal; word-break: break-word;
+            left: -9999px; top: 0; pointer-events: none;
+        `;
+        this._measureEl.textContent = text;
+        const h = this._measureEl.getBoundingClientRect().height;
+        this._measureEl.style.cssText = orig;
+        return h || (F * 0.75 * 1.4);
     }
 
     _yc(ROW_H, row) { return row * ROW_H + ROW_H / 2; }
@@ -1333,49 +1400,52 @@ export class TreeTOC extends BaseComponent {
     }
 
     // ── Render: connectors ────────────────────────────────────────────────────
-    // Arm:  textX + actualW + charW → railX       variable; 1-char gap after text
-    // Rail: railX, parent row → last child row
-    // Stub: railX → childLabelX                   fixed length N; child DOM element starts charW past here
-    // Cross: vertical SVG line at childLabelX for any collapsed child that has grandchildren
+    // Expanded node:  arm (labelX + actualW → railX) + rail (vertical at
+    //   railX from parent row to last child row) + stubs (railX → childLabelX
+    //   per child).
+    // Collapsed node with children:  1-char arm from text end, cross tick at terminus.
+    //   crossCenter = labelX + actualW + charW
+    //   arm + right stem: crossStart → crossCenter + r   (r = charW/2)
+    //   tick: (crossCenter, yc - r) → (crossCenter, yc + r)
+    // Leaf node / no children: nothing drawn.
     _drawConnectors(node, ROW_H) {
-        const expanded = !node._collapsed && node.children && node.children.length;
-        if (!expanded) return;
+        const hasKids = node.children && node.children.length;
+        if (!hasKids) return;
 
-        const { textX, railX } = this._geoMap[node._depth];
-        const childLabelX      = this._geoMap[node._depth + 1].labelX;
-        const actualW          = this._tw(node.label);
-        const py               = this._yc(ROW_H, node._row);
+        const { labelX, textX, railX } = this._geoMap[node._depth];
+        const actualW                  = this._tw(node.label);
+        const armStart                 = labelX + actualW;   // starts at text end, 0 gap (matches left side)
+        const py                       = this._yc(ROW_H, node._row);
 
-        this._svgLine(textX + actualW + this._charW, py, railX, py);
+        if (node._collapsed) {
+            // 2-char arm from text end, cross tick at the terminus.
+            // r = charW/2 for all stems (right arm + vertical each way).
+            const r           = this._charW / 2;
+            const crossStart  = labelX + actualW;
+            const crossCenter = crossStart + this._charW;      // tick at end of 1-char arm
+            this._svgLine(crossStart,  py,      crossCenter + r, py);      // arm + right stem
+            this._svgLine(crossCenter, py - r,  crossCenter,     py + r);  // vertical tick
+            return;
+        }
+
+        const childGeo    = this._geoMap[node._depth + 1];
+        if (!childGeo) return;   // guard: depth+1 not in visible geometry
+        const childLabelX = childGeo.labelX;
+
+        this._svgLine(armStart, py, railX, py);
         this._svgLine(railX, py, railX, this._yc(ROW_H, node._lastChildRow));
 
         node.children.forEach(child => {
             const cy = this._yc(ROW_H, child._row);
             this._svgLine(railX, cy, childLabelX, cy);
-
-            // Collapsed indicator: --- label -+
-            // Drawn to the RIGHT of the child text. Two lines, same weight/colour as all others:
-            //   Horizontal: charW gap after text, then charW segment + charW cross bar (2 chars total, one line)
-            //   Vertical:   charW tall, centred in the cross character (the second charW block)
-            if (child._collapsed && child.children && child.children.length) {
-                const cw        = this._charW;
-                const cTextX    = this._geoMap[child._depth].textX;
-                const cActualW  = this._tw(child.label);
-                const xArm      = cTextX + cActualW + cw;           // arm start (1-char gap after text)
-                const xCross    = xArm + cw / 2;                     // cross left edge (half-char arm)
-                const xCrossC   = xCross + cw / 2;                  // cross centre x
-                this._svgLine(xArm,   cy,        xCross + cw, cy);  // horizontal: segment + cross bar
-                this._svgLine(xCrossC, cy - cw / 2, xCrossC, cy + cw / 2); // vertical: 1 char tall
-            }
-
             this._drawConnectors(child, ROW_H);
         });
     }
 
     // ── Render: labels ────────────────────────────────────────────────────────
-    // DOM element starts at labelX + charW — the charW gap is occupied by the SVG cross
-    // (for collapsed parents) or is simply dead space (leaf nodes, expanded parents).
-    // No padding-left needed: the charW shift IS the gap between the cross and the text.
+    // DOM element starts at labelX. Collapse state is indicated entirely by SVG
+    // line treatment in _drawConnectors (collapsed → arm + cross; expanded → arm
+    // + rail + stubs). No glyph is placed in the label text.
     _placeLabel(node, F, ROW_H) {
         const { labelX } = this._geoMap[node._depth];
         const hasKids    = node.children && node.children.length;
@@ -1384,7 +1454,7 @@ export class TreeTOC extends BaseComponent {
         const el = this.createElement('div', 'tree-toc-node');
         el.style.cssText = `
             position: absolute;
-            left: ${labelX + this._charW}px;
+            left: ${labelX}px;
             top: ${node._row * ROW_H}px;
             height: ${ROW_H}px;
             display: flex;
@@ -1395,6 +1465,8 @@ export class TreeTOC extends BaseComponent {
             color: var(--c-text);
             background: var(--c-bg);
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             user-select: none;
             box-sizing: border-box;
             cursor: ${canInteract ? 'pointer' : 'default'};
@@ -1403,6 +1475,20 @@ export class TreeTOC extends BaseComponent {
         const labelSpan = this.createElement('span');
         labelSpan.textContent = node.label;
         el.appendChild(labelSpan);
+
+        // Add title attribute for leaf nodes (hover detail per UX analysis)
+        if (!hasKids) {
+            // For leaf nodes, show the label as title (helps with truncated text)
+            // If node data has a description, append it
+            let titleText = node.label;
+            if (node.description) {
+                titleText += ` — ${node.description}`;
+            } else if (node._data && typeof node._data === 'object') {
+                if (node._data.description) titleText += ` — ${node._data.description}`;
+                else if (node._data.url) titleText += ` — ${node._data.url}`;
+            }
+            el.setAttribute('title', titleText);
+        }
 
         if (canInteract) {
             el.addEventListener('mouseenter', () => {
@@ -1416,12 +1502,150 @@ export class TreeTOC extends BaseComponent {
         }
 
         if (hasKids && this.collapsible) {
-            el.addEventListener('click', () => { node._collapsed = !node._collapsed; this._draw(); });
+            el.addEventListener('click', () => {
+                if (!this.onBranchDoubleClick) {
+                    // No double-click handler — expand/collapse immediately.
+                    const wasCollapsed = node._collapsed;
+                    node._collapsed = !node._collapsed;
+                    this._draw();
+                    if (wasCollapsed && this.onExpand) this.onExpand(node);
+                    return;
+                }
+                // Double-click disambiguation: second click on the same node within
+                // 280 ms cancels the pending expand and fires onBranchDoubleClick instead.
+                if (this._pendingClickNode === node) {
+                    clearTimeout(this._pendingClickTimer);
+                    this._pendingClickTimer = null;
+                    this._pendingClickNode  = null;
+                    this.onBranchDoubleClick(node._data || node);
+                    return;
+                }
+                clearTimeout(this._pendingClickTimer);
+                this._pendingClickNode  = node;
+                this._pendingClickTimer = setTimeout(() => {
+                    this._pendingClickTimer = null;
+                    this._pendingClickNode  = null;
+                    if (!this.element) return;  // guard: component destroyed while timer was pending
+                    const wasCollapsed = node._collapsed;
+                    node._collapsed = !node._collapsed;
+                    this._draw();
+                    if (wasCollapsed && this.onExpand) this.onExpand(node);
+                }, 220);
+            });
+            if (this.onBranchAuxClick) {
+                // Desktop: middle-click
+                el.addEventListener('auxclick', (e) => {
+                    if (e.button !== 1) return;
+                    e.preventDefault();
+                    this.onBranchAuxClick(node._data || node);
+                });
+                // Mobile: long-press (500 ms hold without significant movement)
+                let longPressTimer   = null;
+                let longPressActive  = false;
+                let touchStartX      = 0;
+                let touchStartY      = 0;
+                el.addEventListener('touchstart', (e) => {
+                    const t     = e.touches[0];
+                    touchStartX = t.clientX;
+                    touchStartY = t.clientY;
+                    longPressActive = false;
+                    longPressTimer  = setTimeout(() => {
+                        longPressActive = true;
+                        longPressTimer  = null;
+                        this.onBranchAuxClick(node._data || node);
+                    }, 500);
+                }, { passive: true });
+                el.addEventListener('touchmove', (e) => {
+                    if (!longPressTimer) return;
+                    const t = e.touches[0];
+                    if (Math.abs(t.clientX - touchStartX) > 10 || Math.abs(t.clientY - touchStartY) > 10) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                }, { passive: true });
+                // passive: false so preventDefault() can suppress the synthetic click
+                el.addEventListener('touchend', (e) => {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                    if (longPressActive) {
+                        longPressActive = false;
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                el.addEventListener('touchcancel', () => {
+                    clearTimeout(longPressTimer);
+                    longPressTimer  = null;
+                    longPressActive = false;
+                }, { passive: true });
+            }
         } else if (!hasKids && this.onItemClick) {
             el.addEventListener('click', () => this.onItemClick(node._data || node));
         }
 
         this.element.appendChild(el);
+
+        // Transparent hit area over the arm + cross for collapsed collapsible nodes.
+        // SVG pointer-events are none; this div makes the cross clickable.
+        if (hasKids && this.collapsible && node._collapsed) {
+            const cW         = this._charW;
+            const crossStart = labelX + this._tw(node.label);
+            const hitW       = cW + cW / 2 + cW;   // arm(1cW) + right-stem(cW/2) + buffer(cW)
+            const hit = this.createElement('div', 'tree-toc-hit');
+            hit.style.cssText = `
+                position: absolute;
+                left: ${crossStart}px;
+                top: ${node._row * ROW_H}px;
+                width: ${hitW}px;
+                height: ${ROW_H}px;
+                cursor: pointer;
+            `;
+            hit.addEventListener('click', () => {
+                node._collapsed = false;
+                this._draw();
+                if (this.onExpand) this.onExpand(node);
+            });
+            this.element.appendChild(hit);
+        }
+
+        // Branch description: sits BELOW the title row, confined between the parent's
+        // rail and this node's own rail (1-char inset each side).
+        // Root (depth 0) has no parent rail; fall back to labelX[0].
+        if (hasKids && !node._collapsed && node.description) {
+            const { railX }   = this._geoMap[node._depth];
+            const cW          = this._charW;
+            const parentRailX = node._depth > 0 && this._geoMap[node._depth - 1]
+                ? this._geoMap[node._depth - 1].railX
+                : this._geoMap[node._depth].labelX;
+            const left  = parentRailX + cW;           // 1-char inset from parent rail
+            const right = railX - cW;                 // 1-char inset before own rail
+            const descW = right - left;
+            const top   = (node._row + 1) * ROW_H;   // row directly below title
+
+            const desc = this.createElement('div', 'tree-toc-desc');
+            desc.textContent = node.description;
+            desc.style.cssText = `
+                position: absolute;
+                left: ${left}px;
+                top: ${top}px;
+                width: ${Math.max(0, descW)}px;
+                display: flex;
+                align-items: flex-start;
+                justify-content: flex-start;
+                text-align: left;
+                font-family: 'Atkinson Hyperlegible Mono', monospace;
+                font-size: ${F * 0.75}px;
+                line-height: 1.4;
+                color: var(--c-border);
+                white-space: normal;
+                word-break: break-word;
+                padding: 0 ${cW}px;
+                pointer-events: none;
+                user-select: none;
+                box-sizing: border-box;
+            `;
+            this.element.appendChild(desc);
+        }
+
         if (!node._collapsed) {
             (node.children || []).forEach(c => this._placeLabel(c, F, ROW_H));
         }
@@ -1434,13 +1658,14 @@ export class TreeTOC extends BaseComponent {
         const F     = this._F();
         const ROW_H = F * 2;
 
-        this.element.querySelectorAll('.tree-toc-node').forEach(e => e.remove());
+        this.element.querySelectorAll('.tree-toc-node, .tree-toc-desc, .tree-toc-hit').forEach(e => e.remove());
         while (this._svgEl.firstChild) this._svgEl.removeChild(this._svgEl.firstChild);
 
         this._assignDepths(this.root);
         const maxWidths = this._collectMaxWidths(this.root);
         this._buildGeo(maxWidths, F);
-        const totalRows = this._assignRows(this.root);
+
+        const totalRows = this._assignRows(this.root, 0, F, ROW_H);
 
         // Deepest visible depth determines canvas width
         let maxVisibleDepth = 0;
@@ -1453,6 +1678,9 @@ export class TreeTOC extends BaseComponent {
         const lastGeo = this._geoMap[maxVisibleDepth];
         const totalW  = lastGeo.labelX + lastGeo.maxW + 2 * this._charW;
         const totalH  = totalRows * ROW_H + 4;
+
+        this._totalW = totalW;
+        this._totalH = totalH;
 
         this.element.style.cssText = `
             position: relative;
@@ -1471,6 +1699,31 @@ export class TreeTOC extends BaseComponent {
 
         this._placeLabel(this.root, F, ROW_H);
         this._drawConnectors(this.root, ROW_H);
+        this._scrollToReveal(F);
+    }
+
+    // ── Auto-scroll: reveal rightmost column when tree > 80% container width ──
+    _scrollToReveal(F) {
+        if (!this.element?.isConnected) return;
+        if (this._noAutoScroll) return;
+
+        let scrollEl = this.element.parentElement;
+        while (scrollEl && scrollEl !== document.documentElement) {
+            const ov = window.getComputedStyle(scrollEl).overflowX;
+            if (ov === 'hidden') return; // inside a pan container — do not scroll
+            if (ov === 'auto' || ov === 'scroll') break;
+            scrollEl = scrollEl.parentElement;
+        }
+        if (!scrollEl) scrollEl = document.documentElement;
+
+        const containerW = scrollEl.clientWidth || window.innerWidth;
+        if (this._totalW <= containerW * 0.8) {
+            scrollEl.scrollLeft = 0;
+            return;
+        }
+
+        const targetLeft = this._totalW - containerW + F * 4;
+        scrollEl.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
     }
 
     // ── Expand / collapse all ─────────────────────────────────────────────────
@@ -1482,7 +1735,36 @@ export class TreeTOC extends BaseComponent {
     expandAll()   { this._setAll(this.root, false, true); this._draw(); }
     collapseAll() { this._setAll(this.root, true,  true); this._draw(); }
 
+    collapseAllAndNotify() {
+        this.collapseAll();
+        if (this.onCollapseAll) this.onCollapseAll();
+    }
+
+    // Replace the children of a named top-level branch and redraw.
+    // Used for async branch loading (e.g. DOCS after manifest fetch).
+    replaceBranchChildren(label, newChildren) {
+        const branch = (this.root.children || []).find(c => c.label === label);
+        if (!branch) return;
+        branch.children = newChildren;
+        this._draw();
+    }
+
+    // Return the pixel top-left origin of a named top-level branch node.
+    // Returns null if the branch is not currently visible.
+    branchCoords(label) {
+        const F     = this._F();
+        const ROW_H = F * 2;
+        const branch = (this.root.children || []).find(c => c.label === label);
+        if (!branch || branch._row === undefined) return null;
+        const geo = this._geoMap[branch._depth];
+        if (!geo) return null;
+        return { x: geo.labelX, y: branch._row * ROW_H };
+    }
+
     destroy() {
+        clearTimeout(this._pendingClickTimer);
+        this._pendingClickTimer = null;
+        this._pendingClickNode  = null;
         this._measureEl = null;
         super.destroy();
     }
@@ -1613,10 +1895,8 @@ export class StatusDisplay extends BaseComponent {
     }
 }
 
-/**
- * TOCGallery - Table of Contents gallery preview component
- */
-export class TOCGallery extends BaseComponent {
+// TOCGallery removed — replaced by ImageGrid in masonry-gallery.js
+class TOCGallery extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'toc-gallery' }, deps);
         this.items = options.items || [];

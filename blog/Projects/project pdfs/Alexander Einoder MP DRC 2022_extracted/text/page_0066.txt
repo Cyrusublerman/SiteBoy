@@ -1,0 +1,35 @@
+Python Script: Leaf Object Adder
+import bpy, bmesh
+import numpy as np
+import math
+def asSpherical(xyz):
+#takes list xyz (single coord)
+x = xyz[0]
+y = xyz[1]
+z = xyz[2]
+r = np.sqrt(x*x + y*y + z*z)
+theta = np.arccos(z/r)*180/ np.pi #to degrees
+phi = np.arctan2(y,x)*180/ np.pi
+return [r,theta,phi]
+def makeLeaf(location, object, name):
+sCo=asSpherical(location)
+newLeaf= bpy.data.objects.new(name, bpy.data.objects[object].data)
+newLeaf.location=location
+distance = (location[0]**2+location[1]**2)**0.5
+scalefac=(((1+distance)/5)**1.5)
+newLeaf.scale=(scalefac**0.9, scalefac, scalefac)
+rotation = (sCo[2]*(math.pi)/180)+np.pi/2
+rotation2=(distance*np.pi)/32
+newLeaf.rotation_euler=((math.pi/2)+rotation2,0,rotation)
+bpy.data.collections[“leaf”].objects.link(newLeaf)
+leafNum=1
+for leaf in bpy.data.collections[“leafVert”].objects:
+origin=len(leaf.data.vertices)-1
+verts=[]
+oX=leaf.data.vertices[origin].co[0]
+oY=leaf.data.vertices[origin].co[1]
+oZ=leaf.data.vertices[origin].co[2]
+name=”leaf {}”.format(leafNum)
+makeLeaf([oX, oY, oZ], “Kyte”, name)
+leafNum+=1
+66

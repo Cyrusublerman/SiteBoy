@@ -1,0 +1,16 @@
+{
+  "id": "multifilament-print",
+  "title": "MULTIFILAMENT PRINT CALIBRATION",
+  "sections": [
+    { "title": "ABSTRACT",                       "src": "projects/multifilament-print/md/abstract.md",               "open": true },
+    { "title": "WORKFLOW OVERVIEW",              "src": "projects/multifilament-print/md/workflow-overview.md"                    },
+    { "title": "COMBINATORIAL SEQUENCES",        "src": "projects/multifilament-print/md/combinatorial-sequences.md"              },
+    { "title": "GRID LAYOUT MATHS",              "src": "projects/multifilament-print/md/grid-layout-maths.md"                   },
+    { "title": "BEER-LAMBERT SIMULATION",        "src": "projects/multifilament-print/md/beer-lambert-simulation.md"             },
+    { "title": "SCAN: ALIGNMENT AND SAMPLING",   "src": "projects/multifilament-print/md/scan-alignment.md"                     },
+    { "title": "QUANTIZE: PALETTE MAPPING",      "src": "projects/multifilament-print/md/quantize-palette-mapping.md"            },
+    { "title": "EXPORT: STL COMPOSITION",        "src": "projects/multifilament-print/md/stl-composition.md"                    },
+    { "title": "LIVE TOOL", "type": "embed",     "src": "/#tools/fabrication/multifilament-print", "height": 720                },
+    { "title": "REFERENCES",                     "src": "projects/multifilament-print/md/references.md"                         }
+  ]
+}

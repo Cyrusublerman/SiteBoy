@@ -1,0 +1,9 @@
+M I C R O P H O N E
+For the audio input, a usb microphone (Audio Technica's AT9934) was gutted and
+the internal componets were repurposed for the CHAT device.
+The USB microphone requires minimal configuration to implement in the
+Raspberry Pi and allows for minimal latency. It has an internal sound-card which
+provides the gain control and analog to digital conversion so that the Raspberry Pi
+merely needs to receive the digital signals and intergrate them into the speech to text
+code.
+25

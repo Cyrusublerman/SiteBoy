@@ -1,0 +1,17 @@
+{
+  "id": "image-processing",
+  "title": "IMAGE PROCESSING",
+  "sections": [
+    { "title": "ABSTRACT",                    "src": "projects/image-processing/md/abstract.md",                    "open": true },
+    { "title": "PIPELINE ALGEBRA",            "src": "projects/image-processing/md/pipeline-algebra.md"                         },
+    { "title": "COLOUR MODELS AND DISTANCE",  "src": "projects/image-processing/md/colour-models-distance.md"                   },
+    { "title": "NEIGHBOURHOOD OPERATORS",     "src": "projects/image-processing/md/neighbourhood-operators.md"                  },
+    { "title": "DITHERING TAXONOMY",          "src": "projects/image-processing/md/dithering-taxonomy.md"                       },
+    { "title": "STRUCTURAL FEATURE MATCHING", "src": "projects/image-processing/md/structural-feature-matching.md"              },
+    { "title": "COLOUR QUANTIZER",            "type": "embed", "src": "/#tools/colour-quantizer",      "height": 720            },
+    { "title": "PIXEL TILER",                 "type": "embed", "src": "/#tools/pixel-tiler",           "height": 720            },
+    { "title": "ASCII ART GENERATOR",         "type": "embed", "src": "/#tools/ascii-art-generator",   "height": 720            },
+    { "title": "DISTORT",                     "type": "embed", "src": "/#tools/processors/distort",    "height": 720            },
+    { "title": "REFERENCES",                  "src": "projects/image-processing/md/references.md"                               }
+  ]
+}

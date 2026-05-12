@@ -4,6 +4,21 @@
   "base_url": "https://media.einoder.net/art/render/lady-on-field",
   "generated_at": "2026-04-08T03:13:26.908446+00:00",
   "total_images": 6,
+  "groups": [
+    {
+      "id": "Pg_LadyOnField",
+      "title": "Lady on Field",
+      "cover": "ladysit3",
+      "images": [
+        { "id": "ladysit", "size": "full" },
+        { "id": "ladysit2", "size": "full" },
+        { "id": "ladysit3", "size": "double" },
+        { "id": "ladysit3_quant_3bit_dither_on", "size": "half" },
+        { "id": "ladysit3_quant_ggost_dither_off", "size": "half" },
+        { "id": "ladysit3_quant_ggost_dither_on", "size": "half" }
+      ]
+    }
+  ],
   "images": [
     {
       "id": "ladysit",

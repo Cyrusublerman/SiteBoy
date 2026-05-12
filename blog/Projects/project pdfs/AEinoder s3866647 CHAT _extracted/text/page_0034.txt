@@ -1,0 +1,12 @@
+PHYSICAL STRUCTURE
+After the bodystorming exercise it was essential to begin the exploration of shape and
+structure.
+The device should be easily picked up and confidently interacted with. These qualities
+require the device to be small, light, visually sturdy and durable. To achieve this, it was decided
+that the body would be initially 3D printed. This also allows for the device to have a more abstract
+shape if necessary.
+The design began with a cuboidal shape which was rotated, lifting the front of the device up.
+This angles the printer to ensure that the receipt will project towards the user. The camera,
+microphone and switch will be front facing. The microphone will have a shape that signifies it's
+purpose and the camera will be angled to counter the body rotation.
+34

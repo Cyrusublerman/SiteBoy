@@ -1,0 +1,1565 @@
+{
+  "name": "stitch_maker-v2_2.001",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometry",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "gap per stitch",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 6
+    },
+    {
+      "name": "stitch length",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 1
+    },
+    {
+      "name": "starting level",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    },
+    {
+      "name": "height",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 30
+    },
+    {
+      "name": "switch direction",
+      "io": "INPUT",
+      "type": "NodeSocketBool",
+      "default": false
+    },
+    {
+      "name": "stitch depth",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.5
+    },
+    {
+      "name": " z infuence",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 1.0
+    },
+    {
+      "name": "Iterations",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    },
+    {
+      "name": "stitch offset",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group",
+      "t": "GROUP",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": "add rings.002"
+    },
+    {
+      "n": "Clamp",
+      "t": "CLAMP",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Named Attribute",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Linear Gizmo",
+      "t": "GIZMO_LINEAR",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.001",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Sample Index",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Linear Gizmo.001",
+      "t": "GIZMO_LINEAR",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.002",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.001",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.001",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.002",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Frame",
+      "t": "FRAME",
+      "lbl": "top",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.001",
+      "t": "FRAME",
+      "lbl": "bottom",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.005",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.006",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.004",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.007",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.008",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.009",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.003",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.010",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.011",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.003",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.002",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.012",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.013",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.014",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.015",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Reroute.016",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Frame.002",
+      "t": "FRAME",
+      "lbl": "width",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Dial Gizmo",
+      "t": "GIZMO_DIAL",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.004",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.003",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Math.005",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.018",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Frame.003",
+      "t": "FRAME",
+      "lbl": "stitch offset",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.017",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.019",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.020",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Linear Gizmo.002",
+      "t": "GIZMO_LINEAR",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.002",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Math.006",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.021",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.003",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.022",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.023",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Reroute.024",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.004",
+      "t": "FRAME",
+      "lbl": "stitch depth",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Dial Gizmo.001",
+      "t": "GIZMO_DIAL",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Reroute.025",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.007",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.005",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Math.008",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.004",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Frame.005",
+      "t": "FRAME",
+      "lbl": "gap per stitch",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.026",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Dial Gizmo.002",
+      "t": "GIZMO_DIAL",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Math.009",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Math.010",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Named Attribute.006",
+      "t": "INPUT_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Sample Index.005",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Math.011",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.004",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Math.012",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Math.013",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Reroute.027",
+      "t": "REROUTE",
+      "lbl": "stitch length",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.006",
+      "t": "FRAME",
+      "lbl": "stitch length",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Value",
+      "t": "VALUE",
+      "lbl": "offest",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.014",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute.030",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.005",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Math.015",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Math.016",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Math.017",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Linear Gizmo.003",
+      "t": "GIZMO_LINEAR",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Frame.007",
+      "t": "FRAME",
+      "lbl": "smooth",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.006",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.028",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.029",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Group",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "gap per stitch",
+      "tn": "Group",
+      "ts": "Gap per stitch"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "starting level",
+      "tn": "Group",
+      "ts": "Starting leval"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "height",
+      "tn": "Group",
+      "ts": "Hight"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "switch direction",
+      "tn": "Group",
+      "ts": "Switch direction"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch length",
+      "tn": "Clamp",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "gap per stitch",
+      "tn": "Clamp",
+      "ts": "Max"
+    },
+    {
+      "fn": "Clamp",
+      "fs": "Result",
+      "tn": "Group",
+      "ts": "Stitch length"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch depth",
+      "tn": "Group",
+      "ts": "stitch_depth"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch offset",
+      "tn": "Group",
+      "ts": "stitch offset"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Iterations",
+      "tn": "Group",
+      "ts": "Iterations"
+    },
+    {
+      "fn": "Named Attribute",
+      "fs": "Attribute",
+      "tn": "Group",
+      "ts": "segments per revalution"
+    },
+    {
+      "fn": "Reroute.008",
+      "fs": "Output",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Geometry",
+      "tn": "Group",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Linear Gizmo",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.005",
+      "fs": "Output",
+      "tn": "Sample Index",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Named Attribute.001",
+      "fs": "Attribute",
+      "tn": "Sample Index",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index",
+      "fs": "Value",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Reroute",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    },
+    {
+      "fn": "Combine XYZ.001",
+      "fs": "Vector",
+      "tn": "Linear Gizmo.001",
+      "ts": "Position"
+    },
+    {
+      "fn": "Named Attribute.002",
+      "fs": "Attribute",
+      "tn": "Sample Index.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index.001",
+      "fs": "Value",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Linear Gizmo.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.011",
+      "fs": "Output",
+      "tn": "Reroute.002",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.006",
+      "fs": "Output",
+      "tn": "Sample Index.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Linear Gizmo",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Reroute.005",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Reroute.006",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "starting level",
+      "tn": "Reroute.004",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Reroute.007",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.009",
+      "fs": "Output",
+      "tn": "Reroute.008",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "height",
+      "tn": "Reroute.009",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Reroute.003",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Reroute.010",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Reroute.011",
+      "ts": "Input"
+    },
+    {
+      "fn": "Named Attribute.003",
+      "fs": "Attribute",
+      "tn": "Sample Index.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Reroute.012",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Reroute.014",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.016",
+      "fs": "Output",
+      "tn": "Reroute.015",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.023",
+      "fs": "Output",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Reroute.016",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.019",
+      "fs": "Output",
+      "tn": "Sample Index.003",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Named Attribute.004",
+      "fs": "Attribute",
+      "tn": "Sample Index.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.005",
+      "fs": "Value",
+      "tn": "Dial Gizmo",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.020",
+      "fs": "Output",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index.003",
+      "fs": "Value",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.018",
+      "fs": "Output",
+      "tn": "Dial Gizmo",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Reroute.018",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch offset",
+      "tn": "Reroute.017",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Reroute.019",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.017",
+      "fs": "Output",
+      "tn": "Reroute.020",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.026",
+      "fs": "Output",
+      "tn": "Linear Gizmo.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Combine XYZ.002",
+      "fs": "Vector",
+      "tn": "Linear Gizmo.002",
+      "ts": "Position"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch depth",
+      "tn": "Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Reroute.021",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.021",
+      "fs": "Output",
+      "tn": "Combine XYZ.002",
+      "ts": "Z"
+    },
+    {
+      "fn": "Math.006",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Combine XYZ.003",
+      "fs": "Vector",
+      "tn": "Dial Gizmo",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.010",
+      "fs": "Output",
+      "tn": "Combine XYZ.003",
+      "ts": "Z"
+    },
+    {
+      "fn": "Sample Index.002",
+      "fs": "Value",
+      "tn": "Reroute.022",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.022",
+      "fs": "Output",
+      "tn": "Reroute.023",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Geometry",
+      "tn": "Reroute.024",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Sample Index.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch depth",
+      "tn": "Reroute.025",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "gap per stitch",
+      "tn": "Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.008",
+      "fs": "Value",
+      "tn": "Dial Gizmo.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Sample Index.004",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Named Attribute.005",
+      "fs": "Attribute",
+      "tn": "Sample Index.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index.004",
+      "fs": "Value",
+      "tn": "Math.007",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.007",
+      "fs": "Value",
+      "tn": "Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.025",
+      "fs": "Output",
+      "tn": "Reroute.026",
+      "ts": "Input"
+    },
+    {
+      "fn": "Named Attribute.006",
+      "fs": "Attribute",
+      "tn": "Sample Index.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.011",
+      "fs": "Value",
+      "tn": "Math.009",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.024",
+      "fs": "Output",
+      "tn": "Sample Index.005",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Math.009",
+      "fs": "Value",
+      "tn": "Math.010",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.010",
+      "fs": "Value",
+      "tn": "Dial Gizmo.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.027",
+      "fs": "Output",
+      "tn": "Math.011",
+      "ts": "Value"
+    },
+    {
+      "fn": "Sample Index.005",
+      "fs": "Value",
+      "tn": "Math.011",
+      "ts": "Value"
+    },
+    {
+      "fn": "Combine XYZ.004",
+      "fs": "Vector",
+      "tn": "Dial Gizmo.001",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.030",
+      "fs": "Output",
+      "tn": "Math.013",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.013",
+      "fs": "Value",
+      "tn": "Combine XYZ.004",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Math.012",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "stitch length",
+      "tn": "Reroute.027",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Dial Gizmo.002",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Reroute.030",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.030",
+      "fs": "Output",
+      "tn": "Combine XYZ.005",
+      "ts": "Z"
+    },
+    {
+      "fn": "Combine XYZ.005",
+      "fs": "Vector",
+      "tn": "Dial Gizmo.002",
+      "ts": "Position"
+    },
+    {
+      "fn": "Value",
+      "fs": "Value",
+      "tn": "Math.015",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.012",
+      "fs": "Output",
+      "tn": "Reroute.013",
+      "ts": "Input"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Math.015",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.015",
+      "fs": "Value",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    },
+    {
+      "fn": "Value",
+      "fs": "Value",
+      "tn": "Math.016",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.014",
+      "fs": "Output",
+      "tn": "Math.016",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.017",
+      "fs": "Value",
+      "tn": "Combine XYZ.001",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.010",
+      "fs": "Output",
+      "tn": "Math.017",
+      "ts": "Value"
+    },
+    {
+      "fn": "Value",
+      "fs": "Value",
+      "tn": "Math.017",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Iterations",
+      "tn": "Linear Gizmo.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Combine XYZ.004",
+      "fs": "Vector",
+      "tn": "Linear Gizmo.003",
+      "ts": "Position"
+    },
+    {
+      "fn": "Reroute.013",
+      "fs": "Output",
+      "tn": "Combine XYZ",
+      "ts": "X"
+    },
+    {
+      "fn": "Reroute.015",
+      "fs": "Output",
+      "tn": "Combine XYZ.001",
+      "ts": "X"
+    },
+    {
+      "fn": "Math.012",
+      "fs": "Value",
+      "tn": "Combine XYZ.004",
+      "ts": "X"
+    },
+    {
+      "fn": "Math.016",
+      "fs": "Value",
+      "tn": "Combine XYZ.002",
+      "ts": "X"
+    },
+    {
+      "fn": "Reroute.028",
+      "fs": "Output",
+      "tn": "Group",
+      "ts": "Z"
+    },
+    {
+      "fn": "Group Input",
+      "fs": " z infuence",
+      "tn": "Reroute.029",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.029",
+      "fs": "Output",
+      "tn": "Reroute.028",
+      "ts": "Input"
+    }
+  ],
+  "frames": [
+    {
+      "n": "Frame",
+      "lbl": "top",
+      "ch": [
+        "Linear Gizmo",
+        "Named Attribute.001",
+        "Math",
+        "Combine XYZ",
+        "Sample Index",
+        "Reroute",
+        "Reroute.001",
+        "Reroute.005",
+        "Reroute.008",
+        "Reroute.009",
+        "Reroute.012",
+        "Reroute.013",
+        "Math.015"
+      ]
+    },
+    {
+      "n": "Frame.001",
+      "lbl": "bottom",
+      "ch": [
+        "Linear Gizmo.001",
+        "Named Attribute.002",
+        "Math.001",
+        "Combine XYZ.001",
+        "Sample Index.001",
+        "Reroute.002",
+        "Reroute.006",
+        "Reroute.004",
+        "Reroute.007",
+        "Math.002",
+        "Reroute.003",
+        "Reroute.010",
+        "Reroute.011",
+        "Reroute.015",
+        "Reroute.016",
+        "Math.017"
+      ]
+    },
+    {
+      "n": "Frame.002",
+      "lbl": "width",
+      "ch": [
+        "Named Attribute.003",
+        "Sample Index.002",
+        "Math.003",
+        "Reroute.014",
+        "Math.006",
+        "Reroute.022",
+        "Reroute.023"
+      ]
+    },
+    {
+      "n": "Frame.003",
+      "lbl": "stitch offset",
+      "ch": [
+        "Math.004",
+        "Dial Gizmo",
+        "Named Attribute.004",
+        "Sample Index.003",
+        "Math.005",
+        "Reroute.018",
+        "Reroute.017",
+        "Reroute.019",
+        "Reroute.020",
+        "Combine XYZ.003"
+      ]
+    },
+    {
+      "n": "Frame.004",
+      "lbl": "stitch depth",
+      "ch": [
+        "Linear Gizmo.002",
+        "Combine XYZ.002",
+        "Math.016"
+      ]
+    },
+    {
+      "n": "Frame.005",
+      "lbl": "gap per stitch",
+      "ch": [
+        "Dial Gizmo.001",
+        "Math.007",
+        "Named Attribute.005",
+        "Math.008",
+        "Sample Index.004",
+        "Combine XYZ.004",
+        "Math.012",
+        "Math.013"
+      ]
+    },
+    {
+      "n": "Frame.006",
+      "lbl": "stitch length",
+      "ch": [
+        "Dial Gizmo.002",
+        "Math.009",
+        "Math.010",
+        "Named Attribute.006",
+        "Sample Index.005",
+        "Math.011",
+        "Math.014",
+        "Combine XYZ.005"
+      ]
+    },
+    {
+      "n": "Frame.007",
+      "lbl": "smooth",
+      "ch": [
+        "Linear Gizmo.003",
+        "Combine XYZ.006"
+      ]
+    }
+  ],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": [
+    "add rings.002"
+  ]
+}

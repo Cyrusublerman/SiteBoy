@@ -1,0 +1,120 @@
+{
+  "source": "final_final_last_final.pdf",
+  "page_count": 4,
+  "text": [
+    {
+      "page": 1,
+      "file": "text/page_0001.txt"
+    },
+    {
+      "page": 2,
+      "file": "text/page_0002.txt"
+    },
+    {
+      "page": 3,
+      "file": "text/page_0003.txt"
+    },
+    {
+      "page": 4,
+      "file": "text/page_0004.txt"
+    }
+  ],
+  "images": [
+    {
+      "xref": 16,
+      "page": 1,
+      "width": 3485,
+      "height": 5368,
+      "file": "images/img_00016_p0001.png"
+    },
+    {
+      "xref": 92,
+      "page": 2,
+      "width": 632,
+      "height": 520,
+      "file": "images/img_00092_p0002.png"
+    },
+    {
+      "xref": 94,
+      "page": 2,
+      "width": 630,
+      "height": 630,
+      "file": "images/img_00094_p0002.png"
+    },
+    {
+      "xref": 96,
+      "page": 2,
+      "width": 630,
+      "height": 630,
+      "file": "images/img_00096_p0002.png"
+    },
+    {
+      "xref": 98,
+      "page": 2,
+      "width": 630,
+      "height": 630,
+      "file": "images/img_00098_p0002.png"
+    },
+    {
+      "xref": 100,
+      "page": 2,
+      "width": 630,
+      "height": 630,
+      "file": "images/img_00100_p0002.png"
+    },
+    {
+      "xref": 102,
+      "page": 2,
+      "width": 630,
+      "height": 630,
+      "file": "images/img_00102_p0002.png"
+    },
+    {
+      "xref": 111,
+      "page": 3,
+      "width": 2665,
+      "height": 1872,
+      "file": "images/img_00111_p0003.png"
+    },
+    {
+      "xref": 113,
+      "page": 3,
+      "width": 2661,
+      "height": 1870,
+      "file": "images/img_00113_p0003.png"
+    },
+    {
+      "xref": 81896,
+      "page": 3,
+      "width": 624,
+      "height": 637,
+      "file": "images/img_81896_p0003.png"
+    }
+  ],
+  "pages": [
+    {
+      "page": 1,
+      "width": 3508,
+      "height": 2684,
+      "file": "pages/page_0001.png"
+    },
+    {
+      "page": 2,
+      "width": 3508,
+      "height": 2684,
+      "file": "pages/page_0002.png"
+    },
+    {
+      "page": 3,
+      "width": 3508,
+      "height": 2684,
+      "file": "pages/page_0003.png"
+    },
+    {
+      "page": 4,
+      "width": 3508,
+      "height": 2684,
+      "file": "pages/page_0004.png"
+    }
+  ]
+}

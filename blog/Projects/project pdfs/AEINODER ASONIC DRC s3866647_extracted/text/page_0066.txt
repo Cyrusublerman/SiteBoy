@@ -1,0 +1,23 @@
+asonic
+Poly(3-hydroxybutyrate-co-3-hydroxyvalerate)(PHBV)
+A plastic in the family of polyhydroxyalkanoates (PHAs), poly(3-
+hydroxybutyrate-co-3-hydroxyvalerate) (PHBV) has been the focus of manifold
+research. The structural and physicochemical properties of PHBV have proven
+to be of high value in many industries including medicine (Tebaldi et al. 2019).
+PHBV is much less prone to biodegradation than other PHA biopolymers
+and can be synthesised to have more hydrophobic properties. Though this
+is often seen as a negative composition when purposed for specific medical
+applications such as cell interaction through drug therapy, this is of high benefit
+when creating an object that will need to withstand microbial proliferation
+within a hospital environment (Figueroa-Lopez et al. 2020.
+PHBV may be synthesised within the cytoplasm of both gram-negative and
+gram-positive bacteria. Each of these bacterial groups, however, pose their own
+issues. Synthesis of PHBV by gram-positive bacteria have proven to be far more
+costly as the purification processes are excessively difficult. Gram-negative
+bacterial synthesis can lead to the co-production of specific endotoxins that
+that may cause inflammatory reactions. This potential toxic reaction may not be
+an issue when the material is used in the creation of a non-ingested product.
+Table 1- Minimum Inhibitory concentration and minimum bactericidal
+concentation of oregano essential oil and zinc oxide nanoparticles
+against S.aureus and E.coli (Figueroa-Lopez et al. 2020).
+66 Ali Einoder

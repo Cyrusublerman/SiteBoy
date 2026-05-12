@@ -1,0 +1,13 @@
+Design Goal
+Nature’s organised complexity is the consequence of a series of self-referential
+algorithms specific to their need. There are however significant trends in these
+patterns that appear to be noticed by the human subconscious. This infers a
+potential utilisation of the underlying trends to create new synthetic forms that
+mimic some of the neuroaesthetic benefits of nature.
+How then might we build structures fully utilising the geometry found in nature
+to improve mental and physical wellbeing?
+By analysing several key patterns and algorithms at the core of nature’s intrinsic
+geometry, and repurposing them for built structures, I hope to provide insight
+into how the biomimicry of mathematical relations can be utilised to inform
+design practices that improve wellbeing.
+6

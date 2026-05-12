@@ -1,0 +1,41 @@
+Creation of a Phyllotactic Dome Part 2:
+Creating a latticed dome with phyllotactic points
+Figure 25: Lattice Structure Generation in Python. Author’s Own 2022.
+Formation of the spiral dome and less regular domes being point will have a unique
+structures, as well as the established. From investigation distance from the center. This
+phyllotactic roofing, indicated into how these lattices are will also mean that the first
+that there was a potential formed, both ideologically segment of each parabola will
+lattice structure that would be and mathematically, it became vary greatly as the distance of
+able to connect the phyllotactic apparent that a variation of a each lines first point will be
+points together. This lamella dome was needed. further away from the center
+framework could then support than the last. The order of the
+This dome is primarily
+the display of other aesthetic lines, from shortest to longest
+composed of overlapping
+features in a plant-like manner. first segment will also appear
+parallel arches, and is a
+irregular as each line is being
+To explore this concept, primary method of connecting
+formed 137.5 degrees from the
+research into the structure non-linear points in a dome. It
+previous.
+of other lattice domes such also as a default has geometry
+as Buckminster Fuller’s aesthetically similar to These issues required the
+geodesic domes was vital. phyllotactic structures. The creation of an algorithm
+The non repeating, non- curves of each arch can be capable of linking each point
+euclidean geometry needed segmented into a series of in overlapping parabolas that
+for the phyllotactic points was straight components if needed are unique and in line with the
+unfortunately incompatible as long as the point of joining wanted phyllotactic geometry.
+with the structural logic behind remains at the intersection of
+If the needed curves have to
+the geodesic domes as no the curve, thus allowing for an
+connect through the points
+repeating shape would be able easier manufacture.
+distributed on the dome and
+to connect the needed locations
+The parabolas usually used the curves are approximately
+Geodesic domes are not the to create lamella domes are evenly distributed around
+only lattice domes possible regular and parallel which the dome then the curves
+however (see image above), is not possible with the themselves will need to be
+with other more complex phyllotactic pattern as each composed of a subset of the
+36

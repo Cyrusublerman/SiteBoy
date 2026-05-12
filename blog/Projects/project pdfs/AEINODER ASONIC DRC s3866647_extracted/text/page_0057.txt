@@ -1,0 +1,13 @@
+asonic
+The alternating wave density on the edges leads the wave generating
+algorithm to create the appearance of directional movement. Like
+water slowly lapping the shore the smooth parallel waves only slightly
+disform and angle. Reducing the perpendicular wave number fewer
+than three proved to remove the realism of the wave and moved the
+shape further away from its needed fractal identity.
+After forming the structure of the edges the inside waves can be
+generated to create a smooth variety of peaks and troughs that flow
+from one edge to the other, crossing over and fluctuating in height. As
+long as the edge requirement is met then this inner wave structure can
+have infinite possibilities.
+S3866647 57

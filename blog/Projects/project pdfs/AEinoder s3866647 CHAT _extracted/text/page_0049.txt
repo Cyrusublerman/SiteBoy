@@ -1,0 +1,8 @@
+The body was printed in two components. This allows for a simple manufacturing process.
+The flat sides and gentle curves minimised the supporting material needed to print, thus
+reducing the cost.
+The printer slides into the base of the stricture and the Pi is mounted on the lip above it. The front
+has screw holes for the camera and the microphone PCB is slotted into the formed crevace and
+glued.
+The two pieces slot together, held tightly with screws through the aigned holes.
+49

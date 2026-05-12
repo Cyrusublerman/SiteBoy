@@ -1,0 +1,16 @@
+Figure 16: Algorithmically generated
+Phyllotaxis x-view. Author’s Own 2022.
+The geometry nodes seen above show the
+creation of the polar coordinates of phyllotaxis
+and subsequent conversion to Cartesian
+coordinates needed to display them within
+Blender. To the right is this recreated in Python
+to begin the algorithm.
+The following pages will show the generation of
+Figure 17(top)/18(bottom): Phyllotactic generation in Blender’s
+points per half degree of the angle of divergence geometry nodes and Python. Author’s Own 2022.
+(0 degrees to 179.5.) This visualisation makes
+obvious both the extreme differences half a
+degree can make as well as the significance of the
+golden angle (137.5 degrees).
+29

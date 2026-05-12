@@ -1,0 +1,6 @@
+P R I N T O U T
+P R O T O T Y P E
+Using the format stated previously and following the limitations of a thermal
+printer (1 bit printing, 384px wide), prototype message printouts were made
+to visualise the potential outcome of the CHAT device.
+20

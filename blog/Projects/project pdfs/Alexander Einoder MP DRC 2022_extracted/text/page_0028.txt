@@ -1,0 +1,36 @@
+Figure 15: Algorithmically generated
+Phyllotaxis z-view. Author’s Own 2022.
+Creation of a Phyllotactic Dome Part 1:
+Generation of Phyllotactic Points
+To create a phyllotactic dome, phyllotactically Because in nature the dome’s curvature varies to
+distributed points must first be created. These such a degree, specificity of the dome curvature
+points, distributed following the equation: in the generation was not needed. Thus for
+this methodology and created algorithms, the
+instantly form the unique aesthetics associated relationship between point number and vertical
+with plant growth. height was linear. This allowed the radial
+distribution to also dictate the vertical, which
+The radius of the phyllotactically distributed
+creates a near uniform dome.
+points need to be constrained to the radius
+of the wanted dome. This can be enforced by The height of the dome was dictated by the
+altering the distribution coefficient C in the equation:
+phyllotactic equation. As it dictates how far
+out the points will range depending on point
+number, then when creating the final point the The dome’s points begin at the inside which is
+value of C must be so that the final point’s polar to be the highest point, thus the first point must
+radius equals the radius of the wanted dome: begin at the maximum height and the final point
+will be at the minimum.
+These equations were used to first create a
+generative geometry node arrangement in
+By following this equation the polar radius of the
+Blender for prototyping and then when confirmed
+final point will always be the radius of the wanted
+it became the initial component of the Python
+dome regardless of point number. This now sets
+code.
+a hard boundary for the shape and begins the
+definition of the structure.
+Making this dome vertical requires developing a
+relationship between either the point number or
+radius and the vertical transformation.
+28

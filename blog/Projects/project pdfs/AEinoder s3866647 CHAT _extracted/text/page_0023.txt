@@ -1,0 +1,30 @@
+C O M P U T I N G
+Because of the potential need for
+complex processing of data and
+integration of several technologies
+within one processing pathway, it was
+considered as optimal to choose a capable
+single board computer such as the Raspberry
+Pi 4.
+This board has accessible GPIO pins that
+can connect to devices such as the thermal
+printer. These GPIO pins can power and
+communicate with the printer over serial
+communication, sending printing commands
+and receiving information on the printing
+state and paper levels.
+The Raspberry Pi 4 has complementary
+camera modules that can attatch via a
+specific camera port. This is paired with
+simple software integration and control.
+The device itself runs a fully capable linux
+based operating system that is easy to setup
+and program within its environment. The
+device can be accessed remotely to allow for
+ease of programming/development.
+The majority of the programming will
+be using the language of Python as it is
+incredibly versatile and libraries exist for the
+control of the needed components. Detailing
+of this will be shown later in the document.
+23

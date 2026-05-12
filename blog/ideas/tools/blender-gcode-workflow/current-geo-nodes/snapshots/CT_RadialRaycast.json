@@ -1,0 +1,249 @@
+{
+  "name": "CT_RadialRaycast",
+  "iface": [
+    {
+      "name": "Points",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Mesh",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "SliceZ",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Radius",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 5.0
+    },
+    {
+      "name": "Resolution",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 64
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve Circle",
+      "t": "CURVE_PRIMITIVE_CIRCLE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Transform Geometry",
+      "t": "TRANSFORM_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve to Points",
+      "t": "CURVE_TO_POINTS",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.001",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math.001",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Raycast",
+      "t": "RAYCAST",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Set Position",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Group Input",
+      "fs": "Resolution",
+      "tn": "Curve Circle",
+      "ts": "Resolution"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Radius",
+      "tn": "Curve Circle",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    },
+    {
+      "fn": "Curve Circle",
+      "fs": "Curve",
+      "tn": "Transform Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Transform Geometry",
+      "ts": "Translation"
+    },
+    {
+      "fn": "Transform Geometry",
+      "fs": "Geometry",
+      "tn": "Curve to Points",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Resolution",
+      "tn": "Curve to Points",
+      "ts": "Count"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Combine XYZ.001",
+      "ts": "Z"
+    },
+    {
+      "fn": "Combine XYZ.001",
+      "fs": "Vector",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math",
+      "fs": "Vector",
+      "tn": "Vector Math.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Mesh",
+      "tn": "Raycast",
+      "ts": "Target Geometry"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Raycast",
+      "ts": "Source Position"
+    },
+    {
+      "fn": "Vector Math.001",
+      "fs": "Vector",
+      "tn": "Raycast",
+      "ts": "Ray Direction"
+    },
+    {
+      "fn": "Curve to Points",
+      "fs": "Points",
+      "tn": "Set Position",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Raycast",
+      "fs": "Is Hit",
+      "tn": "Set Position",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Raycast",
+      "fs": "Hit Position",
+      "tn": "Set Position",
+      "ts": "Position"
+    },
+    {
+      "fn": "Set Position",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Points"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

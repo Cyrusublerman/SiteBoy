@@ -1,0 +1,6 @@
+; T1 ; switch to extruder T1 (any G-code macro can be passed here)
+
+M204 S500 ; Set Starting Acceleration
+
+M106 S0 ; no fan 
+; FEATURE: Outer wall

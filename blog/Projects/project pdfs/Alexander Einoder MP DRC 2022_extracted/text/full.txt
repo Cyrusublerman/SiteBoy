@@ -1,0 +1,2353 @@
+--- Page 1 ---
+Synthetic Biophilia
+Generation of a Phyllotactic Dome
+Alexander Einoder - s3866647 - 2022
+
+--- Page 2 ---
+Index
+Abstract 3
+Introduction 4
+Design Goal 6
+Buildings Brain and Behaviour 8
+Biophilia and Neuroscience 12
+Research to Design 15
+Aesthetics of Nature 16
+Fractals 17
+Natural Patterns: Local Symmetry 18
+Phyllotaxis 20
+Biophilic Design Precedents 22
+Design Methodology 24
+Initial Experiments 26
+Creation of a Phyllotactic Dome Part 1 28
+Creation of a Phyllotactic Dome Part 1 36
+Lattice Combinations 42
+Joints 50
+Negative Space 52
+Leaves 54
+Algorithm Flexibility and Use 56
+Blender Geometry Nodes and Python 58
+Outcomes 68
+Reflection 78
+References 80
+Appendices 84
+2
+
+--- Page 3 ---
+Abstract
+Neuroscientific and behavioural research has solidified
+the importance of the connection between the built
+environment and the health and wellbeing of those within.
+With a vast majority of time spent indoors for those living
+in developed countries, now more than ever, it is vital to
+understand how to maximise an individual’s psychological
+and physiological well-being through architectural design.
+Following the ideology of biophilic design, insights from
+environmental neuroscience, and the mathematics of
+botany, a domed structure has been developed that
+exhibits the geometric patterns of plant growth. The aim
+of this exploration enabled the illumination of a potential
+methodology in which the underlying mathematics of
+natural forms can be applied to modern architecture and
+design.
+In addition, analysis of the literature and experimentation
+of form underpins the development of valuable tools for
+designing biophilic spaces aligned to the numerous insights
+from environmental neuroscience and surrounding fields.
+Potential challenges and compromises with the practical
+implementation of the theory were identified, culminating
+in novel and transferable design solutions.
+Nature, geometry, design: connecting concepts for better health
+3
+
+--- Page 4 ---
+Introduction
+According to the branch of 2021). Structures with forms consistency of complexity,
+evolutionary psychology similar to that of plants, and what are their shared
+- the biophilia hypothesis, wallpapers and pictures with characteristics that benefit
+we are drawn instinctively natural scenes or elements and our brains and bodies? By
+to living things such as the audio recordings of natural answering these questions
+sight of plants and the sound sounds appear to all have and discovering methods of
+of birds (Myers 1996). The significant benefit, being shown recreating the core components
+area of neuroaesthetics has to reduce blood pressure of natural structures, we
+demonstrated many benefits of (Howell et al. 2011), decrease can move towards building
+experiencing natural structures requirement for analgesia synthetic environments that
+and environments. Additionally, (Totaforti 2018), and increase authentically replicate the
+attention restoration theory mental acuity (Totaforti 2018). natural world.
+suggests that nature captures
+These positive health benefits To determine methods of
+our attention even without
+of nature have inspired an creating structures that
+us having to focus directly
+exploration and investigation of mimic the psychological and
+on it. This in turn seems to
+the application of natural forms physiological benefits of
+recharge the mind and alleviate
+in architecture. the natural environment, a
+stress - similar to meditation
+collation of key insights will
+(Alvarsson, Wiens & Nilsson What is it about the shape and
+be derived from literature
+2010). Many experiments structure of plants and natural
+focusing on neuroaesthetics,
+have shown that this environments that provoke a
+environmental neuroscience
+unconscious interaction with restorative effect? What are the
+and biophilia. Additionally, the
+our environment is incredibly core components and attributes
+application of botany-related
+important to our overall of a natural scene? How is
+mathematics will inform the
+wellbeing and mental health, the lighting composed? How
+development of a prototype
+and has led to the development does the sound reverberate?
+and will provide insights into
+of the field of environmental What patterns are recurrent in
+recreating valuable nature
+neuroscience (Westlund 2015). nature?
+inspired structures.
+The benefits of nature seem to To understand the restorative
+extend beyond the presence effects of specific natural forms,
+of nature itself. More and it is important to first analyse
+more studies are showing what forms and patterns are
+that references to nature prevalent in nature and what
+have benefit to the health and makes them distinctive. How do
+wellbeing of those within a plants grow into their myriad
+space (Yao, Zhang & Gong shapes? What creates their
+4
+
+--- Page 5 ---
+Figure 1: Image of the sun through tree canopy. Author’s own 2022.
+5
+
+--- Page 6 ---
+Design Goal
+Nature’s organised complexity is the consequence of a series of self-referential
+algorithms specific to their need. There are however significant trends in these
+patterns that appear to be noticed by the human subconscious. This infers a
+potential utilisation of the underlying trends to create new synthetic forms that
+mimic some of the neuroaesthetic benefits of nature.
+How then might we build structures fully utilising the geometry found in nature
+to improve mental and physical wellbeing?
+By analysing several key patterns and algorithms at the core of nature’s intrinsic
+geometry, and repurposing them for built structures, I hope to provide insight
+into how the biomimicry of mathematical relations can be utilised to inform
+design practices that improve wellbeing.
+6
+
+--- Page 7 ---
+Why develop a tool?
+Finding ways to combine the innovation and development in both
+environmental neuroscience and design will help to progress research in
+both areas moving forward. New insights and evidence-based practices can
+be more quickly and effectively applied and their impacts spread to maximise
+benefit. In turn, the interactions between the design implementations and
+the broader community can then be studied and evaluated which will further
+progress interdisciplinary research initiatives. Clearer and more effective
+implementation of the research insights by designers may also garner more
+publicity and support and thus more funding, further propelling the field.
+Personally, as a motivator for this project, I find that great benefit could come
+from the development of tools that can help apply the insights of scientific
+research to the field of design. This reduces the cognitive burden on individual
+parties and may increase the implementation of new and novel discoveries.
+7
+
+--- Page 8 ---
+Buildings, Brain, and Behavior
+How does the built environment affect wellbeing?
+In the modern era, people spend most of
+their lives inside buildings. The design of Firmitas
+these buildings can have a large impact
+(Strength)
+on the mood, behaviour, and health of the
+inhabitants (International Living Future
+Institute 2018). This may be due to many
+factors such as safety and function. It is
+becoming more apparent however, that
+architectural and design aesthetics play an
+important role in this psychological and
+Architectural
+physiological effect (Gullone 2002).
+Design
+Over the past decade, researchers have
+begun to explore the interconnectedness
+of the built structure and the neurology of
+those within. They have provided much- Utilitas Venustas
+needed insight into how architecture (Functionality) (Aesthetics)
+engages multiple sensory networks and
+how this can lead to motor and emotional
+responses (Berman, Stier & Akcelik 2019).
+Even if a particular building fulfills its
+functional requirements it may however
+Vitruviam Triad
+impede the functioning of people who
+work or live in that space (Gritzka et al. Figure 2: The Vitruvian Triad. Author’s Own 2022
+2020). This illuminates the hypocrisy
+of many workspaces, designed to be
+utilitarian and space-efficient in the hope of
+increasing the productivity of its workers, one of the three core dimensions of architectural design
+but consequentially reducing their mental of at least equal value to its structural stability and
+and physical performance, negating any functionality (see above) (Coburn 2018). Other ancient
+potential benefit (Zaino & Abbas 2020). cultures throughout history have also understood this,
+with Chinese feng shui and Indian vaastru shastra
+The idea that a structure’s aesthetics are of
+offering alternatives to creating cohesion and harmony
+value was not previously unheard of. Two
+within synthetic environments (Mak & Thomas Ng,
+thousand years ago the Roman architect
+2005; Patra, 2009).
+Vitruvius historically crowned beauty as
+Environment Senses Processing Physiology
+Figure 3: The interconnections between the environment and neurophysiology.
+Author’s Own 2022
+8
+
+--- Page 9 ---
+EMOTIONAL STATE
+ENVIRONMENT
+EXPERIENCE CONSCIOUS ACTION COGNITIVE FUNCTION
+GENETICS
+PHYSIOLOGY
+The world around us, both physical and social, is inextricably connected to our brains and behaviour. The study of environmental
+neuroscience highlights the need to be aware of the interactions between the environment, psychology, neurobiology and behaviour.
+Figure 4: Interaction between internal and external elements as described by
+environmental Neuroscience. Author’s Own 2022.
+The state of our mind is the Mental wellbeing has risen of objects and features to
+state of our being. When to the forefront of public the subtleties of shape and
+our mental wellbeing is awareness and there is no form, the composition of our
+diminished, our physical and shortage of challenges to surroundings change the way
+long-term health quickly overcome in the modern we think and feel (Gritzka et al.
+follows. These affronts to our workplace (Gritzka et al. 2020; 2020).
+mental health and wellbeing Connellan et al. 2013).
+Many different key attributes
+can be obvious and conscious
+The environment that have been shown to have
+or subtle and subconscious,
+surrounds a person a direct effect on certain
+as can the factors that lead to
+shapes their emotional aspects of mental wellbeing.
+the changes (Cooper, Boyko
+and physical state in many Particularly that of stress and
+& Codinhoto 2009; Yerbury &
+ways. From the emotional cognitive load (Cooper, Boyko
+Lukey 2021).
+significance and stimulation & Codinhoto 2009).
+9
+
+--- Page 10 ---
+Stress Reduction Theory
+Environmental Recovery From
+Neuroscience Stress
+Attention Restoration Theory
+Figure 5: SRT and ART as subsets of Environmental Neuroscience. Author’s Own
+Research has demonstrated has spurned the development them in a refugial space that
+the interplay between the of two theories of stress provides “soft fascination”
+built environment and mediation – Attention (Pazhouhanfar & Mustafa
+mental restoration (Gritzka Restoration Theory (ART) and Kamal 2014).
+et al. 2020). By incorporating Stress Reduction Theory (SRT)
+Stress Reduction Theory
+elements such as trees, water (Scopelliti, Carrus & Bonaiuto
+focuses on the lower
+and natural landscapes, 2019). Both theories help to
+stimulation of natural
+synthetic environments explain how natural and built
+environments in relation
+were indicated to improve environments can both be
+to the synthetic. This lower
+psychophysiological recovery detrimental and beneficial to
+stimulation is due to the
+from experimental and the well-being of an individual,
+fact that human cognition
+naturalistic stressor exposure especially when exposed to
+developed to process the
+(Alvarsson, Wiens & Nilsson external stressors.
+natural and thus requires less
+2010). In addition, views of
+Attention Restoration effort to do so. The reduced
+nature, landscape paintings
+Theory suggests that natural effort results in less strain
+and indoor plants were
+environments can reduce and thus increased ability to
+also connected to enhanced
+mental fatigue and increase recover from previous stressors
+comfort, mental acuity, and
+concentration by providing (Pazhouhanfar & Mustafa
+positive affect. Several other
+stimuli more harmonious with Kamal 2014).
+studies also demonstrated how
+the brain’s sensory processing
+certain non-natural structures Both of these theories have
+(Moran 2019). This lower
+(such as those that captivate been supported by evidence
+effort processing allows for the
+and support curiosity) can that the presence of shared
+neurological areas associated
+positively affect the restorative gardens, park areas and natural
+with concentration to recover.
+process and significantly refuges improve mental and
+The natural environments
+improve wellbeing. physiological wellbeing (Dong
+are required to separate the
+& Qin 2017).
+The connection between individual from where they
+environment and wellbeing were stressed and immerse
+10
+
+--- Page 11 ---
+11
+
+--- Page 12 ---
+Biophilia and Neuroscience
+Biophilia
+The environments which facilitate optimum
+wellbeing and mental ability seem to be those
+which reproduce and present the mathematical Love of Life
+and structural properties and relations of those
+which encompassed ancestral humanity. As such,
+the core aspects of the environments which Sustaining Life Positive
+facilitated the development of homosapiens may from Threats Integration with
+still be needed for ideal cognitive and emotional
+of Death Eachother
+function, even in today’s hyper-synthetic world
+(Kellert, 2008).
+Innate Tendancy to Focus on Life
+Furthermore, analysis of the mathematical
+composition of nature has shown insight into and Lifelike Processes
+what forms an ideal environment. Mimicking the
+key components and relations of natural forms Figure 6: Biophilic Definition. Author’s Own 2022.
+can bring the natural elements into otherwise
+purely synthetic environments (Salingaros 2012).
+These mathematical compositions and patterns
+have a direct influence on the neurology of the area in a position in which they must adopt what
+experiencer, potentially though the modulation of Richard P. Feynman referred to as a ‘satisfactory
+pleasure-regulating opioid receptors (Biederman philosophy of ignorance’. A realisation that whilst
+and Vessel 2006). humbling, has facilitated enormous progress.
+Biophilic design, especially within the Like many other complex areas, the answer
+architectural space, seeks to reconnect modern probably does not lie in a direct and linear
+society to the natural world. This goal however interrogation of the problems but instead in a
+has been hindered by numerous challenges both multifaceted and multidirectional inquisition into
+internal and external to the design community the intricacies of what biophilic design could be
+(Kellert 2008). The first and potential core issue and how it may function.
+appears to be a lack of clarity of the specific aim Neuroscience research has shown a direct
+of biophilic design (Zhong, Schröder & Bekkering connection between the shapes and forms
+2022). What does it mean to reconnect modern of a biophilic or natural space and the visual
+society to the natural world? To answer this, firstly processing areas of the human brain (Bratman,
+there needs to be a deep understanding of how Hamilton & Daily 2012). The specific curvilinear
+humans evolved to connect with nature. patterns of the stimuli appear to activate
+It is only then that adjustments can then be specialised neuronal systems that may be
+made based on the highlighted differences present to identify resources and environments
+between then and now. Once variances have that facilitate survival and reproduction. This
+been identified, precise mechanisms must be ingrained value of aesthetics has been noted in
+considered to ensure the responses are not several studies, whereby respondents report a
+misguided or vague. For example to identify the sense of order and feelings of visual ease after
+mechanisms by which humans interact with the viewing (Sternberg & Wilson 2006).
+natural and synthetic worlds, you will need to Another observed entangling of visual stimuli
+understand the mechanisms of human physiology and cognitive behaviour has been the direct but
+and psychology so that any manipulation of abstract eliciting of visual memory. The organised
+the human-environment paradigm will not be complexity of the natural patterns appears to
+detrimental. This, though becoming increasingly provoke the viewer to search through their
+complex already, is only the beginning as it is also memory in hopes of identifying novel stimuli.
+important to consider how modern society is This searching is the foundation of intrigue and
+formed, how people currently live and what the provokes mental positive feedback and feelings of
+current state of design is. beauty and joy.
+This puts designers and scientists within the
+12
+
+--- Page 13 ---
+Together, these two connections between how elements of an environment interact with
+natural stimuli and cognitive response illustrate each other and how their composition suggests
+potential mechanisms for biophilic design’s a narrative and functional interplay (Mehaffy
+ability to increase wellbeing and mental wellness. 2019).
+What constitutes biophilic design and what This overarching interaction and the organisation
+elements are essential appears to vary between (or lack thereof) is the fundamental basis of
+practitioner and purpose. Environmental visual “naturalness” and adaptability (Jiang
+consultancy firm Terrapin Bright Green 2015).
+deconstructed biophilic design into fourteen
+Further research into how components of
+patterns, grouped into three main sections,
+structures are organised within synthetic and
+Nature in the Space, Natural Analogues and
+natural systems illustrates the necessity for
+Nature of the Space (see checklist below)
+consistent logic when building environments if
+(Browning, Ryan & Clancy 2014). This
+naturalness is to be achieved (Jiang 2016).
+categorisation serves as a useful tool for
+designers within and outside the field, helping The movement of focus from typical biophilic
+to create guidelines and identify areas for inclusion of natural elements to the logic
+consideration. By creating the three main of design and construction connects with
+groups, the value of both the synthetic and a major critique of the practice of biophilic
+natural components of biophilic design becomes design, especially in architecture. If research is
+apparent, promoting and suggesting a more highlighting the fundamental aesthetic patterns
+thorough investigation into the construction that induce the benefits of nature, it would
+of an environment. Many elements of biophilic stand to reason that these aesthetic patterns
+design are challenged and evaluated by can be created synthetically (Salingaros 1999).
+Christopher Alexander’s theory of natural Emphasis on the overarching, collectivising
+structure, which dictates that buildings develop patterns of construction and design and its
+a natural visual structure when the methods interaction with subconscious thought may
+used to construct them follow the processes of however stand in opposition to much of biophilic
+biological growth (Gabriel & Quillien 2019). design practice.
+Christopher Alexander’s work further explores
+Nature in Space Experience of Place
+Visual connection with nature Organised complexity
+Thermal and airflow variablity Prospect and refuge
+Non-visual connection with nature Transitional spaces
+Non-rhythmic sensory stimuli
+Presence of water
+Forms and Shapes
+Dynamic and/or diffused Light
+Biomorphy
+Geomorphology
+Indirect Experience of Nature
+Biomimicry
+Images
+Materials
+Patterns
+Texture
+Colour Sensory variability
+Shapes + Forms Information richness
+Information Richness Age/change/patina
+Natural Geometries Central focal point
+Simulated Natural Light and Air Patterned wholes
+Biomimicry Transitional spaces
+Figure 7: Author’s recreation of Terrapin Bright Green’s 14 Patterns of Biophilia.2022
+13
+
+--- Page 14 ---
+14
+
+--- Page 15 ---
+Research to Design
+Investigation into what constitutes a natural pattern and
+interaction is also critical to modern biophilic design
+efficacy. Is natural reference beneficial because it is
+consciously or subconsciously provocative? Will the
+inclusion of elements from the 14 patterns of biophilia
+create a less natural space if used in a seemingly illogical
+manner? Does inauthentic reproduction of natural form
+provide the wanted benefit? These are questions that
+must be answered as the practice of biophila grows and
+evolves.
+For this project, several primary components of
+natural patterns will be observed and understood. By
+connecting the systems of pattern creation in nature
+with the observed effect on human wellbeing, insight
+can be gathered on what to replicate in synthetic
+structures and how.
+15
+
+--- Page 16 ---
+Aesthetics of Nature
+The natural world is composed mutation happened one This co-development shapes
+of a vast array of living and by one, and the organisms each party to reflect their
+non-living forms, created either changed slowly, with each neighbours as the ecosystem
+by their evolved biology or by alteration potentially meaning pushes towards a stable state.
+forces acting upon them by the cessation of a species— The complex symbiosis of
+the environment (Fattorini this risky nature of evolution environment and organism
+2017). These two systems are preferences systems that creates a system in which each
+both intricately formed and require minimal support component is intricately linked,
+structured in and of themselves. and energy whilst gaining following a profound biological
+The growth of a living structure significant benefit (Adler, and physicochemical logic
+is dictated by its genome and Barabe & Jean 1997). (Gabora 2013).
+physicochemical interaction
+This logic is fundamental to This system of logical
+with the outside world (Gullone
+understanding the patterns we connections and co-
+2002). The non-living shaping
+see in nature. The preferenced development is a significant
+of the environment stems from
+efficiency of formation factor separating natural
+the interactions of forces and
+encourages the development of and synthetic environments.
+systems, such as the movement
+growth systems and practices Buildings do not share the same
+of water and air, changes in
+that serve multiple functions - a intricate design responses to
+temperature and interactions
+tree’s branches’ growth pattern their environment, and there is
+with living forms. This
+will spread out and fill space, not a consistent logic tying all
+perpetual cycle of interaction
+maximising the interaction with formations together (Alexander
+between components of the
+air, water, and sunlight (Jean 1999).
+environment converted the
+1990). Often, a specific pattern
+earth into the complex and There is even greater
+will address the needs of many
+beautiful design we see today dissonance when comparing
+organisms. The distribution
+(Sanderson & Pimm 2015). patterns and design logic
+characteristics of phyllotaxis
+between structures that differ
+At the core of each complex (the arrangement of leaves
+in scale. For nature however,
+system and form is an around a plant stem) allow
+foundational patterns are
+organised and systematic array one simple growth pattern
+present in both the minute
+of patterns and interactions to spread all the leaves in a
+and massive, such as fractal
+- essentially the universe’s way that minimises overlap
+developments, biological
+programming. How organisms and maximises sun and water
+symmetry and phyllotactic
+grow depends on the structure exposure (Pennybacker,
+divergence (Alexander & Davis
+of their genome, which Shipman & Newell 2015).
+1981).
+is reliant on the chemical Consequentially it has been
+interactions of its polymers . An evolutionarily preferenced and
+organism’s growth is affected is exhibited by the vast majority
+by changes in environmental of plants in one way or another.
+factors, such as air pressure The evolution, growth and
+and temperature alterations proliferation of an organism
+(Gabora 2013). within an environment
+also responds to the other
+It is also essential to recognise
+organisms it interacts with,
+the incremental and procedural
+both directly and indirectly.
+process of evolution. Each
+16
+
+--- Page 17 ---
+Fractals
+Recursive and repeating patterns
+are also consistently exhibited by
+natural forms as a consequence
+of the simplicity and efficiency
+of their core programming
+(Abboushi et al. 2019). Often,
+these recursive patterns become
+what are known as fractals,
+creating a repetition of self-
+similar components where each
+step of the pattern has the same
+relations as the last. This property
+of self-similarity is prevalent
+throughout nature as it is the
+outcome of hyper-irrational
+mathematical relations that allow
+repeating structures to result in
+high integrity structures (Plawsky
+1993).
+Exploration of these inherent
+patterns and the psychology of
+humans has shed light on the
+importance of fractal structures
+and their visual expressions (Joye fractal environments. This expresses a fractal dimension
+2007). It seems the patterns non-optimal D can exacerbate in line with what resonates
+resonate with human neurology, anxiety and depression. with humans and thus might
+which encourages a positive Therefore, it seems reasonable explain its intrinsic appeal
+interplay between emotional to note that harnessing (Williams 2017). There is
+and sensory systems and fractal the use of fractal imagery also an increase in research
+imagery. and structures within an suggesting using fractal
+environment has been shown imagery in art therapy,
+The unique qualities of fractal
+to improve mental acuity and where the use of generative
+patterns and geometries have
+wellbeing (Ma, He & Lu 2021). algorithms can connect
+been shown to have calming,
+patients’ modern inclinations
+almost anxiolytic effects on Research into the effects of
+and their evolutionary
+viewers (Salingaros 2012). fractal imagery has coincided
+preferences (potentially
+According to research, this is with other fractal-related
+enhancing the therapeutic
+because the relationship between investigations. It appears that
+benefit) (Mikiten, Salingaros &
+the fracticality of a pattern or the art of Jackson PolloFckra ctal Dimension (D)
+Yu 2000).
+shape and the psychological effect
+of the viewer is related to the
+fractal dimension of the structure
+(D) (Fernández-Martínez &
+Sánchez-Granero 2014). Humans
+respond ideally when the D value
+is between 1.3 and 1.5, regardless
+of the shape of the structure
+(Abboushi et al. 2019). The
+prevalence of simple structures
+in synthetic environments and
+the increase in mental stress may
+be due to being the antithesis of
+xednI-tH
+Figure 8: Key values and equations of fractal mathematics and psychological affect.
+Author’s Own 2022.
+Figure 9: Relation between fractal mathematics and visual appearance. Author’s Own
+2022.
+17
+
+--- Page 18 ---
+Natural Patterns: Local Symmetry
+Simple, small-scale symmetry is of many structures (Lima- These symmetries don’t only
+incredibly prevalent throughout De-Faria 1997). Allowing for occur in living organisms.
+natural structures, potentially higher uniformity of stacking or Snowflakes and bubbles
+due to the algorithmically a more even balance. Would a and even planets seem to
+growing forms reacting to horse with four legs on one side exhibit basic symmetry of
+specific variables in specific be able to gallop? shape. This is usually due to
+ways, plants, animals and other the fundamental nature and
+Alternatively, symmetry may
+organic life present many of mechanisms of physics and
+just be the consequence of
+their features rich with local chemistry, with forces pushing
+the simplest algorithm taking
+symmetry (Jean 1990). To have and pulling and reactive agents
+preference in the evolutionary
+one developmental procedure diffusing in specific patterns.
+race. Having a cleaner,
+cover two halves of a structure
+simple, and more efficient What is important to note
+has obvious benefits over
+developmental pathway may however, is that local
+having a unique procedure for
+lead to fewer chances of small symmetries of nature
+each. There would need to be
+evolutionary errors ending a rarely result in a perfectly
+large amounts of time, energy
+genetic lineage. Maybe because symmetrical whole (Hileman
+and mutations spent before
+of the simplicity, developing 2014). The changes in the
+a synergistic pair was found
+symmetrical components and surrounding environment,
+(Joly & Schoen 2021). This logic
+forms was just the fastest way epigenetic changes, mutations,
+expands even further for many
+for an organism to become a growth errors and many
+organisms throughout nature.
+complex and comprehensive other factors may alter how
+Iconically, a starfish’s “star” like
+structure. By having changes in a structure develops. The
+shape is due to the rotational
+cellular growth driven by only a consequences are a more
+symmetry of its legs (see right,
+few positional metrics it allows adapted and functional form,
+middle image) (McEdward
+for more focus to be on how or one that’s misshapenness
+1995).
+and when to change (Chou et al. hinders performance,
+In addition, local symmetry 2019). potentially impeding overall
+may improve the functionality function.
+18
+
+--- Page 19 ---
+Bilateral
+Radial
+Spherical
+Figure 10: Biological Symmetry and natural analogues. Author’s Own 2022.
+19
+
+--- Page 20 ---
+Phyllotaxis
+In botany, phyllotaxis (from Ancient Greek phúllon ‘leaf’, and táxis ‘arrangement’) or
+phyllotaxy is the arrangement of leaves on a plant stem. Phyllotactic spirals form a distinctive
+class of patterns in nature (Reinhardt & Gola 2022).
+The structures of nature are amongst designers and plant morphogenesis. The
+often composed of simple mathematicians. dynamic nature of plant-organ
+repeating patterns that evolved development is inherently
+It is possible to generate
+to achieve functional goals. The linked to the patterning
+other number sets using
+patterned formation of plant process, with researchers
+similar rules to the Fibonacci
+organs around a central axis suggesting many logical
+Sequence by adding the
+-phyllotaxis- is an example that reasons for the precise pattern
+preceding two numbers in a
+has intrigued and perplexed of phyllotaxy (Richards 2013).
+group to create the next. Some
+biologists and mathematicians
+of these sequences are crucial Rather than constructing
+since as early as 285BC (Adler,
+to studying phyllotaxis, such an embryonic plan, plants
+Barabe & Jean 1997).
+as [1, 3, 4, 7, 11, …] and [2, 5, primarily produce their organs
+Pliny (23 A.D.–79 A.D.), in his 7, 12, …]. Most importantly, procedurally throughout their
+Natural History, describes the the Golden Number (τ)- lives. This system of growth,
+orpine plant as ‘a ramose, hairy equivalent to [((sqrt(5)+1)/2] patterns the plant’s body in
+plant with five or six leaves - related to the Fibonacci phyllotactic spirals encouraging
+at regular intervals, arranged Sequence by the formula of specific end structures. The
+circularly around the branches’ limFk+1/Fk = τ. This relation particular angle expressed is
+(Adler, Barabe & Jean 1997). between phyllotaxis and the likely related to conditions
+Fibonacci Sequence clearly when the pattern is first
+A millennia later, the
+parallels the number of spirals established (Douady & Couder,
+mathematician Leonardo
+in plants such as daisies 1992; Smith et al., 2006).
+Fibonacci of Pisa’s (1175–
+following the sequence. The
+1240) book, Liber Abaci Of note, current research
+angle of divergence between
+(1202), provided solutions to understanding indicates that it
+consecutive growth on a plant
+the issue of rabbit population may also be important to focus
+spiral (genetic spiral) is also
+growth. To illustrate the on why plants preference spiral
+generally around 137.5 degrees
+progression of the population, phyllotaxy instead of why they
+[ 360 degrees x limF2k+1/Fk ]
+Fibonacci developed the specifically exhibit rotations
+or [360 degrees / τ ].
+sequence [ 1, 1, 2, 3, 5, 8, 13, of 137.5 degrees (Reinhardt &
+21, …, Fk, Fk+1, …] where The study of phyllotaxy has Gola 2022).
+each term after the second is significantly developed over
+the sum of the two preceding the past century with the
+it, and Fk is the kth term of involvement and inclusion of
+the sequence (Adler, Barabe many areas of mathematics,
+& Jean 1997). This sequence including analytic and
+of numbers is the Fibonacci hyperbolic geometry assisting
+Sequence and is famous those who study and research
+20
+
+--- Page 21 ---
+Figure 11: Phyllotaxy and Examples. Author’s Own 2022.
+21
+
+--- Page 22 ---
+Biophilic Design Precedents
+The Khoo Teck Puat Hospital, located in Yishun, Singapore, was
+designed utilising many aspects of biophilia. The structure is covered
+in a multitude of different plans and contains large green areas with
+waterfalls and grottos (‘The Architect’s Perspective: Khoo Teck Puat
+Hospital - RMJM’ 2010).
+The complex also attempts to direct the natural light, creating a
+diffused luminescence throughout whilst also reducing direct glare.
+The building’s walls house fins that channel wind into the building,
+potentially increasing the airflow up to 30%. Solar panels also
+power large fans to further enhance air flow in public areas. Air is
+circulated from the cooler, inner courtyards to the rest of the hospital,
+minimising cooling loads (‘2017 Award Winner: Khoo Teck Puat
+Hospital | Living-Future.org’ 2017).
+Ethimo and Marco Lavit collaborated on wellbeing focused reading
+lounges that aim to provide a natural dialogue between person and
+space (‘PROJECTS — Atelier LAVIT’ 2021). The array of slates create
+a shifting light and filters the perception of the outside environment.
+Created as a place to rest, meditate and relax, the reading nest forms
+a protective cocoon around its inhabitants.
+The huts are movable and unfixed, standing 320cm tall and 300cm
+wide allowing them to be placed in optimum positions in response to
+seasonal and functional requirements.
+These structures use natural, tactile materials and allow for a refuge
+whilst still connecting with the environment. The parallel, sharp lines
+however anchor the structure with a synthetic unnatural aesthetic.
+2022 Pritzker Prize Laureate Francis Kéré designed Xylem to visually
+emulate the cellular structure of a tree (‘Kéré | Work’ 2022).
+The carved wooden seating is asymmetrically and obscurely arranged
+so that visitors are able to sit and view both outwards and inwards at
+any angle.
+This is a clear example of a biophilic natural reference and use of
+natural materials, addressing many of the 14 Patterns of Biophilia.
+The structure however remains aesthetically synthetic with a
+prevalence of repetitive Euclidean geometry. This makes Xylem a
+great example of how natural components and reference may not be
+enough to create a natural seeming structure and in turn highlights
+the interplay between patterns of scale and representation of growth.
+22
+
+--- Page 23 ---
+Amanda Levete’s MPavillion (2015) is constructed of over forty
+fibreglass petals mounted on ninety five carbon fibre stalks. This
+array creates a forrest of dappled shade and diffused light. The light
+carbon fibre posts allow enough movement for the structure to sway
+in the wind and move the rounded organic shadows around the space
+further increasing the dynamics of the space’s lighting.
+This structure emphasises the ability of synthetic material to emulate
+nature and provoke the sense of a cohesive natural environment.
+Without attempting to directly mimic the aesthetics of trees, this
+pavilion expertly interacts with the sunlight and space to recreate the
+feeling of a forest and thus is a great example of visually connecting
+with nature
+Designed to evoke a conception of flesh, NEON’s Skin critiques
+the unnatural and anti-humanistic forms that dominate modern
+architecture by presenting an extreme antithesis. A woven elastic
+structure is suspended on a frame with a single opening. When the
+viewer enters, the shape and structure deform around them, reacting
+to their weight and movement. This disorients the participant,
+blurring the boundary between artwork and body.
+An extreme experimentation of form, Skin shows how reactivity to
+occupation as well as a patterned whole can create a naturalistic
+structure. The constant shifting of shape and space due to interaction
+makes this structure seem alive.
+The 2019 NEON Shiver House is a contemporary Finnish Hut
+(mökki) with a roof composed of 600 counterweighted shingles.
+These shingles dynamically move on supporting axles in response
+to the direction and velocity of the wind. This movement alters the
+obstruction of light and this creates an environment of naturally
+dynamic light, elevating the otherwise simple shape in a naturally
+complex environment.
+This utilization of environmental reactivity creates a space that has
+the ability to connect those within to the outside environment in a
+manner which aims to provoke a deeper connection.
+23
+
+--- Page 24 ---
+Design Methodology
+Following the initial review of the tool, initial experimentation The geometry nodes created
+literature and interrogation of of form included sketches large compilations of potential
+biophilic design and current and 3D modelling along with core structures such as point
+practices, it seemed most associated mathematics and distribution and curve specifics
+appropriate to delve deeper coding. The experiments led which were then used to fine-
+into botanical mathematics to the identification of critical tune the more formalised code.
+and the geometry of nature process steps for generating
+As both the geometry node
+to develop more significant a dome-like structure that
+feature and Python script
+insights into how synthetic expresses the geometry of
+were interfaced within
+structures could authentically phyllotaxy.
+Blender, the outputs could be
+mimic natural forms.
+The first step in the quickly rendered and their
+As much of the research process was identifying aesthetics assessed to guide the
+related to biophilia attributes the mathematics required development process further.
+a high value to this geometry, for generating phyllotactic
+Additionally, any issues with
+it seemed logical to create points. Secondly, it was vital
+the foundational mathematics
+core structures of a built to transform the points
+became immediately
+environment that express into an aesthetic structure
+apparent, which indicated
+the aesthetics detailed in through a series of connecting
+the requirement for further
+the research, principally joints. Finally, using the 3D
+avenues of exploration and
+the detailed patterns and modelling program Blender,
+refinement.
+associated visual relations. It the mathematics were
+became apparent, however, that translated into the parametric
+authentically recreating natural geometry nodes feature and a
+patterns required an advanced Python script run in Blender’s
+level of mathematic capability, embedded Python editor.
+which at times was alienating.
+These two functions were
+Addressing the knowledge
+fundamental to the iterative
+gap led to the development of
+process of the creation of a
+a tool comprising accessible
+generative algorithm. The
+algorithms to successfully
+geometry nodes facilitated
+and authentically combine
+quick visualisation of
+the properties of nature into
+mathematic relations and
+a synthetic space – a seamless
+algorithm functions, whilst
+connection between science
+the Python code allowed for
+and design.
+more specific and sophisticated
+To organically illustrate and generation.
+facilitate the development of
+24
+
+--- Page 25 ---
+25
+
+--- Page 26 ---
+INITIAL EXPERIMENTS
+How to convert phyllotaxis into a dome?
+Plants grow from the center out, with
+their leaves being phyllotactically
+distributed and spread based on
+growth order and time. This, if
+simplified creates a dome with each
+leaf creating an outer point at a
+specific location.
+Naturally however, the leaves
+will occupy the majority of space
+between the central axis and the
+outer point. This would prevent most
+functional use inside the dome if
+recreated architecturally and thus
+is an inadequate translation of the
+geometry. The question to answer
+then is “how can the outer points
+be distributed in accordance with
+phyllotaxy without the structure
+occupying the inner area?”
+To the right are renderings of several
+visual experiments in which different
+avenues were explored. Firstly is the
+consequence of forming a low polygon
+spiral that was a simplification of the
+golden spiral. This was then cloned
+and rotated to create a variance of
+frameworks that united curves into
+domes. These domes could in turn
+have an outer layer attached to further
+solidify and exaggerate the shape.
+These domes, though using the golden
+angle, do not capture the aesthetics
+of plant growth and when mapped
+against the points of phyllotaxy, only
+overlap with a small subset of points
+suggesting that using the golden angle
+and simple repetition and rotational
+symmetry would not be enough.
+Investigation into the potential
+mechanisms of supporting structures
+however indicated that there may
+be potential in some aspects of
+this design, such as the interplay
+between overlapping spirals. Further
+investigation was needed.
+Figure 12: Visual experimentation of Golden Spiral Domes. Author’s Own 2022.
+26
+
+--- Page 27 ---
+Figure 13: Visual experimentation of Phyllotactic Dome. Author’s Own 2022.
+A focus on the rotational component of for each point can be directly translated. Cables
+phyllotaxy provided much insight into the would then attach to the two nearest poles with
+potential of the form. By having a sequence of moderate tension.
+“leaves” distributed around the center using a
+This may however result in a structure that
+divergent rotation of 137.5 degrees, the structure
+is half petal and half web. Like a daisy stuck
+immediately took on a natural aesthetic.
+between a grassy spider nest.
+Having each leaf protruding from the center was
+This further exploration into composition
+however difficult to achieve without obstructing
+indicated how to begin the next stages of
+the inner volume of the dome as each leaf needed
+investigation. The construction of the dome
+unique rotations and distance from the center.
+as well as the development of the design
+If the phyllotactic roof was suspended then methodology must follow the following steps:
+there is the possibility of having three points of a
+Creating the initial two dimensional arrangement
+triangular petal be under tension, connecting to
+of phyllotactic points;
+two of four bordering poles.
+Distributing them vertically into a dome;
+These poles would provide-relative geographic
+coordinates which would be used to determine Connecting them together into a supported
+distance of each point of the petal. Essentially structure;
+moving from (-x,-y) to (x, y). In addition to the
+Creating the outer layer and/or leaves.
+vertical z dimension, predetermined coordinates
+Figure 12: Visual experimentation of Golden Spiral Domes. Author’s Own 2022. Figure 14: Visual experimentation of Phyllotactic Roofing. Author’s Own 2022.
+27
+
+--- Page 28 ---
+Figure 15: Algorithmically generated
+Phyllotaxis z-view. Author’s Own 2022.
+Creation of a Phyllotactic Dome Part 1:
+Generation of Phyllotactic Points
+To create a phyllotactic dome, phyllotactically Because in nature the dome’s curvature varies to
+distributed points must first be created. These such a degree, specificity of the dome curvature
+points, distributed following the equation: in the generation was not needed. Thus for
+this methodology and created algorithms, the
+instantly form the unique aesthetics associated relationship between point number and vertical
+with plant growth. height was linear. This allowed the radial
+distribution to also dictate the vertical, which
+The radius of the phyllotactically distributed
+creates a near uniform dome.
+points need to be constrained to the radius
+of the wanted dome. This can be enforced by The height of the dome was dictated by the
+altering the distribution coefficient C in the equation:
+phyllotactic equation. As it dictates how far
+out the points will range depending on point
+number, then when creating the final point the The dome’s points begin at the inside which is
+value of C must be so that the final point’s polar to be the highest point, thus the first point must
+radius equals the radius of the wanted dome: begin at the maximum height and the final point
+will be at the minimum.
+These equations were used to first create a
+generative geometry node arrangement in
+By following this equation the polar radius of the
+Blender for prototyping and then when confirmed
+final point will always be the radius of the wanted
+it became the initial component of the Python
+dome regardless of point number. This now sets
+code.
+a hard boundary for the shape and begins the
+definition of the structure.
+Making this dome vertical requires developing a
+relationship between either the point number or
+radius and the vertical transformation.
+28
+
+--- Page 29 ---
+Figure 16: Algorithmically generated
+Phyllotaxis x-view. Author’s Own 2022.
+The geometry nodes seen above show the
+creation of the polar coordinates of phyllotaxis
+and subsequent conversion to Cartesian
+coordinates needed to display them within
+Blender. To the right is this recreated in Python
+to begin the algorithm.
+The following pages will show the generation of
+Figure 17(top)/18(bottom): Phyllotactic generation in Blender’s
+points per half degree of the angle of divergence geometry nodes and Python. Author’s Own 2022.
+(0 degrees to 179.5.) This visualisation makes
+obvious both the extreme differences half a
+degree can make as well as the significance of the
+golden angle (137.5 degrees).
+29
+
+--- Page 30 ---
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:91
+erugiF
+30
+
+--- Page 31 ---
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:91
+erugiF
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:02
+erugiF
+31
+
+--- Page 32 ---
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:12
+erugiF
+32
+
+--- Page 33 ---
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:12
+erugiF
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:22
+erugiF
+33
+
+--- Page 34 ---
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:32
+erugiF
+34
+
+--- Page 35 ---
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:32
+erugiF
+.2202
+nwO
+s’rohtuA
+.selgna
+ecnegrevid
+gniyrav
+fo
+slarips
+tniop
+detareneG
+:42
+erugiF
+35
+
+--- Page 36 ---
+Creation of a Phyllotactic Dome Part 2:
+Creating a latticed dome with phyllotactic points
+Figure 25: Lattice Structure Generation in Python. Author’s Own 2022.
+Formation of the spiral dome and less regular domes being point will have a unique
+structures, as well as the established. From investigation distance from the center. This
+phyllotactic roofing, indicated into how these lattices are will also mean that the first
+that there was a potential formed, both ideologically segment of each parabola will
+lattice structure that would be and mathematically, it became vary greatly as the distance of
+able to connect the phyllotactic apparent that a variation of a each lines first point will be
+points together. This lamella dome was needed. further away from the center
+framework could then support than the last. The order of the
+This dome is primarily
+the display of other aesthetic lines, from shortest to longest
+composed of overlapping
+features in a plant-like manner. first segment will also appear
+parallel arches, and is a
+irregular as each line is being
+To explore this concept, primary method of connecting
+formed 137.5 degrees from the
+research into the structure non-linear points in a dome. It
+previous.
+of other lattice domes such also as a default has geometry
+as Buckminster Fuller’s aesthetically similar to These issues required the
+geodesic domes was vital. phyllotactic structures. The creation of an algorithm
+The non repeating, non- curves of each arch can be capable of linking each point
+euclidean geometry needed segmented into a series of in overlapping parabolas that
+for the phyllotactic points was straight components if needed are unique and in line with the
+unfortunately incompatible as long as the point of joining wanted phyllotactic geometry.
+with the structural logic behind remains at the intersection of
+If the needed curves have to
+the geodesic domes as no the curve, thus allowing for an
+connect through the points
+repeating shape would be able easier manufacture.
+distributed on the dome and
+to connect the needed locations
+The parabolas usually used the curves are approximately
+Geodesic domes are not the to create lamella domes are evenly distributed around
+only lattice domes possible regular and parallel which the dome then the curves
+however (see image above), is not possible with the themselves will need to be
+with other more complex phyllotactic pattern as each composed of a subset of the
+36
+
+--- Page 37 ---
+Figure 26: Variation of lattice domes from Frank M.J. Van der Linden’s Patterns for Domes 2022
+domes points. so on. The next line would be would display what each array
+point 2 connected to point 23... of curves would look like (see
+The subset of points, being
+eventually ending with a line left). The initial creation of
+relatively even, would also
+beginning at point 21. this tool was within Blender’s
+need to not overlap with each
+geometry nodes function.
+other so as to create one half of This sequence creates almost
+the lamella dome arches. parallel arches, fulfilling half of Making each curve array
+the lamella dome’s needs. The visual highlighted two novel
+From this logic, the curved
+other half of the lines can be insights. Firstly, the steepness
+connection of points could
+created using the same process and direction of the potential
+be created by creating curves
+with a different denominator. curves vary widely, and
+based off a denominator of the
+secondly, each useful subset
+point number and have the
+of points are either Fibonacci
+modulo dictate the connection
+Numbers or multiples of
+of these points. This would
+Fibonacci Numbers.
+result in every Nth point being
+connected together, creating The second discovery was both
+the curve (N->Nx)*point surprising and reassuring, as
+number. If this was then it solidified the maintenance
+repeated N times around the of the core geometry and
+dome with each iteration also confirmed that the
+adding one position, then you mathematics used to create the
+will end up with N number tools was correct.
+of lines connecting every Nth Not all subsets of points will
+Now that these curves had
+point. work however, as the dome,
+been discovered, combinations
+to function, needs to remain
+As an example, if you were were needed to be assessed to
+hollow with no lines crossing
+to connect every 21st line, determine functional pairs as
+the inner area. Finding a useful
+you would need 21 lines, well as a method of creating a
+set of numbers to form the
+with the first beginning with generative algorithm.
+dome required the formation
+point 1 connecting to point
+of a generative algorithm that The following pages will
+22 connecting to point 43 and
+37
+
+--- Page 38 ---
+Lattice Denominators 0-71
+Figure 27: Line denominator based curve. Author’s Own 2022.
+38
+
+--- Page 39 ---
+Figure 28: Line denominator based curve. Author’s Own 2022.
+39
+
+--- Page 40 ---
+Lattice Denominators 71-143
+Figure 29: Line denominator based curve. Author’s Own 2022.
+40
+
+--- Page 41 ---
+Figure 30: Line denominator based curve. Author’s Own 2022.
+41
+
+--- Page 42 ---
+Lattice Combination Examples
+By simply connecting the points
+in a domed lattice, the natural
+geometry of phyllotaxis can be
+instantly and easily observed.
+The central connections,
+composed of the first pole of
+each curve - create a simplified,
+pointed flower shape. The
+surrounding points, spiralling
+outwards, mimic the layering
+of pine cones, ferns and roses.
+Each hole between the points
+creating a silhouette of a petal
+or leaf.
+The overlapping of similar but
+unique curves in this structure
+results in each silhouetted petal
+also being unique, helping to
+form the wanted organised
+complexity of natural structure.
+42
+
+--- Page 43 ---
+Figure 16: Line denominator based curve. Author’s Own 2022.
+43
+
+--- Page 44 ---
+Lattice Combination Examples
+By allowing for the adjustment of
+point number, line denominators
+and dome shape, the structure
+can vary widely in complexity. As
+long as the combination of curves
+don’t intersect the same exact
+location, the structure can become
+complexly woven. Each point does
+not need to necessarily connect
+with the closest four and can
+instead weave a further distance.
+This increased complexity
+retains the inherent aesthetics
+of phyllotactic geometry as the
+points retain their distribution.
+Interesting experimentation
+is possible with the connecting
+curves as their structural
+characteristics may vary
+dramatically.
+44
+
+--- Page 45 ---
+45
+
+--- Page 46 ---
+Lattice Combination Examples
+The algorithmically derived
+points and dimensions allow
+for the meeting of many design
+requirements. If there is a need
+to reduce material cost, the
+structure can be generated to
+have thin connecting poles of
+minimal length.
+These points all connect
+in a manner that results in
+structurally simple rhomboids.
+This simplicity may also lead
+to increased ease of use as
+the points can be connected
+in sequence based on spatial
+position.
+46
+
+--- Page 47 ---
+47
+
+--- Page 48 ---
+Lattice Combination Examples
+48
+
+--- Page 49 ---
+49
+
+--- Page 50 ---
+Joints
+Figure 31: Polar Coordinates of lattice joints. Author’s Own 2022.
+Calculation of the joints is essential for the The points that these joints connect to are simply
+generation of buildable structures and can be the ones preceding it and following it on both
+performed as part of the generative algorithm. curves.
+By creating sets of coordinates from each point
+For the outer most joints, there can be an
+and the location of the points(n) they
+addition of an extra joint arm to the array. This
+connect to .
+arm will face directly down (or to another
+Relative coordinates can be derived from this position if wanted) so that the dome may have
+and converted into polar legs connecting to the ground or another base
+coordinates which will indicate the structure.
+relative direction each arm of the joint will have
+This array can also be appended to contain
+to aim in order to reach the connected points.
+attachments for an outer structure such as the
+Using the derived polar coordinates for each arm leaves detailed in later pages.
+of the joint, the radius can now be adjusted to
+correspond with the length wanted for the joint
+arm.
+The new polar coordinates (arm 1 to arm n) can
+then be bundled in an array with the Cartesian
+(or polar) coordinates of the joint’s origin point:
+.
+Before these calculations can be performed,
+which joints connect to which must be derived.
+This is calculated by assessing each joints
+placement in the intersecting curves.
+So for each joint, it’s origin will lay at a certain
+position on a curve derived from one lattice
+denominator and a certain position on another.
+50
+
+--- Page 51 ---
+51
+
+--- Page 52 ---
+Negative Space
+The creation of the framework
+in turn creates negative spaces
+between the joints. These spaces
+are a main aesthetic component
+of the resulting dome and can be
+utilised to maximise function.
+For these spaces to be used the
+dimensions are to be discovered.
+As each space is unique, this is
+necessary to be calculated during
+the point’s genesis.
+Similar to the calculation of the
+joints, the surrounding joint
+locations are needed to be
+assessed. For the identification
+of the negative spaces’ corners, a
+different variation of points are
+needed.
+The origin will form the topmost
+point, two points will be derived
+from the subsequent points on
+both the origin joint’s curves. The
+final “bottom” corner is discovered
+by transposing one of the previous
+two joints down one of their
+denominators.
+Once these points are
+discovered the inner trapezoid
+can be calculated. Each side
+Figure 32: Python script to calculate area between dome joints. Author’s Own 2022.
+length between point 1 and
+point two is calculated by:
+With each inner angle being:
+These calculated trapezoids can be
+used to create inner fillings for the
+negative space, allowing for the
+creation of glass panes.
+Figure 33: Sketch of area between dome joints. Author’s Own 2022.
+52
+
+--- Page 53 ---
+53
+
+--- Page 54 ---
+Leaves
+While creating the joints it is possible to create attachments for outer components I have called “leaves”
+for obvious reasons.
+These leaves are in essence the main aesthetic feature of the dome and will exaggerate the geometry’s
+plant-like shape (see above).
+The angle of protrusion is created when the polar coordinates of the joint arm are created and can be
+linked to other variables of the algorithm.
+For instance, if wanted, the leaves can begin almost flat with the dome and become more horizontal as
+they are generated further down. They may also be twisted and transformed in other ways generatively.
+Alteration of the shape, size and relations of these leaves can result in a variety of different structural
+aesthetics.
+This manipulation can be of great use if the generation is to mimic a specific plant or form.
+54
+
+--- Page 55 ---
+The leaves do not need to be themselves naturally shaped for the resulting dome to exhibit a natural
+aesthetic. The above dome is an example, with circular monocle-shaped glass leaves arranged around
+the dome it develops the appearance of a budding or infant flower.
+55
+
+--- Page 56 ---
+Algorithm Flexibility and Use
+With many of the algorithm’s Depending on the total point
+variables being easily number, the size of N can
+manipulated, the dome’s become quite large and the
+composition can vary greatly, combination of the two curves
+ranging from a small structure can lead to both simple and
+with few and thick poles (see complex structures.
+opposite page) to a large
+Certain combinations lead
+complex dome woven with
+to wide and short trapezoid
+many thin poles.
+openings whilst others lead to
+There is also the ability to tall and thin openings.
+generate structural dimensions
+Some, as shown later in this
+for the area between joints,
+report, appear to weave around
+allowing for the filling of space
+each other generating a birds
+and creation of glass domes
+nest appearance.
+(see bottom of opposite page).
+Finally, though the purpose
+The generation of the joints
+of the algorithm is to follow
+have many manipulatable
+phyllotactic principles, the
+variables including the
+angle of divergence can be
+thickness, length and number
+altered also. This will create
+of arms. With the ability to add
+a near infinite range of non-
+an extra arm onto the joint,
+phyllotactic structures.
+there is the ability to add a
+huge variety of structures to
+the outside easily.
+A main component of the
+algorithm, that precedes the
+generation of joints and poles
+is the generation of the lattice
+creating curves.
+As previously stated, the curves
+are generated by connecting
+every Nth curve with N
+preferably being one of the
+Fibonnacci numbers as this
+leads to minimal obstruction of
+the internal volume.
+56
+
+--- Page 57 ---
+57
+
+--- Page 58 ---
+Blender, Geometry Nodes and Python
+Above is an image of the primary geometry nodes used to generate the array of possible curves and
+point distributions. The left of the node map shows the inputs into this node-based algorithm. This
+then begins several parallel branches. The upper third creates and connects the subset of points that
+becomes the lattice curves. These are formed by generating a line and mapping the points to a modulo of
+a denominator.
+58
+
+--- Page 59 ---
+Figure 34: Geometry node based phyllotactic dome algorithm. Author’s Own 2022.
+The central section is the primary generation of phyllotactic points. This then connects to the upper
+section as well as to another collection that creates small spheres that are used to illustrate the point
+locations.
+The bottom most section creates a text output that is present at the bottom of each image render. This
+simplifies the assessment process and allows for faster processing of algorithmic changes.
+For the generation of two curve sets the upper section is duplicated and a second denominator is
+connected as an input. This curve set and the previous can be used to create the entire lattice.
+59
+The following pages show the functional Python script that was developed from the geometry nodes.
+
+--- Page 60 ---
+Python Script: Main Generator
+import bpy, bmesh
+import numpy as np
+import math
+import os
+import pprint
+#=========================================== ######### FUNCTION TO MAKE LINES ###########
+################## INPUT ################### def makeLine(start, end, radiusX, radiusY, name, collection,
+# standard measurement is meters mat):
+radius = 3
+height = 3 startLocation = start
+pointNumber = 610 endLocation = end
+jointDiam = 0.015 C = bpy.context
+jointLength = jointDiam*4 line = bpy.data.meshes.new(name)
+poleRad=0.01 bm = bmesh.new()
+vertNum = 21 v1 = bm.verts.new( startLocation )
+horizNum =34 v2 = bm.verts.new( endLocation )
+leafGen=0 e = bm.edges.new([v1,v2])
+topPoint = [0.0, 0.0, height]
+# top line or flat dictates whether the top poles are a flat piece or bm.to_mesh(line)
+as a bordered ring
+topLineOrFlat = 0 o = bpy.data.objects.new( name, line )
+armReduction = jointLength/3 bpy.data.collections[collection].objects.link(o)
+# ==========================================
+pp=pprint.pprint bpy.context.view_layer.objects.active = o
+#=======JOIN============== o.select_set(True)
+context = bpy.context o.modifiers.new(“Skin”, “SKIN”)
+scene = context.scene o.modifiers.new(“Bevel”, “BEVEL”)
+def join(names): setMat(mat)
+obs = list(filter(None, (scene.objects.get(n) for n in names))) bpy.context.object.modifiers[“Bevel”].width = radiusX/1.5
+obs[0].select_set(True) bpy.context.object.modifiers[“Bevel”].segments = 3
+bpy.ops.object.join(
+{“active_object” : obs[0], for v in o.data.skin_vertices[0].data:
+“object” : obs[0], v.radius = radiusX, radiusY
+“selected_objects” : obs,
+“selected_editable_objects” : obs #def sphereAtJoint(location, name, collection, mat):
+}) # bpy.ops.mesh.primitive_uv_sphere_add(radius=joint-
+#=========== function to change material========== Diam,location=location,scale=(1.2, 1.2, 1.2))
+def setMat(matName): # o=
+mat = bpy.data.materials.get(matName) # bpy.data.objects.name=name
+for o in bpy.context.selected_objects: # bpy.data.collections[collection].objects.link(o)
+if o.data.materials: # setMat(mat)
+o.data.materials[0] = mat #
+else: def sphereAtJoint(location, name, collection, mat, scale):
+o.data.materials.append(mat)
+bpy.ops.mesh.primitive_uv_sphere_add(
+# deselect object function segments=32,
+def deselect(): ring_count=16,
+for obj in bpy.data.objects: radius=jointDiam*scale,
+obj.select_set(False) location=location)
+current_name = bpy.context.selected_objects[0].name
+def distanceFromCenter(coord): sphere = bpy.data.objects[current_name]
+x=coord[0] sphere.name = name
+y=coord[1] setMat(mat)
+z=coord[2] sphere.data.name = name
+bpy.data.collections[“joints2”].objects.link(sphere)
+xyDistance=np.sqrt(x**2+y**2) #bpy.data.collections[collection].objects.link(sphere)
+return xyDistance return
+Figure 35-42: Python based phyllotactic dome algorithm. Author’s Own 2022.
+60
+
+--- Page 61 ---
+Python Script: Main Generator
+# == CARTESIAN TO SPHERICAL and back v+=1
+def asCartesian(rthetaphi): while h<=horizNum:
+#takes list rthetaphi (single coord) if (point+h)%(horizNum)==0:
+r = rthetaphi[0] horizSet[h].append(vector)
+theta = rthetaphi[1]* np.pi/180 # to radian h+=1
+phi = rthetaphi[2]* np.pi/180 point+=1
+x = r * np.sin( theta ) * np.cos( phi ) #=========== joint finder ===============#
+y = r * np.sin( theta ) * np.sin( phi ) h=0
+z = r * np.cos( theta ) h2=0
+return [x,y,z] v=0
+def asSpherical(xyz): v2=0
+#takes list xyz (single coord) donePC=0
+x = xyz[0] while v<len(vertSet):
+y = xyz[1] while v2<(len(vertSet[v])):
+z = xyz[2] while h<len(horizSet):
+r = np.sqrt(x*x + y*y + z*z) while h2<(len(horizSet[h])):
+theta = np.arccos(z/r)*180/ np.pi #to degrees if horizSet[h][h2] == [0.0, 0.0, height] == vertSet[v]
+phi = np.arctan2(y,x)*180/ np.pi [v2]:
+return [r,theta,phi] joints.append([[0.0, 0.0, height],[0.0, 0.0,
+#+++++++++++ BEGINNING ++++++++++++++++ height],[0.0, 0.0, height]])
+points = []
+vertSet = [] elif horizSet[h][h2] == vertSet[v][v2]:
+horizSet = [] jointOrigin=horizSet[h][h2]
+joints = []
+polesVert=[] if (h2+1)<len(horizSet[h]):
+polesHoriz=[] horizForward=horizSet[h][h2+1]
+polesV=[] else:
+polesH=[] horizForward=[horizSet[h][h2][0], horizSet[h]
+bottomJoints=[] [h2][1], 0]
+holeLeaves=[] horizBackward=horizSet[h][h2-1]
+#======== make vert and horiz set size === #
+v=0 if (v2+1)<len(vertSet[v]):
+while v<=vertNum: vertForward=vertSet[v][v2+1]
+vertSet.append([[0.0, 0.0, height]]) else:
+v+=1 vertForward=[vertSet[v][v2][0], vertSet[v][v2]
+[1], 0]
+h=0 vertBackward=vertSet[v][v2-1]
+while h<=horizNum:
+horizSet.append([[0.0, 0.0, height]]) if vertForward==horizForward:
+h+=1 bottomJoints.append([jointOrigin, horizBack-
+#=========== set phyllo base ==========# ward, vertBackward])
+point = 1
+cspread = radius/(math.sqrt(pointNumber)) polesH.append([horizBackward, jointOrigin])
+angle = math.pi*(3-math.sqrt(5)) #golden angle polesV.append([vertBackward, jointOrigin])
+#========== make phyllo points ========# jointVector=[jointOrigin,horizForward,horizBack-
+while point<=pointNumber: ward,vertForward,vertBackward]
+theta = point*angle joints.append(jointVector)
+r = cspread * np.sqrt(point) h2+=1
+x = r*np.cos(theta)
+y = r*np.sin(theta) h+=1
+z= (point/pointNumber*(-height))+height h2=1
+vector = [x, y, z] v2+=1
+points.append(vector) h=1
+#find denominators for set v+=1
+v=1 v2=1
+h=1
+while v<=vertNum:
+if (point+v)%(vertNum)==0:
+vertSet[v].append(vector)
+61
+
+--- Page 62 ---
+Python Script: Main Generator
+# ============== JOINTS =================== # deselect()
+joints2=[] while pV<len(polesV):
+joints2Angles=[] start = polesV[pV][0]
+for group in joints: end = polesV[pV][1]
+origin = group[0]
+x1=origin[0] if start == [0.0, 0.0, height]:
+y1=origin[1] topPieces.append(asSpherical(end))
+z1=origin[2] else:
+v=0 name = “poleV{}, {} , {}”.format(pV, start, end)
+#set join origin coordinates radiusX = poleRad
+joinArms=[origin] radiusY=poleRad
+joinAngles=[origin]
+while v<len(group): makeLine(start, end, radiusX, radiusY, name, “polesV”,
+vector=group[v] “Stainless Steel”)
+x2=vector[0] pV+=1
+y2=vector[1] #========= top con ==============#
+z2=vector[2] vP=0
+#coordinate difference # take third element for sort (phi angle)
+def takeX(elem):
+x4=x2-x1 return elem[2]
+y4=y2-y1
+z4=z2-z1 topPieces.sort(key=takeX)
+#xyz to r theta phi (theta is xy phi is zx) top2=[]
+polarCo=asSpherical([x4, y4, z4]) t=0
+polarCoAdjusted=polarCo while t<(len(topPieces)-1):
+polarCoAdjusted[0]=jointLength
+joinAngle =polarCoAdjusted start=asCartesian(topPieces[t])
+joinAngles.append(joinAngle) top2.append(start)
+joinArmAngle = [[x2, y2, z2,],[polarCoAdjusted]]
+end=asCartesian(topPieces[t+1])
+v+=1 name = “poleTop {}”.format(vP)
+joints2Angles.append(joinAngles) radiusX=poleRad
+joints2.append(joinArms) radiusy=poleRad
+#++++++++++++++++ make poles ++++++++++++++++#
+pH=0 if not topLineOrFlat:
+pV=0 makeLine(start, [0, 0, height] , radiusX, radiusY, name,
+topPieces=[] “topLine”, “Stainless Steel”)
+holeLeaves.append([polesH[pH][0],polesH[pH][1],topPoint])
+while pH<len(polesH): t+=1
+start = polesH[pH][0] vP+=1
+end = polesH[pH][1]
+top2.append(end)
+if pH<(len(polesH)-1): if top2 and topLineOrFlat:
+holeLeaves.append([polesH[pH][0],polesH[pH]
+[1],polesH[pH+1][1],polesH[pH+1][0]]) edges = [[i, i+1] for i in range(len(top2)-1)]
+lastEdge=[edges[-1][1], edges[0][0]]
+if start == [0.0, 0.0, height]: edges.append(lastEdge)
+topPieces.append(asSpherical(end))
+else: vert=top2
+name = “poleH{} {} , {}”.format(pH, start, end) vert.append([0,0,height])
+radiusX=poleRad
+radiusY=poleRad faces =[[i, i+1, (len(top2)-1)] for i in range(len(top2))]
+faces.append([(len(vert)-1), (len(vert)-2), 0])
+makeLine(start, end, radiusX, radiusY, name, “polesH”,
+“Iron brushed”) mesh = bpy.data.meshes.new(“topmesh”)
+mesh.from_pydata(vert, edges, faces)
+pH+=1 mesh.update()
+62
+
+--- Page 63 ---
+Python Script: Main Generator
+mesh.update()
+obj = bpy.data.objects.new(“topob”, mesh)
+bpy.context.collection.objects.link(obj) obj = bpy.data.objects.new(name, mesh)
+bpy.data.collections[“leafVert”].objects.link(obj)
+deselect()
+deselect()
+bpy.context.view_layer.objects.active = bpy.data.ob-
+jects[“topob”] leafNumber+=1
+setMat(“pole1”) #+++++++++++++ make joints ++++++++++++++[
+jointNum=1
+o=bpy.context.active_object
+o.modifiers.new(‘Solidify’, ‘SOLIDIFY’) for j in joints2Angles:
+bpy.context.object.modifiers[“Solidify”].offset = 0.7
+bpy.context.object.modifiers[“Solidify”].thickness = 0.05 origin = j[0]
+ji=1
+#=========== make hole leaves ==============#
+leafNumber=0 deselect()
+vertMod=0.1
+for leaf in holeLeaves: toJoin=[]
+if len(leaf)>3: while ji<len(j):
+if distanceFromCenter(leaf[3])<distanceFromCenter(-
+leaf[0]): r=0.1
+leaf.pop(0) radiusX = jointDiam
+leaf.pop(0) radiusY=radiusX
+leaf.append(topPoint)
+start = origin
+vert=leaf end=j[ji]
+end= asCartesian(end)
+if leafGen>0:
+end[0]+=start[0]
+edges = [[i, i+1] for i in range(len(leaf)-1)] end[1]+=start[1]
+lastEdge=[0,len(edges)-1] end[2]+=start[2]
+edges.append(lastEdge) name = “join {}”.format(jointNum)
+name2 = “join {} {}”.format(jointNum, ji)
+faces =[[i for i in range(len(leaf))]] toJoin.append(name2)
+makeLine(start, end, radiusX, radiusY, name2, “joints”,
+name = “leaf {}”.format(leafNumber) “Brass”)
+ji+=1
+mesh = bpy.data.meshes.new(name) joinName=”join {} c”.format(jointNum)
+sphereAtJoint(origin, joinName, “joints”, “Brass”, 1.2)
+mesh.from_pydata(vert, edges, faces) deselect()
+mesh.update() #sphereAtJoint(origin, joinName, “points”, “Brass”, 2)
+toJoin.append(joinName)
+obj = bpy.data.objects.new(name, mesh)
+bpy.data.collections[“leaf”].objects.link(obj)
+# ============== BOTTOM BITS =============
+else: bj=0
+vert.sort(key=takeX) #sort by z for b in bottomJoints:
+edges = [] start = b[0]
+end = [start[0], start[1], 0]
+faces =[] name=”bottom pole {}”.format(bj)
+makeLine(start, end, poleRad, poleRad, name, “bottom”,
+name = “leaf Vert {}”.format(leafNumber) “Stainless Steel”)
+bj+=1
+mesh = bpy.data.meshes.new(name)
+mesh.from_pydata(vert, edges, faces)
+63
+
+--- Page 64 ---
+Python Script: Negative Space / Leaf Generator
+import bpy, bmesh #============== rotate leaves ============
+import numpy as np leafNumber=0
+import math step=1
+import os totalSteps=1
+import pprint phi=40
+theta=0
+rad=0.2 output_dir = “E:\dropbox\Dropbox\MDIT\MP\assetts\render”
+def deselect(): output_file_pattern_string = ‘render%d.jpg’
+for obj in bpy.data.objects:
+obj.select_set(False) for u in range(0,totalSteps):
+pp=pprint.pprint anglePhi=(-phi)*(step/totalSteps)
+def asCartesian(rthetaphi): angleTheta=theta
+#takes list rthetaphi (single coord) heightChange=0
+r = rthetaphi[0] vertOffset= 0.03
+theta = rthetaphi[1]* np.pi/180 # to radian
+phi = rthetaphi[2]* np.pi/180 ffor leaf in bpy.data.collections[“leafVert”].objects:
+origin=len(leaf.data.vertices)-1
+x = r * np.sin( theta ) * np.cos( phi ) verts=[]
+y = r * np.sin( theta ) * np.sin( phi ) oX=leaf.data.vertices[origin].co[0]
+z = r * np.cos( theta ) oY=leaf.data.vertices[origin].co[1]
+return [x,y,z] oZ=leaf.data.vertices[origin].co[2]
+def asSpherical(xyz):
+#takes list xyz (single coord) heightCo=1
+x = xyz[0]
+y = xyz[1] if anglePhi!=0 or angleTheta!=0:
+z = xyz[2] for vert in leaf.data.vertices:
+r = np.sqrt(x*x + y*y + z*z)
+theta = np.arccos(z/r)*180/ np.pi #to degrees if vert == leaf.data.vertices[origin]:
+phi = np.arctan2(y,x)*180/ np.pi oX=vert.co[0]
+return [r,theta,phi] oY=vert.co[1]
+#======== function to change material======== oZ=vert.co[2]
+def setMat(matName):
+mat = bpy.data.materials.get(matName) verts.append([oX,oY,(oZ+vertOffset)])
+for o in bpy.context.selected_objects:
+if o.data.materials: else:
+o.data.materials[0] = mat startX = vert.co[0]
+else: startY = vert.co[1]
+o.data.materials.append(mat) startZ = vert.co[2]
+#============= make frame ============#
+def makeLine(start, end, radiusX, radiusY, name, collection): relativeX = startX - oX
+relativeY = startY - oY
+startLocation = start relativeZ = startZ - oZ
+endLocation = end relXY=((relativeX)+(relativeY))/2
+newCart=[(startX+relXY), (startY+relXY),
+C = bpy.context (startZ-(relativeZ/2)+vertOffset)]
+line = bpy.data.meshes.new(name) verts.append(newCart)
+bm = bmesh.new() else:
+v1 = bm.verts.new( startLocation ) for vert in leaf.data.vertices:
+v2 = bm.verts.new( endLocation ) verts.append([vert.co[0], vert.co[1], (vert.co[2]+ver-
+e = bm.edges.new([v1,v2]) tOffset)])
+bm.to_mesh(line) if len(verts)>3:
+o = bpy.data.objects.new( name, line ) order = [0, 1, 3, 2]
+bpy.data.collections[collection].objects.link(o) else:
+bpy.context.view_layer.objects.active = o order =[ 0, 1, 2]
+o.select_set(True) edges = [[order[i], order[i+1]] for i in range(len(verts)-1)]
+o.modifiers.new(“Skin”, “SKIN”) lastEdge=[0,len(edges)-1]
+o.modifiers.new(“Bevel”, “BEVEL”) edges.append(lastEdge)
+bpy.context.object.modifiers[“Bevel”].width = radiusX/1.5 faces =[[]]
+bpy.context.object.modifiers[“Bevel”].segments = 3 for i in range(len(verts)):
+for v in o.data.skin_vertices[0].data: faces[0].append(order[i])
+v.radius = radiusX, radiusY name = “leaf {}”.format(leafNumber)
+64
+
+--- Page 65 ---
+#========= make border====
+radiusX=0.005
+radiusY=0.005
+print(verts)
+for i in range (len(verts)):
+start = verts[order[i]]
+if i == len(verts)-1:
+end = verts[order[0]]
+else:
+end = verts[order[i+1]]
+print(i)
+frameName =”frame {}”.format(name)
+makeLine(start, end, radiusX, radiusY,frameName, “leaf”)
+mesh = bpy.data.meshes.new(name)
+mesh.from_pydata(verts, edges, faces)
+mesh.update()
+o = bpy.data.objects.new(name, mesh)
+bpy.data.collections[“leaf”].objects.link(o)
+mod = o.modifiers.new(“Solidify”, ‘SOLIDIFY’)
+mod.offset = 0
+mod.thickness = 0.0002
+deselect()
+leafNumber+=1
+#bpy.data.collections[“leafVert”].objects.unlink(leaf)
+for obj in bpy.data.collections[“leaf”].objects:
+if “frame” in obj.name:
+obj.select_set(True)
+print(obj.name)
+bpy.context.view_layer.objects.active =o
+setMat(“Brass”)
+deselect()
+else:
+obj.select_set(True)
+print(obj.name)
+bpy.context.view_layer.objects.active =o
+setMat(“Smudged Glass”)
+deselect()
+65
+
+--- Page 66 ---
+Python Script: Leaf Object Adder
+import bpy, bmesh
+import numpy as np
+import math
+def asSpherical(xyz):
+#takes list xyz (single coord)
+x = xyz[0]
+y = xyz[1]
+z = xyz[2]
+r = np.sqrt(x*x + y*y + z*z)
+theta = np.arccos(z/r)*180/ np.pi #to degrees
+phi = np.arctan2(y,x)*180/ np.pi
+return [r,theta,phi]
+def makeLeaf(location, object, name):
+sCo=asSpherical(location)
+newLeaf= bpy.data.objects.new(name, bpy.data.objects[object].data)
+newLeaf.location=location
+distance = (location[0]**2+location[1]**2)**0.5
+scalefac=(((1+distance)/5)**1.5)
+newLeaf.scale=(scalefac**0.9, scalefac, scalefac)
+rotation = (sCo[2]*(math.pi)/180)+np.pi/2
+rotation2=(distance*np.pi)/32
+newLeaf.rotation_euler=((math.pi/2)+rotation2,0,rotation)
+bpy.data.collections[“leaf”].objects.link(newLeaf)
+leafNum=1
+for leaf in bpy.data.collections[“leafVert”].objects:
+origin=len(leaf.data.vertices)-1
+verts=[]
+oX=leaf.data.vertices[origin].co[0]
+oY=leaf.data.vertices[origin].co[1]
+oZ=leaf.data.vertices[origin].co[2]
+name=”leaf {}”.format(leafNum)
+makeLeaf([oX, oY, oZ], “Kyte”, name)
+leafNum+=1
+66
+
+--- Page 67 ---
+Figure 43: Possible leaf shapes. Author’s Own 2022.
+67
+
+--- Page 68 ---
+Outcomes and Potential Use
+The creation of a Python script and contained become a key tool in biophilic architecture.
+algorithm can generate a wide variety of
+The methodology used to create this algorithm is
+phyllotactic domes. These domes can be of
+probably however, the most valuable outcome of
+any size and dimension and thus can fulfil the
+this project. Breaking down a natural form into
+requirements of many designers wishing to add
+its key geometric formulation and remaking it as
+phyllotaxy to a structural form.
+a buildable structure is an effective way to apply
+The domes could become the roofing structure biomimicry to architecture. By following the steps
+of buildings, such as the historic domes of of this project and applying the logic to other
+cathedrals and mosques. They may also be areas of biophilia one can hope to create more
+used as windows that transfer the plant-based tools to benefit the design world.
+geometry to projected shadows.
+Bridging the worlds of science and design is vital
+The domes may most easily be constructed as to the progression of both paradigms and must be
+stand-alone forms, proving shelter and refuge. pursued by all parties involved. Creating tools and
+methodologies is merely one way of doing this.
+The most important potential use for these
+generated domes is experimentation of The following pages illustrate the variety of
+neurological affect. Will these synthetic structures possible structures created by the algorithm.
+provide the benefits often associated with natural
+environments? Will the phyllotactic patterns be
+physiologically resonant and encourage stress
+recovery?
+These questions and more should be answered
+to determine the future of structures that
+authentically mimic the geometry of nature.
+If in line with the pre-existing research and thus
+beneficial to those within the dome’s space,
+the algorithm should be further developed and
+68
+
+--- Page 69 ---
+69
+
+--- Page 70 ---
+70
+
+--- Page 71 ---
+71
+
+--- Page 72 ---
+72
+
+--- Page 73 ---
+73
+
+--- Page 74 ---
+74
+
+--- Page 75 ---
+75
+
+--- Page 76 ---
+76
+
+--- Page 77 ---
+77
+
+--- Page 78 ---
+Reflection
+This project has provided problem-solving capabilities
+a vast array of challenges that can be applied and
+and learning experiences, transferred to other areas. The
+leading to learning Python and ability to find the tools most
+Blender and redeveloping and capable of solving problems
+rekindling an understanding and implementing designs has
+of mathematics long since been invaluable.
+forgotten. By applying and
+At times, however, I
+connecting knowledge from
+underestimated the time
+several disciplines, I found
+it would take to undertake
+that my comprehension and
+seemingly simple coding tasks.
+depth of understanding of each
+greatly improved throughout What I initially thought would
+the semester. This enabled me take a few hours sometimes
+to break down comprehensive, took days to configure, analyse
+complex and sometimes and reconfigure.
+alienating concepts and present It is important to note
+them in a more palatable that while I have focused
+and accessible form. The on developing tools and
+combination of applications processes that could benefit
+and tools, whilst being of high the general community and the
+value in and of themselves, design world, there has also
+also helped illuminate been a significant personal
+methodologies of design and benefit. I have realised that
+investigation. By connecting perseverance, determination,
+with a sequence of different dedication and discipline
+processes and the transition are critical attributes to
+to and from each, I feel that I successfully completing a
+have developed sophisticated project.
+78
+
+--- Page 79 ---
+79
+
+--- Page 80 ---
+References
+‘2017 Award Winner: Khoo the Effects on Mental Health of Design Journal, vol. 6, no. 4, pp.
+Teck Puat Hospital | Living- Exposure to Optical Radiation’, 127–168.
+Future.org’, viewed 20 March International Journal of
+Cooper, R, Boyko, C &
+2022, <https://living-future. Environmental Research and
+Codinhoto, Ri 2009, ‘The effect
+org/biophilic/case-studies/ Public Health, vol. 18, no. 4, pp.
+of the physical environment
+award-winner-khoo-teck-puat- 1–16.
+on mental wellbeing’, Mental
+hospital/>.
+Blume, C, Garbazza, C & Capital and Wellbeing, no.
+Abboushi, B, Elzeyadi, I, Taylor, Spitschan, M 2019, ‘Effects February 2014, pp. 967–1006.
+R & Sereno, M 2019, ‘Fractals of light on human circadian
+Dong, H & Qin, B 2017,
+in architecture: The visual rhythms, sleep and mood’,
+‘Exploring the link between
+interest, preference, and mood Somnologie, vol. 23, no. 3.
+neighborhood environment and
+response to projected fractal
+Bourke, P ‘Fractals, Chaos, Self mental wellbeing: A case study
+light patterns in interior spaces’,
+Similarity’, viewed 27 August in Beijing, China’, Landscape
+Journal of Environmental
+2021, <http://paulbourke.net/ and Urban Planning, vol. 164,
+Psychology, vol. 61, pp. 57–70.
+fractals/>. pp. 71–80.
+Adler, I, Barabe, D & Jean, R V.
+Bratman, GN, Hamilton, JP & Fattorini, S 2017, ‘James G.
+1997, ‘A history of the study of
+Daily, GC 2012, ‘The impacts of Sanderson, Stuart L. Pimm,
+phyllotaxis’, Annals of Botany,
+nature experience on human Patterns in Nature. The Analysis
+vol. 80, no. 3, pp. 231–244.
+cognitive function and mental of Species Co-occurrences,
+Alexander, C 1999, ‘The health’, Annals of the New York The University of Chicago
+Origins of Pattern Theory: The Academy of Sciences, vol. 1249, Press (2015), 205 pp. $45.00,
+Future of the Theory, and the no. 1, pp. 118–136. ISBN: 978-0-226-29272-
+Generation of a Living World’, 4 (hardcover)’, Biological
+Browning, W, Ryan, C & Clancy,
+IEEE Software, vol. 16, no. 5, pp. Conservation, vol. 206, p. 329.
+J 2014, ‘14 Patterns of Biophilic
+71–82.
+Design’, Terrapin Bright Ferguson, KT & Evans, GW
+Alexander, C & Davis, H 1981, Green,LLC, pp. 1–60. 2019, ‘The built environment
+‘Beyond Humanism’, Journal of and mental health’,
+Chou, PY, Denadai, R, Chen, SH,
+Architectural Education, vol. 35, Encyclopedia of Environmental
+Tseng, HJ, Hsu, CK, Wang, SW,
+no. 1, pp. 18–24. Health, vol. 80, no. 4, pp.
+Hallac, R, Chen, CH, Kane, AA &
+465–469.
+Alvarsson, JJ, Wiens, S & Lo, LJ 2019, ‘Identifying three-
+Nilsson, ME 2010, ‘Stress dimensional facial fluctuating Fernández-Martínez, M &
+recovery during exposure asymmetry in normal pediatric Sánchez-Granero, MA 2014,
+to nature sound and individuals: A panel assessment ‘Fractal dimension for fractal
+environmental noise’, outcome study of clinicians and structures’, Topology and its
+International Journal of observers’, Journal of Clinical Applications, vol. 163, no. 1, pp.
+Environmental Research and Medicine, vol. 8, no. 5. 93–111.
+Public Health, vol. 7, no. 3, pp.
+Coburn, A 2018, Gabora, L 2013, ‘Convergent
+1036–1046.
+‘Buildings, beauty, and the Evolution’, Brenner’s
+Berman, MG, Stier, AJ & Akcelik, brain :PSYCHOLOGICAL Encyclopedia of Genetics:
+GN 2019, ‘Environmental RESPONSES TO Second Edition, pp. 178–180.
+neuroscience’, American ARCHITECTURAL DESIGN’,
+Gabriel, R & Quillien, J 2019, ‘A
+Psychologist, vol. 74, no. 9, pp. University of Cambridge, p. 242.
+Search for Beauty/A Struggle
+1039–1052.
+Connellan, K, Gaardboe, M, with Complexity: Christopher
+Bertani, DE, De Novellis, AMP, Riggs, D, Due, C, Reinschmidt, Alexander’, Urban Science, vol.
+Farina, R, Latella, E, Meloni, M, A & Mustillo, L 2013, ‘Stressed 3, no. 2, p. 64.
+Scala, C, Valeo, L, Galeazzi, GM spaces: Mental health
+Gritzka, S, MacIntyre, TE, Dörfel,
+& Ferrari, S 2021, ‘“Shedding and architecture’, Health
+D, Baker-Blanc, JL & Calogiuri, G
+Light on Light”: A Review on Environments Research and
+2020, ‘The Effects of Workplace
+80
+
+--- Page 81 ---
+Nature-Based Interventions Science, vol. 29, no. 9, pp. Architects’, viewed 20 March
+on the Mental Health and 1632–1648. 2022, <https://saga.dk/
+Well-Being of Employees: A projects/lunark>.
+Jiang, B 2016, ‘A complex-
+Systematic Review’, Frontiers in
+network perspective on Ma, L, He, S & Lu, M 2021,
+Psychiatry, vol. 0, p. 323.
+Alexander’s wholeness’, Physica ‘A measurement of visual
+Gullone, E 2002, ‘The Biophilia A: Statistical Mechanics and complexity for heterogeneity
+Hypothesis and Life in the its Applications, vol. 463, pp. in the built environment based
+21st Century: Increasing 475–484. on fractal dimension and its
+Mental Health or Increasing application in two gardens’,
+Joly, S & Schoen, DJ 2021,
+Pathology?’, Journal of Fractal and Fractional, vol. 5,
+‘Repeated evolution of a
+Happiness Studies, vol. 1, no. 3, no. 4.
+reproductive polyphenism in
+pp. 293–322.
+plants is strongly associated McEdward, LR 1995, ‘Evolution
+Hileman, LC 2014, ‘Trends in with bilateral flower symmetry’, of pelagic direct development
+flower symmetry evolution Current Biology, vol. 31, no. 7, in the starfish Pteraster
+revealed through phylogenetic pp. 1515-1520.e3. tesselatus (Asteroidea:
+and developmental genetic Velatida)’, Biological Journal of
+Joye, Y 2007, ‘Fractal
+advances’, Philosophical the Linnean Society, vol. 54, no.
+architecture could be good for
+Transactions of the Royal 4, pp. 299–327.
+you’, Nexus Network Journal,
+Society B: Biological Sciences,
+vol. 9, no. 2, pp. 311–320. McMahan, EA & Estes, D 2015,
+vol. 369, no. 1648.
+‘The effect of contact with
+Kaplan, S 1995, ‘The restorative
+Horayangkura, V 2012, natural environments on
+benefits of nature: Toward an
+‘Incorporating Environment- positive and negative affect:
+integrative framework’, Journal
+Behavior Knowledge into the A meta-analysis’, Journal of
+of Environmental Psychology,
+Design Process: An Elusive Positive Psychology, vol. 10, no.
+vol. 15, no. 3, pp. 169–182.
+Challenge for Architects in the 6, pp. 507–519.
+21st Century’, Procedia - Social Kellert, SR 2008, ‘Dimensions,
+Mehaffy, MW 2019, ‘Assessing
+and Behavioral Sciences, vol. Elements, and Attributes of
+Alexander’s Later Contributions
+50, no. July, pp. 30–41. Biophilic Design’, in Biophilic
+to a Science of Cities’, Urban
+Design: The Theory, Science
+Howell, AJ, Dopko, RL, Science, vol. 3, no. 2, p. 59.
+and Practice of Bringing
+Passmore, HA & Buro, K
+Buildings to Life, pp. 3–19. Mikiten, TM, Salingaros, NA &
+2011, ‘Nature connectedness:
+Yu, H-S 2000, ‘Pavements as
+Associations with well-being ‘Kéré | Work’, viewed 20
+Embodiments of Meaning for a
+and mindfulness’, Personality March 2022, <https://www.
+Fractal Mind’, Nexus Network
+and Individual Differences, vol. kerearchitecture.com/work/
+Journal, vol. 2, no. 1–2, pp.
+51, no. 2, pp. 166–171. building/xylem>.
+63–74.
+Interface 2020, ‘Identifying the Li, C, Sun, C, Sun, M, Yuan, Y &
+Moran, D 2019, ‘Back to nature?
+14 patterns of biophilic design’, Li, P 2020, ‘Effects of brightness
+Attention restoration theory
+, pp. 1–6. levels on stress recovery when
+and the restorative effects of
+viewing a virtual reality forest
+Jean, R V. 1990, ‘A synergic nature contact in prison’, Health
+with simulated natural light’,
+approach to plant pattern and Place, vol. 57, pp. 35–43.
+Urban Forestry and Urban
+generation’, Mathematical
+Greening, vol. 56. Myers, OG 1996, ‘The Biophilia
+Biosciences, vol. 98, no. 1, pp.
+Hypothesis’, Environmental
+13–47. Lima-De-Faria, A 1997, ‘The
+Ethics, vol. 18, no. 3, pp.
+atomic basis of biological
+Jiang, B 2015, ‘Wholeness 327–330.
+symmetry and periodicity’,
+as a hierarchical graph to
+BioSystems, vol. 43, no. 2, pp. Pazhouhanfar, M & Mustafa
+capture the nature of space’,
+115–135. Kamal, MS 2014, ‘Effect
+International Journal of
+of predictors of visual
+Geographical Information ‘LUNARK - SAGA Space
+preference as characteristics
+81
+
+--- Page 82 ---
+of urban natural landscapes in Sanderson, JG & Pimm, SL benefits of biophilic theory to
+increasing perceived restorative 2015, Patterns in Nature: hospital design’, City, Territory
+potential’, Urban Forestry and The Analysis of Species Co- and Architecture, vol. 5, no. 1,
+Urban Greening, vol. 13, no. 1, Occurrences,. pp. 1–9.
+pp. 145–151.
+Scopelliti, M, Carrus, G & Ulrich, RS 1983, ‘Aesthetic and
+Pennybacker, MF, Shipman, PD Bonaiuto, M 2019, ‘Is it Really Affective Response to Natural
+& Newell, AC 2015, ‘Phyllotaxis: Nature That Restores People? Environment’, Behavior and
+Some progress, but a story far A Comparison With Historical the Natural Environment, pp.
+from over’, Physica D: Nonlinear Sites With High Restorative 85–125.
+Phenomena, vol. 306, pp. Potential’, Frontiers in
+Westlund, S 2015, ‘Becoming
+48–81. Psychology, vol. 0, no. JAN, p.
+human again’: Exploring
+2742.
+Plawsky, JL 1993, ‘Transport connections between nature
+in Branched Systems I Steady- Sng, Y, Ong, CK & Lai, YF 2018, and recovery from stress and
+state Response’, Chemical ‘Approaches to outpatient post-traumatic distress’, Work,
+Engineering Communications, pharmacy automation: a vol. 50, no. 1, pp. 161–174.
+vol. 123, no. 1, pp. 71–86. systematic review’, European
+Wiley, J 2022, ‘The Theory of
+Journal of Hospital Pharmacy, p.
+Pretty, J, Peacock, J, Sellens, M Biophilic Design’, , no. March.
+ejhpharm-2017-001424.
+& Griffin, M 2005, ‘The mental
+Williams, F 2017, ‘Feel-good
+and physical health outcomes Sternberg, EM & Wilson, MA
+Fractals: From Ocean Waves to
+of green exercise’, International 2006, ‘Neuroscience and
+Jackson Pollock’s Art | Scribd’,
+Journal of Environmental Architecture: Seeking Common
+Aeon.
+Health Research, vol. 15, no. 5, Ground’, Cell, vol. 127, no. 2, pp.
+pp. 319–337. 239–242. Yao, W, Zhang, X & Gong, Q
+2021, ‘The effect of exposure
+Rasheed, M & Bajaj, C 2015, Takeuchi, H, Enzo, A &
+to the natural environment
+‘Highly Symmetric and Minamitani, H 2001, ‘Circadian
+on stress reduction: A meta-
+Congruently Tiled Meshes for rhythm changes in heart rate
+analysis’, Urban Forestry &
+Shells and Domes’, Procedia variability during chronic
+Urban Greening, vol. 57, p.
+Engineering, vol. 124, pp. sound stress’, Medical and
+126932.
+213–225. Biological Engineering and
+Computing, vol. 39, no. 1. Yerbury, RM & Lukey, SJ 2021,
+Reinhardt, D & Gola, EM 2022,
+‘Human–animal interactions:
+‘Law and order in plants – the ‘The Architect’s Perspective:
+Expressions of wellbeing
+origin and functional relevance Khoo Teck Puat Hospital -
+through a “nature language”’,
+of phyllotaxis’, Trends in Plant RMJM’, viewed 20 March 2022,
+Animals, vol. 11, no. 4.
+Science. <https://rmjm.com/the-
+architects-perspective-khoo- Zaino, AA & Abbas, MY 2020,
+Salingaros, NA 1999,
+teck-puat-hospital/>. ‘Architectural Space Alters
+‘Architecture, Patterns, and
+the Expression of Gene
+Mathematics’, Nexus Network Thompson Coon, J, Boddy, K,
+that Regulate Physical and
+Journal, vol. 1, no. 1–2, pp. Stein, K, Whear, R, Barton, J
+Emotional Stress’, Asian Journal
+75–86. & Depledge, MH 2011, ‘Does
+of Environment-Behaviour
+participating in physical
+Salingaros, NA 2000, ‘The Studies, vol. 5, no. 16, pp. 1–19.
+activity in outdoor natural
+structure of pattern languages’,
+environments have a greater Zhong, W, Schröder, T &
+Architectural Research
+effect on physical and mental Bekkering, J 2022, ‘Biophilic
+Quarterly, vol. 4, no. 2, pp.
+wellbeing than physical activity design in architecture and its
+149–162.
+indoors? A systematic review’, contributions to health, well-
+Salingaros, NA 2012, ‘Fractal Environmental Science and being, and sustainability: A
+Art and Architecture Reduce Technology, vol. 45, no. 5, pp. critical review’, Frontiers of
+Physiological Stress’, Journal of 1761–1772. Architectural Research, vol. 11,
+Biourbanism, vol. 2, pp. 11–28. no. 1, pp. 114–141
+Totaforti, S 2018, ‘Applying the
+82
+
+--- Page 83 ---
+83
+
+--- Page 84 ---
+Appendices
+The following appendices contain original
+experimentation that either preceded or occurred
+parallel with the main detailed project. The sketches and
+renders depicted were vital to developing the required
+understanding of potential areas of research and enquiry.
+The appendices also contain collages of key workings from
+author’s notebook.
+All renders and sketches are the author’s own.
+84
+
+--- Page 85 ---
+85
+
+--- Page 86 ---
+86
+
+--- Page 87 ---
+Possible mechanisms for organically shaped structures
+87
+
+--- Page 88 ---
+88
+
+--- Page 89 ---
+89
+
+--- Page 90 ---
+Experimentation with Flexible Material
+This is a direct design response to answer questions so that it becomes a reflection of how the light usually
+associated with the interaction with nature. A wall interacts with it.
+composed of pillars laced with fabric allows for numerous,
+The light passing through will also allow for lighting of
+simultaneous interactions with the environment present
+one side of the wall to be representative of the other with
+on either side.
+shadows and diffusion to match.
+Air can pass through the cloth but not without friction.
+The cloth being woven through the pillars has numerous
+This friction causes movement in the cloth resulting in a
+consequences. Firstly, it allows for relatively stable shape
+dynamism of physical form,
+and position whilst only preventing movement of the
+The movement will affect how the material interacts with outer edges, allowing the inner waves to move in both the
+light, causing it to reflect and/or diffract at different angles X and Y axis. The free movement will let any deformation
+and amounts. dissipate throughout.
+This light passing through the material will change the
+colouration and also the aging and wearing of the material
+90
+
+--- Page 91 ---
+91
+
+--- Page 92 ---
+92
+
+--- Page 93 ---
+93
+
+--- Page 94 ---
+94
+
+--- Page 95 ---
+95
+
+--- Page 96 ---
+96
+
+--- Page 97 ---
+97
+
+--- Page 98 ---
+Creating Natural Forms with Flexible Material
+98
+
+--- Page 99 ---
+99
+
+--- Page 100 ---
+100
+
+--- Page 101 ---
+101
+
+--- Page 102 ---
+102
+
+--- Page 103 ---
+103
+
+--- Page 104 ---

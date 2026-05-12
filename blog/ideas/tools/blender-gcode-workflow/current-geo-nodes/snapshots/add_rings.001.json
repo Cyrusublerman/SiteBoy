@@ -1,0 +1,1170 @@
+{
+  "name": "add rings.001",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometry",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "segments per revalution",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 1
+    },
+    {
+      "name": "Gap per stitch",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Stitch length",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Starting leval",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    },
+    {
+      "name": "Hight",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 0
+    },
+    {
+      "name": "stitch_depth",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Switch direction",
+      "io": "INPUT",
+      "type": "NodeSocketBool",
+      "default": false
+    },
+    {
+      "name": "2d /3d",
+      "io": "INPUT",
+      "type": "NodeSocketBool",
+      "default": false
+    },
+    {
+      "name": "stitch offset",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 2
+    },
+    {
+      "name": "Iterations",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 1
+    },
+    {
+      "name": "Z",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": -1.4299999475479126
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Index",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Compare",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Evaluate on Domain",
+      "t": "FIELD_ON_DOMAIN",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Integer Math",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.001",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Set Position",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Normal",
+      "t": "INPUT_NORMAL",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Vector Math.001",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.002",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Compare.002",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.003",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Boolean Math",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Boolean Math.001",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.003",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Switch",
+      "t": "SWITCH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.002",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Switch.001",
+      "t": "SWITCH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ.003",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Frame",
+      "t": "FRAME",
+      "lbl": "2D or 3D",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Frame.001",
+      "t": "FRAME",
+      "lbl": "reverse stitch depth if needed",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Frame.002",
+      "t": "FRAME",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Frame.003",
+      "t": "FRAME",
+      "lbl": "STITCH DEPTH",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.004",
+      "t": "FRAME",
+      "lbl": "select higher than this",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.005",
+      "t": "FRAME",
+      "lbl": "select less than this",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.006",
+      "t": "FRAME",
+      "lbl": "move selection",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.007",
+      "t": "FRAME",
+      "lbl": "select stich gap",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Compare.003",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Integer Math.005",
+      "t": "INTEGER_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Blur Attribute",
+      "t": "BLUR_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Store Named Attribute",
+      "t": "STORE_NAMED_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Vector Math.002",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.002",
+      "cg": null
+    },
+    {
+      "n": "Frame.008",
+      "t": "FRAME",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.020",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Remove Named Attribute",
+      "t": "REMOVE_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.009",
+      "cg": null
+    },
+    {
+      "n": "Capture Attribute",
+      "t": "CAPTURE_ATTRIBUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Frame.009",
+      "t": "FRAME",
+      "lbl": "i was using this insted of capturte atrabute",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "multiply stitch depth by z influence ",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Vector Math.003",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Frame.010",
+      "t": "FRAME",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Vector Math.004",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Reroute.022",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Normal.001",
+      "t": "INPUT_NORMAL",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Vector Math.005",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Vector Math.008",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Group Input.001",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.002",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.008",
+      "cg": null
+    },
+    {
+      "n": "Group Input.003",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.001",
+      "cg": null
+    },
+    {
+      "n": "Group Input.004",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.010",
+      "cg": null
+    },
+    {
+      "n": "Group Input.005",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.007",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.008",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.007",
+      "cg": null
+    },
+    {
+      "n": "Reroute.027",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Reroute.030",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.032",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Group Input.006",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Group Input.007",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.004",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Reroute.010",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.011",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.012",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.003",
+      "cg": null
+    },
+    {
+      "n": "Group Input.008",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.004",
+      "cg": null
+    },
+    {
+      "n": "Group Input.009",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.006",
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": "Frame.005",
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Boolean Math",
+      "fs": "Boolean",
+      "tn": "Boolean Math.001",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Integer Math",
+      "fs": "Value",
+      "tn": "Compare",
+      "ts": "B"
+    },
+    {
+      "fn": "Compare.002",
+      "fs": "Result",
+      "tn": "Boolean Math",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Index",
+      "fs": "Index",
+      "tn": "Evaluate on Domain",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Compare.002",
+      "ts": "A"
+    },
+    {
+      "fn": "Integer Math.003",
+      "fs": "Value",
+      "tn": "Compare.002",
+      "ts": "B"
+    },
+    {
+      "fn": "Reroute.008",
+      "fs": "Output",
+      "tn": "Integer Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Integer Math.002",
+      "fs": "Value",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.027",
+      "fs": "Output",
+      "tn": "Compare",
+      "ts": "A"
+    },
+    {
+      "fn": "Compare",
+      "fs": "Result",
+      "tn": "Boolean Math",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Compare.003",
+      "fs": "Result",
+      "tn": "Boolean Math.001",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Group Input.008",
+      "fs": "segments per revalution",
+      "tn": "Integer Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "segments per revalution",
+      "tn": "Integer Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.010",
+      "fs": "Output",
+      "tn": "Set Position",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Set Position",
+      "fs": "Geometry",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Group Input.005",
+      "fs": "Gap per stitch",
+      "tn": "Integer Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Hight",
+      "tn": "Integer Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.008",
+      "fs": "Starting leval",
+      "tn": "Integer Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.003",
+      "fs": "Switch direction",
+      "tn": "Switch",
+      "ts": "Switch"
+    },
+    {
+      "fn": "Switch",
+      "fs": "Output",
+      "tn": "Reroute.003",
+      "ts": "Input"
+    },
+    {
+      "fn": "Evaluate on Domain",
+      "fs": "Value",
+      "tn": "Integer Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Combine XYZ.002",
+      "ts": "X"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Combine XYZ.002",
+      "ts": "Y"
+    },
+    {
+      "fn": "Group Input.003",
+      "fs": "stitch_depth",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Switch",
+      "ts": "False"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Combine XYZ.002",
+      "ts": "Z"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Combine XYZ.003",
+      "ts": "X"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Combine XYZ.003",
+      "ts": "Y"
+    },
+    {
+      "fn": "Combine XYZ.002",
+      "fs": "Vector",
+      "tn": "Switch.001",
+      "ts": "False"
+    },
+    {
+      "fn": "Integer Math.001",
+      "fs": "Value",
+      "tn": "Compare.003",
+      "ts": "A"
+    },
+    {
+      "fn": "Group Input.005",
+      "fs": "Stitch length",
+      "tn": "Compare.003",
+      "ts": "B"
+    },
+    {
+      "fn": "Integer Math.005",
+      "fs": "Value",
+      "tn": "Integer Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.020",
+      "fs": "Output",
+      "tn": "Vector Math.002",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Reroute.030",
+      "fs": "Output",
+      "tn": "Set Position",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Boolean Math.001",
+      "fs": "Boolean",
+      "tn": "Capture Attribute",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Reroute.012",
+      "fs": "Output",
+      "tn": "Blur Attribute",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.003",
+      "fs": "stitch_depth",
+      "tn": "Switch",
+      "ts": "True"
+    },
+    {
+      "fn": "Switch",
+      "fs": "Output",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Combine XYZ.003",
+      "ts": "Z"
+    },
+    {
+      "fn": "Blur Attribute",
+      "fs": "Value",
+      "tn": "Reroute.020",
+      "ts": "Input"
+    },
+    {
+      "fn": "Switch.001",
+      "fs": "Output",
+      "tn": "Vector Math.002",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Combine XYZ.003",
+      "fs": "Vector",
+      "tn": "Switch.001",
+      "ts": "True"
+    },
+    {
+      "fn": "Normal",
+      "fs": "True Normal",
+      "tn": "Vector Math.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math.004",
+      "fs": "Vector",
+      "tn": "Reroute.022",
+      "ts": "Input"
+    },
+    {
+      "fn": "Vector Math.002",
+      "fs": "Vector",
+      "tn": "Vector Math.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Normal.001",
+      "fs": "True Normal",
+      "tn": "Vector Math.008",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math.008",
+      "fs": "Vector",
+      "tn": "Vector Math.003",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math.003",
+      "fs": "Vector",
+      "tn": "Vector Math.004",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Group Input.004",
+      "fs": "stitch_depth",
+      "tn": "Vector Math.004",
+      "ts": "Scale"
+    },
+    {
+      "fn": "Combine XYZ.003",
+      "fs": "Vector",
+      "tn": "Vector Math.008",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math.005",
+      "fs": "Vector",
+      "tn": "Set Position",
+      "ts": "Offset"
+    },
+    {
+      "fn": "Group Input.001",
+      "fs": "Geometry",
+      "tn": "Capture Attribute",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "Iterations",
+      "tn": "Blur Attribute",
+      "ts": "Iterations"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Reroute.007",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Reroute.008",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Reroute.027",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.011",
+      "fs": "Output",
+      "tn": "Reroute.030",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.020",
+      "fs": "Output",
+      "tn": "Reroute.032",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.006",
+      "fs": "2d /3d",
+      "tn": "Switch.001",
+      "ts": "Switch"
+    },
+    {
+      "fn": "Group Input.007",
+      "fs": "Z",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.032",
+      "fs": "Output",
+      "tn": "Reroute.004",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Vector Math.005",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Reroute.022",
+      "fs": "Output",
+      "tn": "Vector Math.005",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Capture Attribute",
+      "fs": "Geometry",
+      "tn": "Reroute.010",
+      "ts": "Input"
+    },
+    {
+      "fn": "Boolean Math",
+      "fs": "Boolean",
+      "tn": "Reroute.011",
+      "ts": "Input"
+    },
+    {
+      "fn": "Capture Attribute",
+      "fs": "Boolean",
+      "tn": "Reroute.012",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.009",
+      "fs": "stitch offset",
+      "tn": "Integer Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Reroute.007",
+      "fs": "Output",
+      "tn": "Reroute",
+      "ts": "Input"
+    }
+  ],
+  "frames": [
+    {
+      "n": "Frame",
+      "lbl": "2D or 3D",
+      "ch": [
+        "Combine XYZ.002",
+        "Reroute.003",
+        "Switch.001",
+        "Combine XYZ.003",
+        "Math.002",
+        "Group Input.006",
+        "Group Input.007"
+      ]
+    },
+    {
+      "n": "Frame.001",
+      "lbl": "reverse stitch depth if needed",
+      "ch": [
+        "Math",
+        "Switch",
+        "Group Input.003"
+      ]
+    },
+    {
+      "n": "Frame.002",
+      "lbl": "",
+      "ch": [
+        "Normal",
+        "Vector Math.001",
+        "Vector Math.002"
+      ]
+    },
+    {
+      "n": "Frame.003",
+      "lbl": "STITCH DEPTH",
+      "ch": [
+        "Frame",
+        "Frame.001",
+        "Frame.002",
+        "Frame.008",
+        "Reroute.020",
+        "Frame.010",
+        "Vector Math.005",
+        "Reroute.032",
+        "Reroute.004",
+        "Reroute.012"
+      ]
+    },
+    {
+      "n": "Frame.004",
+      "lbl": "select higher than this",
+      "ch": [
+        "Compare",
+        "Integer Math",
+        "Reroute.027",
+        "Group Input.008"
+      ]
+    },
+    {
+      "n": "Frame.005",
+      "lbl": "select less than this",
+      "ch": [
+        "Group Input",
+        "Compare.002",
+        "Integer Math.003",
+        "Reroute"
+      ]
+    },
+    {
+      "n": "Frame.006",
+      "lbl": "move selection",
+      "ch": [
+        "Index",
+        "Evaluate on Domain",
+        "Integer Math.002",
+        "Integer Math.005",
+        "Group Input.009"
+      ]
+    },
+    {
+      "n": "Frame.007",
+      "lbl": "select stich gap",
+      "ch": [
+        "Integer Math.001",
+        "Compare.003",
+        "Group Input.005",
+        "Reroute.008"
+      ]
+    },
+    {
+      "n": "Frame.008",
+      "lbl": "",
+      "ch": [
+        "Blur Attribute",
+        "Group Input.002"
+      ]
+    },
+    {
+      "n": "Frame.009",
+      "lbl": "i was using this insted of capturte atrabute",
+      "ch": [
+        "Store Named Attribute",
+        "Remove Named Attribute"
+      ]
+    },
+    {
+      "n": "Frame.010",
+      "lbl": "",
+      "ch": [
+        "Vector Math.003",
+        "Vector Math.004",
+        "Reroute.022",
+        "Normal.001",
+        "Vector Math.008",
+        "Group Input.004"
+      ]
+    }
+  ],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [
+    {
+      "node": "Store Named Attribute",
+      "attr": "True",
+      "dt": "FLOAT",
+      "dom": "POINT"
+    }
+  ],
+  "switches": [
+    {
+      "node": "Switch",
+      "type": "FLOAT"
+    },
+    {
+      "node": "Switch.001",
+      "type": "VECTOR"
+    }
+  ],
+  "child_groups": []
+}

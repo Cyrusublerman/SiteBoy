@@ -1,0 +1,17 @@
+asonic
+Parametric design:
+The Wave
+Using the Rhino plugin Grasshopper, After much experimentation and
+the waves that were generated consultation with the design aims,
+were able to embody certain it was deemed necessary that
+predetermined aspects of form. generation must begin with creating
+These aspects were able to remain the outside boundaries. This is
+constant even as other aspects were because the outside border of a
+changed. This is a fundamental value tile must be complementary and
+of parametric design. seamless with those that sit next to
+this border.
+To create this generative algorithm,
+the team worked to first determine Following is the generation of the
+the order/hierarchy of the form inside wave structure.
+characteristics’ creation.
+52 Ali Einoder

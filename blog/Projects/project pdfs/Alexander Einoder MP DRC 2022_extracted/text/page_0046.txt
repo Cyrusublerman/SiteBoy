@@ -1,0 +1,18 @@
+Lattice Combination Examples
+The algorithmically derived
+points and dimensions allow
+for the meeting of many design
+requirements. If there is a need
+to reduce material cost, the
+structure can be generated to
+have thin connecting poles of
+minimal length.
+These points all connect
+in a manner that results in
+structurally simple rhomboids.
+This simplicity may also lead
+to increased ease of use as
+the points can be connected
+in sequence based on spatial
+position.
+46

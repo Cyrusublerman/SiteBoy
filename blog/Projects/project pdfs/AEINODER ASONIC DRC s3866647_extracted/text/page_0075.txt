@@ -1,0 +1,11 @@
+asonic
+Absorption Coefficient of Asonic Wave-Tile, Carlo Holden 2021.
+The absorption of sound by the tiles also proved to be of significant
+value, especially when paired with the diffusing properties of the tile.
+Frequencies above 1000Hz easily passed though the plastic outer shell
+and was absorbed into the cellulose foam.
+Noticeable however is the lack of sound reduction between 400Hz
+and 1000Hz. This is actually beneficial to the environment as it
+allows for the first wave of human voice to travel, allowing for easy
+communication between staff.
+S3866647 75

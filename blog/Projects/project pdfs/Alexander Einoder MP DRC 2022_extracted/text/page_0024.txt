@@ -1,0 +1,61 @@
+Design Methodology
+Following the initial review of the tool, initial experimentation The geometry nodes created
+literature and interrogation of of form included sketches large compilations of potential
+biophilic design and current and 3D modelling along with core structures such as point
+practices, it seemed most associated mathematics and distribution and curve specifics
+appropriate to delve deeper coding. The experiments led which were then used to fine-
+into botanical mathematics to the identification of critical tune the more formalised code.
+and the geometry of nature process steps for generating
+As both the geometry node
+to develop more significant a dome-like structure that
+feature and Python script
+insights into how synthetic expresses the geometry of
+were interfaced within
+structures could authentically phyllotaxy.
+Blender, the outputs could be
+mimic natural forms.
+The first step in the quickly rendered and their
+As much of the research process was identifying aesthetics assessed to guide the
+related to biophilia attributes the mathematics required development process further.
+a high value to this geometry, for generating phyllotactic
+Additionally, any issues with
+it seemed logical to create points. Secondly, it was vital
+the foundational mathematics
+core structures of a built to transform the points
+became immediately
+environment that express into an aesthetic structure
+apparent, which indicated
+the aesthetics detailed in through a series of connecting
+the requirement for further
+the research, principally joints. Finally, using the 3D
+avenues of exploration and
+the detailed patterns and modelling program Blender,
+refinement.
+associated visual relations. It the mathematics were
+became apparent, however, that translated into the parametric
+authentically recreating natural geometry nodes feature and a
+patterns required an advanced Python script run in Blender’s
+level of mathematic capability, embedded Python editor.
+which at times was alienating.
+These two functions were
+Addressing the knowledge
+fundamental to the iterative
+gap led to the development of
+process of the creation of a
+a tool comprising accessible
+generative algorithm. The
+algorithms to successfully
+geometry nodes facilitated
+and authentically combine
+quick visualisation of
+the properties of nature into
+mathematic relations and
+a synthetic space – a seamless
+algorithm functions, whilst
+connection between science
+the Python code allowed for
+and design.
+more specific and sophisticated
+To organically illustrate and generation.
+facilitate the development of
+24

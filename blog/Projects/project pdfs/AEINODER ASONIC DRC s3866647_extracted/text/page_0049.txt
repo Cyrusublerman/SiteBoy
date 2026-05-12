@@ -1,0 +1,24 @@
+asonic
+Tiling
+Fundamental to the functional qualities of the Wave-Tiles is the ability to be
+arranged to make a larger cohesive pattern all whilst retaining the fractal
+and water-like qualities of the surface. Achieving this took a considerable
+amount of time and subsequent development of the tile.
+The primary obstacle was the ability of the waves’ peaks and troughs to flow
+seamlessly from one tile to another.
+A novel solution to this problem is the regulation of tile border patterns.
+By determining template edge waves that are complementary, the central
+wave surface may be randomised.
+Though initially proven to be effective, the previously stated methodology
+created a new issue. The corners of each tile had consistent and
+recognisable z-axis positions, impeding the wanted creation of larger,
+cohesive and seamless pieces when multiple tiles combined.
+Addressing this challenge required the creation of a checker-board styled
+sequencing of tiles, with the “black” tiles having one set of predetermined
+edges and the “white” tiles having another. This allows for a variation in
+corner heights which reduce the sense of a repeating pattern when multiple
+tiles are placed together.
+Unfortunately, this solution does reduce the possible combinations with a
+given set of tiles, as the order and placement now has restrictions.
+<- Sketches of tiling mechanisms and wave aesthetics, Ali Einoder
+S3866647 49

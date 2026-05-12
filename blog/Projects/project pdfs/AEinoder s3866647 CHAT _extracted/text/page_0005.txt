@@ -1,0 +1,28 @@
+f
+I N T RODUC T ION
+The ambiguity and detached nature of written text has become a burden of
+the modern era. Constant conflict is created both directly and indirectly by a
+lack of many human qualities in text. The inability to assess the non-verbal
+qualities of the communication leaves the reader without the true sense of the
+emotional, human qualities of the author (James 2017). This in turn can lead the
+reader to respond and act in a manner which may contradict the real-world, face-
+to-face reaction they would have if witnessing the author speak this text.
+Through computationally processing the spoken word, the CHAT team aims
+to provide insight into potential ways written text can evolve to become a truer
+representation of spoken language.
+How does the medium in which the text is viewed affect the reader's emotional
+connection to the speech? If the text is formed into a physical artifact will the
+reader attribute different emotional qualities to the text? How can the typography
+be altered to represent the nonverbal aspects of human speech?
+These questions and more were explored through research and experimentations
+over the course of the semester, resulting in the development of CHAT - a
+device which computationally humanises typography through audio to text
+translation. Using technologies such as speech to text, electromagnetic field
+recording and audio analysis, the team mapped non-verbal language to the textual
+representation of the verbal. This was then built into a zoomorphically designed
+object that prints these messages (along with an image of the sender) on thermal
+paper to create a timeline of conversation that now occupies the physical world as
+a receipt of the interaction.
+We hope that this device illustrates the potential for further development in the
+text-based world, especially given the move to a greater online presence.
+5

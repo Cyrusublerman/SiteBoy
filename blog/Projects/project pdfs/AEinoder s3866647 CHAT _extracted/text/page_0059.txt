@@ -1,0 +1,54 @@
+Speech to HTML to BMP Image
+This is the core part of the code. It is where The speech to text will iterate through the
+the previously recorded audio will be audio file finding each word and retreiving
+processed using text to speech and then the beginning and end times for the word.
+converted into an HTML webfile with CSS It also will find the punctuation and
+styling. This can then be converted into remove the values that are not necessary
+a BMP image that is able to be printed for this code.
+by the thermal printer over serial port
+The code then removes the formatting
+communication.
+that exported from the speech to text and
+This section begins if the toggle switch rewraps it in the CSS styling. This new
+is read as being ON. It then begins the string is added to the result.
+camera function (previously described) and
+Once the speech to text has finished
+then the audio recording function.
+running through the audio file, it will then
+Once these functions have finished (after finish the HTML file with </body></html>
+the toggle has been switched to OFF) the which then allows it to be proccessed as a
+HTML file will be opened and the taken completed file.
+image will be set to a variable and stored
+Now the options for the HTML to image
+in memory. A string is created (result) that
+are set to a BMP with page width of 384
+is filled with the beginning of an HTML
+pixels and the imgkit function is called and
+document that includes the CSS formatting
+processes the result string.
+of the page and the image taken. It will
+This file is saved as message.bmp and the
+also include the name of the sender(to be
+HTML file is saved and closed.
+added) and time/date.
+message.bmp is now sent to the thermal
+The string at this point ends by opening a
+printer using the printer.printBitmap()
+<body> section of the HTML file. This is
+function.
+so the next section (the speech to text) can
+easily input the words to be presented in
+The device now will be able to react to the
+the required format.
+next time the toggle switch is flicked.
+This format is as follows: '<span
+style="font-weight: {}%; font-size: {}%;
+font-stretch: {};">{} </span>'.
+<span> allows for CSS styling to be
+implemented on a per-word basis, the font-
+weight will adjust the thickness of the text,
+the size will adjust overall height of the
+word and the stretch will adjuist the width.
+Each {} will be filled with the variables
+weight, height, width and word.
+59

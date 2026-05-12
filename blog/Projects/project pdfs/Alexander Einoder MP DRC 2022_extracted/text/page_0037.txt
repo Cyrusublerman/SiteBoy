@@ -1,0 +1,51 @@
+Figure 26: Variation of lattice domes from Frank M.J. Van der Linden’s Patterns for Domes 2022
+domes points. so on. The next line would be would display what each array
+point 2 connected to point 23... of curves would look like (see
+The subset of points, being
+eventually ending with a line left). The initial creation of
+relatively even, would also
+beginning at point 21. this tool was within Blender’s
+need to not overlap with each
+geometry nodes function.
+other so as to create one half of This sequence creates almost
+the lamella dome arches. parallel arches, fulfilling half of Making each curve array
+the lamella dome’s needs. The visual highlighted two novel
+From this logic, the curved
+other half of the lines can be insights. Firstly, the steepness
+connection of points could
+created using the same process and direction of the potential
+be created by creating curves
+with a different denominator. curves vary widely, and
+based off a denominator of the
+secondly, each useful subset
+point number and have the
+of points are either Fibonacci
+modulo dictate the connection
+Numbers or multiples of
+of these points. This would
+Fibonacci Numbers.
+result in every Nth point being
+connected together, creating The second discovery was both
+the curve (N->Nx)*point surprising and reassuring, as
+number. If this was then it solidified the maintenance
+repeated N times around the of the core geometry and
+dome with each iteration also confirmed that the
+adding one position, then you mathematics used to create the
+will end up with N number tools was correct.
+of lines connecting every Nth Not all subsets of points will
+Now that these curves had
+point. work however, as the dome,
+been discovered, combinations
+to function, needs to remain
+As an example, if you were were needed to be assessed to
+hollow with no lines crossing
+to connect every 21st line, determine functional pairs as
+the inner area. Finding a useful
+you would need 21 lines, well as a method of creating a
+set of numbers to form the
+with the first beginning with generative algorithm.
+dome required the formation
+point 1 connecting to point
+of a generative algorithm that The following pages will
+22 connecting to point 43 and
+37

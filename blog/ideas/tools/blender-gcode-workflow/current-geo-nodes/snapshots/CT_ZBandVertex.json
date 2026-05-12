@@ -1,0 +1,157 @@
+{
+  "name": "CT_ZBandVertex",
+  "iface": [
+    {
+      "name": "Points",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Mesh",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "SliceZ",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "BandWidth",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.03999999910593033
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh to Points",
+      "t": "MESH_TO_POINTS",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "BandWidth",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Mesh",
+      "tn": "Mesh to Points",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Mesh to Points",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Mesh to Points",
+      "fs": "Points",
+      "tn": "Group Output",
+      "ts": "Points"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

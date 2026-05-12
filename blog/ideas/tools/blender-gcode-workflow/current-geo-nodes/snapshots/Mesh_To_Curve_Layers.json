@@ -1,0 +1,1105 @@
+{
+  "name": "Mesh To Curve Layers",
+  "iface": [
+    {
+      "name": "Geometry",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Geometry",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "height of section",
+      "io": "INPUT",
+      "type": "NodeSocketFloatDistance",
+      "default": 0.10000000149011612
+    },
+    {
+      "name": "layer point count",
+      "io": "INPUT",
+      "type": "NodeSocketInt",
+      "default": 11
+    },
+    {
+      "name": "rad snap",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.6709999442100525
+    },
+    {
+      "name": "theta snap",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 3.0
+    },
+    {
+      "name": "Fillet",
+      "io": "INPUT",
+      "type": "NodeSocketBool",
+      "default": false
+    },
+    {
+      "name": "Fillet rad",
+      "io": "INPUT",
+      "type": "NodeSocketFloatDistance",
+      "default": 0.17000000178813934
+    },
+    {
+      "name": "point distance",
+      "io": "INPUT",
+      "type": "NodeSocketFloatDistance",
+      "default": 0.10000000149011612
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Cube",
+      "t": "MESH_PRIMITIVE_CUBE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh Boolean",
+      "t": "MESH_BOOLEAN",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Bounding Box",
+      "t": "BOUNDING_BOX",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math.001",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Instance on Points",
+      "t": "INSTANCE_ON_POINTS",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math.002",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math.003",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Realize Instances",
+      "t": "REALIZE_INSTANCES",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Transform Geometry",
+      "t": "TRANSFORM_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Delete Geometry",
+      "t": "DELETE_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Is Spline Cyclic",
+      "t": "INPUT_SPLINE_CYCLIC",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Boolean Math",
+      "t": "BOOLEAN_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh to Curve",
+      "t": "MESH_TO_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Resample Curve",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.001",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.002",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.001",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.003",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Set Position",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve Line",
+      "t": "CURVE_PRIMITIVE_LINE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Viewer",
+      "t": "VIEWER",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh Island",
+      "t": "MESH_ISLAND",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Curve to Mesh",
+      "t": "CURVE_TO_MESH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.002",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Sort Elements",
+      "t": "SORT_ELEMENTS",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Split to Instances",
+      "t": "Split to Instances",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Compare",
+      "t": "COMPARE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Index",
+      "t": "INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Realize Instances.001",
+      "t": "REALIZE_INSTANCES",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Repeat Input",
+      "t": "REPEAT_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Repeat Output",
+      "t": "REPEAT_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Join Geometry",
+      "t": "JOIN_GEOMETRY",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh to Curve.001",
+      "t": "MESH_TO_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Resample Curve.001",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.004",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group",
+      "t": "GROUP",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": "Cartesian to Polar"
+    },
+    {
+      "n": "Group.001",
+      "t": "GROUP",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": "Polar to Cartesian"
+    },
+    {
+      "n": "Set Position.001",
+      "t": "SET_POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position.001",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Realize Instances.002",
+      "t": "REALIZE_INSTANCES",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input.005",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Fillet Curve",
+      "t": "FILLET_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Switch",
+      "t": "SWITCH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Resample Curve.002",
+      "t": "RESAMPLE_CURVE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Domain Size",
+      "t": "ATTRIBUTE_DOMAIN_SIZE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Reroute.003",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Sample Index",
+      "t": "SAMPLE_INDEX",
+      "lbl": "",
+      "mut": true,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Attribute Statistic",
+      "t": "ATTRIBUTE_STATISTIC",
+      "lbl": "",
+      "mut": true,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Reroute.004",
+      "t": "REROUTE",
+      "lbl": "",
+      "mut": true,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Position.002",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": true,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Group.002",
+      "t": "GROUP",
+      "lbl": "",
+      "mut": true,
+      "fr": "Frame",
+      "cg": "Cartesian to Polar"
+    },
+    {
+      "n": "Math.005",
+      "t": "MATH",
+      "lbl": "",
+      "mut": true,
+      "fr": "Frame",
+      "cg": null
+    },
+    {
+      "n": "Frame",
+      "t": "FRAME",
+      "lbl": "",
+      "mut": true,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Realize Instances",
+      "fs": "Geometry",
+      "tn": "Mesh Boolean",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Geometry",
+      "tn": "Bounding Box",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math.001",
+      "fs": "Vector",
+      "tn": "Cube",
+      "ts": "Size"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math",
+      "fs": "Vector",
+      "tn": "Vector Math.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Transform Geometry",
+      "fs": "Geometry",
+      "tn": "Mesh Boolean",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Reroute.001",
+      "fs": "Output",
+      "tn": "Vector Math.002",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Reroute",
+      "fs": "Output",
+      "tn": "Vector Math.003",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Resample Curve",
+      "fs": "Curve",
+      "tn": "Instance on Points",
+      "ts": "Points"
+    },
+    {
+      "fn": "Cube",
+      "fs": "Mesh",
+      "tn": "Instance on Points",
+      "ts": "Instance"
+    },
+    {
+      "fn": "Instance on Points",
+      "fs": "Instances",
+      "tn": "Realize Instances",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Is Spline Cyclic",
+      "fs": "Cyclic",
+      "tn": "Boolean Math",
+      "ts": "Boolean"
+    },
+    {
+      "fn": "Mesh to Curve",
+      "fs": "Curve",
+      "tn": "Delete Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Boolean Math",
+      "fs": "Boolean",
+      "tn": "Delete Geometry",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Mesh Boolean",
+      "fs": "Mesh",
+      "tn": "Mesh to Curve",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Group Input.001",
+      "fs": "height of section",
+      "tn": "Resample Curve",
+      "ts": "Length"
+    },
+    {
+      "fn": "Group Input.002",
+      "fs": "Geometry",
+      "tn": "Transform Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Bounding Box",
+      "fs": "Max",
+      "tn": "Reroute",
+      "ts": "Input"
+    },
+    {
+      "fn": "Bounding Box",
+      "fs": "Min",
+      "tn": "Reroute.001",
+      "ts": "Input"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Group Input.003",
+      "fs": "height of section",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Delete Geometry",
+      "fs": "Geometry",
+      "tn": "Set Position",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "X",
+      "tn": "Combine XYZ",
+      "ts": "X"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Y",
+      "tn": "Combine XYZ",
+      "ts": "Y"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Set Position",
+      "ts": "Position"
+    },
+    {
+      "fn": "Vector Math.002",
+      "fs": "Vector",
+      "tn": "Curve Line",
+      "ts": "Start"
+    },
+    {
+      "fn": "Vector Math.003",
+      "fs": "Vector",
+      "tn": "Curve Line",
+      "ts": "End"
+    },
+    {
+      "fn": "Curve Line",
+      "fs": "Curve",
+      "tn": "Resample Curve",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Group Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Reroute.002",
+      "fs": "Output",
+      "tn": "Viewer",
+      "ts": "Instances"
+    },
+    {
+      "fn": "Set Position",
+      "fs": "Geometry",
+      "tn": "Curve to Mesh",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Curve to Mesh",
+      "fs": "Mesh",
+      "tn": "Sort Elements",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Sort Elements",
+      "ts": "Sort Weight"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Realize Instances.001",
+      "fs": "Geometry",
+      "tn": "Reroute.002",
+      "ts": "Input"
+    },
+    {
+      "fn": "Mesh Island",
+      "fs": "Island Index",
+      "tn": "Compare",
+      "ts": "A"
+    },
+    {
+      "fn": "Compare",
+      "fs": "Result",
+      "tn": "Split to Instances",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Index",
+      "fs": "Index",
+      "tn": "Viewer",
+      "ts": "Index"
+    },
+    {
+      "fn": "Repeat Input",
+      "fs": "Geometry",
+      "tn": "Repeat Output",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Sort Elements",
+      "fs": "Geometry",
+      "tn": "Repeat Input",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Repeat Input",
+      "fs": "Iteration",
+      "tn": "Compare",
+      "ts": "B"
+    },
+    {
+      "fn": "Join Geometry",
+      "fs": "Geometry",
+      "tn": "Repeat Output",
+      "ts": "Geometry.001"
+    },
+    {
+      "fn": "Repeat Input",
+      "fs": "Geometry",
+      "tn": "Split to Instances",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Repeat Output",
+      "fs": "Geometry.001",
+      "tn": "Realize Instances.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Repeat Input",
+      "fs": "Geometry.001",
+      "tn": "Join Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Resample Curve.002",
+      "fs": "Curve",
+      "tn": "Join Geometry",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Split to Instances",
+      "fs": "Instances",
+      "tn": "Mesh to Curve.001",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Realize Instances.002",
+      "fs": "Geometry",
+      "tn": "Set Position.001",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Position.001",
+      "fs": "Position",
+      "tn": "Group",
+      "ts": "XYZ"
+    },
+    {
+      "fn": "Group.001",
+      "fs": "XYZ",
+      "tn": "Set Position.001",
+      "ts": "Position"
+    },
+    {
+      "fn": "Set Position.001",
+      "fs": "Geometry",
+      "tn": "Resample Curve.001",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Group Input.004",
+      "fs": "layer point count",
+      "tn": "Resample Curve.001",
+      "ts": "Count"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Group.001",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Group",
+      "fs": "Theta",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Group.001",
+      "ts": "Theta"
+    },
+    {
+      "fn": "Mesh to Curve.001",
+      "fs": "Curve",
+      "tn": "Realize Instances.002",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Group",
+      "fs": "Phi",
+      "tn": "Group.001",
+      "ts": "Phi"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.005",
+      "fs": "theta snap",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group",
+      "fs": "Radius",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input.005",
+      "fs": "rad snap",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Resample Curve.001",
+      "fs": "Curve",
+      "tn": "Fillet Curve",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Group Input.004",
+      "fs": "Fillet rad",
+      "tn": "Fillet Curve",
+      "ts": "Radius"
+    },
+    {
+      "fn": "Fillet Curve",
+      "fs": "Curve",
+      "tn": "Switch",
+      "ts": "True"
+    },
+    {
+      "fn": "Resample Curve.001",
+      "fs": "Curve",
+      "tn": "Switch",
+      "ts": "False"
+    },
+    {
+      "fn": "Group Input.004",
+      "fs": "Fillet",
+      "tn": "Switch",
+      "ts": "Switch"
+    },
+    {
+      "fn": "Switch",
+      "fs": "Output",
+      "tn": "Resample Curve.002",
+      "ts": "Curve"
+    },
+    {
+      "fn": "Group Input.004",
+      "fs": "layer point count",
+      "tn": "Resample Curve.002",
+      "ts": "Count"
+    },
+    {
+      "fn": "Reroute.003",
+      "fs": "Output",
+      "tn": "Domain Size",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Resample Curve",
+      "fs": "Curve",
+      "tn": "Reroute.003",
+      "ts": "Input"
+    },
+    {
+      "fn": "Group Input.004",
+      "fs": "point distance",
+      "tn": "Resample Curve.002",
+      "ts": "Length"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Sample Index",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Resample Curve.002",
+      "fs": "Curve",
+      "tn": "Reroute.004",
+      "ts": "Input"
+    },
+    {
+      "fn": "Reroute.004",
+      "fs": "Output",
+      "tn": "Attribute Statistic",
+      "ts": "Geometry"
+    },
+    {
+      "fn": "Position.002",
+      "fs": "Position",
+      "tn": "Group.002",
+      "ts": "XYZ"
+    },
+    {
+      "fn": "Math.005",
+      "fs": "Value",
+      "tn": "Attribute Statistic",
+      "ts": "Attribute"
+    },
+    {
+      "fn": "Group.002",
+      "fs": "Theta",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Domain Size",
+      "fs": "Point Count",
+      "tn": "Repeat Input",
+      "ts": "Iterations"
+    }
+  ],
+  "frames": [
+    {
+      "n": "Frame",
+      "lbl": "",
+      "ch": [
+        "Sample Index",
+        "Attribute Statistic",
+        "Reroute.004",
+        "Position.002",
+        "Group.002",
+        "Math.005"
+      ]
+    }
+  ],
+  "repeat_zones": [
+    {
+      "in_node": "Repeat Input",
+      "out_node": "Repeat Output",
+      "items": [
+        "Geometry",
+        "Geometry.001"
+      ]
+    }
+  ],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [
+    {
+      "node": "Switch",
+      "type": "GEOMETRY"
+    }
+  ],
+  "child_groups": [
+    "Polar to Cartesian",
+    "Cartesian to Polar"
+  ]
+}

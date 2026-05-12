@@ -1,0 +1,9 @@
+asonic
+Parametric design:
+The Components
+After creating the algorithm responsible for the wave surface, further
+processing was needed to create the composition of the tiles. As shown
+above, there are four separate functions, one to create the cellulose inside,
+one to create ceiling tiles, one to form the struts that hold the ceiling tiles and
+one that creates an array of varying tiles to be placed on a wall.
+54 Ali Einoder

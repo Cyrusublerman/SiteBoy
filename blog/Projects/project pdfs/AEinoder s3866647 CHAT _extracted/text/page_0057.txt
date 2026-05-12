@@ -1,0 +1,15 @@
+Recording function (END) HTML and Toggle Switch Calibration
+When the switch is no longer in the ON The HTML file is set to the name "Your
+position (GPIO.input(10)==False), the Message.html" which will exist in the root
+stream will stop and then close and the folder. It will have a page width of 384
+audio system will terminate. The audio pixels as it is the width that can be printed.
+file will then be opened and calibrated to It has a maximum length of 10000 pixels at
+the audio settings and then filled with the this stage. The DPI is set to 72 so that font
+recorded audio frames. This file is then sizing within html is directly converted to
+closed and can now be used for further the pixels of the print. The FPS that is set
+processing. to 100 is the effectiveness of the speech to
+text. This setting is in the low to medium
+range. The GPIO is callibrated for the
+toggle switch so it can be read as stated
+previously.
+57

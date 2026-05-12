@@ -1,0 +1,395 @@
+{
+  "name": "CT_EdgeMidpoint",
+  "iface": [
+    {
+      "name": "Points",
+      "io": "OUTPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "Mesh",
+      "io": "INPUT",
+      "type": "NodeSocketGeometry",
+      "default": null
+    },
+    {
+      "name": "SliceZ",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Corners of Edge",
+      "t": "CORNERS_OF_EDGE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vertex of Corner",
+      "t": "VERTEX_OF_CORNER",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Evaluate at Index",
+      "t": "FIELD_AT_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Position",
+      "t": "POSITION",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Corners of Edge.001",
+      "t": "CORNERS_OF_EDGE",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vertex of Corner.001",
+      "t": "VERTEX_OF_CORNER",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Evaluate at Index.001",
+      "t": "FIELD_AT_INDEX",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Separate XYZ.001",
+      "t": "SEPXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.005",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.006",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math.001",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Vector Math.002",
+      "t": "VECT_MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Mesh to Points",
+      "t": "MESH_TO_POINTS",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Corners of Edge",
+      "fs": "Corner Index",
+      "tn": "Vertex of Corner",
+      "ts": "Corner Index"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Evaluate at Index",
+      "ts": "Value"
+    },
+    {
+      "fn": "Vertex of Corner",
+      "fs": "Vertex Index",
+      "tn": "Evaluate at Index",
+      "ts": "Index"
+    },
+    {
+      "fn": "Corners of Edge.001",
+      "fs": "Corner Index",
+      "tn": "Vertex of Corner.001",
+      "ts": "Corner Index"
+    },
+    {
+      "fn": "Position",
+      "fs": "Position",
+      "tn": "Evaluate at Index.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Vertex of Corner.001",
+      "fs": "Vertex Index",
+      "tn": "Evaluate at Index.001",
+      "ts": "Index"
+    },
+    {
+      "fn": "Evaluate at Index",
+      "fs": "Value",
+      "tn": "Separate XYZ",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Evaluate at Index.001",
+      "fs": "Value",
+      "tn": "Separate XYZ.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ.001",
+      "fs": "Z",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "SliceZ",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ.001",
+      "fs": "Z",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Separate XYZ",
+      "fs": "Z",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.005",
+      "fs": "Value",
+      "tn": "Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Evaluate at Index.001",
+      "fs": "Value",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Evaluate at Index",
+      "fs": "Value",
+      "tn": "Vector Math",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math",
+      "fs": "Vector",
+      "tn": "Vector Math.001",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Math.006",
+      "fs": "Value",
+      "tn": "Vector Math.001",
+      "ts": "Scale"
+    },
+    {
+      "fn": "Evaluate at Index",
+      "fs": "Value",
+      "tn": "Vector Math.002",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Vector Math.001",
+      "fs": "Vector",
+      "tn": "Vector Math.002",
+      "ts": "Vector"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Mesh",
+      "tn": "Mesh to Points",
+      "ts": "Mesh"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Mesh to Points",
+      "ts": "Selection"
+    },
+    {
+      "fn": "Vector Math.002",
+      "fs": "Vector",
+      "tn": "Mesh to Points",
+      "ts": "Position"
+    },
+    {
+      "fn": "Mesh to Points",
+      "fs": "Points",
+      "tn": "Group Output",
+      "ts": "Points"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

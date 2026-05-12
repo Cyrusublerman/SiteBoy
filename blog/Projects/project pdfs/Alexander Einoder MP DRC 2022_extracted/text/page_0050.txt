@@ -1,0 +1,34 @@
+Joints
+Figure 31: Polar Coordinates of lattice joints. Author’s Own 2022.
+Calculation of the joints is essential for the The points that these joints connect to are simply
+generation of buildable structures and can be the ones preceding it and following it on both
+performed as part of the generative algorithm. curves.
+By creating sets of coordinates from each point
+For the outer most joints, there can be an
+and the location of the points(n) they
+addition of an extra joint arm to the array. This
+connect to .
+arm will face directly down (or to another
+Relative coordinates can be derived from this position if wanted) so that the dome may have
+and converted into polar legs connecting to the ground or another base
+coordinates which will indicate the structure.
+relative direction each arm of the joint will have
+This array can also be appended to contain
+to aim in order to reach the connected points.
+attachments for an outer structure such as the
+Using the derived polar coordinates for each arm leaves detailed in later pages.
+of the joint, the radius can now be adjusted to
+correspond with the length wanted for the joint
+arm.
+The new polar coordinates (arm 1 to arm n) can
+then be bundled in an array with the Cartesian
+(or polar) coordinates of the joint’s origin point:
+.
+Before these calculations can be performed,
+which joints connect to which must be derived.
+This is calculated by assessing each joints
+placement in the intersecting curves.
+So for each joint, it’s origin will lay at a certain
+position on a curve derived from one lattice
+denominator and a certain position on another.
+50

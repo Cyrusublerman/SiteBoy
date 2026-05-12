@@ -1,0 +1,15 @@
+asonic
+Above is an image showing what was perhaps the most influential
+prototype created. By converting a hand-drawn sketch into a
+3-dimensional wave pattern, several epiphanies emerged. First is that
+the core idea was possible. Second however, is that an even number
+of waves on all edges creates a chaotic wave pattern that lacks the
+wanted emotion. This lead to the development of a more linear wave
+pattern that has significantly more peaks and valleys on two opposing
+edges than the other two perpendicular to them.
+The special sauce of the design is the creation of the tile edges (see
+above). The ability to match up tiles seamlessly is imperative to the tiles
+aesthetic function. Without the flowing of the waves from one section
+to another, the tiles will fail to create the mesmerizing visual of an
+ocean.
+56 Ali Einoder

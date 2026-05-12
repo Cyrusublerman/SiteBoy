@@ -1,0 +1,8 @@
+The specifics of each physical component was refined to simplify the overall aesthetic and
+form the device into one cohesive unit. Shaping the body with soft curves make it inviting
+to touch whilst angling and protruding components emphasise purpose and function. The
+angling of the device prevents the antenna from protruding towards the user's face and also angles
+the microphone towards the mouth without the need for additional protruding shapes. Though
+above, you can see potential microphone structures, it was decided that the presence of a patterned
+array of holes was only affordance needed.
+35

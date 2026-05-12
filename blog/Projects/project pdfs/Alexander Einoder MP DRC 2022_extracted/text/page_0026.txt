@@ -1,0 +1,49 @@
+INITIAL EXPERIMENTS
+How to convert phyllotaxis into a dome?
+Plants grow from the center out, with
+their leaves being phyllotactically
+distributed and spread based on
+growth order and time. This, if
+simplified creates a dome with each
+leaf creating an outer point at a
+specific location.
+Naturally however, the leaves
+will occupy the majority of space
+between the central axis and the
+outer point. This would prevent most
+functional use inside the dome if
+recreated architecturally and thus
+is an inadequate translation of the
+geometry. The question to answer
+then is “how can the outer points
+be distributed in accordance with
+phyllotaxy without the structure
+occupying the inner area?”
+To the right are renderings of several
+visual experiments in which different
+avenues were explored. Firstly is the
+consequence of forming a low polygon
+spiral that was a simplification of the
+golden spiral. This was then cloned
+and rotated to create a variance of
+frameworks that united curves into
+domes. These domes could in turn
+have an outer layer attached to further
+solidify and exaggerate the shape.
+These domes, though using the golden
+angle, do not capture the aesthetics
+of plant growth and when mapped
+against the points of phyllotaxy, only
+overlap with a small subset of points
+suggesting that using the golden angle
+and simple repetition and rotational
+symmetry would not be enough.
+Investigation into the potential
+mechanisms of supporting structures
+however indicated that there may
+be potential in some aspects of
+this design, such as the interplay
+between overlapping spirals. Further
+investigation was needed.
+Figure 12: Visual experimentation of Golden Spiral Domes. Author’s Own 2022.
+26

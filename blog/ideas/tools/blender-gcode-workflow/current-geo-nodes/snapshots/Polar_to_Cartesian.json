@@ -1,0 +1,247 @@
+{
+  "name": "Polar to Cartesian",
+  "iface": [
+    {
+      "name": "XYZ",
+      "io": "OUTPUT",
+      "type": "NodeSocketVector",
+      "default": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "Radius",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Theta",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    },
+    {
+      "name": "Phi",
+      "io": "INPUT",
+      "type": "NodeSocketFloat",
+      "default": 0.0
+    }
+  ],
+  "nodes": [
+    {
+      "n": "Group Output",
+      "t": "GROUP_OUTPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Group Input",
+      "t": "GROUP_INPUT",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.001",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.002",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.003",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.004",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.005",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.006",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.007",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Math.008",
+      "t": "MATH",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    },
+    {
+      "n": "Combine XYZ",
+      "t": "COMBXYZ",
+      "lbl": "",
+      "mut": false,
+      "fr": null,
+      "cg": null
+    }
+  ],
+  "links": [
+    {
+      "fn": "Group Input",
+      "fs": "Radius",
+      "tn": "Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Radius",
+      "tn": "Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.004",
+      "fs": "Value",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.002",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Theta",
+      "tn": "Math",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.005",
+      "fs": "Value",
+      "tn": "Math.006",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.001",
+      "fs": "Value",
+      "tn": "Math.005",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.007",
+      "fs": "Value",
+      "tn": "Math.008",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Theta",
+      "tn": "Math.004",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Phi",
+      "tn": "Math.001",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Phi",
+      "tn": "Math.007",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.002",
+      "fs": "Value",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Group Input",
+      "fs": "Radius",
+      "tn": "Math.003",
+      "ts": "Value"
+    },
+    {
+      "fn": "Math.003",
+      "fs": "Value",
+      "tn": "Combine XYZ",
+      "ts": "X"
+    },
+    {
+      "fn": "Math.006",
+      "fs": "Value",
+      "tn": "Combine XYZ",
+      "ts": "Y"
+    },
+    {
+      "fn": "Math.008",
+      "fs": "Value",
+      "tn": "Combine XYZ",
+      "ts": "Z"
+    },
+    {
+      "fn": "Combine XYZ",
+      "fs": "Vector",
+      "tn": "Group Output",
+      "ts": "XYZ"
+    }
+  ],
+  "frames": [],
+  "repeat_zones": [],
+  "named_attr_reads": [],
+  "named_attr_writes": [],
+  "switches": [],
+  "child_groups": []
+}

@@ -1,0 +1,1063 @@
+--- Page 1 ---
+C H A T
+COMPUTATIONALLY HUMANISED AUDIO TO TEXT
+ALEXANDER EINODER -S3866647
+1
+
+--- Page 2 ---
+Table of Contents
+5 Introduction
+6 Precedents
+8 Language Research
+14
+Typography
+18 Message Format
+20 Print Prototype
+22 Technology
+30
+Bodystorming
+32
+Storyboard
+2
+
+--- Page 3 ---
+34 Physical Structure
+-Initial Sketches
+38 Physical Structure
+-Final Sketches
+40 Physical Structure
+-Renders
+48
+Physical Prototype
+52 Programming CHAT
+60 Contribution
+61 Reflection
+62
+References
+3
+
+--- Page 4 ---
+f
+Ali Einoder
+s3866647
+4
+
+--- Page 5 ---
+f
+I N T RODUC T ION
+The ambiguity and detached nature of written text has become a burden of
+the modern era. Constant conflict is created both directly and indirectly by a
+lack of many human qualities in text. The inability to assess the non-verbal
+qualities of the communication leaves the reader without the true sense of the
+emotional, human qualities of the author (James 2017). This in turn can lead the
+reader to respond and act in a manner which may contradict the real-world, face-
+to-face reaction they would have if witnessing the author speak this text.
+Through computationally processing the spoken word, the CHAT team aims
+to provide insight into potential ways written text can evolve to become a truer
+representation of spoken language.
+How does the medium in which the text is viewed affect the reader's emotional
+connection to the speech? If the text is formed into a physical artifact will the
+reader attribute different emotional qualities to the text? How can the typography
+be altered to represent the nonverbal aspects of human speech?
+These questions and more were explored through research and experimentations
+over the course of the semester, resulting in the development of CHAT - a
+device which computationally humanises typography through audio to text
+translation. Using technologies such as speech to text, electromagnetic field
+recording and audio analysis, the team mapped non-verbal language to the textual
+representation of the verbal. This was then built into a zoomorphically designed
+object that prints these messages (along with an image of the sender) on thermal
+paper to create a timeline of conversation that now occupies the physical world as
+a receipt of the interaction.
+We hope that this device illustrates the potential for further development in the
+text-based world, especially given the move to a greater online presence.
+5
+
+--- Page 6 ---
+6
+
+--- Page 7 ---
+P R E C E DE N T S
+LITTLE PRINTER
+BERG
+2012
+Little Printer was a small thermal printer that was connected to the internet
+and able to print out web articles, social content, and certain images. This
+printer used Berg’s cloud infrastructure to organize content and format it to
+be printed from the thermal printer (Nord Projects n.d.).
+After Berg closed their servers, this project was resuscitated by Nord Projects and
+was given the ability to connect to many people who can send content directly to
+a printer. It was also given the ability to print images sent from a phone after an
+Atkinson Dithering process was applied to allow for 1bit printing.
+PROSODIC FONT
+TARA MICHELLE GRABER ROSENBERGER
+1998
+This thesis details the issues with written text in comparison to the spoken
+word. Specifically focussing on the prosody of language and its lack of
+representation in writing. It aims to create a method of converting the
+spoken word into a moving font that illustrates how a speaker said the words that
+are being presented (Rosenberger & MacNeil 1999).
+By using computationally derived values from speech analysis, the author dictated
+the creation of a new font that is systematically constructed, letter by letter using a
+variation in four key components of the letters.
+ETCH-A-SKETCH THEREMIN
+LOOK MUM NO COMPUTER
+2019
+The youtuber/inventor Sam Battle, under his moniker LOOK MUM NO
+COMPUTER, used an amalgamation of vintage audio test equipment, a
+Moog Etherwave theremin and a vintage scientific X-Y plotter to create a
+hands-free drawing device that resembles an Etch-a-Sketch (Battle 2019).
+The Bruel and Kjaer frequency analyser receives the audio from the theremin and
+converts it into two signals, one for pitch and one for amplitude. These two signals
+are sent via control voltage to the X-Y plotter which draws a line on paper, moving
+in response to the X-Y commands it receives via the control voltage.
+7
+
+--- Page 8 ---
+L A N G U A G E
+R E S E A R C H
+As time progresses, society spends more and more time online.
+An existence inundated with text based language. Text that in its
+basis has been mostly unchanged for hundreds of years (Ferrara,
+Brunner & Whittemore 1991).
+This text has served as an efficient way of expressing ideas and
+information, however when taken at face-value it can lead to
+misunderstandings and conflict (Mehndiratta, Sachdeva & Soni
+2017). This may be due to the lack of many nonverbal components of
+communication that help to frame and contextualise spoken language
+(Bryant & Fox Tree 2005).
+When communicating online it can be excessively complicated to deduce
+the tone of the speaker. Is a comment offensive or humorously sarcastic?
+Is someone joking in a self-depreciating manner or do they need help? Is
+the commenter saying something tongue-in-cheek or phrasing a question
+rhetorically?
+In spoken language, these aspects can be conveyed by altering the way
+in which the sounds/syllables are spoken. Is it possible to translate
+this concept to digitally created text? If so, what would be the rules and
+representation of these inflections (Goulart et al. 2020)?
+8
+
+--- Page 9 ---
+V E R B A L
+C O M M U N I C A T I O N
+The structure of linguistics can
+be broken down into four main
+categories: grammar; discourse; style;
+and, lexicon (Key 2011).
+Grammar is the formation and composition
+of sounds, words, phrases, and sentences
+that make up a given language (Hewes 1992).
+Discourse is the social practice of language,
+where the arrangement of ideas and phrases
+can set the genre and meaning of the speech
+(Toolan 2007).
+The discourse and grammar of a language
+can adapt for specific purposes and practices
+such as changing from a casual to a formal
+dialogue (Shany-Ur et al. 2012) . These
+formations of language - known as registers
+– are an important part of communication
+as they allow a person to assimilate to their
+environment and further encourage group
+identity (Goulart et al. 2020).
+The lexicon of a language is the internal
+dictionary that a person has to form their
+communications (Rheindorf & Wodak 2019).
+It is composed of the known words as well as
+the additional structures such as prefixes and
+suffixes.
+The style (or stylistics) is the complex
+intricacies of the formation of sentences and
+other dialogue aspects. It is what creates
+the emotional tones such as satire, rhetoric,
+or irony (Cheang & Pell 2008). It varies
+between person and person and is what gives
+a person’s linguistics their personality.
+9
+
+--- Page 10 ---
+N O N - V E R B A L
+C O M M U N I C A T I O N
+The ways in which a person moves
+and uses their body can convey
+and communicate emotions and
+information (Marmpena, Lim & Dahl
+2018).
+The meaning and intentions of speech
+can vary heavily based on aspects such as
+eye contact, posture, gestures, and other
+forms of body language (Kleinke 1986). In
+addition to these actions, communication
+can also be further modulated and
+expanded with alterations in distance (also
+known as proxemics), interactions with
+objects and the environment, and the use
+of touch (haptics)(Pennycook 1985).
+The speech itself also has within it key
+aspects of non-verbal communication.
+Non-verbal voice aspects (paralanguage)
+as well as the use of time (chronemics)
+allow for the spacing of words, expression
+of thought processes, and provision of
+insight on the level of consideration of the
+speaker (Walther & Tidwell 1995).
+Paralanguage is an incredibly important
+part of speech (James 2017). By altering
+the pitch, volume, and intonation the
+user can add depth to the meaning of the
+words used in conversation. The use of
+paralanguage can be both conscious and
+subconscious and can even exist within
+handwriting and sign language in an
+altered form (Tsonos & Kouroupetroglou
+2008).
+10
+
+--- Page 11 ---
+The prosodic features of language can shape
+the words and sentences, altering their
+meaning and importance to the listener
+(Hunston 2007). By altering the rhythm and
+stressing of syllables the communicator can
+alter the tone of the speech, incorporating
+emotion or contextual elements such as
+sarcasm or focus (Cheang & Pell 2008;
+Mehndiratta, Sachdeva & Soni 2017).
+Gestural actions differ from other physical
+forms of nonverbal communication. They
+are a means of conveying a wide variety
+of information and feelings, allowing
+movements of the body to communicate
+their own messages or assist verbal speech
+- emphasising and modifying the meaning
+(Iverson & Goldin-Meadow 2005).
+11
+
+--- Page 12 ---
+12
+
+--- Page 13 ---
+W R I T T E N
+L A N G U A G E
+Aw ritten language (or literary language), through representative of
+the spoken language, can differ quite significantly (Toolan 2007).
+It is limited to the standardised symbols that represent sounds
+and information. In most cases written language has focused on specific
+registers and can even exist as a separate dialect to spoken language
+(Ferrara, Brunner & Whittemore 1991).
+Language is standardised to allow for a shared meaning of the symbols
+and formation. This is to maximise the cohesiveness of a language within
+a community and to minimise misunderstandings in dialogue. The
+standardisation involves fixing the orthography, grammar, and dictionary.
+This can help to enforce cultural identity and allow for the transference of
+information accurately to a larger quantity of people over a greater period
+(Wang et al. 2019).
+Written language primarily represents the phonemic structure of speech,
+with the composition of symbols representing the core sounds of syllables
+and words. There is also an inclusion of symbols that alter the grammar and
+punctuation of the language (Luangrath, Peck & Barger 2017).
+Written language, especially in digital form is limited to the standardisation
+of its structure. As the form of the symbols (in their shape and distribution)
+have been allocated their near-fixed meaning and orthography, the
+medium in which they are presented highlight and focus only on these
+standardisations (Jensen 2014). This has led to the literary language
+being merely a representation of the strictly verbal component of spoken
+language. And even then, it in many cases exists with a separate array of
+registers and styles (Luangrath, Peck & Barger 2017).
+These components of language, as stated before, are merely only
+components of a larger system of communication integral to human
+interaction.
+13
+
+--- Page 14 ---
+14
+
+--- Page 15 ---
+T Y P O G R A P H Y
+The way written language is presented can alter the way it is interacted with (Tsonos
+& Kouroupetroglou 2008). The formation of the text, in its shape and size and
+distribution can make the reader attribute different emotions to the text itself . It
+may also affect the readability of the text. In some ways it can be tied to the concept of a
+register in that it can shift the sociolinguistic tone and genre of the communication.
+The shape of the text, such as the intricacies that make up a particular font, can infer
+certain characteristics, giving the text itself a unique voice (Keyes 1993). Certain fonts
+can also reference previously expressed identities such as those from history or pop
+culture (Spitzmüller 2019).
+These fonts can then be presented with many variations, which include alterations to the
+proportions of the letters/symbols as well as the spacing, relative size and weight of the
+text(Castro et al. 2019).
+The arrangement of the text within the medium itself may also influence the reader,
+whether through overcrowding a page or having it aligned in an obscure manner (Tsonos
+& Kouroupetroglou 2008).
+15
+
+--- Page 16 ---
+T Y P O G R A P H Y
+E X P E R I M E N T S
+Typography may have the means of representing
+non-verbal language through the alterations in
+shape and size. To assess the posibilities of the
+project, it was key to visualise how specific typographical
+changes affect the emotional context of the language as
+well as the representation of oral performance.
+Which text looks like it was said slower?
+Which text looks like it was said slower?
+Which text looks like it was said slower?
+Which text looks like it was said slower?
+Which text looks like it was said slower?
+Which text looks like it was said slower?
+W h i c h t e x t l o o k s l i k e i t w a s s a i d s l o w e r ?
+W h i c h t e x t l o o k s l i k e i t w a s s a i d s l o w e r ?
+Which text looks louder? Which text looks louder?
+WWhhiicchh tteexxtt llooookkss lloouuddeerr?? Which text looks louder?
+WWhhiicchh tteexxtt llooookkss lloouuddeerr?? Which text looks louder?
+WWhhiicchh tteexxtt llooookkss lloouuddeerr?? Which text looks louder?
+Which text looks louder? How does the alteration in word height
+change the way in which we view the
+WHICH TEXT LOOKS LOUDER?
+movement of the speaker? Perhaps
+Which text looks louder? changing the height of the text will alter the
+WHICH TEXT LOOKS LOUDER?
+movement.
+Which text looks louder? Maybe changing how much the text leans
+will make the text seem like it was spoken
+WHICH TEXT LOOKS LOUDER?
+from a moving speaker.
+16
+
+--- Page 17 ---
+If we combine an array of typographical
+changes on a per word basis, would it affect how we
+imagine the voice of the speaker? Will there be
+added tone text?
+an and personality to the
+17
+
+--- Page 18 ---
+M E S S A G E F O R M A T
+How should these concepts be presented?
+The message itself is obviously For the final artifact to become a
+of key importance. However, full representation of the message,
+the medium in which it is it will include the author's name
+presented also plays a large role. and the time and date sent.
+How differently it feels to read from
+A printed form of this layout leaves
+a book than a phone. Or even on
+a long strip of material that acts as
+different forms of paper.
+a receipt of a message. To double
+To remove the distration of down on this line of thought, the
+competing media and focus the message should also be printed on
+user on the text as an artifact itself, thermal reciept paper.
+it could be advantageous to have
+This use of a thermal printer
+the created messages be displayed
+will have the benefit of novelty
+in printed form.
+and an iconic experience as the
+It was also decided that having printing has an audible sound. The
+a printed form that is narrow printouts require no ink and the
+and long would highlight the rolls of paper will last for many
+temporal relation to long and short messages.
+messages. It is also referential
+The messages will also remain
+to classic digital message
+linked until torn, forming a
+presentations such as Facebook
+timeline of conversation which
+messages and text messages.
+can in turn enhance the emotional
+To aid the text and to increase the significance of the artifact.
+emotional connection between
+messagers, an image of the sender
+should be present at the top of the
+message. This allows the recipient
+to see the sender's face and have
+it instantly associated with the
+message that is sent.
+18
+
+--- Page 19 ---
+teinmo
+id
+sucear
+tibon
+atua
+suminelev
+allicnis
+murae
+mutnur
+ebitaceS
+19
+
+--- Page 20 ---
+P R I N T O U T
+P R O T O T Y P E
+Using the format stated previously and following the limitations of a thermal
+printer (1 bit printing, 384px wide), prototype message printouts were made
+to visualise the potential outcome of the CHAT device.
+20
+
+--- Page 21 ---
+21
+
+--- Page 22 ---
+T E C H N O L O G Y
+To create a text based analogue of speech, it would be ideal to first
+start with the audio recording of the speech itself. This could then
+be translated into the typographical form.
+The speech would also have to become the written text so that there is
+only a need for one input of information. This will require a microphone
+input and computing hardware that can perform speech to text
+conversion.
+As stated in the previous section, it would be ideal to have an image taken,
+therefore a camera that can easily be intergrated into the computing
+hardware is required.
+There is also a need to measure the participant's body movements around
+the device because many of the non-verbal characteristics of interpersonal
+communication are related to a person's overall position in space and
+movement within their environment.
+Finally, the device will need to a have a thermal printer to print off the
+message "receipts".
+[Not included in this prototype is the means of sending the message.
+It could either be through radio via an adafruit feather or through
+traditional internet communications via wifi.]
+22
+
+--- Page 23 ---
+C O M P U T I N G
+Because of the potential need for
+complex processing of data and
+integration of several technologies
+within one processing pathway, it was
+considered as optimal to choose a capable
+single board computer such as the Raspberry
+Pi 4.
+This board has accessible GPIO pins that
+can connect to devices such as the thermal
+printer. These GPIO pins can power and
+communicate with the printer over serial
+communication, sending printing commands
+and receiving information on the printing
+state and paper levels.
+The Raspberry Pi 4 has complementary
+camera modules that can attatch via a
+specific camera port. This is paired with
+simple software integration and control.
+The device itself runs a fully capable linux
+based operating system that is easy to setup
+and program within its environment. The
+device can be accessed remotely to allow for
+ease of programming/development.
+The majority of the programming will
+be using the language of Python as it is
+incredibly versatile and libraries exist for the
+control of the needed components. Detailing
+of this will be shown later in the document.
+23
+
+--- Page 24 ---
+S P E E C H T O T E X T
+For the speech to be converted into text, a speech to text engine is needed.
+There are several available to use including Google Speech-To-Text, Microsoft-
+Cognitive-Services and IBM Watson. The one chosen however, is CMU Sphinx's
+Pocketsphinx. This is an open source toolkit for speech to text recognition and has easily
+accesible code for implementation in private projects such as CHAT.
+This speech to text toolkit can be used both for live speech recognition as well as reading
+a previously recorded audio file. For this project, an audio file is preferable as it would
+enable a seemless recording of the audio and other variables such as body movement
+(Prazdnichov 2018).
+Pocketsphinx also has the ability to show the start and end times of the words. This
+means that it is possible to determine how long each word took to say as well as when
+they were said.
+24
+
+--- Page 25 ---
+M I C R O P H O N E
+For the audio input, a usb microphone (Audio Technica's AT9934) was gutted and
+the internal componets were repurposed for the CHAT device.
+The USB microphone requires minimal configuration to implement in the
+Raspberry Pi and allows for minimal latency. It has an internal sound-card which
+provides the gain control and analog to digital conversion so that the Raspberry Pi
+merely needs to receive the digital signals and intergrate them into the speech to text
+code.
+25
+
+--- Page 26 ---
+26
+
+--- Page 27 ---
+E L E C T R O -
+M A G N E T I C
+F I E L D S E N S O R
+Omnidirectionally sensing a body is an uncommon need in modern
+technological devices. There is not a wide variety of technologies
+and methods available to sense from a distance how a person moves
+in three-dimensional space.
+There is however, a musical instrument which is controlled in a manner that
+mimics many of the gestural movements of a speaker in conversation. This
+instrument is the theremin.
+Invented in the 1920's by celloist and physicist León Theremin whilst he
+was developing proximity sensors, the instrument is able to detect and react
+to the human body when it was near two radio antennas, resulting in an
+alien-like violin sound.
+This instrument has been developed since, with many iterations, fine tuning
+and simplification.
+Though the theremin uses two antenna to control pitch and amplitude of
+the sound, the CHAT device will only need to monitor one overall body
+instead of the user's hands. This reduces the needed antenna by half and
+greatly simplifies the circuit.
+From the now simplified circuit, a prototype was able to be built that can
+send the measurements of a person's movements to the Raspberry Pi.
+A circular antenna design proved to yield optimum results and could
+respond to movements up to 2m away.
+27
+
+--- Page 28 ---
+THERMAL PRINTER
+The printing of the message "receipt"
+was chosen to be from a thermal
+receipt printer. This is for many
+reasons:
+Firstly, a receipt printer has the ability
+to print out long rolls of monochromatic
+content. This creates a shape of text and
+imagery that is visually similar to that of a
+modern digital text message such as that
+from a SMS or Facebook message.
+Secondly, the printer itself uses no ink and
+instead has paper that reacts to a heating
+element inside the printer. This minimises
+involvement in upkeep and maintenance
+of the device as well as reducing the cost of
+continued function.
+The printer also has a iconic performative
+aspect as it audibly prints line by line,
+jutting the paper out in small bursts. This
+combination of sound and movement can
+aid in the emotional connection with the
+device and the artifact that it creates.
+The specific printer chosen was the Adafruit
+Mini Thermal Printer. This printer has
+preexisting libraries and code for use with a
+Raspberry Pi.
+28
+
+--- Page 29 ---
+CAMERA
+Due to the selection of a Raspberry Pi as the computer of choice, the optimum camera
+module would be the Pi Camera. This camera has a large level of support for software and
+hardware development. Libraries are easily available for the Python language and access to
+the camera's controls are embedded into the default Rasberry Pi software. The Raspberry Pi also
+has a specific port that allows for direct connection to the camera module.
+29
+
+--- Page 30 ---
+B O D Y S T O R M I N G
+To understand how the CHAT device is to be interacted with and what affordances are
+needed in its design, the method of bodystorming was implemented. This is the act of
+using roleplay to walkthrough the user interaction of the device.
+The CHAT team began with a small cube that was the approximate size needed to contain
+the components of the device.
+We then ran with the narrative of coming home and seeing the device. What would be
+our intent when we first see it? How would we know if we have a message? How visible
+should it be?
+After walking over to the device what do we do? From the roleplaying, it was apparent
+that some of us had the urge to pick up the device to inspect it. After inspecting CHAT, it
+was observed that there was a significant need to see what was the front and back of the
+device before we were able to continue the interaction.
+The box was then modified to have a visible camera at the front.
+After many runthroughs it was deduced that the optimal structure of the device would
+have all initial interfaces visible on the front, the EMF sensor on the top and the printer
+on the underside. This was to establish a visible hierachy and order of interaction with
+the interfaces.
+30
+
+--- Page 31 ---
+31
+
+--- Page 32 ---
+STORYBOARD
+The CHAT device is planned to be used as follows. The user enters the room and
+sees the device. They then either see a printed message or just the device itself.
+If there is a printed message they will then read and flick the switch to begin the
+message recording process. If there is no message then they will just flick the switch to
+begin.
+After switching the device on, the user will pose for their photo and the recording will
+begin. The user will speak until they have finished their mesage, moving freely and
+naturally throughout. They will then flick the switch off and the device will print their
+message and send it to the recipient.
+32
+
+--- Page 33 ---
+33
+
+--- Page 34 ---
+PHYSICAL STRUCTURE
+After the bodystorming exercise it was essential to begin the exploration of shape and
+structure.
+The device should be easily picked up and confidently interacted with. These qualities
+require the device to be small, light, visually sturdy and durable. To achieve this, it was decided
+that the body would be initially 3D printed. This also allows for the device to have a more abstract
+shape if necessary.
+The design began with a cuboidal shape which was rotated, lifting the front of the device up.
+This angles the printer to ensure that the receipt will project towards the user. The camera,
+microphone and switch will be front facing. The microphone will have a shape that signifies it's
+purpose and the camera will be angled to counter the body rotation.
+34
+
+--- Page 35 ---
+The specifics of each physical component was refined to simplify the overall aesthetic and
+form the device into one cohesive unit. Shaping the body with soft curves make it inviting
+to touch whilst angling and protruding components emphasise purpose and function. The
+angling of the device prevents the antenna from protruding towards the user's face and also angles
+the microphone towards the mouth without the need for additional protruding shapes. Though
+above, you can see potential microphone structures, it was decided that the presence of a patterned
+array of holes was only affordance needed.
+35
+
+--- Page 36 ---
+36
+
+--- Page 37 ---
+D E S I G N D E C I S I O N S
+The design of the physical structure was further refined with
+experimentations in childish zoomorphic structures and the
+stripping back of all unnecessary shape.
+The form could be angular and sharp or soft and playful. Below is an
+illustration of what was seen to be the minimal level of shape. This
+has the angled body and aimed printer with only a few curves. The
+only protrusions are the legs and the toggle switch. It now presents
+itself like a small alien creature. Something that could even be
+considered endearing or cute.
+37
+
+--- Page 38 ---
+F I N A L S K E T C H E S
+38
+
+--- Page 39 ---
+Further refinement and progression in the technical aspects of this project lead
+the design to become that presented above. Keeping the simple affordances and
+signifiers and overall soft zoomorphic shape, the device is a balance of smooth
+curves and simple geometry. A square front face allows the user to easily identify the
+front and the back of the device. The camera is angled to run parallel with the surface
+that the device is sitting on. The front legs remain soft so reaching between them will
+have no level of intimidation or caution. The elctromagnetic field (EMF) antenna
+protrudes proudly from the top, easily visible but not at all in the way.
+A small size and curved back allows the device to be easily picked up and played with.
+39
+
+--- Page 40 ---
+F I N A L D E S I G N
+40
+
+--- Page 41 ---
+41
+
+--- Page 42 ---
+42
+
+--- Page 43 ---
+43
+
+--- Page 44 ---
+44
+
+--- Page 45 ---
+45
+
+--- Page 46 ---
+46
+
+--- Page 47 ---
+47
+
+--- Page 48 ---
+3 D P R I N T
+48
+
+--- Page 49 ---
+The body was printed in two components. This allows for a simple manufacturing process.
+The flat sides and gentle curves minimised the supporting material needed to print, thus
+reducing the cost.
+The printer slides into the base of the stricture and the Pi is mounted on the lip above it. The front
+has screw holes for the camera and the microphone PCB is slotted into the formed crevace and
+glued.
+The two pieces slot together, held tightly with screws through the aigned holes.
+49
+
+--- Page 50 ---
+The printed body is light-weight and convenient. easily played
+with and able sit on any surface. It can even balance on your
+head!
+50
+
+--- Page 51 ---
+51
+
+--- Page 52 ---
+P R O G R A M M I N G
+C H A T
+OVERVIEW
+For the CHAT device to convert the speech extracting the words from the speech with
+to a modulated typographical printout, their start and end time.
+the programming language Python was
+These start and end times are then used to
+chosen. This was because the language has
+break the EMF reading and audio file into
+a large level of support for the Raspberry Pi
+segments which then have their average
+as well as speech to text libraries.
+amplitudes extracted.
+It was also determined, that for simplicity
+The word is then given attributes from the
+of function, as well as the optimisation of
+extracted values with the time taken for a
+processing resources, the programming
+word to be said becomming the word width
+will be contained within one continuously
+variable. The EMF reading will become the
+running script.
+height variable and the audio amplitude of
+This program needed to first react to the the audio recording will become the weight
+change of switch state, so that it knows of the text.
+whether CHAT is set to send or receive
+The next step is to use the words and their
+signals. This changing of state to ON will
+variables to create an HTML string using
+initiate the taking of a photo which will
+CSS styling to create the typography.
+be saved for later use. After this image is
+taken, the device will begin recording both Firstly however, the HTML file will be
+the audio input and the input signals from created, the image previously taken will be
+the electromagnetic field (EMF) sensor. added to the beginning of the file, then the
+These will continue recording until the time and date as well as the sender name
+user flicks the toggle switch into the OFF will be added underneath. The speech
+position. will then be created with the variables
+modulating typographical parameters.
+Once the switch is flicked, the recording
+of the EMF and audio finishes and the The HTML file is then rendered as a BMP
+readings are saved to be used in the next image file which can then be sent to the
+steps. thermal printer.
+The speech to text engine (CMU Sphinx)
+begins and analyses the audio file,
+52
+
+--- Page 53 ---
+53
+
+--- Page 54 ---
+Code Setup
+The code begins with the importing of The communication is then configured and
+needed libraries and functions (see above). the specific library of communications to
+To simply access the GPIO pins on the the printer is imported.
+Raspberry Pi so that the toggle switch can
+The audio file is then configured by firstly
+be used, the RPi.GPIO library is called. The
+importing the pyaudio and wave libraries
+subsection of the pocketsphinx speech to
+which then allow for an audio file to be
+text library is imported. Time is imported
+created in a specific folder thanks to the
+so that the time and date can be added
+help of os. This file is then opened and able
+to the printout. The picamera library is
+to be edited within the Python code.
+imported and then os which allows for easy
+Now a variable is set to be the time and
+file management. The printer is then setup
+date.
+by importing serial which allows for serial-
+port communication to the printer.
+54
+
+--- Page 55 ---
+Camera Function
+A function is created for the camera
+module. This is so that whenever needed,
+this section of the code can be called and
+an image will be taken at the needed
+resolution. It uses the previously imported
+picamera library and accesses the camera
+through the camera module port on the
+pi. The camera's resolution is 1024 by 768
+pixels however the printout will be only
+384 pixels wide so when the image is taken
+it will be resized to 320 by 240 pixels. The
+image is simply named selfie.bmp and will
+be called later in the code.
+55
+
+--- Page 56 ---
+Recording function (BEGINNING)
+The recording function (called later by will be created to be filled.
+reading the switch as being ON) begins by
+The recording will then continue while the
+calibrating the audio input to the sample
+toggle switch (GPIO.input(10)) is still in
+rate and chanel number that is ideal for
+the ON (==True) position.
+the speech to text processing. The input
+device is set to device 2 which is the usb
+microphone, and the recording filename is
+set to that which was created earlier.
+The pyaudio system is started so that these
+calibrations can be implemented and the
+recording begun. A recording stream can
+now be started with the calibrations and
+an array of recorded audio values (frames)
+56
+
+--- Page 57 ---
+Recording function (END) HTML and Toggle Switch Calibration
+When the switch is no longer in the ON The HTML file is set to the name "Your
+position (GPIO.input(10)==False), the Message.html" which will exist in the root
+stream will stop and then close and the folder. It will have a page width of 384
+audio system will terminate. The audio pixels as it is the width that can be printed.
+file will then be opened and calibrated to It has a maximum length of 10000 pixels at
+the audio settings and then filled with the this stage. The DPI is set to 72 so that font
+recorded audio frames. This file is then sizing within html is directly converted to
+closed and can now be used for further the pixels of the print. The FPS that is set
+processing. to 100 is the effectiveness of the speech to
+text. This setting is in the low to medium
+range. The GPIO is callibrated for the
+toggle switch so it can be read as stated
+previously.
+57
+
+--- Page 58 ---
+58
+
+--- Page 59 ---
+Speech to HTML to BMP Image
+This is the core part of the code. It is where The speech to text will iterate through the
+the previously recorded audio will be audio file finding each word and retreiving
+processed using text to speech and then the beginning and end times for the word.
+converted into an HTML webfile with CSS It also will find the punctuation and
+styling. This can then be converted into remove the values that are not necessary
+a BMP image that is able to be printed for this code.
+by the thermal printer over serial port
+The code then removes the formatting
+communication.
+that exported from the speech to text and
+This section begins if the toggle switch rewraps it in the CSS styling. This new
+is read as being ON. It then begins the string is added to the result.
+camera function (previously described) and
+Once the speech to text has finished
+then the audio recording function.
+running through the audio file, it will then
+Once these functions have finished (after finish the HTML file with </body></html>
+the toggle has been switched to OFF) the which then allows it to be proccessed as a
+HTML file will be opened and the taken completed file.
+image will be set to a variable and stored
+Now the options for the HTML to image
+in memory. A string is created (result) that
+are set to a BMP with page width of 384
+is filled with the beginning of an HTML
+pixels and the imgkit function is called and
+document that includes the CSS formatting
+processes the result string.
+of the page and the image taken. It will
+This file is saved as message.bmp and the
+also include the name of the sender(to be
+HTML file is saved and closed.
+added) and time/date.
+message.bmp is now sent to the thermal
+The string at this point ends by opening a
+printer using the printer.printBitmap()
+<body> section of the HTML file. This is
+function.
+so the next section (the speech to text) can
+easily input the words to be presented in
+The device now will be able to react to the
+the required format.
+next time the toggle switch is flicked.
+This format is as follows: '<span
+style="font-weight: {}%; font-size: {}%;
+font-stretch: {};">{} </span>'.
+<span> allows for CSS styling to be
+implemented on a per-word basis, the font-
+weight will adjust the thickness of the text,
+the size will adjust overall height of the
+word and the stretch will adjuist the width.
+Each {} will be filled with the variables
+weight, height, width and word.
+59
+
+--- Page 60 ---
+C O N T R I B U T I O N
+Throughout the project my tasks to text and connectivity of the various
+and contributions were many. At the technologies, investigating which exact
+commencement of semester I contributed technologies were required and how they
+to the conception of the idea and could be manipulated.
+determination of potential avenues of
+These tasks then expanded to consider
+project exploration.
+how the audio is recorded and processed,
+After the focus of the project was how the typography is formed, how the
+determined I was responsible for modulation devices such as the EMF
+researching what technologies were useful antenna work and how to print the receipt.
+for our project, as well as highlighting what
+Following group bodystorming, the
+areas of theory should be investigated by
+development of storyboards and face-
+the other group members. All members
+to-face (where possible) and virtual
+contributed to this investigative phase.
+simulations, I was then responsible for
+After the primary background research the final design and creation of the outer
+was completed, as a team we determined structure and possible manufacture.
+what areas each member was interested
+In addition to these tasks I assisted team
+in learning so we could equitably
+members with their designated activity
+distribute the workload based on expertise
+through the provision of technical details
+and learning goals. Because of my
+and information.
+understanding of the technologies and
+the theories, I helped to guide each team For the presentation phases of our
+member to ascertain the required avenues project throughout the semester I created
+of exploration for completing their tasks. sketches, renders, animations and other
+This also involved coaching members to visual media including the compilation and
+develop skills, to ensure project timelines production of the final video presentation,
+were met. of which group members contributed
+individual content.
+The initial tasks delegated to me were
+the research and development of the
+internal programming such as the speech
+60
+
+--- Page 61 ---
+R E F L E C T I O N
+Throughout the development of this By the end of the semester, I was required
+project, I encountered many ideological to assist the other members with their
+and intellectual pathways of invaluable delegated tasks to ensure the project
+benefit. The semester gave me opportunity progressed.
+to develop skills in leadership as well
+The project which at the beginning seemed
+as designing many aspects of a complex
+like a very manageable task for four
+technology. It was obvious from the
+people became overwhelming at times.
+beginning that my aims and expectations
+This paradigm was a consequence of
+were excessive in comparison to my
+my individual goals and a great learning
+peers. By setting my goals high I forced
+experience, providing insight into how
+myself to increase my productivity and
+moving foreward, I can both achieve
+capabilities as both a group member and
+the wanted level of self-benefit without
+designer. The project required a vast array
+detriment to the group dynamics.
+of technical ability such as programming
+in several languages, understanding I am thankful as I have gained a significant
+obscure technologies and their interplay, amount from the learning experience,
+and learning the complexities of modern especially in relation to leadership skills.
+sociolinguistic structures and cultures.
+This self-enforced pressure was however,
+a double-edged sword. I may have had
+the ability to learn an enormous array
+of skills and theory, but it came at the
+cost of requiring a large amount of effort
+and time. This development also in ways
+seemed to alienate the team, as our
+learning trajectories and comprehension
+of the activities differed. This in turn led
+to much of my time leading, directing, and
+explaining the processes in intricate detail.
+61
+
+--- Page 62 ---
+R E F E R E N C E S
+Argyle, M 1972, ‘Non-verbal communication in human social interaction.’,.
+Battle, S 2019, ‘DRAWING PICTURES WITH A THEREMIN. Handsfree
+Etch-a-Sketch - YouTube’, viewed 14 June 2021, <https://www.youtube.com/
+watch?v=Rt3jlSQ7E1Y>.
+Brown, TJ, Hooper, L, Elliott, RA, Payne, K, Webb, R, Roberts, C, Rostom, A &
+Symmons, D 2006, ‘A comparison of the cost-effectiveness of five strategies for
+the prevention of non-steroidal anti-inflammatory drug-induced gastrointestinal
+toxicity: a systematic review with economic modelling.’, Health technology
+assessment (Winchester, England), vol. 10, no. 38, pp. iii–iv, xi–xiii, 1–183.
+Bryant, GA & Fox Tree, JE 2005, ‘Is there an Ironic Tone of Voice?’, Language and
+Speech, vol. 48, no. 3, pp. 257–277.
+Castro, JCE, Martins, P, Boavida, A & MacHado, P 2019, ‘«máquina de Ouver»
+- From Sound to Type: Finding the Visual Representation of Speech by Mapping
+Sound Features to Typographic Variables’, in ACM International Conference
+Proceeding Series, Association for Computing Machinery.
+Cheang, HS & Pell, MD 2008, ‘The sound of sarcasm’, Speech Communication,
+vol. 50, no. 5, pp. 366–381.
+Ferrara, K, Brunner, H & Whittemore, G 1991, ‘Interactive Written Discourse as
+an Emergent Register’, Written Communication, vol. 8, no. 1, pp. 8–34.
+Goulart, L, Gray, B, Staples, S, Black, A, Shelton, A, Biber, D, Egbert, J & Wizner,
+S 2020, ‘Linguistic Perspectives on Register’, Annual Review of Linguistics, vol. 6,
+pp. 435–455.
+Hewes, G 1992, ‘History of Glottogonic Theories’, in Language Origin: A
+Multidisciplinary Approach, Springer Netherlands, pp. 3–20.
+Hunston, S 2007, ‘Semantic prosody revisited’, International Journal of Corpus
+Linguistics, vol. 12, no. 2, pp. 249–268.
+Iverson, JM & Goldin-Meadow, S 2005, ‘Gesture paves the way for language
+development’, Psychological Science, vol. 16, no. 5, pp. 367–371.
+James, A 2017, ‘Prosody and paralanguage in speech and the social media: The
+vocal and graphic realisation of affective meaning’, Linguistica, vol. 57, no. 1, pp.
+137–149.
+Jensen, KE 2014, ‘Linguistics in the digital humanities: (computational) corpus
+linguistics’, MedieKultur: Journal of media and communication research, vol. 30,
+no. 57, p. 20.
+Key, MR 2011, The relationship of verbal and nonverbal communication, De
+Gruyter.
+Keyes, E 1993, ‘Typography, color, and information structure’, Technical
+Communication, vol. 40, no. 4, pp. 638–654.
+Kleinke, CL 1986, ‘Gaze and Eye Contact. A Research Review’, Psychological
+62
+
+--- Page 63 ---
+Bulletin, vol. 100, no. 1, pp. 78–100.
+Luangrath, AW, Peck, J & Barger, VA 2017, ‘Textual paralanguage and its
+implications for marketing communications’, Journal of Consumer Psychology,
+vol. 27, no. 1, pp. 98–107.
+Marmpena, M, Lim, A & Dahl, TS 2018, ‘How does the robot feel? Perception of
+valence and arousal in emotional body language’, Paladyn, vol. 9, no. 1, pp. 168–
+182.
+Mehndiratta, P, Sachdeva, S & Soni, D 2017, ‘Detection of sarcasm in text data
+using deep convolutional neural networks’, Scalable Computing, vol. 18, no. 3, pp.
+219–228.
+Nord Projects ‘Little Printers’, viewed 14 June 2021, <https://nordprojects.co/
+projects/littleprinters/>.
+Pennycook, A 1985, ‘Actions Speak Louder Than Words: Paralanguage,
+Communication, and Education’, TESOL Quarterly, vol. 19, no. 2, p. 259.
+Prazdnichov, D 2018, ‘Pocketsphinx Python’, PyPi, viewed 13 June 2021, <https://
+pypi.org/project/pocketsphinx/>.
+Rheindorf, M & Wodak, R 2019, ‘Genre-related language change: Discourse- and
+corpus-linguistic perspectives on Austrian German 1970-2010’, Folia Linguistica,
+vol. 53, no. 1, pp. 125–167.
+Rosenberger, T & MacNeil, RL 1999, ‘Prosodic font’, in p. 252.
+Shany-Ur, T, Poorzand, P, Grossman, SN, Growdon, ME, Jang, JY, Ketelle, RS,
+Miller, BL & Rankin, KP 2012, ‘Comprehension of insincere communication in
+neurodegenerative disease: Lies, sarcasm, and theory of mind’, Cortex, vol. 48, no.
+10, pp. 1329–1341.
+Spitzmüller, J 2019, A Sociolinguistics of Typography, St. Petersburg, viewed 10
+June 2021, <www.spitzmueller.orgPetertheGreatSt.PetersburgPolytechnicUnivers
+ity>.
+Toolan, M 2007, ‘Trust and text, text as trust’, International Journal of Corpus
+Linguistics, vol. 12, no. 2, pp. 269–288.
+Tsonos, D & Kouroupetroglou, G 2008, ‘A Methodology for the Extraction of
+Reader’s Emotional State Triggered from Text Typography’, in Tools in Artificial
+Intelligence, InTech.
+Vgalin ‘html2image’, PyPi, viewed 10 June 2021, <https://pypi.org/project/
+html2image/>.
+Walther, JB & Tidwell, LC 1995, ‘Nonverbal cues in computer mediated
+communication, and the effect of chronemics on relational communication’,
+Journal of Organizational Computing, vol. 5, no. 4, pp. 355–378.
+Wang, Y, Shen, Y, Liu, Z, Liang, PP, Zadeh, A & Morency, LP 2019, ‘Words can
+shift: Dynamically adjusting word representations using nonverbal behaviors’,
+in 33rd AAAI Conference on Artificial Intelligence, AAAI 2019, 31st Innovative
+Applications of Artificial Intelligence Conference, IAAI 2019 and the 9th AAAI
+Symposium on Educational Advances in Artificial Intelligence, EAAI 2019, AAAI
+Press, pp. 7216–7223.
+63
+
+--- Page 64 ---
+64
