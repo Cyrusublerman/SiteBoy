@@ -10,7 +10,8 @@
  *   4 – hard pairs derived from font kerning table (top-N by |value|)
  *   5 – variation reinforcement (re-issue covered prompts, never terminates)
  *
- * @source blog/docs/temp/cursive-glyph-builder.md §8 Prompt Queue Generation
+ * @source blog/docs/pages/tools/utilities/cursive-glyph-builder.md — prompt queue
+ * @wikipedia https://en.wikipedia.org/wiki/Bigram
  * @module shared/algorithms/typography/prompt-sequencer
  */
 
@@ -231,6 +232,29 @@ export function coveragePercent(queueState) {
  */
 export function currentPrompt(queueState) {
     return queueState.prompts[queueState.currentIndex] || null;
+}
+
+/**
+ * Return the next queued prompts after the current index (for UI previews).
+ *
+ * @param {QueueState} queueState
+ * @param {number}     [count=5]
+ * @returns {{ id: string, text: string }[]}
+ * @formula U_k=\text{prompts}[\texttt{currentIndex}+k],\ k=1\ldots\texttt{count}
+ */
+export function peekUpcoming(queueState, count = 5) {
+    const prompts = queueState.prompts ?? [];
+    const idx = queueState.currentIndex ?? 0;
+    const max = Math.max(0, count | 0);
+    const out = [];
+    let i = idx + 1;
+    while (out.length < max && i < prompts.length) {
+        const p = prompts[i++];
+        if (p && typeof p.text === 'string') {
+            out.push({ id: p.id ?? '', text: p.text });
+        }
+    }
+    return out;
 }
 
 /**

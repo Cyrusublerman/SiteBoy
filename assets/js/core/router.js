@@ -56,13 +56,13 @@ const Router = {
      */
     parseRoute() {
         let hash = window.location.hash.slice(1).replace(/^\/+/, ''); // Remove # and any leading slashes
-        console.log(`🔍 Router.parseRoute() - raw hash: "${hash}"`);
+        window.debugLog('NAVIGATION', `🔍 Router.parseRoute() - raw hash: "${hash}"`);
 
         // Check for :full modifier
         const isFullMode = hash.endsWith(':full');
         if (isFullMode) {
             hash = hash.slice(0, -5); // Remove ':full' suffix
-            console.log(`🖼️ Full mode detected! Stripped hash: "${hash}"`);
+            window.debugLog('NAVIGATION', `🖼️ Full mode detected! Stripped hash: "${hash}"`);
         }
 
         // Handle empty or home route
@@ -75,7 +75,7 @@ const Router = {
         const section = parts[0] || 'home';
         const subsection = parts.length > 1 ? parts.slice(1).join('/') : null;
 
-        console.log(`🔍 Parsed route: section="${section}", subsection="${subsection}", isFullMode=${isFullMode}`);
+        window.debugLog('NAVIGATION', `🔍 Parsed route: section="${section}", subsection="${subsection}", isFullMode=${isFullMode}`);
         return { section, subsection, isFullMode };
     },
 

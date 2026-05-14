@@ -17,8 +17,11 @@ import {
     coveragePercent,
     currentPrompt,
     markDrawn,
+    peekUpcoming,
 } from '../../shared/algorithms/typography/prompt-sequencer.js';
 import { normaliseStrokes, computeDrawingMetrics } from '../../shared/algorithms/typography/stroke-capture.js';
+import { ExportUtils } from '../../shared/algorithms/index.js';
+import { ToolToolbar } from '../../shared/components/tool/ToolToolbar.js';
 
 const GF_CURSIVE = [
     'Dancing Script', 'Pacifico', 'Sacramento', 'Great Vibes', 'Allura',
@@ -28,6 +31,12 @@ const GF_CURSIVE = [
 
 const DOC_MD_PATH = '/blog/docs/pages/tools/utilities/cursive-glyph-builder.md';
 
+/** Default VIEW toggles; extended keys map in `_applyGuidesToCanvas`. */
+const DEFAULT_GUIDES = ['BASELINE', 'DESC', 'XH', 'CAP', 'REF'];
+
+const RAIL_FOOTER =
+    'CLEAR INK (SIDEBAR) · UNDO CTRL+Z · REDO CTRL+SHIFT+Z · SKIP ESC · SAVE+NEXT ENTER · EXPORT (TOOLBAR)';
+
 const TOOL_CONFIG = {
     title: 'CURSIVE GLYPH BUILDER',
 
@@ -35,11 +44,6 @@ const TOOL_CONFIG = {
         ['SESSION', [
             ['Library', [
                 ['button', 'New Library', { key: 'newLibrary', value: 'NEW LIBRARY' }],
-                ['button', 'Export ZIP',   { key: 'exportZip',   value: 'EXPORT ZIP' }],
-            ]],
-            ['Files', [
-                ['file', '', '.zip', { key: 'zipFilePick', buttonText: 'IMPORT ZIP', label: '' }],
-                ['file', '', '.ttf,.otf,.woff,.woff2', { key: 'fontFilePick', buttonText: 'FONT FILE', label: '' }],
             ]],
             ['Font', [
                 ['dropdown', 'Font pick', [{ value: '__noop__', label: 'PICK FONT' }],
@@ -48,50 +52,25 @@ const TOOL_CONFIG = {
         ]],
         ['PROMPT', [
             ['Current', [
-                ['label', 'Prompt',   { key: 'promptLabel',    value: '—' }],
-                ['label', 'Phase',    { key: 'phaseLabel',     value: '—' }],
-                ['label', 'Coverage', { key: 'coverageLabel',  value: '0%' }],
+                ['label', 'Prompt',   { key: 'promptLabel',   value: '—' }],
+                ['label', 'Phase',    { key: 'phaseLabel',    value: '—' }],
+                ['label', 'Coverage', { key: 'coverageLabel', value: '0%' }],
             ]],
             ['Queue', [
-                ['button', 'Save + Next', { key: 'saveNext', value: 'SAVE + NEXT' }],
+                ['button', 'Save + Next', { key: 'saveNext',   value: 'SAVE + NEXT' }],
                 ['button', 'Skip',        { key: 'skipPrompt', value: 'SKIP' }],
-                ['button', 'Clear Ink',   { key: 'clearInk',  value: 'CLEAR INK' }],
-            ]],
-        ]],
-        ['CANVAS', [
-            ['Viewport', [
-                ['radio', '', [
-                    { value: 'fit', label: 'FIT' },
-                    { value: 'fill', label: 'FILL' },
-                    { value: 'actual', label: 'ACTUAL' },
-                ], { key: 'displayMode', layout: 'row', selectedValue: 'fit' }],
-            ]],
-            ['Guides', [
-                ['toggle', '', [
-                    { value: 'BASELINE', label: 'BASE' },
-                    { value: 'DESC', label: 'DESC' },
-                    { value: 'XH', label: 'X-HGT' },
-                    { value: 'CAP', label: 'CAP' },
-                    { value: 'REF', label: 'REF' },
-                ], {
-                    key: '_guides',
-                    layout: 'grid',
-                    gridColumns: 2,
-                    selectedValues: ['BASELINE', 'DESC', 'XH', 'CAP', 'REF'],
-                }],
-            ]],
-        ]],
-        ['INFO', [
-            ['', [
-                ['markdown-fetch', DOC_MD_PATH],
+                ['button', 'Clear Ink',   { key: 'clearInk',   value: 'CLEAR INK' }],
             ]],
         ]],
     ],
 
+    // canvas.displayMode is fit/fill/actual capable in backend. UI is intentionally
+    // omitted for this tool — fit is the only meaningful mode for capture work.
     canvas: {
-        displayMode: 'fit',
-        width:  560,
-        height: 392,
+        displayMode:   'fit',
+        fillContainer: true,
+        enableZoom:    true,
+        enablePan:     true,
     },
 };
 
@@ -109,13 +88,18 @@ export class CursiveGlyphBuilderTool {
 
         this.tool = null;
         this._onKeyDown = this._onKeyDown.bind(this);
+        this._unregisterKeydown = null;
+        this._trackedTopBarComponents = [];
 
         this.initialize();
     }
 
     async initialize() {
         try {
-            this.tool = new ToolBase(TOOL_CONFIG, this.deps);
+            this.tool = new ToolBase({
+                ...TOOL_CONFIG,
+                onAfterRender: (tb) => this._mountTopBar(tb),
+            }, this.deps);
             this.tool.onUpdate = (key, value, values) =>
                 this._handleUpdate(key, value, values);
 
@@ -124,17 +108,22 @@ export class CursiveGlyphBuilderTool {
                 this.tool.mount(this.container);
             }
 
+            this.tool.setValue('_guides', DEFAULT_GUIDES);
+            this.tool.setValue('drawHeightFraction', 0.7);
+
             await this._rebuildFontDropdown();
 
             this._captureCanvas = new GlyphCaptureCanvas({
-                width:       560,
-                height:      392,
-                F:           14,
-                fontMetrics: null,
-                prompt:      null,
-                overlays:    {
+                width:          560,
+                height:         392,
+                heightFraction: 0.7,
+                F:              this.tool.F || 14,
+                fontMetrics:    null,
+                prompt:         null,
+                overlays:       {
                     baseline: true, descender: true, xHeight: true, capHeight: true,
                     ascender: false, refGlyph: true,
+                    ascenderShade: false, bbox: false, leftBound: false, rightBound: false,
                 },
                 onStrokeEnd:   () => { this._dirty = true; },
                 onDirtyChange: (dirty) => { this._dirty = dirty; },
@@ -143,35 +132,261 @@ export class CursiveGlyphBuilderTool {
 
             if (this.tool.canvas) this._captureCanvas.attach(this.tool.canvas);
 
-            this.tool.onDraw = (ctx) => { this._captureCanvas.draw(ctx); };
+            this.tool.onDraw = (ctx) => {
+                if (this._captureCanvas && ctx) this._captureCanvas.draw(ctx);
+            };
             this.tool.draw();
+
+            this._syncCaptureCanvasSizeFromTool();
+            queueMicrotask(() => this._syncCaptureCanvasSizeFromTool());
 
             this._applyGuidesToCanvas(this.tool.values['_guides']);
 
             await this._tryRestoreSession();
 
-            document.addEventListener('keydown', this._onKeyDown);
+            this._renderCurrentPrompt();
+
+            this._unregisterKeydown = this.tool.registerKeydown(this._onKeyDown);
         } catch (err) {
             this._showError('Initialisation failed', err);
         }
     }
 
+    _mountTopBar(tb) {
+        if (tb !== this.tool) return;
+        for (const c of this._trackedTopBarComponents) {
+            try { c.destroy?.(); } catch (_) {}
+        }
+        this._trackedTopBarComponents.length = 0;
+        tb.setTopBar(this._buildToolToolbar());
+    }
+
+    _buildToolToolbar() {
+        const Lib = ComponentLibrary;
+
+        /** @type {Array<{destroy?:()=>void}>} */
+        const track = (...xs) => {
+            for (const x of xs) {
+                if (x && typeof x === 'object') this._trackedTopBarComponents.push(x);
+            }
+        };
+
+        const cells = [];
+
+        const viewLibsOk = !!(Lib.ToggleGroup && Lib.NumericInput && Lib.ToolbarPanelStack);
+        const importLibsOk = !!(Lib.FileInput && Lib.ToolbarPanelStack);
+        const exportLibsOk = !!(Lib.Button && Lib.ToolbarPanelStack);
+        const infoLibsOk = !!(Lib.MarkdownBody && Lib.ToolbarPanelStack);
+
+        if (viewLibsOk) {
+            cells.push({
+                id:    'view',
+                label: 'VIEW',
+                buildPanel: (host) => {
+                    const tg = new Lib.ToggleGroup({
+                        layout:         'grid',
+                        gridColumns:    2,
+                        items:          [
+                            { value: 'BASELINE', label: 'BASE' },
+                            { value: 'DESC',     label: 'DESC' },
+                            { value: 'XH',       label: 'X-HGT' },
+                            { value: 'CAP',      label: 'CAP' },
+                            { value: 'REF',      label: 'REF' },
+                            { value: 'ASC',      label: 'ASC' },
+                            { value: 'ASHADE',   label: 'A-SHD' },
+                            { value: 'LFT',      label: 'L-BND' },
+                            { value: 'RGT',      label: 'R-BND' },
+                            { value: 'BOX',      label: 'BBOX' },
+                        ],
+                        selectedValues:
+                            Array.isArray(this.tool.values['_guides'])
+                            && this.tool.values['_guides'].length
+                                ? [...this.tool.values['_guides']]
+                                : [...DEFAULT_GUIDES],
+                        onChange: (sel) => {
+                            this.tool.setValue('_guides', sel);
+                            this._applyGuidesToCanvas(sel);
+                            this.tool?.draw?.();
+                        },
+                    }, this.deps);
+
+                    const num = new Lib.NumericInput({
+                        label:    'DRAWING HEIGHT',
+                        display:  'both',
+                        min:      0.4,
+                        max:      1.5,
+                        step:     0.05,
+                        value:    this.tool.values.drawHeightFraction ?? 0.7,
+                        onChange: (v) => {
+                            this.tool.setValue('drawHeightFraction', Number(v));
+                            this._captureCanvas?.setReferenceHeightFraction(Number(v));
+                            this._renderCurrentPrompt();
+                        },
+                    }, this.deps);
+
+                    track(tg, num);
+                    const stack = new Lib.ToolbarPanelStack({
+                        childrenElements: [tg.render(), num.render()],
+                    }, this.deps);
+                    track(stack);
+                    return stack.render();
+                },
+            });
+        } else window.debugLog('TOOLS', '[GlyphBuilder] VIEW panel libs missing');
+
+        if (importLibsOk) {
+            cells.push({
+                id:    'import',
+                label: 'IMPORT',
+                buildPanel: (host) => {
+                    const zipPick = new Lib.FileInput({
+                        label:      '',
+                        accept:     '.zip',
+                        buttonText: 'IMPORT ZIP',
+                        multiple:   false,
+                        onChange:   (/** @type {File} */ f) => {
+                            if (!(f instanceof File) || !f.name) return;
+                            this._promptImportZip(f);
+                            host.close();
+                        },
+                    }, this.deps);
+
+                    const fontPick = new Lib.FileInput({
+                        label:      '',
+                        accept:     '.ttf,.otf,.woff,.woff2',
+                        buttonText: 'FONT FILE',
+                        multiple:   false,
+                        onChange:   (/** @type {File} */ f) => {
+                            if (!(f instanceof File)) return;
+                            void this._loadFontFromUpload(f);
+                            host.close();
+                        },
+                    }, this.deps);
+
+                    track(zipPick, fontPick);
+                    const stack = new Lib.ToolbarPanelStack({
+                        childrenElements: [zipPick.render(), fontPick.render()],
+                    }, this.deps);
+                    track(stack);
+                    return stack.render();
+                },
+            });
+        } else window.debugLog('TOOLS', '[GlyphBuilder] IMPORT panel libs missing');
+
+        if (exportLibsOk) {
+            cells.push({
+                id:    'export',
+                label: 'EXPORT',
+                buildPanel: (host) => {
+                    const zipBtn = new Lib.Button({
+                        text: 'EXPORT ZIP',
+                        onClick: () => {
+                            void this._exportZip();
+                            host.close();
+                        },
+                    }, this.deps);
+
+                    const pngBtn = new Lib.Button({
+                        text: 'EXPORT PNG',
+                        onClick: () => {
+                            this._exportPng();
+                            host.close();
+                        },
+                    }, this.deps);
+
+                    track(zipBtn, pngBtn);
+                    const stack = new Lib.ToolbarPanelStack({
+                        childrenElements: [zipBtn.render(), pngBtn.render()],
+                    }, this.deps);
+                    track(stack);
+                    return stack.render();
+                },
+            });
+        } else window.debugLog('TOOLS', '[GlyphBuilder] EXPORT panel libs missing');
+
+        if (infoLibsOk) {
+            cells.push({
+                id:    'info',
+                label: 'INFO',
+                buildPanel: (_host) => {
+                    const md = new Lib.MarkdownBody({
+                        fetchPath: DOC_MD_PATH,
+                    }, this.deps);
+                    track(md);
+                    const stack = new Lib.ToolbarPanelStack({
+                        childrenElements: [md.render()],
+                    }, this.deps);
+                    track(stack);
+                    return stack.render();
+                },
+            });
+        } else window.debugLog('TOOLS', '[GlyphBuilder] INFO panel libs missing');
+
+        return new ToolToolbar(
+            {
+                /** Subheader already names the tool; omit duplicate strip. */
+                title: '',
+                cells,
+            },
+            { ...this.deps, MF: { F: this.tool.F || 14 } },
+        );
+    }
+
+    _syncCaptureCanvasSizeFromTool() {
+        const canvas = this.tool?.canvas;
+        const cap = this._captureCanvas;
+        if (!canvas || !cap?.setSize) return;
+        const w = canvas.width | 0;
+        const h = canvas.height | 0;
+        if (w > 0 && h > 0) cap.setSize(w, h);
+    }
+
+    /**
+     * @returns {{
+     *   cw:number, ch:number, padX:number, baselineY:number,
+     *   fontSize:number, canvasAdvanceWidth:number
+     * } | null}
+     */
+    _resolvePromptLayout() {
+        const canvas = this.tool?.canvas;
+        const cap = this._captureCanvas;
+        if (!canvas || !cap) return null;
+
+        const cw = Math.max(1, canvas.width | 0);
+        const ch = Math.max(1, canvas.height | 0);
+        const fracH = Number(this.tool.values.drawHeightFraction);
+        const heightFrac = Number.isFinite(fracH) ? fracH : 0.7;
+        const F = Number(this.tool.F) || 14;
+        const padX = Math.max(F, Math.round(cw * (40 / 560)));
+        const baselineY = ch * heightFrac;
+        const fontSize = ch * (280 / 392);
+        const canvasAdvanceWidth = cw - padX * 2;
+        return {
+            cw, ch, padX, baselineY, fontSize, canvasAdvanceWidth,
+        };
+    }
+
     _applyGuidesToCanvas(selection) {
-        const defs = ['BASELINE', 'DESC', 'XH', 'CAP', 'REF'];
+        const defs = ['BASELINE', 'DESC', 'XH', 'CAP', 'REF', 'ASC', 'ASHADE', 'LFT', 'RGT', 'BOX'];
         const raw = Array.isArray(selection)
             ? selection.filter((/** @type {string} */ v) =>
                 defs.includes(String(v)),
             )
             : null;
-        const activeSet = raw === null ? defs : raw;
+        const activeSet = raw === null || raw.length === 0 ? [...DEFAULT_GUIDES] : raw;
         const s = new Set(activeSet);
 
         this._captureCanvas?.setOverlayToggles({
-            baseline:  s.has('BASELINE'),
-            descender: s.has('DESC'),
-            xHeight:   s.has('XH'),
-            capHeight: s.has('CAP'),
-            refGlyph:  s.has('REF'),
+            baseline:       s.has('BASELINE'),
+            descender:      s.has('DESC'),
+            xHeight:        s.has('XH'),
+            capHeight:      s.has('CAP'),
+            refGlyph:       s.has('REF'),
+            ascender:       s.has('ASC'),
+            ascenderShade:  s.has('ASHADE'),
+            leftBound:      s.has('LFT'),
+            rightBound:     s.has('RGT'),
+            bbox:           s.has('BOX'),
         });
     }
 
@@ -310,24 +525,93 @@ export class CursiveGlyphBuilderTool {
         this._renderCurrentPrompt();
     }
 
+    _idleViewportChrome(headerLineOverride = null) {
+        const cc = this._captureCanvas;
+        if (!cc) return;
+
+        const fontName =
+            (
+                this._library.referenceFont?.name
+                ?? (this.tool?.values?.fontFamily && this.tool.values.fontFamily !== '__noop__'
+                    ? String(this.tool.values.fontFamily).replace(/^gf:|sf:/u, '').replace(/\+/gu, ' ')
+                    : '')
+            ).trim();
+
+        cc.setRails({
+            headerLine: headerLineOverride
+                ?? (
+                    fontName.length
+                        ? `NO ACTIVE PROMPT · ${fontName.toUpperCase()}`
+                        : 'NO FONT LOADED — PICK SESSION FONT OR IMPORT (TOOLBAR IMPORT)'
+                ),
+            footerLine: RAIL_FOOTER,
+        });
+        cc.setPromptBoundingBox(null);
+        cc.setLayoutMarks(null);
+        cc.setPrompt(null);
+        cc.setFontPath('');
+        cc.setUpcoming([]);
+        cc.setFontMetrics(this._adapterFont ? Adapter.getMetrics(this._adapterFont) : null);
+    }
+
     _renderCurrentPrompt() {
+        if (!this._captureCanvas) return;
+
+        this._syncCaptureCanvasSizeFromTool();
+        const lay = this._resolvePromptLayout();
+        if (!lay) return;
+
         const prompt = currentPrompt(this._queueState);
-        if (!prompt || !this._adapterFont || !this._captureCanvas) return;
+        const fontLabel = (
+            this._library.referenceFont?.name ?? ''
+        ).trim().toUpperCase();
+
+        if (!this._adapterFont || !prompt) {
+            this._idleViewportChrome();
+            this.tool?.draw?.();
+            return;
+        }
 
         const metrics = Adapter.getMetrics(this._adapterFont);
-        const fontSize = 280;
-        const baselineY = 392 * 0.7;
         let combinedPath = '';
-        let xCursor = 40;
+        let xCursor = lay.padX;
         for (const ch of prompt.text) {
             const { d, advance } = Adapter.getGlyphPath(
-                this._adapterFont, ch, xCursor, baselineY, fontSize,
+                this._adapterFont, ch, xCursor, lay.baselineY, lay.fontSize,
             );
             if (d) combinedPath += d + ' ';
             xCursor += advance;
         }
         this._captureCanvas.setPrompt({ text: prompt.text, glyphPathD: combinedPath, advance: xCursor });
         this._captureCanvas.setFontMetrics(metrics);
+
+        const bbPx = Adapter.boundingBoxPromptCanvas(
+            this._adapterFont, prompt.text, lay.padX, lay.baselineY, lay.fontSize,
+        );
+        if (bbPx) {
+            this._captureCanvas.setPromptBoundingBox({
+                x: bbPx.xMin,
+                y: bbPx.yMin,
+                w: Math.max(0, bbPx.xMax - bbPx.xMin),
+                h: Math.max(0, bbPx.yMax - bbPx.yMin),
+            });
+        } else this._captureCanvas.setPromptBoundingBox(null);
+
+        this._captureCanvas.setLayoutMarks({
+            left: lay.padX,
+            baselineY: lay.baselineY,
+            advanceX: xCursor,
+        });
+
+        const v = Number(prompt.variationsDrawn ?? 0);
+        this._captureCanvas.setRails({
+            headerLine:
+                `"${prompt.text}" · ${String(prompt.type).toUpperCase()} · V${v + 1} · ${fontLabel || 'UNKNOWN FONT'}`,
+            footerLine: RAIL_FOOTER,
+        });
+
+        this._captureCanvas.setUpcoming(peekUpcoming(this._queueState, 6));
+        this.tool?.draw?.();
     }
 
     async _saveAndNext() {
@@ -337,12 +621,15 @@ export class CursiveGlyphBuilderTool {
         const strokes = this._captureCanvas ? this._captureCanvas.getStrokes() : [];
         if (strokes.length === 0) { this._skipPrompt(); return; }
 
+        const lay = this._resolvePromptLayout();
+        if (!lay) return;
+
         const metrics = Adapter.getMetrics(this._adapterFont);
         const fontAdvanceWidth = metrics.unitsPerEm;
         const promptGeometry = {
-            canvasOriginX:     40,
-            canvasBaselineY:   392 * 0.7,
-            canvasAdvanceWidth: 560 - 80,
+            canvasOriginX:       lay.padX,
+            canvasBaselineY:     lay.baselineY,
+            canvasAdvanceWidth:  lay.canvasAdvanceWidth,
         };
         const normStrokes      = normaliseStrokes(strokes, promptGeometry, fontAdvanceWidth);
         const drawingMetrics   = computeDrawingMetrics(normStrokes, fontAdvanceWidth);
@@ -445,7 +732,7 @@ export class CursiveGlyphBuilderTool {
             }
 
             const blob = await zip.generateAsync({ type: 'blob' });
-            this._downloadBlob(blob, `glyph-library-${Date.now()}.zip`);
+            ExportUtils.downloadBlob(blob, `glyph-library-${Date.now()}.zip`);
             window.debugLog('TOOLS', '[GlyphBuilder] ZIP exported');
         } catch (err) {
             console.error('[GlyphBuilder] ZIP export failed:', err);
@@ -453,17 +740,19 @@ export class CursiveGlyphBuilderTool {
         }
     }
 
-    /** @suppress {duplicate} Minimal browser download shim (architecture exception). */
-    _downloadBlob(blob, filename) {
-        const url = URL.createObjectURL(blob);
-        const link = /** @type {HTMLAnchorElement} */ (document.createElement('a'));
-        link.href = url;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+    _exportPng() {
+        try {
+            const canvas = this.tool?.canvas;
+            if (!canvas) throw new Error('Canvas not ready.');
+            ExportUtils.exportCanvasPNG(canvas, TOOL_CONFIG.title, {
+                filename:
+                    `cursive-glyph-${new Date().toISOString().replace(/[:]/g, '-').slice(0, 19)}Z.png`,
+            });
+            window.debugLog('TOOLS', '[GlyphBuilder] PNG exported');
+        } catch (err) {
+            console.error('[GlyphBuilder] PNG export failed:', err);
+            this._showError('PNG EXPORT FAILED', err);
+        }
     }
 
     async _importZip(file) {
@@ -535,17 +824,16 @@ export class CursiveGlyphBuilderTool {
     _handleUpdate(key, value, _values) {
         window.debugLog('TOOLS', `[GlyphBuilder] Update: ${key}`);
         switch (key) {
+            case '_canvasResize': {
+                const w = Number(value?.width), h = Number(value?.height);
+                if (w > 0 && h > 0) {
+                    this._captureCanvas?.setSize(w, h);
+                    this._renderCurrentPrompt();
+                }
+                break;
+            }
             case 'newLibrary':
                 this._confirmAndNewLibrary();
-                break;
-            case 'exportZip':
-                this._exportZip();
-                break;
-            case 'zipFilePick':
-                if (value instanceof File && value.name) this._promptImportZip(value);
-                break;
-            case 'fontFilePick':
-                if (value instanceof File) void this._loadFontFromUpload(value);
                 break;
             case 'fontFamily':
                 void this._loadFromPick(value);
@@ -562,22 +850,29 @@ export class CursiveGlyphBuilderTool {
             case '_guides':
                 this._applyGuidesToCanvas(Array.isArray(value) ? value : []);
                 break;
+            case 'drawHeightFraction': {
+                const v = Number(value);
+                if (Number.isFinite(v)) this._captureCanvas?.setReferenceHeightFraction(v);
+                this._renderCurrentPrompt();
+                break;
+            }
         }
     }
 
     _confirmAndNewLibrary() {
-        const has = Object.keys(this._library.drawings || {}).length > 0;
+        const drawingCount = Object.keys(this._library.drawings || {}).length;
+        const msg = drawingCount > 0
+            ? 'Create a new library? This clears all drawings from the autosave slot.'
+            : 'Start a fresh library? Clears the queue and resets the autosave slot.';
         const run = async () => {
             await Store.clearActive();
             await this._resetLibrary();
         };
-        if (has) {
-            this._openModalConfirm(
-                'Create a new library? All unsaved drawings will be lost.',
-                () => { void run(); },
-                () => {},
-            );
-        } else void run();
+        this._openModalConfirm(
+            msg,
+            () => { void run(); },
+            () => {},
+        );
     }
 
     async _resetLibrary() {
@@ -585,12 +880,19 @@ export class CursiveGlyphBuilderTool {
         this._queueState = { prompts: [], currentIndex: 0, skipDeferred: [], history: [] };
         this._adapterFont = null;
         this._fontBytes   = null;
-        if (this._captureCanvas) this._captureCanvas.clearInk();
+        if (this._captureCanvas) {
+            this._captureCanvas.clearInk();
+            this._captureCanvas.setFontMetrics(null);
+            this._idleViewportChrome();
+        }
         this._dirty = false;
         try { void this.tool?.setValue('fontFamily', '__noop__'); } catch (_) {}
         this._library.queueState = this._queueState;
         await this._rebuildFontDropdown();
         this._applyGuidesToCanvas(this.tool.values['_guides']);
+        this._updatePromptUI();
+        try { this.tool?.setStatus?.('NEW LIBRARY — PICK FONT OR IMPORT ZIP'); } catch (_) {}
+        this.tool?.draw?.();
     }
 
     _emptyLibrary() {
@@ -614,17 +916,12 @@ export class CursiveGlyphBuilderTool {
     }
 
     _onKeyDown(e) {
-        if (!this.container || !document.body.contains(this.container)) return;
-
-        const focusInTool = (
-            typeof this.tool?.element?.contains === 'function'
-                && this.tool.element.contains(document.activeElement)
-        );
-        const focusGlob = document.activeElement === document.body
-            || this.container.contains(document.activeElement)
-            || focusInTool;
-
-        if (!focusGlob) return;
+        if (!this.tool) return;
+        if (typeof this.tool.isFocusInForm === 'function' && this.tool.isFocusInForm()) return;
+        if (
+            typeof this.tool.isShortcutScopeActive !== 'function'
+            || !this.tool.isShortcutScopeActive(true)
+        ) return;
 
         if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
             e.preventDefault(); void this._saveAndNext();
@@ -664,7 +961,17 @@ export class CursiveGlyphBuilderTool {
     }
 
     _openModalConfirm(msg, ok, cancel) {
-        if (!window.ComponentLibrary?.ModalConfirm) return;
+        if (!window.ComponentLibrary?.ModalConfirm) {
+            try {
+                if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                    if (window.confirm(msg)) ok();
+                    else cancel();
+                    return;
+                }
+            } catch (_) {}
+            void ok?.();
+            return;
+        }
 
         const m = new window.ComponentLibrary.ModalConfirm({
             message: msg,
@@ -683,7 +990,16 @@ export class CursiveGlyphBuilderTool {
     render() {}
 
     destroy() {
-        document.removeEventListener('keydown', this._onKeyDown);
+        if (typeof this._unregisterKeydown === 'function') {
+            try { this._unregisterKeydown(); } catch (_) {}
+        }
+        this._unregisterKeydown = null;
+
+        for (const c of this._trackedTopBarComponents) {
+            try { c.destroy?.(); } catch (_) {}
+        }
+        this._trackedTopBarComponents.length = 0;
+
         this._hideToolOverlay();
 
         if (this._captureCanvas) {

@@ -28,7 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 # Owner exemption regexes (paths that may legitimately contain the pattern).
-OWN_DOM_RE='assets/js/(core/(base-component|app|router|animation-foundation|gpu-foundation)|shared/(foundation|component-library|specialized-components|content|layout|components/.+))\.js$'
+OWN_DOM_RE='assets/js/(core/(base-component|app|router|animation-foundation|gpu-foundation)|shared/(foundation|component-library|specialized-components|content|layout|components/.+)|tools/core/tool-base)\.js$'
 OWN_ANIM_RE='assets/js/core/animation-foundation\.js$'
 OWN_GPU_RE='assets/js/core/gpu-foundation\.js$|assets/js/tools/processors/distort/core/GPURenderPath\.js$|assets/js/tools/processors/distort/shaders/.+\.shader\.js$'
 OWN_ROUTER_RE='assets/js/core/router\.js$'

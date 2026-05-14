@@ -14,7 +14,7 @@
  * 3. Anchors are then labelled: first anchor → 'entry', last → 'exit',
  *    intermediate anchors → 'tangent'.
  *
- * @source blog/docs/temp/cursive-glyph-builder.md §5.2 bezier-fit.js
+ * @source blog/docs/pages/tools/utilities/cursive-glyph-builder.md — stroke approximation
  * @wikipedia https://en.wikipedia.org/wiki/Bezier_curve#Cubic_B%C3%A9zier_curves
  * @formula
  *   h1 = P0 + (1/3)·(P3 − P0)  (approximation for smooth open stroke)

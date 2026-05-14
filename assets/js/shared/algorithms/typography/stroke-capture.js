@@ -11,7 +11,9 @@
  *   - x-height band : y ∈ [0, xHeight]
  *   - Ascender band : y ∈ [xHeight, ascender]
  *
- * @source blog/docs/temp/cursive-glyph-builder.md §3 Invariants
+ * @source blog/docs/pages/tools/utilities/cursive-glyph-builder.md — glyph-space invariants
+ * @wikipedia https://en.wikipedia.org/wiki/Font_metrics
+ * @formula y′ = baselineY − y_canvas scaled by fontAdvanceWidth / canvasAdvanceWidth
  * @module shared/algorithms/typography/stroke-capture
  */
 
@@ -34,7 +36,7 @@ import { chaikinSmooth } from '../geometry/curve-geometry.js';
  * The curve is treated as open (not closed) because pen strokes always
  * have distinct start and end points.
  *
- * @source blog/docs/temp/cursive-glyph-builder.md §7 Capture Pipeline
+ * @source blog/docs/pages/tools/utilities/cursive-glyph-builder.md §7 Capture Pipeline
  * @wikipedia https://en.wikipedia.org/wiki/Chaikin%27s_algorithm
  * @formula Q_{i} = 0.75·P_{i} + 0.25·P_{i+1},  R_{i} = 0.25·P_{i} + 0.75·P_{i+1}
  *
@@ -68,7 +70,7 @@ export function smoothStroke(rawPoints, iterations = 2) {
  * Transform one stroke's smoothed points from canvas-pixel space into
  * normalised glyph-space.
  *
- * @source blog/docs/temp/cursive-glyph-builder.md §7 Capture Pipeline
+ * @source blog/docs/pages/tools/utilities/cursive-glyph-builder.md §7 Capture Pipeline
  * @formula
  *   x' = (x_canvas - canvasOriginX) / canvasAdvanceWidth * fontAdvanceWidth
  *   y' = (canvasBaselineY - y_canvas) / canvasAdvanceWidth * fontAdvanceWidth

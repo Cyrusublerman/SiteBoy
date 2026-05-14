@@ -621,11 +621,14 @@ const SiteBoyApp = {
             if (isToolDetailPage) {
                 // Tools fill the entire content container with no padding
                 this.contentContainer.style.padding = '0';
-                
-                // top/bottom from layout.js define the box; do not force height:auto — ToolBase uses height:100% on children.
-                this.contentContainer.style.height = '';
-                this.contentContainer.style.minHeight = '';
-                // Tools manage their own scrolling
+
+                // PageContainer pins top/bottom with height:auto so the frame fills the inset.
+                // Clearing height removes that inline rule and lets .tool-viewport fixed heights fight top/bottom — wrong box, transport misaligned.
+                this.contentContainer.style.height = 'auto';
+                this.contentContainer.style.minHeight = '0';
+                this.contentContainer.style.maxHeight = 'none';
+
+                // Tools manage their own scrolling inside the chrome box
                 this.contentContainer.style.overflow = 'hidden';
                 window.debugLog('LAYOUT', '📐 Tool page detected - applied tool layout mode');
             } else {
@@ -633,6 +636,7 @@ const SiteBoyApp = {
                 this.contentContainer.style.padding = '';
                 this.contentContainer.style.height = '';
                 this.contentContainer.style.minHeight = '';
+                this.contentContainer.style.maxHeight = '';
                 this.contentContainer.style.overflow = '';
             }
             

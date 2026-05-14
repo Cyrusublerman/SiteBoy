@@ -28,6 +28,7 @@ import { getDefaultParams, applyPreset, randomizeParams } from '../shared/preset
 import { AnimationLoop } from '../../../core/animation-foundation.js';
 import { GeneratorToolbar } from '../../../shared/components/tool/GeneratorToolbar.js';
 import { GeneratorTransportStrip } from '../../../shared/components/tool/TransportStrip.js';
+import { GenerativeCanvasDock } from '../../../shared/components/tool/GenerativeCanvasDock.js';
 import { P5Canvas } from '../../../shared/p5-integration.js';
 import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
 import { ComputeScheduler } from './compute-scheduler.js';
@@ -75,6 +76,8 @@ export class GenerativeToolHost extends BaseComponent {
         // ComputeScheduler (Tier 2+3 — initialised after script load)
         this._scheduler = null;
         this._redrawScheduled = false; // Tier 1 coalesce flag
+        /** @type {import('../../../shared/components/tool/GenerativeCanvasDock.js').GenerativeCanvasDock|null} */
+        this.generativeDock = null;
         
         // Get all available generators from registry
         this.generators = this._buildGeneratorList();
@@ -146,6 +149,7 @@ export class GenerativeToolHost extends BaseComponent {
             flex-direction: column;
             width: 100%;
             height: 100%;
+            min-height: 0;
             overflow: hidden;
         `;
         
@@ -174,15 +178,9 @@ export class GenerativeToolHost extends BaseComponent {
         `;
         this.appendElement(this.wrapperEl, this.toolContentEl);
 
-        // Transport region — below the canvas, outside the sidebar
-        // TransportStrip and SequencerV2 strip both mount here
-        this.transportRegionEl = this.createElement('div');
-        this.transportRegionEl.className = 'generative-host-transport';
-        this.transportRegionEl.style.cssText = `
-            flex-shrink: 0;
-            width: 100%;
-        `;
-        this.appendElement(this.wrapperEl, this.transportRegionEl);
+        // Transport region — placeholder; actual mount happens after ToolBase
+        // creates canvasArea, so we can place the strip below the canvas only.
+        this.transportRegionEl = null;
 
         this.appendElement(this.container, this.wrapperEl);
 
@@ -231,8 +229,19 @@ export class GenerativeToolHost extends BaseComponent {
             this.p5Instance = null;
         }
         this._destroyP5Viewport();
-        
-        // Destroy existing tool
+
+        // Tear down dock + strip before ToolBase — dock owns Resize subscriptions and
+        // wraps canvasArea children; skipping dock.destroy() leaves listeners attached.
+        if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
+        }
+        this._stripEl = null;
+        if (this.generativeDock) {
+            this.generativeDock.destroy();
+            this.generativeDock = null;
+        }
+
         if (this.tool) {
             this.tool.destroy();
             this.tool = null;
@@ -265,7 +274,8 @@ export class GenerativeToolHost extends BaseComponent {
             this.sequencerV2 = null;
         }
         this._sequencerStripEl      = null;
-        this._sequencerStripVisible = true;
+        // Timeline dock: SPEED strip sits above sequencer strip; TIMELINE ▾ expands rows below transport.
+        this._sequencerStripVisible = this.scriptConfig.animation?.sequencer !== true;
 
         this.tool = new ToolBase(toolConfig, {
             ComponentLibrary: this.deps.ComponentLibrary,
@@ -277,35 +287,45 @@ export class GenerativeToolHost extends BaseComponent {
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
 
-        // Mount TransportStrip in the transport region (below canvas)
+        // Mount TransportStrip at the bottom of the canvas column (in-flow dock).
         if (this.transportStrip) {
             this.transportStrip.destroy();
             this.transportStrip = null;
         }
+        this._stripEl = null;
         if (this.scriptConfig.animation && this.scriptConfig.animation.type !== 'none') {
             const transportConfig = buildTransportConfig(this.scriptConfig);
             this.transportStrip = new GeneratorTransportStrip({
                 ...transportConfig,
                 onChange: (key, value) => this._handleTransportChange(key, value),
             }, this.deps);
-            this.clearElement(this.transportRegionEl);
-            this.appendElement(this.transportRegionEl, this.transportStrip.render());
+            const stripEl = this.transportStrip.render();
+            if (this.tool?.canvasArea) {
+                this._stripEl = stripEl;
+                this._stripElClearFixedOverrides(stripEl);
+                this.generativeDock = new GenerativeCanvasDock({
+                    showTimelineSlot: this.scriptConfig.animation.sequencer === true,
+                }, this.deps);
+                this.generativeDock.render();
+                this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
+                this.generativeDock.appendTransportStrip(stripEl);
+                this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
+                this.componentInstances.push(this.generativeDock);
+            }
             this.componentInstances.push(this.transportStrip);
-        } else {
-            this.clearElement(this.transportRegionEl);
         }
 
         // Inject SequencerV2 + AnimationExport UI — only for generators that animate.
         const animType = this.scriptConfig.animation?.type;
         if (this.scriptConfig.animation && animType !== 'none') {
-            setTimeout(() => {
+            queueMicrotask(() => {
                 if (this.scriptConfig.animation.sequencer === true) {
                     this._injectSequencer();
                 }
                 if (this.scriptConfig.animation.animationExport !== false) {
                     this._injectExportUI();
                 }
-            }, 0);
+            });
         }
         
         // Initialize p5.js if p5 context
@@ -391,10 +411,38 @@ export class GenerativeToolHost extends BaseComponent {
             },
             onInit: (values) => this.handleInit(values),
             onUpdate: (key, value, allValues) => this.handleUpdate(key, value, allValues),
-            onDraw: (ctx, canvas, values) => this.handleDraw(ctx, canvas, values)
+            onDraw: (ctx, canvas, values) => this.handleDraw(ctx, canvas, values),
+            onAfterRender: (toolBase) => {
+                try {
+                    if (this.scriptConfig?.animation?.type !== 'none' && toolBase?.canvasArea && this.generativeDock) {
+                        this._syncGenerativeCanvasDock();
+                    }
+                } catch (err) {
+                    console.error('[GenerativeToolHost] onAfterRender dock sync failed:', err);
+                }
+            },
         };
     }
-    
+
+    /** Remove legacy viewport-fixed overrides from GeneratorTransportStrip. */
+    _stripElClearFixedOverrides(stripEl) {
+        ['position', 'bottom', 'left', 'width', 'z-index'].forEach((p) => {
+            stripEl.style.removeProperty(p);
+        });
+    }
+
+    /**
+     * Rebuild dock chrome after ToolBase re-render (orientation change rebuild).
+     */
+    _syncGenerativeCanvasDock() {
+        if (!this.tool?.canvasArea || !this.generativeDock || !this._stripEl) return;
+        this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
+        this.generativeDock.appendTransportStrip(this._stripEl);
+        this._stripElClearFixedOverrides(this._stripEl);
+        this._reattachSequencerStrip();
+        this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
+    }
+
     /**
      * Initialize p5.js instance for p5 context scripts
      * Creates p5 in instance mode, attached to ToolBase's canvas container
@@ -863,9 +911,9 @@ export class GenerativeToolHost extends BaseComponent {
         }
 
         if (key === 'toggleTimeline') {
-            if (this._sequencerStripEl) {
+            if (this.generativeDock?.getTimelineSlot()) {
                 this._sequencerStripVisible = !this._sequencerStripVisible;
-                this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+                this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
             }
             return;
         }
@@ -959,11 +1007,13 @@ export class GenerativeToolHost extends BaseComponent {
      * Preserves current visibility state.
      */
     _reattachSequencerStrip() {
-        if (!this._sequencerStripEl || !this.tool?.canvasArea) return;
-        if (!this.tool.canvasArea.contains(this._sequencerStripEl)) {
-            this.appendElement(this.tool.canvasArea, this._sequencerStripEl);
-            this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+        if (!this._sequencerStripEl) return;
+        const tl = this.generativeDock?.getTimelineSlot();
+        if (!tl || !tl.isConnected) return;
+        if (!tl.contains(this._sequencerStripEl)) {
+            this.appendElement(tl, this._sequencerStripEl);
         }
+        this.generativeDock?.setTimelineVisible(this._sequencerStripVisible);
     }
 
     /**
@@ -993,9 +1043,9 @@ export class GenerativeToolHost extends BaseComponent {
             return;
         }
         if (key === 'toggleTimeline') {
-            if (this._sequencerStripEl) {
+            if (this.generativeDock?.getTimelineSlot()) {
                 this._sequencerStripVisible = !this._sequencerStripVisible;
-                this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+                this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
             }
             return;
         }
@@ -1367,11 +1417,11 @@ export class GenerativeToolHost extends BaseComponent {
         }, {});
 
         const stripEl = this.sequencerV2.getStripElement();
-        if (stripEl && this.tool.canvasArea) {
-            this.appendElement(this.tool.canvasArea, stripEl);
-            this._sequencerStripEl      = stripEl;
-            this._sequencerStripVisible = false;
-            stripEl.style.display = 'none';
+        const tl = this.generativeDock?.getTimelineSlot();
+        if (stripEl && tl) {
+            this.appendElement(tl, stripEl);
+            this._sequencerStripEl = stripEl;
+            this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
         }
 
         window.debugLog('TOOLS', `✅ SequencerV2 injected for "${this.scriptId}"`);
@@ -1413,6 +1463,17 @@ export class GenerativeToolHost extends BaseComponent {
         if (this.animationExporter) {
             this.animationExporter.destroy();
             this.animationExporter = null;
+        }
+
+        if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
+        }
+        this._stripEl = null;
+
+        if (this.generativeDock) {
+            this.generativeDock.destroy();
+            this.generativeDock = null;
         }
         
         if (this.toolbar) {

@@ -42,6 +42,7 @@
     --c-text: var(--vga-silver);
     --c-border: var(--vga-gray);
     --c-accent: var(--vga-white);
+    --c-scrim: rgba(0, 0, 0, 0.45);
     
     /* F=14px constants */
     --f: 14px;
@@ -57,6 +58,22 @@ html.inverted {
     --c-text: var(--vga-black);
     --c-border: var(--vga-gray);
     --c-accent: var(--vga-black);
+    --c-scrim: rgba(255, 255, 255, 0.45);
+}
+
+/* =================================================================
+   MODAL CONFIRM
+   ================================================================= */
+
+.modal-confirm-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--c-scrim);
+    box-sizing: border-box;
 }
 
 /* =================================================================
@@ -1164,6 +1181,11 @@ blockquote {
 
 .seq2-strip-controls::-webkit-scrollbar { display: none; }
 
+.seq2-strip-duration {
+    flex: 1 1 auto;
+    min-width: calc(var(--f) * 8);
+}
+
 .seq2-ctrl-btn {
     flex: 0 0 calc(var(--f) * 5.5);
     height: 100%;
@@ -1941,20 +1963,18 @@ body.with-subheader .content-container {
     max-height: var(--content-height-with-sub, none);
 }
 
-/* Tool/viewport mode - strict height constraints for ToolBase pages */
-/* Use this class when page content should fill exactly the available space */
+/* Tool/viewport mode — fill PageContainer top/bottom insets (inline); do not set height here */
+/* Fixed height + absolute top/bottom yields conflicting geometry and clips/shifts dock transport */
 .content-container.tool-viewport {
-    height: var(--content-min-h-no-sub);
-    min-height: unset;
-    max-height: var(--content-min-h-no-sub);
-    overflow-y: auto;
+    min-height: 0;
+    overflow-y: hidden;
     overflow-x: hidden;
     padding: 0;
 }
 
 body.with-subheader .content-container.tool-viewport {
-    height: var(--content-min-h-with-sub);
-    max-height: var(--content-min-h-with-sub);
+    min-height: 0;
+    max-height: none;
 }
 
 /* Generic tool viewport class for tool containers that are not content-container */
@@ -1971,8 +1991,6 @@ body.with-subheader .content-container.tool-viewport {
 .generator-toolbar {
     display: flex;
     width: 100%;
-    height: calc(var(--f) * 2);
-    min-height: calc(var(--f) * 2);
     border-bottom: 1px solid var(--c-border);
     background: var(--c-bg);
     flex-shrink: 0;
@@ -3528,5 +3546,33 @@ body.full-mode.no-subheader .content-container {
     position: absolute;
     left: -9999px;
     visibility: hidden;
+}
+
+/* Transport strip speed slider — site-consistent range input */
+.transport-speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--generator-transport-thumb-d, var(--f));
+    height: var(--generator-transport-thumb-d, var(--f));
+    background: var(--c-text);
+    border: 1px solid var(--c-text);
+    cursor: pointer;
+}
+.transport-speed-slider::-moz-range-thumb {
+    width: var(--generator-transport-thumb-d, var(--f));
+    height: var(--generator-transport-thumb-d, var(--f));
+    background: var(--c-text);
+    border: 1px solid var(--c-text);
+    cursor: pointer;
+}
+.transport-speed-slider::-webkit-slider-runnable-track {
+    height: var(--generator-transport-track-h, calc(var(--f) * 0.25));
+    background: var(--c-bg);
+    border: 1px solid var(--c-text);
+}
+.transport-speed-slider::-moz-range-track {
+    height: var(--generator-transport-track-h, calc(var(--f) * 0.25));
+    background: var(--c-bg);
+    border: 1px solid var(--c-text);
 }
 

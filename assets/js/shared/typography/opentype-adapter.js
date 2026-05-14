@@ -12,6 +12,7 @@
  */
 
 import * as opentype from 'opentype.js';
+import decompressWoff2 from 'woff2-encoder/decompress';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -55,6 +56,14 @@ function _capHeightUnits(font) {
 export async function loadFromBytes(arrayBuffer) {
     if (arrayBuffer.byteLength >= 4) {
         const sig = new DataView(arrayBuffer).getUint32(0);
+
+        // 0x774F4632 = 'wOF2' — WOFF2; decompress to raw SFNT first
+        if (sig === 0x774F4632) {
+            const sfnt = await decompressWoff2(new Uint8Array(arrayBuffer));
+            const font = opentype.parse(sfnt.buffer);
+            return { _font: font, _bytes: sfnt.buffer };
+        }
+
         // 0x74746366 = 'ttcf' — TrueType Collection; opentype.js cannot parse these.
         if (sig === 0x74746366) {
             throw new Error('TTC font collections are not supported. Upload a single .ttf or .otf file.');
@@ -79,25 +88,15 @@ export async function loadFromGoogle(familyName) {
     if (!cssRes.ok) throw new Error(`Google Fonts CSS fetch failed: ${cssRes.status}`);
     const css = await cssRes.text();
 
-    // Extract the first src url(…) — Google Fonts returns WOFF2 in modern browsers.
     const urlMatch = css.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/);
     if (!urlMatch) throw new Error(`No font URL found in Google Fonts CSS for "${familyName}"`);
 
-    // opentype.js does not support WOFF2. Derive the TTF URL from the gstatic
-    // CDN path: fonts.gstatic.com serves both formats at consistent paths.
-    // WOFF2: https://fonts.gstatic.com/s/name/vN/hash.woff2
-    // TTF  : https://fonts.gstatic.com/s/name/vN/hash.ttf
-    let fontUrl = urlMatch[1];
-    if (fontUrl.endsWith('.woff2')) {
-        fontUrl = fontUrl.replace('.woff2', '.ttf');
-    } else if (!fontUrl.endsWith('.ttf') && !fontUrl.endsWith('.otf') && !fontUrl.endsWith('.woff')) {
-        throw new Error(`Unsupported Google Fonts file format for "${familyName}". Please upload the font file manually.`);
-    }
-
-    const fontRes = await fetch(fontUrl);
+    const fontRes = await fetch(urlMatch[1]);
     if (!fontRes.ok) {
-        // TTF derivation failed — surface a clear message directing to manual upload
-        throw new Error(`Could not fetch TTF for "${familyName}" from Google Fonts. Use the Upload Font button to load the font file manually.`);
+        throw new Error(
+            `Could not fetch font file for "${familyName}" from Google Fonts. `
+            + 'Use the Upload Font button to load the font file manually.',
+        );
     }
     const arrayBuffer = await fontRes.arrayBuffer();
     return loadFromBytes(arrayBuffer);
@@ -185,6 +184,47 @@ export function getGlyphPath(adapterFont, ch, x = 0, y = 0, fontSize = 72) {
     const scale   = fontSize / font.unitsPerEm;
     const advance = glyph.advanceWidth * scale;
     return { d: svgPath, advance, exists: true };
+}
+
+/**
+ * Union bounding box for a rendered prompt string at canvas-relative coordinates.
+ * Uses opentype.js Path bounding boxes — same coord system as {@link getGlyphPath}.
+ *
+ * @param {AdapterFont} adapterFont
+ * @param {string}      text           prompt string (scalars only — caller filters)
+ * @param {number}      startX         canvas pixel x baseline start
+ * @param {number}      baselineY      canvas pixel y at baseline (downward-positive)
+ * @param {number}      fontSize
+ * @returns {{ xMin:number, yMin:number, xMax:number, yMax:number, advanceX:number } | null}
+ */
+export function boundingBoxPromptCanvas(adapterFont, text, startX, baselineY, fontSize) {
+    if (!adapterFont || !text) return null;
+    const font = adapterFont._font;
+    let xMin = Infinity;
+    let yMin = Infinity;
+    let xMax = -Infinity;
+    let yMax = -Infinity;
+    let xCursor = startX;
+    /** @type {number} */
+    let advanceTot = startX;
+
+    for (const ch of text) {
+        const glyph = font.charToGlyph(ch);
+        if (!glyph || glyph.index === 0) continue;
+        const path = glyph.getPath(xCursor, baselineY, fontSize);
+        const bb = path.getBoundingBox();
+        xMin = Math.min(xMin, bb.x1, bb.x2);
+        xMax = Math.max(xMax, bb.x1, bb.x2);
+        yMin = Math.min(yMin, bb.y1, bb.y2);
+        yMax = Math.max(yMax, bb.y1, bb.y2);
+        const scale = fontSize / font.unitsPerEm;
+        xCursor += glyph.advanceWidth * scale;
+        advanceTot = xCursor;
+    }
+
+    if (xMin === Infinity) return { xMin: startX, yMin: baselineY, xMax: startX, yMax: baselineY, advanceX: startX };
+
+    return { xMin, yMin, xMax, yMax, advanceX: advanceTot };
 }
 
 /**

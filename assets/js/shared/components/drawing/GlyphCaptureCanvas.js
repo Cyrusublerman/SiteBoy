@@ -31,6 +31,7 @@
  * @extends BaseComponent
  */
 import { BaseComponent } from '../../foundation.js';
+import { AnimationLoop } from '../../../core/animation-foundation.js';
 import { smoothStroke } from '../../algorithms/typography/stroke-capture.js';
 import { fitCubicsToPolyline, extractAnchors } from '../../algorithms/typography/bezier-fit.js';
 
@@ -58,10 +59,33 @@ export class GlyphCaptureCanvas extends BaseComponent {
         this._h = options.height || 392;
         this._F = options.F     || 14;
 
-        this._overlays    = { baseline: true, xHeight: true, capHeight: true, descender: true, ascender: false, refGlyph: true, ...(options.overlays || {}) };
+        this._overlays    = {
+            baseline: true, xHeight: true, capHeight: true, descender: true, ascender: false,
+            ascenderShade: false, refGlyph: true,
+            bbox: false, leftBound: false, rightBound: false,
+            ...(options.overlays || {}),
+        };
         this._fontMetrics = options.fontMetrics || null;
         this._prompt      = options.prompt     || null;
         this._customPathD = null;
+
+        /** @type {number}  fraction of canvas height for reference line (0.4–1.5) */
+        this._heightFraction = options.heightFraction ?? 0.7;
+        /** @type {{ id?: string, text?: string }[]} */
+        this._upcoming       = [];
+
+        /** @type {{ headerLine:string, footerLine:string }} */
+        this._rails = { headerLine: '', footerLine: '' };
+
+        /** @type {{ x:number, y:number, w:number, h:number } | null} */
+        this._promptBBox = null;
+
+        /** @type {{ left:number, baselineY:number, advanceX:number } | null} */
+        this._layoutMarks = null;
+
+        this._slideDx         = 0;
+        /** @type {import('../../../core/animation-foundation.js').AnimationLoop|null} */
+        this._queueAnim       = null;
 
         this._onStrokeEnd   = options.onStrokeEnd   || null;
         this._onDirtyChange = options.onDirtyChange || null;
@@ -123,7 +147,9 @@ export class GlyphCaptureCanvas extends BaseComponent {
      * Called by the tool shell after computing the path via opentype-adapter.
      */
     setFontPath(svgPathD) {
-        this._customPathD = svgPathD;
+        this._customPathD = svgPathD != null && String(svgPathD).trim() !== ''
+            ? String(svgPathD)
+            : null;
         this._requestRedraw();
     }
 
@@ -133,9 +159,66 @@ export class GlyphCaptureCanvas extends BaseComponent {
         this._requestRedraw();
     }
 
+    /** @param {{ headerLine?: string, footerLine?: string }} r */
+    setRails(r) {
+        this._rails = {
+            headerLine: r?.headerLine != null ? String(r.headerLine) : '',
+            footerLine: r?.footerLine != null ? String(r.footerLine) : '',
+        };
+        this._requestRedraw();
+    }
+
+    /** @param {{ x:number, y:number, w:number, h:number } | null} box */
+    setPromptBoundingBox(box) {
+        this._promptBBox = box && Number.isFinite(box.w) && Number.isFinite(box.h) && box.w >= 0 && box.h >= 0
+            ? { x: box.x, y: box.y, w: box.w, h: box.h }
+            : null;
+        this._requestRedraw();
+    }
+
+    /**
+     * Vertical guide positions for left/right advance lines (canvas px).
+     * @param {{ left:number, baselineY:number, advanceX:number } | null} marks
+     */
+    setLayoutMarks(marks) {
+        this._layoutMarks = marks
+            && Number.isFinite(marks.left)
+            && Number.isFinite(marks.baselineY)
+            && Number.isFinite(marks.advanceX)
+            ? { left: marks.left, baselineY: marks.baselineY, advanceX: marks.advanceX }
+            : null;
+        this._requestRedraw();
+    }
+
     /** Update font metrics (affects overlay positions). */
     setFontMetrics(metrics) {
         this._fontMetrics = metrics;
+        this._requestRedraw();
+    }
+
+    /** Set internal buffer width/height (canvas backing store). */
+    setSize(w, h) {
+        this._w = w;
+        this._h = h;
+        this._requestRedraw();
+    }
+
+    /** Drawing-height scale (matches tool slider 0.4–1.5). */
+    setReferenceHeightFraction(v) {
+        this._heightFraction = v;
+        this._requestRedraw();
+    }
+
+    /**
+     * @param {{ id?: string, text?: string }[]} prompts
+     */
+    setUpcoming(prompts) {
+        const next = Array.isArray(prompts) ? prompts.slice(0, 5) : [];
+        const had = this._upcoming.length > 0;
+        if (had && next.length > 0 && (this._upcoming[0]?.id ?? '') !== (next[0]?.id ?? '')) {
+            this._startQueueSlide();
+        }
+        this._upcoming = next;
         this._requestRedraw();
     }
 
@@ -180,11 +263,17 @@ export class GlyphCaptureCanvas extends BaseComponent {
      */
     draw(ctx) {
         this._drawRef(ctx);
+        this._drawAscenderBand(ctx);
         this._drawOverlays(ctx);
+        this._drawBBox(ctx);
+        this._drawAdvanceBounds(ctx);
+        this._drawUpcoming(ctx);
         this._drawInk(ctx);
         if (this._drawing && this._currentPoints.length >= 2) {
             this._drawLiveStroke(ctx);
         }
+        this._drawRails(ctx);
+        if (this._needsIdleHint()) this._drawIdleHint(ctx);
     }
 
     // ─── Pointer events ───────────────────────────────────────────────────────
@@ -247,18 +336,108 @@ export class GlyphCaptureCanvas extends BaseComponent {
 
     // ─── Rendering ────────────────────────────────────────────────────────────
 
+    /** Match tool `_resolvePromptLayout`: baseline = height × draw fraction. */
+    _baselineCanvasY() {
+        const hf = Number(this._heightFraction);
+        return this._h * (Number.isFinite(hf) ? hf : 0.7);
+    }
+
+    /**
+     * Pixels per one font unit (matches tool glyph layout: fontSize = canvasH × (280/392)).
+     * @returns {number}
+     */
+    _pixelsPerFontUnit() {
+        const upm = this._fontMetrics?.unitsPerEm;
+        if (!upm || upm <= 0) return 1;
+        return (this._h * (280 / 392)) / upm;
+    }
+
+    _refPathAvailable() {
+        const d =
+            this._customPathD
+            ?? (this._prompt?.glyphPathD != null ? String(this._prompt.glyphPathD) : '');
+        return d.trim().length > 0;
+    }
+
+    _needsIdleHint() {
+        const idlePath = !this._refPathAvailable();
+        return (
+            idlePath
+            && this._committedStrokes.length === 0
+            && !this._drawing
+        );
+    }
+
+    _readToken(name, vgaFallback) {
+        return getComputedStyle(document.documentElement)
+            .getPropertyValue(name).trim() || vgaFallback;
+    }
+
+    _startQueueSlide() {
+        if (this._queueAnim) {
+            try { this._queueAnim.destroy(); } catch (_) {}
+            this._queueAnim = null;
+        }
+        const slotW = Math.max(8, (this._w * 0.45) / 5);
+        this._slideDx = slotW;
+        const started = performance.now();
+        const dur = 220;
+
+        this._queueAnim = new AnimationLoop({
+            onFrame: () => {
+                const t = Math.min(1, (performance.now() - started) / dur);
+                const smooth = t * t * (3 - 2 * t);
+                this._slideDx = slotW * (1 - smooth);
+                this._requestRedraw();
+                if (t >= 1) {
+                    this._slideDx = 0;
+                    if (this._queueAnim) {
+                        try { this._queueAnim.destroy(); } catch (_) {}
+                        this._queueAnim = null;
+                    }
+                    this._requestRedraw();
+                }
+            },
+        });
+        this._queueAnim.start();
+    }
+
     _drawRef(ctx) {
         if (!this._overlays.refGlyph) return;
-        const pathD = this._customPathD || (this._prompt && this._prompt.glyphPathD);
+        const pathD = this._customPathD || (this._prompt?.glyphPathD);
         if (!pathD) return;
 
-        const cText = getComputedStyle(document.documentElement).getPropertyValue('--c-text').trim() || '#f5f5f5';
+        const cText = this._readToken('--c-text', '#c0c0c0');
         ctx.save();
         ctx.globalAlpha = 0.18;
         ctx.fillStyle   = cText;
+        ctx.lineWidth   = Math.max(1, this._F * 0.10);
         try {
             ctx.fill(new Path2D(pathD));
         } catch (_) {}
+        ctx.restore();
+    }
+
+    _drawAscenderBand(ctx) {
+        if (
+            !this._overlays.ascenderShade
+            || !this._fontMetrics
+        ) return;
+
+        const { ascender, xHeight } = this._fontMetrics;
+        if (ascender == null || xHeight == null) return;
+        const bl = this._baselineCanvasY();
+        const pu = this._pixelsPerFontUnit();
+        const yAsc = bl - ascender * pu;
+        const yXh = bl - xHeight * pu;
+
+        const cBorder = this._readToken('--c-border', '#808080');
+        ctx.save();
+        ctx.globalAlpha = 0.10;
+        ctx.fillStyle = cBorder;
+        const top = Math.min(yAsc, yXh);
+        const bot = Math.max(yAsc, yXh);
+        ctx.fillRect(0, top, this._w, Math.max(0, bot - top));
         ctx.restore();
     }
 
@@ -266,20 +445,18 @@ export class GlyphCaptureCanvas extends BaseComponent {
         if (!this._fontMetrics) return;
 
         const { ascender, xHeight, capHeight, descender } = this._fontMetrics;
-        if (!ascender) return;
 
-        const descFrac  = Math.abs(descender) / (ascender - descender);
-        const baselineY = this._h * (1 - descFrac * 0.7 - 0.12);
-        const scale     = (this._h * 0.7) / ascender;
+        const baselineY = this._baselineCanvasY();
+        const scale     = this._pixelsPerFontUnit();
 
-        const cBorder = getComputedStyle(document.documentElement).getPropertyValue('--c-border').trim() || '#444';
+        const cBorder = this._readToken('--c-border', '#808080');
         const F = this._F;
 
         const drawGuide = (yFontUnit, label) => {
             const y = baselineY - yFontUnit * scale;
             ctx.save();
             ctx.strokeStyle = cBorder;
-            ctx.lineWidth   = 1;
+            ctx.lineWidth   = Math.max(1, this._F * 0.07);
             ctx.setLineDash([4, 4]);
             ctx.beginPath();
             ctx.moveTo(0, y);
@@ -292,19 +469,141 @@ export class GlyphCaptureCanvas extends BaseComponent {
             ctx.restore();
         };
 
-        if (this._overlays.baseline)  drawGuide(0,         'BASELINE');
-        if (this._overlays.xHeight)   drawGuide(xHeight,   'X-HEIGHT');
-        if (this._overlays.capHeight) drawGuide(capHeight, 'CAP');
-        if (this._overlays.descender) drawGuide(descender, 'DESCENDER');
-        if (this._overlays.ascender)  drawGuide(ascender,  'ASCENDER');
+        if (this._overlays.baseline) drawGuide(0, 'BASELINE');
+        if (xHeight != null && this._overlays.xHeight) drawGuide(xHeight, 'X-HEIGHT');
+        if (capHeight != null && this._overlays.capHeight) drawGuide(capHeight, 'CAP');
+        if (this._overlays.descender && descender != null) drawGuide(descender, 'DESCENDER');
+        if (ascender != null && this._overlays.ascender) drawGuide(ascender, 'ASCENDER');
+    }
+
+    _drawBBox(ctx) {
+        if (!this._overlays.bbox || !this._promptBBox) return;
+
+        const b = this._promptBBox;
+        const cAccent = this._readToken('--c-accent', '#c0c0c0');
+        ctx.save();
+        ctx.strokeStyle = cAccent;
+        ctx.lineWidth   = Math.max(1, this._F * 0.075);
+        ctx.setLineDash([6, 3]);
+        ctx.strokeRect(b.x, b.y, b.w, b.h);
+        ctx.restore();
+    }
+
+    _drawAdvanceBounds(ctx) {
+        const lm = this._layoutMarks;
+        if (!lm) return;
+        const cBorder = this._readToken('--c-border', '#808080');
+        const drawV = (x, want) => {
+            if (!want) return;
+            ctx.save();
+            ctx.strokeStyle = cBorder;
+            ctx.lineWidth   = Math.max(1, this._F * 0.07);
+            ctx.setLineDash([2, 6]);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, this._h);
+            ctx.stroke();
+            ctx.restore();
+        };
+        drawV(lm.left, this._overlays.leftBound);
+        drawV(lm.advanceX, this._overlays.rightBound);
+    }
+
+    _drawRails(ctx) {
+        const hdr = String(this._rails.headerLine ?? '').trim();
+        const ftr = String(this._rails.footerLine ?? '').trim();
+        if (!hdr && !ftr) return;
+
+        const stripH = Math.max(this._F * 2, Math.round(this._F * 1.15 + 11));
+        const pad    = Math.max(4, Math.round(this._F * 0.5));
+
+        const cBorder = this._readToken('--c-border', '#808080');
+        const cBg     = this._readToken('--c-bg', '#000000');
+        const cText   = this._readToken('--c-text', '#c0c0c0');
+        const fs      = Math.max(10, Math.round(this._F * 0.86));
+
+        ctx.save();
+        ctx.font         = `${fs}px 'Atkinson Hyperlegible', monospace`;
+        ctx.textBaseline = 'top';
+
+        if (hdr) {
+            ctx.fillStyle = cBg;
+            ctx.fillRect(0, 0, this._w, stripH);
+            ctx.fillStyle = cText;
+            const yText = pad;
+            ctx.fillText(hdr.slice(0, 400), pad, yText);
+            ctx.strokeStyle = cBorder;
+            ctx.lineWidth   = Math.max(1, this._F * 0.065);
+            ctx.beginPath();
+            ctx.moveTo(0, stripH);
+            ctx.lineTo(this._w, stripH);
+            ctx.stroke();
+        }
+
+        if (ftr) {
+            const y0 = this._h - stripH;
+            ctx.fillStyle = cBg;
+            ctx.fillRect(0, y0, this._w, stripH);
+            ctx.strokeStyle = cBorder;
+            ctx.lineWidth   = Math.max(1, this._F * 0.065);
+            ctx.beginPath();
+            ctx.moveTo(0, y0);
+            ctx.lineTo(this._w, y0);
+            ctx.stroke();
+            ctx.fillStyle = cText;
+            ctx.fillText(ftr.slice(0, 400), pad, y0 + pad);
+        }
+
+        ctx.restore();
+    }
+
+    _drawIdleHint(ctx) {
+        const cBorder = this._readToken('--c-border', '#808080');
+        const msg =
+            !this._fontMetrics
+                ? 'PICK OR LOAD A FONT (SESSION → FONT)'
+                : 'NO ACTIVE PROMPT — QUEUE IDLE';
+        ctx.save();
+        ctx.font         = `${Math.max(13, Math.round(this._h * 0.05))}px 'Atkinson Hyperlegible', monospace`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign    = 'center';
+        ctx.fillStyle    = cBorder;
+        ctx.globalAlpha  = 0.55;
+        ctx.fillText(msg, this._w / 2, this._h / 2);
+        ctx.restore();
+    }
+
+    _drawUpcoming(ctx) {
+        if (!this._upcoming || this._upcoming.length === 0) return;
+
+        const baselineY = this._baselineCanvasY();
+        const slotCount = this._upcoming.length;
+        const regionW   = this._w * 0.45;
+        const slotStep  = slotCount ? regionW / slotCount : regionW;
+        const fontSz    = this._h * this._heightFraction * 0.45;
+        const startX    = this._w * 0.55 + this._slideDx;
+        const cBorder   = this._readToken('--c-border', '#808080');
+
+        ctx.save();
+        ctx.globalAlpha = 0.40;
+        ctx.fillStyle   = cBorder;
+        ctx.font        = `${Math.max(8, Math.round(fontSz))}px 'Atkinson Hyperlegible', monospace`;
+        ctx.textBaseline = 'alphabetic';
+        for (let i = 0; i < slotCount; i++) {
+            const text = String(this._upcoming[i]?.text ?? '');
+            const x = startX + slotStep * (i + 0.5);
+            const tw = ctx.measureText(text).width;
+            ctx.fillText(text, x - tw / 2, baselineY);
+        }
+        ctx.restore();
     }
 
     _drawInk(ctx) {
         if (this._committedStrokes.length === 0) return;
-        const cText = getComputedStyle(document.documentElement).getPropertyValue('--c-text').trim() || '#f5f5f5';
+        const cText = this._readToken('--c-text', '#c0c0c0');
         ctx.save();
         ctx.strokeStyle = cText;
-        ctx.lineWidth   = 2;
+        ctx.lineWidth   = Math.max(1, this._F * 0.18);
         ctx.lineCap     = 'round';
         ctx.lineJoin    = 'round';
         for (const stroke of this._committedStrokes) {
@@ -315,10 +614,10 @@ export class GlyphCaptureCanvas extends BaseComponent {
 
     _drawLiveStroke(ctx) {
         const pts   = this._currentPoints;
-        const cText = getComputedStyle(document.documentElement).getPropertyValue('--c-text').trim() || '#f5f5f5';
+        const cText = this._readToken('--c-text', '#c0c0c0');
         ctx.save();
         ctx.strokeStyle = cText;
-        ctx.lineWidth   = 2;
+        ctx.lineWidth   = Math.max(1, this._F * 0.18);
         ctx.lineCap     = 'round';
         ctx.lineJoin    = 'round';
         ctx.globalAlpha = 0.6;
@@ -355,6 +654,10 @@ export class GlyphCaptureCanvas extends BaseComponent {
 
     destroy() {
         if (this.isDestroyed) return;
+        if (this._queueAnim) {
+            try { this._queueAnim.destroy(); } catch (_) {}
+            this._queueAnim = null;
+        }
         this.detach();
         super.destroy();
     }

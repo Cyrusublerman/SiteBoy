@@ -19,17 +19,7 @@ export class ModalConfirm extends BaseComponent {
 
         const { F, F2 } = this.getF();
 
-        this.element = this.createElement('div', 'modal-confirm');
-        this.element.style.cssText = `
-            position: absolute;
-            inset: 0;
-            z-index: 998;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.45);
-            box-sizing: border-box;
-        `;
+        this.element = this.createElement('div', 'modal-confirm modal-confirm-scrim');
 
         const panel = this.createElement('div', 'modal-confirm-panel');
         panel.style.cssText = `

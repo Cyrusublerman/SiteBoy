@@ -31,6 +31,37 @@ Only these files may own the concern. Others must not implement it.
 - **Modulation engine (driver→shape→range→combine pipeline) → assets/js/tools/generators/core/modulation-engine.js**
 - **Driver registry (lfo/linear/expression/etc.) → assets/js/tools/generators/core/driver-registry.js**
 - **Expression context (cheat-sheet variables/helpers) → assets/js/tools/generators/core/expression-context.js**
+- **Project tracker (roadmap / TODO list) → blog/docs/todo/** — the only authoritative roadmap.
+
+## TODO System (project tracking) — mandatory
+
+`blog/docs/todo/` is the single source of truth for in-flight, planned, and out-of-scope work. Any other "next-steps" / "todo" / "plan" file (e.g. `blog/docs/temp/*-next-steps.md`, `*-todo.md`, `*-plan.md`) is a tool-internal feeder — not authoritative.
+
+### Layout
+- `blog/docs/todo/index.md` — dashboard; one table per area A–H; one row per item with current Status.
+- `blog/docs/todo/<ID>-<slug>.md` — one file per item; owns Status, Sub-tasks, Blockers, Notes.
+- `blog/docs/todo/out-of-scope.md` — explicit non-goals.
+
+### Defined terms (closed sets)
+- Status: `TODO` | `WIP` | `BLOCKED` | `REVIEW` | `DONE`.
+- Priority: `P0` | `P1` | `P2` | `P3` (critical → optional).
+- ID format: `<Area>.<n>` where Area ∈ {A..H}. IDs are permanent.
+
+### Mandatory behaviour
+
+1. Read `blog/docs/todo/index.md` before any non-trivial change. Locate the item ID covering the work.
+2. If no item exists, append a row to `index.md` and author `<ID>-<slug>.md` from the existing template (`Status`, `Priority`, `Owner file(s)`, `Blockers`, `Blocks`, `Last touched`, `Goal`, `Done when`, `Sub-tasks`, `Notes`, `References`) before writing code.
+3. Status flips happen in **two** places: the item file header and the matching row in `index.md`. They must agree.
+4. `Done when` is a single verifiable predicate. Vague verbs (polish/improve/clean up) are forbidden.
+5. IDs are permanent. Status flips. The ID does not.
+6. Blockers are explicit IDs. "Blocked by complexity" is not a blocker.
+7. A row reaches `DONE` only after its predicate is verified — not after code lands.
+8. WIP > 14 days must advance to `REVIEW` or be re-scoped.
+9. Items in `out-of-scope.md` require an ADR to move back in scope.
+
+### Ideas and projects (see `blog/docs/todo/index.md` § Ideas folder)
+- If the same concept exists under `blog/ideas/art/generative/` and `blog/ideas/tools/`, **generative is canonical** for linking and duplicate marking; `tools/` is a feeder unless it is the only copy.
+- Portfolio entries (`#projects/<slug>`) **need not** map to a shipped tool; idea-only project pages are valid (B1).
 
 ## Tab Limit
 - At most 4 tabs in ToolBase sidebar (ceiling, not target)

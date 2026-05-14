@@ -89,7 +89,7 @@ Anchor { id, role:'entry'|'exit'|'tangent',
 1. All 5 phases present in queue. Phase 1 (singles) is MVP priority; Phases 2–5 ship in same build if time permits, otherwise gated by a feature-flag constant.
 2. Reference font: two sources — **upload** (`.ttf`/`.otf`) OR **Google Fonts list** (reuse `window.googleFontsLoader`). Font file bytes hashed (SHA-256 via `crypto.subtle`) and retained for ZIP export.
 3. Hard-pair list (Phase 4) auto-derived from the font's kerning table (opentype.js `font.kerningPairs`); top-N by absolute adjustment magnitude. No hand curation.
-4. Mandatory overlays on canvas: baseline, x-height, cap-height, ascender, descender, left/right bounds, bbox. Togglable individually from OVERLAYS tab in sidebar.
+4. Mandatory overlays on canvas: baseline, x-height, cap-height, ascender line, ascender-band shading (from x-height to ascender band), descender, left/right advance bounds, bbox. Toggle each control from **VIEW** on the utility toolbar (below the site subheader) so sidebar stays within the ≤4 tab ceiling.
 5. Freehand capture via Pointer Events. Mouse, stylus, touch all accepted. Pressure **not** stored.
 6. Per-stroke undo (last stroke removed). No per-point undo.
 7. Stroke order = insertion order; every stroke has a monotonically increasing `order`.
@@ -106,8 +106,8 @@ Anchor { id, role:'entry'|'exit'|'tangent',
 18. Import: ZIP file produced by this tool only. Schema-validated on read.
 19. All persistence is local (IndexedDB). Zero network calls except Google Fonts stylesheet fetch.
 20. Hard fail (halt + full-content error overlay) if: IndexedDB unavailable, `opentype.js` fails to parse the font, Web Crypto missing, or corrupted library on import.
-21. Footer rail: `Undo / Clear stroke / Skip / Save + Next` (Export moved into SESSION tab per §6.1).
-22. Header rail: prompt text, mode, variation index (`N` within current prompt), reference font name.
+21. Footer rail: read-only **`2F`** canvas strip summarising Undo / Clear / Skip / Save+Next (shortcut legend). Primary labelled controls remain in SESSION/PROMPT; exports live under toolbar EXPORT/IMPORT.
+22. Header rail: read-only **`2F`** strip on the PCS — prompt text, mode, variation ordinal within the active prompt (`variationsDrawn + 1` display), reference font name.
 23. Keyboard shortcuts: `Enter` = Save+Next, `Esc` = Skip, `Ctrl+Z` = Undo, `Ctrl+Shift+Z` = Redo.
 24. Every sidebar control wired to a real handler; no stubs.
 25. Canvas shows only the **current** prompt's reference glyph; no next-prompt preview.
@@ -179,69 +179,43 @@ Copy-adapt, do not import. Place shared primitives in `assets/js/shared/utils/po
 Single archetype: Tool page, PCS = capture canvas.
 
 ```
-┌───────────────────────────────────────────────────────────┐
-│ Header rail (2F) — prompt / mode / variation / font      │
-├─────────────────┬─────────────────────────────────────────┤
-│ Sidebar (30F)   │ PCS — capture canvas                    │
-│ tabs ↓          │ (reference glyph + overlays + ink)     │
-│                 │                                         │
-│                 │                                         │
-├─────────────────┴─────────────────────────────────────────┤
-│ Footer rail (2F) — Undo / Clear / Skip / Save+Next / Export │
-└───────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│ Header rail (**2F** canvas strip)                           │
+├─── Session column ──┬──────── PCS ─────────────────────────┤
+│ Sidebar SESSION /     │ Toolbar: VIEW IMPORT EXPORT INFO       │
+│ PROMPT tabs         │ Capture canvas (+ header/footer rails) │
+├─────────────────────┴────────────────────────────────────────┤
+│ Footer rail (**2F** canvas strip — shortcut recap)           │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 Header text is a read-only label component. Footer uses `GeneratorToolbar`-style toolbar (design-law §17: action cells `6F`, status cell `flex: 1 min-width: 30F`).
 
-### 6.1 Sidebar (4 tabs — at the hard limit)
+### 6.1 Sidebar + toolbar surfaces
+
+**Sidebar tabs (2)** — SESSION, PROMPT — keeps headroom below the workspace tab cap.
 
 ```
 [SESSION]
-  Library
-    [button] New library
-    [file]   Import library (.zip)
-    [button] Export library (.zip)
-  Reference font
-    [radio]  Source   [Upload | Google]
-    [file]   Upload .ttf/.otf              (shown when Source=Upload)
-    [dropdown] Google font                  (shown when Source=Google)
-    [text]   Active font                   (read-only)
+  Library … New library · Font picker (ZIP import lives under toolbar IMPORT).
 
 [PROMPT]
-  Current
-    [value]  Prompt text
-    [value]  Mode
-    [value]  Variation #
-  Queue
-    [value]  Coverage %
-    [value]  Singles covered
-    [value]  Digraphs covered
-    [value]  Trigraphs covered
-    [value]  Total drawings
+  Current labels (prompt · phase · coverage)
+  Queue actions … Save + Next · Skip · Clear ink
 
-[OVERLAYS]
-  Guides
-    [toggle] Baseline
-    [toggle] x-height
-    [toggle] Cap height
-    [toggle] Ascender
-    [toggle] Descender
-    [toggle] Left bound
-    [toggle] Right bound
-    [toggle] Bbox
-  Bands
-    [toggle] Shade descender band
-    [toggle] Shade x-height band
-    [toggle] Shade ascender band
+Toolbar (below subheader, aligned with PCS column in landscape):
 
-[INFO]
-  About
-    [label]  Tool description + library format summary
-  Shortcuts
-    [label]  Enter = Save+Next / Esc = Skip / Ctrl+Z = Undo / Ctrl+Shift+Z = Redo
+[VIEW]   overlays + drawing height slider
+[IMPORT] library ZIP · font file
+[EXPORT] library ZIP · canvas PNG
+[INFO]   fetched spec markdown
 ```
 
-Default overlays enabled on first run: Baseline, x-height, Ascender, Descender, Bbox. Others off.
+**VIEW toggles**: baseline (`BASE`), descender (`DESC`), x-height (`X-HGT`), cap (`CAP`), reference glyph (`REF`), ascender line (`ASC`), ascender shading (`A-SHD`), left bound (`L-BND`), right bound (`R-BND`), bbox (`BBOX`).
+
+Rails are **`2F`** high label strips painted by `GlyphCaptureCanvas` atop/below the PCS, not sidebar tabs.
+
+Default overlay selection on cold start matches code `DEFAULT_GUIDES`: baseline + descender + x-height + cap + reference glyph; bounds/bbox shading off until enabled in VIEW.
 
 ### 6.2 Canvas (PCS)
 
@@ -252,7 +226,7 @@ Three stacked layers inside a single `GlyphCaptureCanvas`:
    - during drag: raw polyline in `var(--c-text)`;
    - on `pointerup`: replaced by Chaikin-smoothed polyline, then by the cubic Bezier fit rendered via `ctx.bezierCurveTo`.
 
-Canvas internal resolution: `40F × 28F` (`560 × 392` at `F=14`). Display mode `fit`. Baseline is fixed at `y = 20F` from the top of the canvas; horizontal origin `x = 2F` inset from the left, leaving `36F` of ink width for the prompt string.
+Canvas internal resolution nominal `40F × 28F` (`560 × 392` when `F=14`). Display mode **`fit`** with **`fillContainer`** so buffers snap to occupied PCS after mount. Horizontal origin uses `≥ 1 F` padded inset proportional to nominal `560 px` canvas width. Baseline Y is `canvasHeight × drawHeightFraction` (slider in VIEW, default `0.7`), matching `_resolvePromptLayout` + `GlyphCaptureCanvas._baselineCanvasY()`.
 
 ---
 

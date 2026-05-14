@@ -471,6 +471,8 @@ export const LayoutCalculator = {
     calculateDimensions(type = 'default') {
         const layout = this.computeLayout();
         const F = this.F;
+        /** Shared generative chrome — single source when F changes */
+        const transportStripRow = F * 2;
 
         // Component-specific dimension calculations - now uses shared frame
         const componentDimensions = {
@@ -513,6 +515,37 @@ export const LayoutCalculator = {
                 width: F * 67,    // 804px at F=12, 938px at F=14
                 height: F * 67,   // Square canvas for generative animations
                 sidebarWidth: F * 36  // 432px at F=12, 504px at F=14
+            },
+            /** Generator page toolbar — heights/widths applied in GeneratorToolbar.js */
+            'generator-toolbar': {
+                rowHeight: Config.sizing.header,
+                fontSizePrimary: F,
+                fontSizeSecondary: Math.round(F * 0.75),
+                sidebarTitleColFallback: F * 30,
+                dropdownMaxHeight: Config.sizing.dropdownMaxH,
+                exportPanelWidth: F * 16,
+                infoPanelWidth: F * 30,
+                /** max-height overlay: viewport minus this (px) */
+                overlayMaxHeightDeduction: F * 4,
+                /** Collapse VIEW modes when each grid fraction narrower than this (px) */
+                collapseColumnMinWidth: F * 4,
+            },
+            /** SPEED / TIMELINE strip — applied in TransportStrip.js */
+            'generator-transport-strip': {
+                rowHeight: transportStripRow,
+                labelFontSize: Math.round(F * 0.75),
+                speedCellPaddingX: F,
+                speedCellGap: Math.round(F * 0.5),
+                sliderMinWidth: F * 4,
+                sliderTrackHeight: Math.round(F * 0.25),
+                readoutWidth: F * 3,
+                timelineBtnWidth: F * 6,
+                thumbDiameter: F,
+            },
+            /** GenerativeToolHost canvas column — chrome heights + flex maths (consumers apply via JS). */
+            'generative-canvas-dock': {
+                transportStripHeight: transportStripRow,
+                sequencerTimelineMinHeight: F * 4 // matches seq2-strip row stack
             },
             'export-presets': {
                 // Instagram export presets

@@ -25,8 +25,8 @@ Living document. Sibling to `plan.md`. Gates v1 sign-off (no `status: blocking` 
 
 | id | status | origin | question | resolution |
 |---|---|---|---|---|
-| Q-001 | blocking | plan §3 | Which LLM provider/model for Pass-B extraction (Stage 5)? Cost vs schema-adherence vs throughput trade-off. | |
-| Q-002 | blocking | plan §3 | Which embedding model for Stage 6 — `text-embedding-3-small`, `bge-small-en-v1.5`, local? Trade-off: API cost vs reproducibility. | |
+| Q-001 | resolved | plan §3 | Which LLM provider/model for Pass-B extraction (Stage 5)? Cost vs schema-adherence vs throughput trade-off. | Claude 4 Sonnet (tool_use structured output). Rationale: superior verbatim-quote fidelity vs GPT-4o; quote-substring guard is the hardest constraint. API cost negligible at ~120 articles. Pipeline must accept `--model` flag so provider is not hard-coded. GPT-4o is the designated fallback. |
+| Q-002 | resolved | plan §3 | Which embedding model for Stage 6 — `text-embedding-3-small`, `bge-small-en-v1.5`, local? Trade-off: API cost vs reproducibility. | `text-embedding-3-small` (OpenAI). 1536 dimensions, sufficient for HDBSCAN over ~600 assertions. Cheap. Widest ecosystem support for downstream clustering tooling. Local models add infra cost with no quality gain at this scale. |
 | Q-003 | open | plan §7 | Cluster cosine threshold: 0.82 is a guess. Validate empirically on first 10 Articles. | |
 | Q-004 | open | plan §7 | `confidence = clamp(Σ source.weight / 2.0, 0, 1)`. Why divide by 2? Justify or replace with calibrated formula. | |
 | Q-005 | blocking | plan §4 stage 12 | Where does the linter run — pre-commit hook, CI only, both? Affects developer feedback latency. | |
@@ -36,13 +36,13 @@ Living document. Sibling to `plan.md`. Gates v1 sign-off (no `status: blocking` 
 | Q-009 | open | plan §10 step 9 | When mined Rules conflict with existing SiteBoy `.cursorrules` / `design-law.md`, which wins? Manual review, or supersede via `priority`? | |
 | Q-010 | open | plan §4a | Re-paste policy: if user updates a Tier-3 paste later, does the cache get invalidated and downstream Rules re-derived? | |
 | Q-011 | open | plan §10 | Pipeline cadence: re-run on every URL-list change, weekly, on demand? | |
-| Q-012 | open | plan §3 | `priority` is a 0–1000 integer. How is it set initially — by category, by modality, by hand? | |
+| Q-012 | resolved | plan §3 | `priority` is a 0–1000 integer. How is it set initially — by category, by modality, by hand? | Deterministic formula in schema.mjs: `priority = round(confidence × 500 + modality_base)`. modality_base: MUST/MUST_NOT=400, SHOULD/SHOULD_NOT=200, MAY=0. |
 | Q-013 | open | sample analysis (UX Planet) | Depth-1 expansion from listicle inline links: enabled by default, or opt-in per Source? | |
 | Q-014 | open | plan §11 | Schema versioning + migration policy: how is `schema_version` bumped? Migration scripts checked in? | |
 | Q-015 | open | plan §9 | Token-budget gates (`.cursorrules` ≤6k, `INDEX.md` ≤2k) — measured with which tokeniser? `tiktoken` model name? | |
 | Q-016 | open | plan §4 stage 11 | Generated-file delimiter for the `.cursorrules` Hot Rules block: comment markers (`<!-- HOT-RULES:START -->`)? | |
 | Q-017 | open | plan §3 | Are `examples.bad` strings mandatory for `decidable: true` Rules? (Recommend yes — Detector test relies on them.) | |
-| Q-018 | open | plan §6 | New category `accessibility` — currently absent from taxonomy but recurs across sources (WCAG, NN/g, contrast, colourblind). Add. | |
+| Q-018 | resolved | plan §6 | New category `accessibility` — currently absent from taxonomy but recurs across sources (WCAG, NN/g, contrast, colourblind). Add. | Added to CATEGORIES enum in schema.mjs. WCAG 2.2 added to sources.json as weight=1.0 established-design-system source. |
 | Q-019 | open | sample analysis (NN/g) | Multi-category Rules — adopt `categories: []` + `primary_category`, or split into N Rules? Affects retrieval. | |
 | Q-020 | open | plan §7 | Per-author authority bonus (e.g. Tufte, Norman, Müller-Brockmann named-author override of source-class weight). Worth the maintenance cost? | |
 
@@ -50,7 +50,7 @@ Living document. Sibling to `plan.md`. Gates v1 sign-off (no `status: blocking` 
 
 | id | status | origin | hole | mitigation |
 |---|---|---|---|---|
-| H-001 | open | plan §3 | `decidable` is binary; many Rules are partially decidable (e.g. "no decoration" — what counts as decoration?). Forces false negatives or false positives. | Consider `decidability: full | partial | judgment` ternary. |
+| H-001 | resolved | plan §3 | `decidable` is binary; many Rules are partially decidable (e.g. "no decoration" — what counts as decoration?). Forces false negatives or false positives. | Schema.mjs uses ternary `decidable: 'full' \| 'partial' \| 'judgment'` (resolved before schema lock). Validation rules enforce detector presence for 'full'/'partial', and detector.kind='none' for 'judgment'. |
 | H-002 | open | plan §7 | Authority weight is per-source-class only; ignores per-author reputation. Don Norman on Medium ≠ random influencer. | See Q-020. |
 | H-003 | open | plan §4 stage 7 | Cluster threshold (0.82) is unvalidated. Wrong threshold yields either over-merging (loses nuance) or under-merging (duplicates). | Validate against a hand-labelled set of known-equivalent and known-distinct Assertions. |
 | H-004 | open | plan §4 stage 8 | Synthesis (LLM) is non-deterministic. Re-running the pipeline can produce different canonical statements. | Pin model + seed; cache canonical statement per Cluster signature; only re-synth on Cluster membership change. |
@@ -59,7 +59,7 @@ Living document. Sibling to `plan.md`. Gates v1 sign-off (no `status: blocking` 
 | H-007 | open | plan §8 | Profile-overlay model assumes movements are independently filterable; in practice movements have internal contradictions when blended. | See C-001..C-005 below. Model needs profile-conflict detection. |
 | H-008 | open | plan §4 stage 11 | `.cursorrules` is human-authored AND machine-generated. Idempotent merge requires delimiter discipline. | Q-016 resolves. |
 | H-009 | open | plan §9 | CI-blocking per-Rule tests scale poorly: 200 Rules × 3 examples each = 600 detector runs per CI build. | Tier tests: Hot Rules every CI; full corpus nightly. |
-| H-010 | open | plan §3 | Quote-substring guard fails on markdown emphasis (`**word**` vs `word`), curly quotes (`"` vs `"`), nbsp vs space. | Normalise both sides: strip `*_` emphasis, NFKC unicode, smart→straight quotes, collapse whitespace. |
+| H-010 | resolved | plan §3 | Quote-substring guard fails on markdown emphasis (`**word**` vs `word`), curly quotes (`"` vs `"`), nbsp vs space. | `normaliseForQuoteMatch()` in schema.mjs. `tools/scrape/extract.mjs` builds a normalised full-article string and requires each claim `quote` normalised form to be a substring (stage 5 quote guard). |
 | H-011 | open | plan §4 stage 4 | Heading-as-rule pattern (brutalist-web) requires a separate sub-strategy not yet implemented. | Add: H3 with imperative/declarative full-sentence (>30 chars) + body paragraph → Assertion. |
 | H-012 | open | plan §4 stage 5 | Definition vs prescription discrimination is prompt-dependent and brittle (Figma 13 principles). | Pass-B prompt template explicit; add few-shot examples of definition (reject) vs rule (accept); add validator that flags Rules whose `statement` matches `<term> is <definition>` regex. |
 | H-013 | open | plan §4 stage 5 | Descriptive→prescriptive reframing (Wikipedia Swiss) loses certainty: "X used Y" → "use Y" overstates universality. | Mandatory `movements` tag when `descriptive_origin: true`; reviewer-queue any Rule with `descriptive_origin && movements: []`. |

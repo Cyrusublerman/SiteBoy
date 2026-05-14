@@ -115,6 +115,9 @@ import {
     CanvasModeTabs,
     CategoryTabsBar,
     GeneratorToolbar,
+    GenerativeCanvasDock,
+    ToolToolbar,
+    ToolbarPanelStack,
     SeedInput,
     NavigationDropdown,
     DistortToolbar,
@@ -287,6 +290,9 @@ const ComponentLibrary = {
             'canvas-mode-tabs': CanvasModeTabs,
             'category-tabs-bar': CategoryTabsBar,
             'generator-toolbar': GeneratorToolbar,
+            'generative-canvas-dock': GenerativeCanvasDock,
+            'tool-toolbar': ToolToolbar,
+            'toolbar-panel-stack': ToolbarPanelStack,
             'seed-input': SeedInput,
             'navigation-dropdown': NavigationDropdown,
             'distort-toolbar': DistortToolbar,
@@ -472,6 +478,9 @@ ComponentLibrary.CanvasTabs = CanvasTabs;
 ComponentLibrary.CanvasModeTabs = CanvasModeTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.GeneratorToolbar = GeneratorToolbar;
+ComponentLibrary.GenerativeCanvasDock = GenerativeCanvasDock;
+ComponentLibrary.ToolToolbar = ToolToolbar;
+ComponentLibrary.ToolbarPanelStack = ToolbarPanelStack;
 ComponentLibrary.SeedInput = SeedInput;
 ComponentLibrary.NavigationDropdown = NavigationDropdown;
 ComponentLibrary.DistortToolbar = DistortToolbar;
@@ -632,6 +641,9 @@ export {
     CanvasModeTabs,
     CategoryTabsBar,
     GeneratorToolbar,
+    GenerativeCanvasDock,
+    ToolToolbar,
+    ToolbarPanelStack,
     SeedInput,
     NavigationDropdown,
     DistortToolbar,
