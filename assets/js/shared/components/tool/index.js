@@ -7,6 +7,7 @@ export { CanvasTabs } from './CanvasTabs.js';
 export { CanvasModeTabs } from './CanvasModeTabs.js';
 export { CategoryTabsBar } from './CategoryTabsBar.js';
 export { GeneratorToolbar } from './GeneratorToolbar.js';
+export { GlyphBuilderToolbar } from './GlyphBuilderToolbar.js';
 export { GenerativeCanvasDock } from './GenerativeCanvasDock.js';
 export { ToolbarPanelStack } from './ToolbarPanelStack.js';
 export { ToolToolbar } from './ToolToolbar.js';

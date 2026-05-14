@@ -21,7 +21,6 @@ import {
 } from '../../shared/algorithms/typography/prompt-sequencer.js';
 import { normaliseStrokes, computeDrawingMetrics } from '../../shared/algorithms/typography/stroke-capture.js';
 import { ExportUtils } from '../../shared/algorithms/index.js';
-import { ToolToolbar } from '../../shared/components/tool/ToolToolbar.js';
 
 const GF_CURSIVE = [
     'Dancing Script', 'Pacifico', 'Sacramento', 'Great Vibes', 'Allura',
@@ -35,7 +34,20 @@ const DOC_MD_PATH = '/blog/docs/pages/tools/utilities/cursive-glyph-builder.md';
 const DEFAULT_GUIDES = ['BASELINE', 'DESC', 'XH', 'CAP', 'REF'];
 
 const RAIL_FOOTER =
-    'CLEAR INK (SIDEBAR) · UNDO CTRL+Z · REDO CTRL+SHIFT+Z · SKIP ESC · SAVE+NEXT ENTER · EXPORT (TOOLBAR)';
+    'NEXT ENTER · SKIP ESC · CLEAR INK (SIDEBAR) · UNDO CTRL+Z · REDO CTRL+SHIFT+Z · EXPORT ▾ (TOOLBAR)';
+
+const GUIDE_TOGGLE_ITEMS = [
+    { value: 'BASELINE', label: 'BASE' },
+    { value: 'DESC',     label: 'DESC' },
+    { value: 'XH',       label: 'X-HGT' },
+    { value: 'CAP',      label: 'CAP' },
+    { value: 'REF',      label: 'REF' },
+    { value: 'ASC',      label: 'ASC' },
+    { value: 'ASHADE',   label: 'A-SHD' },
+    { value: 'LFT',      label: 'L-BND' },
+    { value: 'RGT',      label: 'R-BND' },
+    { value: 'BOX',      label: 'BBOX' },
+];
 
 const TOOL_CONFIG = {
     title: 'CURSIVE GLYPH BUILDER',
@@ -43,29 +55,44 @@ const TOOL_CONFIG = {
     sidebar: [
         ['SESSION', [
             ['Library', [
-                ['button', 'New Library', { key: 'newLibrary', value: 'NEW LIBRARY' }],
-            ]],
-            ['Font', [
-                ['dropdown', 'Font pick', [{ value: '__noop__', label: 'PICK FONT' }],
-                    { key: 'fontFamily', value: '__noop__' }],
+                ['button', 'New Library', { key: 'newLibrary' }],
             ]],
         ]],
         ['PROMPT', [
-            ['Current', [
-                ['label', 'Prompt',   { key: 'promptLabel',   value: '—' }],
-                ['label', 'Phase',    { key: 'phaseLabel',    value: '—' }],
-                ['label', 'Coverage', { key: 'coverageLabel', value: '0%' }],
+            ['Status', [
+                ['label', '', { key: 'sessionLine', value: '—', variant: 'caption' }],
             ]],
+            ['Current', [
+                ['label', 'Prompt',   { key: 'promptLabel',   value: '—', variant: 'caption' }],
+                ['label', 'Phase',    { key: 'phaseLabel',    value: '—', variant: 'caption' }],
+                ['label', 'Coverage', { key: 'coverageLabel', value: '0%', variant: 'caption' }],
+            ], { contentColumns: 3 }],
             ['Queue', [
-                ['button', 'Save + Next', { key: 'saveNext',   value: 'SAVE + NEXT' }],
-                ['button', 'Skip',        { key: 'skipPrompt', value: 'SKIP' }],
-                ['button', 'Clear Ink',   { key: 'clearInk',   value: 'CLEAR INK' }],
+                ['button', 'Next',      { key: 'saveNext' }],
+                ['button', 'Skip',      { key: 'skipPrompt' }],
+                ['button', 'Clear Ink', { key: 'clearInk' }],
+            ], { contentColumns: 3 }],
+        ]],
+        ['VIEW', [
+            ['Guides', [
+                ['toggle', 'Overlays', GUIDE_TOGGLE_ITEMS, {
+                    key: '_guides',
+                    exclusive: false,
+                    layout: 'grid',
+                    gridColumns: 2,
+                    selectedValues: DEFAULT_GUIDES,
+                }],
+            ]],
+            ['Layout', [
+                ['slider', 'Draw height', 0.4, 1.5, 0.05, {
+                    key: 'drawHeightFraction',
+                    withNumber: true,
+                    value: 0.7,
+                }],
             ]],
         ]],
     ],
 
-    // canvas.displayMode is fit/fill/actual capable in backend. UI is intentionally
-    // omitted for this tool — fit is the only meaningful mode for capture work.
     canvas: {
         displayMode:   'fit',
         fillContainer: true,
@@ -87,24 +114,55 @@ export class CursiveGlyphBuilderTool {
         this._dirty         = false;
 
         this.tool = null;
+        this._glyphToolbar = null;
+        this._fontDropdown = null;
         this._onKeyDown = this._onKeyDown.bind(this);
         this._unregisterKeydown = null;
-        this._trackedTopBarComponents = [];
 
         this.initialize();
     }
 
     async initialize() {
         try {
+            const Lib = this.deps.ComponentLibrary;
+
+            this._fontDropdown = new Lib.Dropdown({
+                label:       '',
+                options:     [{ value: '__noop__', label: 'REFERENCE FONT' }],
+                value:       '__noop__',
+                placeholder: 'REFERENCE FONT',
+                onChange:    (v) => this._onFontDropdownChange(v),
+            }, this.deps);
+
+            this._glyphToolbar = new Lib.GlyphBuilderToolbar({
+                fontDropdown: this._fontDropdown,
+                displayMode:  'fit',
+                infoFetchPath: DOC_MD_PATH,
+                onDisplayModeChange: (mode) => {
+                    this.tool?.setCanvasDisplayMode(mode);
+                    this._syncCaptureCanvasSizeFromTool();
+                    this._renderCurrentPrompt();
+                },
+                onExportPng: () => this._exportPng(),
+                onExportZip: () => void this._exportZip(),
+                onImportZipPick: (f) => this._promptImportZip(f),
+                onImportFontPick: (f) => void this._loadFontFromUpload(f),
+            }, this.deps);
+
+            if (this.container) {
+                this.container.classList.add('tool-viewport');
+            }
+
             this.tool = new ToolBase({
                 ...TOOL_CONFIG,
-                onAfterRender: (tb) => this._mountTopBar(tb),
+                onAfterRender: (tb) => {
+                    if (this._glyphToolbar) tb.setTopBar(this._glyphToolbar);
+                },
             }, this.deps);
             this.tool.onUpdate = (key, value, values) =>
                 this._handleUpdate(key, value, values);
 
             if (this.container) {
-                this.container.classList.add('tool-viewport');
                 this.tool.mount(this.container);
             }
 
@@ -152,184 +210,20 @@ export class CursiveGlyphBuilderTool {
         }
     }
 
-    _mountTopBar(tb) {
-        if (tb !== this.tool) return;
-        for (const c of this._trackedTopBarComponents) {
-            try { c.destroy?.(); } catch (_) {}
-        }
-        this._trackedTopBarComponents.length = 0;
-        tb.setTopBar(this._buildToolToolbar());
+    _onFontDropdownChange(value) {
+        if (this.tool) this.tool.values.fontFamily = value;
+        void this._loadFromPick(value);
     }
 
-    _buildToolToolbar() {
-        const Lib = ComponentLibrary;
-
-        /** @type {Array<{destroy?:()=>void}>} */
-        const track = (...xs) => {
-            for (const x of xs) {
-                if (x && typeof x === 'object') this._trackedTopBarComponents.push(x);
-            }
+    _modeWord(type) {
+        const map = {
+            single:   'SINGLE',
+            digraph:  'DOUBLE',
+            trigraph: 'TRIPLE',
+            hardpair: 'HARDPAIR',
+            variation: 'VAR',
         };
-
-        const cells = [];
-
-        const viewLibsOk = !!(Lib.ToggleGroup && Lib.NumericInput && Lib.ToolbarPanelStack);
-        const importLibsOk = !!(Lib.FileInput && Lib.ToolbarPanelStack);
-        const exportLibsOk = !!(Lib.Button && Lib.ToolbarPanelStack);
-        const infoLibsOk = !!(Lib.MarkdownBody && Lib.ToolbarPanelStack);
-
-        if (viewLibsOk) {
-            cells.push({
-                id:    'view',
-                label: 'VIEW',
-                buildPanel: (host) => {
-                    const tg = new Lib.ToggleGroup({
-                        layout:         'grid',
-                        gridColumns:    2,
-                        items:          [
-                            { value: 'BASELINE', label: 'BASE' },
-                            { value: 'DESC',     label: 'DESC' },
-                            { value: 'XH',       label: 'X-HGT' },
-                            { value: 'CAP',      label: 'CAP' },
-                            { value: 'REF',      label: 'REF' },
-                            { value: 'ASC',      label: 'ASC' },
-                            { value: 'ASHADE',   label: 'A-SHD' },
-                            { value: 'LFT',      label: 'L-BND' },
-                            { value: 'RGT',      label: 'R-BND' },
-                            { value: 'BOX',      label: 'BBOX' },
-                        ],
-                        selectedValues:
-                            Array.isArray(this.tool.values['_guides'])
-                            && this.tool.values['_guides'].length
-                                ? [...this.tool.values['_guides']]
-                                : [...DEFAULT_GUIDES],
-                        onChange: (sel) => {
-                            this.tool.setValue('_guides', sel);
-                            this._applyGuidesToCanvas(sel);
-                            this.tool?.draw?.();
-                        },
-                    }, this.deps);
-
-                    const num = new Lib.NumericInput({
-                        label:    'DRAWING HEIGHT',
-                        display:  'both',
-                        min:      0.4,
-                        max:      1.5,
-                        step:     0.05,
-                        value:    this.tool.values.drawHeightFraction ?? 0.7,
-                        onChange: (v) => {
-                            this.tool.setValue('drawHeightFraction', Number(v));
-                            this._captureCanvas?.setReferenceHeightFraction(Number(v));
-                            this._renderCurrentPrompt();
-                        },
-                    }, this.deps);
-
-                    track(tg, num);
-                    const stack = new Lib.ToolbarPanelStack({
-                        childrenElements: [tg.render(), num.render()],
-                    }, this.deps);
-                    track(stack);
-                    return stack.render();
-                },
-            });
-        } else window.debugLog('TOOLS', '[GlyphBuilder] VIEW panel libs missing');
-
-        if (importLibsOk) {
-            cells.push({
-                id:    'import',
-                label: 'IMPORT',
-                buildPanel: (host) => {
-                    const zipPick = new Lib.FileInput({
-                        label:      '',
-                        accept:     '.zip',
-                        buttonText: 'IMPORT ZIP',
-                        multiple:   false,
-                        onChange:   (/** @type {File} */ f) => {
-                            if (!(f instanceof File) || !f.name) return;
-                            this._promptImportZip(f);
-                            host.close();
-                        },
-                    }, this.deps);
-
-                    const fontPick = new Lib.FileInput({
-                        label:      '',
-                        accept:     '.ttf,.otf,.woff,.woff2',
-                        buttonText: 'FONT FILE',
-                        multiple:   false,
-                        onChange:   (/** @type {File} */ f) => {
-                            if (!(f instanceof File)) return;
-                            void this._loadFontFromUpload(f);
-                            host.close();
-                        },
-                    }, this.deps);
-
-                    track(zipPick, fontPick);
-                    const stack = new Lib.ToolbarPanelStack({
-                        childrenElements: [zipPick.render(), fontPick.render()],
-                    }, this.deps);
-                    track(stack);
-                    return stack.render();
-                },
-            });
-        } else window.debugLog('TOOLS', '[GlyphBuilder] IMPORT panel libs missing');
-
-        if (exportLibsOk) {
-            cells.push({
-                id:    'export',
-                label: 'EXPORT',
-                buildPanel: (host) => {
-                    const zipBtn = new Lib.Button({
-                        text: 'EXPORT ZIP',
-                        onClick: () => {
-                            void this._exportZip();
-                            host.close();
-                        },
-                    }, this.deps);
-
-                    const pngBtn = new Lib.Button({
-                        text: 'EXPORT PNG',
-                        onClick: () => {
-                            this._exportPng();
-                            host.close();
-                        },
-                    }, this.deps);
-
-                    track(zipBtn, pngBtn);
-                    const stack = new Lib.ToolbarPanelStack({
-                        childrenElements: [zipBtn.render(), pngBtn.render()],
-                    }, this.deps);
-                    track(stack);
-                    return stack.render();
-                },
-            });
-        } else window.debugLog('TOOLS', '[GlyphBuilder] EXPORT panel libs missing');
-
-        if (infoLibsOk) {
-            cells.push({
-                id:    'info',
-                label: 'INFO',
-                buildPanel: (_host) => {
-                    const md = new Lib.MarkdownBody({
-                        fetchPath: DOC_MD_PATH,
-                    }, this.deps);
-                    track(md);
-                    const stack = new Lib.ToolbarPanelStack({
-                        childrenElements: [md.render()],
-                    }, this.deps);
-                    track(stack);
-                    return stack.render();
-                },
-            });
-        } else window.debugLog('TOOLS', '[GlyphBuilder] INFO panel libs missing');
-
-        return new ToolToolbar(
-            {
-                /** Subheader already names the tool; omit duplicate strip. */
-                title: '',
-                cells,
-            },
-            { ...this.deps, MF: { F: this.tool.F || 14 } },
-        );
+        return map[type] ?? String(type || '—').toUpperCase();
     }
 
     _syncCaptureCanvasSizeFromTool() {
@@ -404,7 +298,7 @@ export class CursiveGlyphBuilderTool {
             await this._rebuildFontDropdown();
             const pick = this._library.referenceFont?.pickValue ?? this._guessPickToken(this._library.referenceFont?.name);
             if (pick) {
-                try { this.tool?.setValue('fontFamily', pick); } catch (_) {}
+                this.tool.values.fontFamily = pick;
             }
             this._captureCanvas?.setFontMetrics(this._library.referenceFont.metrics);
             this._applyGuidesToCanvas(this.tool.values['_guides']);
@@ -426,11 +320,11 @@ export class CursiveGlyphBuilderTool {
     }
 
     async _rebuildFontDropdown() {
-        const dd = this.tool?.components.get('fontFamily');
+        const dd = this._fontDropdown;
         if (!dd?.setOptions) return;
 
         const families = await detectSystemFonts();
-        const opts = [{ value: '__noop__', label: 'PICK FONT' }];
+        const opts = [{ value: '__noop__', label: 'REFERENCE FONT' }];
         families.forEach((name) =>
             opts.push({ value: `sf:${name}`, label: String(name).toUpperCase() }),
         );
@@ -450,8 +344,12 @@ export class CursiveGlyphBuilderTool {
         const hasCur = opts.some((o) => !o.separator && String(o?.value ?? '') === String(cur));
         if (!hasCur) cur = '__noop__';
 
-        try { dd.setValue(cur); } catch (_) {
-            try { dd.setValue('__noop__'); } catch (_) {}
+        if (typeof dd.setValueSilent === 'function') {
+            dd.setValueSilent(cur);
+        } else {
+            try { dd.setValue(cur); } catch (_) {
+                try { dd.setValue('__noop__'); } catch (_) {}
+            }
         }
     }
 
@@ -489,6 +387,7 @@ export class CursiveGlyphBuilderTool {
             metrics:  Adapter.getMetrics(adapter),
             pickValue,
         };
+        if (this.tool) this.tool.values.fontFamily = pickValue;
         this._captureCanvas?.setFontMetrics(this._library.referenceFont.metrics);
         this._buildQueue();
         await this._autosave();
@@ -521,6 +420,9 @@ export class CursiveGlyphBuilderTool {
                 { phasesEnabled: true, hardPairCount: 50 });
         this._queueState = { prompts, currentIndex: 0, skipDeferred: [], history: [] };
         this._library.queueState = this._queueState;
+        if (prompts.length === 0) {
+            window.debugLog('TOOLS', '[GlyphBuilder] Prompt queue empty — font may lack required glyphs.');
+        }
         this._updatePromptUI();
         this._renderCurrentPrompt();
     }
@@ -542,7 +444,7 @@ export class CursiveGlyphBuilderTool {
                 ?? (
                     fontName.length
                         ? `NO ACTIVE PROMPT · ${fontName.toUpperCase()}`
-                        : 'NO FONT LOADED — PICK SESSION FONT OR IMPORT (TOOLBAR IMPORT)'
+                        : 'NO FONT LOADED — PICK REFERENCE FONT (TOOLBAR LEFT) OR IMPORT (EXPORT ▾)'
                 ),
             footerLine: RAIL_FOOTER,
         });
@@ -673,9 +575,13 @@ export class CursiveGlyphBuilderTool {
         const prompt = currentPrompt(this._queueState);
         if (!this.tool) return;
         const set = (key, val) => { try { this.tool.setValue(key, val); } catch (_) {} };
+        const pct = `${coveragePercent(this._queueState)}%`;
+        const modeWord = prompt ? this._modeWord(prompt.type) : '—';
+        const glyphs = prompt ? `"${prompt.text}"` : '—';
+        set('sessionLine', `${modeWord} — ${glyphs} — ${pct}`);
         set('promptLabel',   prompt ? `"${prompt.text}"` : '—');
         set('phaseLabel',    prompt ? prompt.type.toUpperCase() : '—');
-        set('coverageLabel', `${coveragePercent(this._queueState)}%`);
+        set('coverageLabel', pct);
     }
 
     async _autosave() {
@@ -835,9 +741,6 @@ export class CursiveGlyphBuilderTool {
             case 'newLibrary':
                 this._confirmAndNewLibrary();
                 break;
-            case 'fontFamily':
-                void this._loadFromPick(value);
-                break;
             case 'saveNext':
                 void this._saveAndNext();
                 break;
@@ -886,7 +789,10 @@ export class CursiveGlyphBuilderTool {
             this._idleViewportChrome();
         }
         this._dirty = false;
-        try { void this.tool?.setValue('fontFamily', '__noop__'); } catch (_) {}
+        if (this._fontDropdown && typeof this._fontDropdown.setValueSilent === 'function') {
+            this._fontDropdown.setValueSilent('__noop__');
+        }
+        this.tool.values.fontFamily = '__noop__';
         this._library.queueState = this._queueState;
         await this._rebuildFontDropdown();
         this._applyGuidesToCanvas(this.tool.values['_guides']);
@@ -995,11 +901,6 @@ export class CursiveGlyphBuilderTool {
         }
         this._unregisterKeydown = null;
 
-        for (const c of this._trackedTopBarComponents) {
-            try { c.destroy?.(); } catch (_) {}
-        }
-        this._trackedTopBarComponents.length = 0;
-
         this._hideToolOverlay();
 
         if (this._captureCanvas) {
@@ -1011,6 +912,12 @@ export class CursiveGlyphBuilderTool {
             this.tool.destroy();
             this.tool = null;
         }
+
+        if (this._fontDropdown) {
+            try { this._fontDropdown.destroy(); } catch (_) {}
+            this._fontDropdown = null;
+        }
+        this._glyphToolbar = null;
     }
 }
 

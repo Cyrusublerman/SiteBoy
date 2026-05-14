@@ -115,6 +115,7 @@ import {
     CanvasModeTabs,
     CategoryTabsBar,
     GeneratorToolbar,
+    GlyphBuilderToolbar,
     GenerativeCanvasDock,
     ToolToolbar,
     ToolbarPanelStack,
@@ -290,6 +291,7 @@ const ComponentLibrary = {
             'canvas-mode-tabs': CanvasModeTabs,
             'category-tabs-bar': CategoryTabsBar,
             'generator-toolbar': GeneratorToolbar,
+            'glyph-builder-toolbar': GlyphBuilderToolbar,
             'generative-canvas-dock': GenerativeCanvasDock,
             'tool-toolbar': ToolToolbar,
             'toolbar-panel-stack': ToolbarPanelStack,
@@ -478,6 +480,7 @@ ComponentLibrary.CanvasTabs = CanvasTabs;
 ComponentLibrary.CanvasModeTabs = CanvasModeTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.GeneratorToolbar = GeneratorToolbar;
+ComponentLibrary.GlyphBuilderToolbar = GlyphBuilderToolbar;
 ComponentLibrary.GenerativeCanvasDock = GenerativeCanvasDock;
 ComponentLibrary.ToolToolbar = ToolToolbar;
 ComponentLibrary.ToolbarPanelStack = ToolbarPanelStack;
@@ -641,6 +644,7 @@ export {
     CanvasModeTabs,
     CategoryTabsBar,
     GeneratorToolbar,
+    GlyphBuilderToolbar,
     GenerativeCanvasDock,
     ToolToolbar,
     ToolbarPanelStack,

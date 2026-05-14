@@ -189,6 +189,8 @@ export class ToolBase extends BaseComponent {
 
         /** @type {HTMLElement|null} */
         this._topBarElement = null;
+        /** @type {HTMLElement|null} */
+        this._canvasSlot = null;
         /** @type {ResizeObserver|null} */
         this._fillContainerResizeObserver = null;
 
@@ -330,7 +332,9 @@ export class ToolBase extends BaseComponent {
     }
 
     /**
-     * Mount a top toolbar above sidebar+canvas grid.
+     * Mount a top toolbar in the **canvas column only** (first row of tool-canvas-area),
+     * in-flow above the canvas slot — not above the sidebar.
+     *
      * @param {{ render: () => HTMLElement|null, destroy?: Function, isDestroyed?: boolean }} component
      */
     setTopBar(component) {
@@ -350,7 +354,7 @@ export class ToolBase extends BaseComponent {
             this._topBarHeightPx = 0;
         }
 
-        if (!this.element) return;
+        if (!this.canvasArea) return;
 
         this.topBarComponent = component;
         const el = component.render();
@@ -359,43 +363,32 @@ export class ToolBase extends BaseComponent {
         this._topBarHeightPx = topH;
         this._topBarElement = el;
 
-        el.style.boxSizing = 'border-box';
-        el.style.position  = 'absolute';
-        el.style.zIndex    = '6';
+        el.style.boxSizing   = 'border-box';
+        el.style.position    = 'relative';
+        el.style.zIndex      = '6';
+        el.style.flexShrink  = '0';
+        el.style.width       = '100%';
 
-        const mainContent = this.element.querySelector('.tool-main-content');
-        if (mainContent && mainContent.parentNode === this.element) {
-            this.element.insertBefore(el, mainContent);
+        const anchor = this._canvasSlot;
+        if (anchor && anchor.parentNode === this.canvasArea) {
+            this.canvasArea.insertBefore(el, anchor);
         } else {
-            this.element.appendChild(el);
+            this.canvasArea.insertBefore(el, this.canvasArea.firstChild);
         }
 
-        this._syncTopBarGeometry();
-
         this.componentInstances.push(this.topBarComponent);
+        this._syncTopBarGeometry();
         this._syncMainContentInset();
     }
 
-    /** Position utility toolbar beside the PCS column when landscape sidebar is visible. */
-    _syncTopBarGeometry() {
-        const el = this._topBarElement;
-        if (!el) return;
-        const tabOff = this.categoryTabsConfig ? this.F * 2 : 0;
-        const portrait = window.innerWidth < window.innerHeight || window.innerWidth < 800;
-        const inset = portrait ? 0 : this.SIDEBAR_WIDTH;
-        el.style.top    = `${tabOff}px`;
-        el.style.left   = `${inset}px`;
-        el.style.right  = '0';
-        el.style.height = `${this._topBarHeightPx || this.F * 2}px`;
-        el.style.zIndex = '6';
-    }
+    /** Legacy hook; inset toolbar is laid out in-flow inside canvasArea. */
+    _syncTopBarGeometry() {}
 
     _syncMainContentInset() {
         if (!this.element) return;
 
         const tabOff = this.categoryTabsConfig ? this.F * 2 : 0;
-        const toolbarH = this._topBarHeightPx || 0;
-        const extra = tabOff + toolbarH;
+        const extra = tabOff;
 
         const mainContent = this.element.querySelector('.tool-main-content');
         if (!mainContent) return;
@@ -963,12 +956,7 @@ export class ToolBase extends BaseComponent {
                 // Block content - padded
                 const content = document.createElement('div');
                 content.className = 'tool-block-content';
-                content.style.cssText = `
-                    display: ${collapsed ? 'none' : 'flex'};
-                    flex-direction: column;
-                    gap: ${this.F2}px;
-                    padding: ${this.F}px;
-                `;
+                content.style.cssText = this._blockContentStyle(collapsed, options);
 
                 components.forEach(componentDef => {
                     const component = this._buildComponent(componentDef);
@@ -995,7 +983,7 @@ export class ToolBase extends BaseComponent {
                 toggleIcon.addEventListener('click', (e) => {
                     e.stopPropagation();
                     collapsed = !collapsed;
-                    content.style.display = collapsed ? 'none' : 'flex';
+                    content.style.cssText = this._blockContentStyle(collapsed, options);
                     toggleIcon.textContent = collapsed ? '+' : '−';
                     header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
                 });
@@ -1032,12 +1020,7 @@ export class ToolBase extends BaseComponent {
                 // Block content - padded
                 const content = document.createElement('div');
                 content.className = 'tool-block-content';
-                content.style.cssText = `
-                    display: ${collapsed ? 'none' : 'flex'};
-                    flex-direction: column;
-                    gap: ${this.F2}px;
-                    padding: ${this.F}px;
-                `;
+                content.style.cssText = this._blockContentStyle(collapsed, options);
 
                 components.forEach(componentDef => {
                     const component = this._buildComponent(componentDef);
@@ -1058,7 +1041,7 @@ export class ToolBase extends BaseComponent {
                 // Add click handler to toggle
                 header.addEventListener('click', () => {
                     collapsed = !collapsed;
-                    content.style.display = collapsed ? 'none' : 'flex';
+                    content.style.cssText = this._blockContentStyle(collapsed, options);
                     toggleIcon.textContent = collapsed ? '+' : '−';
                     header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
                 });
@@ -1067,12 +1050,7 @@ export class ToolBase extends BaseComponent {
             // No header - just content
             const content = document.createElement('div');
             content.className = 'tool-block-content';
-            content.style.cssText = `
-                display: flex;
-                flex-direction: column;
-                gap: ${this.F2}px;
-                padding: ${this.F}px;
-            `;
+            content.style.cssText = this._blockContentStyle(false, options);
 
             components.forEach(componentDef => {
                 const component = this._buildComponent(componentDef);
@@ -1089,6 +1067,35 @@ export class ToolBase extends BaseComponent {
         }
 
         return block;
+    }
+
+    /**
+     * Tool block body layout. Optional `contentColumns` (≥2) or `contentLayout: 'row'`.
+     * @param {boolean} collapsed
+     * @param {object} options
+     * @returns {string}
+     */
+    _blockContentStyle(collapsed, options = {}) {
+        if (collapsed) {
+            return 'display: none;';
+        }
+        const gap = `${this.F2}px`;
+        const pad = `${this.F}px`;
+        const cols = Number(options.contentColumns) || 0;
+        if (cols > 1) {
+            return (
+                'display: grid; ' +
+                `grid-template-columns: repeat(${cols}, minmax(0, 1fr)); ` +
+                `gap: ${gap}; padding: ${pad}; min-width: 0; align-items: stretch; box-sizing: border-box;`
+            );
+        }
+        const dir = options.contentLayout === 'row' ? 'row' : 'column';
+        const wrap = options.contentLayout === 'row' ? 'nowrap' : 'wrap';
+        return (
+            'display: flex; ' +
+            `flex-direction: ${dir}; flex-wrap: ${wrap}; gap: ${gap}; padding: ${pad}; ` +
+            'min-width: 0; box-sizing: border-box;'
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1443,7 +1450,18 @@ export class ToolBase extends BaseComponent {
             this.canvas = this.imageViewport.canvasEl;
             this.ctx = this.imageViewport.ctx;
             this.componentInstances.push(this.imageViewport);
-            area.appendChild(viewportElement);
+            this._canvasSlot = document.createElement('div');
+            this._canvasSlot.className = 'tool-canvas-slot';
+            this._canvasSlot.style.cssText = `
+                flex: 1;
+                min-height: 0;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            `;
+            this._canvasSlot.appendChild(viewportElement);
+            area.appendChild(this._canvasSlot);
             
             window.debugLog('INIT', '✅ Using ImageViewport component');
         } else {
@@ -1517,7 +1535,18 @@ export class ToolBase extends BaseComponent {
             
             // Track component for cleanup
             this.componentInstances.push(this.canvasComponent);
-            area.appendChild(canvasElement);
+            this._canvasSlot = document.createElement('div');
+            this._canvasSlot.className = 'tool-canvas-slot';
+            this._canvasSlot.style.cssText = `
+                flex: 1;
+                min-height: 0;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            `;
+            this._canvasSlot.appendChild(canvasElement);
+            area.appendChild(this._canvasSlot);
             
             window.debugLog('INIT', '✅ Using Canvas component');
         }
@@ -2102,6 +2131,8 @@ export class ToolBase extends BaseComponent {
 
         this.hideFloatingOverlay();
         this.hideLoading();
+
+        this._canvasSlot = null;
 
         if (this.topBarComponent) {
             try {

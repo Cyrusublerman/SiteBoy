@@ -239,7 +239,7 @@ export class Dropdown extends BaseComponent {
     }
     
     _select(value, index) {
-        if (value === '\u0000__sep\u0000' || value === '__noop__') return;
+        if (value === '\u0000__sep\u0000') return;
         this.value = value;
         this.selectedIndex = index;
         
@@ -416,6 +416,21 @@ export class Dropdown extends BaseComponent {
         if (index >= 0) {
             this._select(value, index);
         }
+    }
+
+    /**
+     * Update displayed value without invoking onChange (programmatic sync).
+     * @param {string} value
+     */
+    setValueSilent(value) {
+        const index = this._findValueIndex(value);
+        if (index < 0) return;
+        this.value = value;
+        this.selectedIndex = index;
+        const textEl = this.triggerEl?.querySelector('.dropdown-trigger-text');
+        if (textEl) textEl.textContent = this._getCurrentLabel();
+        const { F } = this.getF();
+        if (this.menuEl) this._renderOptions(F);
     }
     
     setOptions(options) {
