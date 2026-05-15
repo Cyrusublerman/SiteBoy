@@ -13,5 +13,6 @@ export { SVG } from './SVG.js';
 export { Media } from './Media.js';
 export { ProgressBar } from './ProgressBar.js';
 export { AudioOutput } from './AudioOutput.js';
+export { OverlayText } from './OverlayText.js';
 export { AnimationExport } from './AnimationExport.js';
 

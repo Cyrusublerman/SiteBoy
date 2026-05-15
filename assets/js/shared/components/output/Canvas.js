@@ -181,9 +181,30 @@ export class Canvas extends BaseComponent {
             this.redraw();
         }
 
-        // Apply display mode after a frame to ensure viewport has dimensions
+        // Apply display mode once the container has real dimensions.
+        // Observe the outer element (the containing block for the absolute viewport)
+        // so that any parent height settling triggers a re-apply.
+        this._lastViewportWidth = 0;
+        this._lastViewportHeight = 0;
+        this._viewportResizeObserver = new ResizeObserver(() => {
+            const rect = this.viewportEl.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                // Only re-apply if viewport size actually changed
+                if (rect.width !== this._lastViewportWidth || rect.height !== this._lastViewportHeight) {
+                    this._lastViewportWidth = rect.width;
+                    this._lastViewportHeight = rect.height;
+                    this._applyDisplayMode();
+                }
+            }
+        });
+        this._viewportResizeObserver.observe(this.element);
+
+        // Belt-and-suspenders: double-rAF ensures layout has settled even when
+        // the ResizeObserver's first callback fires before parent heights resolve.
         requestAnimationFrame(() => {
-            this._applyDisplayMode();
+            requestAnimationFrame(() => {
+                if (this.viewportEl) this._applyDisplayMode();
+            });
         });
 
         if (this.onMount) {
@@ -255,8 +276,10 @@ export class Canvas extends BaseComponent {
         const canvasHeight = this.height;
 
         const viewportRect = this.viewportEl.getBoundingClientRect();
-        const viewportWidth = viewportRect.width || canvasWidth;
-        const viewportHeight = viewportRect.height || canvasHeight;
+        // Bail out if viewport has no dimensions yet — ResizeObserver will retry
+        if (viewportRect.width === 0 || viewportRect.height === 0) return;
+        const viewportWidth = viewportRect.width;
+        const viewportHeight = viewportRect.height;
 
         let scale = 1;
         let x = 0;
@@ -301,10 +324,7 @@ export class Canvas extends BaseComponent {
             mode = 'auto';
         }
         this.displayMode = mode;
-
-        requestAnimationFrame(() => {
-            this._applyDisplayMode();
-        });
+        this._applyDisplayMode();
     }
 
     // =========================================================================
@@ -938,6 +958,12 @@ export class Canvas extends BaseComponent {
 
         // Cancel in-progress transition
         this._cancelTransition();
+
+        // Disconnect viewport resize observer
+        if (this._viewportResizeObserver) {
+            this._viewportResizeObserver.disconnect();
+            this._viewportResizeObserver = null;
+        }
 
         // Clear zoom indicator timer
         if (this._zoomFadeTimer) {

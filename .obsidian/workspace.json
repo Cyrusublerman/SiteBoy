@@ -195,19 +195,21 @@
       "bases:Create new base": false
     }
   },
-  "active": "f3bd761d4fd2d5e8",
+  "active": "6668b9b3e7a6ff63",
   "lastOpenFiles": [
-    "assets/js/tools/processors/distort/shaders/histogrameq.shader.js",
-    "assets/js/tools/processors/distort/shaders/canny.shader.js",
-    "assets/js/tools/processors/distort/shaders/dog.shader.js",
-    "assets/js/tools/processors/distort/shaders/openclose.shader.js",
-    "assets/js/tools/processors/distort/shaders/dilateerode.shader.js",
-    "assets/js/tools/processors/distort/shaders/truchet.shader.js",
-    "assets/js/tools/processors/distort/shaders/moire.shader.js",
-    "assets/js/tools/processors/distort/shaders/halftonepattern.shader.js",
-    "assets/js/tools/processors/distort/shaders/grating.shader.js",
-    "assets/js/tools/processors/distort/shaders/lensbubbles.shader.js",
-    "assets/js/tools/processors/distort/shaders/advection.shader.js",
+    "blog/docs/guides/standards/gpu-compute.md",
+    "dist/assets/nearest-color-legacy-BjwPMRGv.js",
+    "dist/assets/nearest-color-s0_rGIm9.js",
+    "dist/assets/order-disorder.gen-CUJhAsiV.js",
+    "dist/assets/ordered-B4163zd4.js",
+    "dist/assets/p5-wave-interference.gen-C9dx-QBX.js",
+    "dist/assets/pixel-tiler-legacy-CcVeB2Tp.js",
+    "blog/docs/guides/tools/gpu-shader-authoring.md",
+    "dist/assets/polyfills-legacy-BxhxIurR.js",
+    "dist/assets/polygon-calculator-legacy-B_B5TKat.js",
+    "dist/assets/polygon-operations-DwT7bY26.js",
+    "dist/assets/quine.gen-BKwB5-Vz.js",
+    "blog/docs/components/content/TreeTOC.md",
     "node_modules/@oxc-project/types/README.md",
     "tools/gallery-bundle-processor/output/_bulk2/digital/posters/zoom/8murray3.jpg",
     "tools/gallery-bundle-processor/output/_bulk2/digital/posters/web/man_and_horse.jpg",
@@ -241,8 +243,6 @@
     "blog/docs/temp/radialblur-build-guide.md",
     "blog/docs/temp/polarcoords-build-guide.md",
     "blog/docs/temp/paintstroke-build-guide.md",
-    "blog/docs/temp/perlinoverlay-build-guide.md",
-    "blog/docs/temp/pixelate-build-guide.md",
     "Untitled.canvas"
   ]
 }

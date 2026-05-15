@@ -25,6 +25,7 @@
  * - space-filling/space-filling-curves: Hilbert, Peano, L-systems
  * - tsp/path-optimization: Path optimization (nearest neighbor, 2-opt)
  * - noise/noise-functions: Simplex noise, Perlin, fBm, domain warping
+ * - astronomy/time-anchors: Historical/scientific time anchors across 11 scales (Big Bang → seconds)
  * - patterns/pattern-generators: Truchet tiles, gratings, moiré, superellipse
  * - patterns/halftone-patterns: Line halftone, contour lattice, dyadic scaling
  * - geometry/sdf-operations: Signed distance functions, boolean ops
@@ -147,8 +148,8 @@ export * as DSPEvaluator from './audio/dsp-evaluator.js';
 // Animation
 export * as Animation from './animation/animation-utils.js';
 
-// Export utilities
-export * as ExportUtils from './export/export-utils.js';
+// Export utilities (named object — callers use ExportUtils.exportCanvasPNG, etc.)
+export { ExportUtils } from './export/export-utils.js';
 
 // Rendering
 export * as Rendering from './rendering/rendering-utils.js';

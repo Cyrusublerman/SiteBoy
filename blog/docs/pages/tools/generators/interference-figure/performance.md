@@ -1,35 +1,24 @@
 # Interference Figure — Performance
 
-**Status: Unimplemented stub.** This file analyses expected performance of the intended algorithm.
+## Complexity
 
-## Expected Complexity
+Dominant work is spectral evaluation per pixel.
 
-| Step | Algorithm | Complexity |
-|---|---|---|
-| OPD basis fields | ~10 float ops per pixel | O(W × H) |
-| Fractal noise | noiseOctaves × noise eval | O(W × H × noiseOctaves) |
-| Phase retardation | N_λ multiplications per pixel | O(W × H × N_λ) |
-| Interference intensity | N_λ sin² per pixel | O(W × H × N_λ) |
-| Spectral to XYZ | N_λ × 3 multiplications | O(W × H × N_λ) |
-| Tone mapping | 3 ops per pixel | O(W × H) |
+- Base: `O(W * H * N_lambda)` with `N_lambda = 31`
+- Extra noise cost: `O(W * H * noiseOctaves)` when `noiseWeight > 0`
 
-**Total: O(W × H × N_λ × noiseOctaves)** — dominated by spectral integration.
+At `420x420`, full render evaluates ~176k pixels and ~5.5M wavelength intensity terms.
 
-## Spectral Sampling
+## Runtime Strategy
 
-The number of wavelength samples `N_λ` determines accuracy vs performance. Typical choices:
-- N_λ = 10: coarse but fast, ~10% spectral error.
-- N_λ = 31: 10 nm intervals, CIE standard.
-- N_λ = 81: 5 nm intervals, high accuracy.
+- Tier 3: worker offload via `computePixels`
+- Tier 2: adaptive interaction scale (`0.5`) during slider drag
+- Idle restore: full resolution after `250ms`
 
-At 420×420 and N_λ = 31: ~5.5 M sin/cos calls per frame. At 60 FPS this is on the border of feasibility on the main thread; Worker execution recommended.
+This keeps parameter interaction responsive while preserving full-quality static output after input settles.
 
-## Frame Budget (420×420, static image)
+## Practical Guidance
 
-Static generation (not animation) removes the frame-budget constraint. The critical metric is the time to generate on parameter change — target < 500 ms for interactive response.
-
-At N_λ = 31, noiseOctaves = 3: estimated ~20–80 ms on modern hardware in a Worker.
-
-## Worker Feasibility
-
-**High** — all computation is purely mathematical. No DOM access. The `spectralToRgb` step requires a 31-element CIE colour matching function lookup table (serialisable as a Float32Array).
+- For fastest response: lower `noiseWeight`, `noiseOctaves`, and `globalScale` extremes.
+- Physical mode is heavier than Stylised mode due to spectral integration.
+- Export is PNG-only raster output; no vector performance path exists.

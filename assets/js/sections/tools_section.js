@@ -30,6 +30,7 @@ const ToolsSection = {
         '#tools/utilities/polygon-calculator',
         '#tools/utilities/about-you',
         '#tools/utilities/media-manager',
+        '#tools/utilities/cursive-glyph-builder',
         // Processors subsection
         '#tools/processors/colour-quantizer',
         '#tools/processors/pixel-tiler',
@@ -322,6 +323,12 @@ const ToolsSection = {
                         title: 'Gallery Uploader',
                         description: 'Local-only gallery uploader/manager for batch uploads',
                         slug: 'media-manager'
+                    },
+                    {
+                        id: 'cursive-glyph-builder',
+                        title: 'Cursive Glyph Builder',
+                        description: 'Capture hand-drawn cursive glyphs over a reference font',
+                        slug: 'cursive-glyph-builder'
                     }
                 ]
             }
@@ -363,6 +370,7 @@ const ToolsSection = {
             { label: 'POLYGON CALCULATOR', path: '#tools/polygon-calculator' },
             { label: 'ABOUT YOU', path: '#tools/about-you' },
             { label: 'MEDIA MANAGER', path: '#tools/media-manager' },
+            { label: 'CURSIVE GLYPH BUILDER', path: '#tools/cursive-glyph-builder' },
             // Processors
             { label: 'COLOUR QUANTIZER', path: '#tools/colour-quantizer' },
             { label: 'PIXEL TILER', path: '#tools/pixel-tiler' },
@@ -600,7 +608,8 @@ const ToolsSection = {
             'polygon-calculator': () => import('../tools/utilities/polygon-calculator.js'),
             'about-you': () => import('../tools/utilities/about-you-tool.js'),
             'algorithms-test-lab': () => import('../tools/utilities/algorithms-test-lab.js'),
-            'media-manager': () => import('../tools/utilities/media-manager.js')
+            'media-manager': () => import('../tools/utilities/media-manager.js'),
+            'cursive-glyph-builder': () => import('../tools/utilities/cursive-glyph-builder.js')
         };
 
         // Special handling for unified generators system

@@ -1,26 +1,13 @@
 # Tile Mosaic — Description
 
-**Status: Unimplemented stub.** The live script produces only a black canvas. This description documents the intended design per the legacy specification.
+Tile Mosaic generates dynamic tile-based mosaics on an 800×800 canvas using a three-phase pipeline: layout computation → offscreen sprite caching → composited blit.
 
-## Intended Design (per spec)
+**Layout** produces a set of tiles `{x, y, w, h, type, paletteIndex}` via one of three packing algorithms: Uniform Grid (equal cells), Packed Rects A (shelf-first heuristic), or Packed Rects B (descending-height shelf heuristic). Layout is seeded by `randomSeed`.
 
-Tile Mosaic generates dynamic tile-based mosaics on canvas. The generator operates in two phases:
+**Sprite generation** renders each unique `(type, w, h, colourIdx)` tuple once to an `OffscreenCanvas` and caches it. Tile types: Concentric (arc rings), Wedge (pie sectors), Stripe (bands), Solid (fill), Texture (noise), Micro (fine bands), Truchet (quarter-circle arcs, seeded flip), Hex (hexagon with subdivisions), Triangle (alternating-parity triangles). Pseudo-3D lighting (shadow + highlight linear gradients, driven by `globalLightAngle`) is applied per sprite.
 
-**Phase 1 — Layout:** A macro-tile grid is computed using one of three packing modes:
-- `Uniform Grid`: Regular rows×columns grid with uniform `tileSize`.
-- `Packed Rects A/B`: Rectilinear bin-packing with variable tile dimensions.
+**Blit** composites sprites via `drawImage` with optional noise overlay (fBm, 4-octave value noise, cached per `randomSeed`).
 
-Each layout cell is assigned a tile type from an enabled subset of: Concentric (disc rings), Wedge (pie sectors), Stripe (linear bands), Solid (filled rectangle), Texture (procedural noise fill), Micro (fine-detail variant).
+**Animation modes:** Static, Breathing (sinusoidal tile scale), Morph Layouts (lerp between two seeded layouts), Texture Drift (scrolling noise UV), All (combined).
 
-**Phase 2 — Rendering:** Each tile is pre-rendered to an offscreen canvas sprite. Sprites are shaded using a pseudo-3D lighting model driven by `globalLightAngle`, `depthStrength`, and `highlightIntensity`. A noise texture overlay (Perlin-based) can be blended over the final composition via `textureStrength` and `overlayMode`.
-
-**Animation modes:**
-- `Static`: Single render per parameter change.
-- `Morph Layouts`: Interpolates tile positions between two layouts.
-- `Breathing`: Oscillates tile scale using sinusoidal pulse.
-- `Texture Drift`: Scrolls UV coordinates on texture tiles.
-- `All`: All modes simultaneously.
-
-Colour is drawn from a named palette (`Warm`, `Cool`, `Mixed`, `Earth`, `Pastel`, `High-Contrast`) with variance controlled by `paletteVariance`. Random layout is seeded by `randomSeed`.
-
-Algorithm origin: rectilinear bin packing (Bin Packing Problem literature); pseudo-3D tile shading (standard Lambert-style); tile sprite caching (offscreen canvas pattern).
+**Colour:** six named palettes or custom 8-slot `colourway`. Per-tile hue/saturation/lightness jitter via `paletteVariance`. Optional Z-stack depth sorting with canvas shadow (TIL-03). Optional per-tile texture overlay: grain, crosshatch, dots (TIL-04).

@@ -40,6 +40,7 @@ export class Dropdown extends BaseComponent {
     
     _findValueIndex(value) {
         return this.options.findIndex(opt => {
+            if (opt && typeof opt === 'object' && opt.separator) return false;
             const optValue = typeof opt === 'object' ? opt.value : opt;
             return optValue === value;
         });
@@ -47,12 +48,13 @@ export class Dropdown extends BaseComponent {
     
     _getLabel(opt) {
         if (typeof opt === 'object') {
-            return opt.label ?? opt.value;
+            return opt.separator ? (opt.label ?? '') : (opt.label ?? opt.value);
         }
         return opt;
     }
     
     _getValue(opt) {
+        if (opt && typeof opt === 'object' && opt.separator) return '\u0000__sep\u0000';
         return typeof opt === 'object' ? opt.value : opt;
     }
     
@@ -163,6 +165,28 @@ export class Dropdown extends BaseComponent {
         this.menuEl.innerHTML = '';
         
         this.options.forEach((opt, index) => {
+            if (opt && typeof opt === 'object' && opt.separator) {
+                const item = this.createElement('div', 'dropdown-item dropdown-item--sep');
+                item.textContent = opt.label ?? '————';
+                item.style.cssText = `
+                    height: ${F * 2 - 1}px;
+                    line-height: ${F * 2 - 1}px;
+                    padding: 0 ${F}px;
+                    border-bottom: 1px solid var(--c-border);
+                    background: var(--c-bg);
+                    color: var(--c-text);
+                    opacity: 0.45;
+                    cursor: default;
+                    text-transform: uppercase;
+                    font-family: 'Atkinson Hyperlegible', monospace;
+                    font-size: ${F}px;
+                    pointer-events: none;
+                    box-sizing: border-box;
+                `;
+                this.menuEl.appendChild(item);
+                return;
+            }
+
             const item = this.createElement('div', 'dropdown-item');
             const value = this._getValue(opt);
             const label = this._getLabel(opt);
@@ -215,6 +239,7 @@ export class Dropdown extends BaseComponent {
     }
     
     _select(value, index) {
+        if (value === '\u0000__sep\u0000') return;
         this.value = value;
         this.selectedIndex = index;
         
@@ -241,31 +266,66 @@ export class Dropdown extends BaseComponent {
     
     open() {
         if (this.disabled || this.isOpen) return;
-        
+
+        const { F } = this.getF();
+        const defaultMaxPx = F * 20;
+
         this.isOpen = true;
-        
-        // Position menu below trigger (using fixed positioning)
+
+        const viewportPad = Math.max(Math.round(F * 0.5), 8);
         const triggerRect = this.triggerEl.getBoundingClientRect();
-        this.menuEl.style.top = `${triggerRect.bottom}px`;
-        this.menuEl.style.left = `${triggerRect.left}px`;
+        const vh = window.innerHeight;
+        const vw = window.innerWidth;
+
         this.menuEl.style.width = `${triggerRect.width}px`;
         this.menuEl.style.display = 'block';
-        
+
+        const bottomAnchor = triggerRect.bottom;
+        let top = bottomAnchor;
+        let bottomSpace = vh - bottomAnchor - viewportPad;
+        let topSpace = triggerRect.top - viewportPad;
+
+        let maxH = Math.max(viewportPad * 2, Math.min(defaultMaxPx, bottomSpace));
+        this.menuEl.style.maxHeight = `${maxH}px`;
+
+        let menuRect = this.menuEl.getBoundingClientRect();
+
+        if (menuRect.bottom > vh - viewportPad) {
+            const flipAbove = topSpace >= bottomSpace && topSpace >= viewportPad * 3;
+            if (flipAbove) {
+                maxH = Math.max(viewportPad * 2, Math.min(defaultMaxPx, topSpace));
+                this.menuEl.style.maxHeight = `${maxH}px`;
+                menuRect = this.menuEl.getBoundingClientRect();
+                top = Math.max(viewportPad, triggerRect.top - menuRect.height);
+            } else {
+                maxH = Math.max(viewportPad * 2, Math.min(defaultMaxPx, bottomSpace));
+                this.menuEl.style.maxHeight = `${maxH}px`;
+                top = bottomAnchor;
+                menuRect = this.menuEl.getBoundingClientRect();
+            }
+        }
+
+        top = Math.max(viewportPad, Math.min(top, vh - menuRect.height - viewportPad));
+
+        let left = triggerRect.left;
+        if (left + menuRect.width > vw - viewportPad) {
+            left = Math.max(viewportPad, vw - menuRect.width - viewportPad);
+        }
+
+        this.menuEl.style.left = `${Math.round(left)}px`;
+        this.menuEl.style.top = `${Math.round(top)}px`;
+
         // Keep trigger inverted while open
         this.triggerEl.style.background = 'var(--c-text)';
         this.triggerEl.style.color = 'var(--c-bg)';
-        
-        // Update arrow
+
         const arrow = this.triggerEl.querySelector('.dropdown-arrow');
         if (arrow) arrow.textContent = '−';
-        
-        // Add listeners
+
         document.addEventListener('click', this._handleDocumentClick);
         document.addEventListener('keydown', this._handleKeyDown);
-        // Close on any scroll (capture phase to catch scrolling containers)
         window.addEventListener('scroll', this._handleScroll, true);
-        
-        // Scroll selected item into view
+
         const selectedItem = this.menuEl.querySelector(`[data-index="${this.selectedIndex}"]`);
         if (selectedItem) {
             selectedItem.scrollIntoView({ block: 'nearest' });
@@ -274,10 +334,13 @@ export class Dropdown extends BaseComponent {
     
     close() {
         if (!this.isOpen) return;
-        
+
+        const { F } = this.getF();
+        this.menuEl.style.maxHeight = `${F * 20}px`;
+
         this.isOpen = false;
         this.menuEl.style.display = 'none';
-        
+
         // Restore trigger colors
         this.triggerEl.style.background = 'var(--c-bg)';
         this.triggerEl.style.color = 'var(--c-text)';
@@ -353,6 +416,21 @@ export class Dropdown extends BaseComponent {
         if (index >= 0) {
             this._select(value, index);
         }
+    }
+
+    /**
+     * Update displayed value without invoking onChange (programmatic sync).
+     * @param {string} value
+     */
+    setValueSilent(value) {
+        const index = this._findValueIndex(value);
+        if (index < 0) return;
+        this.value = value;
+        this.selectedIndex = index;
+        const textEl = this.triggerEl?.querySelector('.dropdown-trigger-text');
+        if (textEl) textEl.textContent = this._getCurrentLabel();
+        const { F } = this.getF();
+        if (this.menuEl) this._renderOptions(F);
     }
     
     setOptions(options) {

@@ -18,6 +18,8 @@
  * @version 1.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // ── Palettes ──────────────────────────────────────────────────────────────────
 // Canvas pixel output — VGA/CSS-var constraint exempt (design-law §6.2).
 const _PAL = {

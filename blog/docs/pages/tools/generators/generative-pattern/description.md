@@ -1,6 +1,6 @@
 # Generative Pattern — Description
 
-**Status: Unimplemented stub.** The live script produces only a black canvas. This description documents the intended algorithm per the legacy specification.
+**[DOC-022 DEFERRED — 2026-04-30]** Live script is v1.0.0 (Gray-Scott + SDF + 4 renderers — fully implemented). This file was written against the stub-era spec and does NOT reflect the live implementation. Do not use as implementation reference. Full rewrite deferred; see `issues.md` DOC-022.
 
 ## Intended Design (per spec)
 

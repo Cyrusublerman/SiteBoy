@@ -49,6 +49,10 @@
 Total: 16/16
 Status: closed — all files at score 2
 
+## 2026-04-28 additions (LIS-01)
+
+- **LIS-01 Equation overlay:** `OverlayText` component (X-008) added; displays live parametric equations `x(t) = A·sin(a·t + δ)`, `y(t) = B·sin(b·t)` with current param values substituted. `showEquation` toggle in Display group; `equationPos` select (top-left/top-right/bottom-left/bottom-right).
+
 ## Notes
 
 - The Y-delta coupling architecture change (independent Y params vs delta-from-X) is the most significant architectural divergence from the legacy spec. Documented in feature-parity.md and as NOTE [PARITY] in issues.

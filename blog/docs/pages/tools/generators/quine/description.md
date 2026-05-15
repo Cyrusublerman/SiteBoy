@@ -1,33 +1,18 @@
 # Quine — Description
 
-Quine is a P5.js pixel-buffer animation that types its own source code character by character onto a simulated 1080×1080 paper canvas. Ink bleeds from the typed text into the surrounding paper fibres via a float-precision pixel diffusion buffer. The generator is self-referential: the text it types is the `_QUINE_TEXT` constant embedded in the source, which is an abridged version of the generator's own `SCRIPT_CONFIG` block.
+Quine types an abridged representation of its own generator configuration onto a simulated paper canvas, then diffuses the ink through a pixel buffer.
 
-## Visual Output
+## Runtime Model
 
-- **Paper**: warm off-white background (`rgb(242,238,226)`).
-- **Code text**: dark charcoal (`rgb(45,42,48)`).
-- **Comment text**: warm terracotta (`rgb(125,88,82)`).
-- **Ink bleed**: a diffuse halo spreads from each character into surrounding pixels over time, controlled by `entropy`, `urgency`, and `gravity`.
-- After all text is typed: blank lines are inserted, the generator pauses, the residue fades, and the cycle restarts.
+- State is isolated per p5 instance via `WeakMap`.
+- Character timing is deterministic and derived from character index.
+- Diffusion uses residue and echo buffers.
+- Active-region tracking limits diffusion work to the area affected by wet ink.
 
-## Typing Simulation
+## Output
 
-Characters are emitted one per `_charDelay` frames. The delay is seeded from a pseudo-Perlin noise value (`_noiseT`), incremented by 0.05 per character. Punctuation adds fixed pauses:
-- `.` → `pauseDelay × 0.6`
-- `\n` → `pauseDelay × 0.7`
-- `{` → `pauseDelay × 0.2`
-- `,` → `pauseDelay × 0.3`
-- space → +1 base frame
+The rendered text is a partial quine: it represents the generator configuration conceptually, but does not reproduce the exact source file byte-for-byte.
 
-`delayScale` multiplies the total delay uniformly.
+## Export
 
-## Ink Physics
-
-Rendered text is first drawn onto an offscreen P5 `createGraphics` buffer (`_imagined`). `_absorbInk` reads pixel darkness from this buffer and transfers ink mass to a `Float32Array` residue buffer. `_diffuse` then spreads ink to adjacent pixels in a forward/backward bidirectional pass, attenuating by `entropy` per iteration. The composite step mixes sharp text pixels with bleed residue onto the main canvas.
-
-## Cycle Phases
-
-1. **Typing**: characters emitted one at a time, advancing `_charIndex`.
-2. **Clearing**: blank lines pushed to `_past` until 40 blank lines.
-3. **Dormant**: residue alpha multiplied by 0.2 (fade), then full reset.
-4. Restart from phase 1.
+PNG export is supported. GIF/WebM are disabled because timing depends on cumulative character delay history and does not form a clean loop.

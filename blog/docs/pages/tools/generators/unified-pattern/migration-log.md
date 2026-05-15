@@ -1,35 +1,26 @@
 # Unified Pattern — Migration Log
 
-## Pack Generated
+## Pack Updated
 
-Date: 2026-03-10
-Source analysed: `assets/js/tools/generators/scripts/other/unified-pattern.gen.js` v(none — stub)
-Legacy docs: `unified-pattern-generator-spec.md` (mixed bundle), `unified-pattern-generator-audit.md` (audit only)
+Date: 2026-04-23  
+Source analysed: `assets/js/tools/generators/scripts/other/unified-pattern.gen.js` v1.0.0
 
-## Summary of Migration State
+## Current State
 
-**Generator is not implemented.** Both live and archive sources are identical stubs. 7 of 7 required subsystems (per audit) are missing.
+Unified Pattern is implemented and live.
 
-## Architecture Gap Summary
+Implemented:
+- GEO-018 jittered grid cell generation with occupancy filter
+- GEO-019 domain warp using value-noise displacement
+- GEO-020 superellipse SDF evaluation
+- GEO-021 nested shape generation (`nestingLevels`, `nestingRatio`)
+- GEO-022 numerically stable smooth-min (log-sum-exp shifted)
+- COLOR-008 palette mapper with per-cell variance
+- CANVAS-013 pixel renderer (`putImageData`)
+- Tier 2 adaptive interaction scale + Tier 3 worker offload (`computePixels`)
+- full 15-parameter surface, presets, `animation: { type: 'none' }`, PNG export
 
-| Phase | Subsystem | Module | Status |
-|---|---|---|---|
-| 1 | Jittered grid | GEO-018 | Missing |
-| 2 | Domain warp | GEO-019 | Missing |
-| 3 | Superellipse SDF | GEO-020 | Missing |
-| 4 | Nested shapes | GEO-021 | Missing |
-| 5 | Smooth union | GEO-022 | Missing |
-| 6 | Palette mapper | COLOR-008 | Missing |
-| 7 | SDF renderer | CANVAS-013 | Missing |
+## Residuals
 
-## Implementation Roadmap
-
-1. Research and implement superellipse SDF (GEO-020) — HIGH priority.
-2. Research and implement smooth-min / smooth union (GEO-022) with numerical stability — HIGH priority.
-3. Implement domain warp with Perlin/simplex noise (GEO-019) — MEDIUM priority.
-4. Implement jittered grid with occupancy filtering (GEO-018).
-5. Implement nested shape generation (GEO-021).
-6. Implement palette mapper with per-cell variance (COLOR-008).
-7. Implement SDF renderer with Worker offload (CANVAS-013).
-8. Build full SCRIPT_CONFIG with all 15 parameters, `animation: { type: 'none' }`, export block, and presets.
-9. Address O(W×H×N_cells) cost with spatial culling from the start.
+- Reference source is a stub and not a meaningful implementation parity target.
+- SVG export remains out of scope for per-pixel SDF output.

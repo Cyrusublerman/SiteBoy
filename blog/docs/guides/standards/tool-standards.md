@@ -100,22 +100,59 @@ Track candidate utilities in `blog/docs/guides/shared-utilities.md`.
 
 ---
 
-## 4. Submission Checklist
+## 4. Component Registration
 
-### 4.1 Functionality
+Any component class referenced by a string key in `tool-base.js` `COMPONENT_TYPES` MUST be re-exported from `assets/js/shared/component-library.js`. A component that exists in a file but is not re-exported is invisible to ToolBase and produces a silent render gap (component renders nothing; no error).
+
+Verification: `component-library.js` exports an init-time assertion. If any `COMPONENT_TYPES` entry cannot be resolved, a console error fires on startup identifying the missing key. This is lint-equivalent and blocks undetected breakage.
+
+Rule: add the re-export to `component-library.js` in the same PR as adding the component file. The two changes are not separable.
+
+---
+
+## 5. Custom Code Inputs
+
+Any surface that accepts user-typed code (expression fields, formula inputs, shader entry fields) MUST:
+
+1. Enumerate all available variables, helpers, and constants in a **single source file**.
+2. Expose that source as a **contextual cheat-sheet** visible at the input site (popover, tooltip, or adjacent panel).
+3. Never document available expressions only in a markdown file; the live source must be the authority.
+
+For generator expression drivers, that source is `assets/js/tools/generators/core/expression-context.js`. The cheat-sheet popover reads directly from its exported `EXPRESSION_CONTEXT_SCHEMA`.
+
+---
+
+## 6. Schema Evolution via Shim
+
+When a script schema changes, backward compatibility is achieved via a normalisation shim inside the schema validation entry point. Per-script files must not be hand-edited for back-compat.
+
+Procedure:
+1. Identify the old field(s) and new field(s).
+2. Write a migration transform in the schema owner (e.g. `_migrateScriptConfig()` in `script-types.js`).
+3. Call the shim *before* validation, so validation always sees the new format.
+4. Document the migration in a comment adjacent to the shim.
+5. The old field(s) become ignored inputs; do not delete them from existing scripts until confirmed no script uses them.
+
+This rule prohibits "search and replace all scripts" as a migration strategy.
+
+---
+
+## 7. Submission Checklist
+
+### 7.1 Functionality
 
 - [ ] Required features for the output type are present
 - [ ] Export actions work
 - [ ] Reset or clear path exists
 - [ ] Output interaction model works
 
-### 4.2 Consistency
+### 7.2 Consistency
 
 - [ ] Tool layout follows `ui-interface-overview.md`
 - [ ] Visual law follows `design-law.md`
 - [ ] Standard names are used where applicable
 
-### 4.3 Code Quality
+### 7.3 Code Quality
 
 - [ ] No duplicate logic from existing tools
 - [ ] No custom zoom/pan when canvas owner already provides it

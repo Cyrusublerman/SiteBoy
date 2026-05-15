@@ -1,39 +1,30 @@
 # Defecated — Description
 
-Defecated is a text morphing animation that cycles through Google Fonts, rendering 1–3 configurable text lines that dissolve between fonts using a WebGL gooey blur-threshold shader. The tool uses an iframe to host a P5.js WebGL sketch, as the shader requires a full WebGL context.
+Defecated is a p5 WebGL text-morph generator. It cycles through a shuffled Google Font set and morphs between consecutive font renders using a blur-plus-threshold GLSL shader.
 
-## Morphology Effect
+Each cycle (`morphTime`) interpolates from current to next font:
+1. Text is rasterised into two offscreen 2D buffers.
+2. Mid-cycle frames run through a fragment shader with Gaussian blur + alpha threshold.
+3. Endpoint frames bypass shader and render the source texture directly.
 
-Each morph cycle (`morphTime` ms) transitions from the current font to the next:
-1. Text is pre-rendered to two offscreen P5 graphics buffers (`gfx1`, `gfx2`), white on transparent.
-2. A GLSL fragment shader blends the two buffers using a Gaussian blur kernel (`blurAmount`) and a smoothstep threshold (`threshold`).
-3. The blur causes alpha "halos" around letters that merge and separate as `intensity` sweeps 0→1→0 — producing the liquid gooey morph.
-4. When `intensity = 0` (start/end of cycle), the sharp texture is drawn directly without the shader.
+Timing is wall-clock (`p.millis()`), not frame-index.  
+`power` shapes endpoint dwell versus transition speed.  
+`blurMax` controls peak blur radius.
 
-## Timing Model
+Font system:
+- 40 Google Fonts loaded via a single CSS link.
+- Initial Fisher-Yates shuffle.
+- Queue advances one font per completed cycle.
 
-```
-t = elapsed / morphTime  ∈ [0, 1]
-morphT = power_eased(t)   // symmetric S-curve: slow at endpoints, fast in middle
-intensity = max(0, sin(morphT × π) × 1.1 − 0.1)   // shaped bell
-blurAmount = intensity × blurMax
-threshold = map(intensity, 0, 1, 0.5, 0.3)
-```
+Text layout:
+- Three dropdown-selected lines.
+- Per-line scale targets width fraction (`targetWidth`).
+- Global cap by height fraction (`maxHeight`).
+- Gap controlled by `lineGap`.
 
-The `power` parameter (2–10) controls how much time is spent at each font before morphing begins; higher values = sharper, faster transitions.
-
-## Font System
-
-40 Google Fonts are pre-loaded via a CSS `<link>` tag. Fonts are shuffled randomly on initialisation, then advanced in queue order. Fonts cycle: on each completion, the queue shifts and a new font is appended.
-
-## Text Layout
-
-Each text line is independently scaled to fit `targetWidth × canvas.width`. If the combined height exceeds `maxTotalHeight × canvas.height`, all sizes are uniformly scaled down. Text is bold, horizontally centred.
-
-## Architecture (Legacy ToolBase)
-
-The implementation in `defecated-tool.js` uses an iframe containing a full P5.js sketch injected as an HTML string. This approach is necessary for WebGL shader access. The host tool passes CONFIG via `window.postMessage` to the iframe's script. The current SCRIPT_CONFIG system does not support WebGL shaders or iframe embedding — migration requires extending the host.
-
-## Current Live State
-
-The live `defecated.gen.js` is a placeholder stub that fills the canvas black. `param` is a non-functional slider.
+Current live architecture:
+- `SCRIPT_CONFIG` p5 generator (`context: 'p5'`).
+- `p5Setup` recreates canvas in `WEBGL` mode.
+- No iframe host bridge.
+- Shader uniforms: `tex0`, `tex1`, `blurAmount`, `threshold`, `intensity`, `texelSize`.
+- Export: PNG only (`gif/webm` disabled).

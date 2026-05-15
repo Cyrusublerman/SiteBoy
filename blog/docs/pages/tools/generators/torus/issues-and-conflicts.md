@@ -13,15 +13,13 @@
 
 ---
 
-## WARN [STANDARDS] — Raw Hex Colour Strings
+## **[NON-VIOLATION]** WARN [STANDARDS] — Raw Hex Colour Strings
 
 **Location:**
 - `drawTorusSpiral`: `ctx.fillStyle = 'rgba(192, 192, 192, 0.25)'`
 - `drawToroidalSurfaceSpiral`: `ctx.strokeStyle = '#c0c0c0'`
 
-**Rule:** All colours must use CSS variables `var(--vga-*)`. No raw hex or rgba strings.
-
-**Fix:** Replace with `var(--vga-silver)` or the appropriate VGA colour variable.
+**Rule clarification:** Workspace rules state "No raw hex/rgb/hsl/named colours in UI styling". The canvas context is not UI styling. Rules separately note "Canvas/render output: `var(--vga-*)` palette values permitted" — permissive, not mandatory. `#c0c0c0` is VGA silver; `rgba(192,192,192,0.25)` is the only method available for a translucent canvas fill (CSS variables resolve to opaque values). This is not a violation. Issue closed.
 
 ---
 
@@ -85,15 +83,43 @@ Then project: `{ x: cx + x', y: cy − y' }`.
 
 ---
 
-## WARN [PARITY] — Major and Minor Radii Locked Equal
+## Stale Documentation
 
-**Location:** `updateRadii`: `majorRadius = minorRadius = minDim × sizeFactor`.
+**[STALE DOC] [DOC-011] — mechanisms.md Documents Removed Functions and Old Projection**
+
+Function inventory lists `updateRadii()` (removed in v2.0.0; R computed locally in draw). State Model documents `majorRadius`/`minorRadius` as module-level variables (removed). Projection section describes old 3-stage non-standard algorithm; live source uses standard Ry×Rx. Render pipeline step 1 references `updateRadii`. "Standards violation" note is now resolved. Full mechanisms rewrite needed against live v2.0.0 source.
+
+---
+
+**[STALE DOC] [DOC-012] — ui-layout.md Multiple Stale Entries**
+
+`showTorusMesh` documented as type `toggle`/`default: true` (boolean); live source uses `type: 'radio'`, `options: ['on','off']`, `default: 'on'`. Canvas group lists `canvasWidth`/`canvasHeight` (removed in v2.0.0). Animation section states "No `animatableParams` declared"; live source has `animatableParams: ['viewX', 'viewY']`.
+
+---
+
+**[STALE DOC] [DOC-013] — description.md Projection Section**
+
+Projection paragraph describes "two sequential X-axis rotations (frame-driven xRotation plus static viewAngleX) and a partial Y-axis rotation (viewAngleY)". Live source applies standard Ry×Rx: one Y-axis rotation (viewY + frame phase), then one combined X-axis rotation.
+
+---
+
+**[STALE DOC] [DOC-014] — migration-log.md Analyses v1.0.0**
+
+Migration log states "Source analysed: v1.0.0". Live source is v2.0.0. Open Items 1–8 in the log are all pre-v2.0.0 items; most have been resolved in v2.0.0. Log must be updated to reflect current state.
+
+---
+
+## **[RESOLVED]** WARN [PARITY] — Major and Minor Radii Locked Equal
+
+*Fix: Added `majorRadiusFactor` and `minorRadiusFactor` slider controls; draw path now computes independent `R` and `r` from `baseRadius`.*
+
+**Location:** `draw`: `const R = baseRadius * majorRadiusFactor`, `const r = baseRadius * minorRadiusFactor`.
 
 **Legacy spec:** Separate `majorRadius` and `minorRadius` sliders with independent ranges.
 
-**Impact:** The user cannot create elliptic tori (R ≠ r). At `torusSize = 0.25`, the generator produces a horn torus; to produce a ring torus with a visible hole, R must be > r.
+**Impact:** Resolved. Users can create elliptic/ring/horn-like variants by varying independent major/minor factors.
 
-**Fix:** Add `majorFactor` and `minorFactor` sliders (or `minorRatio`), or implement `updateRadii(W, H, majorFactor, minorFactor)`.
+**Status:** Closed.
 
 ---
 
@@ -102,3 +128,15 @@ Then project: `{ x: cx + x', y: cy − y' }`.
 **Legacy spec:** Play/pause control recommended. The audit flags this as a Medium gap.
 
 **Impact:** The animation always runs; the user cannot inspect a single frame via the UI (though GIF/WebM export via the host's export system provides frame access).
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **GEN-006 (P2, WONTFIX):** Projection behaviour diverges from reference because live keeps corrected standard Ry×Rx model (intentional).
+- **GEN-007 (P2, FIXED):** Added independent `majorRadiusFactor` / `minorRadiusFactor` controls; R and r no longer locked equal.
+- **ARCH-007 (P1, FIXED):** Live torus source imports no modules from `assets/js/shared/` (`zero-shared-imports`).
+- **ARCH-008 (P1, WONTFIX):** Procedural generator pattern retained; `BaseComponent` inheritance not applied to script generators.
+- **DOC-007 (P2, FIXED):** `mechanisms.md` now documents live stateless radii model and Ry×Rx projection.
+- **DOC-008 (P2, FIXED):** `ui-layout.md` synced to live parameter groups and control types.
+- **DOC-009 (P2, FIXED):** `description.md` projection and radius semantics synced with live source.

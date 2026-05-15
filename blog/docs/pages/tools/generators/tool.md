@@ -40,11 +40,12 @@ Toolbar cells are:
 
 Sidebar tabs are host-generated, not script-defined:
 - `PARAMS` always
-- `ANIMATE` iff `scriptConfig.animation` exists
-- `EXPORT` always
-- `INFO` iff `scriptConfig.description` exists
+- `ANIMATE` iff `scriptConfig.animation.type !== 'none'`
+- `CANVAS` always
 
 Canvas area is mandatory. A generator without visible canvas output is invalid.
+
+Export and info are toolbar surfaces, not sidebar tabs.
 
 ## Sidebar Contract
 
@@ -56,17 +57,22 @@ Rules:
 - controls come only from the script config contract
 - no generator script may define its own sidebar DOM
 
+`CANVAS` is host-owned and contains:
+- `SIZE`: canvas width and height controls
+- `COLOURWAY`: host-level background control
+
 ## Animation Contract
 
 Animation is declared, not improvised.
 
-If `scriptConfig.animation` exists, the host must provide:
+If `scriptConfig.animation.type !== 'none'`, the host must provide:
 - `ANIMATE` tab
 - playback controls
-- export surface for animation export UI
-- sequencer strip/runtime support
+- phase/parameter controls for declared `animatableParams`
+- sequencer strip/runtime support when `scriptConfig.animation.sequencer` is truthy
+- animation export UI in the toolbar export panel when `scriptConfig.animation.animationExport !== false`
 
-If `scriptConfig.animation` does not exist:
+If animation is absent or `type: 'none'`:
 - no animation tab
 - no sequencer injection
 - no animation export UI
@@ -104,7 +110,7 @@ Static export is host-level.
 Rules:
 - toolbar `EXPORT` is always present
 - static image export must work from the current visible generator
-- animation export belongs in the `EXPORT` tab injection path when animation exists
+- animation export belongs in the toolbar export panel when animation exists and is export-enabled
 
 ## Per-Generator Minimum
 

@@ -182,6 +182,11 @@ const AssetLoader = {
             script: '/assets/js/tools/utilities/media-manager.js',
             className: 'MediaManagerTool',
             dependencies: []
+        },
+        'cursive-glyph-builder': {
+            script: '/assets/js/tools/utilities/cursive-glyph-builder.js',
+            className: 'CursiveGlyphBuilderTool',
+            dependencies: []
         }
     },
     
@@ -290,11 +295,11 @@ const AssetLoader = {
         // Load the script (with module flag if needed)
         if (dep.module) {
             // Use dynamic import for ES modules to preserve relative import resolution
-            await import(dep.script);
+            await import(/* @vite-ignore */ dep.script);
         } else {
             // For non-module dependencies, try dynamic import first, fall back to script loading
             try {
-                await import(dep.script);
+                await import(/* @vite-ignore */ dep.script);
             } catch (error) {
                 // Fall back to script loading for external scripts (CDNs, etc.)
                 await this.loadScript(dep.script, { module: false });
@@ -360,7 +365,7 @@ const AssetLoader = {
 
         try {
             // Use ES module dynamic import instead of script loading
-            const module = await import(tool.script);
+            const module = await import(/* @vite-ignore */ tool.script);
             console.log(`🔍 Module loaded: ${tool.script}, keys:`, Object.keys(module));
             console.log(`🔍 Looking for class: ${tool.className}`);
             const ToolClass = module[tool.className] || module.default;

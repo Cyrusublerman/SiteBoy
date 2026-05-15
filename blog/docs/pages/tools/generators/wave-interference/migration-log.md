@@ -1,39 +1,41 @@
 # Wave Interference — Migration Log
 
-## Pack Generated
+## Pack Updated
 
-Date: 2026-03-10
-Source analysed: `assets/js/tools/generators/scripts/wave/wave-interference.gen.js` v2.0.0
-Legacy docs: `wave-interference.md` (mixed bundle), `wave-interference-audit.md` (audit only)
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/wave/wave-interference.gen.js` v2.1.0
 
-## Summary of Migration State
+## Current State
 
-The live script is a functional v2 rewrite of the legacy vanilla JS tool. The core equation structure (R/X/Y components, 2 terms each, safePow, blend modes, normalised coordinates, rotation) is fully implemented. The most significant divergences from the legacy spec are:
+Wave Interference is implemented and live.
 
-1. **Output mode**: Binary thresholding replaced with continuous greyscale normalisation.
-2. **Rendering path**: WebGL primary path not implemented; CPU ImageData is the only path (Worker offload available via `computePixels`).
-3. **Missing UI controls**: 18 functional parameters have no corresponding UI slots.
-4. **Missing modulation formula**: Live formula uses sum-of-sins vs spec's product-of-sin-cos.
-5. **Missing interactive features**: No checkpoint system, no sequence animation.
+Implemented:
+- R/X/Y wave components with two terms each
+- signed `safePow` transform
+- additive and multiply blend modes
+- rotation and scale controls
+- complete UI surface for term, offset, wave-shape, and modulation controls
+- full LANDMARK preset maps via `_DEFAULTS`
+- pooled ImageData/Float32Array render buffers
+- worker `computePixels` path and adaptive interaction scale
+- parametric animation metadata and sequencer support
+- PNG/SVG/GIF/WebM/sequence export flags
 
-## Architecture Changes from Legacy
+## 2026-04-28 additions (WIN-03, WIN-06)
 
-| Aspect | Legacy | Live |
-|---|---|---|
-| Script format | Vanilla JS class-based, `window.*` | `.gen.js` module with SCRIPT_CONFIG export |
-| Rendering | WebGL primary, CPU fallback | CPU only (Worker offload via computePixels) |
-| State | Module-level `let state = {...}` | Stateless — all state in params argument |
-| Animation | Per-parameter speed/direction + sequence | Phase params in `animatableParams` list only |
-| Preset format | Partial objects (same in both) | Partial objects |
-| Output | Binary (threshold) | Greyscale (normalised) |
+- **WIN-03 p5-wave-interference merger:** `p5-wave-interference` consolidated into this script. `interferenceMode` toggle added — selects between `equations` (p5 pixel path, from p5-wave-interference), `normal-map` (canvas2d normalised per-pixel), and `complex-ops` (operator-chain complex number mode). Full parameter union; `p5-wave-interference` removed from `ScriptRegistry`.
+- **WIN-06 p5-wave-colour merger:** `p5-wave-colour` consolidated into this script as the `complex-ops` interferenceMode. Full operator-chain parameter surface (_Complex, _WaveOps, operator evolution) available under this mode. `colourMode` axis (mono / hue-mapped / palette) added across all three renderer modes. `p5-wave-colour` removed from `ScriptRegistry`.
 
-## Open Items (Ordered by Priority)
+## Intentional Divergences
 
-1. Add 18 missing UI parameters to their groups (Or2, wave_r2, prm1/2, phi_rm1/2, Ox1/2, wave_x1/2, pxm1/2, phi_xm1/2, Oy1/2, wave_y1/2, pym1/2, phi_ym1/2).
-2. Rename underscore parameter keys to camelCase (phi_r1 → phiR1, etc.) across draw, computePixels, animatableParams, and all presets.
-3. Expand LANDMARKS to full parameter maps (remove dependency on default-merging).
-4. Clarify whether binary thresholding is to be restored or whether greyscale is the intended output; update spec accordingly.
-5. Implement modulation formula per spec (product of sin × cos) or document the intentional divergence.
-6. Implement or defer checkpoint/sequence animation.
-7. Remove `console.log` at line 439.
-8. Remove inert `canvasWidth`/`canvasHeight` parameters or implement host canvas resize support.
+- Output uses continuous greyscale min-max normalisation, not binary thresholding.
+- Modulation uses additive two-sin modulation, not the reference sin×cos product.
+- WebGL is not implemented; worker offload is the current compute path.
+
+## 2026-04-30 assessment (PERF-004)
+
+- **PERF-004 Worker offload: WONTFIX accepted limit.** All three renderers (`equations`, `normal-map`, `complex-ops`) use `p.loadPixels()`/`p.pixels[]` which are bound to the p5 instance. These cannot be transferred to a `ComputeScheduler` worker without rewriting out of p5 entirely. Tier 2 adaptive resolution (`interactionScale: 0.5`, `idleDelay: 200`) is already applied and is the maximum optimisation applicable per `compute-scheduler.md` decision tree. The `complex-ops` renderer additionally maintains per-frame `_opStates` accumulator, ruling out stateless worker dispatch.
+
+## Closed Stale Items
+
+Previous open items for missing UI parameters, snake_case keys, partial presets, console logging, and inert canvas sliders are resolved in the live source.

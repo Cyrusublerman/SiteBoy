@@ -1,23 +1,29 @@
 # Shape Array — Migration Log
 
-## Status
+## Pack Updated
 
-**Implemented.** Port of `shape_array_accident` sketch. Grid morphology animation with perimeter-sampled interpolation and phase ripple. Version 1.0.0.
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/pattern/shape-array.gen.js`
 
-## Architectural Notes
+## Current State
 
-- Context: `p5`. Uses P5.js API.
-- Interface: `p5Setup` / `p5Draw` hooks.
-- Animation: `infinite` — `_globalT` driven, not `frame` driven.
-- State: `_globalT` on SCRIPT_CONFIG.
-- Canvas: uses `p.width`/`p.height` for centring (correct); fixed 1080×1080 in SCRIPT_CONFIG.
+Implemented and live.
 
-## Open Items (priority order)
+Resolved since the original migration:
+- `_globalT` accumulator removed
+- animation phase derived from frame number
+- preset format converted to `{ name, values }`
+- export metadata added
+- `animatableParams: []` declared
+- perimeter sampling optimised with cumulative lengths and cache
 
-1. **[HIGH] Fix `_globalT` to use `frame` counter** — replace `this._globalT += morphSpeed` with `const globalT = (frame * morphSpeed) % 1`. Fixes determinism, replay, and pre-render.
-2. **[MEDIUM] Fix preset format** — add `values: { ... }` wrapper to all 3 presets.
-3. **[MEDIUM] Add `export` block** — at minimum `{ png: true }`.
-4. **[MEDIUM] Optimise `_samplePerimeter`** — precompute cumulative edge lengths; binary-search for target arc position. O(circleRes × n) → O(n + circleRes log n).
-5. **[MEDIUM] Move state out of `SCRIPT_CONFIG`** — `_globalT` to frame-derived local constant eliminates the state entirely.
-6. **[LOW] Replace raw colour literals** — `20`/`245`/`255`/`0` → CSS-variable-derived values.
-7. **[LOW] Separate `circleRes` from circle polygon side count** — add distinct `circleMaxSides` parameter, decouple from sampling resolution.
+## 2026-04-28 additions (SHA-01 – SHA-04)
+
+- **SHA-01/02 Cycle modes:** `cycleMode` select (linear / palindrome / rotate-and-reverse). `_effectiveT` maps raw frame progress to effective t; `palindrome` and `rotate-and-reverse` fold the cycle back, with shapes flipping at the reverse point (`flipOnReverse` toggle).
+- **SHA-03 Per-cycle rotation:** `perCycleRotation` slider (degrees). Rotation accumulates each cycle; in `rotate-and-reverse` mode, the reversed sweep uses the negative increment.
+- **SHA-04 Per-cell colour:** `colourMode` select (mono / position / cycle). `_cellColour` derives cell stroke from grid position (col/row), time, and cycle progress. `isDark` background detection selects light or dark palette variant.
+
+## Residuals
+
+- No worker/GPU path for high cell/resolution settings.
+- `circleRes` still controls both interpolation sampling and circle polygon side count.

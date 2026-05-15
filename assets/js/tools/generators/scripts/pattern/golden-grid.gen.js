@@ -8,7 +8,35 @@
  * @version 2.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 const PHI = 1.618033988749;
+
+// GOL-03: easing look-up — maps preset IDs stored in params.easingCurve → fn(t)
+const _EASING = {
+    'linear':           t => t,
+    'ease':             t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+    'ease-in':          t => t * t * t,
+    'ease-out':         t => 1 - Math.pow(1 - t, 3),
+    'ease-in-out':      t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+    'ease-in-sine':     t => 1 - Math.cos(t * Math.PI / 2),
+    'ease-out-sine':    t => Math.sin(t * Math.PI / 2),
+    'ease-in-out-sine': t => -(Math.cos(Math.PI * t) - 1) / 2,
+    'ease-in-expo':     t => t === 0 ? 0 : Math.pow(2, 10 * t - 10),
+    'ease-out-expo':    t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t),
+    'ease-in-elastic':  t => {
+        if (t === 0 || t === 1) return t;
+        return -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * (2 * Math.PI / 3));
+    },
+    'ease-out-elastic': t => {
+        if (t === 0 || t === 1) return t;
+        return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
+    },
+};
+function _applyEasing(t, id) {
+    const fn = _EASING[id];
+    return fn ? fn(t) : t;
+}
 const P_BIG   = PHI / (1 + PHI);  // ≈ 0.618
 const P_SMALL = 1 - P_BIG;        // ≈ 0.382
 
@@ -29,16 +57,52 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Subdivision',
             params: [
-                { key: 'maxDepth',   type: 'slider', label: 'Max Depth',          min: 4,  max: 16,  step: 1,   default: 13  },
-                { key: 'loopFrames', type: 'slider', label: 'Loop Frames',         min: 60, max: 720, step: 60,  default: 360 }
+                { key: 'maxDepth',   type: 'slider', label: 'Max Depth',   min: 4,   max: 16,   step: 1,  default: 13  },
+                { key: 'loopFrames', type: 'slider', label: 'Loop Frames', min: 60,  max: 9999, step: 30, default: 360 }
             ]
         },
         {
             group: 'Animation',
             params: [
-                { key: 'hueSpeed', type: 'slider', label: 'Hue Speed',         min: 0, max: 10, step: 0.5, default: 3 },
-                { key: 'satSpeed', type: 'slider', label: 'Saturation Speed',  min: 0, max: 10, step: 0.5, default: 2 },
-                { key: 'lumSpeed', type: 'slider', label: 'Lightness Speed',   min: 0, max: 5,  step: 0.5, default: 1 }
+                { key: 'hueSpeed', type: 'slider', label: 'Hue Speed',        min: 0, max: 10, step: 0.5, default: 3 },
+                { key: 'satSpeed', type: 'slider', label: 'Saturation Speed', min: 0, max: 10, step: 0.5, default: 2 },
+                { key: 'lumSpeed', type: 'slider', label: 'Lightness Speed',  min: 0, max: 5,  step: 0.5, default: 1 },
+                // GOL-03: easing curve applied to animation phase t
+                { key: 'easingCurve', type: 'easing-curve', label: 'Easing', default: 'ease-in-out-sine' }
+            ]
+        },
+        // GOL-02: HSL range clamps — map computed H/S/L proportions into sub-ranges
+        {
+            group: 'HSL Ranges',
+            params: [
+                { key: 'hMin', type: 'slider', label: 'H Min', min: 0, max: 1, step: 0.01, default: 0,   precision: 2 },
+                { key: 'hMax', type: 'slider', label: 'H Max', min: 0, max: 1, step: 0.01, default: 1,   precision: 2 },
+                { key: 'sMin', type: 'slider', label: 'S Min', min: 0, max: 1, step: 0.01, default: 0.3, precision: 2 },
+                { key: 'sMax', type: 'slider', label: 'S Max', min: 0, max: 1, step: 0.01, default: 1,   precision: 2 },
+                { key: 'lMin', type: 'slider', label: 'L Min', min: 0, max: 1, step: 0.01, default: 0.2, precision: 2 },
+                { key: 'lMax', type: 'slider', label: 'L Max', min: 0, max: 1, step: 0.01, default: 0.8, precision: 2 }
+            ]
+        },
+        // GOL-04: position and depth modulation
+        {
+            group: 'Position Modulation',
+            defaultCollapsed: true,
+            params: [
+                { key: 'posXHue', type: 'slider', label: 'X → Hue',        min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'posXSat', type: 'slider', label: 'X → Saturation', min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'posXLum', type: 'slider', label: 'X → Lightness',  min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'posYHue', type: 'slider', label: 'Y → Hue',        min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'posYSat', type: 'slider', label: 'Y → Saturation', min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'posYLum', type: 'slider', label: 'Y → Lightness',  min: -1, max: 1, step: 0.05, default: 0, precision: 2 }
+            ]
+        },
+        {
+            group: 'Depth Modulation',
+            defaultCollapsed: true,
+            params: [
+                { key: 'depthHue', type: 'slider', label: 'Depth → Hue',        min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'depthSat', type: 'slider', label: 'Depth → Saturation', min: -1, max: 1, step: 0.05, default: 0, precision: 2 },
+                { key: 'depthLum', type: 'slider', label: 'Depth → Lightness',  min: -1, max: 1, step: 0.05, default: 0, precision: 2 }
             ]
         }
     ],
@@ -117,11 +181,34 @@ export const SCRIPT_CONFIG = {
             const aNorm = this._logNorm(areaProp, bounds.aMin, bounds.aMax);
 
             const t = (frame % params.loopFrames) / params.loopFrames;
-            const hueNorm = (wNorm + t * params.hueSpeed) % 1;
-            const satNorm = 1 - Math.abs((hNorm + t * params.satSpeed) * 2 % 2 - 1);
-            const lumNorm = 1 - Math.abs((aNorm + t * params.lumSpeed) * 2 % 2 - 1);
 
-            p.fill(hueNorm, satNorm, lumNorm);
+            // Base colour from proportion animation
+            let hueNorm = (wNorm + t * params.hueSpeed) % 1;
+            let satNorm = 1 - Math.abs((hNorm + t * params.satSpeed) * 2 % 2 - 1);
+            let lumNorm = 1 - Math.abs((aNorm + t * params.lumSpeed) * 2 % 2 - 1);
+
+            // GOL-04: position modulation (normalised cell centre position)
+            const cxN = (x + w / 2) / p.width;
+            const cyN = (y + h / 2) / p.height;
+            hueNorm = (hueNorm + cxN * (params.posXHue || 0) + cyN * (params.posYHue || 0) + 2) % 1;
+            satNorm = Math.max(0, Math.min(1, satNorm + cxN * (params.posXSat || 0) + cyN * (params.posYSat || 0)));
+            lumNorm = Math.max(0, Math.min(1, lumNorm + cxN * (params.posXLum || 0) + cyN * (params.posYLum || 0)));
+
+            // GOL-04: depth modulation (normalised depth)
+            const depthN = depth / (params.maxDepth || 1);
+            hueNorm = (hueNorm + depthN * (params.depthHue || 0) + 2) % 1;
+            satNorm = Math.max(0, Math.min(1, satNorm + depthN * (params.depthSat || 0)));
+            lumNorm = Math.max(0, Math.min(1, lumNorm + depthN * (params.depthLum || 0)));
+
+            // GOL-02: remap into HSL sub-ranges
+            const hLo = params.hMin ?? 0,   hHi = params.hMax ?? 1;
+            const sLo = params.sMin ?? 0.3, sHi = params.sMax ?? 1;
+            const lLo = params.lMin ?? 0.2, lHi = params.lMax ?? 0.8;
+            const mappedH = hLo + hueNorm * (hHi - hLo);
+            const mappedS = sLo + satNorm * (sHi - sLo);
+            const mappedL = lLo + lumNorm * (lHi - lLo);
+
+            p.fill(mappedH, mappedS, mappedL);
             p.rect(x, y, w, h);
             return;
         }
@@ -169,7 +256,9 @@ export const SCRIPT_CONFIG = {
         }
 
         // Split ratio is constant for the entire frame — compute once.
-        const t = (frame % params.loopFrames) / params.loopFrames;
+        const tRaw = (frame % params.loopFrames) / params.loopFrames;
+        // GOL-03: apply easing to the animation phase
+        const t = _applyEasing(tRaw, params.easingCurve ?? 'ease-in-out-sine');
         const r = Math.pow(PHI, Math.sin(t * Math.PI * 2));
         const ratio = r / (1 + r);
 

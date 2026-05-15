@@ -1986,8 +1986,9 @@ const EASING_KEYS = [
  *
  * Creates a timeline of checkpoints with configurable tween segments.
  * Provides two synchronised views:
- *   1. Sidebar panel (vertical) — lives in the ANIMATION tab.
- *   2. Horizontal strip — appended below the canvas in .tool-canvas-area.
+ *   1. Sidebar panel (vertical) — lives in the ANIMATION tab (playback controls live here).
+ *   2. Horizontal strip — checkpoint row under the SPEED transport strip in GenerativeCanvasDock
+ *      (no duplicate play/stop; duration + checkpoint editing only).
  *
  * Data model:
  *   checkpoints[i] → segments[i] → checkpoints[i+1]
@@ -2058,9 +2059,6 @@ export class SequencerV2 extends BaseComponent {
         // DOM refs — strip
         this._stripEl = null;
         this._stripTrackEl = null;
-        this._stripPlayBtn = null;
-        this._stripStopBtn = null;
-        this._stripLoopBtn = null;
         this._stripTotalEl = null;
     }
 
@@ -2182,12 +2180,6 @@ export class SequencerV2 extends BaseComponent {
             this._stripTotalEl.textContent = `${total.toFixed(1)}s`;
         }
         if (this.onTotalDurationChange) this.onTotalDurationChange(total);
-    }
-
-    _updateLoopBtn() {
-        if (!this._stripLoopBtn) return;
-        this._stripLoopBtn.textContent = `LOOP: ${this.loop ? 'ON' : 'OFF'}`;
-        this._stripLoopBtn.style.color = this.loop ? 'var(--vga-aqua)' : 'var(--vga-gray)';
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2375,7 +2367,6 @@ export class SequencerV2 extends BaseComponent {
 
     _updatePlayButtons() {
         if (this._panelPlayBtn) this._panelPlayBtn.textContent = this._isPlaying ? '■ STOP' : '▶ PLAY';
-        if (this._stripPlayBtn) this._stripPlayBtn.textContent = this._isPlaying ? '⏸ PAUSE' : '▶ PLAY';
     }
 
     _stopAndReset() {
@@ -2861,22 +2852,11 @@ export class SequencerV2 extends BaseComponent {
             return b;
         };
 
-        this._stripPlayBtn = mkCtrl('▶ PLAY', 'Play / Pause');
-        this._stripPlayBtn.addEventListener('click', () => this._togglePlayback());
-
-        this._stripStopBtn = mkCtrl('■ STOP', 'Stop and reset to start');
-        this._stripStopBtn.addEventListener('click', () => this._stopAndReset());
-
-        this._stripLoopBtn = mkCtrl('LOOP: OFF', 'Toggle loop', 'var(--vga-gray)');
-        this._stripLoopBtn.addEventListener('click', () => { this.loop = !this.loop; this._updateLoopBtn(); });
-        // Override hover for loop button to not invert color
-        this._stripLoopBtn.addEventListener('mouseenter', () => { this._stripLoopBtn.style.background = 'var(--c-text)'; this._stripLoopBtn.style.color = 'var(--c-bg)'; });
-        this._stripLoopBtn.addEventListener('mouseleave', () => { this._stripLoopBtn.style.background = 'var(--c-bg)'; this._updateLoopBtn(); });
-
-        this._stripTotalEl = mkCtrl('0.0s', 'Total sequence duration', 'var(--vga-aqua)');
-        this._stripTotalEl.style.cursor = 'default';
-        this._stripTotalEl.addEventListener('mouseenter', () => {});
-        this._stripTotalEl.addEventListener('mouseleave', () => {});
+        // Duration readout — playback is toolbar / sidebar only.
+        this._stripTotalEl = this.createElement('div', 'seq2-strip-duration');
+        this._stripTotalEl.textContent = '0.0s';
+        this._stripTotalEl.title = 'Total sequence duration';
+        this._stripTotalEl.style.cssText = 'flex:1 1 auto;min-width:calc(var(--f)*8);height:100%;background:var(--c-bg);border:none;border-right:1px solid var(--c-border);color:var(--c-text);font-family:inherit;font-size:calc(var(--f)*0.7);cursor:default;padding:0 calc(var(--f));white-space:nowrap;display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;';
 
         const addBtn = mkCtrl('+ ADD', 'Save current state as checkpoint', 'var(--vga-lime)');
         addBtn.addEventListener('click', () => this._handleSave());
@@ -2888,9 +2868,6 @@ export class SequencerV2 extends BaseComponent {
         clearBtn.style.borderRight = 'none';
         clearBtn.addEventListener('click', () => this._handleClearAll());
 
-        controls.appendChild(this._stripPlayBtn);
-        controls.appendChild(this._stripStopBtn);
-        controls.appendChild(this._stripLoopBtn);
         controls.appendChild(this._stripTotalEl);
         controls.appendChild(addBtn);
         controls.appendChild(holdBtn);
@@ -3132,9 +3109,6 @@ export class SequencerV2 extends BaseComponent {
         }
         this._stripEl = null;
         this._stripTrackEl = null;
-        this._stripPlayBtn = null;
-        this._stripStopBtn = null;
-        this._stripLoopBtn = null;
         this._stripTotalEl = null;
 
         this._panelListEl = null;

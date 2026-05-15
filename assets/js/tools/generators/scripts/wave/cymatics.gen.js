@@ -6,6 +6,8 @@
  * @version 1.0.1
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 // ═══════════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
@@ -77,6 +79,37 @@ const TEMPLATES = {
 };
 
 // ═══════════════════════════════════════════════════════════════════
+// GLYPH RENDERING
+// ═══════════════════════════════════════════════════════════════════
+
+const GLYPH_RENDERERS = {
+    dot: (ctx, x, y, size) => {
+        ctx.beginPath();
+        ctx.arc(Math.floor(x), Math.floor(y), size / 2, 0, TWO_PI);
+        ctx.fill();
+    },
+    square: (ctx, x, y, size) => {
+        const h = size / 2;
+        ctx.fillRect(Math.floor(x - h), Math.floor(y - h), size, size);
+    },
+    cross: (ctx, x, y, size) => {
+        const h = size / 2, q = size / 4;
+        ctx.fillRect(Math.floor(x - q), Math.floor(y - h), q * 2, size);
+        ctx.fillRect(Math.floor(x - h), Math.floor(y - q), size, q * 2);
+    },
+    diamond: (ctx, x, y, size) => {
+        const h = size / 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.floor(x), Math.floor(y - h));
+        ctx.lineTo(Math.floor(x + h), Math.floor(y));
+        ctx.lineTo(Math.floor(x), Math.floor(y + h));
+        ctx.lineTo(Math.floor(x - h), Math.floor(y));
+        ctx.closePath();
+        ctx.fill();
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════
 
@@ -86,6 +119,9 @@ let t = 0;
 let _lastTemplate = null;
 let _lastChordType = null;
 let _lastParticleSpacing = null;
+// CYM-02: manual source positions state
+let _lastSourceMode = null;
+let _manualSources = null; // null = use template-derived sources
 
 // Distance caches: constant for fixed source positions; rebuilt only on template/chord/spacing change.
 // _pixelDistCache[s] = Float32Array(W*H): Euclidean distance from source s to each canvas pixel.
@@ -95,6 +131,18 @@ let _pixelDistCache = null;
 let _partDistCache  = null;
 let _cacheW = 0;
 let _cacheH = 0;
+let _offscreenCanvas = null;
+let _offscreenCtx = null;
+
+function ensureOffscreen(W, H) {
+    if (!_offscreenCanvas || _offscreenCanvas.width !== W || _offscreenCanvas.height !== H) {
+        _offscreenCanvas = document.createElement('canvas');
+        _offscreenCanvas.width = W;
+        _offscreenCanvas.height = H;
+        _offscreenCtx = _offscreenCanvas.getContext('2d', { alpha: false });
+    }
+    return _offscreenCtx;
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // WAVE SOURCE
@@ -193,7 +241,26 @@ function buildParticleDistCache() {
 // DRAWING MODES
 // ═══════════════════════════════════════════════════════════════════
 
-function drawParticle(ctx, W, H) {
+// CYM-03: parse hex colour to r,g,b components for alpha compositing
+function _hexToRGB(hex) {
+    const h = (hex || '#c0c0c0').replace('#', '');
+    const n = parseInt(h.length === 3
+        ? h.split('').map(c => c + c).join('')
+        : h, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function drawParticle(ctx, W, H, params) {
+    // CYM-03: particle appearance params
+    const glyph    = params.particleGlyph || 'dot';
+    const size     = params.particleSize  || 2;
+    const colourway = params.colourway || [];
+    const bgEntry  = colourway.find(c => c.id === 'background');
+    const fgEntry  = colourway.find(c => c.id === 'particle');
+    const bgColour = bgEntry ? bgEntry.colour : '#000000';
+    const fgRGB    = _hexToRGB(fgEntry ? fgEntry.colour : '#c0c0c0');
+    const renderGlyph = GLYPH_RENDERERS[glyph] || GLYPH_RENDERERS.dot;
+
     // Update displaced positions using precomputed unit-vector cache (no per-call sqrt).
     for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -208,7 +275,7 @@ function drawParticle(ctx, W, H) {
         p.y = p.oy + dy;
     }
 
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = bgColour;
     ctx.fillRect(0, 0, W, H);
 
     const NUM_BUCKETS  = 20;
@@ -230,30 +297,33 @@ function drawParticle(ctx, W, H) {
         const bucket = alphaBuckets[b];
         if (bucket.length === 0) continue;
         const bucketAlpha = 0.05 + (b + 0.5) / NUM_BUCKETS * 0.95;
-        ctx.fillStyle = `rgba(192, 192, 192, ${bucketAlpha.toFixed(2)})`;
-        ctx.beginPath();
+        ctx.fillStyle = `rgba(${fgRGB.r},${fgRGB.g},${fgRGB.b},${bucketAlpha.toFixed(2)})`;
         for (let i = 0; i < bucket.length; i++) {
-            ctx.rect(Math.floor(bucket[i].x), Math.floor(bucket[i].y), 2, 2);
+            renderGlyph(ctx, bucket[i].x, bucket[i].y, size);
         }
-        ctx.fill();
     }
 }
 
-function drawDensity(ctx, W, H, boost) {
+function drawDensity(ctx, W, H, boost, params) {
+    const colourway = params.colourway || [];
+    const bgEntry   = colourway.find(c => c.id === 'background');
+    const fgEntry   = colourway.find(c => c.id === 'particle');
+    const bgRGB     = _hexToRGB(bgEntry ? bgEntry.colour : '#000000');
+    const fgRGB     = _hexToRGB(fgEntry ? fgEntry.colour : '#c0c0c0');
+
     if (sources.length === 0) {
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = bgEntry ? bgEntry.colour : '#000000';
         ctx.fillRect(0, 0, W, H);
         return;
     }
 
     const total      = W * H;
-    const imageData  = ctx.createImageData(W, H);
+    const renderCtx  = ensureOffscreen(W, H) || ctx;
+    const imageData  = renderCtx.createImageData(W, H);
     const data       = imageData.data;
     const intensities = new Float32Array(total);
     const invBoost   = 1 / boost;
 
-    // Source-outer loop: sequential access through each source's distance array gives
-    // better cache locality than the pixel-outer alternative.
     for (let s = 0; s < sources.length; s++) {
         const srcDists    = _pixelDistCache[s];
         const scale       = TWO_PI / sources[s].freq;
@@ -271,30 +341,43 @@ function drawDensity(ctx, W, H, boost) {
     }
 
     const range = maxI - minI || 1;
+    // CYM-04: lerp between bg and fg colours based on normalised intensity
     for (let i = 0; i < total; i++) {
-        const grey  = Math.floor(Math.pow((intensities[i] - minI) / range, invBoost) * 255);
-        const px    = i * 4;
-        data[px]    = grey;
-        data[px + 1] = grey;
-        data[px + 2] = grey;
+        const n   = Math.pow((intensities[i] - minI) / range, invBoost);
+        const px  = i * 4;
+        data[px]     = Math.round(bgRGB.r + (fgRGB.r - bgRGB.r) * n);
+        data[px + 1] = Math.round(bgRGB.g + (fgRGB.g - bgRGB.g) * n);
+        data[px + 2] = Math.round(bgRGB.b + (fgRGB.b - bgRGB.b) * n);
         data[px + 3] = 255;
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    renderCtx.putImageData(imageData, 0, 0);
+    if (renderCtx !== ctx && _offscreenCanvas) {
+        ctx.drawImage(_offscreenCanvas, 0, 0);
+    }
 }
 
-function drawRadial(ctx, W, H, boost) {
+function drawRadial(ctx, W, H, boost, params) {
+    const colourway = params.colourway || [];
+    const bgEntry   = colourway.find(c => c.id === 'background');
+    const fgEntry   = colourway.find(c => c.id === 'particle');
+    const bgColour  = bgEntry ? bgEntry.colour : '#000000';
+    const fgRGB     = _hexToRGB(fgEntry ? fgEntry.colour : '#c0c0c0');
+    const size      = params.particleSize || 2;
+    const glyph     = params.particleGlyph || 'dot';
+    const renderGlyph = GLYPH_RENDERERS[glyph] || GLYPH_RENDERERS.dot;
+
     if (sources.length === 0) {
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = bgColour;
         ctx.fillRect(0, 0, W, H);
         return;
     }
 
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, W, H);
+    const renderCtx = ensureOffscreen(W, H) || ctx;
+    renderCtx.fillStyle = bgColour;
+    renderCtx.fillRect(0, 0, W, H);
 
-    const res      = 2;
-    const arcR     = Math.max(1, res * 0.8);
+    const res      = Math.max(1, size | 0);
     const invBoost = 1 / boost;
     let minI = Infinity, maxI = -Infinity;
     const points = [];
@@ -315,16 +398,18 @@ function drawRadial(ctx, W, H, boost) {
     }
 
     const range = maxI - minI || 1;
+    // CYM-04: use particle colour and glyph for radial dots
     for (let i = 0; i < points.length; i++) {
         const p          = points[i];
         const normalized = Math.pow((p.intensity - minI) / range, invBoost);
         if (normalized > 0.05) {
-            const grey = Math.floor(normalized * 255);
-            ctx.fillStyle = `rgb(${grey},${grey},${grey})`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, arcR, 0, TWO_PI);
-            ctx.fill();
+            renderCtx.fillStyle = `rgba(${fgRGB.r},${fgRGB.g},${fgRGB.b},${normalized.toFixed(2)})`;
+            renderGlyph(renderCtx, p.x, p.y, size);
         }
+    }
+
+    if (renderCtx !== ctx && _offscreenCanvas) {
+        ctx.drawImage(_offscreenCanvas, 0, 0);
     }
 }
 
@@ -344,13 +429,19 @@ export const SCRIPT_CONFIG = {
         cost:             'per-pixel',
         interactionScale: 0.5,
         idleDelay:        200,
+        worker:           true,
     },
 
     canvas: {
         width:      512,
         height:     512,
         context:    '2d',
-        background: '#000000'
+        background: '#000000',
+        // CYM-04: colourway layers — background and particle foreground
+        colourway: [
+            { id: 'background', label: 'Background', colour: '#000000', kind: 'fill'   },
+            { id: 'particle',   label: 'Particle',   colour: '#c0c0c0', kind: 'stroke', lineWidth: 1 }
+        ]
     },
 
     animation: {
@@ -363,9 +454,24 @@ export const SCRIPT_CONFIG = {
 
     export: {
         png:      true,
-        gif:      false,  // No defined loopFrames; cleanly-looping GIF is not possible.
-        webm:     true,   // Deterministic + continuous — WebM capture is supported.
+        gif:      false,
+        webm:     true,
         sequence: true
+    },
+
+    // CYM-02: emitter handles — active when sourceMode === 'manual'; up to 8 sources.
+    overlay: {
+        emitterHandles: {
+            enabled: true,
+            activateWhen: { param: 'sourceMode', value: 'manual' },
+            handles: Array.from({ length: 8 }, (_, i) => ({
+                id:     `s${i + 1}`,
+                xParam: `s${i + 1}X`,
+                yParam: `s${i + 1}Y`,
+                label:  `${i + 1}`
+            })),
+            sourceCountParam: 'manualSourceCount'
+        }
     },
 
     infoSections: [
@@ -452,140 +558,293 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Visualization',
             params: [
-                {
-                    key:     'vizMode',
-                    type:    'radio',
-                    label:   'Display',
-                    options: ['Particle', 'Density', 'Radial'],
-                    default: 'Particle'
-                },
-                {
-                    key:     'showSources',
-                    type:    'toggle',
-                    label:   'Show Sources',
-                    default: true
-                }
+                { key: 'vizMode',     type: 'radio',   label: 'Display',
+                  options: ['Particle', 'Density', 'Radial'], default: 'Particle' },
+                // CYM-06: showSources controls both overlay handle visibility and orbit-mode markers
+                { key: 'showSources', type: 'toggle',  label: 'Show Sources',   default: true }
+            ]
+        },
+        // CYM-03: particle appearance controls
+        {
+            group: 'Particle',
+            params: [
+                { key: 'particleGlyph', type: 'select', label: 'Glyph',
+                  options: [
+                    { value: 'dot',     label: 'Dot' },
+                    { value: 'square',  label: 'Square' },
+                    { value: 'cross',   label: 'Cross' },
+                    { value: 'diamond', label: 'Diamond' }
+                  ], default: 'dot' },
+                { key: 'particleSize', type: 'slider', label: 'Size',
+                  min: 1, max: 12, step: 0.5, default: 2, precision: 1 },
+                { key: 'particleSpacing', type: 'slider', label: 'Grid Spacing',
+                  min: 2, max: 10, step: 1, default: 5 }
             ]
         },
         {
             group: 'Frequency',
             params: [
-                {
-                    key:     'rootNote',
-                    type:    'dropdown',
-                    label:   'Root Note',
-                    options: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'],
-                    default: 'A4'
-                },
-                {
-                    key:     'chordType',
-                    type:    'dropdown',
-                    label:   'Chord Type',
-                    options: ['maj', 'min', 'dim', 'aug', 'maj7', 'min7', 'dom7', 'sus4'],
-                    default: 'maj'
-                }
+                { key: 'rootNote',  type: 'dropdown', label: 'Root Note',
+                  options: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'], default: 'A4' },
+                { key: 'chordType', type: 'dropdown', label: 'Chord Type',
+                  options: ['maj', 'min', 'dim', 'aug', 'maj7', 'min7', 'dom7', 'sus4'], default: 'maj' }
             ]
         },
         {
             group: 'Pattern',
             params: [
-                {
-                    key:     'template',
-                    type:    'dropdown',
-                    label:   'Layout',
-                    options: ['triangle', 'circle6', 'circle12', 'grid3', 'grid4', 'star5', 'corners', 'cross'],
-                    default: 'triangle'
-                }
+                { key: 'template', type: 'dropdown', label: 'Layout',
+                  options: ['triangle', 'circle6', 'circle12', 'grid3', 'grid4', 'star5', 'corners', 'cross'],
+                  default: 'triangle' }
+            ]
+        },
+        // CYM-02: manual source positions
+        {
+            group: 'Sources — Manual',
+            defaultCollapsed: true,
+            params: [
+                { key: 'sourceMode', type: 'select', label: 'Source Mode',
+                  options: [
+                    { value: 'template', label: 'Template (auto)' },
+                    { value: 'manual',   label: 'Manual (drag)' }
+                  ], default: 'template' },
+                { key: 'manualSourceCount', type: 'slider', label: 'Source Count',
+                  min: 1, max: 8, step: 1, default: 3 },
+                ...Array.from({ length: 8 }, (_, i) => ([
+                    { key: `s${i+1}X`, type: 'slider', label: `S${i+1} X`, min: 0, max: 1, step: 0.01, default: 0.5, precision: 2 },
+                    { key: `s${i+1}Y`, type: 'slider', label: `S${i+1} Y`, min: 0, max: 1, step: 0.01, default: 0.5, precision: 2 }
+                ])).flat()
             ]
         },
         {
             group: 'Wave Parameters',
             params: [
-                {
-                    key:       'amplitude',
-                    type:      'slider',
-                    label:     'Amplitude',
-                    min:       1,
-                    max:       10,
-                    step:      0.5,
-                    default:   3,
-                    precision: 1
-                },
-                {
-                    key:       'speed',
-                    type:      'slider',
-                    label:     'Speed',
-                    min:       0.01,
-                    max:       0.2,
-                    step:      0.01,
-                    default:   0.08,
-                    precision: 2
-                },
-                {
-                    key:       'boost',
-                    type:      'slider',
-                    label:     'Contrast',
-                    min:       1,
-                    max:       10,
-                    step:      0.5,
-                    default:   3,
-                    precision: 1
-                },
-                {
-                    key:     'particleSpacing',
-                    type:    'slider',
-                    label:   'Particle Density',
-                    min:     2,
-                    max:     10,
-                    step:    1,
-                    default: 5
-                }
+                { key: 'amplitude', type: 'slider', label: 'Amplitude',
+                  min: 1, max: 10, step: 0.5, default: 3, precision: 1 },
+                { key: 'speed',     type: 'slider', label: 'Speed',
+                  min: 0.01, max: 0.2, step: 0.01, default: 0.08, precision: 2 },
+                { key: 'boost',     type: 'slider', label: 'Contrast',
+                  min: 1, max: 10, step: 0.5, default: 3, precision: 1 }
             ]
         }
     ],
 
+    computePixels: function(imageData, params, frame) {
+        const W = imageData.width;
+        const H = imageData.height;
+        const data = imageData.data;
+
+        const TWO_PI_LOCAL = Math.PI * 2;
+        const CHORDS_LOCAL = {
+            maj:  [0, 4, 7], min:  [0, 3, 7], dim:  [0, 3, 6], aug:  [0, 4, 8],
+            maj7: [0, 4, 7, 11], min7: [0, 3, 7, 10], dom7: [0, 4, 7, 10], sus4: [0, 5, 7]
+        };
+        const ROOT_NOTES_LOCAL = { C4: 262, D4: 294, E4: 330, F4: 349, G4: 392, A4: 440, B4: 494 };
+        const TEMPLATES_LOCAL = {
+            triangle: (w, h) => [[w / 2, h / 4], [w / 4, 3 * h / 4], [3 * w / 4, 3 * h / 4]],
+            circle6: (w, h) => Array.from({ length: 6 }, (_, i) => {
+                const a = (i / 6) * TWO_PI_LOCAL;
+                return [w / 2 + Math.cos(a) * (w * 0.3), h / 2 + Math.sin(a) * (h * 0.3)];
+            }),
+            circle12: (w, h) => Array.from({ length: 12 }, (_, i) => {
+                const a = (i / 12) * TWO_PI_LOCAL;
+                return [w / 2 + Math.cos(a) * (w * 0.35), h / 2 + Math.sin(a) * (h * 0.35)];
+            }),
+            grid3: (w, h) => {
+                const p = [];
+                for (let i = 1; i <= 3; i++) for (let j = 1; j <= 3; j++) p.push([(w / 4) * i, (h / 4) * j]);
+                return p;
+            },
+            grid4: (w, h) => {
+                const p = [];
+                for (let i = 1; i <= 4; i++) for (let j = 1; j <= 4; j++) p.push([(w / 5) * i, (h / 5) * j]);
+                return p;
+            },
+            star5: (w, h) => Array.from({ length: 5 }, (_, i) => {
+                const a = (i / 5) * TWO_PI_LOCAL - Math.PI / 2;
+                return [w / 2 + Math.cos(a) * (w * 0.3), h / 2 + Math.sin(a) * (h * 0.3)];
+            }),
+            corners: (w, h) => {
+                const m = w * 0.15;
+                return [[m, m], [w - m, m], [m, h - m], [w - m, h - m]];
+            },
+            cross: (w, h) => [[w / 2, h * 0.15], [w / 2, h * 0.85], [w * 0.15, h / 2], [w * 0.85, h / 2], [w / 2, h / 2]]
+        };
+
+        const baseFreq = ROOT_NOTES_LOCAL[params.rootNote] || 440;
+        const intervals = CHORDS_LOCAL[params.chordType] || CHORDS_LOCAL.maj;
+        const positions = (TEMPLATES_LOCAL[params.template] || TEMPLATES_LOCAL.triangle)(W, H);
+        const amp = params.amplitude || 3;
+        const speed = params.speed || 0.08;
+        const tLocal = frame * speed;
+        const boost = params.boost || 3;
+        const vizMode = (params.vizMode || 'Density').toLowerCase();
+        const sourcesLocal = positions.map((pos, i) => {
+            const semitone = intervals[i % intervals.length];
+            const noteFreq = baseFreq * Math.pow(2, semitone / 12);
+            return { x: pos[0], y: pos[1], freq: noteFreq / 10, amp };
+        });
+
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+            data[i + 3] = 255;
+        }
+
+        if (vizMode === 'radial') {
+            const res = 2;
+            const pts = [];
+            let minI = Infinity, maxI = -Infinity;
+            for (let y = 0; y < H; y += res) {
+                for (let x = 0; x < W; x += res) {
+                    let total = 0;
+                    for (let s = 0; s < sourcesLocal.length; s++) {
+                        const src = sourcesLocal[s];
+                        const dx = x - src.x;
+                        const dy = y - src.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        total += Math.abs(src.amp * Math.sin(TWO_PI_LOCAL * (dist / src.freq - tLocal)));
+                    }
+                    pts.push({ x, y, i: total });
+                    if (total < minI) minI = total;
+                    if (total > maxI) maxI = total;
+                }
+            }
+            const range = maxI - minI || 1;
+            for (let p = 0; p < pts.length; p++) {
+                const n = Math.pow((pts[p].i - minI) / range, 1 / boost);
+                if (n <= 0.05) continue;
+                const grey = Math.floor(n * 255);
+                const idx = (Math.floor(pts[p].y) * W + Math.floor(pts[p].x)) * 4;
+                if (idx >= 0 && idx + 3 < data.length) {
+                    data[idx] = grey;
+                    data[idx + 1] = grey;
+                    data[idx + 2] = grey;
+                }
+            }
+            return imageData;
+        }
+
+        // Density path (also used as worker fallback for particle mode)
+        const total = W * H;
+        const intensities = new Float32Array(total);
+        let minI = Infinity, maxI = -Infinity;
+        for (let idx = 0; idx < total; idx++) {
+            const x = idx % W;
+            const y = (idx / W) | 0;
+            let acc = 0;
+            for (let s = 0; s < sourcesLocal.length; s++) {
+                const src = sourcesLocal[s];
+                const dx = x - src.x;
+                const dy = y - src.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                acc += Math.abs(src.amp * Math.sin(TWO_PI_LOCAL * (dist / src.freq - tLocal)));
+            }
+            intensities[idx] = acc;
+            if (acc < minI) minI = acc;
+            if (acc > maxI) maxI = acc;
+        }
+        const range = maxI - minI || 1;
+        const invBoost = 1 / boost;
+        for (let i = 0; i < total; i++) {
+            const grey = Math.floor(Math.pow((intensities[i] - minI) / range, invBoost) * 255);
+            const px = i * 4;
+            data[px] = grey;
+            data[px + 1] = grey;
+            data[px + 2] = grey;
+            data[px + 3] = 255;
+        }
+        return imageData;
+    },
+
     destroy() {
-        sources           = [];
-        particles         = [];
-        t                 = 0;
-        _lastTemplate     = null;
-        _lastChordType    = null;
+        sources              = [];
+        particles            = [];
+        t                    = 0;
+        _lastTemplate        = null;
+        _lastChordType       = null;
         _lastParticleSpacing = null;
-        _pixelDistCache   = null;
-        _partDistCache    = null;
-        _cacheW           = 0;
-        _cacheH           = 0;
+        _lastSourceMode      = null;
+        _manualSources       = null;
+        _pixelDistCache      = null;
+        _partDistCache       = null;
+        _cacheW              = 0;
+        _cacheH              = 0;
+        _offscreenCanvas     = null;
+        _offscreenCtx        = null;
+    },
+
+    onDestroy() {
+        this.destroy();
     },
 
     draw(ctx, canvas, params, frame) {
         const W = canvas.width;
         const H = canvas.height;
 
+        const safeFrame   = +(frame || 0);
+        const sizeChanged = _cacheW !== W || _cacheH !== H;
+        const sourceMode  = params.sourceMode || 'template';
+
+        // CYM-02: resolve sources — template or manual positions
+        const modeChanged     = sourceMode !== _lastSourceMode;
         const templateChanged = params.template !== _lastTemplate || params.chordType !== _lastChordType;
         const spacingChanged  = params.particleSpacing !== _lastParticleSpacing;
 
-        if (sources.length === 0 || templateChanged) {
-            setupSources(
-                params.template  || 'triangle',
-                params.chordType || 'maj',
-                W, H,
-                ROOT_NOTES[params.rootNote] || 440,
-                params.amplitude || 3
-            );
-            buildPixelDistCache(W, H);
-            _lastTemplate  = params.template;
-            _lastChordType = params.chordType;
+        if (sourceMode === 'manual') {
+            const count = Math.max(1, Math.min(8, (params.manualSourceCount || 3) | 0));
+            // Rebuild if count, mode, or canvas changed
+            if (modeChanged || sizeChanged || sources.length !== count) {
+                const defaultXY = [
+                    [0.25, 0.25], [0.75, 0.25], [0.5, 0.75],
+                    [0.25, 0.75], [0.75, 0.75], [0.5, 0.25],
+                    [0.1, 0.5],   [0.9, 0.5]
+                ];
+                sources = Array.from({ length: count }, (_, i) => {
+                    const xN = params[`s${i+1}X`] ?? defaultXY[i]?.[0] ?? 0.5;
+                    const yN = params[`s${i+1}Y`] ?? defaultXY[i]?.[1] ?? 0.5;
+                    const semitone = (CHORDS[params.chordType || 'maj'] || CHORDS.maj)[i % (CHORDS[params.chordType || 'maj'] || CHORDS.maj).length];
+                    return new WaveSource(xN * W, yN * H, semitone, params.amplitude || 3, ROOT_NOTES[params.rootNote] || 440);
+                });
+                buildPixelDistCache(W, H);
+                _lastSourceMode = 'manual';
+            } else {
+                // Update positions from params live (handles dragged)
+                for (let i = 0; i < sources.length; i++) {
+                    const xN = params[`s${i+1}X`] ?? 0.5;
+                    const yN = params[`s${i+1}Y`] ?? 0.5;
+                    if (sources[i].x !== xN * W || sources[i].y !== yN * H) {
+                        sources[i].x = xN * W;
+                        sources[i].y = yN * H;
+                        buildPixelDistCache(W, H);
+                    }
+                }
+            }
+        } else {
+            if (sources.length === 0 || templateChanged || sizeChanged || modeChanged) {
+                setupSources(params.template || 'triangle', params.chordType || 'maj',
+                    W, H, ROOT_NOTES[params.rootNote] || 440, params.amplitude || 3);
+                buildPixelDistCache(W, H);
+                _lastTemplate   = params.template;
+                _lastChordType  = params.chordType;
+                _lastSourceMode = 'template';
+            }
         }
 
-        if (particles.length === 0 || spacingChanged || templateChanged) {
+        if (particles.length === 0 || spacingChanged || templateChanged || modeChanged || sizeChanged) {
             initParticles(W, H, params.particleSpacing || 5);
             buildParticleDistCache();
             _lastParticleSpacing = params.particleSpacing;
         }
 
-        t = frame * (params.speed || 0.08);
+        if (process?.env?.NODE_ENV === 'development') {
+            console.assert(_cacheW === W && _cacheH === H,
+                `[cymatics] cache size mismatch: expected ${W}×${H}, got ${_cacheW}×${_cacheH}`);
+        }
 
-        // Live-update source frequency and amplitude each frame.
+        t = safeFrame * (params.speed || 0.08);
+
         const baseFreq = ROOT_NOTES[params.rootNote] || 440;
         for (let i = 0; i < sources.length; i++) {
             sources[i].amp      = params.amplitude || 3;
@@ -598,14 +857,16 @@ export const SCRIPT_CONFIG = {
         const boost   = params.boost || 3;
 
         if (vizMode === 'particle') {
-            drawParticle(ctx, W, H);
+            drawParticle(ctx, W, H, params);
         } else if (vizMode === 'density') {
-            drawDensity(ctx, W, H, boost);
+            drawDensity(ctx, W, H, boost, params);
         } else if (vizMode === 'radial') {
-            drawRadial(ctx, W, H, boost);
+            drawRadial(ctx, W, H, boost, params);
         }
 
-        if (params.showSources) {
+        // CYM-06: showSources draws markers for orbit mode; in manual mode the HOST
+        // overlay renders draggable handles, so we only draw static dots for orbit mode.
+        if (params.showSources && sourceMode === 'template') {
             ctx.fillStyle = '#ffffff';
             for (let i = 0; i < sources.length; i++) {
                 ctx.beginPath();

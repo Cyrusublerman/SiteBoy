@@ -48,8 +48,14 @@ Use this as the entry point for all component docs.
 ### Tool helpers
 - `tool/NavigationDropdown.md`
 - `tool/CanvasTabs.md`
+- `tool/ToolToolbar.md`
 
-### Layout
+### Drawing
+- `drawing/GlyphCaptureCanvas.md`
+
+### Feedback
+- `feedback/ErrorPane.md`
+- `feedback/ModalConfirm.md`
 - `layout/PageContainer.md`
 - `layout/PageHeader.md`
 - `layout/Subheader.md`

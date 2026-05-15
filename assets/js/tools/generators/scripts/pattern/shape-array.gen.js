@@ -9,6 +9,8 @@
  * @version 1.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 export const SCRIPT_CONFIG = {
     id: 'shape-array',
     title: 'Shape Array',
@@ -75,14 +77,38 @@ export const SCRIPT_CONFIG = {
             group: 'Animation',
             params: [
                 { key: 'morphSpeed',  type: 'slider', label: 'Morph Speed',  min: 0.001, max: 0.02, step: 0.001, default: 0.005 },
-                { key: 'phaseOffset', type: 'slider', label: 'Phase Offset', min: 0,     max: 0.5,  step: 0.01,  default: 0.1 }
+                { key: 'phaseOffset', type: 'slider', label: 'Phase Offset', min: 0,     max: 0.5,  step: 0.01,  default: 0.1 },
+                // SHA-01: cycle mode controls wrapping behaviour
+                { key: 'cycleMode', type: 'select', label: 'Cycle Mode',
+                  options: [
+                    { value: 'linear',            label: 'Linear (wrap)' },
+                    { value: 'palindrome',         label: 'Palindrome (reverse)' },
+                    { value: 'rotate-and-reverse', label: 'Rotate + Reverse' }
+                  ], default: 'linear' },
+                // SHA-02: flip shape at reverse point in palindrome mode
+                { key: 'flipOnReverse', type: 'toggle', label: 'Flip on Reverse', default: false },
+                // SHA-03: per-cycle rotation accumulation
+                { key: 'perCycleRotation', type: 'slider', label: 'Per-Cycle Rotation (°)',
+                  min: 0, max: 180, step: 5, default: 0 }
             ]
         },
         {
             group: 'Style',
             params: [
                 { key: 'bgColor',      type: 'dropdown', label: 'Background',    options: ['dark', 'light'], default: 'dark' },
-                { key: 'strokeWeight', type: 'slider',   label: 'Stroke Weight', min: 0.5, max: 4, step: 0.5, default: 1.5 }
+                { key: 'strokeWeight', type: 'slider',   label: 'Stroke Weight', min: 0.5, max: 4, step: 0.5, default: 1.5 },
+                // SHA-04: per-cell colour function
+                { key: 'colourMode', type: 'select', label: 'Colour Mode',
+                  options: [
+                    { value: 'uniform',  label: 'Uniform (bg-derived)' },
+                    { value: 'position', label: 'Position (x/y)' },
+                    { value: 'progress', label: 'Cycle Progress' },
+                    { value: 'combined', label: 'Position + Progress' }
+                  ], default: 'uniform' },
+                { key: 'colourHueRange', type: 'slider', label: 'Hue Range',
+                  min: 0, max: 360, step: 10, default: 180 },
+                { key: 'colourHueBase', type: 'slider', label: 'Hue Base (°)',
+                  min: 0, max: 360, step: 5, default: 200 }
             ]
         }
     ],
@@ -174,31 +200,91 @@ export const SCRIPT_CONFIG = {
         p.noFill();
     },
 
+    // SHA-01/02: compute effective t given cycleMode, including palindrome
+    _effectiveT(rawT, cycleMode) {
+        if (cycleMode === 'palindrome' || cycleMode === 'rotate-and-reverse') {
+            // remap: 0→0.5 maps to 0→1, 0.5→1 maps to 1→0
+            return rawT < 0.5 ? rawT * 2 : (1 - rawT) * 2;
+        }
+        return rawT;
+    },
+
+    // SHA-01: cycle count (how many full cycles have elapsed) for rotation accumulation
+    _cycleCount(frame, morphSpeed, cycleMode) {
+        const raw = frame * morphSpeed;
+        if (cycleMode === 'palindrome' || cycleMode === 'rotate-and-reverse') {
+            // one palindrome cycle = 2 linear cycles worth of morphSpeed
+            return Math.floor(raw / 2);
+        }
+        return Math.floor(raw);
+    },
+
+    // SHA-04: resolve per-cell stroke colour
+    _cellColour(p, col, row, cols, rows, t, cycleMode, params, isDark) {
+        const mode = params.colourMode || 'uniform';
+        if (mode === 'uniform') {
+            return isDark ? p.color(255) : p.color(0);
+        }
+        p.colorMode(p.HSL, 360, 100, 100);
+        const hueBase  = params.colourHueBase  ?? 200;
+        const hueRange = params.colourHueRange  ?? 180;
+        const xN = cols > 1 ? col / (cols - 1) : 0;
+        const yN = rows > 1 ? row / (rows - 1) : 0;
+        let hue;
+        if (mode === 'position') {
+            hue = (hueBase + (xN + yN) * 0.5 * hueRange) % 360;
+        } else if (mode === 'progress') {
+            hue = (hueBase + t * hueRange) % 360;
+        } else {
+            // combined
+            hue = (hueBase + ((xN + yN) * 0.5 + t) * 0.5 * hueRange) % 360;
+        }
+        const sat = 80, lum = isDark ? 70 : 45;
+        const c = p.color(hue, sat, lum);
+        p.colorMode(p.RGB, 255);
+        return c;
+    },
+
     p5Draw(p, params, frame) {
-        const { cols, rows, spacing, shapeSize, circleRes, morphSpeed, phaseOffset, bgColor, strokeWeight } = params;
+        const { cols, rows, spacing, shapeSize, circleRes, morphSpeed, phaseOffset, bgColor, strokeWeight,
+                cycleMode, flipOnReverse, perCycleRotation, colourMode } = params;
 
-        const globalT = (frame * morphSpeed) % 1;
+        const rawGlobalT = (frame * morphSpeed) % (
+            (cycleMode === 'palindrome' || cycleMode === 'rotate-and-reverse') ? 2 : 1
+        );
+        const globalT = this._effectiveT(rawGlobalT % 1, cycleMode);
+        const isDark  = bgColor !== 'light';
 
-        p.background(bgColor === 'dark' ? 20 : 245);
-        p.stroke(bgColor === 'dark' ? 255 : 0);
+        p.background(isDark ? 20 : 245);
+        if ((colourMode || 'uniform') === 'uniform') {
+            p.stroke(isDark ? 255 : 0);
+        }
         p.strokeWeight(strokeWeight);
+        p.noFill();
 
         const stages  = [2, 3, 4, Math.max(8, circleRes)];
         const offsetX = (p.width  - (cols - 1) * spacing) / 2;
         const offsetY = (p.height - (rows - 1) * spacing) / 2;
 
-        // Stage sample pair cache — at most 3 pairs computed per frame (si ∈ {0,1,2})
-        // shared across all cells; avoids recomputing identical polygon+perimeter pairs.
+        // SHA-03: cumulative rotation per cycle
+        const cycleCount   = this._cycleCount(frame, morphSpeed, cycleMode);
+        const rotAccum     = (perCycleRotation || 0) * cycleCount * Math.PI / 180;
+        // rotate-and-reverse: flip also rotates each reverse pass
+        const isReversed   = (cycleMode === 'palindrome' || cycleMode === 'rotate-and-reverse')
+                             && rawGlobalT >= 1;
+
+        // Stage sample pair cache
         const stageCache = new Map();
-        const getStageSamples = (si) => {
-            if (stageCache.has(si)) return stageCache.get(si);
+        const getStageSamples = (si, rotation) => {
+            const cacheKey = `${si}|${rotation.toFixed(4)}`;
+            if (stageCache.has(cacheKey)) return stageCache.get(cacheKey);
             const fromN = stages[Math.min(si,     stages.length - 1)];
             const toN   = stages[Math.min(si + 1, stages.length - 1)];
             const entry = {
-                from: this._samplePerimeter(this._polygon(p, fromN, shapeSize), circleRes),
-                to:   this._samplePerimeter(this._polygon(p, toN,   shapeSize), circleRes)
+                from: this._samplePerimeter(this._polygon(p, fromN, shapeSize, rotation), circleRes),
+                to:   this._samplePerimeter(this._polygon(p, toN,   shapeSize, rotation), circleRes)
             };
-            stageCache.set(si, entry);
+            stageCache.set(cacheKey, entry);
             return entry;
         };
 
@@ -210,11 +296,27 @@ export const SCRIPT_CONFIG = {
                 const si     = Math.floor(stageT);
                 const localT = stageT - si;
 
-                const { from, to } = getStageSamples(si);
-                const shape = this._lerpShape(from, to, localT);
+                // SHA-03: per-cell accumulated rotation offset + per-cycle rotation
+                const cellRotation = rotAccum + (cycleMode === 'rotate-and-reverse' && isReversed
+                    ? Math.PI / 4 * (col + row)  // rotate-and-reverse adds positional twist
+                    : 0);
+
+                const { from, to } = getStageSamples(si, cellRotation);
+                let shape = this._lerpShape(from, to, localT);
+
+                // SHA-02: flip shape at reverse point
+                if (flipOnReverse && isReversed) {
+                    shape = shape.map(v => ({ x: -v.x, y: v.y }));
+                }
 
                 const px = offsetX + col * spacing;
                 const py = offsetY + row * spacing;
+
+                // SHA-04: per-cell colour
+                if ((colourMode || 'uniform') !== 'uniform') {
+                    p.stroke(this._cellColour(p, col, row, cols, rows, t, cycleMode, params, isDark));
+                }
+
                 p.push();
                 p.translate(px, py);
                 p.beginShape();

@@ -3,6 +3,8 @@
  * 13 just-intonation intervals cycled over 4 view modes in an 8-pass sequence.
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 const intervals = [
     [1, 1],    [16, 15], [9, 8],  [6, 5],  [5, 4],  [4, 3],  [45, 32],
     [3, 2],    [8, 5],   [5, 3],  [9, 5],  [15, 8], [2, 1]
@@ -199,6 +201,29 @@ export const SCRIPT_CONFIG = {
                     default: 90
                 }
             ]
+        },
+        {
+            group: 'Canvas',
+            params: [
+                {
+                    key: 'canvasWidth',
+                    type: 'slider',
+                    label: 'Canvas Width',
+                    min: 400,
+                    max: 2000,
+                    step: 100,
+                    default: 800
+                },
+                {
+                    key: 'canvasHeight',
+                    type: 'slider',
+                    label: 'Canvas Height',
+                    min: 400,
+                    max: 2000,
+                    step: 100,
+                    default: 800
+                }
+            ]
         }
     ],
 
@@ -248,9 +273,13 @@ export const SCRIPT_CONFIG = {
 
         const w = canvas.width;
         const h = canvas.height;
-        const cx = w / 2;
-        const cy = h / 2;
-        const scale = Math.min(w, h) * 0.35;
+        const drawW = params.canvasWidth || w;
+        const drawH = params.canvasHeight || h;
+        const offsetX = (w - drawW) / 2;
+        const offsetY = (h - drawH) / 2;
+        const cx = offsetX + drawW / 2;
+        const cy = offsetY + drawH / 2;
+        const scale = Math.min(drawW, drawH) * 0.35;
         const baseRadius = scale * 0.7;
         const points = params.points || 800;
         const pointSize = params.pointSize || 1;

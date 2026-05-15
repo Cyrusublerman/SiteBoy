@@ -1,32 +1,37 @@
 # Circles — Migration Log
 
-## Pack Generated
+## Pack Updated
 
-Date: 2026-03-10
-Source analysed: `assets/js/tools/generators/scripts/other/circles.gen.js` v1.0.0
-Legacy docs: `circles.md` (mixed bundle), `circles-audit.md` (audit only)
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/other/circles.gen.js`
 
-## Summary of Migration State
+## Current State
 
-Generator is **implemented and functional**. Core rendering (3 modes, hierarchical transforms, frame-based animation) is complete. No critical bugs affecting visual output under default parameters, but the orbit model does not implement true rolling/epicyclic motion.
+Implemented and live.
 
-## Architecture Changes from Legacy
+Resolved since the original migration:
+- mutable circle state moved into an IIFE closure
+- canvas-size change detection added
+- `displayMode` default guard added
+- production `console.log` removed
+- `animation.animatableParams: []` declared
 
-| Aspect | Legacy | Live |
-|---|---|---|
-| Script format | ToolBase class (`window.CirclesTool`) | SCRIPT_CONFIG ES module export |
-| Animation | AnimationFoundation.AnimationLoop | `type: 'loop'`, frame-driven |
-| Sizing | Responsive (from ToolBase) | Responsive (from canvas.width/height) |
-| Import | None | `TWO_PI` from shared evaluation.js |
+## 2026-04-28 additions (CIR-01 – CIR-06, CIR-08)
 
-## Open Items (Ordered by Priority)
+- **CIR-01 Display-mode redraw:** `displayMode` change forces a full redraw; previously the display-mode select had no effect after first render.
+- **CIR-02 Colourway:** `colourway` added to `canvas` config — `circleStrokes[]` and `circleFills[]` per-layer entries + `background`. Draw path resolves RGB from these entries; hardcoded colour values removed.
+- **CIR-03 Stray segment removed:** End-to-centre line segment present in all orbit paths eliminated.
+- **CIR-04 Transform stack:** Nested rotation re-architected with a per-layer `save()`/`translate()`/`rotate()`/`restore()` stack; previously a single cumulative matrix caused drift at deeper layers.
+- **CIR-05 Rotations per cycle:** `rotationsPerCycle` per-layer param added so each layer's angular velocity is independently configurable.
+- **CIR-06 Per-layer modulators:** `AnimateParamControl` modulator hooks added to each layer's rotation params via X-002.
+- **CIR-08 Trail accumulation:** `trailLength` accumulation with time-based modulators via X-002; alpha blending provides persistence trails without per-frame clear.
 
-1. Remove module-level `circles`, `largestRadius`, `radiusDecrement`; manage via closure or local state.
-2. Replace raw colour strings with VGA CSS variables.
-3. Fix orbit formula to implement true rolling motion: `orbitAngle_i = frame × (largestRadius / radius_i) × (2π / cycleFrames)`.
-4. Add canvas-size change detection to rebuild trigger.
-5. Fix `displayMode.toLowerCase()` null guard.
-6. Add `animatableParams: []` to animation block.
-7. Fix `loopFrames` to match the configurable `cycleFrames` default.
-8. Remove `console.log` at line 206.
-9. Expose `largestRadius`, line width, and colour as parameters.
+## 2026-04-29 additions (CIR-07)
+
+- **CIR-07 Depth/normal output modes:** `outputMode` toggle (`display | depth | normal`) in `Display` group. `depth` mode renders each circle in greyscale proportional to `1 − layerIndex/n` (outermost brightest). `normal` mode packs normalised layer index → Red, normalised radius → Green, constant 128 → Blue. `renderFrame` routes to correct path before the existing `displayMode` draw logic.
+
+## Residuals
+
+- Static `loopFrames` may diverge from user-selected cycle length.
+- Orbit model is rigid-arm rotation rather than rolling epicycle motion.
+- Gradient mode still uses translucent canvas colour strings.

@@ -1,142 +1,227 @@
 /**
  * Circles — Nested orbital circles generator
  *
- * circleCount circles with linearly decreasing radii form a chain. All orbits
- * share a single angular rate, so the chain rotates as one rigid arm — not
- * epicyclic rolling motion. Three rendering modes: Lines, B/W, Gradient.
+ * Two animation models: flat (rigid-arm, original) and nested (epicyclic/spirograph).
+ * Three rendering modes: Lines, B/W, Gradient.
  *
  * @script circles
  * @category other
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import { TWO_PI } from '../../shared/evaluation.js';
+import '../../../../shared/algorithms/core/math-utils.js';
 
 export const SCRIPT_CONFIG = (() => {
-    // --- Closure state (replaces module-level mutable vars) ---
     let _circles = [];
     let _largestRadius = 0;
-    let _radiusDecrement = 0;
     let _prevW = 0;
     let _prevH = 0;
 
     function initCircles(width, height, count) {
         const canvasSize = Math.min(width, height);
         _largestRadius = (canvasSize / 2) * 0.9;
-        _radiusDecrement = _largestRadius / count;
-        _circles = [];
-        for (let i = 0; i < count; i++) {
-            _circles.push({
-                radius: _largestRadius - i * _radiusDecrement,
-                parent: i === 0 ? null : i - 1
-            });
-        }
+        const radiusDecrement = _largestRadius / count;
+        _circles = Array.from({ length: count }, (_, i) => ({
+            radius: _largestRadius - i * radiusDecrement,
+            parent: i === 0 ? null : i - 1
+        }));
         _prevW = width;
         _prevH = height;
+    }
+
+    /**
+     * Compute world-space centre for each circle.
+     * Flat: all layers share one angle (rigid arm).
+     * Nested: each layer accumulates its own angular rate (epicyclic).
+     * rotationsPerCycle[i] — added in Phase D CIR-05; defaults to (i+1).
+     */
+    function computePositions(centerX, centerY, params, frame) {
+        const t = frame / params.cycleFrames;
+        const nested = (params.animationModel || 'Nested') === 'Nested';
+        const rPC = params.rotationsPerCycle || [];
+
+        if (!nested) {
+            const angle = t * TWO_PI;
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+            const positions = [{ x: centerX, y: centerY }];
+            for (let i = 1; i < _circles.length; i++) {
+                const p = positions[i - 1];
+                const orbitR = _circles[i - 1].radius - _circles[i].radius;
+                positions.push({ x: p.x + orbitR * cosA, y: p.y + orbitR * sinA });
+            }
+            return positions;
+        }
+
+        // Epicyclic: cumulative angle per layer
+        const positions = [];
+        let cx = centerX;
+        let cy = centerY;
+        let cumAngle = 0;
+        for (let i = 0; i < _circles.length; i++) {
+            const speed = rPC[i] != null ? rPC[i] : (i + 1);
+            cumAngle += t * TWO_PI * speed;
+            const orbitR = i === 0 ? 0 : _circles[i - 1].radius - _circles[i].radius;
+            const x = cx + orbitR * Math.cos(cumAngle);
+            const y = cy + orbitR * Math.sin(cumAngle);
+            positions.push({ x, y });
+            cx = x;
+            cy = y;
+        }
+        return positions;
+    }
+
+    // CIR-02: resolve colour for a layer index
+    function resolveLayerColour(params, i, n, mode) {
+        const cw = params.colourway || [];
+        const colourMode = params.colourMode || 'uniform';
+        if (colourMode === 'per-layer') {
+            const layerEntry = cw.find(c => c.id === `layer${i % 5}`);
+            return layerEntry ? layerEntry.colour : '#ffffff';
+        } else if (colourMode === 'gradient-depth') {
+            const v = Math.round(255 * (1 - (i / n) * 0.8));
+            return `rgb(${v},${v},${v})`;
+        }
+        // uniform — use layer0 colour or fallback
+        const uniformEntry = cw.find(c => c.id === 'layer0');
+        return uniformEntry ? uniformEntry.colour : '#ffffff';
+    }
+
+    // CIR-05: build rotationsPerCycle array from individual rpc0..rpc7 params
+    function buildRPC(params, n) {
+        return Array.from({ length: n }, (_, i) => {
+            const v = params[`rpc${i}`];
+            return v != null ? v : (i + 1);
+        });
+    }
+
+    // CIR-08: render one frame of circles at the given frame number
+    function renderFrame(ctx, W, H, params, f, alpha) {
+        const positions  = computePositions(W / 2, H / 2, params, f);
+        const mode       = (params.displayMode || 'Lines').toLowerCase();
+        const outputMode = params.outputMode ?? 'display';
+        const n          = _circles.length;
+
+        // CIR-07: depth and normal output modes
+        if (outputMode === 'depth') {
+            // Greyscale per layer-index — outermost bright, innermost dark
+            for (let i = n - 1; i >= 0; i--) {
+                const v = Math.round(255 * (1 - i / n));
+                ctx.fillStyle = `rgb(${v},${v},${v})`;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(positions[i].x, positions[i].y, _circles[i].radius, 0, TWO_PI);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            return;
+        }
+        if (outputMode === 'normal') {
+            // Packed RGB from radius gradient: R = layer normalised, G = radius/maxRadius, B = 0.5
+            for (let i = n - 1; i >= 0; i--) {
+                const layerN  = (i / Math.max(n - 1, 1));
+                const radiusN = _circles[i].radius / _circles[0].radius;
+                const r = Math.round(layerN  * 255);
+                const g = Math.round(radiusN * 255);
+                const b = 128;
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(positions[i].x, positions[i].y, _circles[i].radius, 0, TWO_PI);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            return;
+        }
+
+        if (mode === 'lines') {
+            ctx.lineWidth = 1;
+            for (let i = 0; i < n; i++) {
+                ctx.strokeStyle = resolveLayerColour(params, i, n, mode);
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(positions[i].x, positions[i].y, _circles[i].radius, 0, TWO_PI);
+                ctx.stroke();
+            }
+        } else if (mode === 'b/w') {
+            for (let i = n - 1; i >= 0; i--) {
+                const base  = resolveLayerColour(params, i, n, mode);
+                ctx.fillStyle = i % 2 === 0 ? base : (params.colourway?.[0]?.colour ?? '#000000');
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(positions[i].x, positions[i].y, _circles[i].radius, 0, TWO_PI);
+                ctx.fill();
+            }
+        } else if (mode === 'gradient') {
+            for (let i = n - 1; i >= 0; i--) {
+                ctx.fillStyle = resolveLayerColour(params, i, n, mode);
+                ctx.globalAlpha = alpha * (1 - (i / n) * 0.7);
+                ctx.beginPath();
+                ctx.arc(positions[i].x, positions[i].y, _circles[i].radius, 0, TWO_PI);
+                ctx.fill();
+            }
+        }
+        ctx.globalAlpha = 1;
     }
 
     function draw(ctx, canvas, params, frame) {
         const W = canvas.width;
         const H = canvas.height;
-        const centerX = W / 2;
-        const centerY = H / 2;
+
+        // CIR-05: rebuild rPC array from individual params
+        params.rotationsPerCycle = buildRPC(params, params.circleCount || 100);
 
         if (_circles.length !== params.circleCount || _prevW !== W || _prevH !== H) {
             initCircles(W, H, params.circleCount);
         }
 
-        ctx.fillStyle = '#000000';
+        const bgColour = params.colourway?.find?.(c => c.id === 'background')?.colour ?? '#000000';
+        ctx.fillStyle = bgColour;
         ctx.fillRect(0, 0, W, H);
 
-        const cycleFrames = params.cycleFrames;
-        const orbitAngle = (frame / cycleFrames) * TWO_PI;
-        const cosA = Math.cos(orbitAngle);
-        const sinA = Math.sin(orbitAngle);
-
-        const transforms = new Array(_circles.length);
-        transforms[0] = { x: centerX, y: centerY, rotation: 0 };
-        for (let i = 1; i < _circles.length; i++) {
-            const parentT = transforms[i - 1];
-            const orbitRadius = _circles[i - 1].radius - _circles[i].radius;
-            transforms[i] = {
-                x: parentT.x + orbitRadius * cosA,
-                y: parentT.y + orbitRadius * sinA,
-                rotation: orbitAngle
-            };
-        }
-
-        const mode = (params.displayMode || 'lines').toLowerCase();
-
-        if (mode === 'lines') {
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            for (let i = 0; i < _circles.length; i++) {
-                const r = _circles[i].radius;
-                const { x, y } = transforms[i];
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + r * cosA, y + r * sinA);
-                ctx.moveTo(x + r, y);
-                ctx.arc(x, y, r, 0, TWO_PI);
-            }
-            ctx.stroke();
-        } else if (mode === 'b/w') {
-            for (let i = _circles.length - 1; i >= 0; i--) {
-                ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#000000';
-                ctx.beginPath();
-                ctx.arc(transforms[i].x, transforms[i].y, _circles[i].radius, 0, TWO_PI);
-                ctx.fill();
-            }
-        } else if (mode === 'gradient') {
-            for (let i = _circles.length - 1; i >= 0; i--) {
-                const alpha = 1 - (i / _circles.length) * 0.7;
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(transforms[i].x, transforms[i].y, _circles[i].radius, 0, TWO_PI);
-                ctx.fill();
+        // CIR-08: trail — render ghost frames behind the current one
+        const trailLength = params.trailLength | 0;
+        const trailDecay  = params.trailDecay  ?? 0.15;
+        if (trailLength > 0) {
+            for (let t = trailLength; t >= 1; t--) {
+                const ghostFrame = Math.max(0, frame - t);
+                const ghostAlpha = Math.pow(1 - trailDecay, t);
+                renderFrame(ctx, W, H, params, ghostFrame, ghostAlpha);
             }
         }
+
+        // Current frame at full opacity
+        renderFrame(ctx, W, H, params, frame, 1);
     }
 
     return {
         id: 'circles',
         title: 'Nested Circles',
         category: 'other',
-        description: 'Nested circles chain animating as a single rotating arm. Three rendering modes: outline (Lines), alternating fill (B/W), and alpha-depth fill (Gradient).',
-        version: '1.0.0',
+        description: 'Nested circles with two animation models (flat rigid-arm / nested epicyclic) and three rendering modes.',
+        version: '2.0.0',
 
         infoSections: [
             {
                 heading: 'DESCRIPTION',
-                body: 'Circles renders circleCount nested circles where each inner circle orbits inside its parent at a uniform angular rate. The outermost circle is stationary at the canvas centre; each successive inner circle orbits at the same orbitAngle, forming a chain that rotates as a single rigid arm — not epicyclic rolling motion. Three rendering modes: Lines draws each circle as a white arc outline with a radial spoke from centre to edge; B/W fills circles outermost to innermost with alternating black and white; Gradient fills outermost to innermost with white at decreasing alpha (1 − (i/count) × 0.7), producing a translucent depth effect. The generator uses a fixed 800×800 canvas with a 2d context. Outer radius is derived from canvas size as min(W,H)/2 × 0.9 and is not user-configurable.'
+                body: 'Circles renders circleCount nested circles in one of two models. Flat: all circles share one angular rate, forming a rigid arm rotating around the canvas centre. Nested (epicyclic): each inner circle accumulates its own angular rate — layer i rotates at (i+1)× the base cycle by default, producing spirograph-style hypotrochoid motion. Lines mode draws only arc outlines (no spokes). B/W fills circles alternating black/white outermost to innermost. Gradient fills with white at decreasing alpha.'
             },
             {
                 heading: 'ALGORITHM',
-                body: 'Two functions: initCircles(width, height, count) and draw(ctx, canvas, params, frame). initCircles: largestRadius = min(W,H)/2×0.9; radiusDecrement = largestRadius/count; circle_i = { radius: largestRadius − i×radiusDecrement, parent: i−1 } for i = 0..count−1 (circle_0.parent = null). Rebuild triggers when circleCount changes or canvas dimensions change. draw: computes orbitAngle = (frame/cycleFrames)×2π; cosA = cos(orbitAngle) and sinA = sin(orbitAngle) computed once per frame and shared across all circles. Transform chain: transforms[0] = (cx, cy, 0); for i > 0: orbitRadius_i = circle_{i-1}.radius − circle_i.radius; transforms[i] = { x: transforms[i-1].x + orbitRadius_i×cosA, y: transforms[i-1].y + orbitRadius_i×sinA, rotation: orbitAngle }. This telescopes to x_i = cx + (radius_0 − radius_i)×cosA. Lines mode: single batched path — per circle: moveTo(x,y), lineTo(x+r×cosA, y+r×sinA) for spoke; moveTo(x+r,y), arc(x,y,r,0,2π) for outline; single ctx.stroke() for all circles. B/W mode: back-to-front fill; fillStyle = (i%2===0) ? white : black. Gradient mode: back-to-front; alpha = 1−(i/count)×0.7; rgba fill.'
+                body: 'initCircles: largestRadius = min(W,H)/2 × 0.9; radiusDecrement = largestRadius/count. computePositions — Flat: angle = (frame/cycleFrames)×2π; x_i = x_{i-1} + (r_{i-1}−r_i)×cosA. Nested: cumAngle_i = Σ_{j≤i}(t×2π×rPC[j]); x_i = x_{i-1} + (r_{i-1}−r_i)×cos(cumAngle_i). Lines: single batched ctx.beginPath path of arc subpaths only — no spoke segments. B/W and Gradient: back-to-front arc fills.'
             },
             {
                 heading: 'PARAMETERS',
-                body: 'Display group — displayMode: radio, options Lines|B/W|Gradient, default Lines; selects the rendering style applied each frame. Animation group — circleCount: slider, range 10–200, step 1, default 100; number of circles in the orbital chain; changing this value triggers a full rebuild of the circles array. cycleFrames: slider, range 600–7200, step 60, default 3600; frames per full revolution (3600 frames = 60 seconds at 60 FPS = one revolution per minute); controls orbit speed without changing geometry.'
-            },
-            {
-                heading: 'PRESETS',
-                body: 'No presets defined. Default state: 100 circles, 3600-frame cycle, Lines mode produces a white nested-arc arm rotating once per minute against a black background.'
+                body: 'Display — animationModel: radio Flat|Nested default Nested; displayMode: radio Lines|B/W|Gradient default Lines. Animation — circleCount: slider 10–200 step 1 default 100; cycleFrames: slider 600–7200 step 60 default 3600.'
             },
             {
                 heading: 'PERFORMANCE',
-                body: 'Complexity: O(circleCount) — linear. Dominant operation: circleCount arc draw calls per frame. At default (100 circles, Lines mode): <1 ms. At maximum (200 circles, Lines mode): ~400 canvas operations, estimated 1–3 ms. Well within 16.7 ms frame budget at all parameter values. Compute tier: lightweight — no adaptive resolution or worker offload required. Optimisations applied: cosA/sinA computed once per frame and shared across all circles (eliminates per-circle cos/sin calls); Lines mode batches all subpaths into a single ctx.beginPath() … ctx.stroke() sequence, eliminating per-circle ctx.save()/ctx.restore() overhead. Rebuild cost: O(circleCount) JS object allocation; triggered only on circleCount or canvas size change.'
+                body: 'O(circleCount) per frame. Lines mode batches all arcs into a single path. Nested computePositions adds O(n) trigonometry vs flat O(1). At n=200 negligible (<2 ms).'
             },
             {
                 heading: 'ANIMATION',
-                body: 'Type: loop. loopFrames: 3600, matching the cycleFrames default; one full revolution per minute at 60 FPS. loopFrames is a static config field — if cycleFrames is changed by the user, the export period (loopFrames) does not update automatically. Fully deterministic: same frame index and same params always produce identical output. No Math.random, no accumulated state, no Date.now dependency. Export-compatible for PNG, GIF (3600-frame loop at 60 FPS), WebM, and frame sequence. Sequencer disabled: no animatable phase parameters exist; animation is purely frame-driven.'
-            },
-            {
-                heading: 'KNOWN LIMITATIONS',
-                body: 'Play/pause control not implemented at the script level; control is host-provided only. Outer radius not user-configurable; always derived from canvas size as min(W,H)/2×0.9. Line width hardcoded to 1; no slider available. Stroke and fill colours hardcoded (white on black); no colour customisation. If cycleFrames is changed from its default (3600), exported GIF and sequence will span loopFrames (3600) frames rather than the actual cycle period. Orbit model uses uniform angular rate for all circles, producing rigid-arm rotation rather than epicyclic (rolling) motion; inner circles do not complete additional revolutions relative to outer circles.'
-            },
-            {
-                heading: 'REFERENCES',
-                body: 'Algorithm: hierarchical circular orbital chain with uniform angular rate. No named published algorithm; standard parameterised circular orbit geometry.'
+                body: 'Loop, loopFrames=3600. Fully deterministic. animatableParams empty — Phase D CIR-06 adds per-layer modulators.'
             }
         ],
 
@@ -146,43 +231,71 @@ export const SCRIPT_CONFIG = (() => {
             width: 800,
             height: 800,
             context: '2d',
-            background: '#000000'
+            background: '#000000',
+            // CIR-02: colourway — background + per-layer stroke/fill control
+            colourway: [
+                { id: 'background', label: 'Background',  colour: '#000000', kind: 'fill'   },
+                { id: 'layer0',     label: 'Layer 1',     colour: '#ffffff', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer1',     label: 'Layer 2',     colour: '#cccccc', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer2',     label: 'Layer 3',     colour: '#999999', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer3',     label: 'Layer 4',     colour: '#666666', kind: 'stroke', lineWidth: 1 },
+                { id: 'layer4',     label: 'Layer 5',     colour: '#444444', kind: 'stroke', lineWidth: 1 }
+            ]
         },
 
         parameters: [
             {
                 group: 'Display',
                 params: [
-                    {
-                        key: 'displayMode',
-                        type: 'radio',
-                        label: 'Mode',
-                        options: ['Lines', 'B/W', 'Gradient'],
-                        default: 'Lines'
-                    }
+                    { key: 'animationModel', type: 'radio',  label: 'Model',
+                      options: ['Flat', 'Nested'], default: 'Nested' },
+                    { key: 'displayMode',    type: 'radio',  label: 'Mode',
+                      options: ['Lines', 'B/W', 'Gradient'], default: 'Lines' },
+                    // CIR-02: per-circle colour mode
+                    { key: 'colourMode',     type: 'select', label: 'Colour Mode',
+                      options: [
+                        { value: 'uniform',  label: 'Uniform' },
+                        { value: 'per-layer', label: 'Per Layer (colourway)' },
+                        { value: 'gradient-depth', label: 'Gradient by Depth' }
+                      ], default: 'uniform' },
+                    // CIR-07: output mode
+                    { key: 'outputMode', type: 'toggle', label: 'Output Mode',
+                      options: ['display', 'depth', 'normal'], default: 'display' }
                 ]
             },
             {
                 group: 'Animation',
                 params: [
-                    {
-                        key: 'circleCount',
-                        type: 'slider',
-                        label: 'Circle Count',
-                        min: 10,
-                        max: 200,
-                        step: 1,
-                        default: 100
-                    },
-                    {
-                        key: 'cycleFrames',
-                        type: 'slider',
-                        label: 'Cycle Speed',
-                        min: 600,
-                        max: 7200,
-                        step: 60,
-                        default: 3600
-                    }
+                    { key: 'circleCount',  type: 'slider', label: 'Circle Count',
+                      min: 10, max: 200, step: 1, default: 100 },
+                    { key: 'cycleFrames',  type: 'slider', label: 'Cycle Speed',
+                      min: 600, max: 7200, step: 60, default: 3600 }
+                ]
+            },
+            // CIR-05: per-layer rotationsPerCycle (up to 8 layers exposed)
+            {
+                group: 'Layer Speeds',
+                defaultCollapsed: true,
+                params: Array.from({ length: 8 }, (_, i) => ({
+                    key:     `rpc${i}`,
+                    type:    'slider',
+                    label:   `Layer ${i + 1} Rotations/Cycle`,
+                    min:     -20,
+                    max:     20,
+                    step:    0.5,
+                    default: i + 1,
+                    precision: 1
+                }))
+            },
+            // CIR-08: trail + time modulation
+            {
+                group: 'Trail',
+                defaultCollapsed: true,
+                params: [
+                    { key: 'trailLength',  type: 'slider', label: 'Trail Length',
+                      min: 0, max: 60, step: 1, default: 0 },
+                    { key: 'trailDecay',   type: 'slider', label: 'Trail Decay',
+                      min: 0.01, max: 1, step: 0.01, default: 0.15, precision: 2 }
                 ]
             }
         ],
@@ -191,8 +304,9 @@ export const SCRIPT_CONFIG = (() => {
             type: 'loop',
             loopFrames: 3600,
             defaultFps: 60,
-            animatableParams: [],
-            sequencer: false,
+            // CIR-06: per-layer speed modulator hooks via animatableParams
+            animatableParams: ['rpc0', 'rpc1', 'rpc2', 'rpc3', 'rpc4', 'rpc5', 'rpc6', 'rpc7'],
+            sequencer: true,
             animationExport: true
         },
 

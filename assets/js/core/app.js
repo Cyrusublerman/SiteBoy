@@ -588,9 +588,25 @@ const SiteBoyApp = {
             
             // Tool detail pages manage their own scrolling; padding handled by setSubheaderState
             if (isToolDetailPage) {
-                this.contentContainer.style.padding  = '0';
+                // Tools fill the entire content container with no padding
+                this.contentContainer.style.padding = '0';
+
+                // PageContainer pins top/bottom with height:auto so the frame fills the inset.
+                // Clearing height removes that inline rule and lets .tool-viewport fixed heights fight top/bottom — wrong box, transport misaligned.
+                this.contentContainer.style.height = 'auto';
+                this.contentContainer.style.minHeight = '0';
+                this.contentContainer.style.maxHeight = 'none';
+
+                // Tools manage their own scrolling inside the chrome box
                 this.contentContainer.style.overflow = 'hidden';
                 window.debugLog('LAYOUT', '📐 Tool page detected - applied tool layout mode');
+            } else {
+                // Restore default styling for non-tool pages
+                this.contentContainer.style.padding = '';
+                this.contentContainer.style.height = '';
+                this.contentContainer.style.minHeight = '';
+                this.contentContainer.style.maxHeight = '';
+                this.contentContainer.style.overflow = '';
             }
             
             // App coordinates the section building (async support)

@@ -1,6 +1,6 @@
 # Generative Pattern — Mechanisms
 
-**Status: Unimplemented stub.** The live `draw` function only calls `ctx.fillRect(0, 0, w, h)` with `fillStyle = '#000000'`. No algorithm is present. This file documents the intended mechanisms from the legacy spec.
+**[DOC-022 DEFERRED — 2026-04-30]** Live script is v1.0.0 (fully implemented). This file was written against the stub-era spec and does NOT reflect the live implementation. Do not use as implementation reference. Full rewrite deferred; see `issues.md` DOC-022.
 
 ## Live Script State
 

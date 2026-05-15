@@ -1,23 +1,23 @@
 /**
  * Defecated - WebGL gooey font morphing animation
- * Cycles 40 Google Fonts via GLSL Gaussian blur + smoothstep threshold shader.
- * @version 1.0.0
+ * DEF-01: Cycles ≥50 fonts via FontRegistry.
+ * DEF-02: Ink-bleed GLSL shader with directional spread + noise-warped edges.
+ * DEF-04: Free-text input param, default 'have you defecated today'.
+ * @version 2.0.0
  */
 
-// === FONT DATABASE ===
+import '../../../../shared/algorithms/core/math-utils.js';
+import { FontRegistry } from '../../../../shared/typography/font-registry.js';
 
-const FONT_NAMES = [
-    'Bebas Neue', 'Anton', 'Archivo Black', 'Black Ops One',
-    'Monoton', 'Bungee', 'Bangers', 'Creepster', 'Nosifer',
-    'Orbitron', 'Audiowide', 'Press Start 2P', 'VT323',
-    'Abril Fatface', 'Playfair Display', 'Ultra', 'Yeseva One',
-    'Permanent Marker', 'Lobster', 'Pacifico', 'Kaushan Script',
-    'Alfa Slab One', 'Titan One', 'Sigmar One', 'Righteous',
-    'Russo One', 'Staatliches', 'Teko', 'Fjalla One', 'Passion One',
-    'Fredoka One', 'Comfortaa', 'Quicksand',
-    'Metal Mania', 'Rubik Mono One', 'Cinzel',
-    'Montserrat', 'Poppins', 'Raleway', 'Space Grotesk'
-];
+// DEF-01: build font list from FontRegistry — all canvas fonts, display/handwriting first
+function _buildFontList() {
+    const all = FontRegistry.listFonts();
+    const priority = all.filter(f => f.category === 'display' || f.category === 'handwriting');
+    const rest     = all.filter(f => f.category !== 'display' && f.category !== 'handwriting');
+    return [...priority, ...rest].map(f => f.family);
+}
+
+const FONT_NAMES = _buildFontList();
 
 // === GLSL SHADERS ===
 
@@ -32,6 +32,7 @@ void main() {
   gl_Position = pos;
 }`;
 
+// DEF-02: Ink-bleed fragment shader — directional spread + noise-warped edges
 const FRAG_SRC = `
 precision mediump float;
 varying vec2 vTexCoord;
@@ -41,27 +42,51 @@ uniform float blurAmount;
 uniform float threshold;
 uniform float intensity;
 uniform vec2 texelSize;
+uniform float seed;
 
-vec4 blur(sampler2D tex, vec2 uv, float amount) {
-  vec4 sum = vec4(0.0);
-  float total = 0.0;
-  for (int x = -15; x <= 15; x++) {
-    for (int y = -15; y <= 15; y++) {
-      if (abs(float(x)) > amount || abs(float(y)) > amount) continue;
-      float weight = exp(-(float(x * x + y * y)) / (2.0 * amount * amount + 0.001));
-      sum += texture2D(tex, uv + vec2(float(x), float(y)) * texelSize) * weight;
-      total += weight;
+float hash2(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453 + seed * 0.017);
+}
+float valNoise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  f = f*f*(3.0-2.0*f);
+  float a = hash2(i); float b = hash2(i+vec2(1,0));
+  float c = hash2(i+vec2(0,1)); float d = hash2(i+vec2(1,1));
+  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0; float a = 0.5;
+  for(int i=0;i<3;i++){ v+=a*valNoise(p); p*=2.1; a*=0.5; }
+  return v;
+}
+
+vec4 inkSample(sampler2D tex, vec2 uv, float spread) {
+  if(spread < 0.5) return texture2D(tex, uv);
+  vec4 sum = vec4(0.0); float total = 0.0;
+  float inv2 = 1.0 / (spread * spread * 2.0 + 0.01);
+  float inv3 = 1.0 / (spread * spread * 3.0 + 0.01);
+  for(int x=-7;x<=7;x++){
+    for(int y=-7;y<=7;y++){
+      float fx=float(x); float fy=float(y);
+      float wx=exp(-fx*fx*inv2);
+      float wy=exp(-fy*fy*inv3)*(fy>=0.0?1.35:0.65);
+      float w=wx*wy;
+      vec2 offset=vec2(fx,fy)*texelSize*spread;
+      float n=fbm((uv+offset)*40.0)*0.5-0.25;
+      vec2 warpedUV=clamp(uv+offset+vec2(n)*texelSize*spread*0.4,0.0,1.0);
+      sum+=texture2D(tex,warpedUV)*w; total+=w;
     }
   }
-  return sum / total;
+  return total>0.0 ? sum/total : vec4(0.0);
 }
 
 void main() {
   vec2 uv = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
-  vec4 c1 = blur(tex0, uv, blurAmount);
-  vec4 c2 = blur(tex1, uv, blurAmount);
+  vec4 c1 = inkSample(tex0, uv, blurAmount);
+  vec4 c2 = inkSample(tex1, uv, blurAmount);
   vec4 mixed = mix(c1, c2, intensity);
-  float alpha = smoothstep(threshold - 0.1, threshold + 0.1, mixed.a);
+  float noiseEdge = (fbm(uv*22.0+blurAmount*0.05)-0.5)*0.18;
+  float alpha = smoothstep(threshold-0.1+noiseEdge, threshold+0.1+noiseEdge, mixed.a);
   gl_FragColor = vec4(mixed.rgb, alpha);
 }`;
 
@@ -83,8 +108,16 @@ function advanceFont(state) {
     state._fontQueue.push(n);
 }
 
+// DEF-04: resolve lines from params — custom text or preset dropdowns
+function resolveLines(params) {
+    if (params.textMode === 'Custom' && params.customText) {
+        return params.customText.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3);
+    }
+    return [params.line1, params.line2, params.line3].filter(s => s && s.trim());
+}
+
 function calculateSizes(gfx, params, fontName) {
-    const lines = [params.line1, params.line2, params.line3].filter(s => s && s.trim());
+    const lines = resolveLines(params);
     if (lines.length === 0) return { fontName, sizes: [], heights: [], lines: [] };
 
     const tw = gfx.width * params.targetWidth;
@@ -149,7 +182,7 @@ export const SCRIPT_CONFIG = {
     id: 'defecated',
     title: 'DEFECATED',
     category: 'other',
-    version: '1.0.0',
+    version: '2.0.0',
 
     canvas: { width: 800, height: 600, context: 'p5' },
 
@@ -164,7 +197,13 @@ export const SCRIPT_CONFIG = {
     },
 
     parameters: [
+        // DEF-04: free text input with default sentence; each newline becomes a new line
         { group: 'Text', params: [
+            { key: 'textMode', type: 'radio', label: 'Mode',
+              options: ['Preset', 'Custom'], default: 'Preset' },
+            // Custom free-text: newline-delimited, up to 3 lines
+            { key: 'customText', type: 'text', label: 'Custom Text',
+              default: 'have you\ndefecated\ntoday?' },
             { key: 'line1', type: 'dropdown', label: 'Line 1',
               options: ['HAVE YOU', 'ARE YOU', 'DID YOU', 'WILL YOU', 'CAN YOU'],
               default: 'HAVE YOU' },
@@ -246,8 +285,13 @@ export const SCRIPT_CONFIG = {
     ],
 
     p5Setup(p, params) {
+        // Use host-configured canvas dimensions so render is always bounded (DEF-03).
+        // p.width/p.height are set by the host before calling p5Setup.
+        const W = (p.width  > 0 ? p.width  : SCRIPT_CONFIG.canvas.width);
+        const H = (p.height > 0 ? p.height : SCRIPT_CONFIG.canvas.height);
+
         // Recreate canvas in WEBGL mode — overrides the host 2D canvas
-        const cnv = p.createCanvas(800, 600, p.WEBGL);
+        const cnv = p.createCanvas(W, H, p.WEBGL);
         p.pixelDensity(1);
 
         // Centre the new WEBGL canvas in the host container
@@ -258,15 +302,12 @@ export const SCRIPT_CONFIG = {
         el.style.transform = 'translate(-50%, -50%)';
         el.style.display = 'block';
 
-        // Inject Google Fonts CSS (once per page load)
-        if (!document.querySelector('link[data-defecated-fonts]')) {
-            const families = FONT_NAMES.map(f => f.replace(/ /g, '+')).join('|');
-            const link = document.createElement('link');
-            link.href = `https://fonts.googleapis.com/css?family=${families}:700&display=swap`;
-            link.rel = 'stylesheet';
-            link.setAttribute('data-defecated-fonts', '');
-            document.head.appendChild(link);
-        }
+        // Store dimensions for buffer recreation on resize
+        this._canvasW = W;
+        this._canvasH = H;
+
+        // DEF-01: Use FontRegistry to inject all canvas fonts (idempotent)
+        FontRegistry.ensureLoaded();
 
         // Initialise shuffled font queue
         const fontNames = [...FONT_NAMES];
@@ -277,9 +318,9 @@ export const SCRIPT_CONFIG = {
         // Create GLSL shader
         this._shader = p.createShader(VERT_SRC, FRAG_SRC);
 
-        // Create 2D offscreen graphics buffers for text rendering
-        this._gfx1 = p.createGraphics(800, 600);
-        this._gfx2 = p.createGraphics(800, 600);
+        // Create 2D offscreen graphics buffers — matched to canvas dimensions (DEF-03)
+        this._gfx1 = p.createGraphics(W, H);
+        this._gfx2 = p.createGraphics(W, H);
 
         // Create 2D debug overlay buffer (reliable text rendering in WEBGL context)
         this._debugGfx = p.createGraphics(172, 90);
@@ -299,8 +340,19 @@ export const SCRIPT_CONFIG = {
     },
 
     p5Draw(p, params, _frame) {
+        // Recreate graphics buffers if canvas was resized (DEF-03)
+        if (p.width !== this._canvasW || p.height !== this._canvasH) {
+            this._canvasW = p.width;
+            this._canvasH = p.height;
+            if (this._gfx1) { this._gfx1.remove(); }
+            if (this._gfx2) { this._gfx2.remove(); }
+            this._gfx1 = p.createGraphics(this._canvasW, this._canvasH);
+            this._gfx2 = p.createGraphics(this._canvasW, this._canvasH);
+            this._lastTextSig = ''; // force redraw
+        }
+
         // Detect text or layout param changes; recalculate buffers when they occur
-        const sig = `${params.line1}|${params.line2}|${params.line3}|${params.targetWidth}|${params.maxHeight}|${params.lineGap}`;
+        const sig = `${params.textMode}|${params.customText}|${params.line1}|${params.line2}|${params.line3}|${params.targetWidth}|${params.maxHeight}|${params.lineGap}`;
         if (sig !== this._lastTextSig) {
             this._lastTextSig  = sig;
             this._currentData  = calculateSizes(this._gfx1, params, this._fontNames[this._fontQueue[0]]);
@@ -341,6 +393,8 @@ export const SCRIPT_CONFIG = {
             this._shader.setUniform('threshold',  threshold);
             this._shader.setUniform('intensity',  morphT);
             this._shader.setUniform('texelSize',  [1.0 / p.width, 1.0 / p.height]);
+            // DEF-02: seed for per-cycle noise variation in ink-bleed shader
+            this._shader.setUniform('seed',       (this._fontQueue[0] % 99) * 1.37);
             p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
             p.resetShader();
         }

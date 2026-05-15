@@ -89,6 +89,44 @@ Impact: The trail/blur effect available in the prior ToolBase implementation is 
 
 ---
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-007] — mechanisms.md Documents Removed evaluate() Function**
+
+`mechanisms.md` Function Inventory lists `evaluate(t, p)` as a separate function. It was inlined into `draw()` in v1.1.0 and no longer exists. Render Loop Order step 4 still describes calling `evaluate(t, params)`. Mathematical Model states rotation trig is computed inside `evaluate()` on every call — it is now precomputed once per frame before the loop.
+
+---
+
+**[STALE DOC] [DOC-008] — ui-layout.md Phase Parameter Keys Stale**
+
+All 8 phase parameter keys documented as `phi_x1`, `phi_x2`, `phi_xm1`, `phi_xm2`, `phi_y1`, `phi_y2`, `phi_ym1`, `phi_ym2` (snake_case). Live source uses `phiX1`, `phiX2`, `phiXm1`, `phiXm2`, `phiY1`, `phiY2`, `phiYm1`, `phiYm2` (camelCase) after v1.1.0 rename. Sidebar structure slot labels also stale.
+
+---
+
+**[STALE DOC] [DOC-009] — performance.md Multiple Stale Sections**
+
+(1) Dominant Op references `evaluate(t, params)`. (2) Complexity says rotation trig "recomputed every call". (3) Frame Budget says "20,000 evaluate() calls". (4) Worker Feasibility section describes offloading `evaluate()`. (5) Mitigation Candidates lists rotation-precompute and path-break guard as open items — both applied in v1.1.0. Extreme-param section says off-screen points add "unnecessary lineTo segments" — path-break guard prevents this.
+
+---
+
+**[MISSING DOC] [DOC-010] — source-reference.md Absent**
+
+Migration log claims `source-reference.md` was produced with compliance score 2, but the file does not exist in the folder.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **GEN-005 (P1, WONTFIX):** Reference delta-coupled Y architecture is absent in live (`ref lissajous.gen.js:220-248` vs live independent Y params). Independent Y model retained by design.
+- **EXP-001 (P2, FIXED):** Reference export set differs; SVG export is now enabled in live config.
+- **ARCH-005 (P1, FIXED):** No imports from `assets/js/shared/*` in live lissajous source (`zero-shared-imports`).
+- **ARCH-006 (P1, WONTFIX):** Live generator remains procedural SCRIPT_CONFIG module; BaseComponent inheritance is not applicable to this generator class.
+- **DOC-004 (P2, FIXED):** `ui-layout.md` now reflects camelCase phase keys.
+- **DOC-005 (P2, FIXED):** `mechanisms.md` updated to live draw/inlined-evaluation model.
+- **DOC-006 (P2, FIXED):** `performance.md` updated to current mitigations and no-`evaluate()` path.
+
+---
+
 ## Escalation Issues
 
 **[NOTE] [ESCALATION] Algorithm candidate: generalised Lissajous parametric evaluation**

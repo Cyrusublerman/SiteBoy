@@ -7,11 +7,31 @@
  * @version 5.0.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+import { TIME_ANCHORS, SCALES, getElapsedLabel } from '../../../../shared/algorithms/astronomy/time-anchors.js';
+
 // ═══════════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
 
 const J2000_MS = 946728000000;
+
+// SOL-04: Moon data — simplified Keplerian (circular orbit, parent-relative)
+// Fields: parent (planet name), a (AU), period (days), radius (km), color, phase0 (deg)
+const MOON_DATA = [
+    // Earth
+    { parent: 'Earth',   name: 'Moon',     a: 0.002570, period:   27.32158, radius:  1737, color: '#c0c0c0', phase0:   0 },
+    // Mars
+    { parent: 'Mars',    name: 'Phobos',   a: 0.0000627, period:   0.31891, radius:    11, color: '#996633', phase0:  45 },
+    { parent: 'Mars',    name: 'Deimos',   a: 0.0001568, period:   1.26244, radius:     6, color: '#cc9966', phase0: 120 },
+    // Jupiter (Galilean)
+    { parent: 'Jupiter', name: 'Io',       a: 0.002820,  period:   1.76914, radius:  1821, color: '#ffcc00', phase0:  30 },
+    { parent: 'Jupiter', name: 'Europa',   a: 0.004490,  period:   3.55118, radius:  1561, color: '#e0c080', phase0:  90 },
+    { parent: 'Jupiter', name: 'Ganymede', a: 0.007155,  period:   7.15455, radius:  2634, color: '#999966', phase0: 150 },
+    { parent: 'Jupiter', name: 'Callisto', a: 0.01258,   period:  16.68902, radius:  2410, color: '#808080', phase0: 210 },
+    // Saturn
+    { parent: 'Saturn',  name: 'Titan',    a: 0.00816,   period:  15.94542, radius:  2575, color: '#ffaa44', phase0:  60 },
+];
 const EMU_WAR_MS = new Date(1932, 10, 2, 11, 0, 0).getTime();
 const DEG_TO_RAD = Math.PI / 180;
 const TWO_PI = Math.PI * 2;
@@ -115,10 +135,11 @@ export const SCRIPT_CONFIG = {
     },
 
     animation: {
-        type:            'infinite',
-        defaultFps:      1,
-        sequencer:       false,
-        animatableParams: []
+        type:             'infinite',
+        defaultFps:       1,
+        sequencer:        false,
+        animatableParams: ['distanceScale', 'planetScale'],
+        // SOL-03: fps bumped when timeRate is not realtime (driven by param change at draw time)
     },
 
     export: {
@@ -132,14 +153,20 @@ export const SCRIPT_CONFIG = {
     // ── Instance state (on SCRIPT_CONFIG; not module-level) ──────────
     _planets: [],
     _asteroidParticles: [],
-    _asteroidCached: null,       // normalised log-scale positions per particle
-    _beltDistScale: null,        // distScale at which _beltScreenCache was built
-    _beltCX: null,               // cx at which _beltScreenCache was built
-    _beltCY: null,               // cy at which _beltScreenCache was built
-    _beltScreenCache: null,      // absolute pixel positions for current distScale/cx/cy
+    _asteroidCached: null,
+    _beltDistScale: null,
+    _beltCX: null,
+    _beltCY: null,
+    _beltScreenCache: null,
     _longitude: null,
     _latitude: null,
     _locationRequested: false,
+    _hoveredPlanet: null,
+    _pointerX: null,
+    _pointerY: null,
+    _canvasPointerHandler: null,
+    _canvasLeaveHandler: null,
+    _pointerCanvas: null,
 
     // ── INFO tab ─────────────────────────────────────────────────────
     infoSections: [
@@ -189,24 +216,85 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Display',
             params: [
-                { key: 'distanceScale',  type: 'slider', label: 'Distance Scale', min: 0.2,  max: 0.8,  step: 0.05, default: 0.45, precision: 2 },
-                { key: 'planetScale',    type: 'slider', label: 'Planet Scale',   min: 0.5,  max: 3.0,  step: 0.1,  default: 1.0,  precision: 1 },
-                { key: 'showLabels',     type: 'toggle', label: 'Show Labels',    default: false },
-                { key: 'showInfo',       type: 'toggle', label: 'Show Info',      default: true  }
+                { key: 'distanceScale', type: 'slider', label: 'Distance Scale',
+                  min: 0.2, max: 0.8, step: 0.05, default: 0.45, precision: 2 },
+                // SOL-01: sizeMode — how to scale planet display radii
+                { key: 'sizeMode', type: 'select', label: 'Size Mode',
+                  options: [
+                    { value: 'proportional',  label: 'Proportional (true scale)' },
+                    { value: 'logarithmic',   label: 'Logarithmic' },
+                    { value: 'exaggerated',   label: 'Exaggerated (×5 small)' }
+                  ], default: 'proportional' },
+                { key: 'planetScale', type: 'slider', label: 'Planet Scale',
+                  min: 0.5, max: 3.0, step: 0.1, default: 1.0, precision: 1 },
+                // SOL-02: terminator shading toggle
+                { key: 'showTerminator', type: 'toggle', label: 'Terminator Shading', default: false },
+                { key: 'showLabels',     type: 'toggle', label: 'Show Labels',         default: false },
+                { key: 'showInfo',       type: 'toggle', label: 'Show Info',           default: true  },
+                // SOL-04: moon display toggle
+                { key: 'showMoons',      type: 'toggle', label: 'Show Moons',          default: false }
+            ]
+        },
+        // SOL-03: time controls — rate and animation range
+        {
+            group: 'Time',
+            params: [
+                { key: 'timeRate', type: 'select', label: 'Time Rate',
+                  options: [
+                    { value: 'realtime',  label: 'Real-Time (live)' },
+                    { value: 'day',       label: '1 day / sec' },
+                    { value: 'week',      label: '1 week / sec' },
+                    { value: 'month',     label: '1 month / sec' },
+                    { value: 'year',      label: '1 year / sec' },
+                    { value: 'decade',    label: '1 decade / sec' },
+                    { value: 'century',   label: '1 century / sec' }
+                  ], default: 'realtime' },
+                { key: 'animRange', type: 'select', label: 'Animation Window',
+                  options: [
+                    { value: 'none',     label: 'None (real-time)' },
+                    { value: 'day',      label: 'Last 24 hours' },
+                    { value: 'week',     label: 'Last 7 days' },
+                    { value: 'year',     label: 'Last year' },
+                    { value: 'decade',   label: 'Last decade' },
+                    { value: 'century',  label: 'Last century' }
+                  ], default: 'none' }
             ]
         },
         {
             group: 'Asteroid Belt',
             params: [
-                { key: 'asteroidCount',    type: 'slider', label: 'Particles',  min: 100, max: 1000, step: 50, default: 300 },
-                { key: 'showAsteroidBelt', type: 'toggle', label: 'Show Belt',  default: true }
+                { key: 'asteroidCount',    type: 'slider', label: 'Particles', min: 100, max: 1000, step: 50, default: 300 },
+                { key: 'showAsteroidBelt', type: 'toggle', label: 'Show Belt', default: true }
             ]
         },
         {
             group: 'Viewer',
             params: [
-                { key: 'showViewer', type: 'toggle', label: 'Show Viewer', default: true },
-                { key: 'fovAngle',   type: 'slider', label: 'FOV Angle',   min: 10, max: 90, step: 5, default: 30 }
+                { key: 'showViewer',  type: 'toggle', label: 'Show Viewer',  default: true },
+                { key: 'fovAngle',    type: 'slider', label: 'FOV Angle',    min: 10, max: 90, step: 5, default: 30 },
+                // SOL-05: viewer reticle toggle
+                { key: 'showReticle', type: 'toggle', label: 'Viewer Reticle', default: true }
+            ]
+        },
+        // SOL-07: multi-scale time panel
+        {
+            group: 'Time Panel', defaultCollapsed: true,
+            params: [
+                { key: 'showTimePanel',  type: 'toggle', label: 'Show Time Panel', default: false },
+                { key: 'timePanelScale', type: 'select', label: 'Time Scale',
+                  options: [
+                    { value: 'seconds',   label: 'Seconds' },
+                    { value: 'minutes',   label: 'Minutes' },
+                    { value: 'hours',     label: 'Hours'   },
+                    { value: 'days',      label: 'Days'    },
+                    { value: 'months',    label: 'Months'  },
+                    { value: 'years',     label: 'Years'   },
+                    { value: 'decades',   label: 'Decades' },
+                    { value: 'centuries', label: 'Centuries' },
+                    { value: 'millennia', label: 'Millennia' },
+                    { value: 'megayears', label: 'Megayears (Myr)' },
+                    { value: 'gigayears', label: 'Gigayears (Gyr)' }
+                  ], default: 'years' }
             ]
         }
     ],
@@ -290,6 +378,17 @@ export const SCRIPT_CONFIG = {
         return (d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600) / 24;
     },
 
+    destroy() {
+        if (this._pointerCanvas) {
+            this._pointerCanvas.removeEventListener('pointermove', this._canvasPointerHandler);
+            this._pointerCanvas.removeEventListener('pointerleave', this._canvasLeaveHandler);
+        }
+        this._canvasPointerHandler = null;
+        this._canvasLeaveHandler   = null;
+        this._hoveredPlanet        = null;
+        this._pointerCanvas        = null;
+    },
+
     _requestLocation() {
         if (this._locationRequested) return;
         this._locationRequested = true;
@@ -302,13 +401,215 @@ export const SCRIPT_CONFIG = {
             .catch(() => {});
     },
 
-    // _frame is intentionally unused — this generator reads Date.now() directly.
-    // Frame-indexed animation is not meaningful for a real-time astronomical display.
+    // SOL-03: compute T (Julian centuries past J2000) given timeRate and animRange params.
+    _computeT(params, frame) {
+        const MS_PER_CENTURY = 36525 * 86400000;
+        const rateMap = {
+            realtime: 0,
+            day:      86400000,
+            week:     7 * 86400000,
+            month:    30 * 86400000,
+            year:     365.25 * 86400000,
+            decade:   10 * 365.25 * 86400000,
+            century:  MS_PER_CENTURY
+        };
+        const rangeMap = {
+            none:    0,
+            day:     86400000,
+            week:    7 * 86400000,
+            year:    365.25 * 86400000,
+            decade:  10 * 365.25 * 86400000,
+            century: MS_PER_CENTURY
+        };
+        const timeRate  = params.timeRate  || 'realtime';
+        const animRange = params.animRange || 'none';
+
+        if (timeRate === 'realtime' && animRange === 'none') {
+            return getCenturiesPastJ2000();
+        }
+        // Base T from current real time
+        const baseT = getCenturiesPastJ2000();
+        const nowMs = Date.now();
+
+        if (animRange !== 'none') {
+            // Animate frame-driven offset within the range
+            const rangeMs = rangeMap[animRange] || 0;
+            const fps = params._fps || 1;
+            const ratePerFrame = (rateMap[timeRate] || 86400000) / 1000 / fps;
+            // Sweep back from now by animRange over a looping animation
+            const elapsed = (frame * ratePerFrame) % rangeMs;
+            return (nowMs - rangeMs + elapsed - J2000_MS) / MS_PER_CENTURY;
+        }
+        // Fixed-rate time-lapse from current real position
+        const rateMs = rateMap[timeRate] || 0;
+        const offsetMs = frame * rateMs / (params._fps || 1);
+        return (nowMs + offsetMs - J2000_MS) / MS_PER_CENTURY;
+    },
+
+    // SOL-01: compute display radius for a planet given sizeMode
+    _planetDisplayRadius(planet, sizeScale, sizeMode, sunRadius) {
+        const trueR = Math.max(planet.radius * sizeScale, 2);
+        if (sizeMode === 'logarithmic') {
+            return Math.max(Math.log(planet.radius) / Math.log(695700) * sunRadius * 0.6, 2);
+        } else if (sizeMode === 'exaggerated') {
+            // Exaggerate small planets (Mercury, Mars) relative to gas giants
+            const refR = 6371; // Earth radius km
+            if (planet.radius < refR * 2) {
+                return Math.max(planet.radius * sizeScale * 5, 3);
+            }
+            return trueR;
+        }
+        return trueR; // proportional
+    },
+
+    // SOL-02: draw terminator (day/night boundary) on a planet circle
+    _drawTerminator(ctx, px, py, r, planetAngle) {
+        if (r < 3) return;
+        // Sun is at origin; planet is at (px, py); angle from sun to planet
+        // Light comes from (0,0), so the terminator is perpendicular to the sun direction
+        const sunAngle = Math.atan2(-py, -px); // direction FROM planet TOWARD sun
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, TWO_PI);
+        ctx.clip();
+        // Dark hemisphere: semicircle on the side away from the sun
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.beginPath();
+        ctx.arc(px, py, r + 1, sunAngle + Math.PI / 2, sunAngle + (3 * Math.PI / 2));
+        ctx.lineTo(px, py);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    },
+
+    // SOL-04: compute moon position relative to its parent planet (in canvas coords)
+    _moonScreenPos(moon, parentScreenX, parentScreenY, distScale, T) {
+        // T is Julian centuries past J2000; period is in days
+        const daysPastJ2000 = T * 36525;
+        const phaseRad = (moon.phase0 * Math.PI / 180) + (TWO_PI * daysPastJ2000 / moon.period);
+        const orbitPx = moon.a * distScale;
+        return {
+            x: parentScreenX + orbitPx * Math.cos(phaseRad),
+            y: parentScreenY + orbitPx * Math.sin(phaseRad)
+        };
+    },
+
+    // SOL-04: draw moons for all planets in _planets that have entries in MOON_DATA
+    _drawMoons(ctx, distScale, T, sizeScale, params) {
+        for (const moon of MOON_DATA) {
+            const parent = this._planets.find(p => p.name === moon.parent);
+            if (!parent) continue;
+            const { x: mx, y: my } = this._moonScreenPos(moon, parent.screenX, parent.screenY, distScale, T);
+            const r = Math.max(moon.radius * sizeScale, 1);
+            ctx.fillStyle = moon.color;
+            ctx.beginPath();
+            ctx.arc(mx, my, r, 0, TWO_PI);
+            ctx.fill();
+            if (params.showLabels && r >= 2) {
+                ctx.fillStyle  = '#606060';
+                ctx.font       = '8px "Space Mono", monospace';
+                ctx.textAlign  = 'center';
+                ctx.fillText(moon.name, mx, my - r - 3);
+            }
+        }
+    },
+
+    // SOL-05: draw a reticle (crosshairs + outer ring) at the viewer position
+    _drawViewerReticle(ctx, vx, vy, solarTime) {
+        const RING_R  = 6;
+        const CROSS   = 10;
+        ctx.save();
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth   = 1;
+        // Outer ring
+        ctx.beginPath();
+        ctx.arc(vx, vy, RING_R, 0, TWO_PI);
+        ctx.stroke();
+        // Crosshairs
+        ctx.beginPath();
+        ctx.moveTo(vx - CROSS, vy);
+        ctx.lineTo(vx - RING_R, vy);
+        ctx.moveTo(vx + RING_R, vy);
+        ctx.lineTo(vx + CROSS,  vy);
+        ctx.moveTo(vx, vy - CROSS);
+        ctx.lineTo(vx, vy - RING_R);
+        ctx.moveTo(vx, vy + RING_R);
+        ctx.lineTo(vx, vy + CROSS);
+        ctx.stroke();
+        // Local time label (fractional 24h → HH:MM)
+        const totalMinutes = Math.round(solarTime * 24 * 60) % (24 * 60);
+        const hh = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+        const mm = String(totalMinutes % 60).padStart(2, '0');
+        ctx.fillStyle  = '#00ffff';
+        ctx.font       = '8px "Space Mono", monospace';
+        ctx.textAlign  = 'center';
+        ctx.fillText(`${hh}:${mm}`, vx, vy - RING_R - 4);
+        ctx.restore();
+    },
+
+    // SOL-07: draw multi-scale time-anchor panel in top-right corner
+    _drawTimePanel(ctx, w, h, scale) {
+        const anchors = TIME_ANCHORS.filter(a => a.scale === scale)
+            .sort((a, b) => a.ms - b.ms);
+        if (anchors.length === 0) return;
+
+        const PAD  = 8;
+        const LH   = 13;
+        const COL1 = 130; // px reserved for elapsed label
+        const titleH = LH + 4;
+        const rowH   = LH;
+        const panelH = titleH + anchors.length * rowH + PAD * 2;
+        const panelW = 340;
+        const px     = w - panelW - PAD;
+        const py     = PAD;
+
+        ctx.fillStyle = 'rgba(0,0,0,0.82)';
+        ctx.fillRect(px, py, panelW, panelH);
+        ctx.strokeStyle = '#404040';
+        ctx.lineWidth   = 1;
+        ctx.strokeRect(px + 0.5, py + 0.5, panelW - 1, panelH - 1);
+
+        ctx.font      = '9px "Space Mono", monospace';
+        ctx.textAlign = 'left';
+
+        // Title
+        ctx.fillStyle = '#808080';
+        ctx.fillText(`TIME ANCHORS — ${scale.toUpperCase()}`, px + PAD, py + PAD + 9);
+
+        // Rows
+        for (let i = 0; i < anchors.length; i++) {
+            const a   = anchors[i];
+            const ry  = py + titleH + PAD + i * rowH + 9;
+            const ela = getElapsedLabel(a.ms, scale);
+            ctx.fillStyle = '#606060';
+            ctx.fillText(ela, px + PAD, ry);
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillText(a.label, px + PAD + COL1, ry);
+        }
+    },
+
+    // _frame is used when timeRate !== 'realtime'
     draw(ctx, canvas, params, _frame) {
         if (this._planets.length === 0) {
             this._initializePlanets();
             this._generateAsteroidBelt(params.asteroidCount || 300);
             this._requestLocation();
+        }
+
+        // Lazily attach pointer handlers for planet hit-testing (SOL-06)
+        if (!this._canvasPointerHandler) {
+            this._canvasPointerHandler = (e) => {
+                this._pointerX = e.offsetX;
+                this._pointerY = e.offsetY;
+            };
+            this._canvasLeaveHandler = () => {
+                this._pointerX = null;
+                this._pointerY = null;
+                this._hoveredPlanet = null;
+            };
+            canvas.addEventListener('pointermove', this._canvasPointerHandler);
+            canvas.addEventListener('pointerleave', this._canvasLeaveHandler);
+            this._pointerCanvas = canvas;
         }
 
         if (this._asteroidParticles.length !== (params.asteroidCount || 300)) {
@@ -320,7 +621,8 @@ export const SCRIPT_CONFIG = {
         const s  = Math.min(w, h);
         const cx = w / 2;
         const cy = h / 2;
-        const T  = getCenturiesPastJ2000();
+        // SOL-03: use configurable time rate
+        const T  = this._computeT(params, _frame);
 
         const distanceScaleParam = params.distanceScale || 0.45;
         const planetScale        = params.planetScale   || 1.0;
@@ -349,6 +651,24 @@ export const SCRIPT_CONFIG = {
         ctx.arc(0, 0, 695700 * sizeScale, 0, TWO_PI);
         ctx.fill();
 
+        // Update hover detection in canvas coordinate space (translate already applied)
+        if (this._pointerX != null) {
+            const mx = this._pointerX - cx;
+            const my = this._pointerY - cy;
+            let closest = Infinity;
+            this._hoveredPlanet = null;
+            for (const planet of this._planets) {
+                const dx = mx - planet.screenX;
+                const dy = my - planet.screenY;
+                const d2 = dx * dx + dy * dy;
+                const threshold = Math.max(planet.screenRadius + 8, 12);
+                if (d2 <= threshold * threshold && d2 < closest) {
+                    closest = d2;
+                    this._hoveredPlanet = planet;
+                }
+            }
+        }
+
         let earthData = null;
         for (let i = 0; i < this._planets.length; i++) {
             const planet = this._planets[i];
@@ -358,9 +678,13 @@ export const SCRIPT_CONFIG = {
             const px     = sd * Math.cos(angle);
             const py     = sd * Math.sin(angle);
 
+            // SOL-01: use configured size mode
+            const displayRadius = this._planetDisplayRadius(planet, sizeScale, params.sizeMode || 'proportional', sunRadius);
             planet.screenX      = px;
             planet.screenY      = py;
-            planet.screenRadius = Math.max(planet.radius * sizeScale, 2);
+            planet.screenRadius = displayRadius;
+            planet._orbitAngleDeg = angle * (180 / Math.PI);
+            planet._distAU        = pos.distance;
 
             if (planet.name === 'Earth') {
                 earthData = { x: px, y: py, angle, radius: planet.screenRadius };
@@ -371,12 +695,22 @@ export const SCRIPT_CONFIG = {
             ctx.arc(px, py, planet.screenRadius, 0, TWO_PI);
             ctx.fill();
 
+            // SOL-02: terminator shading
+            if (params.showTerminator) {
+                this._drawTerminator(ctx, px, py, planet.screenRadius, angle);
+            }
+
             if (params.showLabels) {
                 ctx.fillStyle  = '#808080';
                 ctx.font       = '10px "Space Mono", monospace';
                 ctx.textAlign  = 'center';
                 ctx.fillText(planet.name, px, py - planet.screenRadius - 4);
             }
+        }
+
+        // SOL-04: draw moons after planets so they layer on top of orbits
+        if (params.showMoons) {
+            this._drawMoons(ctx, distScale, T, sizeScale, params);
         }
 
         if (earthData && params.showViewer) {
@@ -398,13 +732,58 @@ export const SCRIPT_CONFIG = {
             ctx.lineTo(vx + coneLen * Math.cos(ra), vy + coneLen * Math.sin(ra));
             ctx.stroke();
 
-            ctx.fillStyle = '#00ffff';
-            ctx.beginPath();
-            ctx.arc(vx, vy, 2, 0, TWO_PI);
-            ctx.fill();
+            // SOL-05: viewer reticle (crosshairs + ring + time label) or simple dot
+            if (params.showReticle) {
+                this._drawViewerReticle(ctx, vx, vy, solarTime);
+            } else {
+                ctx.fillStyle = '#00ffff';
+                ctx.beginPath();
+                ctx.arc(vx, vy, 2, 0, TWO_PI);
+                ctx.fill();
+            }
         }
 
         ctx.restore();
+
+        // Planet tooltip (SOL-06)
+        if (this._hoveredPlanet && this._pointerX != null) {
+            const p   = this._hoveredPlanet;
+            const pos = computePlanetPosition(p, T);
+            // Mean orbital velocity in km/s: v ≈ 2π × a × 1.496e8 km / (period_years × 3.156e7 s)
+            const periodYears = Math.pow(pos.distance, 1.5);
+            const velKmS = (TWO_PI * pos.distance * 1.496e8) / (periodYears * 3.156e7);
+            const angleDeg = ((p._orbitAngleDeg % 360) + 360) % 360;
+
+            const lines = [
+                p.name.toUpperCase(),
+                `dist   ${pos.distance.toFixed(3)} AU`,
+                `angle  ${angleDeg.toFixed(1)}°`,
+                `vel    ${velKmS.toFixed(1)} km/s`,
+            ];
+
+            const pad  = 8;
+            const lh   = 14;
+            const tw   = 136;
+            const th   = lines.length * lh + pad * 2;
+            let tx = this._pointerX + 14;
+            let ty = this._pointerY - th / 2;
+            if (tx + tw > w) tx = this._pointerX - tw - 14;
+            if (ty < 0)      ty = 0;
+            if (ty + th > h) ty = h - th;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.82)';
+            ctx.fillRect(tx, ty, tw, th);
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(tx + 0.5, ty + 0.5, tw - 1, th - 1);
+
+            ctx.font      = '10px "Space Mono", monospace';
+            ctx.textAlign = 'left';
+            for (let i = 0; i < lines.length; i++) {
+                ctx.fillStyle = i === 0 ? p.color : '#c0c0c0';
+                ctx.fillText(lines[i], tx + pad, ty + pad + i * lh + 9);
+            }
+        }
 
         if (params.showInfo) {
             const hrs = Math.floor((Date.now() - EMU_WAR_MS) / 3600000);
@@ -423,6 +802,11 @@ export const SCRIPT_CONFIG = {
                 distGiraff.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' giraffe intestines to Pluto',
                 cx, h - 36
             );
+        }
+
+        // SOL-07: multi-scale time panel overlay
+        if (params.showTimePanel) {
+            this._drawTimePanel(ctx, w, h, params.timePanelScale || 'years');
         }
     }
 };

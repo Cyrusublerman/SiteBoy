@@ -15,4 +15,8 @@ export { ColorInput } from './ColorInput.js';
 export { EquationEditor } from './EquationEditor.js';
 export { DropZone } from './DropZone.js';
 export { FilamentPicker } from './FilamentPicker.js';
+export { NoiseTypeSelect, NOISE_TYPES } from './NoiseTypeSelect.js';
+
+export { EasingCurveInput } from './EasingCurveInput.js';
+export { HSLRangeInput } from './HSLRangeInput.js';
 

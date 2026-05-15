@@ -15,6 +15,50 @@ Only these files may own the concern. Others must not implement it.
 - Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
 - Sections/page composition → assets/js/sections/*.js
 - All styling → assets/css/styles.css
+- **Generator UI structure (tab layout for all 22 generators) → assets/js/tools/generators/core/parameter-builder.js**
+- **Generator schema + validation → assets/js/tools/generators/core/script-types.js**
+- **Modulation engine (driver→shape→range→combine pipeline) → assets/js/tools/generators/core/modulation-engine.js**
+- **Driver registry (lfo/linear/expression/etc.) → assets/js/tools/generators/core/driver-registry.js**
+- **Expression context (cheat-sheet variables/helpers) → assets/js/tools/generators/core/expression-context.js**
+- **Project tracker (roadmap / TODO list) → blog/docs/todo/** — the only authoritative roadmap.
+
+## ═══════════════════════════════════════════════════════════════════
+## TODO SYSTEM (PROJECT TRACKING) — MANDATORY
+## ═══════════════════════════════════════════════════════════════════
+
+The folder `blog/docs/todo/` is the single source of truth for in-flight, planned, and out-of-scope work. Other "next-steps" / "todo" / "plan" docs (e.g. `blog/docs/temp/*-next-steps.md`, `*-todo.md`, `*-plan.md`) are tool-internal feeders only; they are not authoritative.
+
+### Layout
+- `blog/docs/todo/index.md` — dashboard. One table per area (A–H). One row per item with current status.
+- `blog/docs/todo/<ID>-<slug>.md` — one file per item. Owns its status, sub-tasks, blockers, notes.
+- `blog/docs/todo/out-of-scope.md` — explicit non-goals.
+
+### Defined terms (closed sets)
+- **Status**: `TODO` | `WIP` | `BLOCKED` | `REVIEW` | `DONE`.
+- **Priority**: `P0` (critical path) | `P1` (must ship next release) | `P2` (deferrable one release) | `P3` (no deadline).
+- **ID format**: `<Area>.<n>`. Areas are letters A–H. IDs are permanent.
+
+### Required behaviour (every agent + every contributor)
+
+1. **Read before coding.** Before any non-trivial change, read `blog/docs/todo/index.md`. Locate the item ID that covers your work.
+2. **Append if missing.** If no item exists, append one to the correct area in `index.md` and create `<ID>-<slug>.md` using the template established in existing files (`Status`, `Priority`, `Owner file(s)`, `Blockers`, `Blocks`, `Last touched`, `Goal`, `Done when`, `Sub-tasks`, `Notes`, `References`).
+3. **Status flips happen in two places.** Edit the item file's header `Status:` line **and** the matching row in `index.md`. Both must agree at all times.
+4. **`Done when` is a single, verifiable predicate.** Vague verbs (`polish`, `improve`, `clean up`) are forbidden. Acceptance is binary.
+5. **IDs are permanent.** Status flips. The ID does not. Renumbering breaks history.
+6. **Blockers are explicit item IDs.** "Blocked by complexity" is not a blocker.
+7. **DONE only after the predicate is verified.** Not "implementation landed". Verified.
+8. **WIP has a 14-day SLA.** A row with `WIP` for >14 days must advance to `REVIEW` or be re-scoped.
+
+### When user asks for new work
+- If the request maps to an existing item, mention the ID and proceed.
+- If not, propose an ID and add the row before starting code.
+
+### Out of scope
+- Anything listed in `blog/docs/todo/out-of-scope.md` requires an ADR to move back into scope. Do not silently re-introduce.
+
+### Ideas and projects (see `blog/docs/todo/index.md` § Ideas folder)
+- If the same concept exists under `blog/ideas/art/generative/` and `blog/ideas/tools/`, **generative is canonical** for linking and duplicate marking; `tools/` is a feeder unless it is the only copy.
+- Portfolio entries (`#projects/<slug>`) **need not** map to a shipped tool; idea-only project pages are valid (B1).
 
 ## ═══════════════════════════════════════════════════════════════════
 ## ABSOLUTE PROHIBITIONS — STOP AND CHECK BEFORE WRITING CODE
@@ -128,9 +172,10 @@ new AnimationFoundation.IntervalAnimator({ interval: ms, onTick: fn })
 - Use math/tokens for dimensions (no ad-hoc px for layout logic).
 
 ## Tab Limit
-- Maximum 4 tabs in ToolBase sidebar (hard limit - this is all that fits)
-- If more organization needed, use blocks within tabs
-- NEVER exceed 4 tabs - consolidate into blocks instead
+- At most 4 tabs in ToolBase sidebar (ceiling, not target)
+- Use the minimum number of tabs that map to genuinely distinct user concerns
+- Reaching the cap is a smell — consolidate into blocks within tabs
+- NEVER exceed 4 tabs
 
 ## Build Chronology (observable path)
 app → router → destroy → section → subheader → JSON → blocks → render → URL

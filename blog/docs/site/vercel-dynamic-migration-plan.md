@@ -1,0 +1,454 @@
+# Vercel Dynamic Migration Plan
+
+Status: draft, no code changes proposed yet.
+Owner: site author (single editor).
+Target host: Vercel.
+Companion docs: `vite-integration-plan.md`, `vite-static-hosting-analysis.md`, `js-framework-migration-analysis.md`, `CLOUD_MIGRATION_AND_CLEANUP.md`.
+
+---
+
+## 1. Definitions
+
+- **Static site (current)**: every byte served by GitHub Pages is precomputed at `vite build` time. No request-time logic.
+- **Dynamic site (target)**: same precomputed shell, plus a small server surface that authenticates a single user and mutates persistent content.
+- **Public surface**: every URL reachable without authentication. Read-only.
+- **Authoring surface**: URL subtree under `/admin/*` reachable only with a valid session. Read-write.
+- **Content object**: any persisted unit the editor can mutate. Three kinds:
+  1. `Article` — markdown body + metadata, currently a `.md` file under `blog/`.
+  2. `GalleryItem` — image + metadata, currently a row in `art/manifests/**/*.json`.
+  3. `PageBlocks` — the JSON block array a section renders, currently inlined in `assets/js/sections/*.js` or fetched from a JSON file.
+- **Editor**: the single human with credentials. The system is single-tenant.
+- **Media blob**: the actual image/audio/video file. Stored on Cloudflare R2. Out of scope for the database; only URLs are persisted.
+
+## 2. Goal state (one-paragraph contract)
+
+The site is hosted on Vercel. Anonymous visitors see the same SiteBoy SPA they see today, with content fetched from a Vercel-hosted JSON API (or, where unchanged, from static files in the build). The editor authenticates at `/admin/login`, receives a session cookie, and gains access to `/admin/*` routes that overlay edit affordances on existing sections (blog, art, projects, page blocks). Mutations call API routes that (a) write structured data to a managed database, (b) upload media to the existing R2 bucket, (c) optionally mirror to git for backup. No public route exposes write capability. R2 stays the media store. The Vite/SiteBoy front-end architecture (BaseComponent, MathematicalFoundation, AnimationFoundation, file-ownership rules) is preserved verbatim.
+
+## 3. Why Vercel (versus alternatives)
+
+| Criterion | Vercel | Cloudflare Pages + Workers | Self-hosted Node |
+|---|---|---|---|
+| Static hosting parity with GH Pages | Yes | Yes | Manual |
+| First-class serverless functions for `/api/*` | Yes (Node + Edge runtimes) | Yes (Workers) | Yes |
+| Managed Postgres with zero config | Yes (Vercel Postgres / Neon partner) | Indirect (D1, Hyperdrive) | Manual |
+| Existing R2 integration reusable | Yes (R2 is host-agnostic) | Native | Yes |
+| Preview deployments per branch | Yes | Yes | Manual |
+| Auth ecosystem (NextAuth/Auth.js, Lucia, Clerk) | Mature | Mature | Manual |
+
+Decision: target Vercel as primary, but keep all server logic framework-agnostic (plain `fetch`-style handlers) so that a later move to Cloudflare Workers requires only adapter changes. Media stays on R2 regardless. See §13 open decision D-1.
+
+## 4. Current → Target architecture
+
+### 4.1 Current
+```
+Browser → GitHub Pages (static dist/) → Vite-built SPA
+                                          ├── fetches blog/blog-docs-manifest.json
+                                          ├── fetches art/manifests/**/*.json
+                                          └── fetches media.einoder.net/* (R2)
+Authoring: editor edits files locally, commits, GH Actions rebuilds, GH Pages serves.
+```
+
+### 4.2 Target
+```
+Browser
+ ├── Public                                Authenticated
+ │   GET /              (Vercel static)    /admin/login              (POST → /api/auth/*)
+ │   GET /#blog/...     (Vercel static)    /admin/blog               (overlay UI)
+ │   GET /api/content/* (Vercel function)  /admin/art                (overlay UI)
+ │   GET media.einoder.net/* (R2 CDN)      POST /api/content/*       (writes DB)
+ │                                         POST /api/media/upload    (signs R2 PUT)
+ │                                         POST /api/publish         (optional git mirror)
+ │
+Persistence
+ ├── Postgres (Vercel Postgres / Neon)    structured content, sessions, audit log
+ ├── R2 bucket assetts-einoder            media blobs, unchanged
+ └── Git repo (optional)                  publish-time mirror of canonical JSON
+```
+
+## 5. Component inventory and migration impact
+
+| Concern | Today | After migration | File ownership impact |
+|---|---|---|---|
+| HTML shell | `index.html` served by GH Pages | identical, served by Vercel | none |
+| SPA bundle | Vite build → `dist/` | identical, served by Vercel | none |
+| Routing | `assets/js/core/router.js` (hash) | unchanged for public; new `/admin/*` path-based subtree handled by router extension | router.js owns nav |
+| Sections | `assets/js/sections/*.js` JSON-driven | unchanged read path; an Editor overlay component renders on top in `/admin/*` | sections unchanged |
+| Blog manifest | `blog/blog-docs-manifest.json` regenerated by `blog/refresh-blog-manifest.js` | replaced by `GET /api/content/blog/manifest`; static fallback retained for offline build | new owner: `api/` folder |
+| Art manifests | `art/manifests/**/*.json` regenerated by Python | replaced by `GET /api/content/art/:gallery`; R2 upload path unchanged | new owner: `api/` folder |
+| Page blocks | inline in section JS | optionally moved to DB rows of `PageBlocks`, fetched at runtime | section files become readers |
+| Media | R2, public reads, uploads via local Python scripts | R2 unchanged; uploads via signed PUT from `/admin/*` UI | scripts retained as fallback |
+| Auth | none | session cookie issued by `/api/auth/*` | new |
+| Admin UI | none | new components in `assets/js/admin/`, new section files for editor pages | new ownership entry required in `.cursorrules` |
+
+## 6. Authentication model
+
+Constraints: single editor, no public sign-up, hostile-internet exposure.
+
+Mandatory:
+- Password is never stored in plaintext. Argon2id hash, stored as a single env-injected constant or a single DB row.
+- Second factor required. TOTP (RFC 6238) is sufficient and free.
+- Session is an HTTP-only, `Secure`, `SameSite=Lax` cookie holding an opaque token; token row in DB with `expires_at`, `revoked_at`, `user_agent`, `ip_first_seen`.
+- All `/admin/*` page loads and all mutating `/api/*` routes verify session + CSRF token.
+- Rate-limit `/api/auth/login` to ≤ 5 attempts per IP per 10 min and ≤ 20 globally per hour. Return constant-time response.
+- All mutations write an `audit_log` row: `(actor, action, target, before_hash, after_hash, ip, ts)`.
+
+Library candidates (final pick deferred — see D-2):
+- `Lucia` (framework-agnostic, minimal, fits vanilla JS).
+- `Auth.js` / NextAuth Core (heavier, but ecosystem).
+- Hand-rolled (smallest footprint, requires careful crypto review).
+
+Recommendation: Lucia + `@node-rs/argon2` + `otplib` for TOTP.
+
+## 7. Data model (initial schema)
+
+All tables in a single Postgres database. IDs are ULIDs unless noted.
+
+```
+users            (id, username, password_hash, totp_secret, created_at)
+sessions         (id, user_id, expires_at, revoked_at, ip, ua)
+csrf_tokens      (id, session_id, token_hash, expires_at)
+
+articles         (id, slug UNIQUE, category, title, body_md, frontmatter_jsonb,
+                  status ENUM('draft','published'), published_at, updated_at, version)
+article_versions (id, article_id, body_md, frontmatter_jsonb, editor_id, created_at)
+
+gallery_items    (id, gallery_slug, sort_index, filename, urls_jsonb,
+                  metadata_jsonb, status, created_at, updated_at)
+galleries        (id, slug UNIQUE, kind ENUM('photos','digital','render','book',
+                  'physical','objects','project'), title, description_md, sort_jsonb)
+
+page_blocks      (id, page_slug UNIQUE, blocks_jsonb, version, updated_at)
+page_block_versions (id, page_blocks_id, blocks_jsonb, editor_id, created_at)
+
+media_uploads    (id, r2_key UNIQUE, mime, bytes, sha256, uploaded_by, created_at)
+
+audit_log        (id, actor_id, action, target_kind, target_id,
+                  before_hash, after_hash, ip, ts)
+```
+
+Notes:
+- `urls_jsonb` mirrors the existing manifest shape: `{ thumb, web, zoom }`. Read code in `art_section.js` continues to consume the same shape, only the source moves from file to API.
+- `frontmatter_jsonb` lets blog metadata (tags, date, author) be queried without parsing markdown.
+- `*_versions` tables give cheap undo. Retention: keep 50 most recent per object, prune nightly.
+
+## 8. API surface (read + write contract)
+
+All routes JSON, all mutations require valid session + CSRF header `X-CSRF`.
+
+Public read:
+```
+GET  /api/content/blog/manifest                → Article[] (published only)
+GET  /api/content/blog/:slug                   → Article (published only)
+GET  /api/content/art/:gallery                 → { gallery, items: GalleryItem[] }
+GET  /api/content/page/:slug                   → PageBlocks
+GET  /api/health                               → { ok: true, build, ts }
+```
+
+Auth:
+```
+POST /api/auth/login          { username, password, totp } → Set-Cookie session
+POST /api/auth/logout                                       → 204
+GET  /api/auth/me                                           → { user } | 401
+```
+
+Authoring:
+```
+POST   /api/admin/articles                     → create draft
+PATCH  /api/admin/articles/:id                 → update body/metadata
+POST   /api/admin/articles/:id/publish         → flip status, set published_at
+DELETE /api/admin/articles/:id                 → soft delete
+
+POST   /api/admin/galleries/:slug/items        → add item (after media upload)
+PATCH  /api/admin/galleries/:slug/items/:id    → reorder, edit metadata
+DELETE /api/admin/galleries/:slug/items/:id    → remove (does not delete R2 blob)
+
+PUT    /api/admin/pages/:slug                  → replace blocks_jsonb (creates version)
+
+POST   /api/admin/media/sign                   → returns { url, fields, key } for R2 PUT
+POST   /api/admin/media/confirm                → records media_uploads row after PUT
+
+POST   /api/admin/publish                      → optional: snapshot DB → JSON, commit to git
+```
+
+Versioning:
+- Every PATCH that mutates `articles` or `page_blocks` performs `INSERT INTO *_versions` first, in the same transaction.
+- Optimistic concurrency: client sends `If-Match: <version>`; server rejects on mismatch with 409.
+
+## 9. Front-end changes (high level, no code)
+
+New folders (proposed; subject to file-ownership rules):
+```
+assets/js/admin/              ← new owner of editor-only UI
+assets/js/admin/auth.js       ← session bootstrap, CSRF fetch wrapper
+assets/js/admin/editor-bar.js ← top overlay shown on every /admin/* page
+assets/js/admin/editors/      ← per-content editors (article, gallery, blocks)
+api/                          ← Vercel functions (Node runtime)
+```
+
+Modifications to existing files are limited to:
+- `router.js`: recognise `/admin/*` (path-based, not hash-based) and route to admin section. Keep public `#…` hash routing untouched.
+- Section files (`blog_section.js`, `art_section.js`, etc.): swap their fetch source from static manifest path to `/api/content/...`. Source-of-truth field shapes unchanged.
+- `index.html`: add a `<noscript>` admin-disabled notice; otherwise unchanged.
+
+`.cursorrules` update required: add `assets/js/admin/` and `api/` as new owned concerns; declare that no admin code may live in `assets/js/sections/*` or `assets/js/tools/*`.
+
+## 10. Editor UX scope (what pages get edit affordances)
+
+Phase A — read-API parity (no editor UI yet):
+- Blog list, blog article, all art galleries, projects all read from `/api/content/*` instead of static JSON. Behaviour identical for end-user.
+
+Phase B — minimum viable editor:
+- `/admin/login`, `/admin/logout`.
+- `/admin/blog`: list articles, create draft, edit markdown in a textarea + live preview using existing markdown renderer, set frontmatter, publish.
+- `/admin/art`: list galleries, upload images (drag-drop → signed R2 PUT → confirm), reorder, edit captions.
+- `/admin/audit`: tail of `audit_log`.
+
+Phase C — full editor:
+- `/admin/pages/:slug`: visual block editor for `PageBlocks`. Block types match the existing JSON contract (`SectionDropdown`, `TextBlock`, `ImageBlock`, `Grid`, `Chart`, `CanvasWidget`).
+- Inline edit-in-place: while authenticated, public sections render an "edit this" affordance that deep-links to the relevant `/admin/*` page.
+- Optional: `/admin/publish` button that snapshots all content tables to JSON and commits to a `content/` branch in the git repo, giving a permanent file-based backup.
+
+Out of scope for this plan: multi-user, comments, drafts shared with reviewers, scheduled publishing.
+
+## 11. Content migration (one-shot, scripted)
+
+Performed once, before flipping DNS:
+
+1. Export current `blog/blog-docs-manifest.json` and every referenced `.md` file → `INSERT` into `articles`. Preserve slugs verbatim so existing URLs survive.
+2. Walk `art/manifests/**/*.json` → `INSERT` into `galleries` + `gallery_items`. R2 URLs are copied as-is into `urls_jsonb`; no media moves.
+3. For each section in `assets/js/sections/*.js` whose blocks are inline JS, extract the JSON literal → `INSERT` into `page_blocks`. Sections whose blocks are computed (not literal) stay code-driven; mark as "non-editable" in admin UI.
+4. Validate: for every URL in the live site, the new API returns the same payload shape and content. Diff with `jq` or equivalent.
+
+Migration script lives under `scripts/migration/` (folder already exists).
+
+## 12. Phased delivery (ordered, not time-estimated)
+
+Each phase ships behind a feature flag. The site remains green at every step.
+
+Phase 0 — Decisions locked
+- Resolve all open decisions in §13.
+- Provision Vercel project, Postgres instance, R2 access keys for server-side signing.
+- No code changes to the live site.
+
+Phase 1 — Vercel parity
+- Deploy current static build to Vercel under a preview domain.
+- Verify byte-equivalent behaviour vs GH Pages.
+- DNS not yet flipped.
+
+Phase 2 — Read API
+- Implement `GET /api/content/*` reading from Postgres.
+- Run §11 migration script into the new DB.
+- Switch section fetch sources to API on the preview deployment only.
+- Verify parity. Then flip DNS.
+
+Phase 3 — Auth
+- Implement `/api/auth/*`, session middleware, CSRF, rate limiting, audit log.
+- Ship `/admin/login`. No editors yet.
+
+Phase 4 — MVP editor (Phase B in §10)
+- Blog and gallery editors. Media upload via signed PUT.
+
+Phase 5 — Block editor + publish (Phase C in §10)
+- Page-block editor. Optional git mirror.
+
+Phase 6 — Hardening
+- Backup automation (nightly `pg_dump` to R2).
+- Monitoring (`/api/health`, error reporting, login alert email).
+- Document recovery runbook.
+
+Rollback: every phase is reversible by reverting the deploy. Static build remains valid because it does not depend on the API for first paint of the public read path beyond what is already cached.
+
+## 13. Open decisions (must resolve before Phase 0 exits)
+
+- **D-1. Host commitment.** Vercel-only, or Vercel-now-Cloudflare-later? Affects whether functions are written against Vercel's `Request`/`Response` directly or against a thin adapter.
+- **D-2. Auth library.** Lucia vs Auth.js vs hand-rolled. Affects dependency surface and audit complexity.
+- **D-3. Database provider.** Vercel Postgres (managed Neon), Supabase, or Turso/libSQL. Affects pricing tier and connection-pooling needs.
+- **D-4. Markdown editor.** Plain `<textarea>` + preview, CodeMirror 6, or Milkdown. Affects bundle size on `/admin/*` only.
+- **D-5. Git mirror.** Yes/no. If yes, decide which branch and whether commits are signed.
+- **D-6. Public API caching.** Vercel Edge cache TTL for `GET /api/content/*`. Lower = fresher, higher = cheaper.
+- **D-7. Domain layout.** Same apex domain for `/admin/*`, or separate `admin.einoder.net`. Cookie scope and CSP differ.
+- **D-8. Build-time vs request-time content.** For very stable content (e.g. blog archive index), do we keep generating static JSON at build time and only hit the API for fresh writes? Hybrid is cheapest but adds a cache-invalidation step on publish.
+
+## 14. Risk register
+
+| ID | Risk | Severity | Mitigation |
+|---|---|---|---|
+| R-1 | Credential compromise → site defacement | High | Argon2id + TOTP + IP-rate-limit + audit log + git mirror for fast restore |
+| R-2 | DB outage breaks public read path | Medium | Edge-cache `GET /api/content/*` with stale-while-revalidate; static JSON fallback baked into build |
+| R-3 | R2 cost spike from hot-linked media | Low | Existing R2 setup unchanged; add Cloudflare cache rules if needed |
+| R-4 | Vercel function cold starts hurt admin latency | Low | Admin is single-user; cold starts acceptable. Public reads cached at edge. |
+| R-5 | Schema drift between code and DB | Medium | Single migrations folder, applied in deploy step, verified by smoke test on preview |
+| R-6 | Lock-in to Vercel | Medium | Adapter layer per D-1; keep functions as plain handlers |
+| R-7 | Loss of git as source of truth for content | Medium | D-5: optional publish-time git mirror gives durable, diffable backup |
+| R-8 | CSRF / XSS in admin overlay | High | Strict CSP on `/admin/*`, sanitise all rendered markdown, CSRF token on every mutation |
+
+## 15. Out of scope (explicit non-goals)
+
+- Multi-user collaboration, comments, social features.
+- Server-side rendering of public pages (SPA stays client-rendered).
+- Replacing Vite, the SiteBoy component system, or any file-ownership rule.
+- Migrating media off R2.
+- Search indexing beyond what already exists.
+
+## 16. Acceptance criteria for "migration complete"
+
+1. Public site on Vercel is byte-equivalent in behaviour to the prior GH Pages site for every existing URL.
+2. Editor can, while logged in: create a blog article, upload a gallery image, reorder a gallery, edit a page's blocks, publish, and see changes live within one cache TTL without touching git or the local repo.
+3. All write paths require a valid session and a valid CSRF token; logged-out requests to `/api/admin/*` return 401.
+4. `audit_log` contains a row for every mutation performed during acceptance testing.
+5. A simulated DB outage leaves the public read path serving cached or static-fallback content for at least 1 hour.
+6. A nightly `pg_dump` artefact exists in R2 with a documented restore procedure.
+
+---
+
+# Part B — UI Specification (binding decisions)
+
+This section records the UI decisions captured from the editor questionnaire. It supersedes any conflicting suggestion in §§1–16 above. All visual rules from `.cursorrules` (VGA palette, F-system, Atkinson Hyperlegible, no shadows/gradients/rounded corners) apply unchanged. `.cursorrules` will not be modified until implementation begins.
+
+## B0. Operating principles
+
+- **Same site, two modes.** No separate `/admin/*` URL subtree for content pages. Each public page has an *admin variant* rendered in-place when (a) the editor is authenticated and (b) admin mode is active. URL stays the same. Visual style is identical; only specific elements gain edit affordances.
+- **Generic over bespoke.** Every editor surface (toolbar, dropdown, dialog, list, picker) reuses an existing `ComponentLibrary` / `SpecializedComponents` class. New admin components are only created when no existing component fits.
+- **Sizing parity.** Admin chrome (toolbars, action rows) sized identically to existing `PageHeader` / `Subheader` (same F-multiplier band). Inputs and buttons sized identically to existing `Input` / `Button` from `assets/js/shared/interactive.js`.
+- **GUI-first.** No raw code editing in the default path. JSON/code editing only as an explicit "advanced" toggle inside the relevant editor.
+- **Touch-first responsive.** Every admin control must work on a phone with touch. Drag operations use *long-press (≥1000 ms) → drag → release* as the canonical gesture, mirrored by mouse drag on desktop.
+- **No file-size cap.** Soft warnings only; never block.
+
+## B1. Authentication UI
+
+- **B1.1 Trigger.** Triple-click the existing theme toggle (`☼`/`☾` glyph in `PageHeader`, `assets/js/shared/layout.js` line 960). Three clicks within 600 ms opens the login overlay. Single and double clicks retain current theme-toggle behaviour. Keyboard equivalent: `Ctrl+Shift+L`.
+- **B1.2 Form.** Centred modal overlay. Single password input, submit button, error line. No username (single-tenant). MFA deferred (not in MVP — revisit before public-facing launch; see §6 of Part A and risk R-1).
+- **B1.3 Component basis.** New `LoginOverlay` extends `BaseComponent`, internally composes `Input` (interactive.js:551) for the password field and `Button` (interactive.js:499) for submit. Backdrop dims to `var(--c-bg)` at reduced contrast; no shadow, no rounded corners.
+- **B1.4 Logged-in indicator.** When session is valid, the home-link in `PageHeader` (currently text `AEINODER` at `assets/js/shared/layout.js` line 867) renders the string `I'M AEINODER` instead. Same font, same size, same colour, same target (`#home`). This is the *only* persistent visual signal of admin state on public pages.
+- **B1.5 Logout.** Triple-click theme toggle while authenticated opens a one-button `Log out` overlay (same component as B1.3, no password field).
+- **B1.6 Session.** HTTP-only secure cookie; sliding 12 h expiry; revocation row in `sessions` table (Part A §7). CSRF token fetched on auth and held in memory by the admin module.
+
+## B2. Admin-mode activation and chrome
+
+- **B2.1 Activation.** Authentication alone enables admin mode. There is no separate "enter edit mode" toggle. If the editor wants the public view, they log out (or use a private window).
+- **B2.2 Per-page admin variant.** Each section (`assets/js/sections/*.js`) gains a sibling rendering path (`renderAdmin(...)` alongside the existing `render*` methods). The router (`assets/js/core/router.js`) calls `renderAdmin` if `Auth.isAuthenticated()` is true, else the existing public render. Same URL, same data, different render. Public file ownership unchanged: section files still own their own admin variant.
+- **B2.3 Editor toolbar.** A single horizontal `EditorToolbar` component renders at the top of the content area on every admin-rendered page. Height equals `Subheader` height. Holds page-scoped actions: `Save`, `Hide`/`Show`, `History`, `Insert`, plus context-specific actions per page type. Pushes the content `<div>` down (chosen layout: top banner pushes content, per editor preference).
+- **B2.4 Notification banner.** Errors and notable events render as a single-line banner immediately below the `EditorToolbar`. Dismissable. Pushes content further down while present. New `NoticeBanner` component; reuses `Button` for the dismiss control.
+- **B2.5 Navigation.** Identical to public site. No admin sidebar, no admin landing page. Logging in lands the user on whatever URL they were already on.
+
+## B3. Blog editor
+
+Scope: every page rendered by `blog_section.js`, plus the blog TOC index.
+
+- **B3.1 TOC as file directory.** The blog TOC (the existing tree-style index) is the editor's primary navigation. Clicking a node opens the article in admin mode in place. **Right-click** (desktop) or **long-press** (touch) on a TOC node opens a `NodeActionsMenu` (reuses existing `Menu` from interactive.js:398) with: `Open`, `Move…`, `Rename…`, `Archive`, `Hide` / `Show`, `Duplicate`, `New child page`, `Delete (soft)`. `Move…` opens a `TreePicker` overlay (new component, composes the existing TOC renderer in read-only selectable mode).
+- **B3.2 Article editor body.** Plain markdown text editor. Reuses `Input` (interactive.js:551) configured as a multiline `<textarea>`. No syntax highlighting in MVP. Live preview is *not* split-pane; preview is the page itself behind the editor area, refreshed on `Save`. (Decision: editor preferred GUI-first, not split-pane code; the page already shows the rendered result.)
+- **B3.3 Frontmatter editor.** A `CollapsibleSection` (interactive.js:888) above the markdown body labelled `Page settings`. Form fields for: title, slug (auto from title, editable), category, tags, hidden flag, archive flag, sort order. New `FrontmatterForm` component composes existing `Input`, `Select`, `Button`.
+- **B3.4 Insert toolbar.** Inside the markdown editor, a thin `InsertToolbar` (height = half a `Subheader`) holds buttons that insert structured content at the cursor:
+  - `Image` → opens `ImagePicker` (B5.2), inserts canonical markdown image with R2 URL.
+  - `Gallery` → inserts a `GalleryEmbed` block referencing an existing gallery slug; rendered publicly via existing `MasonryGallery` (`assets/js/shared/masonry-gallery.js`).
+  - `Carousel` → inserts a `CarouselEmbed` block; rendered via `Carousel` (interactive.js:1069).
+  - `Dropdown section` → inserts a `CollapsibleSection`-backed block. Editor sees its title + body inline; public render uses `CollapsibleSection`.
+  - `IFrame` → inserts iframe block; URL field; sandbox flags toggle.
+  - `p5 sketch` → inserts a `P5Embed` block referencing a sketch source (file path or inline); rendered via `P5Canvas` / `P5ControlledSketch` (`assets/js/shared/p5-integration.js`).
+  - `Algorithm widget` → inserts a block that mounts a named export from `assets/js/shared/algorithms/` into a `MathematicalCanvas` host. Picker lists all exported algorithm functions with parameter forms.
+  - `Graph` → inserts a `BarGraph` / `LineGraph` / `PieGraph` (graphs.js) block with inline data-table editor.
+  - `VGA grid` → inserts a `VGAGrid` block (specialized.js:29).
+- **B3.5 Block model.** Every inserted non-text element is a fenced block in the markdown source with shape `:::block <type>\n<json>\n:::`. The renderer parses these and instantiates the matching `ComponentLibrary` class. This keeps blog source human-readable and git-diffable.
+- **B3.6 Save.** Single `Save` action commits to DB, snapshots prior version into `article_versions` (Part A §7), pushes git mirror immediately (per editor decision), invalidates cache.
+- **B3.7 History.** `History` toolbar action opens a `VersionList` overlay: list of prior versions with timestamp + diff summary. Click a version to preview, second button to revert. New `VersionList` and `DiffView` components.
+- **B3.8 No drafts.** `Hide` / `Show` (status flag in DB) replaces drafts entirely. Hidden pages are invisible to anonymous visitors; visible to authenticated editor (rendered with a muted "hidden" badge in the toolbar area).
+
+## B4. Gallery editor
+
+Scope: every page rendered by `art_section.js` and `projects_section.js`. Mirrors the existing folder hierarchy (gallery layer → image-page → assets).
+
+- **B4.1 Three editable scopes.** Each gallery-tree level has its own admin variant:
+  1. **Gallery layer** (e.g. `#art/photography`): grid of child layers and image-pages.
+  2. **Image-page** (single tile in a gallery): cover image + ordered list of media + text.
+  3. **Asset** (a single image/video inside an image-page): metadata only.
+- **B4.2 Layer-level controls.** Toolbar adds: `New folder`, `New image-page`, `Edit description`, `Reorder`, `Hide` / `Show`, `Sort by…`. Long-press / right-click on a tile opens `NodeActionsMenu` (reuses B3.1's component) with `Open`, `Move…`, `Copy to…`, `Hide`, `Show`, `Delete`, `Set as cover`. `Copy to…` opens the `TreePicker` and inserts a reference (not a duplicate file) into the destination layer.
+- **B4.3 Image-page editor.** Cover image picker at top (selects from the page's own assets). Below: ordered list of assets (images/videos) interleaved with text blocks. Reorder by long-press drag. Each asset row exposes inline `alt`, `tags`, `caption`. Text blocks use the same markdown editor as B3.2 (without the full insert toolbar — only `Image`, `IFrame`, `Algorithm widget`).
+- **B4.4 Asset metadata.** Editable: alt text, caption, tags, date, location, hidden flag, sort index. Form composes `Input` + `Select` + tag-chip widget (new `TagChips` component).
+- **B4.5 Upload.** Per-context only. Each layer and each image-page has an `Upload` action in its toolbar.
+  - On a **layer**, upload offers two modes: *one image-page per file* (default, current behaviour), or *upload as collection* (all selected files become a single new image-page).
+  - On an **image-page**, uploaded files are appended as new assets.
+  - Hidden galleries serve as the staging area for uploads-not-yet-published; no separate "drafts" concept.
+- **B4.6 Thumbnail generation.** Server-side (Vercel function). Pipeline: original PUT to R2 → function generates `thumb` / `web` / `zoom` variants → writes manifest URLs (matches existing `urls_jsonb` shape). Decision rationale: server-side is the lowest-effort path for the editor and is consistent with current R2 layout.
+- **B4.7 Video thumbnails.** After a video upload completes, a `FrameScrubber` overlay opens (new component, built on a `<video>` element wrapped in `BaseComponent`, controls reuse `Input`/`Button`). Editor scrubs to a frame and clicks `Use as thumbnail`; server captures that frame and stores it as the asset's thumbnail.
+- **B4.8 No file-size cap.** Soft warning at >500 MB ("this will take a while"); no block. Upload uses chunked PUT to R2 (resumable) so multi-GB uploads survive disconnects.
+
+## B5. Media handling primitives
+
+- **B5.1 Upload progress.** All uploads use the existing `ProgressBar` (interactive.js:717 / specialized `OutputProgressBar`). Below the bar, a single text line names the current stage (`uploading 3/12 — DSCF1234.jpg (47%)`, then `generating thumbnails`, then `writing manifest`, then `done`). Container is a new `UploadQueue` component that manages multiple simultaneous `ProgressBar` instances stacked vertically.
+- **B5.2 Image picker.** Reusable `ImagePicker` overlay shows the gallery tree (left, reusing `Menu`/tree pattern) and a grid of thumbs (right, reusing `MasonryGallery` in selection mode). Used by every "insert image" action. Returns the canonical R2 URL set.
+- **B5.3 Drag-drop.** Long-press initiates drag for: reordering assets within an image-page, reordering image-pages within a layer, moving the corner handle of an embedded `IFrame` block in the blog editor. All other interactions are tap/click.
+
+## B6. Page-block editor (for sections that use JSON blocks)
+
+Scope: `home_section.js`, `contact_section.js`, `qr_section.js`, plus any future section whose body is JSON-driven.
+
+- **B6.1 Render-as-edit.** The page renders normally; each block displays a small `EditorHandle` (a glyph button) on hover/focus. Tapping the handle opens a per-block form in a side panel (reuses `Panel` from layout.js:2070).
+- **B6.2 Insert block.** Between any two blocks, a thin `InsertSlot` (height ≈ ¼ `Subheader`) appears in admin mode. Tap → block-type picker → form for that block's props → inserted in place.
+- **B6.3 Reorder.** Long-press a block to drag-reorder. Drop targets are the `InsertSlot`s.
+- **B6.4 Delete.** `Delete` button in the per-block side panel; confirmation banner via `NoticeBanner`.
+- **B6.5 No raw JSON in default path.** Each block type has a typed form. An `Advanced: edit JSON` toggle in the side panel exposes the underlying object for that one block when needed.
+
+## B7. Save, publish, history
+
+- **B7.1 No drafts.** `Save` is publish. `Hide` flag replaces the draft concept.
+- **B7.2 Cache.** Edge cache purged immediately on save (no TTL waiting). Acceptable cost for a single-editor site.
+- **B7.3 Git mirror.** Immediate. Every save commits the canonical JSON snapshot to a `content/` branch in the repo (Part A D-5 = yes, mode = automatic). Commit message format: `content(<kind>/<slug>): <action> @ <iso-ts>`.
+- **B7.4 Audit log.** Every mutation writes to `audit_log` (Part A §7). Viewable via a future `/admin/audit` page; not in MVP UI.
+- **B7.5 Versioning.** `*_versions` table keeps full prior versions (no pruning in MVP — disk is cheap, undo regret is expensive). `History` action exposes them per item (B3.7).
+- **B7.6 Undo / redo.** Within an open editor session, `Ctrl+Z` / `Ctrl+Shift+Z` (and `Cmd` equivalents) are local-only undo of unsaved edits. Cross-save revert uses `History` (B3.7).
+
+## B8. Notifications
+
+- **B8.1 Banner.** `NoticeBanner` renders top of content area, single line, four levels: `info`, `success`, `warning`, `error`. Dismissable. Auto-dismiss on `success` after 3 s; `warning` and `error` persist until dismissed.
+- **B8.2 No toasts, no modals for non-blocking events.** Modals reserved for: login (B1), confirmations of destructive actions (delete, revert), media pickers (B5.2), version history (B3.7).
+
+## B9. Keyboard
+
+- **B9.1 Standard shortcuts.** `Ctrl/Cmd+S` save, `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo, `Enter` confirm in dialogs, `Esc` close overlay/banner, `Ctrl+Shift+L` open login overlay.
+- **B9.2 No section-jump shortcuts in MVP.**
+
+## B10. Responsive / touch
+
+- **B10.1 Targets.** All admin controls usable down to 360 px viewport width.
+- **B10.2 Hit areas.** Every interactive admin element is at least one F-unit tall (`var(--f)` minimum), regardless of viewport, to satisfy touch-target minimums.
+- **B10.3 Drag gesture.** Long-press ≥1000 ms then drag. Visual feedback (slight outline change, no shadow) on press recognition. Cancel by releasing without movement.
+
+## B11. Accessibility
+
+- **B11.1 Focus order.** All admin overlays trap focus while open and restore focus on close.
+- **B11.2 Keyboard reachability.** Every admin action reachable without a pointer.
+- **B11.3 ARIA.** `NoticeBanner` uses `role="status"` for info/success and `role="alert"` for warning/error.
+
+## B12. Component map (existing → reused; new → to build)
+
+Reused without change:
+- `PageHeader`, `PageFooter`, `Subheader`, `PageContainer`, `Panel` (layout.js)
+- `Button`, `Input`, `Select`, `NumericInput`, `ButtonGroup`, `Menu`, `Breadcrumb`, `Lightbox`, `CollapsibleSection`, `Carousel`, `ProgressBar` (interactive.js)
+- `MasonryGallery`, `GalleryLightbox` (masonry-gallery.js)
+- `BarGraph`, `LineGraph`, `PieGraph` (graphs.js)
+- `VGAGrid`, `MathematicalCanvas`, `SVGDisplay`, `AnimationControls` (specialized.js)
+- `P5Canvas`, `P5ControlledSketch` (p5-integration.js)
+- `Heading`, `Paragraph` (content.js)
+
+New components (proposed owner: `assets/js/admin/`):
+- `LoginOverlay` — modal password form (B1).
+- `EditorToolbar` — top action bar, `Subheader`-sized (B2.3).
+- `NoticeBanner` — top notice line (B2.4, B8).
+- `NodeActionsMenu` — long-press / right-click menu for tree nodes (B3.1, B4.2).
+- `TreePicker` — modal tree-selection picker for move/copy targets (B3.1, B4.2).
+- `FrontmatterForm` — typed metadata form (B3.3).
+- `InsertToolbar` — in-editor insertion bar (B3.4).
+- `ImagePicker` — modal R2 asset picker (B5.2).
+- `UploadQueue` — multi-file upload status container (B5.1).
+- `FrameScrubber` — video thumbnail picker (B4.7).
+- `TagChips` — tag input widget (B4.4).
+- `EditorHandle` — per-block edit affordance (B6.1).
+- `InsertSlot` — between-block insertion target (B6.2).
+- `VersionList` — version history overlay (B3.7).
+- `DiffView` — markdown / JSON diff renderer (B3.7).
+
+All new components extend `BaseComponent`, are registered through `ComponentLibrary` for discoverability, follow VGA / F-system / no-shadow / no-rounded rules, and live exclusively under `assets/js/admin/`.
+
+## B13. Future stage (out of scope here)
+
+A second migration pass will extend admin mode into `assets/js/tools/`: a p5.js-style editor for generators (live JS + GUI panel side-by-side, save deploys the tool). Not designed in this document. Will reuse `P5ControlledSketch`, `Sequencer`, and a code-editor component (CodeMirror 6) added at that time.

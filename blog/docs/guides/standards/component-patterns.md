@@ -284,4 +284,47 @@ See `border-system.md §11` for full tab bar border specification.
 
 ---
 
+## 8. Density Law
+
+Related parameters that are read together by the user MUST be laid out in a multi-column grid, never stacked in a single column.
+
+### Rule: paired numerics
+
+Two numeric parameters that belong conceptually together (width × height, min × max, R × G, start × end) use a **3-column inline grid**:
+
+```
+[ label ]  [ input ]  ×  [ input ]
+```
+
+Columns: label | first-input | separator-glyph | second-input. The separator glyph is `×` (U+00D7) centred in its own cell. Both inputs share an equal fraction of the available space.
+
+### Rule: palette rows
+
+One colourway layer renders as a **5-column row**:
+
+```
+[ label ]  [ swatch ]  [ hex input ]  [ width-or-alpha ]  [ mod chip ]
+```
+
+Column widths: label `3F`, swatch `2F`, hex `6F`, width/alpha `3F`, mod chip `2F`. Total `16F` per row.
+
+A `PaletteRow` component encodes this layout. Do not re-implement the five-column structure elsewhere.
+
+### Rule: single-column reserved
+
+Single-column stacked layout is permitted only for parameters that are:
+- unrelated to their neighbours
+- self-contained (not part of a named pair or group)
+- controls with complex internal structure that cannot be abbreviated
+
+### Summary table
+
+| Relationship | Layout | Component |
+|---|---|---|
+| Paired numerics (W×H, Min×Max) | 3-col inline grid | `NumericInput` pair in grid wrapper |
+| Palette layer | 5-col row | `PaletteRow` |
+| Unrelated single param | 1-col full row | standard param row |
+
+---
+
 End of Component Patterns.

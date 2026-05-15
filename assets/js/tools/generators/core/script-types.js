@@ -8,12 +8,82 @@
  */
 
 /**
+ * A single paintable layer in the generator's colourway.
+ * @typedef {Object} ColourwayLayer
+ * @property {string} id       - Unique layer identifier (camelCase, e.g. 'background', 'outerLines')
+ * @property {string} label    - Human-readable label shown in OUTPUT tab
+ * @property {string} colour   - Current colour value (hex, e.g. '#000000')
+ * @property {'stroke'|'fill'} kind - Determines which OUTPUT controls render. Required.
+ * @property {number} [alpha]     - Opacity 0–1 (default 1)
+ * @property {number} [lineWidth] - Stroke width in px (stroke layers only, default 1)
+ * @property {string} [lineCap]   - 'butt'|'round'|'square' (stroke layers only)
+ * @property {string} [lineJoin]  - 'miter'|'round'|'bevel' (stroke layers only)
+ */
+
+/**
+ * Per-stage config for a modulator.
+ * @typedef {Object} ModulatorShapeConfig
+ * @property {string}  [easing]   - 'linear'|'ease-in'|'ease-out'|'ease-in-out' (default 'linear')
+ * @property {number}  [quantise] - Snap step size (0 = off); use for integer params
+ * @property {number}  [smooth]   - Slew / lag filter rate (0 = off)
+ * @property {boolean} [invert]   - Flip signal (default false)
+ */
+
+/**
+ * @typedef {Object} ModulatorRangeConfig
+ * @property {number}      [depth]   - Swing fraction 0–1 (default 1)
+ * @property {number}      [bias]    - Offset from base value (default 0)
+ * @property {number|null} [min]     - Hard minimum (null = inherit param def)
+ * @property {number|null} [max]     - Hard maximum (null = inherit param def)
+ * @property {boolean}     [bipolar] - Swing around base (true) or above base (false)
+ */
+
+/**
+ * @typedef {Object} ModulatorSyncConfig
+ * @property {'free'|'loop'|'timeline'|'trigger'} [clock] - Clock source (default 'free')
+ * @property {number}      [rateMul]  - Rate multiplier (default 1)
+ * @property {string|null} [trigger]  - Trigger param key or event name
+ */
+
+/**
+ * Descriptor for a single modulator instance.
+ * @typedef {Object} ModulatorDescriptor
+ * @property {string}  targetKey - Param key or 'colourway__<id>' being modulated
+ * @property {boolean} [enabled] - Whether active at load (default false — user opts in)
+ * @property {{ type: string, config: Object }} driver - Driver type + config; see driver-registry.js
+ * @property {ModulatorShapeConfig}  [shape]   - Shape stage
+ * @property {ModulatorRangeConfig}  [range]   - Range stage
+ * @property {'add'|'multiply'|'replace'|'drift'|'max'|'min'} [combine] - Combine mode (default 'add')
+ * @property {ModulatorSyncConfig}   [sync]    - Sync/clock config
+ */
+
+/**
+ * Optional post-processing effects (OUTPUT tab, opt-in per script).
+ * @typedef {Object} PostEffect
+ * @property {'grain'|'vignette'|'posterise'|'invert'} type
+ * @property {number}  [strength] - Effect intensity 0–1
+ * @property {boolean} [enabled]  - Active by default (default false)
+ */
+
+/**
+ * Output config (post-effects; OUTPUT tab opt-in block).
+ * @typedef {Object} OutputConfig
+ * @property {PostEffect[]} [post] - Post-processing effects to expose in OUTPUT tab
+ */
+
+/**
  * Canvas configuration
  * @typedef {Object} CanvasConfig
- * @property {number} width - Canvas width in pixels
- * @property {number} height - Canvas height in pixels
+ * @property {number} width    - Canvas width in pixels
+ * @property {number} height   - Canvas height in pixels
  * @property {'2d'|'webgl'|'p5'} context - Rendering context type
- * @property {string} [background] - Optional background color (CSS or VGA)
+ * @property {ColourwayLayer[]} [colourway] - Ordered array of paintable layers.
+ *   Index 0 is conventionally the background layer (id: 'background').
+ *   The HOST renders one ColorInput per entry and routes updates via
+ *   _handleCanvasColourway(). Read in draw() as colourway[i].colour.
+ * @property {string} [background] - Legacy single-colour background (CSS or VGA hex).
+ *   Deprecated in favour of colourway[]. Kept for backward compat — scripts that
+ *   have not migrated to colourway[] still work.
  */
 
 /**
@@ -50,7 +120,10 @@
  * @typedef {Object} AnimationConfig
  * @property {'parametric'|'infinite'|'sequence'} [type] - Animation type
  * @property {number} [loopFrames] - Frames per loop (0 = infinite)
- * @property {string[]} [animatableParams] - Parameter keys that can be animated
+ * @property {ModulatorDescriptor[]} [modulators] - Modulator descriptors (preferred format)
+ * @property {string[]|Array<{key:string,mode?:string,rate?:number}>} [animatableParams]
+ *   Legacy format — accepted, migrated to modulators[] by _migrateScriptConfig() shim.
+ *   Do not use in new scripts.
  * @property {number} [defaultSpeed] - Default animation speed multiplier
  * @property {number} [defaultFps] - Default frames per second
  */
@@ -124,6 +197,7 @@
  * @property {ParameterGroup[]} parameters - UI parameter definitions
  * @property {Preset[]} [presets] - Optional preset configurations
  * @property {AnimationConfig} [animation] - Optional animation configuration
+ * @property {OutputConfig} [output] - Output tab configuration (post-effects)
  * @property {ExportConfig} [export] - Export capabilities (defaults to PNG only)
  * @property {DrawFunction} [draw] - Main draw function (required for 2d/webgl)
  * @property {SetupFunction} [setup] - Optional one-time setup (2d/webgl)
@@ -131,6 +205,52 @@
  * @property {P5SetupFunction} [p5Setup] - p5 setup function (required for p5 context)
  * @property {P5DrawFunction} [p5Draw] - p5 draw function (required for p5 context)
  */
+
+/**
+ * Migrate legacy script config fields to the current schema.
+ * Must be called BEFORE validateScriptConfig — validation always sees the new format.
+ *
+ * Migrations performed:
+ *   animatableParams: ['x']             → animation.modulators: [{ targetKey: 'x', driver: { type: 'lfo', ... } }]
+ *   animatableParams: [{ key, mode, rate }] → animation.modulators: [{ ... }]
+ *
+ * @param {Object} config - Raw script config (mutated in-place and returned)
+ * @returns {Object} The same config object, normalised
+ */
+export function _migrateScriptConfig(config) {
+    if (!config.animation) return config;
+
+    const anim = config.animation;
+
+    // Migrate animatableParams → modulators[]
+    if (anim.animatableParams && anim.animatableParams.length > 0) {
+        const existing = new Set((anim.modulators || []).map(m => m.targetKey));
+        const migrated = [];
+
+        for (const entry of anim.animatableParams) {
+            const key  = typeof entry === 'string' ? entry : entry.key;
+            const rate = typeof entry === 'object' && entry.rate != null ? entry.rate : 1;
+
+            if (existing.has(key)) continue; // already declared as modulator
+
+            migrated.push({
+                targetKey: key,
+                enabled:   false,
+                driver:    { type: 'lfo', config: { waveform: 'sine', rate } },
+                shape:     { easing: 'linear', invert: false },
+                range:     { depth: 1, bias: 0, bipolar: true },
+                combine:   'add',
+                sync:      { clock: 'free', rateMul: 1 }
+            });
+        }
+
+        anim.modulators = [...(anim.modulators || []), ...migrated];
+        // Keep animatableParams so existing code that reads it directly still works
+        // during the transition period; it is no longer authoritative.
+    }
+
+    return config;
+}
 
 /**
  * Validate script configuration
@@ -209,6 +329,39 @@ export function validateScriptConfig(config) {
         }
     }
     
+    // Colourway validation (optional field)
+    if (config.canvas.colourway) {
+        if (!Array.isArray(config.canvas.colourway)) {
+            throw new Error('canvas.colourway must be an array');
+        }
+        const colourwayIds = new Set();
+        for (const layer of config.canvas.colourway) {
+            if (!layer.id   || typeof layer.id   !== 'string') throw new Error('ColourwayLayer missing id');
+            if (!layer.label|| typeof layer.label !== 'string') throw new Error(`ColourwayLayer "${layer.id}" missing label`);
+            if (!layer.colour || typeof layer.colour !== 'string') throw new Error(`ColourwayLayer "${layer.id}" missing colour`);
+            if (!layer.kind || !['stroke', 'fill'].includes(layer.kind)) {
+                throw new Error(`ColourwayLayer "${layer.id}" kind must be 'stroke' or 'fill' (required)`);
+            }
+            if (colourwayIds.has(layer.id)) throw new Error(`Duplicate colourway id: "${layer.id}"`);
+            colourwayIds.add(layer.id);
+        }
+    }
+
+    // Modulator validation (optional field, post-migration)
+    if (config.animation && config.animation.modulators) {
+        if (!Array.isArray(config.animation.modulators)) {
+            throw new Error('animation.modulators must be an array');
+        }
+        for (const mod of config.animation.modulators) {
+            if (!mod.targetKey || typeof mod.targetKey !== 'string') {
+                throw new Error('ModulatorDescriptor missing targetKey');
+            }
+            if (!mod.driver || typeof mod.driver.type !== 'string') {
+                throw new Error(`Modulator "${mod.targetKey}" missing driver.type`);
+            }
+        }
+    }
+
     return true;
 }
 

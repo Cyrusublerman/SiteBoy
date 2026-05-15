@@ -1,51 +1,50 @@
 /**
- * Parameter Builder - Convert script parameters to ToolBase sidebar DSL
+ * Parameter Builder — convert script config to ToolBase sidebar DSL.
  *
- * Responsibilities:
- * - Convert parameter definitions to ToolBase component arrays
- * - Generate PARAMS, ANIMATE, CANVAS tabs
- * - Handle parameter groups as collapsible blocks
- * - Create preset/randomise/reset controls
+ * Produces two tabs only:
+ *   PARAMS — presets/randomise/reset, then parameter groups with inline
+ *            modulator-chip per param row for any modulatable parameter.
+ *   OUTPUT — SIZE block (width × height), PALETTE block (palette-row per
+ *            colourway layer), optional POST block.
  *
- * INFO content is served via GeneratorToolbar.setInfoContent() — not a sidebar tab.
+ * The ANIMATE tab has been removed; transport lives below the canvas
+ * (mounted by GenerativeToolHost via buildTransportStrip()).
  *
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 /**
  * Build complete ToolBase sidebar configuration from script config.
- * @param {ScriptConfig} scriptConfig
+ * @param {import('./script-types.js').ScriptConfig} scriptConfig
  * @returns {Array} ToolBase sidebar configuration
  */
 export function buildSidebarConfig(scriptConfig) {
     const tabs = [];
-
-    // PARAMS tab - auto-generated from parameters
     tabs.push(['PARAMS', buildParamsTab(scriptConfig)]);
-
-    // ANIMATE tab — only for generators that actually animate (type !== 'none')
-    if (scriptConfig.animation && scriptConfig.animation.type !== 'none') {
-        tabs.push(['ANIMATE', buildAnimateTab(scriptConfig)]);
-    }
-
-    // CANVAS tab — canvas size and colourway settings
-    tabs.push(['CANVAS', buildCanvasTab(scriptConfig)]);
-
+    tabs.push(['OUTPUT', buildOutputTab(scriptConfig)]);
     return tabs;
 }
 
 /**
- * Build PARAMS tab content
- * @param {ScriptConfig} scriptConfig - Script configuration
+ * Build PARAMS tab content.
+ *
+ * Each modulatable parameter (one with a ModulatorDescriptor in
+ * animation.modulators[]) gets a modulator-chip component immediately
+ * following its control row.
+ *
+ * @param {import('./script-types.js').ScriptConfig} scriptConfig
  * @returns {Array} Blocks for PARAMS tab
  */
 function buildParamsTab(scriptConfig) {
     const blocks = [];
-    
-    // Presets block (always first if presets exist)
+
+    // Build set of modulatable param keys for chip injection
+    const modulatorKeys = _buildModulatorKeySet(scriptConfig);
+
+    // Presets / Controls block
     if (scriptConfig.presets && scriptConfig.presets.length > 0) {
         blocks.push(['Presets', [
-            ['dropdown', 'Select', getPresetNames(scriptConfig.presets), { 
+            ['dropdown', 'Select', _getPresetNames(scriptConfig.presets), {
                 key: 'preset',
                 value: '— Select Preset —'
             }],
@@ -53,194 +52,238 @@ function buildParamsTab(scriptConfig) {
             ['button', 'Reset All', null, { key: 'resetAll' }],
         ]]);
     } else {
-        // No presets, just reset
         blocks.push(['Controls', [
             ['button', 'Reset All', null, { key: 'resetAll' }],
         ]]);
     }
-    
+
     // Parameter groups
     for (const group of scriptConfig.parameters) {
-        const components = group.params.map(param => paramToComponent(param));
+        const components = [];
+        for (const param of group.params) {
+            components.push(paramToComponent(param));
+            // Inject modulator chip after every non-toggle, non-button param
+            if (_isModulatable(param)) {
+                components.push(['modulator-chip', '', {
+                    key:       `mod__${param.key}`,
+                    targetKey: param.key,
+                    modulator: modulatorKeys.get(param.key) ?? null,
+                }]);
+            }
+        }
         blocks.push([group.group, components, {
             defaultCollapsed: group.defaultCollapsed || false
         }]);
     }
-    
-    return blocks;
-}
-
-/**
- * Build ANIMATE tab content
- * @param {ScriptConfig} scriptConfig - Script configuration
- * @returns {Array} Blocks for ANIMATE tab
- */
-function buildAnimateTab(scriptConfig) {
-    const blocks = [];
-    const anim = scriptConfig.animation;
-    
-    // Playback controls
-    const playbackComponents = [
-        ['button', 'PLAY', null, { key: 'playPause' }],
-        ['button', 'STOP', null, { key: 'stopReset' }],
-        ['slider', 'Speed', 0.1, 5, 0.1, {
-            key: 'animSpeed',
-            value: anim.defaultSpeed || 1,
-            withNumber: true,
-            precision: 1
-        }],
-    ];
-    if (anim.sequencer === true) {
-        playbackComponents.push(['button', 'Timeline', null, { key: 'toggleTimeline' }]);
-    }
-    blocks.push(['Playback', playbackComponents]);
-    
-    // Animatable params — each entry may be a string key or an object { key, label, mode, ... }
-    if (anim.animatableParams && anim.animatableParams.length > 0) {
-        const deriveLabel = (key) => key
-            .replace(/^phi_/, 'φ')
-            .replace(/^w([xy])/, 'ω$1')
-            .replace(/_/g, '');
-
-        const labels = anim.animatableParams.map(entry =>
-            typeof entry === 'string' ? deriveLabel(entry) : (entry.label ?? deriveLabel(entry.key))
-        );
-        
-        blocks.push(['Animate Params', [
-            ['toggle', 'Animate', labels, { 
-                key: 'phaseToggles',
-                selectedValues: []
-            }],
-        ]]);
-    }
-    
-    // Loop settings (if loopFrames defined)
-    if (anim.loopFrames && anim.loopFrames > 0) {
-        blocks.push(['Loop', [
-            ['label', `Loop: ${anim.loopFrames} frames`, { variant: 'caption' }],
-            ['toggle', 'Options', ['Enabled'], { 
-                key: 'loopEnabled',
-                selectedValues: ['Enabled']
-            }],
-        ]]);
-    }
 
     return blocks;
 }
 
 /**
- * Build CANVAS tab content — canvas size and colourway settings.
- * @param {ScriptConfig} scriptConfig
- * @returns {Array} Blocks for CANVAS tab
+ * Build OUTPUT tab content.
+ *
+ * Blocks:
+ *   SIZE    — width × height inputs
+ *   PALETTE — one palette-row per colourway layer (or legacy background dropdown)
+ *   POST    — optional post-effect controls (iff scriptConfig.output?.post is declared)
+ *
+ * @param {import('./script-types.js').ScriptConfig} scriptConfig
+ * @returns {Array} Blocks for OUTPUT tab
  */
-function buildCanvasTab(scriptConfig) {
+function buildOutputTab(scriptConfig) {
     const blocks = [];
     const canvas = scriptConfig.canvas || {};
+    const modulatorKeys = _buildModulatorKeySet(scriptConfig);
 
-    // Size block — width and height sliders
+    // SIZE block — width and height
     blocks.push(['Size', [
-        ['slider', 'Width', 100, 4096, 1, {
-            key: 'canvasWidth',
-            value: canvas.width || 800,
-            withNumber: true,
-            precision: 0
+        ['number', 'Width', {
+            key:       'canvasWidth',
+            value:     canvas.width  || 800,
+            min:       100,
+            max:       4096,
+            step:      1,
+            precision: 0,
         }],
-        ['slider', 'Height', 100, 4096, 1, {
-            key: 'canvasHeight',
-            value: canvas.height || 800,
-            withNumber: true,
-            precision: 0
+        ['number', 'Height', {
+            key:       'canvasHeight',
+            value:     canvas.height || 800,
+            min:       100,
+            max:       4096,
+            step:      1,
+            precision: 0,
         }],
     ]]);
 
-    // Colourway block — background colour
-    const VGA_PALETTE_KEYS = [
-        '#000000', '#800000', '#008000', '#808000',
-        '#000080', '#800080', '#008080', '#c0c0c0',
-        '#808080', '#ff0000', '#00ff00', '#ffff00',
-        '#0000ff', '#ff00ff', '#00ffff', '#ffffff'
-    ];
+    // PALETTE block — palette-row per colourway layer
+    if (Array.isArray(canvas.colourway) && canvas.colourway.length > 0) {
+        const paletteComponents = [];
+        for (const layer of canvas.colourway) {
+            const layerModKey = `colourway__${layer.id}`;
+            const layerMod    = modulatorKeys.get(layerModKey) ?? null;
+            paletteComponents.push(['palette-row', layer.label || layer.id, {
+                key:          `palette__${layer.id}`,
+                layer:        { ...layer },
+                hasModulator: layerMod !== null,
+                modEnabled:   layerMod?.enabled ?? false,
+            }]);
+        }
+        blocks.push(['Palette', paletteComponents]);
+    } else {
+        // Legacy: single background colour dropdown
+        const VGA_PALETTE = [
+            '#000000', '#800000', '#008000', '#808000',
+            '#000080', '#800080', '#008080', '#c0c0c0',
+            '#808080', '#ff0000', '#00ff00', '#ffff00',
+            '#0000ff', '#ff00ff', '#00ffff', '#ffffff'
+        ];
+        blocks.push(['Palette', [
+            ['dropdown', 'Background', VGA_PALETTE, {
+                key:   'canvasBackground',
+                value: canvas.background || '#000000'
+            }]
+        ]]);
+    }
 
-    blocks.push(['Colourway', [
-        ['dropdown', 'Background', VGA_PALETTE_KEYS, {
-            key: 'canvasBackground',
-            value: canvas.background || '#000000'
-        }],
-    ]]);
+    // POST block — opt-in per script via output.post[]
+    if (Array.isArray(scriptConfig.output?.post) && scriptConfig.output.post.length > 0) {
+        const postComponents = [];
+        for (const effect of scriptConfig.output.post) {
+            postComponents.push(['toggle', _capitalise(effect.type), ['on', 'off'], {
+                key:            `post__${effect.type}`,
+                selectedValues: [effect.enabled ? 'on' : 'off'],
+            }]);
+            if (typeof effect.strength === 'number') {
+                postComponents.push(['slider', 'Strength', 0, 1, 0.01, {
+                    key:         `post__${effect.type}__strength`,
+                    value:       effect.strength,
+                    withNumber:  true,
+                    precision:   2,
+                }]);
+            }
+        }
+        blocks.push(['Post', postComponents, { defaultCollapsed: true }]);
+    }
 
     return blocks;
-
 }
 
 /**
- * Convert parameter definition to ToolBase component definition
- * @param {ParameterDef} param - Parameter definition
- * @returns {Array} Component definition array
+ * Build the config object for a GeneratorTransportStrip instance.
+ * Called by GenerativeToolHost._buildContainerLayout().
+ *
+ * @param {import('./script-types.js').ScriptConfig} scriptConfig
+ * @returns {{ defaultSpeed: number, showTimeline: boolean }}
  */
-const VGA_PALETTE = [
-    '#000000', '#800000', '#008000', '#808000',
-    '#000080', '#800080', '#008080', '#c0c0c0',
-    '#808080', '#ff0000', '#00ff00', '#ffff00',
-    '#0000ff', '#ff00ff', '#00ffff', '#ffffff'
-];
+export function buildTransportConfig(scriptConfig) {
+    const anim = scriptConfig.animation;
+    return {
+        defaultSpeed: anim?.defaultSpeed ?? 1,
+        showTimeline: anim?.sequencer    === true,
+    };
+}
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Build a Map from param key → ModulatorDescriptor for quick lookup.
+ * @param {import('./script-types.js').ScriptConfig} scriptConfig
+ * @returns {Map<string, Object>}
+ */
+function _buildModulatorKeySet(scriptConfig) {
+    const map = new Map();
+    const modulators = scriptConfig.animation?.modulators;
+    if (!Array.isArray(modulators)) return map;
+    for (const mod of modulators) {
+        map.set(mod.targetKey, mod);
+    }
+    return map;
+}
+
+/**
+ * Determine whether a parameter should receive a modulator chip.
+ * Only slider/number/color params can be modulated.
+ * @param {import('./script-types.js').ParameterDef} param
+ * @returns {boolean}
+ */
+function _isModulatable(param) {
+    return ['slider', 'number', 'color'].includes(param.type);
+}
+
+/**
+ * Convert a ParameterDef to a ToolBase component array.
+ * @param {import('./script-types.js').ParameterDef} param
+ * @returns {Array}
+ */
 function paramToComponent(param) {
     switch (param.type) {
         case 'slider':
             return ['slider', param.label, param.min, param.max, param.step, {
-                key: param.key,
-                value: param.default,
+                key:        param.key,
+                value:      param.default,
                 withNumber: true,
+                precision:  param.precision
+            }];
+
+        case 'number':
+            return ['number', param.label, {
+                key:       param.key,
+                value:     param.default,
+                min:       param.min,
+                max:       param.max,
+                step:      param.step,
                 precision: param.precision
             }];
-            
+
         case 'toggle':
             return ['toggle', param.label, param.options, {
-                key: param.key,
+                key:           param.key,
                 selectedValues: Array.isArray(param.default) ? param.default : [param.default]
             }];
-            
+
         case 'dropdown':
+        case 'select':
             return ['dropdown', param.label, param.options, {
-                key: param.key,
+                key:   param.key,
                 value: param.default
             }];
-            
+
         case 'radio':
             return ['radio', param.label, param.options, {
-                key: param.key,
+                key:           param.key,
                 selectedValue: param.default
             }];
 
         case 'color':
-            return ['dropdown', param.label, param.options || VGA_PALETTE, {
-                key: param.key,
-                value: param.default
+            return ['color', param.label, {
+                key:   param.key,
+                value: param.default || '#000000'
             }];
-            
+
+        case 'easing-curve':
+            return ['easing-curve', param.label, {
+                key:   param.key,
+                value: param.default ?? 'ease-in-out'
+            }];
+
         default:
-            console.warn(`Unknown parameter type: ${param.type}, using label`);
+            console.warn(`[parameter-builder] Unknown parameter type: ${param.type}`);
             return ['label', `${param.label}: (unsupported type ${param.type})`, {}];
     }
 }
 
-/**
- * Get preset names for dropdown
- * @param {Preset[]} presets - Array of presets
- * @returns {string[]} Preset names with placeholder
- */
-function getPresetNames(presets) {
+function _getPresetNames(presets) {
     return ['— Select Preset —', ...presets.map(p => p.name)];
 }
 
-/**
- * Export functions
- */
+function _capitalise(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export default {
     buildSidebarConfig,
     buildParamsTab,
-    buildAnimateTab,
-    buildCanvasTab,
+    buildOutputTab,
+    buildTransportConfig,
     paramToComponent,
-    getPresetNames
 };

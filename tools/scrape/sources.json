@@ -1,0 +1,554 @@
+[
+  {
+    "url": "https://material.io/design",
+    "authority_class": "established-design-system",
+    "weight": 1.0,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "Material Design 3 — added, was missing from original list"
+  },
+  {
+    "url": "https://developer.apple.com/design/human-interface-guidelines/",
+    "authority_class": "established-design-system",
+    "weight": 1.0,
+    "expected_tier": 1,
+    "category_hint": "interaction",
+    "notes": "Apple HIG — added, was missing from original list"
+  },
+  {
+    "url": "https://design-system.service.gov.uk/",
+    "authority_class": "established-design-system",
+    "weight": 1.0,
+    "expected_tier": 1,
+    "category_hint": "interaction",
+    "notes": "GOV.UK Design System — added, was missing from original list"
+  },
+  {
+    "url": "https://www.w3.org/WAI/WCAG22/quickref/",
+    "authority_class": "established-design-system",
+    "weight": 1.0,
+    "expected_tier": 1,
+    "category_hint": "accessibility",
+    "notes": "WCAG 2.2 quick reference — added, resolves Q-018"
+  },
+  {
+    "url": "https://carbondesignsystem.com/",
+    "authority_class": "established-design-system",
+    "weight": 1.0,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "IBM Carbon Design System — added, was missing from original list"
+  },
+  {
+    "url": "https://madeagency.com.au/the-art-of-simplicity-minimalism-in-graphic-design/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://www.logodesign.net/guide-minimal-design-graphic-designers",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://dev.to/andrewcknight/a-beginners-guide-to-minimalist-design-50mc",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://docs.mew.design/blog/minimalism-graphic-design-style/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://www.portotheme.com/the-art-of-print-design-principles-and-best-practices/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "print-production",
+    "notes": ""
+  },
+  {
+    "url": "https://smartpress.com/blog/features/principles-of-design",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/design-bootcamp/the-60-30-10-color-rule-for-ui-design-32695d04a7c2",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "colour",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/nextuxdesign/design-rules-for-ui-designer-275eff3a304c",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@shailesh.7890/25-rules-for-beautiful-ui-design-f61e3fa24250",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://uxdesign.cc/58-rules-for-stunning-and-effective-user-interface-design-ea4b93f931f6",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://uxplanet.org/design-for-non-designers-b765c20a73d2",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "hierarchy",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/hellotegra/golden-rules-for-minimal-ui-design-875f24ff3692",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@floyd.may/rules-for-agile-ui-design-99938be6bd76",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://paril-katrodiya.medium.com/mastering-letter-casing-rules-for-effective-ui-ux-design-346b064c9116",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "casing",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@premjithpurushotham/top-10-thumb-rules-for-innate-ui-ux-design-777f8138183c",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://uxplanet.org/7-rules-for-mobile-ui-button-design-e9cf2ea54556",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "affordance",
+    "notes": ""
+  },
+  {
+    "url": "https://heyakash.medium.com/goldren-rules-for-better-ui-user-interface-design-d84b387aae5f",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://syams-ramadan.medium.com/jakob-nielsens-10-usability-heuristics-a-rule-of-thumb-for-all-ui-designers-14dadfb44f7a",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": "Secondary coverage of Nielsen heuristics; lower authority than NN/g primary"
+  },
+  {
+    "url": "https://www.reddit.com/r/Design/comments/10prpb3/the_12_rules_of_infographic_design/",
+    "authority_class": "forum",
+    "weight": 0.2,
+    "expected_tier": 1,
+    "category_hint": "data-visualisation",
+    "notes": ""
+  },
+  {
+    "url": "https://www.nngroup.com/articles/designing-effective-infographics/",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "data-visualisation",
+    "notes": "NN/g primary — high authority"
+  },
+  {
+    "url": "https://www.marq.com/blog/how-to-design-an-infographic/",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "data-visualisation",
+    "notes": ""
+  },
+  {
+    "url": "https://venngage.com/blog/7-essential-rules-create-infographics/",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "data-visualisation",
+    "notes": ""
+  },
+  {
+    "url": "https://libguides.hull.ac.uk/infographics/principles",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "data-visualisation",
+    "notes": ""
+  },
+  {
+    "url": "https://guides.library.unlv.edu/infographics/design",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "data-visualisation",
+    "notes": ""
+  },
+  {
+    "url": "https://www.printmag.com/featured/swiss-style-principles-typefaces-designers/",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "typography",
+    "notes": ""
+  },
+  {
+    "url": "https://en.wikipedia.org/wiki/Swiss_Style_(design)",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "descriptive_origin=true — inferred rules must be tagged with movements:swiss"
+  },
+  {
+    "url": "https://vanseodesign.com/web-design/swiss-design/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://docs.mew.design/blog/swiss-design-style/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "Duplicate domain (docs.mew.design) — check for content overlap with minimalism entry"
+  },
+  {
+    "url": "https://uxplanet.org/philosophy-of-swiss-design-how-to-to-make-more-of-less-fda6943de391",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/design-bootcamp/ux-blueprint-09-why-does-swiss-design-have-a-minimal-style-and-why-is-it-adopted-in-many-ui-0122a95e7387",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://www.goodmoodprints.com/en-SA/goodnews/what-is-swiss-design-exploring-the-influential-design-style",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://swissthemes.design/insights/swiss-design-for-web-designers",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "Duplicate domain (swissthemes.design) — 3 entries, check overlap"
+  },
+  {
+    "url": "https://swissthemes.design/insights/why-minimalism-works",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "Duplicate domain (swissthemes.design)"
+  },
+  {
+    "url": "https://swissthemes.design/insights/freelance-portfolio",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "Duplicate domain (swissthemes.design)"
+  },
+  {
+    "url": "https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "modularity",
+    "notes": "Kept — directly relevant to front-end design/code principles"
+  },
+  {
+    "url": "https://medium.com/swlh/efficient-design-system-practices-a38145cd854b",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "tokens",
+    "notes": ""
+  },
+  {
+    "url": "https://blog.bitsrc.io/5-principles-for-building-design-systems-0e2c23726dc8",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "tokens",
+    "notes": ""
+  },
+  {
+    "url": "https://www.seangoedecke.com/good-system-design/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "modularity",
+    "notes": ""
+  },
+  {
+    "url": "https://www.outliant.com/insights/design-agility-how-to-keep-your-design-system-efficient",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "tokens",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@axtriqdesign/ux-in-2026-7-outdated-rules-designers-must-leave-behind-089bc88b75d3",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://nurxmedov.medium.com/why-senior-ux-designers-are-struggling-in-2026-0bfca609dfb6",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": "Duplicate author (nurxmedov) — 3 entries"
+  },
+  {
+    "url": "https://medium.com/design-bootcamp/7-ui-ux-mistakes-that-scream-youre-a-beginner-and-exactly-how-to-fix-each-one-6e407242a3e7",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@sausheong/from-vibe-coding-to-agentic-engineering-1ca3ca72b5ac",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://uxplanet.org/claude-skills-for-product-designers-a453a7a8faa7",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://uxplanet.org/figma-make-with-claude-4-6-or-gemini-3-70d3b380f14a",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://michalmalewicz.medium.com/the-future-of-ui-design-past-2026-4f199c3d370b",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "interaction",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/design-bootcamp/why-are-designers-leaving-figma-the-great-transition-1a63d8b03745",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://nurxmedov.medium.com/stop-overthinking-every-design-decision-use-these-7-rules-instead-70be04705392",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": "Duplicate author (nurxmedov)"
+  },
+  {
+    "url": "https://michalmalewicz.medium.com/my-complete-web-design-build-workflow-for-2026-3279e813b3fe",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@alemiau/how-to-build-an-ai-first-content-design-system-6891d986c85f",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "tokens",
+    "notes": ""
+  },
+  {
+    "url": "https://uxplanet.org/top-7-mcp-for-product-designers-4bd77f4e281c",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://nurxmedov.medium.com/stop-trusting-ai-design-output-use-these-5-judgment-rules-instead-3c303648c347",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": "Duplicate author (nurxmedov)"
+  },
+  {
+    "url": "https://uxdesign.cc/youre-still-designing-for-an-architecture-that-no-longer-exists-28b0b10900dd",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "information-architecture",
+    "notes": ""
+  },
+  {
+    "url": "https://amymrogers.medium.com/stop-making-colour-palettes-644bbd3256c3",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "colour",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/design-bootcamp/4-sites-every-designer-should-bookmark-in-2026-30b6a5cd42b7",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@ryan.almeida86/the-ultimate-ui-ux-designer-toolkit-everything-you-actually-need-in-2026-634981040325",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://medium.com/@rentierdigital/i-stopped-vibe-coding-and-started-prompt-contracts-claude-code-went-from-gambling-to-shipping-4080ef23efac",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": ""
+  },
+  {
+    "url": "https://nurxmedov.medium.com/were-using-5-percent-of-what-ai-can-do-3c4790ea0f8d",
+    "authority_class": "generic-medium",
+    "weight": 0.3,
+    "expected_tier": 3,
+    "category_hint": "process",
+    "notes": "Duplicate author (nurxmedov)"
+  },
+  {
+    "url": "https://webflow.com/blog/brutalism",
+    "authority_class": "reputable-publisher",
+    "weight": 0.7,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://brutalist-web.design/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": "Heading-per-rule structure — requires H-011 sub-strategy in stage 4"
+  },
+  {
+    "url": "https://bbs.boingboing.net/t/guidelines-for-brutalist-web-design/124230/41",
+    "authority_class": "forum",
+    "weight": 0.2,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "http://khalilstemmler.com/blogs/thoughts/brutalist-websites/",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://carder.market/threads/the-2025-web-design-paradigm-a-symphony-of-purpose-performance-and-personality.175752/",
+    "authority_class": "forum",
+    "weight": 0.2,
+    "expected_tier": 1,
+    "category_hint": "composition",
+    "notes": ""
+  },
+  {
+    "url": "https://typride.github.io/blogs/a-year-of-cursor.html",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "expected_tier": 1,
+    "category_hint": "process",
+    "notes": ""
+  }
+]

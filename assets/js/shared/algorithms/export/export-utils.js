@@ -40,6 +40,21 @@ export const ExportUtils = {
         URL.revokeObjectURL(url);
         return filename;
     },
+
+    /**
+     * Trigger a browser download for a Blob.
+     * Architectural exception: shared download utility uses minimal DOM
+     * (parallels exportCanvasPNG and exportSVG above).
+     */
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        return filename;
+    },
     
     /**
      * Generate standard SVG header

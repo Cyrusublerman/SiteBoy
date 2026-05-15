@@ -16,7 +16,8 @@ export class ToggleGroup extends BaseComponent {
         super({ ...options, componentType: 'toggle-group' }, deps);
         
         this.items = options.items ?? []; // [{value, label}] or ['string']
-        this.layout = options.layout ?? 'list'; // 'list' | 'row'
+        this.layout = options.layout ?? 'list'; // 'list' | 'row' | 'grid'
+        this.gridColumns = options.gridColumns ?? 2;
         this.exclusive = options.exclusive ?? false;
         this.label = options.label ?? '';
         
@@ -53,9 +54,18 @@ export class ToggleGroup extends BaseComponent {
         }
         
         const container = this.createElement('div', 'toggle-group-items');
-        container.style.cssText = this.layout === 'row' 
-            ? `display: flex; flex-direction: row; gap: ${F}px; flex-wrap: wrap;`
-            : `display: flex; flex-direction: column; gap: ${F2}px;`;
+        if (this.layout === 'row') {
+            container.style.cssText = `display: flex; flex-direction: row; gap: ${F}px; flex-wrap: wrap;`;
+        } else if (this.layout === 'grid') {
+            const cols = Math.max(1, this.gridColumns | 0);
+            container.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(${cols}, minmax(0, 1fr));
+                gap: ${F}px;
+            `;
+        } else {
+            container.style.cssText = `display: flex; flex-direction: column; gap: ${F2}px;`;
+        }
         
         this.checkboxElements = [];
         

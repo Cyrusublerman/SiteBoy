@@ -41,5 +41,17 @@ Property is absent from `_makeState()`. Dead code removed.
 **[RESOLVED] [ACCURACY] Header comment: "Perlin noise-driven delay"**
 Header no longer describes Perlin noise. `_pseudoNoise` is correctly described as "Deterministic hash → value in [0, 1)".
 
+**[STALE DOC]** **DOC-054** `ui-layout.md` preset format, animatableParams, and export options entries likely stale (all resolved in fixes). → fix doc
+
+**[STALE DOC]** **DOC-055** `migration-log.md` Open Items 1 (non-determinism), 2 (state/WeakMap), 3 (diffuse bounding box), 4 (float buffers), 5 (preset format), 6 (animatableParams), 7 (export), 9 (dead state), 10 (comment accuracy) all resolved. → fix doc
+
 **[PARITY] Partial quine**
 `_QUINE_TEXT` still renders parameter names without numeric values. A true quine would render the exact source of `SCRIPT_CONFIG` verbatim.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-031 (P1, FIXED):** Live quine imports no modules from `assets/js/shared/` (`zero-shared-imports`) and keeps diffusion/timing helpers inline.
+- **DOC-055 (P2, FIXED):** `ui-layout.md` refreshed against current preset/animation/export/compute metadata.
+- **DOC-056 (P2, FIXED):** `description.md` refreshed against current timing/diffusion model.

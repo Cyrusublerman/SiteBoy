@@ -23,13 +23,18 @@
 import { BaseComponent } from '../../../shared/foundation.js';
 import { ToolBase } from '../../core/tool-base.js';
 import ScriptRegistry from './script-registry.js';
-import { buildSidebarConfig } from './parameter-builder.js';
+import { buildSidebarConfig, buildTransportConfig } from './parameter-builder.js';
 import { getDefaultParams, applyPreset, randomizeParams } from '../shared/presets.js';
 import { AnimationLoop } from '../../../core/animation-foundation.js';
 import { GeneratorToolbar } from '../../../shared/components/tool/GeneratorToolbar.js';
+import { GeneratorTransportStrip } from '../../../shared/components/tool/TransportStrip.js';
+import { GenerativeCanvasDock } from '../../../shared/components/tool/GenerativeCanvasDock.js';
 import { P5Canvas } from '../../../shared/p5-integration.js';
 import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
 import { ComputeScheduler } from './compute-scheduler.js';
+import { evaluateModulators } from './modulation-engine.js';
+import { buildContext } from './expression-context.js';
+import { _migrateScriptConfig } from './script-types.js';
 
 export class GenerativeToolHost extends BaseComponent {
     constructor(container, initialScriptId = null, deps = {}) {
@@ -61,7 +66,6 @@ export class GenerativeToolHost extends BaseComponent {
         this.animator = null;
         this.frame = 0;
         this.isPlaying = false;
-        this.phaseAnimationState = {};
         this.displayMode = 'fit';
         this.p5Instance = null;  // p5.js instance for context: 'p5'
         this.isP5Context = false; // Flag for p5 mode
@@ -72,6 +76,8 @@ export class GenerativeToolHost extends BaseComponent {
         // ComputeScheduler (Tier 2+3 — initialised after script load)
         this._scheduler = null;
         this._redrawScheduled = false; // Tier 1 coalesce flag
+        /** @type {import('../../../shared/components/tool/GenerativeCanvasDock.js').GenerativeCanvasDock|null} */
+        this.generativeDock = null;
         
         // Get all available generators from registry
         this.generators = this._buildGeneratorList();
@@ -118,12 +124,13 @@ export class GenerativeToolHost extends BaseComponent {
             
         } catch (error) {
             console.error('❌ Failed to initialize GenerativeToolHost:', error);
-            this.container.innerHTML = `
-                <div style="padding: 20px; color: var(--c-text);">
-                    <h2>Generator Load Error</h2>
-                    <p style="color: red;">${error.message}</p>
-                </div>
-            `;
+            this.clearElement(this.container);
+            const errorEl = this.createElement('div', 'generative-host-error');
+            const titleEl = this.createElement('h2', '', 'Generator Load Error');
+            const messageEl = this.createElement('p', '', error.message);
+            this.appendElement(errorEl, titleEl);
+            this.appendElement(errorEl, messageEl);
+            this.appendElement(this.container, errorEl);
         }
     }
     
@@ -132,16 +139,17 @@ export class GenerativeToolHost extends BaseComponent {
      */
     _buildContainerLayout() {
         // Clear container
-        this.container.innerHTML = '';
+        this.clearElement(this.container);
         
         // Create wrapper
-        this.wrapperEl = document.createElement('div');
+        this.wrapperEl = this.createElement('div');
         this.wrapperEl.className = 'generative-host-wrapper';
         this.wrapperEl.style.cssText = `
             display: flex;
             flex-direction: column;
             width: 100%;
             height: 100%;
+            min-height: 0;
             overflow: hidden;
         `;
         
@@ -155,12 +163,12 @@ export class GenerativeToolHost extends BaseComponent {
             onExport: (format, exportState) => this._handleExport(format, exportState)
         }, this.deps);
         
-        this.wrapperEl.appendChild(this.toolbar.render());
+        this.appendElement(this.wrapperEl, this.toolbar.render());
         this.componentInstances.push(this.toolbar);
         
         // Create tool content area (where ToolBase renders)
         // Must be positioned for ToolBase's absolute positioning to work correctly
-        this.toolContentEl = document.createElement('div');
+        this.toolContentEl = this.createElement('div');
         this.toolContentEl.className = 'generative-host-content';
         this.toolContentEl.style.cssText = `
             flex: 1;
@@ -168,9 +176,36 @@ export class GenerativeToolHost extends BaseComponent {
             overflow: hidden;
             position: relative;
         `;
-        this.wrapperEl.appendChild(this.toolContentEl);
-        
-        this.container.appendChild(this.wrapperEl);
+        this.appendElement(this.wrapperEl, this.toolContentEl);
+
+        // Transport region — placeholder; actual mount happens after ToolBase
+        // creates canvasArea, so we can place the strip below the canvas only.
+        this.transportRegionEl = null;
+
+        this.appendElement(this.container, this.wrapperEl);
+
+        // X-001: Spacebar play/stop — bound to the host wrapper, not the document,
+        // so it only fires when focus is within the generator page.
+        this._onKeyDown = (e) => {
+            if (e.code !== 'Space' || e.repeat) return;
+            // Do not intercept when an input, textarea, select, or contenteditable
+            // element has focus — the user may be typing in a param field.
+            const active = document.activeElement;
+            if (active && (
+                active.tagName === 'INPUT' ||
+                active.tagName === 'TEXTAREA' ||
+                active.tagName === 'SELECT' ||
+                active.isContentEditable
+            )) return;
+            // Only act when an animating generator is loaded
+            if (!this.scriptConfig?.animation || this.scriptConfig.animation.type === 'none') return;
+            e.preventDefault();
+            this.togglePlay();
+        };
+        this.wrapperEl.setAttribute('tabindex', '-1');
+        this.wrapperEl.addEventListener('keydown', this._onKeyDown);
+        // Also listen at document level so focus is not required to be on wrapper
+        document.addEventListener('keydown', this._onKeyDown);
     }
     
     /**
@@ -194,47 +229,37 @@ export class GenerativeToolHost extends BaseComponent {
             this.p5Instance = null;
         }
         this._destroyP5Viewport();
-        
-        // Destroy existing tool
+
+        // Tear down dock + strip before ToolBase — dock owns Resize subscriptions and
+        // wraps canvasArea children; skipping dock.destroy() leaves listeners attached.
+        if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
+        }
+        this._stripEl = null;
+        if (this.generativeDock) {
+            this.generativeDock.destroy();
+            this.generativeDock = null;
+        }
+
         if (this.tool) {
             this.tool.destroy();
             this.tool = null;
         }
         
         // Clear content
-        this.toolContentEl.innerHTML = '';
+        this.clearElement(this.toolContentEl);
         
         // Load script config
         this.scriptId = scriptId;
-        this.scriptConfig = await ScriptRegistry.load(scriptId);
+        const rawConfig = await ScriptRegistry.load(scriptId);
+        this.scriptConfig = _migrateScriptConfig(rawConfig);
         
         // Get default parameter values
         this.params = getDefaultParams(this.scriptConfig.parameters);
         
-        // Initialize animation state for each animatable param.
-        // Each entry in animatableParams may be either a plain string (key)
-        // or an object: { key, label?, mode?, rate?, min?, max? }
-        //   mode: 'phase'     — linear phase increment, wraps at param range
-        //   mode: 'oscillate' — sinusoidal between min/max, period ~4s at speed=1
-        //   rate: multiplier applied on top of the global speed slider (default 1)
-        this.phaseAnimationState = {};
-        if (this.scriptConfig.animation?.animatableParams) {
-            for (const entry of this.scriptConfig.animation.animatableParams) {
-                const cfg = typeof entry === 'string' ? { key: entry } : entry;
-                const key = cfg.key;
-                const paramDef = this._findParamDef(key);
-                this.phaseAnimationState[key] = {
-                    enabled:   false,
-                    baseValue: this.params[key] ?? 0,
-                    label:     cfg.label ?? this._deriveAnimLabel(key),
-                    mode:      cfg.mode  ?? 'phase',
-                    rate:      cfg.rate  ?? 1,
-                    // Explicit min/max wins; fall back to param definition; then ±2π
-                    min: cfg.min ?? paramDef?.min ?? -(Math.PI * 2),
-                    max: cfg.max ?? paramDef?.max ??  (Math.PI * 2),
-                };
-            }
-        }
+        // Build modulators array from new schema (post-migration)
+        this.modulators = this.scriptConfig.animation?.modulators ?? [];
         
         // Check if this is a p5 context script
         this.isP5Context = this.scriptConfig.canvas.context === 'p5';
@@ -249,7 +274,8 @@ export class GenerativeToolHost extends BaseComponent {
             this.sequencerV2 = null;
         }
         this._sequencerStripEl      = null;
-        this._sequencerStripVisible = true;
+        // Timeline dock: SPEED strip sits above sequencer strip; TIMELINE ▾ expands rows below transport.
+        this._sequencerStripVisible = this.scriptConfig.animation?.sequencer !== true;
 
         this.tool = new ToolBase(toolConfig, {
             ComponentLibrary: this.deps.ComponentLibrary,
@@ -261,20 +287,45 @@ export class GenerativeToolHost extends BaseComponent {
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
 
+        // Mount TransportStrip at the bottom of the canvas column (in-flow dock).
+        if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
+        }
+        this._stripEl = null;
+        if (this.scriptConfig.animation && this.scriptConfig.animation.type !== 'none') {
+            const transportConfig = buildTransportConfig(this.scriptConfig);
+            this.transportStrip = new GeneratorTransportStrip({
+                ...transportConfig,
+                onChange: (key, value) => this._handleTransportChange(key, value),
+            }, this.deps);
+            const stripEl = this.transportStrip.render();
+            if (this.tool?.canvasArea) {
+                this._stripEl = stripEl;
+                this._stripElClearFixedOverrides(stripEl);
+                this.generativeDock = new GenerativeCanvasDock({
+                    showTimelineSlot: this.scriptConfig.animation.sequencer === true,
+                }, this.deps);
+                this.generativeDock.render();
+                this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
+                this.generativeDock.appendTransportStrip(stripEl);
+                this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
+                this.componentInstances.push(this.generativeDock);
+            }
+            this.componentInstances.push(this.transportStrip);
+        }
+
         // Inject SequencerV2 + AnimationExport UI — only for generators that animate.
-        // type: 'none' generators have no ANIMATE/EXPORT tabs so injection targets don't exist.
-        // Set animation.sequencer = false to suppress SequencerV2.
-        // Set animation.animationExport = false to suppress AnimationExport.
         const animType = this.scriptConfig.animation?.type;
         if (this.scriptConfig.animation && animType !== 'none') {
-            setTimeout(() => {
+            queueMicrotask(() => {
                 if (this.scriptConfig.animation.sequencer === true) {
                     this._injectSequencer();
                 }
                 if (this.scriptConfig.animation.animationExport !== false) {
                     this._injectExportUI();
                 }
-            }, 0);
+            });
         }
         
         // Initialize p5.js if p5 context
@@ -360,10 +411,38 @@ export class GenerativeToolHost extends BaseComponent {
             },
             onInit: (values) => this.handleInit(values),
             onUpdate: (key, value, allValues) => this.handleUpdate(key, value, allValues),
-            onDraw: (ctx, canvas, values) => this.handleDraw(ctx, canvas, values)
+            onDraw: (ctx, canvas, values) => this.handleDraw(ctx, canvas, values),
+            onAfterRender: (toolBase) => {
+                try {
+                    if (this.scriptConfig?.animation?.type !== 'none' && toolBase?.canvasArea && this.generativeDock) {
+                        this._syncGenerativeCanvasDock();
+                    }
+                } catch (err) {
+                    console.error('[GenerativeToolHost] onAfterRender dock sync failed:', err);
+                }
+            },
         };
     }
-    
+
+    /** Remove legacy viewport-fixed overrides from GeneratorTransportStrip. */
+    _stripElClearFixedOverrides(stripEl) {
+        ['position', 'bottom', 'left', 'width', 'z-index'].forEach((p) => {
+            stripEl.style.removeProperty(p);
+        });
+    }
+
+    /**
+     * Rebuild dock chrome after ToolBase re-render (orientation change rebuild).
+     */
+    _syncGenerativeCanvasDock() {
+        if (!this.tool?.canvasArea || !this.generativeDock || !this._stripEl) return;
+        this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
+        this.generativeDock.appendTransportStrip(this._stripEl);
+        this._stripElClearFixedOverrides(this._stripEl);
+        this._reattachSequencerStrip();
+        this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
+    }
+
     /**
      * Initialize p5.js instance for p5 context scripts
      * Creates p5 in instance mode, attached to ToolBase's canvas container
@@ -414,6 +493,12 @@ export class GenerativeToolHost extends BaseComponent {
                     } catch (error) {
                         console.error('p5Setup error:', error);
                     }
+                }
+
+                // FIB-03: wire script-level audio emitter into AnimationExport if present
+                if (typeof scriptConfig.getAudioEmitter === 'function' && host.animationExporter) {
+                    const emitter = scriptConfig.getAudioEmitter.call(scriptConfig);
+                    if (emitter) host.animationExporter.setAudioEmitter(emitter);
                 }
                 
                 window.debugLog('TOOLS', '✅ p5.js instance created');
@@ -701,9 +786,9 @@ export class GenerativeToolHost extends BaseComponent {
             const a = this.createElement('a');
             a.href = url;
             a.download = `${this.scriptId}-${Date.now()}.${ext}`;
-            document.body.appendChild(a);
+            this.attachToBody(a);
             a.click();
-            document.body.removeChild(a);
+            this.detachElement(a);
             URL.revokeObjectURL(url);
         }, mime);
     }
@@ -826,15 +911,39 @@ export class GenerativeToolHost extends BaseComponent {
         }
 
         if (key === 'toggleTimeline') {
-            if (this._sequencerStripEl) {
+            if (this.generativeDock?.getTimelineSlot()) {
                 this._sequencerStripVisible = !this._sequencerStripVisible;
-                this._sequencerStripEl.style.display = this._sequencerStripVisible ? '' : 'none';
+                this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
             }
             return;
         }
         
         if (key === 'phaseToggles') {
             this.handlePhaseToggles(value);
+            return;
+        }
+
+        if (key.startsWith('animParam__')) {
+            // Legacy animParam__ events — no-op; modulator state now managed via mod__ keys
+            return;
+        }
+
+        // New modulation engine — mod__<targetKey> updates a ModulatorDescriptor
+        if (key.startsWith('mod__')) {
+            const targetKey = key.replace(/^mod__/, '');
+            const modIdx = this.modulators.findIndex(m => m.targetKey === targetKey);
+            if (modIdx >= 0) {
+                this.modulators[modIdx] = { ...this.modulators[modIdx], ...value };
+            } else if (value) {
+                this.modulators.push({ targetKey, ...value });
+            }
+            return;
+        }
+
+        // Palette row — palette__<id>: { colour, alpha, lineWidth }
+        if (key.startsWith('palette__')) {
+            const layerId = key.replace(/^palette__/, '');
+            this._handlePaletteLayerUpdate(layerId, value);
             return;
         }
         
@@ -850,6 +959,11 @@ export class GenerativeToolHost extends BaseComponent {
 
         if (key === 'canvasBackground') {
             this._handleCanvasBackground(value);
+            return;
+        }
+
+        if (key.startsWith('colourway__')) {
+            this._handleCanvasColourway(key, value);
             return;
         }
 
@@ -876,17 +990,93 @@ export class GenerativeToolHost extends BaseComponent {
         } else if (this.tool?.canvas) {
             this.tool.canvas.width  = this.scriptConfig.canvas.width;
             this.tool.canvas.height = this.scriptConfig.canvas.height;
+            // Re-apply display mode so CSS scaling re-calculates for the new dimensions.
+            this.tool.setCanvasDisplayMode(this.displayMode);
         }
+
+        // X-003: Re-mount sequencer strip if it was detached by a layout rebuild.
+        // This can happen when canvas orientation flips cause the canvasArea to
+        // re-render, detaching the strip element from the live DOM.
+        this._reattachSequencerStrip();
 
         this.draw();
     }
 
     /**
-     * Handle background colour change from CANVAS tab.
+     * Re-attach the sequencer strip to canvasArea if it has been detached.
+     * Preserves current visibility state.
+     */
+    _reattachSequencerStrip() {
+        if (!this._sequencerStripEl) return;
+        const tl = this.generativeDock?.getTimelineSlot();
+        if (!tl || !tl.isConnected) return;
+        if (!tl.contains(this._sequencerStripEl)) {
+            this.appendElement(tl, this._sequencerStripEl);
+        }
+        this.generativeDock?.setTimelineVisible(this._sequencerStripVisible);
+    }
+
+    /**
+     * Handle palette row update (OUTPUT tab new-schema path).
+     * value: { colour?, alpha?, lineWidth? }
+     */
+    _handlePaletteLayerUpdate(layerId, value) {
+        if (!this.scriptConfig?.canvas?.colourway) return;
+        const layer = this.scriptConfig.canvas.colourway.find(l => l.id === layerId);
+        if (!layer) return;
+        if (value.colour    !== undefined) layer.colour    = value.colour;
+        if (value.alpha     !== undefined) layer.alpha     = value.alpha;
+        if (value.lineWidth !== undefined) layer.lineWidth = value.lineWidth;
+        this.scheduleRedraw();
+    }
+
+    /**
+     * Handle transport strip events (play/pause/stop/speed/timeline).
+     * Mirrors the sidebar handleUpdate branches but routes to TransportStrip.
+     */
+    _handleTransportChange(key, value) {
+        if (key === 'playPause')      { this.togglePlay(); return; }
+        if (key === 'stopReset')      { this.stop();       return; }
+        if (key === 'animSpeed')      {
+            // Store speed so updatePhaseAnimations and the modulation engine can read it
+            this._animSpeed = value;
+            return;
+        }
+        if (key === 'toggleTimeline') {
+            if (this.generativeDock?.getTimelineSlot()) {
+                this._sequencerStripVisible = !this._sequencerStripVisible;
+                this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
+            }
+            return;
+        }
+    }
+
+    /**
+     * Handle background colour change from CANVAS tab (legacy single-colour path).
      */
     _handleCanvasBackground(colour) {
         if (!this.scriptConfig?.canvas) return;
         this.scriptConfig.canvas.background = colour;
+        // Also keep colourway[0] in sync if the schema is present
+        if (this.scriptConfig.canvas.colourway?.[0]) {
+            this.scriptConfig.canvas.colourway[0].colour = colour;
+        }
+        this.draw();
+    }
+
+    /**
+     * Handle a per-layer colourway change from the CANVAS tab.
+     * key format: 'colourway__<layerId>'
+     */
+    _handleCanvasColourway(key, colour) {
+        if (!this.scriptConfig?.canvas?.colourway) return;
+        const layerId = key.replace(/^colourway__/, '');
+        const layer = this.scriptConfig.canvas.colourway.find(l => l.id === layerId);
+        if (layer) {
+            layer.colour = colour;
+            // Keep legacy .background in sync when background layer changes
+            if (layerId === 'background') this.scriptConfig.canvas.background = colour;
+        }
         this.draw();
     }
 
@@ -938,18 +1128,32 @@ export class GenerativeToolHost extends BaseComponent {
     }
     
     /**
-     * Handle reset
+     * Handle reset — rewinds to frame 0, re-runs lifecycle.onInit, restores
+     * default params. Stops animation so the generator starts from a clean state.
      */
     handleReset() {
         window.debugLog('TOOLS', '🔄 Resetting parameters');
-        
+
+        // Stop animation and rewind frame counter
+        if (this.isPlaying) this.stop();
+        this.frame = 0;
+
         this.params = getDefaultParams(this.scriptConfig.parameters);
-        
+
+        // Re-run script lifecycle init if defined (resets any internal state)
+        if (typeof this.scriptConfig.lifecycle?.onInit === 'function') {
+            try {
+                this.scriptConfig.lifecycle.onInit(this.params);
+            } catch (err) {
+                console.warn('lifecycle.onInit error during reset:', err);
+            }
+        }
+
         // Update UI
         for (const key in this.params) {
             this.tool.setValue(key, this.params[key]);
         }
-        
+
         this.draw();
     }
     
@@ -978,27 +1182,6 @@ export class GenerativeToolHost extends BaseComponent {
     }
 
     /**
-     * Handle phase animation toggles.
-     * selectedLabels is the list of label strings currently toggled on.
-     */
-    handlePhaseToggles(selectedLabels) {
-        if (!this.scriptConfig.animation?.animatableParams) return;
-        
-        for (const key in this.phaseAnimationState) {
-            const state = this.phaseAnimationState[key];
-            const nowEnabled = selectedLabels.includes(state.label);
-            
-            if (nowEnabled && !state.enabled) {
-                // Capture the live value as base when first enabling
-                state.baseValue = this.params[key] ?? 0;
-            }
-            state.enabled = nowEnabled;
-        }
-        
-        window.debugLog('TOOLS', `🎬 Phase animation: ${selectedLabels.length} params enabled`);
-    }
-    
-    /**
      * Toggle play/pause animation
      */
     togglePlay() {
@@ -1017,6 +1200,10 @@ export class GenerativeToolHost extends BaseComponent {
      * restoring to the default idle colours.
      */
     _syncPlayButton() {
+        // Update transport strip (new path)
+        this.transportStrip?.setPlaying(this.isPlaying);
+
+        // Update legacy sidebar button (kept during transition period)
         const btn = this.tool?.getComponent?.('playPause');
         if (!btn?.element) return;
         const playing = this.isPlaying;
@@ -1104,64 +1291,24 @@ export class GenerativeToolHost extends BaseComponent {
             this.animator.stop();
         }
         
-        // Reset animated params to their rest position
-        for (const key in this.phaseAnimationState) {
-            const state = this.phaseAnimationState[key];
-            if (!state.enabled) continue;
-            if (state.mode === 'oscillate') {
-                // Oscillate rests at center of range
-                this.params[key] = (state.min + state.max) / 2;
-            } else {
-                this.params[key] = state.baseValue;
-            }
-        }
-        
         this.draw();
         window.debugLog('TOOLS', '⏹️ Animation stopped');
     }
     
     /**
-     * Update all enabled param animations each frame.
-     *
-     * Two modes are supported:
-     *
-     *   'phase'     — Continuously increments the value and wraps it within
-     *                 the param's min/max range.  Good for phases (φ) and any
-     *                 parameter where you want perpetual drift.
-     *                 Formula: value = baseValue + frame × globalSpeed × rate × 2π/60
-     *
-     *   'oscillate' — Sinusoidally bounces between the param's min and max.
-     *                 Good for amplitudes, frequencies, and modulation amounts.
-     *                 Formula: value = center + half × sin(frame × globalSpeed × rate × 2π / 240)
-     *                 (240 frames ≈ 4 s per cycle at speed=1, rate=1)
-     *
-     * The global speed slider scales both modes uniformly.
-     * The per-param `rate` field scales an individual param relative to global speed.
+     * Evaluate all declared modulators for the current frame, writing output into params.
      */
     updatePhaseAnimations() {
-        const speed = this.tool?.getValue('animSpeed') || 1;
-        const TWO_PI = Math.PI * 2;
-        
-        for (const key in this.phaseAnimationState) {
-            const state = this.phaseAnimationState[key];
-            if (!state.enabled) continue;
-            
-            const t = this.frame * speed * (state.rate ?? 1);
-            
-            if (state.mode === 'oscillate') {
-                const center = (state.min + state.max) / 2;
-                const half   = (state.max - state.min) / 2;
-                this.params[key] = center + half * Math.sin(t * TWO_PI / 240);
-            } else {
-                // 'phase' — linear increment with wrapping
-                const range = state.max - state.min;
-                let val = state.baseValue + t * TWO_PI / 60;
-                if (range > 0) {
-                    val = ((val - state.min) % range + range) % range + state.min;
-                }
-                this.params[key] = val;
-            }
-        }
+        if (!this.modulators || this.modulators.length === 0) return;
+        const speed      = this._animSpeed ?? 1;
+        const loopFrames = this.scriptConfig.animation?.loopFrames || 360;
+        const fps        = this.scriptConfig.animation?.defaultFps || 60;
+        const t          = loopFrames > 0 ? (this.frame % loopFrames) / loopFrames : 0;
+        const ctx = buildContext({
+            t, frame: this.frame, fps, loop: loopFrames, speed,
+            params: this.params, mods: {},
+        });
+        evaluateModulators(this.modulators, this.params, this.frame, ctx);
     }
     
     /**
@@ -1210,9 +1357,11 @@ export class GenerativeToolHost extends BaseComponent {
         const ctx = this.tool.ctx;
         const canvas = this.tool.canvas;
         
-        // Clear/background
-        if (this.scriptConfig.canvas.background) {
-            ctx.fillStyle = this.scriptConfig.canvas.background;
+        // Clear/background — prefer new colourway[] schema; fall back to legacy .background
+        const cv = this.scriptConfig.canvas;
+        const bgColour = cv.colourway?.[0]?.colour ?? cv.background ?? null;
+        if (bgColour) {
+            ctx.fillStyle = bgColour;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         
@@ -1258,39 +1407,21 @@ export class GenerativeToolHost extends BaseComponent {
                 for (const key in cpParams) {
                     this.tool.setValue(key, cpParams[key]);
                 }
-                // Align phase baseValues so animation resumes relative to loaded state
-                for (const key in this.phaseAnimationState) {
-                    if (cpParams[key] !== undefined) {
-                        this.phaseAnimationState[key].baseValue = cpParams[key];
-                    }
-                }
                 this.draw();
             },
             onFrame: (interpolated) => {
                 // Set checkpoint-interpolated base values
                 Object.assign(this.params, interpolated);
-                // Track phase baseValue to the sequencer position so offsets stay relative
-                for (const key in this.phaseAnimationState) {
-                    if (key in interpolated && this.phaseAnimationState[key].mode === 'phase') {
-                        this.phaseAnimationState[key].baseValue = interpolated[key];
-                    }
-                }
-                // Apply phase animation on top if it is active
-                const phaseActive = Object.values(this.phaseAnimationState).some(s => s.enabled);
-                if (phaseActive && this.isPlaying) {
-                    this.frame++;
-                    this.updatePhaseAnimations();
-                }
                 this.draw();
             }
         }, {});
 
         const stripEl = this.sequencerV2.getStripElement();
-        if (stripEl && this.tool.canvasArea) {
-            this.tool.canvasArea.appendChild(stripEl);
-            this._sequencerStripEl      = stripEl;
-            this._sequencerStripVisible = false;
-            stripEl.style.display = 'none';
+        const tl = this.generativeDock?.getTimelineSlot();
+        if (stripEl && tl) {
+            this.appendElement(tl, stripEl);
+            this._sequencerStripEl = stripEl;
+            this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
         }
 
         window.debugLog('TOOLS', `✅ SequencerV2 injected for "${this.scriptId}"`);
@@ -1301,6 +1432,11 @@ export class GenerativeToolHost extends BaseComponent {
      */
     destroy() {
         window.debugLog('TOOLS', `🗑️ Destroying GenerativeToolHost`);
+
+        if (this._onKeyDown) {
+            document.removeEventListener('keydown', this._onKeyDown);
+            this._onKeyDown = null;
+        }
         
         // Cleanup p5 instance
         if (this.p5Instance) {
@@ -1327,6 +1463,17 @@ export class GenerativeToolHost extends BaseComponent {
         if (this.animationExporter) {
             this.animationExporter.destroy();
             this.animationExporter = null;
+        }
+
+        if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
+        }
+        this._stripEl = null;
+
+        if (this.generativeDock) {
+            this.generativeDock.destroy();
+            this.generativeDock = null;
         }
         
         if (this.toolbar) {

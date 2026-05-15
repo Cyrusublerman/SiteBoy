@@ -10,6 +10,8 @@
  * @version 1.1.0
  */
 
+import '../../../../shared/algorithms/core/math-utils.js';
+
 export const SCRIPT_CONFIG = {
     id: 'order-disorder',
     title: 'Order and Disorder',
@@ -17,7 +19,15 @@ export const SCRIPT_CONFIG = {
     description: 'A rotating influence field pulls a grid of points between ordered and chaotic states, driven by Perlin noise.',
     version: '1.1.0',
 
-    canvas: { width: 1080, height: 1080, context: 'p5' },
+    canvas: {
+        width: 1080, height: 1080, context: 'p5',
+        // ORD-04: colourway — background and point colours
+        colourway: [
+            { id: 'background', label: 'Background', colour: '#ffffff', kind: 'fill'   },
+            { id: 'ordered',    label: 'Ordered',    colour: '#000000', kind: 'stroke', lineWidth: 1 },
+            { id: 'disordered', label: 'Disordered', colour: '#000000', kind: 'stroke', lineWidth: 1 }
+        ]
+    },
 
     // Tier 1 (RAF coalesce) is always active. Tier 2/3 not applicable:
     // point count is grid-spacing-based and does not scale with canvas resolution;
@@ -36,6 +46,8 @@ export const SCRIPT_CONFIG = {
         {
             group: 'Noise',
             params: [
+                // ORD-02: canonical noise type selector (X-010 NoiseTypeSelect)
+                { key: 'noiseType',         type: 'noiseTypeSelect', label: 'Noise Type',         default: 'perlin' },
                 { key: 'noiseMaxOffset',    type: 'slider', label: 'Noise Offset',        min: 0,     max: 60,   step: 1,     default: 20 },
                 { key: 'noiseSpatialScale', type: 'slider', label: 'Noise Spatial Scale', min: 0.005, max: 0.15, step: 0.005, default: 0.03 },
                 { key: 'noiseTimeScale',    type: 'slider', label: 'Noise Time Scale',    min: 0.001, max: 0.05, step: 0.001, default: 0.016 },
@@ -104,7 +116,8 @@ export const SCRIPT_CONFIG = {
     // discontinuity at any wrap point and are therefore disabled.
     export: { png: true, gif: false, webm: false },
 
-    animation: { type: 'infinite', defaultFps: 60, animatableParams: ['noiseMaxOffset', 'noiseSpatialScale', 'noiseTimeScale', 'jiggleAmount', 'pointSize'], sequencer: true },
+    // ORD-03: Capped at 30 FPS — p5 main-thread Perlin loop is O(N); 60fps exceeds budget at default params.
+    animation: { type: 'infinite', defaultFps: 30, animatableParams: ['noiseMaxOffset', 'noiseSpatialScale', 'noiseTimeScale', 'jiggleAmount', 'pointSize'], sequencer: true },
 
     infoSections: [
         {
@@ -151,6 +164,36 @@ export const SCRIPT_CONFIG = {
             this._lastParams.gridSpacing !== params.gridSpacing ||
             this._lastParams.gridMargin  !== params.gridMargin
         );
+    },
+
+    // ORD-02: value noise fallback for non-Perlin noise types.
+    // Uses a Wang-hash lattice to approximate gradient noise without p5 dependency.
+    _valueNoise3(x, y, t) {
+        const ix = Math.floor(x), iy = Math.floor(y), it = Math.floor(t * 8);
+        const fx = x - ix, fy = y - iy, ft = (t * 8) - it;
+        const h = (ix, iy, iz) => {
+            let s = (ix * 374761393 ^ iy * 1103515245 ^ iz * 2891336453) >>> 0;
+            s = (s ^ (s >>> 13)) * 1274126177 >>> 0;
+            return ((s ^ (s >>> 16)) & 0xffff) / 65535;
+        };
+        const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy), ut = ft * ft * (3 - 2 * ft);
+        const lerp = (a, b, u) => a + (b - a) * u;
+        const a = lerp(lerp(h(ix,iy,it), h(ix+1,iy,it), ux), lerp(h(ix,iy+1,it), h(ix+1,iy+1,it), ux), uy);
+        const b = lerp(lerp(h(ix,iy,it+1), h(ix+1,iy,it+1), ux), lerp(h(ix,iy+1,it+1), h(ix+1,iy+1,it+1), ux), uy);
+        return lerp(a, b, ut);
+    },
+
+    // Dispatch noise evaluation based on noiseType param.
+    _evalNoise(p, x, y, t, noiseType) {
+        if (!noiseType || noiseType === 'perlin') return p.noise(x, y, t);
+        if (noiseType === 'value') return this._valueNoise3(x, y, t);
+        if (noiseType === 'fbm') {
+            let v = 0, a = 0.5, s = 1;
+            for (let o = 0; o < 4; o++) { v += a * p.noise(x * s, y * s, t); a *= 0.5; s *= 2; }
+            return v;
+        }
+        // Fallback: white-gaussian approximation via value noise
+        return this._valueNoise3(x + 0.5, y + 0.7, t * 1.3);
     },
 
     _buildPoints(params, w, h) {
@@ -222,40 +265,76 @@ export const SCRIPT_CONFIG = {
             this._lastParams = { ...params };
         }
 
-        p.background(255);
-        p.stroke(0);
+        // ORD-04: resolve colours from colourway
+        const cw          = params.colourway || [];
+        const bgEntry     = cw.find(c => c.id === 'background');
+        const ordEntry    = cw.find(c => c.id === 'ordered');
+        const disEntry    = cw.find(c => c.id === 'disordered');
+        const bgColour    = bgEntry  ? bgEntry.colour  : '#ffffff';
+        const ordColour   = ordEntry ? ordEntry.colour : '#000000';
+        const disColour   = disEntry ? disEntry.colour : '#000000';
+
+        p.background(bgColour);
         p.strokeWeight(params.pointSize);
 
         const cx = p.width  / 2;
         const cy = p.height / 2;
 
         const { loopFrames, noiseMaxOffset, noiseSpatialScale,
-                noiseTimeScale, jiggleAmount, jiggleSpeed } = params;
+                noiseTimeScale, jiggleAmount, jiggleSpeed, noiseType } = params;
 
         const sourceTheta = (Math.PI * 2 * (frame % loopFrames)) / loopFrames;
         const t  = frame * noiseTimeScale;
         const jt = frame * jiggleSpeed;
 
-        p.beginShape(p.POINTS);
-        for (const pt of this._points) {
-            const alpha = this._getAlpha(pt.gridX, pt.gridY, cx, cy, sourceTheta, params);
-
-            const sx = pt.gridX * noiseSpatialScale;
-            const sy = pt.gridY * noiseSpatialScale;
-            const noiseX = (p.noise(sx + pt.noiseOffsetX, sy, t) - 0.5) * 2;
-            const noiseY = (p.noise(sx, sy + pt.noiseOffsetY, t) - 0.5) * 2;
-            const noisyX = pt.gridX + noiseX * noiseMaxOffset;
-            const noisyY = pt.gridY + noiseY * noiseMaxOffset;
-
-            const baseX = noisyX + (pt.gridX - noisyX) * alpha;
-            const baseY = noisyY + (pt.gridY - noisyY) * alpha;
-
-            const transitionAmt = 1 - Math.abs(alpha - 0.5) * 2;
-            const jx = (p.noise(pt.jiggleOffset,       jt) - 0.5) * 2 * jiggleAmount * transitionAmt;
-            const jy = (p.noise(pt.jiggleOffset + 500, jt) - 0.5) * 2 * jiggleAmount * transitionAmt;
-
-            p.vertex(baseX + jx, baseY + jy);
+        // ORD-04: draw in two passes if ordered/disordered colours differ
+        const sameColour = ordColour === disColour;
+        if (sameColour) {
+            p.stroke(ordColour);
+            p.beginShape(p.POINTS);
+            for (const pt of this._points) {
+                const alpha = this._getAlpha(pt.gridX, pt.gridY, cx, cy, sourceTheta, params);
+                const sx = pt.gridX * noiseSpatialScale;
+                const sy = pt.gridY * noiseSpatialScale;
+                const noiseX = (this._evalNoise(p, sx + pt.noiseOffsetX, sy, t, noiseType) - 0.5) * 2;
+                const noiseY = (this._evalNoise(p, sx, sy + pt.noiseOffsetY, t, noiseType) - 0.5) * 2;
+                const noisyX = pt.gridX + noiseX * noiseMaxOffset;
+                const noisyY = pt.gridY + noiseY * noiseMaxOffset;
+                const baseX = noisyX + (pt.gridX - noisyX) * alpha;
+                const baseY = noisyY + (pt.gridY - noisyY) * alpha;
+                const transitionAmt = 1 - Math.abs(alpha - 0.5) * 2;
+                const jx = (this._evalNoise(p, pt.jiggleOffset,       0, jt, noiseType) - 0.5) * 2 * jiggleAmount * transitionAmt;
+                const jy = (this._evalNoise(p, pt.jiggleOffset + 500, 0, jt, noiseType) - 0.5) * 2 * jiggleAmount * transitionAmt;
+                p.vertex(baseX + jx, baseY + jy);
+            }
+            p.endShape();
+        } else {
+            // Two passes: ordered and disordered points in different colours
+            const ordPoints = [], disPoints = [];
+            for (const pt of this._points) {
+                const alpha = this._getAlpha(pt.gridX, pt.gridY, cx, cy, sourceTheta, params);
+                const sx = pt.gridX * noiseSpatialScale;
+                const sy = pt.gridY * noiseSpatialScale;
+                const noiseX = (this._evalNoise(p, sx + pt.noiseOffsetX, sy, t, noiseType) - 0.5) * 2;
+                const noiseY = (this._evalNoise(p, sx, sy + pt.noiseOffsetY, t, noiseType) - 0.5) * 2;
+                const noisyX = pt.gridX + noiseX * noiseMaxOffset;
+                const noisyY = pt.gridY + noiseY * noiseMaxOffset;
+                const baseX = noisyX + (pt.gridX - noisyX) * alpha;
+                const baseY = noisyY + (pt.gridY - noisyY) * alpha;
+                const transitionAmt = 1 - Math.abs(alpha - 0.5) * 2;
+                const jx = (this._evalNoise(p, pt.jiggleOffset,       0, jt, noiseType) - 0.5) * 2 * jiggleAmount * transitionAmt;
+                const jy = (this._evalNoise(p, pt.jiggleOffset + 500, 0, jt, noiseType) - 0.5) * 2 * jiggleAmount * transitionAmt;
+                const pos = [baseX + jx, baseY + jy];
+                (alpha > 0.5 ? ordPoints : disPoints).push(pos);
+            }
+            p.stroke(ordColour);
+            p.beginShape(p.POINTS);
+            for (const [px, py] of ordPoints) p.vertex(px, py);
+            p.endShape();
+            p.stroke(disColour);
+            p.beginShape(p.POINTS);
+            for (const [px, py] of disPoints) p.vertex(px, py);
+            p.endShape();
         }
-        p.endShape();
     }
 };

@@ -1,0 +1,133 @@
+# v4 Generator Review — State Pointer
+
+**phase:** 4-complete
+**turn:** terminal
+**stage:** complete
+**card:** terminal
+**last_action:** v4 plan complete
+**next_action:** maintenance mode (use single-gen-review.md or drift-detection.md)
+**updated:** 2026-04-25T12:55:00+10:00
+**session_count:** 1
+**checkpoints:**
+- 2026-04-23T07:39:19Z — pre — state file initialised
+- 2026-04-23T07:39:19Z — pre-execute — phase-0 register and progress files created
+- 2026-04-23T08:36:51Z — discovery — inventory read; canonical references located for all 25 ids
+- 2026-04-23T08:36:51Z — between-turns — phase 0 execute complete; questionnaire next
+- 2026-04-23T08:36:51Z — reconcile — phase 0 answers applied; summary written; waiting for phase 1 confirmation
+- 2026-04-23T08:58:27Z — phase-1-reset — v3 DOC archive created; live issues DOC section reset
+- 2026-04-23T08:58:27Z — pre-A — entering first generator review turn: harmonics
+- 2026-04-23T09:03:25Z — turn-complete — p1-gen-01-harmonics artefacts written; key validations pass
+- 2026-04-23T09:03:25Z — pre-A — next turn set: p1-gen-02-lissajous
+- 2026-04-23T11:07:56Z — turn-complete — p1-gen-02-lissajous artefacts written; key validations pass
+- 2026-04-23T11:07:56Z — pre-A — next turn set: p1-gen-03-torus
+- 2026-04-23T11:10:51Z — turn-complete — p1-gen-03-torus artefacts written; key validations pass
+- 2026-04-23T11:10:51Z — pre-A — next turn set: p1-gen-04-cymatics
+- 2026-04-23T11:15:04Z — turn-complete — p1-gen-04-cymatics artefacts written; key validations pass
+- 2026-04-23T11:15:04Z — pre-A — next turn set: p1-gen-05-moire
+- 2026-04-23T11:21:55Z — turn-complete — p1-gen-05-moire artefacts written; key validations pass
+- 2026-04-23T11:21:55Z — pre-A — next turn set: p1-gen-06-wave-interference
+- 2026-04-23T11:24:09Z — turn-complete — p1-gen-06-wave-interference artefacts written; key validations pass
+- 2026-04-23T11:24:09Z — pre-A — next turn set: p1-gen-07-p5-wave-interference
+- 2026-04-23T11:26:19Z — turn-complete — p1-gen-07-p5-wave-interference artefacts written; key validations pass
+- 2026-04-23T11:26:19Z — pre-A — next turn set: p1-gen-08-p5-wave-colour
+- 2026-04-23T11:28:50Z — turn-complete — p1-gen-08-p5-wave-colour artefacts written; key validations pass
+- 2026-04-23T11:28:50Z — pre-A — next turn set: p1-gen-09-generative-pattern
+- 2026-04-23T11:31:03Z — turn-complete — p1-gen-09-generative-pattern artefacts written; key validations pass
+- 2026-04-23T11:31:03Z — pre-A — next turn set: p1-gen-10-tile-mosaic
+- 2026-04-23T11:50:11Z — turn-complete — p1-gen-10-tile-mosaic artefacts written; key validations pass
+- 2026-04-23T11:50:11Z — pre-A — next turn set: p1-gen-11-golden-grid
+- 2026-04-23T11:52:06Z — turn-complete — p1-gen-11-golden-grid artefacts written; key validations pass
+- 2026-04-23T11:52:06Z — pre-A — next turn set: p1-gen-12-order-disorder
+- 2026-04-23T12:07:30Z — turn-complete — p1-gen-12-order-disorder artefacts written; key validations pass
+- 2026-04-23T12:07:30Z — pre-A — next turn set: p1-gen-13-animated-lines
+- 2026-04-23T12:21:45Z — turn-complete — p1-gen-13-animated-lines artefacts written; key validations pass
+- 2026-04-23T12:21:45Z — pre-A — next turn set: p1-gen-14-shape-array
+- 2026-04-23T12:30:22Z — turn-complete — p1-gen-14-shape-array artefacts written; key validations pass
+- 2026-04-23T12:30:22Z — pre-A — next turn set: p1-gen-15-fibonacci-balls
+- 2026-04-23T12:44:40Z — stage-A-complete — p1-gen-15-fibonacci-balls ingest complete (7 files read; system-map missing expected)
+- 2026-04-23T12:46:55Z — stage-B-begin — reference capability extraction started
+- 2026-04-23T12:54:30Z — turn-complete — p1-gen-15-fibonacci-balls artefacts written; key validations pass
+- 2026-04-23T12:54:30Z — pre-A — next turn set: p1-gen-16-circles
+- 2026-04-23T13:04:30Z — turn-complete — p1-gen-16-circles artefacts written; key validations pass
+- 2026-04-23T13:04:30Z — pre-A — next turn set: p1-gen-17-interference-figure
+- 2026-04-23T13:14:25Z — turn-complete — p1-gen-17-interference-figure artefacts written; key validations pass
+- 2026-04-23T13:14:25Z — pre-A — next turn set: p1-gen-18-squares
+- 2026-04-23T13:19:05Z — stage-B-begin — reference capability extraction started
+- 2026-04-23T13:25:45Z — turn-complete — p1-gen-18-squares artefacts written; key validations pass
+- 2026-04-23T13:25:45Z — pre-A — next turn set: p1-gen-19-unified-pattern
+- 2026-04-23T13:31:20Z — turn-complete — p1-gen-19-unified-pattern artefacts written; key validations pass
+- 2026-04-23T13:31:20Z — pre-A — next turn set: p1-gen-20-solar-system
+- 2026-04-23T13:39:45Z — turn-complete — p1-gen-20-solar-system artefacts written; key validations pass
+- 2026-04-23T13:39:45Z — pre-A — next turn set: p1-gen-21-wave-equation-synth
+- 2026-04-23T13:48:30Z — turn-complete — p1-gen-21-wave-equation-synth artefacts written; key validations pass
+- 2026-04-23T13:48:30Z — pre-A — next turn set: p1-gen-22-clockwise
+- 2026-04-23T13:55:40Z — turn-complete — p1-gen-22-clockwise artefacts written; key validations pass
+- 2026-04-23T13:55:40Z — pre-A — next turn set: p1-gen-23-curtain-morph
+- 2026-04-23T14:03:20Z — turn-complete — p1-gen-23-curtain-morph artefacts written; key validations pass
+- 2026-04-23T14:03:20Z — pre-A — next turn set: p1-gen-24-quine
+- 2026-04-23T14:12:45Z — turn-complete — p1-gen-24-quine artefacts written; key validations pass
+- 2026-04-23T14:12:45Z — pre-A — next turn set: p1-gen-25-defecated
+- 2026-04-23T14:20:35Z — turn-complete — p1-gen-25-defecated artefacts written; key validations pass
+- 2026-04-23T14:20:35Z — phase-transition — all 25 phase-1 generator turns complete; host card next
+- 2026-04-23T14:22:10Z — host-pre — card 16 started
+- 2026-04-23T14:23:40Z — host-blocked — Q-host-doc-folder queued (required host docs folder missing)
+- 2026-04-23T14:36:10Z — host-complete — card 16 resumed after user folder confirmation; host parity artefacts + issues written; validations pass
+- 2026-04-23T14:36:40Z — spot-audit-pre — advanced to card 17
+- 2026-04-23T14:44:10Z — spot-audit-complete — 3 audits PASS (interference-figure, torus, moire)
+- 2026-04-23T14:45:00Z — questionnaire-complete — 0 OPEN Qs; answers file emitted (header only)
+- 2026-04-23T14:48:40Z — reconcile-ready — resolved register + summary written; awaiting phase-2 confirmation
+- 2026-04-23T14:50:10Z — phase-2-entry-confirmed — user confirmed transition to Phase 2
+- 2026-04-23T15:02:40Z — p2-execute-complete — fix-order + phase-2-questions written; advanced to card 21
+- 2026-04-23T15:08:10Z — p2-questionnaire-complete — 3 triage answers captured
+- 2026-04-23T15:12:40Z — p2-reconcile-ready — fix-order updated for defer decisions; summary artefacts written
+- 2026-04-23T15:14:10Z — phase-3-entry-confirmed — user confirmed transition to Phase 3
+- 2026-04-23T15:16:40Z — p3-batch-0-pre — card 23 entered; preparing batch 0 confirmation
+- 2026-04-23T15:34:40Z — p3-batch-0-complete — shared-import remediation applied; 25 ARCH issues fixed
+- 2026-04-23T15:34:40Z — p3-batch-1-pre — next batch queued (cymatics)
+- 2026-04-23T15:58:40Z — p3-batch-1-complete — cymatics batch applied; ARCH-010 skipped with Q-mid-fix-ARCH-010
+- 2026-04-23T15:58:40Z — p3-batch-2-pre — next batch queued (defecated)
+- 2026-04-23T16:07:20Z — p3-batch-2-complete — defecated batch applied; 3 GEN placeholder-parity items skipped
+- 2026-04-23T16:07:20Z — p3-batch-3-pre — next batch queued (generative-pattern)
+- 2026-04-23T16:14:20Z — p3-batch-3-complete — generative-pattern batch applied; PERF-006 queued as mid-fix blocker
+- 2026-04-23T16:14:20Z — p3-batch-4-pre — next batch queued (harmonics)
+- 2026-04-23T16:27:40Z — p3-batch-4-complete — harmonics batch applied; 3 issues skipped, mini-questionnaire required
+- 2026-04-23T16:36:10Z — p3-mini-questionnaire-resolved — GEN-001/ARCH-004 set WONTFIX by user decision
+- 2026-04-23T16:36:10Z — p3-batch-5-pre — next batch queued (interference-figure)
+- 2026-04-23T16:47:30Z — p3-batch-5-complete — interference-figure docs reconciled; GEN placeholder-parity items set WONTFIX
+- 2026-04-23T16:47:30Z — p3-batch-6-pre — next batch queued (lissajous)
+- 2026-04-23T17:06:20Z — p3-batch-6-complete — lissajous export/docs reconciled; GEN/ARCH design items set WONTFIX
+- 2026-04-23T17:06:20Z — p3-batch-7-pre — next batch queued (moire)
+- 2026-04-23T17:18:20Z — p3-batch-7-complete — moire docs/ARCH reconciled; GEN/EXP/PERF design items set WONTFIX
+- 2026-04-23T17:18:20Z — p3-batch-8-pre — next batch queued (p5-wave-interference)
+- 2026-04-23T17:31:30Z — p3-batch-8-complete — p5-wave-interference docs reconciled; GEN/PERF items set WONTFIX
+- 2026-04-23T17:31:30Z — p3-batch-9-pre — next batch queued (tile-mosaic)
+- 2026-04-23T17:38:40Z — p3-batch-9-complete — tile-mosaic migration log reconciled; GEN/PERF placeholder/design items set WONTFIX
+- 2026-04-23T17:38:40Z — p3-batch-10-pre — next batch queued (torus)
+- 2026-04-23T18:05:00Z — p3-batch-10-complete — torus code/docs reconciled; GEN projection + ARCH BaseComponent set WONTFIX by design
+- 2026-04-23T18:05:00Z — p3-batch-11-pre — next batch queued (unified-pattern)
+- 2026-04-23T18:20:00Z — p3-batch-11-complete — unified-pattern docs reconciled; GEN placeholder-parity items set WONTFIX
+- 2026-04-23T18:20:00Z — p3-batch-12-pre — next batch queued (wave-equation-synth)
+- 2026-04-25T10:35:00+10:00 — p3-batch-12-complete — wave-equation-synth docs reconciled; GEN placeholder-parity items set WONTFIX
+- 2026-04-25T10:35:00+10:00 — p3-batch-13-pre — next batch queued (wave-interference)
+- 2026-04-25T10:50:00+10:00 — p3-batch-13-complete — wave-interference export/render/docs reconciled; greyscale/modulation divergences set WONTFIX
+- 2026-04-25T10:50:00+10:00 — p3-batch-14-pre — next batch queued (HOST)
+- 2026-04-25T11:05:00+10:00 — p3-batch-14-complete — host DOM boundary and tool docs reconciled
+- 2026-04-25T11:05:00+10:00 — p3-batch-15-pre — next batch queued (animated-lines)
+- 2026-04-25T11:20:00+10:00 — p3-batch-15-complete — animated-lines docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T11:25:00+10:00 — p3-batch-16-complete — circles docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T11:30:00+10:00 — p3-batch-17-complete — clockwise docs reconciled
+- 2026-04-25T11:40:00+10:00 — p3-batch-18-complete — curtain-morph docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T11:45:00+10:00 — p3-batch-19-complete — fibonacci-balls docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T11:50:00+10:00 — p3-batch-20-complete — golden-grid docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T11:55:00+10:00 — p3-batch-21-complete — order-disorder docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T12:00:00+10:00 — p3-batch-22-complete — p5-wave-colour docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T12:05:00+10:00 — p3-batch-23-complete — quine docs reconciled
+- 2026-04-25T12:10:00+10:00 — p3-batch-24-complete — shape-array docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T12:15:00+10:00 — p3-batch-25-complete — solar-system docs reconciled
+- 2026-04-25T12:20:00+10:00 — p3-batch-26-complete — squares docs reconciled; PERF acceleration item set WONTFIX
+- 2026-04-25T12:25:00+10:00 — phase-transition — phase 3 complete; awaiting Phase 4 confirmation
+- 2026-04-25T12:40:00+10:00 — p4-execute-complete — maintenance docs written; system-map guide promoted per user confirmation
+- 2026-04-25T12:40:00+10:00 — p4-questionnaire-pre — next card queued
+- 2026-04-25T12:45:00+10:00 — p4-questionnaire — zero OPEN Phase 4 questions; OBSERVE card-path update retained
+- 2026-04-25T12:50:00+10:00 — p4-reconcile — phase-4 answers/resolved/summary written
+- 2026-04-25T12:55:00+10:00 — terminal — v4 plan complete; maintenance mode active

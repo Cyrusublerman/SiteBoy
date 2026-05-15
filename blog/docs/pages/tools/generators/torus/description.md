@@ -12,7 +12,11 @@ x = (R + r·cos(φ))·cos(θ)
 y = (R + r·cos(φ))·sin(θ)
 z = r·sin(φ)
 ```
-where `R = r = minDim × torusSize` (major and minor radii are locked equal, producing a horn torus when torusSize ≥ 0.25).
+where the radii derive from the canvas minimum dimension and independent scale factors:
+where:
+- `base = minDim × torusSize`
+- `R = base × majorRadiusFactor`
+- `r = base × minorRadiusFactor`
 
 The generator renders two types of curves on the torus:
 
@@ -27,6 +31,6 @@ where `offset_i = (i / numSpirals) × 2π` spaces the spirals evenly. Each spira
 
 Animation: at each frame, three rotation angles advance together — `torusRotation`, `spiralRotation` (counter-direction), and `xRotation` — all driven by `frame / cycleFrames`. This produces a compound rotation where the torus and spirals move in opposite directions simultaneously.
 
-Projection: a custom `project3D` function applies two sequential X-axis rotations (frame-driven `xRotation` plus static `viewAngleX`) and a partial Y-axis rotation (`viewAngleY`) to project from 3D to 2D canvas coordinates. No perspective divide — the projection is orthographic.
+Projection: `project3D` applies a standard orthographic Ry×Rx chain. It applies Y-axis yaw first (`viewY`), then X-axis rotation with frame phase + `viewX`. No perspective divide is used.
 
 Visual: monochrome. Mesh fills are `rgba(192, 192, 192, 0.25)`. Spiral strokes are `#c0c0c0`. Background is black.

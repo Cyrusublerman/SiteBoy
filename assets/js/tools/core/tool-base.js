@@ -60,9 +60,13 @@ const COMPONENT_TYPES = {
     'canvas-tabs': 'CanvasTabs',
     'seed': 'NumericInput',  // Seed inputs are numeric
 
+    'noise-type': 'NoiseTypeSelect',
+    'easing-curve': 'EasingCurveInput',
+
     // Outputs
     'label': 'Text',
     'markdown': 'Text',
+    'markdown-fetch': 'MarkdownBody',
     'value': 'Text',
     'imageviewport': 'ImageViewport',
     'image-viewport': 'ImageViewport',
@@ -77,7 +81,14 @@ const COMPONENT_TYPES = {
     'section': 'Section',
     'grid': 'Grid',
     'tabs': 'Tabs',
-    'file-table': 'FileTable'
+    'file-table': 'FileTable',
+
+    // Generator modulation + animation
+    'modulator-chip':         'ModulatorChip',
+    'modulator-panel':        'ModulatorPanel',
+    'palette-row':            'PaletteRow',
+    'gradient-stops':         'GradientStops',
+    'transport-strip':        'GeneratorTransportStrip',
 };
 
 // Component access helper - uses deps instead of globals
@@ -168,7 +179,25 @@ export class ToolBase extends BaseComponent {
         
         // Loading state (component-based)
         this.loadingOverlayComponent = null;
-        
+
+        /** @type {{ destroy?: Function, render?: Function, isDestroyed?: boolean } | null} */
+        this.floatingOverlayComponent = null;
+
+        /** @type {{ destroy?: Function, render?: Function, isDestroyed?: boolean } | null} */
+        this.topBarComponent = null;
+        this._topBarHeightPx = 0;
+
+        /** @type {HTMLElement|null} */
+        this._topBarElement = null;
+        /** @type {HTMLElement|null} */
+        this._canvasSlot = null;
+        /** @type {ResizeObserver|null} */
+        this._fillContainerResizeObserver = null;
+
+        /** @type {Array<(e: KeyboardEvent)=>void>|null} */
+        this._keydownHandlers = null;
+        this._keydownProxy = null;
+
         // Advanced tab configs
         this.categoryTabsConfig = config.categoryTabs ?? null;
         this.canvasModeTabsConfig = config.canvasModeTabs ?? null;
@@ -223,6 +252,152 @@ export class ToolBase extends BaseComponent {
         if (this.loadingOverlayComponent) {
             this.loadingOverlayComponent.destroy();
             this.loadingOverlayComponent = null;
+        }
+    }
+
+    /**
+     * Full-tool modal / error layer (covers sidebar + canvas). Single slot.
+     */
+    showFloatingOverlay(component) {
+        this.hideFloatingOverlay();
+        if (!this.element || !component || typeof component.render !== 'function') return;
+        this.floatingOverlayComponent = component;
+        const el = component.render();
+        if (el) this.element.appendChild(el);
+    }
+
+    hideFloatingOverlay() {
+        if (!this.floatingOverlayComponent) return;
+        try {
+            if (!this.floatingOverlayComponent.isDestroyed) {
+                this.floatingOverlayComponent.destroy?.();
+            }
+        } catch (_) {}
+        this.floatingOverlayComponent = null;
+    }
+
+    /**
+     * Tool-scoped global keydown registration.
+     * Returns an unregister function.
+     *
+     * @param {(e: KeyboardEvent)=>void} handler
+     * @returns {() => void}
+     */
+    registerKeydown(handler) {
+        if (typeof handler !== 'function') return () => {};
+        this._keydownHandlers ??= [];
+        this._keydownHandlers.push(handler);
+        if (!this._keydownProxy) {
+            this._keydownProxy = (e) => {
+                const handlers = [...(this._keydownHandlers || [])];
+                for (const fn of handlers) {
+                    try { fn(e); } catch (err) { console.error('[ToolBase] keydown handler error:', err); }
+                }
+            };
+            document.addEventListener('keydown', this._keydownProxy);
+        }
+        return () => {
+            const list = this._keydownHandlers || [];
+            const i = list.indexOf(handler);
+            if (i >= 0) list.splice(i, 1);
+            if (!list.length && this._keydownProxy) {
+                document.removeEventListener('keydown', this._keydownProxy);
+                this._keydownProxy = null;
+                this._keydownHandlers = [];
+            }
+        };
+    }
+
+    /** When focus sits in an editable control inside the tool, skip global shortcuts. */
+    isFocusInForm() {
+        if (typeof document === 'undefined') return false;
+        const el = /** @type {HTMLElement|null} */ (document.activeElement);
+        if (!el || !this.element) return false;
+        if (!this.element.contains(el)) return false;
+        const tag = String(el.tagName || '').toLowerCase();
+        return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable === true;
+    }
+
+    /**
+     * True when focus is usable for canvas-level shortcuts:
+     * `document.activeElement` is `<body>` (default) or inside this tool root.
+     * @param {boolean} [includeBody=true]
+     */
+    isShortcutScopeActive(includeBody = true) {
+        if (typeof document === 'undefined' || !this.element) return false;
+        const el = /** @type {HTMLElement|null} */ (document.activeElement);
+        if (!el) return false;
+        if (includeBody && el === document.body) return true;
+        return this.element.contains(el);
+    }
+
+    /**
+     * Mount a top toolbar in the **canvas column only** (first row of tool-canvas-area),
+     * in-flow above the canvas slot — not above the sidebar.
+     *
+     * @param {{ render: () => HTMLElement|null, destroy?: Function, isDestroyed?: boolean }} component
+     */
+    setTopBar(component) {
+        if (!component || typeof component.render !== 'function') return;
+
+        const F = this.F;
+        const topH = F * 2;
+
+        if (this.topBarComponent) {
+            try {
+                const idx = this.componentInstances.indexOf(this.topBarComponent);
+                if (idx >= 0) this.componentInstances.splice(idx, 1);
+                this.topBarComponent.destroy?.();
+            } catch (_) {}
+            this.topBarComponent = null;
+            this._topBarElement = null;
+            this._topBarHeightPx = 0;
+        }
+
+        if (!this.canvasArea) return;
+
+        this.topBarComponent = component;
+        const el = component.render();
+        if (!el) return;
+
+        this._topBarHeightPx = topH;
+        this._topBarElement = el;
+
+        el.style.boxSizing   = 'border-box';
+        el.style.position    = 'relative';
+        el.style.zIndex      = '6';
+        el.style.flexShrink  = '0';
+        el.style.width       = '100%';
+
+        const anchor = this._canvasSlot;
+        if (anchor && anchor.parentNode === this.canvasArea) {
+            this.canvasArea.insertBefore(el, anchor);
+        } else {
+            this.canvasArea.insertBefore(el, this.canvasArea.firstChild);
+        }
+
+        this.componentInstances.push(this.topBarComponent);
+        this._syncTopBarGeometry();
+        this._syncMainContentInset();
+    }
+
+    /** Legacy hook; inset toolbar is laid out in-flow inside canvasArea. */
+    _syncTopBarGeometry() {}
+
+    _syncMainContentInset() {
+        if (!this.element) return;
+
+        const tabOff = this.categoryTabsConfig ? this.F * 2 : 0;
+        const extra = tabOff;
+
+        const mainContent = this.element.querySelector('.tool-main-content');
+        if (!mainContent) return;
+
+        const portrait = window.innerWidth < window.innerHeight || window.innerWidth < 800;
+        if (portrait) {
+            mainContent.style.marginTop = extra ? `${extra}px` : '';
+        } else {
+            mainContent.style.top = `${extra}px`;
         }
     }
     
@@ -353,6 +528,16 @@ export class ToolBase extends BaseComponent {
         this._resizeHandler = () => this._handleResize();
         window.addEventListener('resize', this._resizeHandler);
 
+        if (typeof this.config?.onAfterRender === 'function') {
+            queueMicrotask(() => {
+                try {
+                    this.config.onAfterRender(this);
+                } catch (err) {
+                    console.error('[ToolBase] onAfterRender failed:', err);
+                }
+            });
+        }
+
         return this.element;
     }
 
@@ -379,26 +564,26 @@ export class ToolBase extends BaseComponent {
                     this.F = newF;
                     this.F2 = this.F / 2;
                     this.SIDEBAR_WIDTH = this.F * 30;
-                    const topOffset = this.F * 2;
-                    
-                    // Update mainContent positioning
+
                     const mainContent = this.element.querySelector('.tool-main-content');
-                    if (mainContent) {
-                        if (isPortrait) {
-                            mainContent.style.marginTop = `${topOffset}px`;
-                        } else {
-                            mainContent.style.top = `${topOffset}px`;
-                            mainContent.style.gridTemplateColumns = `${this.SIDEBAR_WIDTH}px 1fr`;
-                        }
-                        window.debugLog('LAYOUT', `ToolBase: Updated layout - F=${newF}, offset=${topOffset}px, sidebarWidth=${this.SIDEBAR_WIDTH}px`);
+                    if (mainContent && isPortrait) {
+                        mainContent.style.gridTemplateColumns = '';
                     }
-                    
+                    if (!isPortrait) {
+                        const mainContent2 = this.element.querySelector('.tool-main-content');
+                        if (mainContent2) {
+                            mainContent2.style.gridTemplateColumns = `${this.SIDEBAR_WIDTH}px 1fr`;
+                        }
+                    }
+                    window.debugLog('LAYOUT', `ToolBase: Updated layout - F=${newF}px, sidebarWidth=${this.SIDEBAR_WIDTH}px`);
                     // Update canvas area padding if needed
                     if (this.canvasArea && isPortrait) {
                         this.canvasArea.style.padding = `${this.F}px`;
                     }
                 }
             }
+            this._syncMainContentInset();
+            this._syncTopBarGeometry();
         }
     }
 
@@ -771,12 +956,7 @@ export class ToolBase extends BaseComponent {
                 // Block content - padded
                 const content = document.createElement('div');
                 content.className = 'tool-block-content';
-                content.style.cssText = `
-                    display: ${collapsed ? 'none' : 'flex'};
-                    flex-direction: column;
-                    gap: ${this.F2}px;
-                    padding: ${this.F}px;
-                `;
+                content.style.cssText = this._blockContentStyle(collapsed, options);
 
                 components.forEach(componentDef => {
                     const component = this._buildComponent(componentDef);
@@ -803,7 +983,7 @@ export class ToolBase extends BaseComponent {
                 toggleIcon.addEventListener('click', (e) => {
                     e.stopPropagation();
                     collapsed = !collapsed;
-                    content.style.display = collapsed ? 'none' : 'flex';
+                    content.style.cssText = this._blockContentStyle(collapsed, options);
                     toggleIcon.textContent = collapsed ? '+' : '−';
                     header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
                 });
@@ -840,12 +1020,7 @@ export class ToolBase extends BaseComponent {
                 // Block content - padded
                 const content = document.createElement('div');
                 content.className = 'tool-block-content';
-                content.style.cssText = `
-                    display: ${collapsed ? 'none' : 'flex'};
-                    flex-direction: column;
-                    gap: ${this.F2}px;
-                    padding: ${this.F}px;
-                `;
+                content.style.cssText = this._blockContentStyle(collapsed, options);
 
                 components.forEach(componentDef => {
                     const component = this._buildComponent(componentDef);
@@ -866,7 +1041,7 @@ export class ToolBase extends BaseComponent {
                 // Add click handler to toggle
                 header.addEventListener('click', () => {
                     collapsed = !collapsed;
-                    content.style.display = collapsed ? 'none' : 'flex';
+                    content.style.cssText = this._blockContentStyle(collapsed, options);
                     toggleIcon.textContent = collapsed ? '+' : '−';
                     header.style.borderBottom = collapsed ? 'none' : `1px solid var(--c-border)`;
                 });
@@ -875,12 +1050,7 @@ export class ToolBase extends BaseComponent {
             // No header - just content
             const content = document.createElement('div');
             content.className = 'tool-block-content';
-            content.style.cssText = `
-                display: flex;
-                flex-direction: column;
-                gap: ${this.F2}px;
-                padding: ${this.F}px;
-            `;
+            content.style.cssText = this._blockContentStyle(false, options);
 
             components.forEach(componentDef => {
                 const component = this._buildComponent(componentDef);
@@ -897,6 +1067,35 @@ export class ToolBase extends BaseComponent {
         }
 
         return block;
+    }
+
+    /**
+     * Tool block body layout. Optional `contentColumns` (≥2) or `contentLayout: 'row'`.
+     * @param {boolean} collapsed
+     * @param {object} options
+     * @returns {string}
+     */
+    _blockContentStyle(collapsed, options = {}) {
+        if (collapsed) {
+            return 'display: none;';
+        }
+        const gap = `${this.F2}px`;
+        const pad = `${this.F}px`;
+        const cols = Number(options.contentColumns) || 0;
+        if (cols > 1) {
+            return (
+                'display: grid; ' +
+                `grid-template-columns: repeat(${cols}, minmax(0, 1fr)); ` +
+                `gap: ${gap}; padding: ${pad}; min-width: 0; align-items: stretch; box-sizing: border-box;`
+            );
+        }
+        const dir = options.contentLayout === 'row' ? 'row' : 'column';
+        const wrap = options.contentLayout === 'row' ? 'nowrap' : 'wrap';
+        return (
+            'display: flex; ' +
+            `flex-direction: ${dir}; flex-wrap: ${wrap}; gap: ${gap}; padding: ${pad}; ` +
+            'min-width: 0; box-sizing: border-box;'
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -999,6 +1198,7 @@ export class ToolBase extends BaseComponent {
                     items: args[1] ?? [],
                     exclusive: typeLower === 'radio',
                     layout: extraOptions.layout ?? 'list',
+                    gridColumns: extraOptions.gridColumns ?? 2,
                     selectedValues: extraOptions.selectedValues ?? [],
                     selectedValue: extraOptions.selectedValue ?? null,
                     key: extraOptions.key ?? this._makeKey(args[0]),
@@ -1069,10 +1269,20 @@ export class ToolBase extends BaseComponent {
                 break;
             }
 
+            case 'markdown-fetch':
+                options = {
+                    fetchPath: args[0] ?? extraOptions.fetchPath ?? '',
+                    markdownText: extraOptions.markdownText ?? '',
+                    className: extraOptions.className ?? 'markdown-body',
+                    ...(extraOptions.key ? { key: extraOptions.key } : {}),
+                };
+                break;
+
             case 'markdown':
                 options = {
                     variant: 'markdown',
                     content: args[0],
+                    ...(extraOptions.key ? { key: extraOptions.key } : {}),
                 };
                 break;
 
@@ -1080,11 +1290,13 @@ export class ToolBase extends BaseComponent {
             case 'value':
                 options = {
                     variant: extraOptions.variant ?? (typeLower === 'value' ? 'value' : 'body'),
-                    content: args[0],
+                    content: extraOptions.value ?? args[0],
                     label: extraOptions.label,
                     unit: extraOptions.unit,
                     level: extraOptions.level,
                     status: extraOptions.status,
+                    // Allow key so setValue() can find and update label/value components
+                    ...(extraOptions.key ? { key: extraOptions.key } : {}),
                 };
                 break;
 
@@ -1096,6 +1308,17 @@ export class ToolBase extends BaseComponent {
                     key: extraOptions.key ?? this._makeKey(args[0]),
                 };
                 break;
+
+            case 'easing-curve': {
+                const ecKey = extraOptions.key ?? this._makeKey(args[0]);
+                options = {
+                    label:    args[0],
+                    value:    extraOptions.value ?? 'ease-in-out',
+                    key:      ecKey,
+                    onChange: (id, _fn) => this._handleChange(ecKey, id),
+                };
+                break;
+            }
 
             case 'equation':
                 // For equation, the params object IS the extraOptions (after pop)
@@ -1227,9 +1450,20 @@ export class ToolBase extends BaseComponent {
             this.canvas = this.imageViewport.canvasEl;
             this.ctx = this.imageViewport.ctx;
             this.componentInstances.push(this.imageViewport);
-            area.appendChild(viewportElement);
+            this._canvasSlot = document.createElement('div');
+            this._canvasSlot.className = 'tool-canvas-slot';
+            this._canvasSlot.style.cssText = `
+                flex: 1;
+                min-height: 0;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            `;
+            this._canvasSlot.appendChild(viewportElement);
+            area.appendChild(this._canvasSlot);
             
-            console.log('✅ Using ImageViewport component');
+            window.debugLog('INIT', '✅ Using ImageViewport component');
         } else {
             // ALWAYS use Canvas component for procedural rendering
             const { Canvas } = this.deps.ComponentLibrary;
@@ -1301,9 +1535,20 @@ export class ToolBase extends BaseComponent {
             
             // Track component for cleanup
             this.componentInstances.push(this.canvasComponent);
-            area.appendChild(canvasElement);
+            this._canvasSlot = document.createElement('div');
+            this._canvasSlot.className = 'tool-canvas-slot';
+            this._canvasSlot.style.cssText = `
+                flex: 1;
+                min-height: 0;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            `;
+            this._canvasSlot.appendChild(canvasElement);
+            area.appendChild(this._canvasSlot);
             
-            console.log('✅ Using Canvas component');
+            window.debugLog('INIT', '✅ Using Canvas component');
         }
 
         return area;
@@ -1349,7 +1594,7 @@ export class ToolBase extends BaseComponent {
         const width = Math.floor(availableWidth / this.F) * this.F;
         const height = Math.floor(availableHeight / this.F) * this.F;
         
-        console.log('📐 Resizing canvas to fit container:', {
+        window.debugLog('LAYOUT', '📐 Resizing canvas to fit container:', {
             container: { width: rect.width, height: rect.height },
             available: { width: availableWidth, height: availableHeight },
             canvas: { width, height }
@@ -1364,7 +1609,7 @@ export class ToolBase extends BaseComponent {
             this.canvas = this.canvasComponent.canvasEl;
             this.ctx = this.canvasComponent.ctx;
             
-            console.log('✅ Canvas resized via component API');
+            window.debugLog('LAYOUT', '✅ Canvas resized via component API');
         } else if (this.imageViewport) {
             // Use ImageViewport's resize API
             this.imageViewport.resize(width, height);
@@ -1373,7 +1618,7 @@ export class ToolBase extends BaseComponent {
             this.canvas = this.imageViewport.canvasEl;
             this.ctx = this.imageViewport.ctx;
             
-            console.log('✅ ImageViewport resized');
+            window.debugLog('LAYOUT', '✅ ImageViewport resized');
         }
     }
     
@@ -1586,8 +1831,11 @@ export class ToolBase extends BaseComponent {
     _handleChange(key, value) {
         // Handle displayMode radio button
         if (key === 'displayMode') {
-            const modeMap = { 'Fit': 'fit', 'Fill': 'fill', 'Actual': 'actual' };
-            const mode = modeMap[value] || 'fit';
+            const raw = String(value || '').trim().toLowerCase();
+            const mode =
+                raw === 'fill' ? 'fill' :
+                raw === 'actual' ? 'actual' :
+                'fit';
             this.setCanvasDisplayMode(mode);
             // Don't store in values or call onUpdate for internal controls
             return;
@@ -1606,20 +1854,57 @@ export class ToolBase extends BaseComponent {
     // PUBLIC API
     // ═══════════════════════════════════════════════════════════════════════════
 
+    _teardownFillContainerResizeObserver() {
+        if (!this._fillContainerResizeObserver) return;
+        try {
+            this._fillContainerResizeObserver.disconnect();
+        } catch (_) {}
+        this._fillContainerResizeObserver = null;
+    }
+
+    /**
+     * Recompute canvas backing store whenever the canvas area layout changes (fillContainer tools).
+     */
+    _wireFillContainerResizeObserver() {
+        this._teardownFillContainerResizeObserver();
+        if (!this.canvasConfig.fillContainer || !this.canvasArea) return;
+        if (typeof ResizeObserver === 'undefined') return;
+
+        const self = this;
+        const ro = new ResizeObserver(() => {
+            queueMicrotask(() => {
+                try {
+                    self._resizeCanvasToFit();
+                } catch (err) {
+                    console.error('[ToolBase] fillContainer resize failed:', err);
+                }
+            });
+        });
+
+        try {
+            ro.observe(this.canvasArea);
+            self._fillContainerResizeObserver = ro;
+        } catch (err) {
+            console.warn('[ToolBase] ResizeObserver on canvasArea failed:', err);
+        }
+    }
+
     mount(container) {
         container.innerHTML = '';
         container.appendChild(this.render());
-        
-        // If fillContainer is enabled, resize canvas after mount
+
         if (this.canvasConfig.fillContainer) {
-            console.log('🔍 fillContainer enabled, resizing after mount');
-            // Use a longer delay to ensure Canvas component is fully initialized
-            setTimeout(() => {
-                console.log('🔍 Executing resize callback after mount');
-                this._resizeCanvasToFit();
-            }, 200);
+            this._wireFillContainerResizeObserver();
+            queueMicrotask(() => {
+                try {
+                    window.debugLog('LAYOUT', '🔍 fillContainer: initial resize after mount');
+                    this._resizeCanvasToFit();
+                } catch (err) {
+                    console.error('[ToolBase] fillContainer initial resize failed:', err);
+                }
+            });
         }
-        
+
         return this;
     }
 
@@ -1830,10 +2115,36 @@ export class ToolBase extends BaseComponent {
     }
 
     destroy() {
+        this._teardownFillContainerResizeObserver();
+
         // Remove resize listener
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;
+        }
+
+        if (this._keydownProxy) {
+            document.removeEventListener('keydown', this._keydownProxy);
+            this._keydownProxy = null;
+            this._keydownHandlers = [];
+        }
+
+        this.hideFloatingOverlay();
+        this.hideLoading();
+
+        this._canvasSlot = null;
+
+        if (this.topBarComponent) {
+            try {
+                const i = this.componentInstances.indexOf(this.topBarComponent);
+                if (i >= 0) this.componentInstances.splice(i, 1);
+                if (!this.topBarComponent.isDestroyed) {
+                    this.topBarComponent.destroy?.();
+                }
+            } catch (_) {}
+            this.topBarComponent = null;
+            this._topBarElement = null;
+            this._topBarHeightPx = 0;
         }
 
         this.componentInstances.forEach(c => c.destroy && c.destroy());
@@ -1848,4 +2159,4 @@ export class ToolBase extends BaseComponent {
     }
 }
 
-console.log('✅ ToolBase loaded (ES Module)');
+window.debugLog('INIT', '✅ ToolBase loaded (ES Module)');

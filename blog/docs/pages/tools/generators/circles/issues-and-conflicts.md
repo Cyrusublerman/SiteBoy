@@ -52,6 +52,29 @@ Guard added: `const mode = (params.displayMode || 'lines').toLowerCase();`
 
 ---
 
+## Stale Documentation
+
+**[STALE DOC] [DOC-037] — ui-layout.md Stale Entries**
+
+Animation section states "No `animatableParams`" — RESOLVED (`animatableParams: []` now declared inside `animation` block). Export section and sidebar structure may have additional stale entries related to the same fix.
+
+---
+
+**[STALE DOC] [DOC-038] — migration-log.md Stale**
+
+Open Items 1 (module-level state → IIFE closure), 4 (canvas size change detection), 5 (displayMode guard), 6 (animatableParams), 8 (console.log) confirmed RESOLVED in issues-and-conflicts.md.
+
+---
+
 **[PARITY] — Play/Pause, Speed, largestRadius, Line Width Missing**
 
 Play/pause, outer radius slider, line width slider, and colour customisation are still not implemented. All flagged as known limitations in infoSections.
+
+---
+
+## v4 turn log (2026-04-23)
+
+- **ARCH-023 (P1, FIXED):** Live circles imports no modules from `assets/js/shared/` (`zero-shared-imports`) and remains outside BaseComponent architecture.
+- **PERF-013 (P2, WONTFIX):** No worker/GPU acceleration path; workload is lightweight and low risk.
+- **DOC-035 (P2, FIXED):** `ui-layout.md` refreshed against current animation/export/runtime semantics.
+- **DOC-036 (P2, FIXED):** `migration-log.md` refreshed against resolved closure-state and guard fixes.

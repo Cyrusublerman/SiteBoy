@@ -1,23 +1,11 @@
 # Interference Figure — UI Layout
 
-**Status: Unimplemented stub.**
-
-## Live Parameters (Current)
-
-| Group | Key | Type | Default | Range |
-|---|---|---|---|---|
-| Pattern | `sources` | slider | 4 | 2 → 10, step 1 |
-
-**Total: 1 parameter.** `sources` is not read by the draw function.
-
-## Intended Parameters (per spec)
-
-### CONTROLS tab
+## Parameters (Live)
 
 | Block | Key | Type | Range / Options |
 |---|---|---|---|
 | Pattern | `patternFamily` | dropdown | Rings / Spiral / Biaxial / Grid / Petal / Multi-Axis / Organic / Hybrid |
-| Pattern | `patternMorph` | slider | 0 → 1 |
+| Pattern | `patternMorph` | slider | 0 → 1 (step 0.01) |
 | Fields | `radialWeight` | slider | 0 → 1 |
 | Fields | `spiralWeight` | slider | 0 → 1 |
 | Fields | `spiralRate` | slider | −4 → 4 |
@@ -48,16 +36,27 @@
 | Noise | `noiseScale` | slider | 0.2 → 4 |
 | Noise | `noiseOctaves` | stepper | 1 → 5 |
 
-**Total intended: 26 parameters** (across 3 functional tabs; PRESETS tab uses buttons, not parameters).
+Total: 26 parameters.
 
-## Canvas (per spec)
+## Host Surfaces
 
-- 420×420 (spec), 800×800 (live stub). Conflict.
+- `PARAMS`: Pattern, Fields, Angular, Transform, Multi-Axis, Colour, Noise.
+- `CANVAS`: host-managed size/background tab.
+- `ANIMATE`: present but inactive (`animation.type: none`).
+- `EXPORT`: PNG enabled; GIF/WebM disabled.
+- `INFO`: present via `infoSections`.
 
-## Export (per spec)
+## Canvas and Export
 
-- PNG, SVG.
+- Canvas: `420 x 420`.
+- Export: PNG only.
+- SVG: unsupported.
 
-## Presets (per spec)
+## Presets
 
-- 6 preset buttons in PRESETS tab: Rings, Spiral, Biaxial, Grid, Petal, Organic.
+- Rings
+- Spiral
+- Biaxial
+- Grid
+- Petal
+- Organic

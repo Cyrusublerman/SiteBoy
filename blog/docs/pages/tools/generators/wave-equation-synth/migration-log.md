@@ -1,47 +1,28 @@
 # Wave Equation Synth — Migration Log
 
-## Pack Generated
+## Pack Updated
 
-Date: 2026-03-10
-Source analysed: `assets/js/tools/generators/scripts/other/wave-equation-synth.gen.js` v(none — stub)
-Legacy docs: `wave-equation-synth-spec.md` (mixed bundle), `wave-equation-synth-audit.md` (audit only)
+Date: 2026-04-25  
+Source analysed: `assets/js/tools/generators/scripts/other/wave-equation-synth.gen.js` v1.0.0
 
-## Summary of Migration State
+## Current State
 
-**Generator is not implemented.** Both live and archive sources are identical stubs. All 8 required subsystems are missing. Additionally, this generator requires architectural extensions to the generator host (audio lifecycle hooks) that are not present in the current host.
+Wave Equation Synth is implemented and live.
 
-## Architecture Gap Summary
+Implemented:
+- AUDIO-004 safe equation compiler for predefined expressions
+- AUDIO-005 wave indexing (`p`, `w`, `u`, `t`, `g`)
+- AUDIO-006 equation evaluator and normalised summation
+- AUDIO-007 Web Audio `AudioBuffer` playback lifecycle
+- AUDIO-008 16-bit PCM WAV encoder (programmatic only)
+- CANVAS-014 oscilloscope/segmented renderer
+- CANVAS-015 circular loop renderer
+- CANVAS-016 GIF exporter stub, intentionally suppressed by export metadata
+- 420×420 canvas, presets, animation/export metadata, and 15-parameter live surface
 
-| Step | Subsystem | Module | Status |
-|---|---|---|---|
-| 1 | Safe equation compiler | AUDIO-004 | Missing |
-| 2 | Wave indexing | AUDIO-005 | Missing |
-| 3 | Equation evaluator | AUDIO-006 | Missing |
-| 4 | AudioBuffer playback | AUDIO-007 | Missing |
-| 5 | Oscilloscope renderer | CANVAS-014 | Missing |
-| 6 | Circular loop renderer | CANVAS-015 | Missing |
-| 7 | WAV exporter | AUDIO-008 | Missing |
-| 8 | GIF exporter | CANVAS-016 | Missing |
+## Residuals
 
-## Host Extension Required
-
-The generator host must be extended to support:
-- Audio context lifecycle (`init`, `onDestroy`, `onPlay`, `onStop`).
-- Free-text equation input fields (`type: 'textarea'`).
-- Action buttons for audio export (WAV).
-
-This is a prerequisite before implementing the generator itself.
-
-## Implementation Roadmap
-
-1. Define audio lifecycle interface in `generative-tool-host.js` — HIGH priority prerequisite.
-2. Implement sandboxed equation compiler in a Worker context (AUDIO-004) — HIGH priority; security review required.
-3. Implement wave indexing variables (AUDIO-005).
-4. Implement equation evaluator with summation (AUDIO-006).
-5. Implement Web Audio API buffer generation and playback (AUDIO-007).
-6. Implement oscilloscope renderer (CANVAS-014).
-7. Implement circular loop renderer (CANVAS-015).
-8. Implement WAV file exporter (AUDIO-008).
-9. Implement GIF exporter (CANVAS-016) — shared with other generators.
-10. Build full SCRIPT_CONFIG with all parameters, animation block, export block.
-11. Resolve canvas size: adopt 420×420 per spec.
+- Reference source is a placeholder stub and not a meaningful parity target.
+- Free-text equation textareas are replaced by predefined dropdown equations.
+- WAV export has no host UI action surface.
+- Worker sandboxing for equation evaluation is not implemented.

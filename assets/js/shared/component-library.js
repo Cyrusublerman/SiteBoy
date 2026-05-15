@@ -91,6 +91,8 @@ import { DrawMaskOverlay } from './components/drawing/DrawMaskOverlay.js';
 
 // Import feedback components
 import LoadingOverlay from './components/feedback/LoadingOverlay.js';
+import { ModalConfirm } from './components/feedback/ModalConfirm.js';
+import { ErrorPane } from './components/feedback/ErrorPane.js';
 
 // Import P5.js integration components
 import { P5Canvas, P5EmbeddedSketch, P5ControlledSketch } from './p5-integration.js';
@@ -112,6 +114,10 @@ import {
     CanvasModeTabs,
     CategoryTabsBar,
     GeneratorToolbar,
+    GlyphBuilderToolbar,
+    GenerativeCanvasDock,
+    ToolToolbar,
+    ToolbarPanelStack,
     SeedInput,
     NavigationDropdown,
     DistortToolbar,
@@ -166,6 +172,13 @@ import {
     StandardBundle,
     ProfessionalBundle
 } from './image-adjustments/index.js';
+
+// Import generator modulation + animation components
+import { ModulatorChip }       from './components/input/ModulatorChip.js';
+import { ModulatorPanel }      from './components/input/ModulatorPanel.js';
+import { PaletteRow }          from './components/input/PaletteRow.js';
+import { GradientStops }       from './components/input/GradientStops.js';
+import { GeneratorTransportStrip } from './components/tool/TransportStrip.js';
 
 /**
  * AdjustmentBundle - Factory function that routes to correct bundle type
@@ -279,6 +292,10 @@ const ComponentLibrary = {
             'canvas-mode-tabs': CanvasModeTabs,
             'category-tabs-bar': CategoryTabsBar,
             'generator-toolbar': GeneratorToolbar,
+            'glyph-builder-toolbar': GlyphBuilderToolbar,
+            'generative-canvas-dock': GenerativeCanvasDock,
+            'tool-toolbar': ToolToolbar,
+            'toolbar-panel-stack': ToolbarPanelStack,
             'seed-input': SeedInput,
             'navigation-dropdown': NavigationDropdown,
             'distort-toolbar': DistortToolbar,
@@ -466,6 +483,10 @@ ComponentLibrary.CanvasTabs = CanvasTabs;
 ComponentLibrary.CanvasModeTabs = CanvasModeTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.GeneratorToolbar = GeneratorToolbar;
+ComponentLibrary.GlyphBuilderToolbar = GlyphBuilderToolbar;
+ComponentLibrary.GenerativeCanvasDock = GenerativeCanvasDock;
+ComponentLibrary.ToolToolbar = ToolToolbar;
+ComponentLibrary.ToolbarPanelStack = ToolbarPanelStack;
 ComponentLibrary.SeedInput = SeedInput;
 ComponentLibrary.NavigationDropdown = NavigationDropdown;
 ComponentLibrary.DistortToolbar = DistortToolbar;
@@ -484,9 +505,18 @@ ComponentLibrary.InputDomainSelector = InputDomainSelector;
 ComponentLibrary.OutputModeSelector = OutputModeSelector;
 ComponentLibrary.MaskControls = MaskControls;
 ComponentLibrary.DriverMappingPanel = DriverMappingPanel;
+ComponentLibrary.ModalConfirm = ModalConfirm;
+ComponentLibrary.ErrorPane = ErrorPane;
 ComponentLibrary.TemporalModeControl = TemporalModeControl;
 ComponentLibrary.DiagnosticPreviewToggle = DiagnosticPreviewToggle;
 ComponentLibrary.LuminanceCurveEditor = LuminanceCurveEditor;
+
+// Assign generator modulation + animation components
+ComponentLibrary.ModulatorChip           = ModulatorChip;
+ComponentLibrary.ModulatorPanel          = ModulatorPanel;
+ComponentLibrary.PaletteRow              = PaletteRow;
+ComponentLibrary.GradientStops           = GradientStops;
+ComponentLibrary.GeneratorTransportStrip = GeneratorTransportStrip;
 
 // Assign navigation components to ComponentLibrary immediately
 ComponentLibrary.Scrollbar = Scrollbar;
@@ -504,6 +534,26 @@ ComponentLibrary.ProfessionalBundle = ProfessionalBundle;
 if (typeof window !== 'undefined') {
     window.ComponentLibrary = ComponentLibrary;
 }
+
+// Init-time assertion: every COMPONENT_TYPES entry in tool-base.js must resolve.
+// This guards against "component defined but not re-exported" breakage (tool-standards.md §4).
+// COMPONENT_TYPES list is duplicated here and checked at startup; a console.error fires if any is absent.
+(function _assertComponentRegistrations() {
+    const REQUIRED = [
+        'NumericInput', 'TextInput', 'Dropdown', 'ToggleGroup', 'ColorInput',
+        'FileInput', 'DropZone', 'Button', 'EquationEditor', 'FilamentPicker',
+        'NavigationDropdown', 'CanvasTabs', 'Text',
+        'ImageViewport', 'PalettePreview', 'ProgressBar', 'AdjustmentBundle',
+        'Section', 'Grid', 'FileTable',
+        'ModulatorChip', 'ModulatorPanel', 'PaletteRow', 'GradientStops',
+        'GeneratorTransportStrip',
+    ];
+    for (const name of REQUIRED) {
+        if (!ComponentLibrary[name]) {
+            console.error(`[component-library] MISSING REGISTRATION: ${name} is not exported from ComponentLibrary. Add it to component-library.js.`);
+        }
+    }
+})();
 
 window.debugLog('INIT', `📚 ComponentLibrary v${ComponentLibrary.version} - Modular Architecture Ready (all components assigned)`);
 window.debugLog('VERBOSE', ' BaseComponent available:', !!ComponentLibrary.BaseComponent);
@@ -560,6 +610,8 @@ export {
     
     // Feedback
     LoadingOverlay,
+    ModalConfirm,
+    ErrorPane,
 
     // Graphs
     BarGraph,
@@ -597,6 +649,10 @@ export {
     CanvasModeTabs,
     CategoryTabsBar,
     GeneratorToolbar,
+    GlyphBuilderToolbar,
+    GenerativeCanvasDock,
+    ToolToolbar,
+    ToolbarPanelStack,
     SeedInput,
     NavigationDropdown,
     DistortToolbar,
@@ -623,7 +679,14 @@ export {
     AdjustmentBundle,
     MinimalBundle,
     StandardBundle,
-    ProfessionalBundle
+    ProfessionalBundle,
+
+    // Generator modulation + animation components
+    ModulatorChip,
+    ModulatorPanel,
+    PaletteRow,
+    GradientStops,
+    GeneratorTransportStrip
 };
 
 // Export ComponentLibrary as default for backward compatibility

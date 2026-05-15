@@ -815,11 +815,21 @@ export class AnimationExport extends BaseComponent {
         });
     }
     
+    /**
+     * Set an AudioOutput instance to capture and mux alongside video export.
+     * Call before startExport(). The audio stream is added to the MediaRecorder.
+     * Degrades gracefully if MediaRecorder does not support audio tracks.
+     * @param {import('./AudioOutput.js').AudioOutput|null} audioOutput
+     */
+    setAudioEmitter(audioOutput) {
+        this._audioEmitter = audioOutput ?? null;
+    }
+
     async _exportVideo(format) {
         const canvas = this.getCanvas();
         if (!canvas) throw new Error('No canvas available');
         
-        // Determine codec
+        // Determine codec — prefer Opus audio track in WebM
         let mimeType;
         if (format === 'mp4') {
             const mp4Codecs = ['video/mp4;codecs=avc1.42E01E', 'video/mp4'];
@@ -829,7 +839,13 @@ export class AnimationExport extends BaseComponent {
                 return this._exportVideoRecordRTC(format);
             }
         } else {
-            const webmCodecs = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+            const webmCodecs = [
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp8,opus',
+                'video/webm;codecs=vp9',
+                'video/webm;codecs=vp8',
+                'video/webm',
+            ];
             mimeType = webmCodecs.find(c => MediaRecorder.isTypeSupported(c));
         }
         
@@ -839,7 +855,19 @@ export class AnimationExport extends BaseComponent {
         
         this._updateProgress(0, 100, 'Starting video recording...');
         
-        const stream = canvas.captureStream(0);
+        // Build combined stream: canvas video + optional audio
+        const canvasStream = canvas.captureStream(0);
+        const stream = new MediaStream(canvasStream.getVideoTracks());
+
+        if (this._audioEmitter) {
+            try {
+                const audioStream = this._audioEmitter.getMediaStream();
+                audioStream.getAudioTracks().forEach(t => stream.addTrack(t));
+            } catch (e) {
+                console.warn('AnimationExport: audio stream unavailable, exporting silent video.', e);
+            }
+        }
+
         const chunks = [];
         
         const recorder = new MediaRecorder(stream, {
@@ -861,9 +889,9 @@ export class AnimationExport extends BaseComponent {
             
             recorder.onerror = reject;
             recorder.start();
-            
-            // Render frames
-            this._renderFramesForRecording(stream, recorder);
+
+            // Render frames using the original canvas stream for requestVideoFrameCallback
+            this._renderFramesForRecording(canvasStream, recorder);
         });
     }
     
