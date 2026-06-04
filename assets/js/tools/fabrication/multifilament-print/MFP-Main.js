@@ -1773,10 +1773,11 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
         };
         
         // Capture-phase pointer listeners intercept before Canvas.js pan/zoom handlers
-        canvas.addEventListener('pointerdown', onPointerDown, true);
-        canvas.addEventListener('pointermove', onPointerMove, true);
-        canvas.addEventListener('pointerup',   onPointerUp,   true);
-        canvas.addEventListener('pointercancel', onPointerUp, true);
+        const ptrCap = { capture: true, passive: false };
+        canvas.addEventListener('pointerdown', onPointerDown, ptrCap);
+        canvas.addEventListener('pointermove', onPointerMove, ptrCap);
+        canvas.addEventListener('pointerup',   onPointerUp,   ptrCap);
+        canvas.addEventListener('pointercancel', onPointerUp, ptrCap);
         canvas.addEventListener('click', onClick, true);
     }
     

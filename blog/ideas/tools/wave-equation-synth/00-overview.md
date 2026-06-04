@@ -1,4 +1,6 @@
 # Wave Equation Synth — Overview
+**Status:** SPEC | **Cluster:** audio-waves
+
 
 ## Quick Reference
 
@@ -17,3 +19,19 @@
 - `CoordinateTransforms.waveformToPath` — oscilloscope rendering
 - `CoordinateTransforms.waveformToCircular` — polar mapping
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Wave Equation Synth (legacy)](../wave-synth-legacy.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Sonification of Climate Change](../../art/generative/sonification-climate-change.md)

@@ -258,6 +258,75 @@ export function peekUpcoming(queueState, count = 5) {
 }
 
 /**
+ * Return prompts immediately before the current index (for left-side trace previews).
+ *
+ * @param {QueueState} queueState
+ * @param {number}     [count=5]
+ * @returns {{ id: string, text: string }[]}
+ */
+export function peekPrior(queueState, count = 5) {
+    const prompts = queueState.prompts ?? [];
+    const idx = queueState.currentIndex ?? 0;
+    const max = Math.max(0, count | 0);
+    const out = [];
+    let i = idx - 1;
+    while (out.length < max && i >= 0) {
+        const p = prompts[i--];
+        if (p && typeof p.text === 'string') {
+            out.push({ id: p.id ?? '', text: p.text });
+        }
+    }
+    return out.reverse();
+}
+
+/**
+ * Step back one prompt without mutating history or drawings.
+ *
+ * @param {QueueState} queueState
+ * @returns {QueueState}
+ */
+export function stepPrevious(queueState) {
+    const qs = { ...queueState, prompts: [...queueState.prompts] };
+    if (qs.currentIndex > 0) qs.currentIndex -= 1;
+    return qs;
+}
+
+/**
+ * Visible row window centred on {@link currentPrompt} (active row in middle slot).
+ *
+ * @param {QueueState} queueState
+ * @param {number}     maxRows  total rows that fit in the canvas band
+ * @returns {{
+ *   centerSlot: number,
+ *   rows: Array<{
+ *     slot: number,
+ *     index: number,
+ *     prompt: object|null,
+ *     isActive: boolean
+ *   }>
+ * }}
+ */
+export function getRowWindow(queueState, maxRows) {
+    const prompts = queueState.prompts ?? [];
+    const cur = queueState.currentIndex ?? 0;
+    const n = Math.max(1, maxRows | 0);
+    const centerSlot = Math.floor((n - 1) / 2);
+    const startIdx = cur - centerSlot;
+    const rows = [];
+    for (let slot = 0; slot < n; slot += 1) {
+        const index = startIdx + slot;
+        const prompt = index >= 0 && index < prompts.length ? prompts[index] : null;
+        rows.push({
+            slot,
+            index,
+            prompt,
+            isActive: index === cur,
+        });
+    }
+    return { centerSlot, rows };
+}
+
+/**
  * Increment variationsDrawn for the given prompt id.
  * @param {QueueState} queueState
  * @param {string} promptId

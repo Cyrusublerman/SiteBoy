@@ -51,7 +51,7 @@ Before any judgement, Read every file in the matching column. Do not rely on mem
 
 | Kind | Required reads |
 | --- | --- |
-| All kinds | `.cursor/rules/rules.mdc`, `.cursorrules`, `blog/docs/guides/ai-routing-map.md`, `blog/docs/guides/standards/coding-standards.md`, `blog/docs/guides/standards/design-law.md`, `blog/docs/guides/standards/border-system.md`, `blog/docs/guides/standards/semiotics.md`, `blog/docs/guides/standards/text-treatment.md`, `blog/docs/guides/standards/component-patterns.md`, `blog/docs/guides/f-system.md`, `blog/docs/site/ui-interface-overview.md` |
+| All kinds | `.cursor/rules/rules.mdc`, `.cursorrules`, `blog/docs/guides/ai-routing-map.md`, `blog/docs/guides/standards/coding-standards.md`, `blog/docs/guides/standards/design-law.md`, `blog/docs/guides/standards/border-system.md`, `blog/docs/guides/standards/semiotics.md`, `blog/docs/guides/standards/text-treatment.md`, `blog/docs/guides/standards/component-patterns.md`, `blog/docs/guides/standards/composite-components.md`, `blog/docs/guides/f-system.md`, `blog/docs/site/ui-interface-overview.md` |
 | `tool`, `generator`, `p5-generator` | + `blog/docs/guides/standards/tool-standards.md`, `blog/docs/guides/lazy-loading.md`, `blog/docs/guides/shared-utilities.md`, `blog/docs/guides/page-design-guide.md` |
 | `p5-generator` | + `blog/docs/guides/standards/p5-generator-standards.md` |
 | `gallery` | + `blog/docs/guides/page-design-guide.md` |
@@ -108,6 +108,19 @@ For tools and generators also walk:
 - `design-law.md §10` (Prohibited Patterns — any present = FAIL)
 
 ## Phase 6 — Kind-Specific Gates
+
+### Composite controls (component, tool, generator, section — any page that binds ≥2 subcomponents into one bordered box)
+Trigger: the page builds a single visible control from two or more subcomponents/primitives sharing one outer border (e.g. toggle + slider + numeric field; label div attached above a control; flush-stacked param rows). If no such construct exists, mark N/A.
+
+Against `composite-components.md`:
+- One outer border owned by the composite; no four-sided border on an embedded cell.
+- `gap: 0` between cells and between cell and container — no `margin` simulating spacing (cross-check `border-system.md §6` rule "margin to simulate spacing").
+- Each interior divider is a single `1px var(--c-border)` line owned by exactly one side (`border-left` horizontally, `border-top` vertically); no double borders.
+- Embedded primitives suppress edges they do not own via per-edge control (`borders` / `embedded` / `topBorder`), not by being wrapped in an extra div.
+- Flush-stacked siblings: only the first item owns the shared top edge; the rest set `topBorder: false` (or equivalent). First item must not double the container's top edge.
+- Dividers/sizing are F-derived; state signalled by inversion, not colour-only.
+
+Any miss = FAIL with `file:line` and the `composite-components.md` clause.
 
 ### Tool / generator
 - `tool-standards.md §1` minimum-functionality table for the page's output type (canvas / animation / audio / data / file). Every row marked "Yes" must be present.

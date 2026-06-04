@@ -73,12 +73,16 @@ export class GenerativeCanvasDock extends BaseComponent {
         }
 
         if (this.chromeStackEl) {
+            // The chrome stack is one unified Composite Partition (transport row +
+            // timeline rows). It owns the single outer top border (the stack edge
+            // against the viewport); inner Cells never re-declare it (I4/I6).
             this.chromeStackEl.style.cssText = [
                 'box-sizing:border-box',
                 'display:flex',
                 'flex-direction:column',
                 'flex-shrink:0',
                 'min-width:0',
+                'border-top:1px solid var(--c-border)',
             ].join(';');
         }
 

@@ -201,8 +201,9 @@ export const SCRIPT_CONFIG = {
         { group: 'Text', params: [
             { key: 'textMode', type: 'radio', label: 'Mode',
               options: ['Preset', 'Custom'], default: 'Preset' },
-            // Custom free-text: newline-delimited, up to 3 lines
-            { key: 'customText', type: 'text', label: 'Custom Text',
+            // Custom free-text: one editable cell per line, up to 3 lines
+            { key: 'customText', type: 'lines', label: 'Custom Text',
+              maxLines: 3, minLines: 1,
               default: 'have you\ndefecated\ntoday?' },
             { key: 'line1', type: 'dropdown', label: 'Line 1',
               options: ['HAVE YOU', 'ARE YOU', 'DID YOU', 'WILL YOU', 'CAN YOU'],

@@ -2,15 +2,15 @@
  * Parameter Builder — convert script config to ToolBase sidebar DSL.
  *
  * Produces two tabs only:
- *   PARAMS — presets/randomise/reset, then parameter groups with inline
- *            modulator-chip per param row for any modulatable parameter.
+ *   PARAMS — presets/randomise/reset, then parameter groups with
+ *            expression-param rows (static slider or expression input).
  *   OUTPUT — SIZE block (width × height), PALETTE block (palette-row per
  *            colourway layer), optional POST block.
  *
  * The ANIMATE tab has been removed; transport lives below the canvas
  * (mounted by GenerativeToolHost via buildTransportStrip()).
  *
- * @version 3.0.0
+ * @version 4.0.0
  */
 
 /**
@@ -28,9 +28,8 @@ export function buildSidebarConfig(scriptConfig) {
 /**
  * Build PARAMS tab content.
  *
- * Each modulatable parameter (one with a ModulatorDescriptor in
- * animation.modulators[]) gets a modulator-chip component immediately
- * following its control row.
+ * Slider and number params render as expression-param rows with an inline
+ * static / expression mode toggle.
  *
  * @param {import('./script-types.js').ScriptConfig} scriptConfig
  * @returns {Array} Blocks for PARAMS tab
@@ -38,41 +37,44 @@ export function buildSidebarConfig(scriptConfig) {
 function buildParamsTab(scriptConfig) {
     const blocks = [];
 
-    // Build set of modulatable param keys for chip injection
-    const modulatorKeys = _buildModulatorKeySet(scriptConfig);
-
     // Presets / Controls block
     if (scriptConfig.presets && scriptConfig.presets.length > 0) {
         blocks.push(['Presets', [
-            ['dropdown', 'Select', _getPresetNames(scriptConfig.presets), {
-                key: 'preset',
-                value: '— Select Preset —'
+            ['preset-toolbar', _getPresetNames(scriptConfig.presets), {
+                key:   'preset',
+                value: '— Select Preset —',
             }],
-            ['button', 'Randomise', null, { key: 'randomise' }],
-            ['button', 'Reset All', null, { key: 'resetAll' }],
-        ]]);
+        ], { flush: true }]);
     } else {
         blocks.push(['Controls', [
             ['button', 'Reset All', null, { key: 'resetAll' }],
         ]]);
     }
 
-    // Parameter groups
+    // Parameter groups — rows stack flush (no gap); only the first contract-aware
+    // component (expression-param or toggle/radio/checkbox) in a group keeps its
+    // top border, so mixed groups stack flush with single dividers (border-system §3).
+    const CONTRACT_AWARE = new Set([
+        'expression-param', 'toggle', 'radio', 'checkbox',
+        'dropdown', 'select', 'color', 'easing-curve', 'line-list',
+    ]);
     for (const group of scriptConfig.parameters) {
         const components = [];
+        let firstContractSeen = false;
         for (const param of group.params) {
-            components.push(paramToComponent(param));
-            // Inject modulator chip after every non-toggle, non-button param
-            if (_isModulatable(param)) {
-                components.push(['modulator-chip', '', {
-                    key:       `mod__${param.key}`,
-                    targetKey: param.key,
-                    modulator: modulatorKeys.get(param.key) ?? null,
-                }]);
+            const def = paramToComponent(param);
+            if (CONTRACT_AWARE.has(def[0])) {
+                const opts = def[def.length - 1];
+                if (opts && typeof opts === 'object' && !Array.isArray(opts)) {
+                    if (firstContractSeen) opts.topBorder = false;
+                    firstContractSeen = true;
+                }
             }
+            components.push(def);
         }
         blocks.push([group.group, components, {
-            defaultCollapsed: group.defaultCollapsed || false
+            defaultCollapsed: group.defaultCollapsed || false,
+            flush: true,
         }]);
     }
 
@@ -93,42 +95,26 @@ function buildParamsTab(scriptConfig) {
 function buildOutputTab(scriptConfig) {
     const blocks = [];
     const canvas = scriptConfig.canvas || {};
-    const modulatorKeys = _buildModulatorKeySet(scriptConfig);
 
-    // SIZE block — width and height
+    // SIZE block — width × height pair
     blocks.push(['Size', [
-        ['number', 'Width', {
-            key:       'canvasWidth',
-            value:     canvas.width  || 800,
+        ['canvas-size-pair', {
+            width:     canvas.width  || 800,
+            height:    canvas.height || 800,
+            widthKey:  'canvasWidth',
+            heightKey: 'canvasHeight',
             min:       100,
             max:       4096,
             step:      1,
             precision: 0,
         }],
-        ['number', 'Height', {
-            key:       'canvasHeight',
-            value:     canvas.height || 800,
-            min:       100,
-            max:       4096,
-            step:      1,
-            precision: 0,
-        }],
-    ]]);
+    ], { flush: true }]);
 
     // PALETTE block — palette-row per colourway layer
     if (Array.isArray(canvas.colourway) && canvas.colourway.length > 0) {
-        const paletteComponents = [];
-        for (const layer of canvas.colourway) {
-            const layerModKey = `colourway__${layer.id}`;
-            const layerMod    = modulatorKeys.get(layerModKey) ?? null;
-            paletteComponents.push(['palette-row', layer.label || layer.id, {
-                key:          `palette__${layer.id}`,
-                layer:        { ...layer },
-                hasModulator: layerMod !== null,
-                modEnabled:   layerMod?.enabled ?? false,
-            }]);
-        }
-        blocks.push(['Palette', paletteComponents]);
+        blocks.push(['Palette', [
+            ['palette-table', canvas.colourway.map(layer => ({ ...layer }))],
+        ], { flush: true }]);
     } else {
         // Legacy: single background colour dropdown
         const VGA_PALETTE = [
@@ -149,20 +135,14 @@ function buildOutputTab(scriptConfig) {
     if (Array.isArray(scriptConfig.output?.post) && scriptConfig.output.post.length > 0) {
         const postComponents = [];
         for (const effect of scriptConfig.output.post) {
-            postComponents.push(['toggle', _capitalise(effect.type), ['on', 'off'], {
-                key:            `post__${effect.type}`,
-                selectedValues: [effect.enabled ? 'on' : 'off'],
-            }]);
-            if (typeof effect.strength === 'number') {
-                postComponents.push(['slider', 'Strength', 0, 1, 0.01, {
-                    key:         `post__${effect.type}__strength`,
-                    value:       effect.strength,
-                    withNumber:  true,
-                    precision:   2,
-                }]);
-            }
+            const postOpts = {
+                label:   _capitalise(effect.type),
+                enabled: effect.enabled,
+            };
+            if (typeof effect.strength === 'number') postOpts.strength = effect.strength;
+            postComponents.push(['post-effect-row', effect.type, postOpts]);
         }
-        blocks.push(['Post', postComponents, { defaultCollapsed: true }]);
+        blocks.push(['Post', postComponents, { defaultCollapsed: true, flush: true }]);
     }
 
     return blocks;
@@ -178,37 +158,12 @@ function buildOutputTab(scriptConfig) {
 export function buildTransportConfig(scriptConfig) {
     const anim = scriptConfig.animation;
     return {
-        defaultSpeed: anim?.defaultSpeed ?? 1,
-        showTimeline: anim?.sequencer    === true,
+        defaultFps:   anim?.defaultFps ?? 60,
+        showTimeline: anim?.sequencer  === true,
     };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Build a Map from param key → ModulatorDescriptor for quick lookup.
- * @param {import('./script-types.js').ScriptConfig} scriptConfig
- * @returns {Map<string, Object>}
- */
-function _buildModulatorKeySet(scriptConfig) {
-    const map = new Map();
-    const modulators = scriptConfig.animation?.modulators;
-    if (!Array.isArray(modulators)) return map;
-    for (const mod of modulators) {
-        map.set(mod.targetKey, mod);
-    }
-    return map;
-}
-
-/**
- * Determine whether a parameter should receive a modulator chip.
- * Only slider/number/color params can be modulated.
- * @param {import('./script-types.js').ParameterDef} param
- * @returns {boolean}
- */
-function _isModulatable(param) {
-    return ['slider', 'number', 'color'].includes(param.type);
-}
 
 /**
  * Convert a ParameterDef to a ToolBase component array.
@@ -218,21 +173,21 @@ function _isModulatable(param) {
 function paramToComponent(param) {
     switch (param.type) {
         case 'slider':
-            return ['slider', param.label, param.min, param.max, param.step, {
-                key:        param.key,
-                value:      param.default,
-                withNumber: true,
-                precision:  param.precision
+            return ['expression-param', param.label, param.min, param.max, param.step, {
+                key:         param.key,
+                value:       param.default,
+                precision:   param.precision,
+                description: param.description ?? '',
+                display:     'both',
             }];
 
         case 'number':
-            return ['number', param.label, {
-                key:       param.key,
-                value:     param.default,
-                min:       param.min,
-                max:       param.max,
-                step:      param.step,
-                precision: param.precision
+            return ['expression-param', param.label, param.min ?? 0, param.max ?? 100, param.step ?? 1, {
+                key:         param.key,
+                value:       param.default,
+                precision:   param.precision,
+                description: param.description ?? '',
+                display:     'field',
             }];
 
         case 'toggle':
@@ -264,6 +219,17 @@ function paramToComponent(param) {
             return ['easing-curve', param.label, {
                 key:   param.key,
                 value: param.default ?? 'ease-in-out'
+            }];
+
+        case 'text':
+        case 'textarea':
+        case 'lines':
+            return ['line-list', param.label, {
+                key:         param.key,
+                value:       param.default ?? '',
+                maxLines:    param.maxLines ?? (param.type === 'text' ? 1 : 8),
+                minLines:    param.minLines ?? 1,
+                placeholder: param.placeholder ?? '',
             }];
 
         default:

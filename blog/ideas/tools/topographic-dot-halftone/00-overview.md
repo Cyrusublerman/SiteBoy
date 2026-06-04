@@ -1,4 +1,6 @@
 # Topographic Dot Halftone — Overview
+**Status:** SPEC | **Cluster:** halftone-stipple
+
 
 ## Quick Reference
 
@@ -20,3 +22,24 @@
 - `HalftonePatterns.extractNormalMap` — normal sampling
 - `HalftonePatterns.extractDepthMap` — depth sampling
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Topographic Dot Halftone (legacy)](../topographic-halftone-legacy.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Smart Halftone System](../smart-halftone-system/00-overview.md)
+- [ASCII Art Generator](../ascii-art-generator/00-overview.md)
+- [Stipple → Single-Line Path](../../art/generative/stipple-single-line-path.md)
+- [Complex Line Shading](../complex-line-shading/00-overview.md)
+- [Stipple Node Spec](../image-editor/Nodes.md)
+- [Cloth Shrink Halftone](../cloth-shrink-halftone/Matt's Webcorner - Cloth.md)

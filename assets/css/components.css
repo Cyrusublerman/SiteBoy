@@ -1403,6 +1403,76 @@ mjx-container mjx-assistive-mml * {
     border-color: var(--c-accent) !important;
 }
 
+/* Slider — standalone monochrome range primitive (components/input/Slider.js).
+   The input element carries the box (background + per-edge border vars set by
+   the component); the runnable-track is transparent and the thumb fills the
+   track interior exactly via --slider-thumb-h. Sizing is F-derived; colours are
+   UI tokens only; no radius/shadow. Per-edge borders avoid double borders when
+   nested in an already-bordered container. */
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: var(--slider-track-h, calc(var(--f) * 2));
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    background: var(--c-bg);
+    border-top: var(--slider-bd-top, 1px solid var(--c-border));
+    border-right: var(--slider-bd-right, 1px solid var(--c-border));
+    border-bottom: var(--slider-bd-bottom, 1px solid var(--c-border));
+    border-left: var(--slider-bd-left, 1px solid var(--c-border));
+    cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+    border: none;
+}
+
+.slider::-moz-range-track {
+    height: 100%;
+    background: transparent;
+    border: none;
+    box-sizing: border-box;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--slider-thumb-w, calc(var(--f) * 0.5));
+    height: var(--slider-thumb-h, calc(var(--slider-track-h, calc(var(--f) * 2)) - 2px));
+    margin-top: 0;
+    background: var(--c-text);
+    border: none;
+    border-radius: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: var(--slider-thumb-w, calc(var(--f) * 0.5));
+    height: var(--slider-thumb-h, calc(var(--slider-track-h, calc(var(--f) * 2)) - 2px));
+    background: var(--c-text);
+    border: none;
+    border-radius: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.slider:focus {
+    outline: none;
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+    background: var(--c-accent);
+}
+
+.slider:focus-visible::-moz-range-thumb {
+    background: var(--c-accent);
+}
+
 /* P5.js slider styling */
 .p5-canvas-container input[type="range"] {
     -webkit-appearance: none !important;

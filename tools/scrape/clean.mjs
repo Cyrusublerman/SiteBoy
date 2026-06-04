@@ -5,30 +5,34 @@
  *   Stage 2: @mozilla/readability → cache/<hash>/readable.html
  *   Stage 3: turndown → cache/<hash>/clean.md
  *
- * Quality gate: logs a warning if clean.md < 200 chars after stripping.
- *
- * Idempotent: skips entries that already have clean.md unless --force flag.
+ * Post-process: strip image markdown, normalise whitespace.
+ * Body-length gate: clean.md < 1000 chars → Tier-3 manual-paste queue.
+ * Updates meta.json: cleaned_at, clean_length, tier_promoted.
  *
  * Usage:
- *   node tools/scrape/clean.mjs [--force]
+ *   node tools/scrape/clean.mjs [--force] [--hash=<12-char>]
  */
 
-import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import TurndownService from 'turndown';
+import { appendQueueEntry, queueIdsSet } from './queue-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = resolve(__dirname, 'cache');
+const SOURCES_JSON = resolve(__dirname, 'sources.json');
 
-const CLEAN_MIN_CHARS = 200;
+const CLEAN_WARN_CHARS = 200;
+const CLEAN_TIER3_CHARS = 1000;
+
 const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
-
-// ── Turndown configuration ────────────────────────────────────────────────────
+const hashArg = args.find(a => a.startsWith('--hash='));
+const SINGLE_HASH = hashArg ? hashArg.split('=')[1] : null;
 
 const td = new TurndownService({
   headingStyle: 'atx',
@@ -36,7 +40,6 @@ const td = new TurndownService({
   codeBlockStyle: 'fenced',
 });
 
-// Preserve tables (useful for design systems that use tabular rule layouts).
 td.addRule('keep-tables', {
   filter: ['table'],
   replacement(_content, node) {
@@ -44,12 +47,29 @@ td.addRule('keep-tables', {
   },
 });
 
-// Remove script/style/nav/footer/header/aside nodes entirely.
-td.remove(['script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript']);
+td.remove(['script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript', 'img']);
 
-// ── Process one cache entry ───────────────────────────────────────────────────
+function postProcessMarkdown(md) {
+  return md
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/<img[^>]*>/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
 
-async function processEntry(hash) {
+async function loadSourceIndexByUrl() {
+  const map = new Map();
+  try {
+    const sources = JSON.parse(await readFile(SOURCES_JSON, 'utf8'));
+    sources.forEach((s, i) => map.set(s.url, i));
+  } catch {
+    /* */
+  }
+  return map;
+}
+
+async function processEntry(hash, sourceIndexByUrl, queuedIds) {
   const dir = resolve(CACHE_DIR, hash);
   const rawPath = resolve(dir, 'raw.html');
   const readablePath = resolve(dir, 'readable.html');
@@ -58,60 +78,92 @@ async function processEntry(hash) {
 
   if (!existsSync(rawPath)) return { hash, outcome: 'skip/no-raw' };
 
-  // Read meta to get the source URL (used by Readability for relative URLs).
   let meta = {};
   try {
     meta = JSON.parse(await readFile(metaPath, 'utf8'));
-  } catch { /* non-fatal */ }
+  } catch {
+    /* non-fatal */
+  }
 
   if (!FORCE && existsSync(cleanPath)) {
     return { hash, outcome: 'cached' };
   }
 
-  // Stage 2: Readability
   const rawHtml = await readFile(rawPath, 'utf8');
   const dom = new JSDOM(rawHtml, { url: meta.url ?? 'https://example.com' });
   const reader = new Readability(dom.window.document);
   const article = reader.parse();
 
   let readableHtml;
-  if (article && article.content) {
+  if (article?.content) {
     readableHtml = article.content;
   } else {
-    // Fallback: use full body if Readability fails to extract article.
     readableHtml = dom.window.document.body?.innerHTML ?? rawHtml;
   }
 
   await writeFile(readablePath, readableHtml, 'utf8');
 
-  // Stage 3: turndown → markdown
-  let markdown = td.turndown(readableHtml);
-
-  // Collapse excessive blank lines (>2 consecutive).
-  markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
-
+  let markdown = postProcessMarkdown(td.turndown(readableHtml));
   await writeFile(cleanPath, markdown, 'utf8');
 
   const charCount = markdown.length;
-  if (charCount < CLEAN_MIN_CHARS) {
-    process.stdout.write(`  [warn/thin] ${hash} — only ${charCount} chars after clean (${meta.url ?? 'unknown'})\n`);
-    return { hash, outcome: 'warn-thin', chars: charCount };
+  const cleaned_at = new Date().toISOString();
+  let tier_promoted = false;
+
+  if (charCount < CLEAN_TIER3_CHARS && meta.url && !queuedIds.has(hash)) {
+    const idx = sourceIndexByUrl.get(meta.url) ?? -1;
+    appendQueueEntry({
+      id: hash,
+      url: meta.url,
+      status: 'pending',
+      reason: 'empty',
+      detected_at: cleaned_at,
+      source_index: String(idx),
+    });
+    queuedIds.add(hash);
+    tier_promoted = true;
+    process.stdout.write(`  [tier3/thin] ${hash} — ${charCount} chars (${meta.url})\n`);
+    return { hash, outcome: 'tier3-thin', chars: charCount };
   }
 
-  process.stdout.write(`  [ok] ${hash} — ${charCount} chars (${meta.url ?? 'unknown'})\n`);
-  return { hash, outcome: 'ok', chars: charCount };
-}
+  if (charCount < CLEAN_WARN_CHARS) {
+    process.stdout.write(`  [warn/thin] ${hash} — ${charCount} chars (${meta.url ?? 'unknown'})\n`);
+  } else {
+    process.stdout.write(`  [ok] ${hash} — ${charCount} chars (${meta.url ?? 'unknown'})\n`);
+  }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+  await writeFile(
+    metaPath,
+    JSON.stringify(
+      {
+        ...meta,
+        cleaned_at,
+        clean_length: charCount,
+        tier_promoted,
+      },
+      null,
+      2,
+    ),
+    'utf8',
+  );
+
+  return { hash, outcome: charCount < CLEAN_WARN_CHARS ? 'warn-thin' : 'ok', chars: charCount };
+}
 
 async function main() {
   let entries;
-  try {
-    const items = await readdir(CACHE_DIR, { withFileTypes: true });
-    entries = items.filter(d => d.isDirectory()).map(d => d.name);
-  } catch {
-    process.stdout.write('No cache directory found. Run npm run scrape:fetch first.\n');
-    process.exit(0);
+  if (SINGLE_HASH) {
+    entries = [SINGLE_HASH];
+  } else {
+    try {
+      const items = await readdir(CACHE_DIR, { withFileTypes: true });
+      entries = items
+        .filter(d => d.isDirectory() && !d.name.startsWith('_'))
+        .map(d => d.name);
+    } catch {
+      process.stdout.write('No cache directory found. Run npm run scrape:fetch first.\n');
+      process.exit(0);
+    }
   }
 
   if (entries.length === 0) {
@@ -119,12 +171,14 @@ async function main() {
     process.exit(0);
   }
 
+  const sourceIndexByUrl = await loadSourceIndexByUrl();
+  const queuedIds = queueIdsSet();
+
   process.stdout.write(`Cleaning ${entries.length} cached entries (force=${FORCE})\n\n`);
 
   const results = [];
   for (const hash of entries) {
-    const result = await processEntry(hash);
-    results.push(result);
+    results.push(await processEntry(hash, sourceIndexByUrl, queuedIds));
   }
 
   const summary = results.reduce((acc, r) => {
@@ -135,14 +189,6 @@ async function main() {
   process.stdout.write('\n── Summary ──\n');
   for (const [k, v] of Object.entries(summary)) {
     process.stdout.write(`  ${k}: ${v}\n`);
-  }
-
-  const thin = results.filter(r => r.outcome === 'warn-thin');
-  if (thin.length > 0) {
-    process.stdout.write(`\n${thin.length} thin article(s) flagged for manual review:\n`);
-    for (const r of thin) {
-      process.stdout.write(`  ${r.hash} (${r.chars} chars)\n`);
-    }
   }
 }
 

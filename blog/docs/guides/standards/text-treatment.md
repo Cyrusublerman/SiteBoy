@@ -12,7 +12,7 @@ These apply everywhere. No exceptions.
 
 | Property | Value | Notes |
 | --- | --- | --- |
-| Font family | `'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace` | Matches styles.css global declaration |
+| Font family | `'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace` | Matches `base.css` global declaration |
 | Authorised font sizes | `F × 0.75` (`10.5px` at `F=14`) and `F` (`14px`) only | No other multipliers — design-law §13.7 |
 | Interactive row height | `F × 2` (`28px` at `F=14`) | All buttons, toolbar cells, dropdown items, tabs, collapsible headers |
 | Line-height (controls) | `F × 2` (matches row height) | Vertically centres text without flex |

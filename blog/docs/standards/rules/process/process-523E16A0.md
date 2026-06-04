@@ -1,0 +1,42 @@
+<!-- generated: do not edit -->
+
+---
+id: process-523E16A0
+schema_version: 1.0.0
+category: process
+modality: MUST
+statement: Keep memory footprint under five hundred megabytes during transformation.
+rationale: Memory cap prevents Power Query from exhausting client resources on large tables.
+scope: 
+  - algorithm
+applies_to: []
+excludes: []
+decidable: judgment
+confidence: 0.3
+consensus: 1
+priority: 550
+movements: []
+medium: []
+conflicts_with: []
+supersedes: []
+descriptive_origin: false
+suppressed_by: null
+tags: []
+detector:
+  kind: none
+---
+
+# process-523E16A0
+
+**MUST:** Keep memory footprint under five hundred megabytes during transformation.
+
+## Rationale
+
+Memory cap prevents Power Query from exhausting client resources on large tables.
+
+## Sources
+
+- **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
+  - weight: 0.6
+  - sourced: local
+  > Memory footprint under 500MB during transformation

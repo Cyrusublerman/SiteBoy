@@ -17,14 +17,27 @@ let _urlWeights = null;
 export async function loadUrlWeights() {
   if (_urlWeights) return _urlWeights;
   const map = new Map();
+
+  // Web sources
   try {
     const sources = JSON.parse(await readFile(SOURCES_JSON, 'utf8'));
     for (const s of sources) {
       map.set(s.url, WEIGHT_BY_CLASS[s.authority_class] ?? 0.5);
     }
-  } catch {
-    /* optional */
-  }
+  } catch { /* optional */ }
+
+  // Local sources — keyed by file:// URL written into meta.json
+  const localPath = resolve(dirname(SOURCES_JSON), 'local-sources.json');
+  try {
+    const { pathToFileURL } = await import('node:url');
+    const localSources = JSON.parse(await readFile(localPath, 'utf8'));
+    for (const s of localSources) {
+      const absPath = resolve(dirname(dirname(dirname(SOURCES_JSON))), s.path);
+      const fileUrl = pathToFileURL(absPath).href;
+      map.set(fileUrl, s.weight ?? WEIGHT_BY_CLASS[s.authority_class] ?? 0.5);
+    }
+  } catch { /* optional */ }
+
   _urlWeights = map;
   return map;
 }

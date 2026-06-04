@@ -14,6 +14,7 @@ Implementation guides (apply this law to concrete situations):
 - `blog/docs/guides/standards/semiotics.md` — every symbol, glyph, and DOM structure
 - `blog/docs/guides/standards/text-treatment.md` — every text context with case, size, alignment, padding
 - `blog/docs/guides/standards/component-patterns.md` — component selection, space division, build recipes, duplication prevention
+- `blog/docs/guides/standards/composite-components.md` — building components from subcomponents bound into one partition (shared boundaries, no gaps, stack-aware borders)
 
 ---
 
@@ -144,7 +145,7 @@ If changing `F` breaks proportion, alignment, or rhythm, the affected component 
 
 Canonical font: `'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace`.
 
-This matches the global declaration in `styles.css`. No other typeface is authorised. The previous reference to Space Mono in this section was incorrect and is superseded.
+This matches the global declaration in `base.css`. No other typeface is authorised. The previous reference to Space Mono in this section was incorrect and is superseded.
 
 ### 5.2 Case Roles
 
@@ -261,6 +262,8 @@ Prohibited unless explicitly authorised:
 - local one-off spacing conventions
 - controls overlaid on a PCS when they can exist as partitions around it
 - tool-specific aesthetic rules that override site law
+
+**Exception — toolbar-anchored dropdown panels:** Export menus and info panels attached to the toolbar bottom edge are permitted when they use `var(--c-border)` shared boundaries, dismiss on outside click, do not permanently obscure the PCS, and do not introduce independent scroll contexts that compete with the sidebar. Applies to `GeneratorToolbar` and `GlyphBuilderToolbar`.
 
 ---
 

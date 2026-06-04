@@ -72,6 +72,10 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true,
       port: 3000,
+      // Avoid disk/memory reuse of the shell + module graph in the same tab (reload appearing “stuck” until a new tab).
+      headers: {
+        'Cache-Control': 'no-store'
+      },
       hmr: {
         overlay: true // Error overlay for better debugging
       },

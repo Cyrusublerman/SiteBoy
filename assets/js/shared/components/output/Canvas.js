@@ -33,6 +33,9 @@
 import { BaseComponent } from '../../foundation.js';
 import { AnimationLoop } from '../../../core/animation-foundation.js';
 
+/** Zoom/pan and some interaction paths call preventDefault on pointer events. */
+const POINTER_NON_PASSIVE = { passive: false };
+
 export class Canvas extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'canvas' }, deps);
@@ -55,6 +58,8 @@ export class Canvas extends BaseComponent {
         this.interactive = options.interactive ?? false;
         this.enableZoom = options.enableZoom ?? false;
         this.enablePan = options.enablePan ?? false;
+        /** Arrow keys pan viewport when hovered (disable when tool owns ←/→). */
+        this.enableArrowPan = options.enableArrowPan ?? true;
         this.displayMode = options.displayMode ?? 'auto';
         this.enableHUD = options.enableHUD ?? (options.hud?.length > 0);
 
@@ -155,9 +160,9 @@ export class Canvas extends BaseComponent {
             this.ctx = this.canvasEl.getContext('webgl') || this.canvasEl.getContext('experimental-webgl');
         } else {
             this.ctx = this.canvasEl.getContext('2d');
-            // Scale context so drawing operations use logical coordinates
+            // Logical drawing space: buffer is physical px, context scaled by DPR
             if (this.dpr !== 1) {
-                this.ctx.scale(this.dpr, this.dpr);
+                this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
             }
         }
 
@@ -168,8 +173,9 @@ export class Canvas extends BaseComponent {
             this._setupInteraction();
         }
 
-        if (this.enableZoom || this.enablePan) {
-            this._setupZoomPan();
+        // Handlers always mounted; enablePan / enableZoom gate behaviour (supports runtime toggles).
+        this._setupZoomPan();
+        if (this.enableZoom) {
             this._setupZoomIndicator();
         }
 
@@ -187,17 +193,28 @@ export class Canvas extends BaseComponent {
         this._lastViewportWidth = 0;
         this._lastViewportHeight = 0;
         this._viewportResizeObserver = new ResizeObserver(() => {
-            const rect = this.viewportEl.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                // Only re-apply if viewport size actually changed
-                if (rect.width !== this._lastViewportWidth || rect.height !== this._lastViewportHeight) {
-                    this._lastViewportWidth = rect.width;
-                    this._lastViewportHeight = rect.height;
+            const w = this.viewportEl.clientWidth | 0;
+            const h = this.viewportEl.clientHeight | 0;
+            if (w > 0 && h > 0) {
+                if (w !== this._lastViewportWidth || h !== this._lastViewportHeight) {
+                    this._lastViewportWidth = w;
+                    this._lastViewportHeight = h;
                     this._applyDisplayMode();
                 }
             }
         });
         this._viewportResizeObserver.observe(this.element);
+
+        // ResizeObserver does not run on `devicePixelRatio` changes alone; window
+        // `resize` does (e.g. moving the tab between displays). Keep backing store in sync.
+        this._boundHandlers.windowResizeDpr = () => {
+            if (this.isDestroyed || !this.enableDPR || !this.canvasEl) return;
+            const nextDpr = window.devicePixelRatio || 1;
+            if (nextDpr !== this.dpr && this.width > 0 && this.height > 0) {
+                this.resize(this.width, this.height, { resetTransform: false });
+            }
+        };
+        window.addEventListener('resize', this._boundHandlers.windowResizeDpr);
 
         // Belt-and-suspenders: double-rAF ensures layout has settled even when
         // the ResizeObserver's first callback fires before parent heights resolve.
@@ -239,14 +256,20 @@ export class Canvas extends BaseComponent {
             this._logicalHeight = this.height;
         }
 
+        const nextDpr = this.enableDPR ? (window.devicePixelRatio || 1) : 1;
+        this.dpr = nextDpr;
+
         if (this.canvasEl) {
             this.canvasEl.width = this.width * this.dpr;
             this.canvasEl.height = this.height * this.dpr;
             this.canvasEl.style.width = `${this.width}px`;
             this.canvasEl.style.height = `${this.height}px`;
 
-            if (this.contextType === '2d' && this.ctx && this.dpr !== 1) {
-                this.ctx.scale(this.dpr, this.dpr);
+            if (this.contextType === '2d' && this.ctx) {
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                if (this.dpr !== 1) {
+                    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+                }
             }
         }
 
@@ -275,11 +298,11 @@ export class Canvas extends BaseComponent {
         const canvasWidth = this.width;
         const canvasHeight = this.height;
 
-        const viewportRect = this.viewportEl.getBoundingClientRect();
+        // Integer layout box avoids sub-pixel fit scale blur (getBoundingClientRect is fractional).
+        const viewportWidth = Math.max(1, this.viewportEl.clientWidth | 0);
+        const viewportHeight = Math.max(1, this.viewportEl.clientHeight | 0);
         // Bail out if viewport has no dimensions yet — ResizeObserver will retry
-        if (viewportRect.width === 0 || viewportRect.height === 0) return;
-        const viewportWidth = viewportRect.width;
-        const viewportHeight = viewportRect.height;
+        if (viewportWidth === 0 || viewportHeight === 0) return;
 
         let scale = 1;
         let x = 0;
@@ -309,6 +332,17 @@ export class Canvas extends BaseComponent {
                 x = (viewportWidth - canvasWidth) / 2;
                 y = (viewportHeight - canvasHeight) / 2;
                 break;
+        }
+
+        // Pixel-aligned display: near-unity scale from integer viewport/buffer → force 1, integer translate
+        if (Math.abs(scale - 1) <= 0.002) {
+            scale = 1;
+            x = Math.round(x);
+            y = Math.round(y);
+        } else {
+            x = Math.round(x * 1000) / 1000;
+            y = Math.round(y * 1000) / 1000;
+            scale = Math.round(scale * 1000) / 1000;
         }
 
         this.transform.x = x;
@@ -342,10 +376,10 @@ export class Canvas extends BaseComponent {
         this._boundHandlers.keydown        = (e) => this._handleKeydown(e);
 
         target.addEventListener('wheel',         this._boundHandlers.wheelZoom, { passive: false });
-        target.addEventListener('pointerdown',   this._boundHandlers.pointerdown);
-        target.addEventListener('pointermove',   this._boundHandlers.pointermove);
-        target.addEventListener('pointerup',     this._boundHandlers.pointerup);
-        target.addEventListener('pointercancel', this._boundHandlers.pointercancel);
+        target.addEventListener('pointerdown',   this._boundHandlers.pointerdown, POINTER_NON_PASSIVE);
+        target.addEventListener('pointermove',   this._boundHandlers.pointermove, POINTER_NON_PASSIVE);
+        target.addEventListener('pointerup',     this._boundHandlers.pointerup, POINTER_NON_PASSIVE);
+        target.addEventListener('pointercancel', this._boundHandlers.pointercancel, POINTER_NON_PASSIVE);
         document.addEventListener('keydown',     this._boundHandlers.keydown);
 
         // Suppress context menu so right-drag doesn't trigger it
@@ -486,20 +520,15 @@ export class Canvas extends BaseComponent {
                 this.resetViewport();
                 break;
             case 'ArrowLeft':
-                e.preventDefault();
-                this.pan(50, 0);
-                break;
             case 'ArrowRight':
-                e.preventDefault();
-                this.pan(-50, 0);
-                break;
             case 'ArrowUp':
-                e.preventDefault();
-                this.pan(0, 50);
-                break;
             case 'ArrowDown':
+                if (!this.enableArrowPan) return;
                 e.preventDefault();
-                this.pan(0, -50);
+                if (e.key === 'ArrowLeft') this.pan(50, 0);
+                else if (e.key === 'ArrowRight') this.pan(-50, 0);
+                else if (e.key === 'ArrowUp') this.pan(0, 50);
+                else this.pan(0, -50);
                 break;
             default:
                 return;
@@ -707,6 +736,32 @@ export class Canvas extends BaseComponent {
         this._applyViewportTransform();
     }
 
+    /**
+     * Enable or disable drag-to-pan on the viewport (e.g. glyph capture tools default off).
+     * @param {boolean} enabled
+     */
+    setPanEnabled(enabled) {
+        this.enablePan = !!enabled;
+        const target = this.viewportEl || this.canvasEl;
+        if (!target) return;
+        if (!this.enablePan && this.transform.isDragging) {
+            this.transform.isDragging = false;
+            this._activePointers.clear();
+        }
+        target.style.cursor = this.enablePan ? 'grab' : 'default';
+    }
+
+    /**
+     * Enable or disable wheel / keyboard zoom affordances.
+     * @param {boolean} enabled
+     */
+    setZoomEnabled(enabled) {
+        this.enableZoom = !!enabled;
+        if (this.enableZoom && this.viewportEl && !this._zoomIndicatorEl) {
+            this._setupZoomIndicator();
+        }
+    }
+
     setTransform(x, y, scale) {
         this._cancelTransition();
         this.transform.x = x;
@@ -747,10 +802,10 @@ export class Canvas extends BaseComponent {
         this._boundHandlers.wheel                   = (e) => this._handleWheel(e);
 
         this.canvasEl.addEventListener('click',         this._boundHandlers.click);
-        this.canvasEl.addEventListener('pointerdown',   this._boundHandlers.interactionPointerdown);
-        this.canvasEl.addEventListener('pointermove',   this._boundHandlers.interactionPointermove);
-        this.canvasEl.addEventListener('pointerup',     this._boundHandlers.interactionPointerup);
-        this.canvasEl.addEventListener('pointercancel', this._boundHandlers.interactionPointerup);
+        this.canvasEl.addEventListener('pointerdown',   this._boundHandlers.interactionPointerdown, POINTER_NON_PASSIVE);
+        this.canvasEl.addEventListener('pointermove',   this._boundHandlers.interactionPointermove, POINTER_NON_PASSIVE);
+        this.canvasEl.addEventListener('pointerup',     this._boundHandlers.interactionPointerup, POINTER_NON_PASSIVE);
+        this.canvasEl.addEventListener('pointercancel', this._boundHandlers.interactionPointerup, POINTER_NON_PASSIVE);
 
         if (this.onWheel) {
             this.canvasEl.addEventListener('wheel', this._boundHandlers.wheel, { passive: false });
@@ -974,6 +1029,10 @@ export class Canvas extends BaseComponent {
         // Remove the only document-level listener
         if (this._boundHandlers.keydown) {
             document.removeEventListener('keydown', this._boundHandlers.keydown);
+        }
+        if (this._boundHandlers.windowResizeDpr) {
+            window.removeEventListener('resize', this._boundHandlers.windowResizeDpr);
+            delete this._boundHandlers.windowResizeDpr;
         }
 
         this._boundHandlers = {};

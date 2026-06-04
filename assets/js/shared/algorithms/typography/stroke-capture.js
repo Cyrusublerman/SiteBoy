@@ -50,20 +50,178 @@ export function smoothStroke(rawPoints, iterations = 2) {
     return chaikinSmooth(pts, iterations, false); // open curve
 }
 
+// ─── Capture viewport (shared coordinate frame) ─────────────────────────────
+
+/**
+ * Ascender/descender band in canvas pixels at a trace size.
+ *
+ * @param {{ unitsPerEm?:number, ascender?:number, descender?:number }} metrics
+ * @param {number} fontSize
+ */
+export function metricBandPx(metrics, fontSize) {
+    const upm  = metrics?.unitsPerEm || 1000;
+    const asc  = Number.isFinite(metrics?.ascender) ? metrics.ascender : upm * 0.8;
+    const desc = Number.isFinite(metrics?.descender) ? metrics.descender : -upm * 0.2;
+    const ppu  = fontSize / upm;
+    const ascPx = asc * ppu;
+    const descPx = desc * ppu;
+    return {
+        upm,
+        ascPx,
+        descPx,
+        captureHeight: ascPx - descPx,
+        ppu,
+    };
+}
+
+/** @param {CaptureGeometry|null|undefined} g */
+export function isValidCaptureGeometry(g) {
+    return Boolean(g && g.canvasAdvanceWidth > 0 && g.captureHeight > 0);
+}
+
+/**
+ * Build capture geometry from a live canvas row (capture save / replay).
+ *
+ * @param {{
+ *   originX     : number,
+ *   baselineY   : number,
+ *   advanceWidth: number,
+ *   fontSize    : number,
+ * }} row
+ * @param {{ unitsPerEm?:number, ascender?:number, descender?:number }} metrics
+ * @returns {CaptureGeometry}
+ */
+export function captureGeometryFromCanvasRow(row, metrics, fontSize) {
+    const band = metricBandPx(metrics, fontSize);
+    const baselineY = row.baselineY;
+    const advanceWidth = Math.max(1, row.advanceWidth);
+    return {
+        canvasOriginX:      row.originX,
+        canvasBaselineY:    baselineY,
+        canvasAdvanceWidth: advanceWidth,
+        captureTopY:        baselineY - band.ascPx,
+        captureHeight:      band.captureHeight,
+        ascPx:              band.ascPx,
+        descPx:             band.descPx,
+        fontAdvanceWidth:   band.upm,
+        traceFontSize:      fontSize,
+    };
+}
+
+/**
+ * Local capture viewport: band top-left at (0,0), baseline at ascPx.
+ * Used for atlas cells and geometry backfill when canvas row coords are absent.
+ *
+ * @param {{ advanceWidthPx:number, fontSize:number }} box
+ * @param {{ unitsPerEm?:number, ascender?:number, descender?:number }} metrics
+ * @returns {CaptureGeometry}
+ */
+export function captureGeometryLocal(box, metrics) {
+    const band = metricBandPx(metrics, box.fontSize);
+    return {
+        canvasOriginX:      0,
+        canvasBaselineY:    band.ascPx,
+        canvasAdvanceWidth: Math.max(1, box.advanceWidthPx),
+        captureTopY:        0,
+        captureHeight:      band.captureHeight,
+        ascPx:              band.ascPx,
+        descPx:             band.descPx,
+        fontAdvanceWidth:   band.upm,
+        traceFontSize:      box.fontSize,
+    };
+}
+
+/**
+ * Prompt geometry used at save/normalise time — identical to stored capture box.
+ *
+ * @param {CaptureGeometry} captureGeom
+ * @returns {PromptGeometry}
+ */
+export function promptGeometryFromCapture(captureGeom) {
+    return {
+        canvasOriginX:      captureGeom.canvasOriginX,
+        canvasBaselineY:    captureGeom.canvasBaselineY,
+        canvasAdvanceWidth: captureGeom.canvasAdvanceWidth,
+    };
+}
+
+/**
+ * Text-line placement (preview compose, capture row ghost/active ink).
+ *
+ * @param {number} originX
+ * @param {number} baselineY
+ * @param {number} advanceWidthPx
+ * @returns {PromptGeometry}
+ */
+export function linePromptGeometry(originX, baselineY, advanceWidthPx) {
+    return {
+        canvasOriginX:      originX,
+        canvasBaselineY:    baselineY,
+        canvasAdvanceWidth: Math.max(1, advanceWidthPx),
+    };
+}
+
+/**
+ * Isolated viewport placement (atlas cell): capture band scaled to viewport width.
+ *
+ * @param {CaptureGeometry} captureGeom
+ * @param {number} viewportWidthPx
+ * @returns {PromptGeometry}
+ */
+export function viewportPromptGeometry(captureGeom, viewportWidthPx) {
+    const w = Math.max(1, viewportWidthPx);
+    const s = w / Math.max(1, captureGeom.canvasAdvanceWidth);
+    return {
+        canvasOriginX:      0,
+        canvasBaselineY:    captureGeom.ascPx * s,
+        canvasAdvanceWidth: w,
+    };
+}
+
+/**
+ * Pixel cell size for one capture viewport at a uniform display scale.
+ * Height is derived from width so scale matches vertically (avoids clipping).
+ *
+ * @param {CaptureGeometry} captureGeom
+ * @param {number}          displayScale
+ * @returns {{ w:number, h:number, s:number }}
+ */
+export function captureCellDimensions(captureGeom, displayScale) {
+    const capW = Math.max(1, captureGeom.canvasAdvanceWidth);
+    const capH = Math.max(1, captureGeom.captureHeight);
+    const w    = Math.max(1, Math.floor(capW * displayScale));
+    const s    = w / capW;
+    const h    = Math.max(1, Math.floor(capH * s));
+    return { w, h, s };
+}
+
 // ─── Normalisation ───────────────────────────────────────────────────────────
 
 /**
- * Geometry description of the canvas region that corresponds to one prompt.
+ * Canvas placement for one prompt — maps glyph-space ↔ pixels.
  *
  * @typedef {{
- *   canvasOriginX : number,   // canvas-pixel x of the left boundary for this prompt
- *   canvasBaselineY: number,  // canvas-pixel y of the baseline
- *   canvasAdvanceWidth: number, // canvas-pixel width of the full advance
- *   fontMetrics: {
- *     unitsPerEm: number, ascender: number, xHeight: number,
- *     capHeight: number, baseline: number, descender: number
- *   }
+ *   canvasOriginX      : number,
+ *   canvasBaselineY    : number,
+ *   canvasAdvanceWidth : number,
  * }} PromptGeometry
+ */
+
+/**
+ * Persisted capture viewport (ascender→descender band × advance width).
+ * Single source for save, capture replay, preview compose, and atlas cells.
+ *
+ * @typedef {{
+ *   canvasOriginX      : number,
+ *   canvasBaselineY    : number,
+ *   canvasAdvanceWidth : number,
+ *   captureTopY        : number,
+ *   captureHeight      : number,
+ *   ascPx              : number,
+ *   descPx             : number,
+ *   fontAdvanceWidth   : number,
+ *   traceFontSize?     : number,
+ * }} CaptureGeometry
  */
 
 /**
@@ -118,6 +276,105 @@ function normPt(pt, pg, aw) {
         x: (pt.x - pg.canvasOriginX) * scale,
         y: (pg.canvasBaselineY - pt.y) * scale,
     };
+}
+
+/**
+ * Map one glyph-space point back to canvas pixels (inverse of {@link normPt}).
+ *
+ * @param {{ x:number, y:number }} pt
+ * @param {PromptGeometry}         promptGeometry
+ * @param {number}                 fontAdvanceWidth
+ * @returns {{ x:number, y:number }}
+ */
+export function denormaliseToCanvasSpace(pt, promptGeometry, fontAdvanceWidth) {
+    const scale = promptGeometry.canvasAdvanceWidth / fontAdvanceWidth;
+    return {
+        x: pt.x * scale + promptGeometry.canvasOriginX,
+        y: promptGeometry.canvasBaselineY - pt.y * scale,
+    };
+}
+
+/**
+ * Reproject normalised stroke beziers into canvas space for on-canvas display.
+ *
+ * @param {object[]}       strokes  glyph-space strokes from library storage
+ * @param {PromptGeometry} promptGeometry
+ * @param {number}         fontAdvanceWidth
+ * @returns {object[]}
+ */
+export function denormaliseStrokes(strokes, promptGeometry, fontAdvanceWidth) {
+    const mapPt = (pt) => denormaliseToCanvasSpace(pt, promptGeometry, fontAdvanceWidth);
+    return (strokes || []).map((stroke) => ({
+        ...stroke,
+        beziers: (stroke.beziers || []).map((seg) => ({
+            a0: mapPt(seg.a0),
+            h1: mapPt(seg.h1),
+            h2: mapPt(seg.h2),
+            a1: mapPt(seg.a1),
+        })),
+    }));
+}
+
+/** @alias denormaliseStrokes */
+export function projectStrokes(strokes, promptGeometry, fontAdvanceWidth) {
+    return denormaliseStrokes(strokes, promptGeometry, fontAdvanceWidth);
+}
+
+/**
+ * Axis-aligned bounds of canvas-space stroke beziers.
+ *
+ * @param {object[]} strokes
+ * @param {number}   [lineWidth=0]  include half stroke width as padding
+ * @returns {{ minX:number, minY:number, maxX:number, maxY:number, width:number, height:number }|null}
+ */
+export function canvasStrokeBounds(strokes, lineWidth = 0) {
+    const pad = Math.max(0, lineWidth) * 0.5;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const stroke of strokes || []) {
+        for (const seg of stroke.beziers || []) {
+            for (const pt of [seg.a0, seg.h1, seg.h2, seg.a1]) {
+                if (!pt) continue;
+                if (pt.x < minX) minX = pt.x;
+                if (pt.y < minY) minY = pt.y;
+                if (pt.x > maxX) maxX = pt.x;
+                if (pt.y > maxY) maxY = pt.y;
+            }
+        }
+    }
+
+    if (!isFinite(minX)) return null;
+
+    minX -= pad;
+    minY -= pad;
+    maxX += pad;
+    maxY += pad;
+    return {
+        minX, minY, maxX, maxY,
+        width:  maxX - minX,
+        height: maxY - minY,
+    };
+}
+
+/**
+ * Uniform scale + translation to centre ink bounds inside a viewport.
+ *
+ * @param {{ minX:number, minY:number, maxX:number, maxY:number, width:number, height:number }} bounds
+ * @param {number} viewportW
+ * @param {number} viewportH
+ * @param {number} [fill=0.88]  fraction of viewport to occupy
+ * @returns {{ scale:number, tx:number, ty:number }}
+ */
+export function fitTransformForBounds(bounds, viewportW, viewportH, fill = 0.88) {
+    const bw = Math.max(1e-6, bounds.width);
+    const bh = Math.max(1e-6, bounds.height);
+    const scale = Math.min(viewportW * fill / bw, viewportH * fill / bh);
+    const tx = (viewportW - bounds.width * scale) * 0.5 - bounds.minX * scale;
+    const ty = (viewportH - bounds.height * scale) * 0.5 - bounds.minY * scale;
+    return { scale, tx, ty };
 }
 
 // ─── Metrics ─────────────────────────────────────────────────────────────────

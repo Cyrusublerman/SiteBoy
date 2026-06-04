@@ -8,12 +8,12 @@ Logic + render for ink strokes atop a ToolBase-owned canvas; attaches pointer ha
 |--------|---------|
 | `attach(canvasEl)` | Wire pointer/contextmenu listeners; crosshair cursor. |
 | `detach()` | Reverse `attach`. |
-| `draw(ctx)` | Reference path, overlays, upcoming-queue strip, ink, live stroke (ToolBase `onDraw`). |
+| `draw(ctx)` | Reference path, overlays, upcoming previews, ink, live stroke (ToolBase `onDraw`). |
 | `setSize(w,h)` | Logical buffer size (`_w,_h`; must match backing store for normalisation consistency). |
 | `setPrompt({text,glyphPathD,advance})` | Current reference path + spacing token. |
 | `setFontMetrics(m)` | Em-scale metrics for guide lines. |
 | `setReferenceHeightFraction(v)` | Baseline position as fraction of canvas height (`0.4–1.5`). |
-| `setUpcoming(prompts)` | Horizontal queue overlay; `{id,text}[]`; slide on head change (`AnimationFoundation.AnimationLoop`). |
+| `setUpcoming(items)` | Up to 2 pre-positioned SVG paths `{ id?, pathD }[]` (OpenType layout in host tool). |
 | `setOverlayToggles(...)` | Baseline/x-height/etc. |
 | Ink: `undo` / `redo` / `clearInk` / `getStrokes()` | Stroke stack + export. |
 

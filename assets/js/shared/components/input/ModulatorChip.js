@@ -3,8 +3,8 @@
  *
  * States:
  *   • No modulator declared  → [+ MOD]  (add button)
- *   • Modulator disabled     → [MOD OFF] (grey)
- *   • Modulator enabled      → [MOD: lfo∿]  (active summary, accent text)
+ *   • Modulator disabled     → [MOD OFF]
+ *   • Modulator enabled      → [MOD: lfo∿]
  *
  * Click opens/closes the associated ModulatorPanel (sibling in the DOM managed
  * by parameter-builder.js). The chip does not own the panel; it emits:
@@ -54,7 +54,7 @@ export class ModulatorChip extends BaseComponent {
         this.element.style.cssText = `
             display: inline-flex;
             align-items: center;
-            height: ${F * 1.5}px;
+            height: ${F * 2}px;
             flex-shrink: 0;
             cursor: pointer;
             user-select: none;
@@ -66,17 +66,17 @@ export class ModulatorChip extends BaseComponent {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            height: ${F * 1.5}px;
-            padding: 0 ${F * 0.5}px;
+            height: ${F * 2}px;
+            padding: 0 ${F}px;
             border: 1px solid var(--c-border);
             background: var(--c-bg);
             color: var(--c-text);
             font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: ${F * 0.75}px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             cursor: pointer;
             white-space: nowrap;
+            box-sizing: border-box;
         `;
 
         this._update();
@@ -98,39 +98,34 @@ export class ModulatorChip extends BaseComponent {
 
     _update() {
         if (!this._btn) return;
-        const { F } = this.getF();
         const mod = this.modulator;
+        const inverted = this._panelOpen;
 
         if (!mod) {
             this._btn.textContent = '+ mod';
-            this._btn.style.color  = 'var(--c-border)';
-            this._btn.style.border = `1px solid var(--c-border)`;
-        } else if (!mod.enabled) {
-            const icon = DRIVER_ICONS[mod.driver?.type] ?? '?';
-            this._btn.textContent = `mod ${icon}`;
-            this._btn.style.color  = 'var(--c-text)';
-            this._btn.style.border = `1px solid var(--c-border)`;
         } else {
             const icon = DRIVER_ICONS[mod.driver?.type] ?? '?';
-            this._btn.textContent = `mod ${icon}`;
-            this._btn.style.color  = 'var(--c-accent)';
-            this._btn.style.border = `1px solid var(--c-accent)`;
+            this._btn.textContent = mod.enabled ? `mod ${icon}` : `mod ${icon}`;
         }
 
-        if (this._panelOpen) {
-            this._btn.style.background = 'var(--c-border)';
+        this._btn.style.border = '1px solid var(--c-border)';
+        if (inverted) {
+            this._btn.style.background = 'var(--c-text)';
+            this._btn.style.color = 'var(--c-bg)';
+        } else if (!mod) {
+            this._btn.style.background = 'var(--c-bg)';
+            this._btn.style.color = 'var(--c-border)';
         } else {
             this._btn.style.background = 'var(--c-bg)';
+            this._btn.style.color = 'var(--c-text)';
         }
     }
 
-    /** Update the modulator reference (called by host after state changes). */
     setModulator(modulator) {
         this.modulator = modulator;
         this._update();
     }
 
-    /** Sync panel-open visual state without triggering callbacks. */
     setPanelOpen(open) {
         this._panelOpen = open;
         this._update();

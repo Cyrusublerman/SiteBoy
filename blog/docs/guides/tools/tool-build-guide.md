@@ -476,6 +476,8 @@ sidebar: [
 
 **Always provide explicit `key` in options object.**
 
+> Building a component out of several of these (a toggle + slider + numeric field bound into one bordered box, a label div attached above a control, etc.)? Follow `blog/docs/guides/standards/composite-components.md` — one outer border, no gaps, single-owner `1px` dividers, stack-aware (`topBorder`/`borders`/`embedded`) per-edge control so flush-stacked items never double their borders.
+
 ### Complete Reference
 
 #### Numeric Inputs

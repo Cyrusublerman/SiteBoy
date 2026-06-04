@@ -1,4 +1,6 @@
 # Year Breakdown Possibilities (365 Days)
+**Status:** BRAINSTORM
+
 
 This table shows all integer combinations of Months, Weeks, and Days that result in a remainder (x) of 10 or less.
 

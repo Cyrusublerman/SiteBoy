@@ -1,4 +1,6 @@
 # Complex Line Shading — Documentation Index
+**Status:** SPEC | **Cluster:** halftone-stipple, plotter-paths
+
 
 ## Quick Reference
 
@@ -89,3 +91,26 @@ blog/ideas/reference documentation/processing/
 └── geometry/
 ```
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Complex Line Shading (brainstorm)](../complex-line-shading-brainstorm.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Smart Halftone System](../smart-halftone-system/00-overview.md)
+- [Topographic Dot Halftone](../topographic-dot-halftone/00-overview.md)
+- [ASCII Art Generator](../ascii-art-generator/00-overview.md)
+- [Stipple → Single-Line Path](../../art/generative/stipple-single-line-path.md)
+- [Stipple Node Spec](../image-editor/Nodes.md)
+- [Cloth Shrink Halftone](../cloth-shrink-halftone/Matt's Webcorner - Cloth.md)
+- [Pen Plotter](../../art/generative/pen-plotter.md)
+- [Glyph Rig Deformation](../../art/generative/glyph-rig-deformation.md)

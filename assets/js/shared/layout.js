@@ -699,9 +699,10 @@ export class PageContainer extends BaseComponent {
             this.contentBody.style.left         = `${marginLeft}px`;
             this.contentBody.style.width        = `${frameWidth}px`;
             this.contentBody.style.height       = 'auto';
-            this.contentBody.style.padding      = `calc(var(--f) * 4)`;
-            this.contentBody.style.overflow     = '';
-            this.contentBody.style.overflowY    = 'auto';
+            const isToolViewport = this.contentBody.classList.contains('tool-viewport');
+            this.contentBody.style.padding      = isToolViewport ? '0' : `calc(var(--f) * 4)`;
+            this.contentBody.style.overflow     = isToolViewport ? 'hidden' : '';
+            this.contentBody.style.overflowY    = isToolViewport ? 'hidden' : 'auto';
             this.contentBody.style.display      = '';
             this.contentBody.style.alignItems   = '';
             this.contentBody.style.justifyContent = '';

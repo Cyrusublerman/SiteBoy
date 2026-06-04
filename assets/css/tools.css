@@ -78,10 +78,19 @@
 .tool-canvas-area {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--c-bg);
+    align-items: stretch;
+    justify-content: flex-start;
+    flex: 1;
     min-height: 0;
+    min-width: 0;
+    background: var(--c-bg);
+}
+
+.tool-canvas-area > .canvas-container {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
 }
 
 /* Tool canvas wrapper */
@@ -211,4 +220,245 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+/* =================================================================
+   CURSIVE GLYPH BUILDER
+   ================================================================= */
+
+.control-dimmed {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.control-locked {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.tool-canvas-area.atlas-active {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.tool-canvas-area.atlas-active > .canvas-container {
+    display: none !important;
+}
+
+.glyph-builder-toolbar {
+    display: flex;
+    width: 100%;
+    height: calc(var(--f) * 2);
+    background: var(--c-bg);
+    flex-shrink: 0;
+    box-sizing: border-box;
+    overflow: visible;
+    position: relative;
+}
+
+.glyph-builder-toolbar-actions {
+    display: grid;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    grid-template-rows: 100%;
+    grid-template-columns: repeat(6, 1fr);
+}
+
+.glyph-builder-toolbar-btn {
+    height: calc(var(--f) * 2);
+    padding: 0 var(--f);
+    border: none;
+    min-width: 0;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.glyph-builder-toolbar-btn--active {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.glyph-builder-toolbar-btn--bordered {
+    border-left: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+    width: 100%;
+    height: 100%;
+}
+
+.glyph-builder-toolbar-btn--bordered-first {
+    border-left: none;
+    border-bottom: 1px solid var(--c-border);
+    width: 100%;
+    height: 100%;
+}
+
+.glyph-builder-toolbar-export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    padding: 0 var(--f);
+    border: none;
+    min-width: 0;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    box-sizing: border-box;
+    position: relative;
+    grid-column: span 2;
+    border-left: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.glyph-builder-toolbar-export-btn--active {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.glyph-builder-export-label {
+    flex: 1;
+    text-align: left;
+}
+
+.glyph-builder-export-glyph {
+    flex-shrink: 0;
+}
+
+.glyph-builder-export-panel {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: calc(var(--f) * 16);
+    background: var(--c-bg);
+    border-left: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+    z-index: 200;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - calc(var(--f) * 4));
+    padding: 0;
+    margin: 0;
+}
+
+.glyph-builder-export-panel--open {
+    display: block;
+}
+
+.glyph-builder-export-row-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: calc(var(--f) * 2);
+    padding: 0 var(--f);
+    border: none;
+    border-top: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.glyph-builder-export-row-btn:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.glyph-builder-info-panel {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: calc(var(--f) * 30);
+    max-height: calc(100vh - calc(var(--f) * 4));
+    overflow-y: auto;
+    background: var(--c-bg);
+    border-left: 1px solid var(--c-border);
+    border-right: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+    z-index: 300;
+    box-sizing: border-box;
+}
+
+.glyph-builder-info-panel--open {
+    display: block;
+}
+
+.glyph-builder-info-empty {
+    padding: var(--f);
+    font-family: 'Atkinson Hyperlegible', sans-serif;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+}
+
+.glyph-builder-hidden-input {
+    display: none;
+}
+
+.glyph-atlas-grid {
+    display: none !important;
+}
+
+.tool-canvas-area.atlas-active .glyph-atlas-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    flex: 1;
+    gap: 0;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 0;
+    box-sizing: border-box;
+    background: var(--c-bg);
+}
+
+.glyph-atlas-empty {
+    width: 100%;
+    padding: var(--f);
+    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-border);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.glyph-atlas-cell {
+    flex-shrink: 0;
+    overflow: visible;
+    background: var(--c-bg);
+    box-sizing: border-box;
+    box-shadow: inset -1px -1px 0 0 var(--c-border);
+}
+
+.glyph-atlas-cell-canvas {
+    width: 100%;
+    height: 100%;
+    background: var(--c-bg);
+}
+
+.glyph-atlas-cell-canvas canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }

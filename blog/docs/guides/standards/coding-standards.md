@@ -2,7 +2,7 @@
 
 **Authority:** `design-law.md` (visual law), `ui-interface-overview.md` (layout), `.cursor/rules/rules.mdc` (file ownership).
 
-- **Ownership:** Use SSoT map in `rules.mdc`: BaseComponent/tool UI only in core/shared tools; algorithms only in `assets/js/shared/algorithms/`; styling in `assets/css/styles.css`.
+- **Ownership:** Use SSoT map in `rules.mdc`: BaseComponent/tool UI only in core/shared tools; algorithms only in `assets/js/shared/algorithms/`; styling in modular CSS (`assets/css/index.css` → `base.css`, `components.css`, `layout.css`, `tools.css`, `utilities.css`). Never edit `assets/css/styles.css` (dead legacy).
 - **Animation:** AnimationFoundation only; destroy animators; no RAF/setInterval for animations.
 - **Loading:** AssetLoader for tools/deps/exports; no direct script tags; exports via ToolBase.
 - **DOM:** No document/window DOM ops outside BaseComponent internals; no inline styles; ComponentLibrary only.

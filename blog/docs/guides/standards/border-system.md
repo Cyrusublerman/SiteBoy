@@ -85,6 +85,8 @@ A double border occurs when element N has `border-bottom` and element N+1 has `b
 
 **Diagnosis:** If a 2px line appears between two elements, find which element has the redundant border declaration and remove it.
 
+**Components built from subcomponents:** when a control is assembled from several primitives bound into one bordered box, the composite owns the outer border and each embedded primitive suppresses the edges it does not own. See `composite-components.md` for the per-edge control contract (`borders`/`embedded`/`topBorder`).
+
 ---
 
 ## 7. Collapsible Section Borders
