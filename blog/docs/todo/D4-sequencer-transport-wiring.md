@@ -23,6 +23,8 @@ On a generator with `animation.sequencer === true` and ≥2 saved checkpoints, p
 - [x] `host.stop()` resets the sequencer to time 0.
 - [x] Default segment easing changed `easeInOutCubic` → `linear` (no ease).
 - [x] Strip block gains an `EASE` cell next to the frame-count input; click cycles `EASING_KEYS`.
+- [x] Default checkpoint hold changed `2s` → `0` (no auto-dwell; continuous lerp).
+- [x] `+ HOLD` seeds an explicit editable dwell; hold blocks bind the frame field to `cp.hold` (label `HOLD`).
 
 ## Notes / decisions
 

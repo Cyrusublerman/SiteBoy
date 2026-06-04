@@ -2023,7 +2023,7 @@ export class SequencerV2 extends BaseComponent {
         // Config
         this.fps = options.fps || 60;
         this.loop = options.loop !== false;
-        this.defaultHold = options.defaultHold || 2;
+        this.defaultHold = options.defaultHold ?? 0;
         this.defaultSegmentDuration = options.defaultSegmentDuration || 1.5;
         this.defaultEasing = options.defaultEasing || 'linear';
 
@@ -2985,7 +2985,27 @@ export class SequencerV2 extends BaseComponent {
         // EASE — cycles through easing functions for this tween; click to advance.
         const easeEl = mkCell('calc(var(--f)*4)', '', 'Click to cycle easing');
 
-        if (seg) {
+        if (cp.type === 'hold') {
+            // Manual hold checkpoint: the frame field edits the dwell (cp.hold),
+            // not a tween. No easing applies to a static dwell.
+            tweenEl.textContent = 'HOLD';
+            tweenEl.style.color = 'var(--c-accent)';
+            tweenEl.title = 'Hold — dwell on this state';
+
+            durInput.value = Math.round((cp.hold || 0) * this.fps);
+            durInput.disabled = false;
+            durInput.title = 'Hold duration (frames)';
+            durInput.addEventListener('change', e => {
+                e.stopPropagation();
+                cp.hold = Math.max(0, (parseInt(durInput.value, 10) || 0)) / this.fps;
+                this._updateCurrentTime();
+            });
+            durInput.addEventListener('click', e => e.stopPropagation());
+            durInput.addEventListener('mousedown', e => e.stopPropagation());
+
+            easeEl.textContent = '—';
+            easeEl.style.color = 'var(--c-text)';
+        } else if (seg) {
             const labels = ['PARAM', 'SEQ', 'MIX', 'CUT'];
             const getIdx = (s) => {
                 if (s.strategy === 'cut') return 3;
@@ -3165,6 +3185,9 @@ export class SequencerV2 extends BaseComponent {
         if (!params) return;
         const cp = this._makeCheckpoint(params);
         cp.type = 'hold';
+        // Manual holds carry an explicit, editable dwell (defaultHold is 0, so
+        // seed from the segment default to make the hold immediately functional).
+        cp.hold = this.defaultSegmentDuration;
         if (this.checkpoints.length > 0) {
             const seg = this._makeSegment();
             seg.strategy = 'cut';

@@ -1476,7 +1476,7 @@ export class GenerativeToolHost extends BaseComponent {
         this.sequencerV2 = new SequencerV2({
             fps: this.scriptConfig.animation?.defaultFps || 60,
             loop: true,
-            defaultHold: 2,
+            defaultHold: 0,
             defaultSegmentDuration: 1.5,
             defaultEasing: 'linear',
             onSave: () => JSON.parse(JSON.stringify(this.params)),
