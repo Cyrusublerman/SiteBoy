@@ -500,6 +500,82 @@ export class DiagnosticPreviewToggle extends DistortCtrlBase {
   }
 }
 
+export class PaintPaletteControl extends DistortCtrlBase {
+  constructor(options = {}, deps = {}) {
+    super({ componentType: 'paint-palette-control', ...options }, deps);
+    const raw = options.colours ?? options.paletteColours ?? '["#000000","#ffffff"]';
+    this._colours = typeof raw === 'string' ? (() => {
+      try { return JSON.parse(raw); } catch { return ['#000000', '#ffffff']; }
+    })() : [...raw];
+    if (!this._colours.length) this._colours = ['#000000', '#ffffff'];
+    this._onChange = options.onChange ?? (() => {});
+    this._instances = [];
+    this._listEl = null;
+  }
+
+  _emit() {
+    this._onChange({ paletteColours: JSON.stringify(this._colours) });
+  }
+
+  _rebuildList(F) {
+    if (!this._listEl) return;
+    this._instances.forEach(i => i.destroy?.());
+    this._instances = [];
+    while (this._listEl.firstChild) this._listEl.removeChild(this._listEl.firstChild);
+
+    this._colours.forEach((hex, idx) => {
+      const row = this.createElement('div', 'paint-palette-row');
+      row.style.cssText = `display:flex;align-items:center;gap:${F / 2}px;min-height:${F * 2}px;`;
+      const ci = new ColorInput({
+        label: `C${idx + 1}`,
+        value: hex,
+        showHex: true,
+        onChange: v => { this._colours[idx] = v; this._emit(); },
+      }, this.deps);
+      this._instances.push(ci);
+      row.appendChild(ci.render());
+      if (this._colours.length > 2) {
+        const rm = this.createElement('button', '', '−');
+        rm.type = 'button';
+        rm.style.cssText = `min-width:${F * 2}px;min-height:${F * 2}px;border:1px solid var(--c-border);background:var(--c-bg);color:var(--c-text);cursor:pointer;`;
+        rm.addEventListener('click', () => {
+          this._colours.splice(idx, 1);
+          this._emit();
+          this._rebuildList(F);
+        });
+        row.appendChild(rm);
+      }
+      this._listEl.appendChild(row);
+    });
+
+    const add = this.createElement('button', '', '+ SWATCH');
+    add.type = 'button';
+    add.style.cssText = `width:100%;min-height:${F * 2}px;border:1px solid var(--c-border);background:var(--c-bg);color:var(--c-text);font-family:'Atkinson Hyperlegible',monospace;font-size:${F * 0.75}px;text-transform:uppercase;cursor:pointer;`;
+    add.addEventListener('click', () => {
+      this._colours.push('#808080');
+      this._emit();
+      this._rebuildList(F);
+    });
+    this._listEl.appendChild(add);
+  }
+
+  render() {
+    super.render();
+    const { F } = this.getF();
+    this.element.style.cssText = `display:flex;flex-direction:column;gap:${F / 2}px;width:100%;`;
+    this._listEl = this._vstack(F);
+    this.element.appendChild(this._listEl);
+    this._rebuildList(F);
+    return this.element;
+  }
+
+  destroy() {
+    this._instances.forEach(i => i.destroy?.());
+    this._instances = [];
+    super.destroy();
+  }
+}
+
 export class LuminanceCurveEditor extends DistortCtrlBase {
   constructor(options = {}, deps = {}) {
     super({ componentType: 'luminance-curve-editor', ...options }, deps);

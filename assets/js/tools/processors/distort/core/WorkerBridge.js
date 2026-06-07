@@ -98,18 +98,51 @@ export class WorkerBridge {
     this._pending  = true;
 
     const s = this.state;
-    const stackData = s.stack.map(n => ({
-      type: n.type, enabled: n.enabled, opacity: n.opacity, blendMode: n.blendMode ?? 'normal',
-      params: { ...n.params },
-      mask: n.mask ? {
-        enabled: !!n.mask.enabled,
-        source: n.mask.source ?? 'none',
-        invert: !!n.mask.invert,
-        feather: n.mask.feather ?? 0
-      } : null,
-      modulation: { ...(n.modulation ?? {}) },
-      frame: s.frame ?? 0
-    }));
+    const transfers = [];
+
+    const modulationMapsPayload = {};
+    for (const [name, map] of Object.entries(s.modulationMaps ?? {})) {
+      const px = map.sourcePixels.slice(0);
+      modulationMapsPayload[name] = {
+        sourceW: map.sourceW,
+        sourceH: map.sourceH,
+        pixels: px.buffer,
+      };
+      transfers.push(px.buffer);
+    }
+
+    const stackData = s.stack.map(n => {
+      let maskPayload = null;
+      if (n.mask) {
+        maskPayload = {
+          enabled: !!n.mask.enabled,
+          source: n.mask.source ?? 'none',
+          invert: !!n.mask.invert,
+          feather: n.mask.feather ?? 0,
+        };
+        if (n.mask._sourcePixels?.length) {
+          const sp = n.mask._sourcePixels.slice(0);
+          maskPayload._sourcePixels = sp.buffer;
+          maskPayload._sourceW = n.mask._sourceW;
+          maskPayload._sourceH = n.mask._sourceH;
+          transfers.push(sp.buffer);
+        }
+        if (n.mask._drawPixels?.length) {
+          const dp = n.mask._drawPixels.slice(0);
+          maskPayload._drawPixels = dp.buffer;
+          maskPayload._drawW = n.mask._drawW;
+          maskPayload._drawH = n.mask._drawH;
+          transfers.push(dp.buffer);
+        }
+      }
+      return {
+        type: n.type, enabled: n.enabled, opacity: n.opacity, blendMode: n.blendMode ?? 'normal',
+        params: { ...n.params },
+        mask: maskPayload,
+        modulation: { ...(n.modulation ?? {}) },
+        frame: s.frame ?? 0,
+      };
+    });
 
     // For preview renders, send the pre-downsampled buffer (cached in AppState) —
     // avoids copying the full-res source and lets the worker skip the downsample step.
@@ -128,6 +161,7 @@ export class WorkerBridge {
       sendH = s.sourceH;
     }
 
+    transfers.push(pixelsCopy.buffer);
     this._worker.postMessage({
       type: 'render', renderId: id,
       sourcePixels: pixelsCopy.buffer,
@@ -137,8 +171,9 @@ export class WorkerBridge {
       quality: s.quality, previewScale: s.previewScale,
       globalSeed: s.globalSeed, soloNodeId: s.soloNodeId,
       frame: s.frame ?? 0, frameCount: s.frameCount ?? 1,
-      stack: stackData
-    }, [pixelsCopy.buffer]);
+      modulationMaps: modulationMapsPayload,
+      stack: stackData,
+    }, transfers);
 
     // Hang detection
     this._clearTimeout();

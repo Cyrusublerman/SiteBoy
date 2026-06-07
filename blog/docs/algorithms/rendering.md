@@ -11,6 +11,12 @@
 | Per-pixel invert (GPU) | `shaders/invert.shader.js` | rgba8unorm texture, uMode | rgba8unorm texture | `guides/tools/gpu-shader-authoring.md` | Trivial tier; template for per-pixel nodes |
 | Separable box blur (GPU) | `shaders/boxblur.shader.js` | rgba8unorm texture, uRadius, uPass | rgba8unorm texture | `guides/tools/gpu-shader-authoring.md` | Two-pass; shared-memory tile in WGSL |
 | Sobel edge detection (GPU) | `shaders/sobel.shader.js` | rgba8unorm texture, threshold, ramp | rgba8unorm texture | `guides/tools/gpu-shader-authoring.md` | Two-pass; stencil tier |
+| `runGenerativePainter` | `assets/js/shared/algorithms/painter/generative-painter.js` | src, dst, w, h, params, hooks | dst (mutated) | `components/distort/modules/paintstroke.md` | Palette reconstruction; per-pass CDF rebuild |
+| `buildPalette` | `assets/js/shared/algorithms/painter/generative-painter.js` | src, w, h, mode, rng, colours, extractCount | RGB[][] | `components/distort/modules/paintstroke.md` | CUSTOM/SOURCE/EXTRACT/presets |
+| `parsePaletteColours` | `assets/js/shared/algorithms/painter/generative-painter.js` | raw JSON/hex | RGB[][] | `components/distort/modules/paintstroke.md` | Parses paletteColours param |
+| `paintBrushShape` | `assets/js/shared/algorithms/painter/brush-engine.js` | buf, w, h, x, y, color, size, shape, hardness, angle, rng, length | buf (mutated) | `components/distort/modules/paintstroke.md` | Shape dispatch: RADIAL/SOFT/HARD/ELLIPSE/BRISTLE/RIBBON/DRY |
+| `paintRadialGradient` | `assets/js/shared/algorithms/painter/brush-engine.js` | buf, w, h, x, y, color, radius | buf (mutated) | `components/distort/modules/paintstroke.md` | Centre-full radial dab |
+| `paintPolyline` | `assets/js/shared/algorithms/painter/brush-engine.js` | pixels, w, h, points, opts | Uint8ClampedArray | `components/distort/modules/paintstroke.md` | FLOW STROKE polyline stamps |
 
 Checklist: `../guides/checklists/algorithms.md`
 

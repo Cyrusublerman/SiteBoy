@@ -2,62 +2,69 @@
   "gallery_type": "physical",
   "gallery_name": "small/casual",
   "base_url": "https://media.einoder.net/art/physical/small/casual",
-  "generated_at": "2026-04-08T03:13:01.889561+00:00",
-  "total_images": 6,
-  "images": [
+  "generated_at": "2026-06-07T01:44:51.978366+00:00",
+  "intro": null,
+  "cards": [
     {
+      "type": "image",
       "id": "AitMoc",
-      "filename": "AitMoc.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/small/casual/thumbs/AitMoc.jpg",
         "web": "https://media.einoder.net/art/physical/small/casual/web/AitMoc.jpg",
         "zoom": "https://media.einoder.net/art/physical/small/casual/zoom/AitMoc.jpg"
-      }
+      },
+      "filename": "AitMoc.jpg"
     },
     {
+      "type": "image",
       "id": "Clowned",
-      "filename": "Clowned.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/small/casual/thumbs/Clowned.jpg",
         "web": "https://media.einoder.net/art/physical/small/casual/web/Clowned.jpg",
         "zoom": "https://media.einoder.net/art/physical/small/casual/zoom/Clowned.jpg"
-      }
+      },
+      "filename": "Clowned.jpg"
     },
     {
+      "type": "image",
       "id": "HotWings",
-      "filename": "HotWings.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/small/casual/thumbs/HotWings.jpg",
         "web": "https://media.einoder.net/art/physical/small/casual/web/HotWings.jpg",
         "zoom": "https://media.einoder.net/art/physical/small/casual/zoom/HotWings.jpg"
-      }
+      },
+      "filename": "HotWings.jpg"
     },
     {
+      "type": "image",
       "id": "Styleless",
-      "filename": "Styleless.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/small/casual/thumbs/Styleless.jpg",
         "web": "https://media.einoder.net/art/physical/small/casual/web/Styleless.jpg",
         "zoom": "https://media.einoder.net/art/physical/small/casual/zoom/Styleless.jpg"
-      }
+      },
+      "filename": "Styleless.jpg"
     },
     {
+      "type": "image",
       "id": "Sunbathing",
-      "filename": "Sunbathing.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/small/casual/thumbs/Sunbathing.jpg",
         "web": "https://media.einoder.net/art/physical/small/casual/web/Sunbathing.jpg",
         "zoom": "https://media.einoder.net/art/physical/small/casual/zoom/Sunbathing.jpg"
-      }
+      },
+      "filename": "Sunbathing.jpg"
     },
     {
+      "type": "image",
       "id": "Waiting",
-      "filename": "Waiting.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/small/casual/thumbs/Waiting.jpg",
         "web": "https://media.einoder.net/art/physical/small/casual/web/Waiting.jpg",
         "zoom": "https://media.einoder.net/art/physical/small/casual/zoom/Waiting.jpg"
-      }
+      },
+      "filename": "Waiting.jpg"
     }
-  ]
+  ],
+  "total_images": 6
 }

@@ -631,6 +631,8 @@ export class PageContainer extends BaseComponent {
 
         if (!this.contentBody) return;
 
+        const isToolPage = document.body.classList.contains('tool-page');
+
         const layout     = this.deps.MF?.computeLayout() || {};
         const margin     = this.deps.MF?.Config?.margin || layout.marginLeft || 14;
         const headerH    = layout.headerHeight || 28;
@@ -673,9 +675,11 @@ export class PageContainer extends BaseComponent {
             this.contentBody.style.left         = `${marginLeft}px`;
             this.contentBody.style.width        = `${frameWidth}px`;
             this.contentBody.style.height       = 'auto';
-            this.contentBody.style.padding      = '';
-            this.contentBody.style.overflow     = '';
-            this.contentBody.style.overflowY    = 'auto';
+            this.contentBody.style.padding      = isToolPage ? '0' : '';
+            this.contentBody.style.overflow     = isToolPage ? 'hidden' : '';
+            this.contentBody.style.overflowY    = isToolPage ? '' : 'auto';
+            this.contentBody.style.minHeight    = isToolPage ? '0' : '';
+            this.contentBody.style.maxHeight    = isToolPage ? 'none' : '';
             this.contentBody.style.display      = '';
             this.contentBody.style.alignItems   = '';
             this.contentBody.style.justifyContent = '';
@@ -699,9 +703,11 @@ export class PageContainer extends BaseComponent {
             this.contentBody.style.left         = `${marginLeft}px`;
             this.contentBody.style.width        = `${frameWidth}px`;
             this.contentBody.style.height       = 'auto';
-            this.contentBody.style.padding      = `calc(var(--f) * 4)`;
-            this.contentBody.style.overflow     = '';
-            this.contentBody.style.overflowY    = 'auto';
+            this.contentBody.style.padding      = isToolPage ? '0' : `calc(var(--f) * 4)`;
+            this.contentBody.style.minHeight    = isToolPage ? '0' : '';
+            this.contentBody.style.maxHeight    = isToolPage ? 'none' : '';
+            this.contentBody.style.overflow     = isToolPage ? 'hidden' : '';
+            this.contentBody.style.overflowY    = isToolPage ? '' : 'auto';
             this.contentBody.style.display      = '';
             this.contentBody.style.alignItems   = '';
             this.contentBody.style.justifyContent = '';

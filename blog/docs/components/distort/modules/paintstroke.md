@@ -1,6 +1,6 @@
 # PAINT STROKE
 
-Simulates oil painting by iteratively stamping brush strokes at positions where a palette colour best approximates the target source pixel.
+Reconstructs an image by iteratively depositing brush marks from a constrained palette. Each step picks a location, selects a colour that moves the canvas toward the source at that pixel, then stamps a brush shape. Colour selection is canvas-aware (uses current canvas + target, not just the source): `DOT` uses reference blend-match (simulate blend at expected opacity, pick nearest palette result); all other modes use analytic overcorrection — solve `P = C + (T − C)·gain` where `gain = min(overshoot, 1/α)` (overshoots past target so the translucent layer lands on it, but capped by `overshoot` so a single dab never demands a wildly out-of-gamut palette extreme), snap to nearest palette member, then `paletteBlend` relaxes toward the clamped ideal. Combined with directional strokes and the persistent error map, this drives an impressionist build-up. Total stroke budget is `passCount × iterations` (PASSES × STROKES/PASS); each pass rebuilds the placement CDF from the evolving error map, so adaptive placement re-targets fresh high-error regions between sweeps. Stops when average layer coverage reaches `maxAverageLayers`, or when the budget is exhausted. Default `brushAreaApprox` matches the reference (`strokes × π·avgR² / pixels`, opacity-independent); `trueAccumulation` is an opt-in opacity-weighted alternative. Per-pixel caps prevent overpaint. Each `apply()` runs the full stroke budget in one shot (no per-tick throttle).
 
 ## Identity
 
@@ -10,109 +10,68 @@ Simulates oil painting by iteratively stamping brush strokes at positions where 
 | Category | `GENERATIVE` |
 | Module type | pixel |
 | Source file | `assets/js/tools/processors/distort/nodes/generative/PaintStrokeNode.js` |
+| Engine | `assets/js/shared/algorithms/painter/generative-painter.js` |
 
 ## Algorithm
 
-| Algorithm | Source | Documentation |
-|-----------|--------|---------------|
-| `paintStamp` | `assets/js/shared/algorithms/painter/brush-engine.js` | — |
-| `LayerTracker` | `assets/js/shared/algorithms/painter/layer-tracker.js` | — |
-| `SeededRNG` | `assets/js/tools/processors/distort/core/SeededRNG.js` | — |
+| Algorithm | Source | Role |
+|-----------|--------|------|
+| `runGenerativePainter` | `generative-painter.js` | Main loop |
+| `paintRadialGradient`, `paintBrushShape`, `paintPolyline` | `brush-engine.js` | Stamps |
+| `paintStrokeErrorGuided` | `paintstroke-error.js` | FLOW STROKE polylines |
+| `SeededRNG` | `SeededRNG.js` | Deterministic placement |
 
-`paintStamp` places a circular brush stroke with anti-aliased soft falloff. `LayerTracker` accumulates intermediate snapshots every 250 strokes; `flatten()` composites all layers. Palette built from source colours (or synthetically for named modes).
+Coverage uses a per-pixel counter grid with a circular footprint at the true brush radius (`size/2`), so `maxPixelLayers` reflects real brush-size overlap. It is not snapshot compositing. `LayerTracker` in `layer-tracker.js` is a separate snapshot compositor and is not used here.
 
-## Parameters
+## Weight map (Distort integration)
 
-### NodePanel (Universal)
+| Param | Purpose |
+|-------|---------|
+| `weightSource` | `NONE` / `DRIVER` (+D image on `weight`) / `MASK` (node mask.data at stroke time) / `SOURCE LUM` |
+| `weightMode` | `REJECT` / `PROBABILITY` (skip if random > w) / `SCALE OPACITY` / `SCALE SIZE` |
+| `weight` | Driveable 0–255; image/expr/source drivers via +D |
 
-All modules are managed by the NodePanel component. These controls are always present regardless of module type.
+Node mask (upload/luminance/gradient/draw) still post-composites effect strength after `apply()`. `MASK` weight source reuses the same mask buffer for stroke gating only.
 
-**Interactive controls (not stored as module params):**
+## Parameters (tier 3 primary)
 
-| Control | Component | Description |
-|---------|-----------|-------------|
-| Drag handle | drag-handle | Reorder module in the effect stack |
-| Enable | toggle | Off = bypass; unmodified source passes through to next module |
-| Solo | button | Isolate module; all others suppressed until solo is cleared |
+| Key | Label | Range / options | Default |
+|-----|-------|-----------------|---------|
+| `passCount` | PASSES | 1–10000 (non-DOT) | 1 |
+| `iterations` | STROKES/PASS | 0–200000 | 5000 |
+| `brushMin` / `brushMax` | BRUSH MIN/MAX | px | 10 / 50 |
+| `minOpacity` / `maxOpacity` | MIN/MAX OPAC | 1–255 | 10 / 50 |
+| `painterMode` | PAINTER MODE | DOT / STROKE / FLOW STROKE / PATCH / PALETTE RECONSTRUCTION | DOT |
+| `brushShape` | BRUSH SHAPE | RADIAL GRADIENT / SOFT DAB / … | RADIAL GRADIENT (non-DOT) |
 
-**Composition params (applied after module `apply()` writes its output):**
+## Parameters (tier 4+)
 
-| Key | Label | Component | Range | Default | Purpose |
-|-----|-------|-----------|-------|---------|---------|
-| `opacity` | OPACITY | slider+number | 0–1 | 1 | Scales module output before compositing onto source |
-| `blendMode` | BLEND MODE | dropdown | `normal` `multiply` `screen` `overlay` `add` `difference` `darken` `lighten` | `normal` | Compositing mode for blending module output onto source |
+| Key | Notes |
+|-----|-------|
+| `maxAverageLayers` | Global stop; `brushAreaApprox` (default) = reference geometric formula |
+| `maxPixelLayers` | Per-pixel skip threshold (default 20) |
+| `paletteMode` | CUSTOM / SOURCE / EXTRACT / GREYSCALE / WARM / COOL |
+| `paletteColours` | JSON hex list; UI via `paint-palette-control` when CUSTOM |
+| `backgroundColour` | Canvas fill; UI via `color-input` extended control |
+| `coverageModel` | `brushAreaApprox` (default, reference π·r² formula) or `trueAccumulation` (opacity-weighted) |
+| `overshoot` | Caps overcorrection gain (1–16×, default 2); higher = more aggressive/impressionist, lower = colours closer to source. Non-DOT only |
+| `brushHardness` | HARDNESS; applies to SOFT DAB / ELLIPSE / BRISTLE / RIBBON only (HARD DAB, DRY BRUSH, RADIAL GRADIENT ignore it) |
+| `placementMode` | RANDOM, ERROR/EDGE/GRADIENT/SALIENCY, WEIGHTED RANDOM, STRATIFIED |
+| `coverageTarget`, `errorThreshold` | Per-pass coverage break + error skip threshold |
+| `colourDistance`, `alphaAssumption`, `coverageModel` | Match + stop semantics |
 
-### Tier 3 (primary)
+## Pipeline behaviour
 
-| Key | Label | Component | Range | Default | Purpose |
-|-----|-------|-----------|-------|---------|---------|
-| `iterations` | STROKES | slider+number | 100–50000 | 5000 | Maximum number of brush strokes |
-| `brushMin` | BRUSH MIN | slider+number | 1–100 | 10 | Minimum brush radius in pixels |
-| `brushMax` | BRUSH MAX | slider+number | 2–200 | 50 | Maximum brush radius in pixels |
-| `minOpacity` | MIN OPAC | slider+number | 1–255 | 10 | Minimum stroke opacity |
-| `maxOpacity` | MAX OPAC | slider+number | 1–255 | 50 | Maximum stroke opacity |
+1. `Pipeline` calls `buildMask` then `apply` with `ctx.maskData` and `ctx.modMaps`.
+2. Engine fills background, runs strokes, writes `dst`.
+3. Pipeline post-composites with mask if enabled.
 
-### Tier 4 (secondary)
+Preview: `iterations` (per-pass) capped at 50000. Worker: `forceWorkerPreview`; modulation maps and mask pixels transferred via `WorkerBridge`.
 
-| Key | Label | Component | Range | Default | Purpose |
-|-----|-------|-----------|-------|---------|---------|
-| `maxLayers` | MAX LAYERS | slider+number | 1–50 | 15 | Per-pixel layer count limit (stops overdraw) |
-| `paletteMode` | PALETTE | dropdown | `source`, `greyscale`, `warm`, `cool` | `source` | Colour palette source for strokes |
+## Modulation
 
-**Synthetic palette values (`_buildPalette`):**
+Per-pixel driveable (+D) params resolve inside the stroke loop via `modulate(key, pixelIdx)`:
 
-| Mode | Fixed 5-colour palette (RGB) |
-|------|------------------------------|
-| `greyscale` | `[0,0,0]` `[64,64,64]` `[128,128,128]` `[192,192,192]` `[255,255,255]` |
-| `warm` | `[30,10,5]` `[120,40,20]` `[200,100,50]` `[240,180,100]` `[255,230,200]` — near-black, dark red, burnt orange, amber, cream |
-| `cool` | `[5,10,30]` `[20,40,120]` `[50,100,200]` `[100,180,240]` `[200,230,255]` — near-black, dark blue, mid blue, sky, pale ice |
+`brushMin`, `brushMax`, `minOpacity`, `maxOpacity`, `brushJitter`, `manualAngle`, `overshoot`, `weight`, `brushHardness`, `brushLength`, `strokeAngleJitter`, `paletteBlend`, `colourJitter`, `edgeInfluence`, `contrastInfluence`, `luminanceInfluence`.
 
-`source` mode samples `iterations`-worth of random pixels from the source to build a variable-size palette.
-
-## Pipeline Behaviour
-
-### Input
-Full RGBA image.
-
-### Process
-1. Build a colour palette from source (or synthetic for named modes).
-2. Initialise an empty canvas buffer.
-3. For each iteration (up to `iterations`): stop early if average layer coverage exceeds `maxLayers`.
-4. Pick a random `(x, y)` position. Skip if pixel's own layer count is already `maxLayers × 1.3`.
-5. Find the palette colour that, when alpha-composited at average opacity, minimises RGB squared distance to the source pixel.
-6. Stamp a brush circle via `paintStamp`; increment per-pixel layer counters.
-7. Push snapshot to `LayerTracker` every 250 strokes.
-8. Flatten all layers and write to destination.
-
-### Output
-Painterly RGBA image.
-
-### Preview strategy
-`iterations` capped at 1000.
-
-> **Performance:** at `iterations = 50000`, each stroke requires a palette scan and `paintStamp` call. At high resolution this is the most CPU-intensive node in the pipeline. Preview cap at 1000 strokes is essential.
-
-## Mask controls
-
-Applied after compositing. Mask luminance drives blend weight per-pixel: white = full module effect, black = module has no effect (source passes through).
-
-| Control | Component | Options / Range | Description |
-|---------|-----------|-----------------|-------------|
-| Mode | dropdown | `none` / `upload` / `luminance` / `gradient` | Source for the mask image |
-| Image | file | — | Greyscale PNG upload (upload mode only) |
-| Invert | toggle | — | Flip mask values before applying |
-| Blur | slider+number | 0–20 px | Gaussian blur applied to mask edges before compositing |
-
-**Modes:**
-- `none` — no mask; module effect applies uniformly across all pixels
-- `upload` — user-supplied greyscale image mapped to image dimensions
-- `luminance` — source image luminance at point of masking drives the blend weight
-- `gradient` — system-generated linear or radial gradient
-
-## Modulation targets
-All `range`-type params accept image and expression drivers via the `+D` button in the NodePanel. No parameters in this module have pre-wired `getModulated()` calls in the current implementation — all values read directly from `this.params`.
-
-See [driver-system.md](../driver-system.md) for image driver and expression driver reference.
-
-## Presets using this node
-None in current PRESETS.
+Not driveable (loop-structural): `passCount`, `iterations`, `maxAverageLayers`, `maxPixelLayers`, `coverageTarget`, `errorThreshold`.

@@ -22,6 +22,7 @@ export { CategoryPicker } from './distort/CategoryPicker.js';
 export { ViewportCanvas } from './distort/ViewportCanvas.js';
 export {
   ColourRampControl,
+  PaintPaletteControl,
   CentrePointPicker,
   FrameSlider,
   SVGExportButton,

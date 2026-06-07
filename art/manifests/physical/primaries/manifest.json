@@ -2,71 +2,79 @@
   "gallery_type": "physical",
   "gallery_name": "primaries",
   "base_url": "https://media.einoder.net/art/physical/primaries",
-  "generated_at": "2026-04-08T05:30:05.265098+00:00",
-  "total_images": 7,
-  "images": [
+  "generated_at": "2026-06-07T01:44:40.688872+00:00",
+  "intro": null,
+  "cards": [
     {
+      "type": "image",
       "id": "img004",
-      "filename": "img004.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img004.jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img004.jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img004.jpg"
-      }
+      },
+      "filename": "img004.jpg"
     },
     {
+      "type": "image",
       "id": "img005_(4)",
-      "filename": "img005_(4).jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img005_(4).jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img005_(4).jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img005_(4).jpg"
-      }
+      },
+      "filename": "img005_(4).jpg"
     },
     {
+      "type": "image",
       "id": "img006",
-      "filename": "img006.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img006.jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img006.jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img006.jpg"
-      }
+      },
+      "filename": "img006.jpg"
     },
     {
+      "type": "image",
       "id": "img007",
-      "filename": "img007.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img007.jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img007.jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img007.jpg"
-      }
+      },
+      "filename": "img007.jpg"
     },
     {
+      "type": "image",
       "id": "img008",
-      "filename": "img008.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img008.jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img008.jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img008.jpg"
-      }
+      },
+      "filename": "img008.jpg"
     },
     {
+      "type": "image",
       "id": "img013",
-      "filename": "img013.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img013.jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img013.jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img013.jpg"
-      }
+      },
+      "filename": "img013.jpg"
     },
     {
+      "type": "image",
       "id": "img035",
-      "filename": "img035.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/physical/primaries/thumbs/img035.jpg",
         "web": "https://media.einoder.net/art/physical/primaries/web/img035.jpg",
         "zoom": "https://media.einoder.net/art/physical/primaries/zoom/img035.jpg"
-      }
+      },
+      "filename": "img035.jpg"
     }
-  ]
+  ],
+  "total_images": 7
 }

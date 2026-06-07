@@ -9,7 +9,7 @@
  * - content.js       → Heading, Paragraph, Quote, Image, Video, Audio, MarkdownBody, SimpleTOC, NumberedTOC
  * - interactive.js   → CollapsibleBase, Menu, Breadcrumb, Button, Input, Select, ButtonGroup
  * - graphs.js        → BarGraph, LineGraph, PieGraph
- * - specialized.js   → VGAGrid, MathematicalCanvas, ProgressBar
+ * - specialized.js   → VGAGrid, MathematicalCanvas, InlineCarousel, ProgressBar
  *
  * DO NOT ADD NEW COMPONENTS TO THIS FILE!
  * Add them to the appropriate category file and import here.
@@ -83,7 +83,7 @@ import { FilamentPicker } from './components/input/FilamentPicker.js';
 import { BarGraph, LineGraph, PieGraph } from './graphs.js';
 
 // Import specialized components
-import { VGAGrid, MathematicalCanvas, SVGDisplay, AnimationControls } from './specialized.js';
+import { VGAGrid, MathematicalCanvas, SVGDisplay, AnimationControls, InlineCarousel } from './specialized.js';
 
 // Import drawing components
 import { DrawCanvas } from './components/drawing/DrawCanvas.js';
@@ -128,6 +128,7 @@ import {
     CategoryPicker,
     ViewportCanvas,
     ColourRampControl,
+    PaintPaletteControl,
     CentrePointPicker,
     FrameSlider,
     SVGExportButton,
@@ -306,6 +307,9 @@ const ComponentLibrary = {
             'category-picker': CategoryPicker,
             'viewport-canvas': ViewportCanvas,
             'colour-ramp-control': ColourRampControl,
+            'color-input': ColorInput,
+            'colour-input': ColorInput,
+            'paint-palette-control': PaintPaletteControl,
             'centre-point-picker': CentrePointPicker,
             'frame-slider': FrameSlider,
             'svg-export-button': SVGExportButton,
@@ -438,6 +442,7 @@ ComponentLibrary.VGAGrid = VGAGrid;
 ComponentLibrary.MathematicalCanvas = MathematicalCanvas;
 ComponentLibrary.SVGDisplay = SVGDisplay;
 ComponentLibrary.AnimationControls = AnimationControls;
+ComponentLibrary.InlineCarousel = InlineCarousel;
 
 // Assign drawing components to ComponentLibrary immediately
 ComponentLibrary.DrawCanvas = DrawCanvas;
@@ -497,6 +502,7 @@ ComponentLibrary.DriverPicker = DriverPicker;
 ComponentLibrary.CategoryPicker = CategoryPicker;
 ComponentLibrary.ViewportCanvas = ViewportCanvas;
 ComponentLibrary.ColourRampControl = ColourRampControl;
+ComponentLibrary.PaintPaletteControl = PaintPaletteControl;
 ComponentLibrary.CentrePointPicker = CentrePointPicker;
 ComponentLibrary.FrameSlider = FrameSlider;
 ComponentLibrary.SVGExportButton = SVGExportButton;
@@ -623,6 +629,7 @@ export {
     MathematicalCanvas,
     SVGDisplay,
     AnimationControls,
+    InlineCarousel,
 
     // Drawing
     DrawCanvas,

@@ -1,5 +1,6 @@
 /**
- * @fileoverview Layer tracker — accumulate RGBA pixel layers and composite them.
+ * @fileoverview Snapshot layer compositor — push named RGBA buffers and flatten via alpha-over.
+ * Distinct from generative-painter coverage grid (per-pixel stroke counters only).
  *
  * @source DISTORT image pipeline reference (src/modules/painter/layer-tracker.js)
  * @wikipedia https://en.wikipedia.org/wiki/Alpha_compositing

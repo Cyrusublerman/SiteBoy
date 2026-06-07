@@ -2,35 +2,39 @@
   "gallery_type": "digital",
   "gallery_name": "rough",
   "base_url": "https://media.einoder.net/art/digital/rough",
-  "generated_at": "2026-04-08T03:11:01.110469+00:00",
-  "total_images": 3,
-  "images": [
+  "generated_at": "2026-06-07T01:44:02.093878+00:00",
+  "intro": null,
+  "cards": [
     {
+      "type": "image",
       "id": "505611476_eightbit3",
-      "filename": "505611476_eightbit3.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/rough/thumbs/505611476_eightbit3.jpg",
         "web": "https://media.einoder.net/art/digital/rough/web/505611476_eightbit3.jpg",
         "zoom": "https://media.einoder.net/art/digital/rough/zoom/505611476_eightbit3.jpg"
-      }
+      },
+      "filename": "505611476_eightbit3.jpg"
     },
     {
+      "type": "image",
       "id": "PSX_20190815_145031",
-      "filename": "PSX_20190815_145031.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/rough/thumbs/PSX_20190815_145031.jpg",
         "web": "https://media.einoder.net/art/digital/rough/web/PSX_20190815_145031.jpg",
         "zoom": "https://media.einoder.net/art/digital/rough/zoom/PSX_20190815_145031.jpg"
-      }
+      },
+      "filename": "PSX_20190815_145031.jpg"
     },
     {
+      "type": "image",
       "id": "PSX_20190816_091332",
-      "filename": "PSX_20190816_091332.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/rough/thumbs/PSX_20190816_091332.jpg",
         "web": "https://media.einoder.net/art/digital/rough/web/PSX_20190816_091332.jpg",
         "zoom": "https://media.einoder.net/art/digital/rough/zoom/PSX_20190816_091332.jpg"
-      }
+      },
+      "filename": "PSX_20190816_091332.jpg"
     }
-  ]
+  ],
+  "total_images": 3
 }

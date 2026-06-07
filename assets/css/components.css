@@ -458,6 +458,7 @@
     color: var(--c-accent);
 }
 
+/* design-law §17.2: 1023px = landscape/portrait pivot; action cells shrink to 5F */
 @media (max-width: 1023px) {
     .gallery-lightbox__counter {
         min-width: 0;
@@ -1614,9 +1615,8 @@ mjx-container mjx-assistive-mml * {
 
 /* Content positioning with subheader - now handled by JavaScript */
 
-/* Tool/viewport mode - strict height constraints for ToolBase pages */
-/* Use this class when page content should fill exactly the available space */
-/* Height now handled by JavaScript positioning */
+/* Tool pages — no content padding */
+body.tool-page .content-container,
 .content-container.tool-viewport {
     overflow-y: auto;
     overflow-x: hidden;
@@ -1633,6 +1633,10 @@ mjx-container mjx-assistive-mml * {
 @media (max-width: 768px) {
     .content-container {
         padding: var(--f); /* 1F padding on mobile */
+    }
+    body.tool-page .content-container,
+    .content-container.tool-viewport {
+        padding: 0;
     }
 }
 

@@ -2,71 +2,85 @@
   "gallery_type": "digital",
   "gallery_name": "posters",
   "base_url": "https://media.einoder.net/art/digital/posters",
-  "generated_at": "2026-04-09T04:29:58.534031+00:00",
-  "total_images": 7,
-  "images": [
+  "generated_at": "2026-06-07T01:44:01.565088+00:00",
+  "intro": null,
+  "cards": [
     {
+      "type": "image",
       "id": "8murray3",
-      "filename": "8murray3.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/posters/thumbs/8murray3.jpg",
         "web": "https://media.einoder.net/art/digital/posters/web/8murray3.jpg",
         "zoom": "https://media.einoder.net/art/digital/posters/zoom/8murray3.jpg"
-      }
+      },
+      "filename": "8murray3.jpg"
     },
     {
+      "type": "image",
       "id": "COWBOY",
-      "filename": "COWBOY.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/posters/thumbs/COWBOY.jpg",
         "web": "https://media.einoder.net/art/digital/posters/web/COWBOY.jpg",
         "zoom": "https://media.einoder.net/art/digital/posters/zoom/COWBOY.jpg"
-      }
+      },
+      "filename": "COWBOY.jpg"
     },
     {
-      "id": "cowboyFramed",
-      "filename": "cowboyFramed.jpg",
-      "urls": {
-        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/cowboyFramed.jpg",
-        "web": "https://media.einoder.net/art/digital/posters/web/cowboyFramed.jpg",
-        "zoom": "https://media.einoder.net/art/digital/posters/zoom/cowboyFramed.jpg"
-      }
-    },
-    {
+      "type": "image",
       "id": "JapanRoadHouse",
-      "filename": "JapanRoadHouse.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/posters/thumbs/JapanRoadHouse.jpg",
         "web": "https://media.einoder.net/art/digital/posters/web/JapanRoadHouse.jpg",
         "zoom": "https://media.einoder.net/art/digital/posters/zoom/JapanRoadHouse.jpg"
-      }
+      },
+      "filename": "JapanRoadHouse.jpg"
     },
     {
-      "id": "man_and_horse",
-      "filename": "man_and_horse.jpg",
-      "urls": {
-        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/man_and_horse.jpg",
-        "web": "https://media.einoder.net/art/digital/posters/web/man_and_horse.jpg",
-        "zoom": "https://media.einoder.net/art/digital/posters/zoom/man_and_horse.jpg"
-      }
+      "type": "page",
+      "id": "must",
+      "cover": null,
+      "blocks": []
     },
     {
+      "type": "image",
       "id": "PSX_20191016_113829",
-      "filename": "PSX_20191016_113829.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/posters/thumbs/PSX_20191016_113829.jpg",
         "web": "https://media.einoder.net/art/digital/posters/web/PSX_20191016_113829.jpg",
         "zoom": "https://media.einoder.net/art/digital/posters/zoom/PSX_20191016_113829.jpg"
-      }
+      },
+      "filename": "PSX_20191016_113829.jpg"
     },
     {
+      "type": "image",
       "id": "SelfPortraitatMurray",
-      "filename": "SelfPortraitatMurray.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/posters/thumbs/SelfPortraitatMurray.jpg",
         "web": "https://media.einoder.net/art/digital/posters/web/SelfPortraitatMurray.jpg",
         "zoom": "https://media.einoder.net/art/digital/posters/zoom/SelfPortraitatMurray.jpg"
-      }
+      },
+      "filename": "SelfPortraitatMurray.jpg"
+    },
+    {
+      "type": "image",
+      "id": "cowboyFramed",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/cowboyFramed.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/cowboyFramed.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/cowboyFramed.jpg"
+      },
+      "filename": "cowboyFramed.jpg"
+    },
+    {
+      "type": "image",
+      "id": "man_and_horse",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/posters/thumbs/man_and_horse.jpg",
+        "web": "https://media.einoder.net/art/digital/posters/web/man_and_horse.jpg",
+        "zoom": "https://media.einoder.net/art/digital/posters/zoom/man_and_horse.jpg"
+      },
+      "filename": "man_and_horse.jpg"
     }
-  ]
+  ],
+  "total_images": 7
 }

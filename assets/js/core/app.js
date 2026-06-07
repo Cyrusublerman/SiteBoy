@@ -400,6 +400,10 @@ const SiteBoyApp = {
     /**
      * Set subheader state
      */
+    isToolDetailRoute(section, subsection) {
+        return section === 'tools' && !!subsection && subsection !== 'tools-toc';
+    },
+
     setSubheaderState(hasSubheader) {
         this.state.hasSubheader = hasSubheader;
         
@@ -460,6 +464,13 @@ const SiteBoyApp = {
             document.body.classList.add('full-mode');
         } else {
             document.body.classList.remove('full-mode');
+        }
+
+        // Tool detail routes: layout must never apply content-container 4F padding
+        if (this.isToolDetailRoute(section, subsection)) {
+            document.body.classList.add('tool-page');
+        } else {
+            document.body.classList.remove('tool-page');
         }
 
         // Body class controls footer visibility and content bottom offset via setSubheaderState
@@ -552,7 +563,7 @@ const SiteBoyApp = {
         }
         
         try {
-            const isToolDetailPage = sectionName === 'tools' && subsectionName && subsectionName !== 'tools-toc';
+            const isToolDetailPage = this.isToolDetailRoute(sectionName, subsectionName);
             const isToolsTOC = sectionName === 'tools' && !isToolDetailPage;
             // Sections whose index page (no subsection) hides the subheader
             const NO_SUBHEADER_INDEX_SECTIONS = ['home', 'projects', 'art', 'qr'];
@@ -586,28 +597,7 @@ const SiteBoyApp = {
             this.state.currentSectionModule = SectionModule;
             this.state.currentSectionName = sectionName;
             
-            // Tool detail pages manage their own scrolling; padding handled by setSubheaderState
-            if (isToolDetailPage) {
-                // Tools fill the entire content container with no padding
-                this.contentContainer.style.padding = '0';
-
-                // PageContainer pins top/bottom with height:auto so the frame fills the inset.
-                // Clearing height removes that inline rule and lets .tool-viewport fixed heights fight top/bottom — wrong box, transport misaligned.
-                this.contentContainer.style.height = 'auto';
-                this.contentContainer.style.minHeight = '0';
-                this.contentContainer.style.maxHeight = 'none';
-
-                // Tools manage their own scrolling inside the chrome box
-                this.contentContainer.style.overflow = 'hidden';
-                window.debugLog('LAYOUT', '📐 Tool page detected - applied tool layout mode');
-            } else {
-                // Restore default styling for non-tool pages
-                this.contentContainer.style.padding = '';
-                this.contentContainer.style.height = '';
-                this.contentContainer.style.minHeight = '';
-                this.contentContainer.style.maxHeight = '';
-                this.contentContainer.style.overflow = '';
-            }
+            // Tool chrome (no padding, overflow hidden): PageContainer.setSubheaderState + body.tool-page
             
             // App coordinates the section building (async support)
             if (typeof SectionModule.handleRoute === 'function') {

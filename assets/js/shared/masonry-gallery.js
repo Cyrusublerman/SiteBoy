@@ -6,7 +6,8 @@
  * - MasonryGallery        (CSS column masonry with lazy loading, opens GalleryLightbox)
  * - ImageGrid             (2-column card grid for category/section/image browsing)
  * - ArtworkPage           (vertical block-stack for a single artwork page)
- * - HorizontalImageStrip  (horizontal snap-scroll strip; reserved future block type)
+ * - HorizontalImageStrip  (horizontal snap-scroll strip; page-strip block type)
+ * - InlineCarousel        (owned by specialized.js; embedded by MasonryGallery for object cards)
  *
  * @version 5.0.0
  * @dependencies foundation.js (BaseComponent)
@@ -14,6 +15,7 @@
 
 import { BaseComponent } from './foundation.js';
 import { MarkdownBody } from './content.js';
+import { InlineCarousel } from './specialized.js';
 
 // ── GalleryLightbox ────────────────────────────────────────────────────────────
 
@@ -392,6 +394,8 @@ export class MasonryGallery extends BaseComponent {
         this.lightbox    = null;
         // If provided, overrides the default lightbox-open behaviour on card click.
         this.onItemClick = options.onItemClick || null;
+        this.onObjectImageClick = options.onObjectImageClick || null;
+        this._carousels = [];
     }
 
     render() {
@@ -408,6 +412,27 @@ export class MasonryGallery extends BaseComponent {
     createItem(imageData, index) {
         const item = this.createElement('li', 'masonry-item');
         item.dataset.index = index;
+
+        if (imageData.cardType === 'object' && imageData.card) {
+            item.classList.add('masonry-item--object');
+            const carouselImages = (imageData.card.images || []).map(i => ({
+                thumb: i.urls?.thumb,
+                src:   i.urls?.web,
+                zoom:  i.urls?.zoom,
+                title: i.id,
+            }));
+            const carousel = new InlineCarousel({
+                images: carouselImages,
+                onImageClick: (idx) => {
+                    if (this.onObjectImageClick) {
+                        this.onObjectImageClick(imageData, idx, carouselImages);
+                    }
+                },
+            }, this.deps);
+            this._carousels.push(carousel);
+            item.appendChild(carousel.render());
+            return item;
+        }
 
         const img = this.createElement('img', 'masonry-item__img');
         img.dataset.src = imageData.thumb || imageData.src || imageData.imageUrl;
@@ -465,6 +490,8 @@ export class MasonryGallery extends BaseComponent {
     }
 
     destroy() {
+        this._carousels.forEach(c => { try { c.destroy?.(); } catch (_) { /* no-op */ } });
+        this._carousels = [];
         if (this.observer) { this.observer.disconnect(); this.observer = null; }
         if (this.lightbox) { this.lightbox.destroy(); this.lightbox = null; }
         if (this.element)  { this.element.remove(); this.element = null; }
@@ -709,6 +736,7 @@ export class ArtworkPage extends BaseComponent {
             overflow-y: auto;
             overflow-x: hidden;
             box-sizing: border-box;
+            padding: ${F}px;
         `;
         this.element.appendChild(inner);
 
@@ -735,9 +763,7 @@ export class ArtworkPage extends BaseComponent {
                 wrapper.style.cssText = `
                     display: flex;
                     justify-content: center;
-                    padding: 0 ${F}px;
                     box-sizing: border-box;
-                    ${bi > 0 ? `border-top: 1px solid var(--c-border);` : ''}
                 `;
                 const img = this.createElement('img');
                 img.alt = block.title || '';
@@ -761,11 +787,7 @@ export class ArtworkPage extends BaseComponent {
                 }, { MF: this.deps.MF });
                 this._markdownBodies.push(md);
                 const textEl = md.render();
-                textEl.style.cssText = `
-                    padding: ${F}px;
-                    box-sizing: border-box;
-                    ${bi > 0 ? `border-top: 1px solid var(--c-border);` : ''}
-                `;
+                textEl.style.cssText = `box-sizing: border-box;`;
                 inner.appendChild(textEl);
             }
             // Unknown types: silently skipped
@@ -825,8 +847,8 @@ export class ArtworkPage extends BaseComponent {
 
 /**
  * Horizontal snap-scroll strip of image slots.
- * Reserved for future use as a { type: 'strip' } block inside ArtworkPage,
- * or as a standalone component elsewhere in the UI.
+ * Reserved for { type: 'strip' } blocks inside ArtworkPage.
+ * Object (-o) gallery cards use InlineCarousel (specialized.js) instead.
  *
  * Each slot shows one group of images stacked vertically; the strip
  * translates horizontally to reveal the active slot.

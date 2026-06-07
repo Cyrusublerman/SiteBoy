@@ -2,26 +2,29 @@
   "gallery_type": "digital",
   "gallery_name": "uncertain",
   "base_url": "https://media.einoder.net/art/digital/uncertain",
-  "generated_at": "2026-04-08T03:11:06.758569+00:00",
-  "total_images": 2,
-  "images": [
+  "generated_at": "2026-06-07T01:44:03.848981+00:00",
+  "intro": null,
+  "cards": [
     {
-      "id": "image_3A2108_eightbit2",
-      "filename": "image_3A2108_eightbit2.jpg",
-      "urls": {
-        "thumb": "https://media.einoder.net/art/digital/uncertain/thumbs/image_3A2108_eightbit2.jpg",
-        "web": "https://media.einoder.net/art/digital/uncertain/web/image_3A2108_eightbit2.jpg",
-        "zoom": "https://media.einoder.net/art/digital/uncertain/zoom/image_3A2108_eightbit2.jpg"
-      }
-    },
-    {
+      "type": "image",
       "id": "IMG_20191127_091549_810",
-      "filename": "IMG_20191127_091549_810.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/digital/uncertain/thumbs/IMG_20191127_091549_810.jpg",
         "web": "https://media.einoder.net/art/digital/uncertain/web/IMG_20191127_091549_810.jpg",
         "zoom": "https://media.einoder.net/art/digital/uncertain/zoom/IMG_20191127_091549_810.jpg"
-      }
+      },
+      "filename": "IMG_20191127_091549_810.jpg"
+    },
+    {
+      "type": "image",
+      "id": "image_3A2108_eightbit2",
+      "urls": {
+        "thumb": "https://media.einoder.net/art/digital/uncertain/thumbs/image_3A2108_eightbit2.jpg",
+        "web": "https://media.einoder.net/art/digital/uncertain/web/image_3A2108_eightbit2.jpg",
+        "zoom": "https://media.einoder.net/art/digital/uncertain/zoom/image_3A2108_eightbit2.jpg"
+      },
+      "filename": "image_3A2108_eightbit2.jpg"
     }
-  ]
+  ],
+  "total_images": 2
 }

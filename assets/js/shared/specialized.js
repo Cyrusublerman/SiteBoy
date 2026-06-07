@@ -324,3 +324,161 @@ export class AnimationControls extends BaseComponent {
         this.updateFrameInfo();
     }
 }
+
+/**
+ * InlineCarousel — card-scale multi-image viewer for object (-o) gallery cards.
+ * Prev/next toolbar per semiotics §5; image click opens scoped lightbox (consumer).
+ */
+export class InlineCarousel extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ ...options, componentType: 'inline-carousel' }, deps);
+        this.images        = options.images || [];
+        this._index        = options.startIndex ?? 0;
+        this.onImageClick  = options.onImageClick || null;
+        this._imgEl        = null;
+        this._counterEl    = null;
+    }
+
+    render() {
+        if (this.element) return this.element;
+        const F = this.deps.MF ? this.deps.MF.F : 14;
+
+        this.element = this.createElement('div', 'inline-carousel');
+        this.element.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--c-border);
+        `;
+
+        const bar = this.createElement('div', 'inline-carousel__bar');
+        bar.style.cssText = `
+            display: flex;
+            align-items: stretch;
+            height: ${F * 2}px;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--c-border);
+        `;
+
+        this._counterEl = this.createElement('div', 'inline-carousel__counter');
+        this._counterEl.style.cssText = `
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 ${F}px;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            color: var(--c-text);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        `;
+        bar.appendChild(this._counterEl);
+
+        const prev = this._barBtn('PREV', '←', 'left', F);
+        prev.addEventListener('click', (e) => { e.stopPropagation(); this._navigate(-1); });
+        bar.appendChild(prev);
+
+        const next = this._barBtn('NEXT', '→', 'right', F);
+        next.addEventListener('click', (e) => { e.stopPropagation(); this._navigate(1); });
+        bar.appendChild(next);
+
+        const wrap = this.createElement('div', 'inline-carousel__wrap');
+        wrap.style.cssText = `
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            cursor: zoom-in;
+            background: var(--c-bg);
+        `;
+
+        this._imgEl = this.createElement('img', 'inline-carousel__img');
+        this._imgEl.draggable = false;
+        this._imgEl.style.cssText = `
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        `;
+        this._imgEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.onImageClick) this.onImageClick(this._index, this.images[this._index]);
+        });
+        wrap.appendChild(this._imgEl);
+        wrap.addEventListener('click', (e) => e.stopPropagation());
+
+        this.element.appendChild(bar);
+        this.element.appendChild(wrap);
+        this._showIndex(this._index);
+        return this.element;
+    }
+
+    _barBtn(label, glyph, side, F) {
+        const btn = this.createElement('button', 'inline-carousel__btn');
+        btn.type = 'button';
+        btn.style.cssText = `
+            width: ${F * 6}px;
+            flex-shrink: 0;
+            height: 100%;
+            padding: 0;
+            background: var(--c-bg);
+            color: var(--c-text);
+            border: none;
+            border-left: 1px solid var(--c-border);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: ${F * 0.75}px;
+            text-transform: uppercase;
+            text-align: center;
+        `;
+        const g = this.createElement('span');
+        const l = this.createElement('span');
+        if (side === 'left') {
+            g.textContent = glyph;
+            l.textContent = ' ' + label;
+            btn.appendChild(g);
+            btn.appendChild(l);
+        } else {
+            l.textContent = label;
+            g.textContent = ' ' + glyph;
+            btn.appendChild(l);
+            btn.appendChild(g);
+        }
+        btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--c-text)'; btn.style.color = 'var(--c-bg)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--c-bg)'; btn.style.color = 'var(--c-text)'; });
+        return btn;
+    }
+
+    _navigate(dir) {
+        if (this.images.length <= 1) return;
+        this._index = (this._index + dir + this.images.length) % this.images.length;
+        this._showIndex(this._index);
+    }
+
+    _showIndex(idx) {
+        const img = this.images[idx];
+        if (!img || !this._imgEl) return;
+        const src = img.thumb || img.src || '';
+        if (img.thumb && img.src && img.thumb !== img.src) {
+            this._imgEl.dataset.src = img.src;
+            this._imgEl.src = src;
+            this._imgEl.onload = () => { if (this._imgEl.dataset.src) this._imgEl.src = this._imgEl.dataset.src; };
+        } else {
+            this._imgEl.src = src;
+        }
+        this._imgEl.alt = img.title || '';
+        if (this._counterEl) {
+            const cur = String(idx + 1).padStart(2, '0');
+            const tot = String(this.images.length).padStart(2, '0');
+            this._counterEl.textContent = `${cur} / ${tot}`;
+        }
+    }
+
+    destroy() {
+        if (this.element) { this.element.remove(); this.element = null; }
+        super.destroy();
+    }
+}

@@ -17,9 +17,13 @@ against the design-law family of guides.
 |---|---|
 | Folder rename (legacy → tagged) | DONE — 34 folders (33 + `Toilet`) |
 | Convention spec | DONE — §3, §4 below |
-| Processor (`bulk_upload.py`) | NOT UPDATED — `GALLERY_MAP` still authoritative; new walker pending |
-| Reader (`art_section.js`, `masonry-gallery.js`) | NOT UPDATED — still consumes flat `manifest.images` |
-| Standards violations identified | DONE — §7 |
+| Processor (`bulk_upload.py`) | DONE — tag walker; emits `cards[]`, `_index.json`; no `GALLERY_MAP` |
+| Reader (`art_section.js`, `masonry-gallery.js`) | DONE — `cards` switch; registry from `_index.json`; `InlineCarousel` for `-o` |
+| Photography manifests | DONE — reader fetches `art/manifests/photos/<set>/manifest.json` (O3) |
+| Standards violations (A/B) | DONE — A1, B1–B4, B6, B10 fixed in P1/P2 |
+| Standards violations (B7/B8/B9) | DEFERRED — separate PR |
+| Standards violations (C-series) | DONE — C1–C8, C5–C6, C7 |
+| Standards violations (D-series) | DONE — D1–D4, D6; D5 resolved (InlineCarousel, HIS kept for strip blocks) |
 
 The convention is finalised. Code changes to honour it are scheduled but
 not done in this pass.
@@ -31,7 +35,7 @@ not done in this pass.
 | **section** | Top-level folder under `reference/images to upload/`. Member of the closed set listed in §5.1. Maps to manifest field `gallery_type` and to URL prefix `#art/{section}/…`. |
 | **gallery** | Folder tagged `-g`. Produces a manifest and a route. Direct file children become **cards**. |
 | **page** | Folder tagged `-p` inside a gallery. Produces a route under that gallery and renders as a vertical block-stack (`ArtworkPage`). |
-| **object** | Folder tagged `-o` inside a gallery. Produces a card on the parent gallery; renders as an inline carousel (`HorizontalImageStrip` or successor). No own route. |
+| **object** | Folder tagged `-o` inside a gallery. Produces a card on the parent gallery; renders as `InlineCarousel` (card-scale). No own route. |
 | **folder** | Folder tagged `-f`. Transparent organisational container. Has no route, no card, no slug contribution. Its children attach to the nearest enclosing gallery. |
 | **card** | Element of a gallery's manifest. Discriminated by `type ∈ {image, page, object}`. |
 | **block** | Element of a page's manifest. Discriminated by `type ∈ {image, md}`. |
@@ -187,9 +191,7 @@ via `/` (e.g. `physical/small/400xf`); `-f` does not contribute.
   "generated_at":  "<ISO-8601 UTC>",
   "intro":         null | "<markdown text from _gallery.md>",
   "cards":         [ <card> ... ],
-  // Backward-compat fields (DEPRECATED; kept while legacy reader is in use):
-  "total_images":  <int>,
-  "images":        [ <flat image entries derived from cards> ]
+  "total_images":  <int>   // derived image count; no flat images[] array
 }
 ```
 
@@ -245,9 +247,9 @@ The section set is closed and hard-coded. As of this writing, on-disk:
 { book, digital, objects, physical, render }
 ```
 
-`photos/` is reserved for a future migration of the `photography` route
-(currently served from hard-coded JS arrays in `art_section.js`; see §7.3).
-The section name on disk MUST equal the `gallery_type` written into manifests.
+`photos/` manifests serve the `photography` route (reader-only; O3). On-disk
+`reference/images to upload/photos/` migration deferred. Section name on disk
+MUST equal `gallery_type` in manifests for art sections.
 
 ### 5.2 Route construction
 
@@ -400,11 +402,13 @@ before implementation proceeds beyond §8 step 4.
 
 | ID | Decision |
 |---|---|
-| O1 | Should `digital/Experiments-g/AI-f` and `digital/Posters-g/MUST-f` remain `-f` (current merge behaviour) or be promoted to `-g` (new routes `digital/experiments/ai`, `digital/posters/must`)? Default: keep as `-f`. |
-| O2 | Should `book/Notebook 1-g` use generic `nnn-` order prefixes after C4, or should the processor support a `_gallery.json` flag like `{ "sort": "trailing-int" }` for the existing `note_0..note_125` filenames as-is? Default: generic prefixes (rename files at upload time once). |
-| O3 | Should `photos/` (renamed from `photography`) be added as the sixth section, or kept as a separate pipeline reading from the existing R2 `art/photos/` layout? Default: add as section, migrate sources. |
-| O4 | Should `-o` render via `HorizontalImageStrip` (existing reserved component) or a new `InlineCarousel` that fits within a masonry card without horizontal page-paging? Default: `InlineCarousel` (smaller, card-scale). |
-| O5 | Should object cards (`-o`) on click open the lightbox in a sub-list of just that object's images, or expand inline only? Default: expand inline; lightbox on second click. |
-| O6 | Should `_gallery.md` be rendered above the masonry on the gallery route, or only exposed via a metadata field? Default: above the masonry, behind a collapsible section header per `semiotics.md §1` (`▸`/`▾` content section). |
+| O1 | **RESOLVED** — `AI-f`/`MUST-f` renamed to `AI-p`/`MUST-p`; page routes `digital/experiments/ai`, `digital/posters/must`. |
+| O2 | **RESOLVED** — `note_NNN.png` → `NNN.png`; ids `000`..`125` (cache break accepted). |
+| O3 | **RESOLVED** — reader-only via `art/manifests/photos/<set>/manifest.json`; no source migration yet. |
+| O4 | **RESOLVED** — `InlineCarousel` in `specialized.js`; `HorizontalImageStrip` kept for `{type:'strip'}` page blocks. |
+| O5 | **RESOLVED** — inline carousel on card; lightbox on inner image click (scoped to object images). |
+| O6 | **RESOLVED** — `card.blocks[]` infinite md+image; document flow (no per-block borders); `intro` above masonry. |
+
+**Id-compat decision:** image-file card `id`s preserve legacy `safe_stem` (spaces→`_`, case kept). Only folder slugs are kebab-cased. `book/notebook-1` ids change (`note_NNN`→`NNN`).
 
 End of document.

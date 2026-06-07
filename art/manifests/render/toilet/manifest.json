@@ -2,17 +2,19 @@
   "gallery_type": "render",
   "gallery_name": "toilet",
   "base_url": "https://media.einoder.net/art/render/toilet",
-  "generated_at": "2026-04-08T03:13:43.587951+00:00",
-  "total_images": 1,
-  "images": [
+  "generated_at": "2026-06-07T01:44:58.248731+00:00",
+  "intro": null,
+  "cards": [
     {
+      "type": "image",
       "id": "Man_on_Toilet",
-      "filename": "Man_on_Toilet.jpg",
       "urls": {
         "thumb": "https://media.einoder.net/art/render/toilet/thumbs/Man_on_Toilet.jpg",
         "web": "https://media.einoder.net/art/render/toilet/web/Man_on_Toilet.jpg",
         "zoom": "https://media.einoder.net/art/render/toilet/zoom/Man_on_Toilet.jpg"
-      }
+      },
+      "filename": "Man_on_Toilet.jpg"
     }
-  ]
+  ],
+  "total_images": 1
 }

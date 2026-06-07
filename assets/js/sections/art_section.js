@@ -9,23 +9,28 @@
  *   book        → sketchbooks/notebooks (sequential pages, masonry display)
  *   photography → film photography (life1/life2/morocco/nature/rom/snow/urban)
  *
- * @version 4.0.0
+ * @version 5.0.0
  * @dependencies ['ComponentLibrary', 'R2Helper']
  */
 
 import R2Helper from '../shared/r2-url-helper.js';
+import { MarkdownBody } from '../shared/content.js';
 import { GalleryLightbox, MasonryGallery, ImageGrid, ArtworkPage } from '../shared/masonry-gallery.js';
 
 const R2_BASE = 'https://media.einoder.net';
 
-const ArtSection = {
-    version: '4.0.0',
-    currentContainer: null,
-    componentInstances: [],
-    navigationCallbacks: null,
+const SECTION_META = {
+    physical:    { title: 'PHYSICAL',    description: 'Painted and drawn works on physical media' },
+    objects:     { title: 'OBJECTS',     description: 'Decorated and painted physical objects' },
+    digital:     { title: 'DIGITAL',     description: 'Digital artworks and compositions' },
+    render:      { title: 'RENDER',      description: '3D rendered works and digital sculptures' },
+    book:        { title: 'BOOK',        description: 'Sketchbook pages and notebook works' },
+    photography: { title: 'PHOTOGRAPHY', description: 'Film photography collections across different themes and locations' },
+};
 
-    // ── Route registry ──────────────────────────────────────────────────────
-    pages: [
+const PHOTO_SETS = ['life1', 'life2', 'morocco', 'nature', 'rom', 'snow', 'urban'];
+
+const _FALLBACK_PAGES = [
         '#art',
         // Physical
         '#art/physical',
@@ -76,10 +81,9 @@ const ArtSection = {
         // Book
         '#art/book',
         '#art/book/notebook-1',
-    ],
+];
 
-    // ── Gallery structure (mirrors reference/images to upload) ───────────────
-    galleryStructure: {
+const _FALLBACK_GALLERY_STRUCTURE = {
         physical: {
             title: 'PHYSICAL',
             description: 'Painted and drawn works on physical media',
@@ -157,11 +161,21 @@ const ArtSection = {
             ],
             artworks: [{ id: 'all', title: 'ALL PHOTOS', count: 128 }],
         },
-    },
+};
+
+const ArtSection = {
+    version: '5.0.0',
+    currentContainer: null,
+    componentInstances: [],
+    navigationCallbacks: null,
+    _galleryIndex: null,
+    pages: [..._FALLBACK_PAGES],
+    galleryStructure: JSON.parse(JSON.stringify(_FALLBACK_GALLERY_STRUCTURE)),
 
     // ── Route handler ────────────────────────────────────────────────────────
     async handleRoute(subsection, container, callbacks) {
         callbacks = callbacks || {};
+        await this._ensureRegistry();
         console.log(`Art Section v${this.version} route: ${subsection || 'index'}`);
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
@@ -183,8 +197,8 @@ const ArtSection = {
         } else if (subsection === 'physical/small/all') {
             await this.renderAllForSection('physical', 'small');
 
-        // ── Artwork page (imageId within a gallery — deepest level) ──
-        } else if (this._isArtworkRoute(subsection)) {
+        // ── Artwork page (page card route — data-driven from manifest) ──
+        } else if (await this._isPageRoute(subsection)) {
             await this.renderArtworkPage(subsection);
 
         // ── Physical ──
@@ -229,14 +243,94 @@ const ArtSection = {
 
         // ── Photography ──
         } else if (subsection === 'photography') {
-            this.renderPhotographyIndex();
+            await this.renderPhotographyIndex();
         } else if (subsection.startsWith('photography/')) {
             const photoSection = subsection.replace('photography/', '');
-            this.renderPhotographyGallery(photoSection);
+            await this.renderPhotographyGallery(photoSection);
 
         } else {
             this.renderArtGallery(subsection);
         }
+    },
+
+    // ── Registry (from art/manifests/_index.json) ────────────────────────────
+
+    async _ensureRegistry() {
+        if (this._galleryIndex) return;
+        try {
+            const res = await fetch('/art/manifests/_index.json');
+            if (!res.ok) throw new Error(`index ${res.status}`);
+            const index = await res.json();
+            this._galleryIndex = index;
+            this.galleryStructure = this._buildGalleryStructureFromIndex(index);
+            this.pages = this._buildPagesFromIndex(index);
+        } catch (e) {
+            console.warn('ArtSection: _index.json unavailable, using fallback registry', e);
+            this._galleryIndex = null;
+            this.galleryStructure = JSON.parse(JSON.stringify(_FALLBACK_GALLERY_STRUCTURE));
+            this.pages = [..._FALLBACK_PAGES];
+        }
+    },
+
+    _buildSubsectionTree(galleries) {
+        const root = {};
+        for (const g of galleries) {
+            const parts = g.slug.split('/');
+            let node = root;
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                if (!node[part]) {
+                    node[part] = {
+                        id:    part,
+                        title: (i === parts.length - 1 ? g.title : part).toUpperCase(),
+                        count: i === parts.length - 1 ? (g.card_count || 0) : 0,
+                        _nest: {},
+                    };
+                } else if (i === parts.length - 1) {
+                    node[part].count = g.card_count || 0;
+                    node[part].title = g.title.toUpperCase();
+                }
+                node = node[part]._nest;
+            }
+        }
+        const toArray = (nest) => Object.values(nest).map(n => {
+            const subs = toArray(n._nest);
+            const out  = { id: n.id, title: n.title, count: n.count };
+            if (subs.length) out.subsections = subs;
+            return out;
+        }).sort((a, b) => a.id.localeCompare(b.id));
+        return toArray(root);
+    },
+
+    _buildGalleryStructureFromIndex(index) {
+        const structure = {};
+        for (const [sectionKey, sectionData] of Object.entries(index.sections || {})) {
+            const meta = SECTION_META[sectionKey] || { title: sectionKey.toUpperCase(), description: '' };
+            structure[sectionKey] = {
+                title:       meta.title,
+                description: meta.description,
+                subsections: this._buildSubsectionTree(sectionData.galleries || []),
+            };
+        }
+        structure.photography = JSON.parse(JSON.stringify(_FALLBACK_GALLERY_STRUCTURE.photography));
+        return structure;
+    },
+
+    _buildPagesFromIndex(index) {
+        const pages = ['#art'];
+        for (const [sectionKey, sectionData] of Object.entries(index.sections || {})) {
+            pages.push(`#art/${sectionKey}`);
+            for (const g of sectionData.galleries || []) {
+                pages.push(`#art/${sectionKey}/${g.slug}`);
+                for (const pid of g.pages || []) {
+                    pages.push(`#art/${sectionKey}/${g.slug}/${pid}`);
+                }
+            }
+        }
+        pages.push('#art/photography');
+        for (const set of PHOTO_SETS) pages.push(`#art/photography/${set}`);
+        pages.push('#art/photography/all');
+        return pages;
     },
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -250,18 +344,122 @@ const ArtSection = {
     },
 
     /**
-     * Returns true if subsection is a per-artwork path (imageId as final segment).
-     * physical/small/{sub}/{imageId} → 4 segments (physical/small/* are galleries at depth 3)
-     * {cat}/{gallery}/{imageId}      → 3 segments for all other categories
-     * photography/* never has artwork pages (photos go straight to lightbox).
+     * Returns true when the final path segment matches a page card on the parent gallery.
+     * Data-driven: reads manifest.cards (or legacy image.page) — no depth heuristics.
      */
-    _isArtworkRoute(subsection) {
-        if (!subsection) return false;
+    async _isPageRoute(subsection) {
+        if (!subsection || subsection.startsWith('photography')) return false;
         const parts = subsection.split('/');
-        if (parts[0] === 'photography') return false;
-        // physical/small/{sub} is itself a gallery (3 segs); depth-4 is artwork
-        if (parts[0] === 'physical' && parts[1] === 'small') return parts.length === 4;
-        return parts.length >= 3;
+        if (parts.length < 2) return false;
+        const pageId      = parts[parts.length - 1];
+        const galleryType = parts[0];
+        const galleryName = parts.slice(1, -1).join('/');
+        if (!galleryName) return false;
+        try {
+            const manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+            return (manifest.cards || []).some(c => c.type === 'page' && c.id === pageId);
+        } catch {
+            return false;
+        }
+    },
+
+    /** Map a manifest card to a MasonryGallery item. */
+    _cardToMasonryItem(card) {
+        if (card.type === 'image') {
+            return {
+                thumb:    card.urls?.thumb,
+                src:      card.urls?.web,
+                zoom:     card.urls?.zoom,
+                title:    card.id,
+                cardType: 'image',
+                card,
+            };
+        }
+        if (card.type === 'page') {
+            const thumb = card.cover?.thumb || card.blocks?.find(b => b.type === 'image')?.urls?.thumb;
+            const web   = card.cover?.web   || card.blocks?.find(b => b.type === 'image')?.urls?.web;
+            return {
+                thumb, src: web, zoom: web,
+                title:    card.id,
+                cardType: 'page',
+                hasPage:  true,
+                card,
+            };
+        }
+        if (card.type === 'object') {
+            const first = card.images?.[0];
+            return {
+                thumb:    card.cover?.thumb || first?.urls?.thumb,
+                src:      card.cover?.web   || first?.urls?.web,
+                zoom:     first?.urls?.zoom,
+                title:    card.id,
+                cardType: 'object',
+                card,
+            };
+        }
+        return null;
+    },
+
+    /** Convert manifest page blocks to ArtworkPage block schema. */
+    _blocksToArtworkBlocks(blocks) {
+        return (blocks || []).map(block => {
+            if (block.type === 'image') {
+                return {
+                    type:  'image',
+                    src:   block.urls?.web   || '',
+                    zoom:  block.urls?.zoom  || block.urls?.web || '',
+                    thumb: block.urls?.thumb || '',
+                    title: block.id,
+                };
+            }
+            if (block.type === 'md') return { type: 'md', text: block.text };
+            return block;
+        });
+    },
+
+    /** Resolve preview thumb from a manifest (cards-first, flat images fallback for photos). */
+    _thumbFromManifest(manifest) {
+        if (manifest.cards?.length) {
+            for (let i = manifest.cards.length - 1; i >= 0; i--) {
+                const c = manifest.cards[i];
+                if (c.type === 'image') return c.urls?.thumb ?? null;
+                if (c.type === 'object') return c.cover?.thumb || c.images?.[c.images.length - 1]?.urls?.thumb || null;
+                if (c.type === 'page') {
+                    const blk = c.blocks?.findLast?.(b => b.type === 'image') ||
+                        [...(c.blocks || [])].reverse().find(b => b.type === 'image');
+                    return c.cover?.thumb || blk?.urls?.thumb || null;
+                }
+            }
+            return null;
+        }
+        const images = manifest.images;
+        if (!images?.length) return null;
+        return images[images.length - 1]?.urls?.thumb ?? null;
+    },
+
+    /** Lightbox-ready images from card list (image cards + object inner images). */
+    _lightboxImagesFromCards(cards) {
+        const out = [];
+        for (const card of cards || []) {
+            if (card.type === 'image') {
+                out.push({
+                    src:   card.urls?.web,
+                    zoom:  card.urls?.zoom,
+                    thumb: card.urls?.thumb,
+                    title: card.id,
+                });
+            } else if (card.type === 'object') {
+                for (const img of card.images || []) {
+                    out.push({
+                        src:   img.urls?.web,
+                        zoom:  img.urls?.zoom,
+                        thumb: img.urls?.thumb,
+                        title: img.id,
+                    });
+                }
+            }
+        }
+        return out;
     },
 
     /**
@@ -270,92 +468,75 @@ const ArtSection = {
      */
     async renderArtworkPage(subsection) {
         const parts       = subsection.split('/');
-        const imageId     = parts[parts.length - 1];
+        const pageId      = parts[parts.length - 1];
         const galleryType = parts[0];
         const galleryName = parts.slice(1, -1).join('/');
-        const galleryTitle = this._galleryTitle(galleryType, parts[parts.length - 2]);
 
-        let manifest, allImages;
+        let manifest;
         try {
-            manifest  = await R2Helper.fetchManifest(galleryType, galleryName);
-            allImages = await this._manifestImages(galleryType, galleryName, galleryTitle);
+            manifest = await R2Helper.fetchManifest(galleryType, galleryName);
         } catch {
             this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}`);
             return;
         }
 
-        const rawImage     = (manifest.images || []).find(img => img.id === imageId);
-        const resolvedIdx  = allImages.findIndex(img => img.title === imageId);
-        const resolvedImg  = allImages[resolvedIdx];
+        const pageCard = manifest.cards?.find(c => c.type === 'page' && c.id === pageId);
+        let blocks = [];
 
-        if (!rawImage || !resolvedImg) {
+        if (!pageCard) {
+            this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}`);
+            return;
+        }
+        blocks = this._blocksToArtworkBlocks(pageCard.blocks);
+
+        if (!blocks.length) {
             this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}`);
             return;
         }
 
-        if (!rawImage.page?.length) {
-            // No page content — render the gallery masonry and open lightbox immediately
-            await this._renderImageGallery(galleryType, galleryName, galleryTitle);
-            const lb = new GalleryLightbox(
-                { images: allImages, index: Math.max(0, resolvedIdx) },
-                { MF: window.MathematicalFoundation }
-            );
-            this.componentInstances.push(lb);
-            lb.open();
-            return;
-        }
-
-        // Resolve page blocks: image ids → URLs from the manifest
-        const rawById  = Object.fromEntries((manifest.images || []).map(img => [img.id, img]));
-        const resById  = Object.fromEntries(allImages.map(img => [img.title, img]));
-        const blocks   = rawImage.page.map(block => {
-            if (block.type === 'image') {
-                const res = resById[block.id] || resolvedImg;
-                return { type: 'image', src: res.src || '', zoom: res.zoom || '', thumb: res.thumb || '', title: block.id };
-            }
-            if (block.type === 'md') return { type: 'md', text: block.text };
-            return block; // unknown types passed through for forward compat
-        });
-
         this.currentContainer.innerHTML = '';
         this.currentContainer.style.padding = '0';
 
-        const page = new ArtworkPage({ blocks, title: imageId }, { MF: window.MathematicalFoundation });
+        const page = new ArtworkPage({ blocks, title: pageId }, { MF: window.MathematicalFoundation });
         this.componentInstances.push(page);
         this.currentContainer.appendChild(page.render());
         page.mount();
 
-        this._setupSubheaderArtwork(galleryType, galleryName, imageId, allImages);
+        const navItems = (manifest.cards || [])
+            .filter(c => c.type === 'page')
+            .map(c => ({ title: c.id }));
+        this._setupSubheaderArtworkFromCards(galleryType, galleryName, pageId, navItems);
     },
 
-    _setupSubheaderArtwork(galleryType, galleryName, imageId, allImages) {
+    _setupSubheaderArtworkFromCards(galleryType, galleryName, pageId, cardNavItems) {
         if (!window.Subheader) return;
         const sh           = window.Subheader;
         const galleryLabel = this._galleryTitle(galleryType, galleryName.split('/').pop());
 
-        sh.updateTitle(imageId);
+        sh.updateTitle(pageId);
 
+        const pages = cardNavItems.filter(c => c.title);
         const dropItems = [
             { label: `← BACK TO ${galleryLabel}`, path: `#art/${galleryType}/${galleryName}`, isCurrent: false },
-            ...allImages.map(img => ({
-                label:     img.title || img.id,
-                path:      `#art/${galleryType}/${galleryName}/${img.title}`,
-                isCurrent: img.title === imageId,
+            ...pages.map(c => ({
+                label:     c.title,
+                path:      `#art/${galleryType}/${galleryName}/${c.title}`,
+                isCurrent: c.title === pageId,
             })),
         ];
         sh.setDropdownContent(dropItems, item => {
             if (item.path) this.navigateToPage(item.path);
         });
 
-        const navItems = allImages.map(img => ({
-            id:    img.title,
-            path:  `#art/${galleryType}/${galleryName}/${img.title}`,
-            title: img.title,
+        const navItems = pages.map(c => ({
+            id:    c.title,
+            path:  `#art/${galleryType}/${galleryName}/${c.title}`,
+            title: c.title,
             isTOC: false,
         }));
         sh.updateNavigation({
             section:    'art',
-            subsection: `${galleryName}/${imageId}`,
+            subsection: `${galleryName}/${pageId}`,
             items:      navItems,
             navigate:   (sec, sub) => this.navigationCallbacks?.navigateToSection?.(sec, sub),
         });
@@ -374,6 +555,19 @@ const ArtSection = {
      */
     async _manifestGroups(galleryType, galleryName, labelPrefix) {
         const manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+
+        if (manifest.cards?.length) {
+            const items = manifest.cards.map(c => this._cardToMasonryItem(c)).filter(Boolean);
+            return [{
+                id:     'default',
+                title:  labelPrefix,
+                images: items,
+                text:   null,
+                thumb:  items[items.length - 1]?.thumb || null,
+                cards:  manifest.cards,
+            }];
+        }
+
         const allImages = manifest.images || [];
 
         // Deduplicate by id
@@ -389,6 +583,7 @@ const ArtSection = {
                 title:   img.id,
                 size:    s,
                 hasPage: Array.isArray(img.page) && img.page.length > 0,
+                cardType: 'image',
             };
         };
 
@@ -506,11 +701,7 @@ const ArtSection = {
         }
         try {
             const manifest = await R2Helper.fetchManifest(r2Type, path);
-            const images = manifest.images;
-            if (!images?.length) return null;
-            // Last entry = most recently added
-            const last = images[images.length - 1];
-            return last.urls?.thumb ?? null;
+            return this._thumbFromManifest(manifest);
         } catch {
             return null;
         }
@@ -696,9 +887,17 @@ const ArtSection = {
         this.currentContainer.style.padding = '0';
         const F = window.MathematicalFoundation?.F || 14;
 
+        let manifest = null;
         let allImages = [];
+        let cards = null;
         try {
-            allImages = await this._manifestImages(galleryType, galleryName, title);
+            manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+            if (manifest.cards?.length) {
+                cards     = manifest.cards;
+                allImages = cards.map(c => this._cardToMasonryItem(c)).filter(Boolean);
+            } else {
+                allImages = await this._manifestImages(galleryType, galleryName, title);
+            }
         } catch {
             console.warn(`No manifest for art/${galleryType}/${galleryName}`);
         }
@@ -713,6 +912,21 @@ const ArtSection = {
             return;
         }
 
+        if (manifest?.intro) {
+            const intro = new MarkdownBody({
+                markdownText: manifest.intro,
+                className:    'gallery-intro markdown-body',
+            }, { MF: window.MathematicalFoundation });
+            this.componentInstances.push(intro);
+            const introEl = intro.render();
+            introEl.style.cssText = `padding:${F}px;box-sizing:border-box;border-bottom:1px solid var(--c-border);`;
+            this.currentContainer.appendChild(introEl);
+        }
+
+        const lightboxPool = cards
+            ? this._lightboxImagesFromCards(cards)
+            : allImages.map(img => ({ src: img.src, zoom: img.zoom, thumb: img.thumb, title: img.title }));
+
         const gallery = new MasonryGallery({
             images:         allImages,
             gap:            0,
@@ -721,7 +935,17 @@ const ArtSection = {
             columnsDesktop: 3,
             columnsWide:    4,
             loadBuffer:     200,
-            onItemClick:    (img, idx) => this._handleArtworkClick(galleryType, galleryName, img, idx, allImages),
+            onItemClick:    (img, idx) => this._handleArtworkClick(
+                galleryType, galleryName, img, idx, allImages, lightboxPool, cards,
+            ),
+            onObjectImageClick: (img, idx, objImages) => {
+                const lb = new GalleryLightbox(
+                    { images: objImages, index: idx },
+                    { MF: window.MathematicalFoundation },
+                );
+                this.componentInstances.push(lb);
+                lb.open();
+            },
         }, { MF: window.MathematicalFoundation });
         this.componentInstances.push(gallery);
         this.currentContainer.appendChild(gallery.render());
@@ -731,20 +955,27 @@ const ArtSection = {
 
     /**
      * Called when a card is clicked in the leaf masonry gallery.
-     * Routes to the artwork page if the image declares page content,
-     * otherwise opens GalleryLightbox directly (overlay over the masonry).
+     * Routes by card.type: page -> route; object -> inline carousel (P5a);
+     * image -> GalleryLightbox.
      */
-    _handleArtworkClick(galleryType, galleryName, img, idx, allImages) {
-        if (img.hasPage) {
+    _handleArtworkClick(galleryType, galleryName, img, idx, allImages, lightboxPool, cards) {
+        const cardType = img.cardType || (img.hasPage ? 'page' : 'image');
+
+        if (cardType === 'page' || img.hasPage) {
             this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}/${img.title}`);
-        } else {
-            const lb = new GalleryLightbox(
-                { images: allImages, index: idx },
-                { MF: window.MathematicalFoundation }
-            );
-            this.componentInstances.push(lb);
-            lb.open();
+            return;
         }
+
+        if (cardType === 'object') return;
+
+        const pool = lightboxPool || allImages;
+        const lbIdx = pool.findIndex(i => i.title === img.title);
+        const lb = new GalleryLightbox(
+            { images: pool, index: Math.max(0, lbIdx >= 0 ? lbIdx : idx) },
+            { MF: window.MathematicalFoundation },
+        );
+        this.componentInstances.push(lb);
+        lb.open();
     },
 
     // ── Subheader helpers ────────────────────────────────────────────────────
@@ -827,35 +1058,37 @@ const ArtSection = {
     },
 
     // ── Photography ───────────────────────────────────────────────────────────
-    renderPhotographyIndex() {
+    async renderPhotographyIndex() {
         this.currentContainer.innerHTML = '';
         this.currentContainer.style.padding = '0';
         const F = window.MathematicalFoundation?.F || 14;
         const photography = this.galleryStructure.photography;
 
-        const items = photography.subsections.map(sub => {
-            const sampleImages = this.getPhotographyImages(sub.id);
+        const items = await Promise.all(photography.subsections.map(async (sub) => {
+            const sampleImages = await this.getPhotographyImages(sub.id);
             const image = sampleImages[0]?.thumb || sampleImages[0]?.src || null;
             return {
                 image,
                 label: sub.title,
-                count: sub.count || null,
+                count: sampleImages.length || sub.count || null,
                 onClick: () => this.navigationCallbacks?.navigateToSection?.('art', `photography/${sub.id}`),
             };
-        });
+        }));
 
         const wrap = this._makeWrap(F);
         const grid = new ImageGrid({ items }, { MF: window.MathematicalFoundation });
         this.componentInstances.push(grid);
         wrap.appendChild(grid.render());
         this.currentContainer.appendChild(wrap);
+
+        this._appendViewAllButton('photography', photography, photography.subsections);
     },
 
-    renderPhotographyGallery(photoSection) {
+    async renderPhotographyGallery(photoSection) {
         this.currentContainer.innerHTML = '';
         this.currentContainer.style.padding = '0';
         const F = window.MathematicalFoundation?.F || 14;
-        const images = this.getPhotographyImages(photoSection);
+        const images = await this.getPhotographyImages(photoSection);
 
         if (images.length === 0) {
             this.currentContainer.appendChild(this._renderEmptyState(
@@ -890,66 +1123,29 @@ const ArtSection = {
         this.setupSubheaderForPhotography(photoSection);
     },
 
-    getPhotographyImages(photoSection) {
-        const sectionMap = {
-            life1: 'life1', life2: 'life2', morocco: 'morocco',
-            nature: 'nature', rom: 'rom', snow: 'snow', urban: 'urban',
-        };
-        const imageLists = {
-            Life1: [
-                '237040610016','237040610021','237040610022','237040610023','237040610024',
-                '237040610025','237040610027','237040610028','237040610029','237040610030','237040610032',
-            ],
-            Life2: [
-                '262556200009','262556200012','262556200013','262556200015','262556200018',
-                '262556200031','262556200032','262556200033','262556200035',
-                'R1-01040-0000','R1-01040-0001','R1-01040-0002','R1-01040-0004','R1-01040-0005',
-                'R1-01040-0006','R1-01040-0007','R1-01040-0008','R1-01040-0009','R1-01040-0010',
-            ],
-            Morocco: [
-                '237040620001','237040620002','237040620003','237040620004','237040620009','237040620011',
-                '237040620012','237040620013','237040620015','237040620016','237040620018','237040620019',
-                '237040620020','237040620021','237040620024','237040620027','237040620030','237040620032',
-                '237040620036','237040630002','237040630003','237040630004','237040630005','237040630006',
-                '237040630007','237040630010','237040630011','237040630012','237040630013','237040630014',
-                '237040630015','237040630016','237040630017','237040630018','237040630019','237040630020',
-                '237040630021','237040630022','237040630023','237040630024','237040630025','237040630027',
-                '237040630029','237040630031','237040630034','237040630035','262556210002','262556210003',
-                '262556210004','262556210005','262556210006','262556210007',
-            ],
-            Nature: ['262556200028','262556200029','262556200030','R1-01040-0003'],
-            Rom: [
-                '237040610034','237040610035','237040610036','262556200001','262556200002','262556200003',
-                '262556200004','262556200006','262556210030','262556210031','262556210032','262556210033',
-                '262556210034','262556210035','262556210036',
-            ],
-            Snow: [
-                '262556210008','262556210009','262556210010','262556210011','262556210012','262556210013',
-                '262556210014','262556210015','262556210016','262556210017','262556210018','262556210019',
-                '262556210020','262556210021','262556210022','262556210023','262556210024','262556210025',
-                '262556210026','262556210027','262556210028','262556210029',
-            ],
-            Urban: ['237040610010','237040610011','237040610012','237040610014','237040620001'],
-        };
-
-        const toImg = (galleryName, cap, filename) => {
-            const urls = R2Helper.getPhotoUrlSet(galleryName, `${filename}.jpg`);
-            return { thumb: urls.thumb, src: urls.web, zoom: urls.zoom, title: `${cap} - ${filename}`, caption: `Film photography from ${cap} collection` };
-        };
-
-        if (photoSection === 'all') {
-            const images = [];
-            Object.keys(sectionMap).forEach(key => {
-                const cap = key.charAt(0).toUpperCase() + key.slice(1);
-                (imageLists[cap] || []).forEach(f => images.push(toImg(sectionMap[key], cap, f)));
-            });
-            return images;
+    async _photoManifestImages(setName) {
+        try {
+            const manifest = await R2Helper.fetchManifest('photos', setName);
+            const cap = setName.charAt(0).toUpperCase() + setName.slice(1);
+            return (manifest.images || []).map(img => ({
+                thumb:   img.urls?.thumb,
+                src:     img.urls?.web,
+                zoom:    img.urls?.zoom,
+                title:   img.id,
+                caption: `Film photography from ${cap} collection`,
+            }));
+        } catch {
+            return [];
         }
-        const galleryName = sectionMap[photoSection];
-        const cap = photoSection.charAt(0).toUpperCase() + photoSection.slice(1);
-        return galleryName && imageLists[cap]
-            ? imageLists[cap].map(f => toImg(galleryName, cap, f))
-            : [];
+    },
+
+    async getPhotographyImages(photoSection) {
+        if (photoSection === 'all') {
+            const batches = await Promise.all(PHOTO_SETS.map(s => this._photoManifestImages(s)));
+            return batches.flat();
+        }
+        if (!PHOTO_SETS.includes(photoSection)) return [];
+        return this._photoManifestImages(photoSection);
     },
 
     setupSubheaderForPhotography(photoSection) {

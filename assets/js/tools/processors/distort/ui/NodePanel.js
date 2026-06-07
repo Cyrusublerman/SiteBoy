@@ -37,20 +37,32 @@ export class NodePanel extends BaseComponent {
     this._extendedControlInstances = [];
   }
 
-  /** G14: param defs may set `when: { param, equals } | { param, in: string[] } | { param, notEquals }` */
+  /** G14: when: single clause | array of clauses (AND); each { param, equals|in|notEquals } */
   _paramDefVisible(def) {
     const w = def?.when;
-    if (!w || !w.param) return true;
-    const pv = this._node.params[w.param];
-    if (Object.prototype.hasOwnProperty.call(w, 'equals')) return pv === w.equals;
-    if (Object.prototype.hasOwnProperty.call(w, 'notEquals')) return pv !== w.notEquals;
-    if (Array.isArray(w.in)) return w.in.includes(pv);
+    if (!w) return true;
+    const clauses = Array.isArray(w) ? w : [w];
+    return clauses.every(c => this._paramClauseVisible(c));
+  }
+
+  _paramClauseVisible(clause) {
+    if (!clause?.param) return true;
+    const pv = this._node.params[clause.param];
+    if (Object.prototype.hasOwnProperty.call(clause, 'equals')) return pv === clause.equals;
+    if (Object.prototype.hasOwnProperty.call(clause, 'notEquals')) return pv !== clause.notEquals;
+    if (Array.isArray(clause.in)) return clause.in.includes(pv);
     return true;
+  }
+
+  _paramWhenDependsOn(when, depKey) {
+    if (!when) return false;
+    const clauses = Array.isArray(when) ? when : [when];
+    return clauses.some(c => c?.param === depKey);
   }
 
   _paramDefsDependOn(depKey) {
     const defs = this._node.getParamDefs ? this._node.getParamDefs() : {};
-    return Object.values(defs).some(d => d?.when?.param === depKey);
+    return Object.values(defs).some(d => this._paramWhenDependsOn(d?.when, depKey));
   }
 
   render() {
@@ -226,6 +238,7 @@ export class NodePanel extends BaseComponent {
     const byTier = {};
     for (const [key, def] of Object.entries(paramDefs)) {
       if (def.type === 'internal') continue;
+      if (key === '__opacity__') continue;
       const tier = def.tier ?? 3;
       if (!byTier[tier]) byTier[tier] = [];
       byTier[tier].push([key, def]);
@@ -257,7 +270,12 @@ export class NodePanel extends BaseComponent {
   _applyExtendedPatch(patch, paramKeys) {
     if (patch == null || !paramKeys) return;
     if (typeof patch === 'string' || typeof patch === 'number' || typeof patch === 'boolean') {
-      if (paramKeys.mode) this._node.params[paramKeys.mode] = patch;
+      if (paramKeys.value) this._node.params[paramKeys.value] = patch;
+      else if (paramKeys.mode) this._node.params[paramKeys.mode] = patch;
+      else {
+        const entries = Object.entries(paramKeys);
+        if (entries.length === 1) this._node.params[entries[0][1]] = patch;
+      }
       this._emit();
       return;
     }
@@ -282,6 +300,7 @@ export class NodePanel extends BaseComponent {
   _buildExtendedControl(ctrl) {
     const CL = this.deps.ComponentLibrary;
     if (!ctrl?.type || !CL?.create) return;
+    if (ctrl.when && !this._paramDefVisible({ when: ctrl.when })) return;
     const paramKeys = ctrl.paramKeys ?? {};
     const mergedOpts = { ...(ctrl.options ?? {}) };
     for (const [stateKey, paramKey] of Object.entries(paramKeys)) {

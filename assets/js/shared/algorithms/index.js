@@ -669,6 +669,11 @@ export * as Morphology from './image/morphology.js';
 // ═══════════════════════════════════════════════════════════════════════════
 export * as BrushEngine from './painter/brush-engine.js';
 export { LayerTracker } from './painter/layer-tracker.js';
+export {
+  runGenerativePainter,
+  buildPalette,
+  parsePaletteColours,
+} from './painter/generative-painter.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COLOUR ADJUSTMENTS — histogram EQ, CLAHE, channel mixer, vibrance, temp/tint

@@ -37,7 +37,7 @@ Every module listed below has zero open `ERROR` or `WARN` rows in `distort-issue
 - [ ] domainwarp
 - [ ] cellularautomata
 - [ ] wavedistortion
-- [ ] paintstroke
+- [x] paintstroke (WIP — Distort integration rebuild)
 - [ ] delaunaymesh
 - [ ] sdfshape
 

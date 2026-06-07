@@ -34,6 +34,16 @@ function _buildStack(msgStack) {
       node.mask.source = nd.mask.source ?? 'none';
       node.mask.invert = !!nd.mask.invert;
       node.mask.feather = nd.mask.feather ?? 0;
+      if (nd.mask._sourcePixels) {
+        node.mask._sourcePixels = new Uint8ClampedArray(nd.mask._sourcePixels);
+        node.mask._sourceW = nd.mask._sourceW ?? 0;
+        node.mask._sourceH = nd.mask._sourceH ?? 0;
+      }
+      if (nd.mask._drawPixels) {
+        node.mask._drawPixels = new Uint8Array(nd.mask._drawPixels);
+        node.mask._drawW = nd.mask._drawW ?? 0;
+        node.mask._drawH = nd.mask._drawH ?? 0;
+      }
     }
     if (nd.modulation) {
       node.modulation = { ...nd.modulation };
@@ -65,6 +75,15 @@ self.onmessage = function (e) {
     try {
       state.sourcePixels = new Uint8ClampedArray(msg.sourcePixels);
       _applyMsg(msg);
+      state.modulationMaps = {};
+      for (const [name, m] of Object.entries(msg.modulationMaps ?? {})) {
+        state.modulationMaps[name] = {
+          sourcePixels: new Uint8ClampedArray(m.pixels),
+          sourceW: m.sourceW,
+          sourceH: m.sourceH,
+          name,
+        };
+      }
       state.stack = _buildStack(msg.stack);
       for (const n of state.stack) { n._cacheValid = false; }
 

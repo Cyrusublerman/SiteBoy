@@ -248,14 +248,15 @@ export class Pipeline {
           const hasMod  = Object.keys(node.modulation ?? {}).length > 0;
           const mode    = node.blendMode ?? 'normal';
 
+          if (hasMask) node.buildMask(bufA, w, h);
+
           const ctx = {
             ...pipelineCtx,
             nodeSeed: hashSeed(s.globalSeed, ni, node.id),
             nodeIndex: ni,
             modMaps: hasMod ? modMaps : null,
+            maskData: node.mask?.data ?? null,
           };
-
-          if (hasMask) node.buildMask(bufA, w, h);
 
           const tNode = performance.now();
           const needsBlend = node.opacity < 1 || hasMask || mode !== 'normal';
