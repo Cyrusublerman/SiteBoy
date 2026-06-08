@@ -979,16 +979,24 @@ export class GenerativeToolHost extends BaseComponent {
         if (key === 'canvasWidth')  this.scriptConfig.canvas.width  = value;
         if (key === 'canvasHeight') this.scriptConfig.canvas.height = value;
 
+        const w = this.scriptConfig.canvas.width;
+        const h = this.scriptConfig.canvas.height;
+
         if (this.isP5Context && this.p5Instance) {
-            this.p5Instance.resizeCanvas(
-                this.scriptConfig.canvas.width,
-                this.scriptConfig.canvas.height
-            );
+            this.p5Instance.resizeCanvas(w, h);
             this._applyP5DisplayMode();
-        } else if (this.tool?.canvas) {
-            this.tool.canvas.width  = this.scriptConfig.canvas.width;
-            this.tool.canvas.height = this.scriptConfig.canvas.height;
-            // Re-apply display mode so CSS scaling re-calculates for the new dimensions.
+            if (this.scriptConfig.p5Setup) {
+                try {
+                    this.scriptConfig.p5Setup.call(this.scriptConfig, this.p5Instance, this.params);
+                } catch (error) {
+                    console.error('p5Setup error after canvas resize:', error);
+                }
+            }
+        } else if (this.tool?.canvasComponent) {
+            // Keep buffer, CSS layout size, DPR transform, and display-mode math in sync.
+            this.tool.canvasComponent.resize(w, h, { resetTransform: true });
+            this.tool.canvas = this.tool.canvasComponent.canvasEl;
+            this.tool.ctx = this.tool.canvasComponent.ctx;
             this.tool.setCanvasDisplayMode(this.displayMode);
         }
 
