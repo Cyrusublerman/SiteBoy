@@ -74,6 +74,7 @@ export class GeneratorToolbar extends BaseComponent {
             flex-shrink: 0;
             height: 100%;
             position: relative;
+            border-right: 1px solid var(--c-border);
             border-bottom: 1px solid var(--c-border);
             box-sizing: border-box;
         `;
@@ -378,7 +379,6 @@ export class GeneratorToolbar extends BaseComponent {
             box-sizing: border-box;
             position: relative;
             grid-column: span 2;
-            border-left: 1px solid var(--c-border);
             border-bottom: 1px solid var(--c-border);
         `;
 
@@ -995,12 +995,13 @@ export class GeneratorToolbar extends BaseComponent {
     // ─── HELPERS ───────────────────────────────────────────────────────────────
 
     /**
-     * Apply borders to a grid action cell.
-     * Grid handles sizing; only borders and box-sizing are set here.
+     * Apply borders to a non-terminal toolbar action cell (header/subheader convention:
+     * border-right on each cell except the row's last; no border-left).
      * @param {HTMLElement} el
      */
     _applyActionCellBorders(el) {
-        el.style.borderLeft   = '1px solid var(--c-border)';
+        el.style.borderLeft   = 'none';
+        el.style.borderRight  = '1px solid var(--c-border)';
         el.style.borderBottom = '1px solid var(--c-border)';
         el.style.boxSizing    = 'border-box';
         el.style.width        = '100%';
