@@ -500,7 +500,13 @@ export const SCRIPT_CONFIG = {
     ],
 
     // ─── Shared perimeter helpers ───────────────────────────────────
-    _TRIANGLE: [{ x: 540, y: 54 }, { x: 1026, y: 1026 }, { x: 54, y: 1026 }],
+    _triangle(W, H) {
+        return [
+            { x: W / 2, y: H * 0.05 },
+            { x: W * 0.95, y: H * 0.95 },
+            { x: W * 0.05, y: H * 0.95 },
+        ];
+    },
 
     _perimToXY(pos, W, H) {
         const perim = 2 * (W + H);
@@ -518,9 +524,10 @@ export const SCRIPT_CONFIG = {
     },
 
     _refVec(time, cycleFrames, W, H) {
+        const triangle = this._triangle(W, H);
         const t = ((time % cycleFrames) / cycleFrames) * 10;
         const ep = (t % 1) * 3, ei = Math.floor(ep) % 3, et = ep - ei;
-        const v0 = this._TRIANGLE[ei], v1 = this._TRIANGLE[(ei + 1) % 3];
+        const v0 = triangle[ei], v1 = triangle[(ei + 1) % 3];
         const sx = v0.x + (v1.x - v0.x) * et, sy = v0.y + (v1.y - v0.y) * et;
         const theta = (sx / W) * Math.PI * 2, phi = (sy / H) * Math.PI;
         return new _Vector3(Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi));

@@ -319,11 +319,16 @@ export const SCRIPT_CONFIG = {
         map.clear();
         swaps.length = 0;
 
+        const canvasW = p.width;
+        const canvasH = p.height;
+        const centreX = canvasW / 2;
+        const centreY = canvasH / 2;
+
         // CLK-05: geometry pass — collect collisions into pending swap list (no immediate swap)
         for (const sq of this._squares) {
             const curAngle = sq.startAngle + this._globalOrbitAngle;
-            const cx  = 540 + ap.orbitRadius * Math.cos(curAngle);
-            const cy  = 540 + ap.orbitRadius * Math.sin(curAngle);
+            const cx  = centreX + ap.orbitRadius * Math.cos(curAngle);
+            const cy  = centreY + ap.orbitRadius * Math.sin(curAngle);
             const res = sq.resolution;
 
             for (let x = 0; x < res; x++) {
@@ -335,8 +340,8 @@ export const SCRIPT_CONFIG = {
 
                     const sx = (ent.cartesian.x + 0.5) | 0;
                     const sy = (ent.cartesian.y + 0.5) | 0;
-                    if (sx >= 0 && sx < 1080 && sy >= 0 && sy < 1080) {
-                        const idx = sy * 1080 + sx;
+                    if (sx >= 0 && sx < canvasW && sy >= 0 && sy < canvasH) {
+                        const idx = sy * canvasW + sx;
                         if (!map.has(idx)) {
                             map.set(idx, { sq, gx: x, gy: y });
                         } else {

@@ -615,7 +615,9 @@ export const SCRIPT_CONFIG = {
             pointSets = _cachedRings;
         }
 
-        pointSets = _translateShapes(pointSets, 540, 540);
+        const centreX = p.width / 2;
+        const centreY = p.height / 2;
+        pointSets = _translateShapes(pointSets, centreX, centreY);
 
         // CUR-01: configurable parallel direction angle
         const dirRad = ((directionAngle || 90) * _PI / 180);
@@ -624,8 +626,8 @@ export const SCRIPT_CONFIG = {
             direction:      { x: _cos(dirRad), y: _sin(dirRad) },
             distance:       extrusionDist,
             factor:         extrusionFactor,
-            vanishingPoint: { x: 540 + vpX,   y: 540 + vpY },
-            lightSource:    { x: 540 + lightX, y: 540 + lightY },
+            vanishingPoint: { x: centreX + vpX,   y: centreY + vpY },
+            lightSource:    { x: centreX + lightX, y: centreY + lightY },
             shadingMode,
             gradientSteps,
             // CUR-01: pass resolved colourway to renderer

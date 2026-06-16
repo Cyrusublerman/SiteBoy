@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-05-25 (F5 handwriting vector compose).
+Last touched: 2026-06-08 (D3.1 canvas resize audit).
 
 ---
 
@@ -71,6 +71,7 @@ Last touched: 2026-05-25 (F5 handwriting vector compose).
 | D1 | [D1-new-generators.md](D1-new-generators.md) | Ship queued generators | P1 | TODO | — |
 | D2 | [D2-animation-export.md](D2-animation-export.md) | TransportStrip record button | P1 | WIP | — |
 | D3 | [D3-generator-audit.md](D3-generator-audit.md) | Compliance audit per generator | P2 | TODO | → D1 |
+| D3.1 | [D3.1-canvas-resize-audit.md](D3.1-canvas-resize-audit.md) | Canvas resize consistency audit | P2 | DONE | — |
 | D4 | [D4-sequencer-transport-wiring.md](D4-sequencer-transport-wiring.md) | Sequencer transport wiring | P1 | REVIEW | — |
 
 ## E. Distort

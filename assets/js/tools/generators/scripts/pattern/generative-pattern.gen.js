@@ -180,6 +180,8 @@ export const SCRIPT_CONFIG = {
     _sdfMin: 0,
     _sdfMax: 1,
     _lastStructKey: null,
+    _lastCanvasW: null,
+    _lastCanvasH: null,
     _offImg: null,        // p5 p.createImage buffer (blob/contour renderer)
     _rngState: 42,
 
@@ -801,12 +803,20 @@ export const SCRIPT_CONFIG = {
     p5Setup(p, params) {
         p.noLoop();
         p.colorMode(p.RGB, 255);
+        this._lastCanvasW = p.width;
+        this._lastCanvasH = p.height;
         this._rebuild(p, params);
     },
 
     p5Draw(p, params, frame) {
-        if (this._structKey(params) !== this._lastStructKey) {
+        if (
+            this._structKey(params) !== this._lastStructKey ||
+            p.width !== this._lastCanvasW ||
+            p.height !== this._lastCanvasH
+        ) {
             this._rebuild(p, params);
+            this._lastCanvasW = p.width;
+            this._lastCanvasH = p.height;
         }
 
         const mode = params.renderMode;

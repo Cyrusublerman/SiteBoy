@@ -168,9 +168,11 @@ const VGA = {
 ## 5. Sizing Constraints
 
 ### Canvas Dimensions
-- Use fixed dimensions in config (e.g. 800×800)
-- Host handles display scaling (Fit/Fill/Actual)
-- Do NOT resize canvas in sketch
+- Declare default width×height in `SCRIPT_CONFIG.canvas` (e.g. 800×800).
+- Host owns resize via OUTPUT → Size (`canvasWidth` / `canvasHeight`); do **not** call `resizeCanvas()` or mutate canvas size inside the sketch.
+- Host display modes (Fit/Fill/Actual) apply a **uniform** CSS scale only — they must not change aspect ratio.
+- In `p5Draw` / `draw`, always read live dimensions (`p.width`/`p.height` or `canvas.width`/`canvas.height`); never hardcode layout centres or bounds from the default config size.
+- Setup caches (grids, buffers, graphs) must rebuild when canvas size changes. Host re-runs `p5Setup` after `resizeCanvas`; scripts may also compare `_lastCanvasW/H` in `p5Draw` if they rebuild outside setup.
 
 ### Element Sizing
 Use F-system via passed helpers:
