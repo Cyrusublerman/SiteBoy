@@ -461,15 +461,28 @@ async function processArticle(hash, sourceCategory) {
 // ── Source category lookup ────────────────────────────────────────────────────
 
 async function buildSourceCategoryMap() {
+  const { createHash } = await import('node:crypto');
   const map = new Map();
+
+  // Web sources (URL-based hash)
   try {
     const sources = JSON.parse(await readFile(SOURCES_JSON, 'utf8'));
     for (const s of sources) {
-      const { createHash } = await import('node:crypto');
       const hash = createHash('sha256').update(s.url).digest('hex').slice(0, 12);
       map.set(hash, s.category_hint ?? null);
     }
   } catch { /* non-fatal */ }
+
+  // Local sources (sha256('local:' + relative_path)[:12])
+  const localSourcesPath = resolve(__dirname, 'local-sources.json');
+  try {
+    const localSources = JSON.parse(await readFile(localSourcesPath, 'utf8'));
+    for (const s of localSources) {
+      const hash = createHash('sha256').update(`local:${s.path}`).digest('hex').slice(0, 12);
+      map.set(hash, s.category_hint ?? null);
+    }
+  } catch { /* non-fatal */ }
+
   return map;
 }
 

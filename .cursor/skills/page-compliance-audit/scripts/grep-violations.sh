@@ -129,4 +129,12 @@ sweep INLINE-STYLE-CSSTEXT \
     'style\.cssText[[:space:]]*=' \
     "$OWN_DOM_RE"
 
+# DEAD-CSS-REF: reference to the dead styles.css monolith. The live system is
+# index.css → base/components/layout/tools/utilities. Only 404.html is exempt
+# (pending migration).
+EXEMPT_DEAD_CSS='404\.html$'
+if [[ ! "$REL" =~ $EXEMPT_DEAD_CSS ]]; then
+    grep -nE 'styles\.css' "$TARGET" 2>/dev/null | format_emit DEAD-CSS-REF
+fi
+
 exit 0

@@ -1,4 +1,6 @@
 # Unified Pattern Generator — Overview
+**Status:** SPEC | **Cluster:** generative-pattern
+
 
 ## Quick Reference
 
@@ -50,3 +52,24 @@
 ## Gaps
 - None — 100% coverage
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Unified Pattern Generator (initial)](../../art/generative/initial/unified-pattern-initial.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Generative Pattern Algorithm](../generative-pattern-algorithm/00-overview.md)
+- [Interference Figure Generator](../interference-figure-generator/00-overview.md)
+- [Moiré Generator](../moire-generator/00-overview.md)
+- [Ribbon Breeze](../ribbon-breeze/00-overview.md)
+- [Tile Mosaic System](../tile-mosaic-system/00-overview.md)
+- [Wallpaper Groups](../wallpaper-generator/wallpaper-groups-procedural-generation.md)

@@ -35,7 +35,7 @@ SiteBoy follows a **strict modular architecture** where each concern has exactly
 | Routing | `router.js` | pushState, popstate |
 | App bootstrap | `app.js` | initialize() |
 | UI components | `component-library.js` | Component classes |
-| All styling | `styles.css` | Colors, sizes, fonts |
+| All styling | `assets/css/` modular system (`components.css`, `tools.css`, etc.) | Colors, sizes, fonts |
 
 ### Why This Matters
 
@@ -187,7 +187,9 @@ If you need a new component type:
 1. Add to appropriate category file (`interactive.js`, `content.js`, etc.)
 2. Extend `BaseComponent`
 3. Export from `component-library.js`
-4. Use CSS classes for styling (in `styles.css`)
+4. Use CSS classes for styling (in `components.css` or `tools.css`)
+
+**If the new component is built from existing subcomponents** (e.g. binding a toggle, slider, and numeric field into one bordered box), follow `blog/docs/guides/standards/composite-components.md`: one outer border, no gaps between cells, single-owner `1px` dividers, and per-edge border control so adjacent components never double their borders.
 
 ---
 
@@ -504,7 +506,7 @@ export class CustomList extends BaseComponent {
 **Solution:** Use CSS classes + CSS variables
 
 ```css
-/* In styles.css */
+/* In tools.css or components.css */
 .dynamic-element {
     left: var(--dynamic-x);
     top: var(--dynamic-y);
@@ -655,7 +657,7 @@ animator.destroy();
 ctx.fillStyle = '#000000';  // VGA black only
 ctx.fillStyle = '#ffffff';  // VGA white only
 
-// CSS (in styles.css only)
+// CSS (in modular .css files only — never styles.css)
 .element { color: var(--c-text); }
 ```
 

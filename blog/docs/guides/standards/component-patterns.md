@@ -4,7 +4,9 @@ Which component to use for every UI need. How to divide space. How to compose pa
 
 **Authority:** `design-law.md §17` (toolbar partitions), `design-law.md §2.8` (informative minimalism), `ui-interface-overview.md §2–3` (standard tool layout).
 
-Cross-references: `border-system.md`, `semiotics.md`, `text-treatment.md`.
+Cross-references: `border-system.md`, `semiotics.md`, `text-treatment.md`, `composite-components.md`.
+
+Building a component from subcomponents (e.g. toggle + slider + numeric field bound into one bordered box) is governed by `composite-components.md` — shared boundaries, no gaps, stack-aware borders. Read it before composing.
 
 ---
 
@@ -37,6 +39,7 @@ For every UI need, the canonical component. No alternatives.
 | UI need | ComponentLibrary key | Notes |
 | --- | --- | --- |
 | Numeric input (slider + number field) | `'numeric-input'` | Provides label, slider, field, stepper in one unit |
+| Slider (bare range track) | `'slider'` | Monochrome range primitive. Compose inside `numeric-input`, transport, etc.; use directly only when no number field is wanted |
 | Dropdown (select from list) | `'dropdown'` | Full-width, anchored expansion, `▾` glyph required |
 | Button (action trigger) | `'button'` | Use `size: 's'`/`'m'`/`'l'` for width |
 | Toggle group (multi-select) | `'toggle-group'` | Radio-style or multi-select |
@@ -50,6 +53,10 @@ For every UI need, the canonical component. No alternatives.
 | Tab bar | ToolBase `sidebar` config | Tabs are framework-managed — not custom DOM |
 | Equation editor | `'equation-editor'` | For expression/formula inputs |
 | Colour palette display | `'palette-preview'` | For displaying a set of VGA colours |
+| Preset toolbar (dropdown + randomise + reset) | `'preset-toolbar'` | Generator Presets block; one horizontal partition |
+| Canvas size pair (width × height) | `'canvas-size-pair'` | Generator OUTPUT Size block |
+| Post effect row (on/off + strength) | `'post-effect-row'` | Generator OUTPUT Post block, per effect |
+| Palette layer table | `'palette-table'` | Generator OUTPUT Palette block; flush `PaletteRow` stack |
 
 If a need is not in this table, search `blog/docs/components/COMPONENT-REFERENCE.md` before building anything new.
 
@@ -321,8 +328,11 @@ Single-column stacked layout is permitted only for parameters that are:
 
 | Relationship | Layout | Component |
 |---|---|---|
-| Paired numerics (W×H, Min×Max) | 3-col inline grid | `NumericInput` pair in grid wrapper |
-| Palette layer | 5-col row | `PaletteRow` |
+| Paired numerics (W×H, Min×Max) | 3-col inline grid | `CanvasSizePair` or `NumericInput` pair in grid wrapper |
+| Palette layer | 5-col row | `PaletteRow` (via `PaletteTable` in generator OUTPUT) |
+| Presets + actions | horizontal partition | `PresetToolbar` |
+| Post effect | toggle + strength partition | `PostEffectRow` |
+| Newline-delimited text | per-line cells + add/remove | `LineListInput` (param type `text`/`textarea`/`lines`) |
 | Unrelated single param | 1-col full row | standard param row |
 
 ---

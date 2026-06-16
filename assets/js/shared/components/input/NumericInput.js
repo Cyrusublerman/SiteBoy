@@ -10,6 +10,7 @@
  */
 
 import { BaseComponent } from '../../foundation.js';
+import { Slider } from './Slider.js';
 
 export class NumericInput extends BaseComponent {
     constructor(options = {}, deps = {}) {
@@ -26,8 +27,15 @@ export class NumericInput extends BaseComponent {
         
         // Display mode
         this.display = options.display ?? 'both'; // 'slider' | 'field' | 'both'
+        // Embedded: drop the outer box (top/bottom/right) and use border-left dividers
+        // only, so the group sits inside an already-bordered container without doubling.
+        this.embedded = options.embedded ?? false;
+        this.topBorder = options.topBorder ?? true;
         // Steppers shown by default whenever a field is present; opt out with showSteppers: false
         this.showSteppers = options.showSteppers ?? (options.display !== 'slider');
+        // Let the number field grow to fill its container instead of a fixed width.
+        // Used when the field is the sole flexible cell (e.g. CanvasSizePair).
+        this.fieldFlex = options.fieldFlex ?? false;
         this.logarithmic = options.logarithmic ?? false;
         
         // Labels & formatting
@@ -44,8 +52,11 @@ export class NumericInput extends BaseComponent {
         this.onInput = options.onInput ?? null; // Continuous (drag)
         
         // Internal refs
+        this._sliderComp = null;
         this.sliderEl = null;
         this.fieldEl = null;
+        this._titleDiv = null;
+        this._box = null;
         
         // Scroll velocity tracking for exponential scroll response
         this._scrollVelocity = 0;
@@ -80,6 +91,17 @@ export class NumericInput extends BaseComponent {
         return Math.max(4, Math.ceil(totalChars * 0.6));
     }
     
+    _containerBorderCss() {
+        if (this.embedded) return '';
+        const top = this.label ? true : this.topBorder;
+        return `
+            border-top: ${top ? '1px solid var(--c-border)' : 'none'};
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+            border-left: 1px solid var(--c-border);
+        `;
+    }
+
     render() {
         if (this.element) return this.element;
         
@@ -89,91 +111,118 @@ export class NumericInput extends BaseComponent {
         this.element.style.cssText = `
             display: flex;
             flex-direction: column;
-            gap: ${F2}px;
+            gap: 0;
             width: 100%;
         `;
         
-        // Label row
-        if (this.label) {
-            const labelRow = this.createElement('div', 'numeric-input-label-row');
-            labelRow.style.cssText = `
+        if (this.label && !this.embedded) {
+            this._titleDiv = this.createElement('div', 'numeric-input__label-row');
+            this._titleDiv.style.cssText = `
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
-                font-family: 'Atkinson Hyperlegible', monospace;
-                font-size: ${F}px;
-                color: var(--c-text);
+                justify-content: space-between;
+                height: ${F * 1.5}px;
+                padding: 0 ${F2}px;
+                border-top: ${this.topBorder ? '1px solid var(--c-border)' : 'none'};
+                border-left: 1px solid var(--c-border);
+                border-right: 1px solid var(--c-border);
+                box-sizing: border-box;
             `;
-            
             const labelEl = this.createElement('span', 'numeric-input-label');
-            labelEl.textContent = this.label;
-            labelRow.appendChild(labelEl);
-            
-            // Value display with unit (for slider-only mode)
+            labelEl.textContent = this.label.toUpperCase();
+            labelEl.style.cssText = `
+                font-family: 'Atkinson Hyperlegible', monospace;
+                font-size: ${F * 0.75}px;
+                color: var(--c-text);
+                text-transform: uppercase;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            `;
+            this._titleDiv.appendChild(labelEl);
             if (this.display === 'slider') {
                 this.valueDisplay = this.createElement('span', 'numeric-input-value');
                 this.valueDisplay.textContent = this._formatValue(this.value);
-                labelRow.appendChild(this.valueDisplay);
+                this.valueDisplay.style.cssText = `
+                    font-family: 'Atkinson Hyperlegible Mono', monospace;
+                    font-size: ${F * 0.75}px;
+                    color: var(--c-text);
+                    flex-shrink: 0;
+                `;
+                this._titleDiv.appendChild(this.valueDisplay);
             }
-            
-            this.element.appendChild(labelRow);
+            this.element.appendChild(this._titleDiv);
         }
         
-        // Control row - gap only between slider and other controls, not between field+steppers
         const controlRow = this.createElement('div', 'numeric-input-controls');
-        controlRow.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 0;
-        `;
-        
-        // Slider
-        if (this.display === 'slider' || this.display === 'both') {
-            this.sliderEl = this.createElement('input', 'numeric-input-slider');
-            this.sliderEl.type = 'range';
-            this.sliderEl.min = this.min;
-            this.sliderEl.max = this.max;
-            this.sliderEl.step = this.step;
-            this.sliderEl.value = this.value;
-            this.sliderEl.style.cssText = `
-                flex: 1;
-                height: ${F * 2}px;
-                cursor: pointer;
-                accent-color: var(--c-text);
-                margin-right: ${F2}px;
+        if (this.embedded) {
+            controlRow.style.cssText = `display: flex; align-items: stretch; gap: 0; height: 100%;`;
+        } else {
+            this._box = this.createElement('div', 'numeric-input__box');
+            this._box.style.cssText = `
+                display: flex;
+                align-items: stretch;
+                gap: 0;
+                width: 100%;
+                height: ${F * 2 + 2}px;
+                box-sizing: border-box;
+                ${this._containerBorderCss()}
             `;
-            
-            this.sliderEl.addEventListener('input', (e) => {
-                const val = this._parseValue(e.target.value);
-                this._updateValue(val, true);
-            });
-            
-            this.sliderEl.addEventListener('change', (e) => {
-                const val = this._parseValue(e.target.value);
-                this._updateValue(val, false);
-            });
-            
+            controlRow.style.cssText = `display: flex; align-items: stretch; gap: 0; width: 100%; height: 100%;`;
+            this._box.appendChild(controlRow);
+            this.element.appendChild(this._box);
+        }
+        
+        const hasSlider = this.display === 'slider' || this.display === 'both';
+        const sliderBorders = this.embedded
+            ? { top: false, right: false, bottom: false, left: true }
+            : { top: false, right: false, bottom: false, left: false };
+
+        if (hasSlider) {
+            this._sliderComp = new Slider({
+                min:   this.min,
+                max:   this.max,
+                step:  this.step,
+                value: this.value,
+                trackHF: 2,
+                ariaLabel: this.label,
+                borders: sliderBorders,
+                onInput:  (val) => this._updateValue(val, true),
+                onChange: (val) => this._updateValue(val, false),
+            }, this.deps);
+            this.addChild(this._sliderComp);
+            this.sliderEl = this._sliderComp.render();
+            this.sliderEl.style.flex = '1';
+            this.sliderEl.style.minWidth = '0';
+            this.sliderEl.style.height = '100%';
             controlRow.appendChild(this.sliderEl);
         }
         
-        // Number field - hide browser spinners; field is left anchor of [field | − | +]
-        if (this.display === 'field' || this.display === 'both') {
+        // Field + stepper group: [ − | field | + ]
+        const hasField = this.display === 'field' || this.display === 'both';
+
+        // Stepper minus — first cell of the group
+        if (this.showSteppers) {
+            controlRow.appendChild(this._makeStepperBtn('−', -1, F, false, hasSlider && !this.embedded));
+        }
+
+        // Number field — hide browser spinners
+        if (hasField) {
             this.fieldEl = this.createElement('input', 'numeric-input-field');
             this.fieldEl.type = 'number';
             this.fieldEl.min = this.min;
             this.fieldEl.max = this.max;
             this.fieldEl.step = this.step;
             this.fieldEl.value = this._formatValue(this.value);
-            // Field owns top/left/bottom borders; right border is owned by the adjacent stepper's border-left
-            const fieldBorderRight = this.showSteppers ? 'none' : '1px solid var(--c-border)';
+            const fieldIsLast = !this.showSteppers;
+            const fieldSizing = this.fieldFlex
+                ? `flex: 1; min-width: 0; width: auto;`
+                : `width: ${F * this.fieldWidthF}px; flex-shrink: 0;`;
             this.fieldEl.style.cssText = `
-                width: ${F * this.fieldWidthF}px;
-                height: ${F * 2}px;
+                ${fieldSizing}
+                height: 100%;
                 padding: 0 ${F2}px;
-                border-top: 1px solid var(--c-border);
-                border-left: 1px solid var(--c-border);
-                border-bottom: 1px solid var(--c-border);
-                border-right: ${fieldBorderRight};
+                ${this._cellBorderCss(fieldIsLast, !this.embedded && (hasSlider || this.showSteppers))}
                 background: var(--c-bg);
                 color: var(--c-text);
                 font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
@@ -181,7 +230,6 @@ export class NumericInput extends BaseComponent {
                 text-align: right;
                 box-sizing: border-box;
                 -moz-appearance: textfield;
-                flex-shrink: 0;
             `;
             this._injectSpinnerHideCSS();
             
@@ -213,14 +261,9 @@ export class NumericInput extends BaseComponent {
             controlRow.appendChild(this.fieldEl);
         }
         
-        // Stepper minus — border-left only (shared boundary with field per border-system §4)
+        // Stepper plus — last cell of the group
         if (this.showSteppers) {
-            controlRow.appendChild(this._makeStepperBtn('−', -1, F));
-        }
-        
-        // Stepper plus — border-left only (shared boundary with minus per border-system §4)
-        if (this.showSteppers) {
-            controlRow.appendChild(this._makeStepperBtn('+', 1, F));
+            controlRow.appendChild(this._makeStepperBtn('+', 1, F, true, !this.embedded));
         }
         
         // Unit label
@@ -236,16 +279,16 @@ export class NumericInput extends BaseComponent {
             controlRow.appendChild(unitEl);
         }
         
-        this.element.appendChild(controlRow);
+        if (this.embedded) this.element.appendChild(controlRow);
         
         return this.element;
     }
     
-    _makeStepperBtn(glyph, direction, F) {
+    _makeStepperBtn(glyph, direction, F, isLast, withLeftDivider = false) {
         const btn = this.createElement('button', `numeric-input-stepper ${direction > 0 ? 'plus' : 'minus'}`);
         btn.type = 'button';
         btn.textContent = glyph;
-        btn.style.cssText = this._stepperStyle(F);
+        btn.style.cssText = this._stepperStyle(F, isLast, withLeftDivider);
         btn.addEventListener('click', () => this._step(direction));
         btn.addEventListener('mouseenter', () => {
             btn.style.background = 'var(--c-text)';
@@ -258,15 +301,33 @@ export class NumericInput extends BaseComponent {
         return btn;
     }
 
-    _stepperStyle(F) {
-        // Horizontal stack: each stepper owns its left boundary only (border-system §4)
+    /**
+     * Border CSS for one cell of the [ − | field | + ] group.
+     * Standalone: full box (top/bottom/left; right only on the last cell).
+     * Embedded: border-left divider only — the container owns the outer box.
+     */
+    _cellBorderCss(isLast, withLeftDivider = false) {
+        if (this.embedded) {
+            return `
+                border-top: none;
+                border-bottom: none;
+                border-right: none;
+                border-left: 1px solid var(--c-border);
+            `;
+        }
         return `
-            width: ${F * 2}px;
-            height: ${F * 2}px;
             border-top: none;
             border-bottom: none;
             border-right: none;
-            border-left: 1px solid var(--c-border);
+            border-left: ${withLeftDivider || !isLast ? '1px solid var(--c-border)' : 'none'};
+        `;
+    }
+
+    _stepperStyle(F, isLast, withLeftDivider = false) {
+        return `
+            width: ${F * 2}px;
+            height: 100%;
+            ${this._cellBorderCss(isLast, withLeftDivider)}
             background: var(--c-bg);
             color: var(--c-text);
             font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
@@ -402,6 +463,17 @@ export class NumericInput extends BaseComponent {
         }
     }
     
+    setTopBorder(on) {
+        this.topBorder = !!on;
+        if (this.embedded) return;
+        const edge = on ? '1px solid var(--c-border)' : 'none';
+        if (this._titleDiv) {
+            this._titleDiv.style.borderTop = edge;
+        } else if (this._box) {
+            this._box.style.borderTop = edge;
+        }
+    }
+
     reset() {
         this.setValue(this.defaultValue);
     }
@@ -410,6 +482,10 @@ export class NumericInput extends BaseComponent {
         if (this._scrollDecayTimer) {
             clearTimeout(this._scrollDecayTimer);
             this._scrollDecayTimer = null;
+        }
+        if (this._sliderComp) {
+            this._sliderComp.destroy();
+            this._sliderComp = null;
         }
         super.destroy?.();
     }

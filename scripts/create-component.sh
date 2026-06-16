@@ -100,7 +100,7 @@ echo "✅ Component created: $COMPONENT_FILE"
 
 # Add CSS template
 echo ""
-echo "📝 Add this CSS to assets/css/styles.css:"
+echo "📝 Add this CSS to assets/css/components.css:"
 echo ""
 cat << EOF
 /* $COMPONENT_NAME Component */
@@ -122,7 +122,7 @@ EOF
 echo ""
 echo "📋 Next steps:"
 echo "1. Update src/index.js to import and export $COMPONENT_NAME"
-echo "2. Add CSS styles to assets/css/styles.css"
+echo "2. Add CSS styles to assets/css/components.css"
 echo "3. Add UI test to tools_section.js"
 echo "4. Run ./scripts/rebuild-bundle.sh"
 echo "5. Test at http://localhost:8000/#tools/ui-test"

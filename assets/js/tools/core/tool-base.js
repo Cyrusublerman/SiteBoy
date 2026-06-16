@@ -84,11 +84,19 @@ const COMPONENT_TYPES = {
     'file-table': 'FileTable',
 
     // Generator modulation + animation
+    'expression-param':       'ExpressionParam',
     'modulator-chip':         'ModulatorChip',
     'modulator-panel':        'ModulatorPanel',
     'palette-row':            'PaletteRow',
     'gradient-stops':         'GradientStops',
     'transport-strip':        'GeneratorTransportStrip',
+
+    // Generator OUTPUT composites
+    'preset-toolbar':         'PresetToolbar',
+    'canvas-size-pair':       'CanvasSizePair',
+    'post-effect-row':        'PostEffectRow',
+    'palette-table':          'PaletteTable',
+    'line-list':              'LineListInput',
 };
 
 // Component access helper - uses deps instead of globals
@@ -175,8 +183,9 @@ export class ToolBase extends BaseComponent {
         // Get F values
         this.F = deps.MF?.F || F;
         this.F2 = this.F / 2;
-        this.SIDEBAR_WIDTH = this.F * 30; // 30F = 420px
-        
+        /** Fallback when --subheader-title-width is unavailable */
+        this.SIDEBAR_WIDTH = this.F * 30;
+
         // Loading state (component-based)
         this.loadingOverlayComponent = null;
 
@@ -189,8 +198,6 @@ export class ToolBase extends BaseComponent {
 
         /** @type {HTMLElement|null} */
         this._topBarElement = null;
-        /** @type {HTMLElement|null} */
-        this._canvasSlot = null;
         /** @type {ResizeObserver|null} */
         this._fillContainerResizeObserver = null;
 
@@ -331,6 +338,12 @@ export class ToolBase extends BaseComponent {
         return this.element.contains(el);
     }
 
+    /** True when keyboard focus is on this tool's canvas element. */
+    isFocusOnCanvas() {
+        if (typeof document === 'undefined' || !this.canvas) return false;
+        return document.activeElement === this.canvas;
+    }
+
     /**
      * Mount a top toolbar in the **canvas column only** (first row of tool-canvas-area),
      * in-flow above the canvas slot — not above the sidebar.
@@ -369,7 +382,7 @@ export class ToolBase extends BaseComponent {
         el.style.flexShrink  = '0';
         el.style.width       = '100%';
 
-        const anchor = this._canvasSlot;
+        const anchor = this._getCanvasColumnHostEl();
         if (anchor && anchor.parentNode === this.canvasArea) {
             this.canvasArea.insertBefore(el, anchor);
         } else {
@@ -440,14 +453,14 @@ export class ToolBase extends BaseComponent {
                 position: relative;
             `;
         } else {
-            // Landscape: sidebar left, canvas right
+            // Landscape: inner `.tool-main-content` grid holds sidebar | canvas.
+            // Root is block + relative so the absolute main sheet spans the viewport;
+            // avoids a bogus 2-col grid with a single child (used to fight layout math).
             this.element.style.cssText = `
                 width: 100%;
                 height: 100%;
-                display: grid;
+                display: block;
                 position: relative;
-                grid-template-columns: ${this.SIDEBAR_WIDTH}px 1fr;
-                gap: 0;
                 overflow: hidden;
             `;
         }
@@ -471,9 +484,11 @@ export class ToolBase extends BaseComponent {
                 ${this.categoryTabsConfig ? `margin-top: ${topOffset}px;` : ''}
             `;
         } else {
+            // Match subheader title column (50% − adjustments) — same token as GeneratorToolbar.
+            const sideCol = `var(--subheader-title-width, ${this.SIDEBAR_WIDTH}px)`;
             mainContent.style.cssText = `
                 display: grid;
-                grid-template-columns: ${this.SIDEBAR_WIDTH}px 1fr;
+                grid-template-columns: ${sideCol} 1fr;
                 gap: 0;
                 overflow: hidden;
                 position: absolute;
@@ -572,18 +587,30 @@ export class ToolBase extends BaseComponent {
                     if (!isPortrait) {
                         const mainContent2 = this.element.querySelector('.tool-main-content');
                         if (mainContent2) {
-                            mainContent2.style.gridTemplateColumns = `${this.SIDEBAR_WIDTH}px 1fr`;
+                            const sideCol = `var(--subheader-title-width, ${this.SIDEBAR_WIDTH}px)`;
+                            mainContent2.style.gridTemplateColumns = `${sideCol} 1fr`;
                         }
                     }
                     window.debugLog('LAYOUT', `ToolBase: Updated layout - F=${newF}px, sidebarWidth=${this.SIDEBAR_WIDTH}px`);
-                    // Update canvas area padding if needed
                     if (this.canvasArea && isPortrait) {
-                        this.canvasArea.style.padding = `${this.F}px`;
+                        this.canvasArea.style.padding = '0';
                     }
                 }
             }
             this._syncMainContentInset();
             this._syncTopBarGeometry();
+            // Window `resize` must refit fillContainer tools: sidebar/grid updates and
+            // DPR changes do not always fire ResizeObserver with new (w,h), but buffer +
+            // displayMode must stay locked to the viewport (same path as initial mount).
+            if (this.canvasConfig.fillContainer && (this.canvasComponent || this.imageViewport)) {
+                queueMicrotask(() => {
+                    try {
+                        this._resizeCanvasToFit();
+                    } catch (err) {
+                        console.error('[ToolBase] fillContainer window resize refit failed:', err);
+                    }
+                });
+            }
         }
     }
 
@@ -1079,7 +1106,9 @@ export class ToolBase extends BaseComponent {
         if (collapsed) {
             return 'display: none;';
         }
-        const gap = `${this.F2}px`;
+        // flush: no inter-component gap — children form a continuous bordered
+        // stack via shared boundaries (design-law §3.2; border-system §3).
+        const gap = options.flush ? '0' : `${this.F2}px`;
         const pad = `${this.F}px`;
         const cols = Number(options.contentColumns) || 0;
         if (cols > 1) {
@@ -1176,6 +1205,7 @@ export class ToolBase extends BaseComponent {
                     rows: extraOptions.rows ?? 4,
                     key: extraOptions.key ?? this._makeKey(args[0]),
                     onChange: (v) => this._handleChange(options.key, v),
+                    onInput: (v) => this._handleChange(options.key, v),
                 };
                 break;
 
@@ -1185,6 +1215,8 @@ export class ToolBase extends BaseComponent {
                     label: args[0],
                     options: args[1] ?? [],
                     value: extraOptions.value ?? (args[1]?.[0]?.value ?? args[1]?.[0]),
+                    topBorder: extraOptions.topBorder ?? true,
+                    embedded: extraOptions.embedded ?? false,
                     key: extraOptions.key ?? this._makeKey(args[0]),
                     onChange: (v) => this._handleChange(options.key, v),
                 };
@@ -1201,6 +1233,8 @@ export class ToolBase extends BaseComponent {
                     gridColumns: extraOptions.gridColumns ?? 2,
                     selectedValues: extraOptions.selectedValues ?? [],
                     selectedValue: extraOptions.selectedValue ?? null,
+                    topBorder: extraOptions.topBorder ?? true,
+                    embedded: extraOptions.embedded ?? false,
                     key: extraOptions.key ?? this._makeKey(args[0]),
                     onChange: (v) => this._handleChange(options.key, v),
                 };
@@ -1209,8 +1243,10 @@ export class ToolBase extends BaseComponent {
             case 'color':
                 options = {
                     label: args[0],
-                    value: args[1] ?? '#000000',
+                    value: extraOptions.value ?? args[1] ?? '#000000',
                     showHex: extraOptions.showHex ?? true,
+                    topBorder: extraOptions.topBorder ?? true,
+                    embedded: extraOptions.embedded ?? false,
                     key: extraOptions.key ?? this._makeKey(args[0]),
                     onChange: (v) => this._handleChange(options.key, v),
                 };
@@ -1312,10 +1348,121 @@ export class ToolBase extends BaseComponent {
             case 'easing-curve': {
                 const ecKey = extraOptions.key ?? this._makeKey(args[0]);
                 options = {
-                    label:    args[0],
-                    value:    extraOptions.value ?? 'ease-in-out',
-                    key:      ecKey,
-                    onChange: (id, _fn) => this._handleChange(ecKey, id),
+                    label:     args[0],
+                    value:     extraOptions.value ?? 'ease-in-out',
+                    topBorder: extraOptions.topBorder ?? true,
+                    embedded:  extraOptions.embedded ?? false,
+                    key:       ecKey,
+                    onChange:  (id, _fn) => this._handleChange(ecKey, id),
+                };
+                break;
+            }
+
+            case 'preset-toolbar': {
+                const presetKey = extraOptions.key ?? 'preset';
+                options = {
+                    presetNames:     args[0] ?? [],
+                    presetValue:     extraOptions.value ?? '— Select Preset —',
+                    key:             presetKey,
+                    topBorder:       extraOptions.topBorder ?? true,
+                    embedded:        extraOptions.embedded ?? false,
+                    onPresetChange:  (v) => this._handleChange(presetKey, v),
+                    onRandomise:     extraOptions.onRandomise ?? (() => this._handleChange('randomise', true)),
+                    onReset:         extraOptions.onReset ?? (() => this._handleChange('resetAll', true)),
+                };
+                break;
+            }
+
+            case 'canvas-size-pair': {
+                const sizeOpts = (args[0] && typeof args[0] === 'object' && !Array.isArray(args[0]))
+                    ? args[0]
+                    : extraOptions;
+                const widthKey = sizeOpts.widthKey ?? 'canvasWidth';
+                const heightKey = sizeOpts.heightKey ?? 'canvasHeight';
+                options = {
+                    width:     sizeOpts.width ?? 800,
+                    height:    sizeOpts.height ?? 800,
+                    widthKey,
+                    heightKey,
+                    min:       sizeOpts.min ?? 100,
+                    max:       sizeOpts.max ?? 4096,
+                    step:      sizeOpts.step ?? 1,
+                    precision: sizeOpts.precision ?? 0,
+                    topBorder: sizeOpts.topBorder ?? extraOptions.topBorder ?? true,
+                    embedded:  sizeOpts.embedded ?? extraOptions.embedded ?? false,
+                    key:       extraOptions.key ?? widthKey,
+                    onWidthChange:  (v) => this._handleChange(widthKey, v),
+                    onHeightChange: (v) => this._handleChange(heightKey, v),
+                };
+                break;
+            }
+
+            case 'post-effect-row': {
+                const effectType = args[0] ?? '';
+                const toggleKey = extraOptions.toggleKey ?? `post__${effectType}`;
+                const strengthKey = extraOptions.strengthKey ?? `post__${effectType}__strength`;
+                options = {
+                    effectType,
+                    label:     extraOptions.label ?? effectType.replace(/(^|[-_])(\w)/g, (_, __, c) => c.toUpperCase()),
+                    enabled:   extraOptions.enabled ?? false,
+                    toggleKey,
+                    strengthKey,
+                    topBorder: extraOptions.topBorder ?? true,
+                    embedded:  extraOptions.embedded ?? false,
+                    key:       extraOptions.key ?? toggleKey,
+                    onToggleChange: (enabled) => this._handleChange(toggleKey, enabled ? ['on'] : ['off']),
+                    onStrengthChange: (v) => this._handleChange(strengthKey, v),
+                };
+                if (typeof extraOptions.strength === 'number') {
+                    options.strength = extraOptions.strength;
+                }
+                break;
+            }
+
+            case 'palette-table': {
+                const layers = args[0] ?? [];
+                options = {
+                    layers,
+                    keyPrefix: extraOptions.keyPrefix ?? 'palette__',
+                    topBorder: extraOptions.topBorder ?? true,
+                    embedded:  extraOptions.embedded ?? false,
+                    onChange:  (layerId, patch) => this._handleChange(`${extraOptions.keyPrefix ?? 'palette__'}${layerId}`, patch),
+                    onModulate: extraOptions.onModulate ?? (() => {}),
+                };
+                break;
+            }
+
+            case 'line-list': {
+                const llKey = extraOptions.key ?? this._makeKey(args[0]);
+                options = {
+                    label:       args[0],
+                    value:       extraOptions.value ?? '',
+                    maxLines:    extraOptions.maxLines ?? 8,
+                    minLines:    extraOptions.minLines ?? 1,
+                    placeholder: extraOptions.placeholder ?? '',
+                    topBorder:   extraOptions.topBorder ?? true,
+                    embedded:    extraOptions.embedded ?? false,
+                    key:         llKey,
+                    onChange:    (v) => this._handleChange(llKey, v),
+                };
+                break;
+            }
+
+            case 'expression-param': {
+                const epKey = extraOptions.key ?? this._makeKey(args[0]);
+                options = {
+                    label:       args[0],
+                    min:         args[1] ?? 0,
+                    max:         args[2] ?? 100,
+                    step:        args[3] ?? 1,
+                    key:         epKey,
+                    value:       extraOptions.value ?? args[1] ?? 0,
+                    precision:   extraOptions.precision,
+                    description: extraOptions.description ?? '',
+                    display:     extraOptions.display ?? 'both',
+                    topBorder:   extraOptions.topBorder ?? true,
+                    onChange: (v) => this._handleChange(epKey, v),
+                    onExpressionChange: () => this._handleChange(`${epKey}__expr`, null),
                 };
                 break;
             }
@@ -1358,18 +1505,40 @@ export class ToolBase extends BaseComponent {
     // CANVAS AREA
     // ═══════════════════════════════════════════════════════════════════════════
 
+    /**
+     * Root node of Canvas or ImageViewport when it is a direct child of `.tool-canvas-area`.
+     */
+    _getCanvasColumnHostEl() {
+        const cc = this.canvasComponent?.element;
+        if (cc && this.canvasArea && cc.parentNode === this.canvasArea) return cc;
+        const iv = this.imageViewport?.element;
+        if (iv && this.canvasArea && iv.parentNode === this.canvasArea) return iv;
+        return null;
+    }
+
+    /**
+     * Let the drawable host consume remaining height in `.tool-canvas-area` under optional toolbar.
+     * (Formerly a wrapper `tool-canvas-slot`; same flex contract on the component root.)
+     */
+    _applyCanvasColumnFlex(hostEl) {
+        if (!hostEl) return;
+        hostEl.style.flex = '1';
+        hostEl.style.minHeight = '0';
+        hostEl.style.minWidth = '0';
+    }
+
     _buildCanvasArea(isPortrait = false) {
         const area = document.createElement('div');
         area.className = 'tool-canvas-area';
 
         if (isPortrait) {
-            // Portrait: canvas area at top, flexible height
+            // Portrait: canvas area at top — no extra padding (avoids stacked gutters with resize math).
             area.style.cssText = `
                 display: flex;
                 flex-direction: column;
                 align-items: stretch;
                 justify-content: stretch;
-                padding: ${this.F}px;
+                padding: 0;
                 background: var(--c-bg);
                 flex: 1;
                 min-height: 200px;
@@ -1450,18 +1619,8 @@ export class ToolBase extends BaseComponent {
             this.canvas = this.imageViewport.canvasEl;
             this.ctx = this.imageViewport.ctx;
             this.componentInstances.push(this.imageViewport);
-            this._canvasSlot = document.createElement('div');
-            this._canvasSlot.className = 'tool-canvas-slot';
-            this._canvasSlot.style.cssText = `
-                flex: 1;
-                min-height: 0;
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-            `;
-            this._canvasSlot.appendChild(viewportElement);
-            area.appendChild(this._canvasSlot);
+            this._applyCanvasColumnFlex(viewportElement);
+            area.appendChild(viewportElement);
             
             window.debugLog('INIT', '✅ Using ImageViewport component');
         } else {
@@ -1477,7 +1636,6 @@ export class ToolBase extends BaseComponent {
             const canvasHeight = this.canvasConfig.height ?? size;
             
             // Hook up tool's onDraw to Canvas component's draw callback
-            const toolOnDraw = this.onDraw;
             const toolValues = () => this.values;
             const self = this;
             
@@ -1489,6 +1647,7 @@ export class ToolBase extends BaseComponent {
                 // Feature flags
                 enableZoom: this.canvasConfig.enableZoom ?? false,
                 enablePan: this.canvasConfig.enablePan ?? false,
+                enableArrowPan: this.canvasConfig.enableArrowPan ?? true,
                 displayMode: this.canvasConfig.displayMode ?? 'fit',  // Default to 'fit' mode
                 enableHUD: this.canvasConfig.enableHUD ?? false,
                 hud: this.canvasConfig.hud ?? [],
@@ -1504,14 +1663,16 @@ export class ToolBase extends BaseComponent {
                 onDrag: this.canvasConfig.onDrag ?? null,
                 onWheel: this.canvasConfig.onWheel ?? null,
                 
-                // Draw callback
+                // Draw callback — read self.onDraw each frame so tools can assign
+                // after mount (e.g. cursive-glyph-builder wires GlyphCaptureCanvas post-init).
                 // Note: self.canvas may not be assigned yet during initial render,
                 // so fall back to canvasComponent.canvasEl for the initial draw
                 draw: (ctx, width, height) => {
-                    if (toolOnDraw) {
+                    const cb = self.onDraw;
+                    if (typeof cb === 'function') {
                         const canvasEl = self.canvas || self.canvasComponent?.canvasEl;
                         if (canvasEl) {
-                            toolOnDraw.call(self, ctx, canvasEl, toolValues());
+                            cb.call(self, ctx, canvasEl, toolValues());
                         }
                     }
                 },
@@ -1535,18 +1696,8 @@ export class ToolBase extends BaseComponent {
             
             // Track component for cleanup
             this.componentInstances.push(this.canvasComponent);
-            this._canvasSlot = document.createElement('div');
-            this._canvasSlot.className = 'tool-canvas-slot';
-            this._canvasSlot.style.cssText = `
-                flex: 1;
-                min-height: 0;
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-            `;
-            this._canvasSlot.appendChild(canvasElement);
-            area.appendChild(this._canvasSlot);
+            this._applyCanvasColumnFlex(canvasElement);
+            area.appendChild(canvasElement);
             
             window.debugLog('INIT', '✅ Using Canvas component');
         }
@@ -1559,21 +1710,25 @@ export class ToolBase extends BaseComponent {
         if (this.canvasConfig.fillContainer && this.element) {
             const container = this.canvasArea || this.element.querySelector('.tool-canvas-area');
             if (container) {
-                const rect = container.getBoundingClientRect();
-                // Use smaller dimension to keep square, subtract padding
-                const availableWidth = rect.width - (this.F * 2);
-                const availableHeight = rect.height - (this.F * 2);
-                const size = Math.min(availableWidth, availableHeight);
-                // Snap to F grid
-                return Math.floor(size / this.F) * this.F;
+                const cw = container.clientWidth || 0;
+                const ch = container.clientHeight || 0;
+                if (cw > 0 && ch > 0) {
+                    const host = this._getCanvasColumnHostEl();
+                    const padding = host ? 0 : this.F * 2;
+                    // Integer CSS px — avoid F-grid undershoot + fractional CSS scale blur
+                    const availableWidth = Math.max(0, Math.floor(cw - padding));
+                    const availableHeight = Math.max(0, Math.floor(ch - padding));
+                    const size = Math.min(availableWidth, availableHeight);
+                    return Math.max(1, size);
+                }
             }
         }
-        
+
         // If explicit dimensions provided, use smaller dimension for square canvas
         if (this.canvasConfig.width && this.canvasConfig.height) {
             return Math.min(this.canvasConfig.width, this.canvasConfig.height);
         }
-        
+
         // Default: 30F (420px at F=14)
         const targetSize = this.canvasConfig.size ?? this.F * 30;
         return Math.floor(targetSize / this.F) * this.F;
@@ -1584,40 +1739,55 @@ export class ToolBase extends BaseComponent {
             console.warn('⚠️ Cannot resize: canvasArea not available');
             return;
         }
-        
-        const rect = this.canvasArea.getBoundingClientRect();
-        const padding = this.F * 2;
-        const availableWidth = rect.width - padding;
-        const availableHeight = rect.height - padding;
-        
-        // Snap to F-grid
-        const width = Math.floor(availableWidth / this.F) * this.F;
-        const height = Math.floor(availableHeight / this.F) * this.F;
-        
+
+        /**
+         * Same box Canvas uses for `fit` / `fill` (absolute viewport), so logical
+         * buffer size matches `viewportEl.clientWidth`/`Height` — near-unity scale, no drift.
+         */
+        const host = this._getCanvasColumnHostEl();
+        let measureEl = host ?? this.canvasArea;
+        let padding = host ? 0 : this.F * 2;
+        if (this.canvasComponent?.viewportEl) {
+            measureEl = this.canvasComponent.viewportEl;
+            padding = 0;
+        }
+
+        const rect = measureEl.getBoundingClientRect();
+        const rawW = measureEl.clientWidth || rect.width;
+        const rawH = measureEl.clientHeight || rect.height;
+        const availableWidth = Math.max(0, Math.floor(rawW - padding));
+        const availableHeight = Math.max(0, Math.floor(rawH - padding));
+
+        // Full integer viewport box — matches ToolBase canvas viewport so displayMode
+        // 'fit' uses scale≈1 (no upscaling a undersized buffer → crisp text/strokes).
+        const width = Math.max(1, availableWidth);
+        const height = Math.max(1, availableHeight);
+
         window.debugLog('LAYOUT', '📐 Resizing canvas to fit container:', {
-            container: { width: rect.width, height: rect.height },
+            measure: measureEl.className,
+            container: { width: rawW, height: rawH },
             available: { width: availableWidth, height: availableHeight },
-            canvas: { width, height }
+            canvas: { width, height },
         });
-        
+
         if (this.canvasComponent) {
             // Use Canvas component's public resize API
             // This triggers onResize callback which fires _canvasResize event
             this.canvasComponent.resize(width, height, { resetTransform: true });
-            
+
             // Update local refs
             this.canvas = this.canvasComponent.canvasEl;
             this.ctx = this.canvasComponent.ctx;
-            
+
             window.debugLog('LAYOUT', '✅ Canvas resized via component API');
         } else if (this.imageViewport) {
             // Use ImageViewport's resize API
             this.imageViewport.resize(width, height);
-            
+
             // Update local refs
             this.canvas = this.imageViewport.canvasEl;
             this.ctx = this.imageViewport.ctx;
-            
+
             window.debugLog('LAYOUT', '✅ ImageViewport resized');
         }
     }
@@ -1883,6 +2053,8 @@ export class ToolBase extends BaseComponent {
 
         try {
             ro.observe(this.canvasArea);
+            const host = self._getCanvasColumnHostEl();
+            if (host) ro.observe(host);
             self._fillContainerResizeObserver = ro;
         } catch (err) {
             console.warn('[ToolBase] ResizeObserver on canvasArea failed:', err);
@@ -2131,8 +2303,6 @@ export class ToolBase extends BaseComponent {
 
         this.hideFloatingOverlay();
         this.hideLoading();
-
-        this._canvasSlot = null;
 
         if (this.topBarComponent) {
             try {

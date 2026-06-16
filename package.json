@@ -14,6 +14,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "validate": "node scripts/validate-compatibility.js",
+    "scrape:pipeline": "node tools/scrape/run-pipeline.mjs --stage=all",
     "scrape:fetch": "node tools/scrape/fetch.mjs",
     "scrape:clean": "node tools/scrape/clean.mjs",
     "scrape:paste": "node tools/scrape/paste-loop.mjs",
@@ -22,7 +23,15 @@
     "scrape:embed": "node tools/scrape/embed.mjs",
     "scrape:cluster": "node tools/scrape/cluster.mjs",
     "scrape:synth": "node tools/scrape/synth.mjs",
-    "scrape:run": "node tools/scrape/fetch.mjs && node tools/scrape/clean.mjs && node tools/scrape/mine.mjs"
+    "scrape:cursor-synth": "node tools/scrape/cursor-synth.mjs",
+    "scrape:run": "node tools/scrape/fetch.mjs && node tools/scrape/clean.mjs && node tools/scrape/mine.mjs",
+    "scrape:ingest-local": "node tools/scrape/ingest-local.mjs",
+    "scrape:conflict": "node tools/scrape/conflict.mjs",
+    "scrape:categorise": "node tools/scrape/categorise.mjs",
+    "scrape:emit": "node tools/scrape/emit.mjs",
+    "scrape:lint-compile": "node tools/scrape/lint-compile.mjs",
+    "lint:design": "node tools/lint/design-rules.mjs",
+    "test:design-rules": "node tools/scrape/test-rules.mjs"
   },
   "keywords": [
     "ui",
@@ -57,7 +66,9 @@
   "dependencies": {
     "@rolldown/binding-win32-x64-msvc": "^1.0.3",
     "jszip": "^3.10.1",
+    "minimatch": "^10.2.5",
     "opentype.js": "^1.3.5",
+    "tiktoken": "^1.0.22",
     "woff2-encoder": "^2.0.0"
   }
 }

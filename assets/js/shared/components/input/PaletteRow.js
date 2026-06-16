@@ -1,11 +1,5 @@
 /**
- * PaletteRow — 5-column compact row for one colourway layer in the OUTPUT tab.
- *
- * Columns:  [ label (3F) | swatch (2F) | hex input (6F) | width-or-alpha (3F) | mod chip (2F) ]
- *
- * Emits:
- *   onChange(layerId, { colour, alpha, lineWidth })
- *   onModulate(layerId)   — request to open a modulator panel for this layer
+ * PaletteRow — one colourway layer row (horizontal Composite cell stack).
  *
  * @extends BaseComponent
  */
@@ -13,24 +7,44 @@
 import { BaseComponent } from '../../foundation.js';
 
 export class PaletteRow extends BaseComponent {
-    /**
-     * @param {Object} options
-     * @param {Object}   options.layer      - ColourwayLayer descriptor
-     * @param {Function} options.onChange   - (layerId, patch) => void
-     * @param {Function} options.onModulate - (layerId) => void
-     * @param {boolean}  [options.hasModulator] - Whether a modulator exists
-     * @param {boolean}  [options.modEnabled]   - Whether the modulator is active
-     */
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'palette-row' }, deps);
 
-        this.layer       = options.layer       ?? { id: '', label: '', colour: '#000000', kind: 'stroke' };
-        this.onChange    = options.onChange    ?? (() => {});
-        this.onModulate  = options.onModulate  ?? (() => {});
+        this.layer = options.layer ?? { id: '', label: '', colour: '#000000', kind: 'stroke' };
+        this.onChange = options.onChange ?? (() => {});
+        this.onModulate = options.onModulate ?? (() => {});
         this.hasModulator = options.hasModulator ?? false;
-        this.modEnabled   = options.modEnabled   ?? false;
+        this.modEnabled = options.modEnabled ?? false;
+        this.topBorder = options.topBorder ?? true;
+        this.embedded = options.embedded ?? true;
 
         this._els = {};
+    }
+
+    _rowBorderCss() {
+        if (this.embedded) {
+            return `border-top: ${this.topBorder ? '1px solid var(--c-border)' : 'none'}; border-left: none; border-right: none; border-bottom: none;`;
+        }
+        return `
+            border-top: ${this.topBorder ? '1px solid var(--c-border)' : 'none'};
+            border-right: 1px solid var(--c-border);
+            border-bottom: 1px solid var(--c-border);
+            border-left: 1px solid var(--c-border);
+        `;
+    }
+
+    _cellCss(index, F, extra = '') {
+        return `
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            height: 100%;
+            border-top: none;
+            border-bottom: none;
+            border-right: none;
+            border-left: ${index > 0 ? '1px solid var(--c-border)' : 'none'};
+            ${extra}
+        `;
     }
 
     render() {
@@ -38,65 +52,86 @@ export class PaletteRow extends BaseComponent {
 
         const { F } = this.getF();
         const layer = this.layer;
+        const borderExtra = this.embedded ? 0 : 2;
 
         this.element = this.createElement('div', 'palette-row component');
         this.element.style.cssText = `
-            display: grid;
-            grid-template-columns: ${F * 3}px ${F * 2}px ${F * 6}px ${F * 3}px ${F * 2}px;
-            align-items: center;
-            height: ${F * 2}px;
-            border-bottom: 1px solid var(--c-border);
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            width: 100%;
+            height: ${F * 2 + borderExtra}px;
+            box-sizing: border-box;
+            ${this._rowBorderCss()}
         `;
 
-        // Col 1: Label
+        const lblCell = this.createElement('div', 'palette-row__label-cell');
+        lblCell.style.cssText = this._cellCss(0, F, `flex: 1; min-width: 0; padding: 0 ${F}px;`);
         const lbl = this.createElement('span', 'palette-row__label');
-        lbl.textContent = layer.label;
+        lbl.textContent = String(layer.label ?? '').toUpperCase();
         lbl.style.cssText = `
             font-family: 'Atkinson Hyperlegible', monospace;
-            font-size: ${F}px;
+            font-size: ${F * 0.75}px;
             color: var(--c-text);
-            text-transform: uppercase;
-            padding-left: ${F * 0.5}px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         `;
-        this.element.appendChild(lbl);
+        lblCell.appendChild(lbl);
+        this.element.appendChild(lblCell);
 
-        // Col 2: Swatch (colour picker input disguised as swatch)
+        const swatchCell = this.createElement('div', 'palette-row__swatch-cell');
+        swatchCell.style.cssText = this._cellCss(1, F, `flex: 0 0 ${F * 2}px; justify-content: center; position: relative; padding: ${Math.round(F * 0.35)}px;`);
+        const swatchPreview = this.createElement('div', 'palette-row__swatch-preview');
+        swatchPreview.style.cssText = `
+            width: 100%;
+            height: 100%;
+            background: ${layer.colour};
+            box-sizing: border-box;
+        `;
         const swatch = this.createElement('input', 'palette-row__swatch');
         swatch.type = 'color';
         swatch.value = layer.colour;
         swatch.style.cssText = `
-            width: ${F * 1.5}px;
-            height: ${F * 1.5}px;
-            border: 1px solid var(--c-border);
-            cursor: pointer;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             padding: 0;
-            background: none;
+            margin: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            opacity: 0;
+            box-sizing: border-box;
         `;
         swatch.addEventListener('input', (e) => {
             layer.colour = e.target.value;
+            swatchPreview.style.background = e.target.value;
             hexInput.value = e.target.value;
             this._emitColour();
         });
         this._els.swatch = swatch;
-        this.element.appendChild(swatch);
+        this._els.swatchPreview = swatchPreview;
+        swatchCell.appendChild(swatchPreview);
+        swatchCell.appendChild(swatch);
+        this.element.appendChild(swatchCell);
 
-        // Col 3: Hex input
+        const hexCell = this.createElement('div', 'palette-row__hex-cell');
+        hexCell.style.cssText = this._cellCss(2, F, `flex: 0 0 ${Math.round(F * 5.5)}px; min-width: 0; padding: 0 ${F}px;`);
         const hexInput = this.createElement('input', 'palette-row__hex');
         hexInput.type = 'text';
         hexInput.value = layer.colour;
         hexInput.maxLength = 7;
         hexInput.style.cssText = `
             width: 100%;
-            height: ${F * 1.5}px;
-            padding: 0 ${F * 0.5}px;
-            border: 1px solid var(--c-border);
-            background: var(--c-bg);
+            height: 100%;
+            padding: 0;
+            border: none;
+            background: transparent;
             color: var(--c-text);
             font-family: 'Atkinson Hyperlegible Mono', monospace;
-            font-size: ${F}px;
+            font-size: ${F * 0.75}px;
             box-sizing: border-box;
         `;
         hexInput.addEventListener('change', (e) => {
@@ -104,91 +139,107 @@ export class PaletteRow extends BaseComponent {
             if (/^#[0-9a-fA-F]{6}$/.test(val)) {
                 layer.colour = val;
                 swatch.value = val;
+                swatchPreview.style.background = val;
                 this._emitColour();
             }
         });
         this._els.hexInput = hexInput;
-        this.element.appendChild(hexInput);
+        hexCell.appendChild(hexInput);
+        this.element.appendChild(hexCell);
 
-        // Col 4: Width (stroke) or Alpha (fill)
         const isStroke = layer.kind === 'stroke' || layer.kind === undefined;
+        const waCell = this.createElement('div', 'palette-row__width-cell');
+        waCell.style.cssText = this._cellCss(3, F, `flex: 0 0 ${F * 3}px; padding: 0 ${F}px;`);
         const widthAlpha = this.createElement('input', 'palette-row__width-alpha');
         widthAlpha.type = 'number';
         if (isStroke) {
-            widthAlpha.min   = '0.5';
-            widthAlpha.max   = '20';
-            widthAlpha.step  = '0.5';
+            widthAlpha.min = '0.5';
+            widthAlpha.max = '20';
+            widthAlpha.step = '0.5';
             widthAlpha.value = String(layer.lineWidth ?? 1);
-            widthAlpha.title = 'Line width (px)';
         } else {
-            widthAlpha.min   = '0';
-            widthAlpha.max   = '1';
-            widthAlpha.step  = '0.05';
+            widthAlpha.min = '0';
+            widthAlpha.max = '1';
+            widthAlpha.step = '0.05';
             widthAlpha.value = String(layer.alpha ?? 1);
-            widthAlpha.title = 'Opacity (0–1)';
         }
         widthAlpha.style.cssText = `
             width: 100%;
-            height: ${F * 1.5}px;
-            padding: 0 ${F * 0.25}px;
-            border: 1px solid var(--c-border);
-            background: var(--c-bg);
+            height: 100%;
+            padding: 0;
+            border: none;
+            background: transparent;
             color: var(--c-text);
             font-family: 'Atkinson Hyperlegible Mono', monospace;
-            font-size: ${F}px;
+            font-size: ${F * 0.75}px;
+            text-align: right;
             box-sizing: border-box;
         `;
         widthAlpha.addEventListener('change', (e) => {
             const v = parseFloat(e.target.value);
             if (!isNaN(v)) {
-                if (isStroke) { layer.lineWidth = v; }
-                else          { layer.alpha = v; }
+                if (isStroke) layer.lineWidth = v;
+                else layer.alpha = v;
                 this.onChange(layer.id, isStroke
                     ? { colour: layer.colour, lineWidth: v }
                     : { colour: layer.colour, alpha: v });
             }
         });
         this._els.widthAlpha = widthAlpha;
-        this.element.appendChild(widthAlpha);
+        waCell.appendChild(widthAlpha);
+        this.element.appendChild(waCell);
 
-        // Col 5: Mod chip
+        const modCell = this.createElement('div', 'palette-row__mod-cell');
+        modCell.style.cssText = this._cellCss(4, F, `flex: 0 0 ${F * 2}px; justify-content: center;`);
         const modBtn = this.createElement('button', 'palette-row__mod-btn');
         modBtn.type = 'button';
+        modBtn.textContent = this.hasModulator ? '∿' : '+';
         modBtn.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: ${F * 1.5}px;
-            height: ${F * 1.5}px;
-            border: 1px solid ${this.modEnabled ? 'var(--c-accent)' : 'var(--c-border)'};
-            background: var(--c-bg);
-            color: ${this.modEnabled ? 'var(--c-accent)' : 'var(--c-border)'};
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: ${this.modEnabled ? 'var(--c-text)' : 'var(--c-bg)'};
+            color: ${this.modEnabled ? 'var(--c-bg)' : 'var(--c-text)'};
             font-family: 'Atkinson Hyperlegible Mono', monospace;
             font-size: ${F * 0.75}px;
             cursor: pointer;
+            box-sizing: border-box;
+            padding: 0;
         `;
-        modBtn.textContent = this.hasModulator ? '∿' : '+';
-        modBtn.title = 'Modulate this layer';
         modBtn.addEventListener('click', () => this.onModulate(layer.id));
+        modBtn.addEventListener('mouseenter', () => {
+            modBtn.style.background = 'var(--c-text)';
+            modBtn.style.color = 'var(--c-bg)';
+        });
+        modBtn.addEventListener('mouseleave', () => {
+            modBtn.style.background = this.modEnabled ? 'var(--c-text)' : 'var(--c-bg)';
+            modBtn.style.color = this.modEnabled ? 'var(--c-bg)' : 'var(--c-text)';
+        });
         this._els.modBtn = modBtn;
-        this.element.appendChild(modBtn);
+        modCell.appendChild(modBtn);
+        this.element.appendChild(modCell);
 
         return this.element;
+    }
+
+    setTopBorder(on) {
+        this.topBorder = !!on;
+        if (!this.element) return;
+        const edge = on ? '1px solid var(--c-border)' : 'none';
+        this.element.style.borderTop = edge;
     }
 
     _emitColour() {
         this.onChange(this.layer.id, { colour: this.layer.colour });
     }
 
-    /** Update visual mod chip state. */
     setModState(hasModulator, enabled) {
         this.hasModulator = hasModulator;
-        this.modEnabled   = enabled;
+        this.modEnabled = enabled;
         if (!this._els.modBtn) return;
-        const { F } = this.getF();
         this._els.modBtn.textContent = hasModulator ? '∿' : '+';
-        this._els.modBtn.style.color  = enabled ? 'var(--c-accent)' : 'var(--c-border)';
-        this._els.modBtn.style.border = `1px solid ${enabled ? 'var(--c-accent)' : 'var(--c-border)'}`;
+        this._els.modBtn.style.background = enabled ? 'var(--c-text)' : 'var(--c-bg)';
+        this._els.modBtn.style.color = enabled ? 'var(--c-bg)' : 'var(--c-text)';
     }
 
     destroy() {

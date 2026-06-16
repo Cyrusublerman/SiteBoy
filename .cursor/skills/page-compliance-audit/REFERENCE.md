@@ -17,7 +17,13 @@ Source: `.cursor/rules/rules.mdc` and `.cursorrules` File Ownership sections.
 | UI components | `assets/js/shared/component-library.js` |
 | Specialised widgets | `assets/js/shared/specialized-components.js` |
 | Sections | `assets/js/sections/*.js` |
-| Styling | `assets/css/styles.css` |
+| Styling (entry) | `assets/css/index.css` |
+| Styling (palette/reset/typo) | `assets/css/base.css` |
+| Styling (UI components) | `assets/css/components.css` |
+| Styling (page structure) | `assets/css/layout.css` |
+| Styling (tool interfaces) | `assets/css/tools.css` |
+| Styling (utilities/debug) | `assets/css/utilities.css` |
+| ~~Styling (DEAD)~~ | ~~`assets/css/styles.css`~~ — legacy monolith, do NOT edit |
 | Distort GPU dispatch | `assets/js/tools/processors/distort/core/GPURenderPath.js` |
 | Distort node shaders | `assets/js/tools/processors/distort/shaders/*.shader.js` |
 | Generator UI tab layout | `assets/js/tools/generators/core/parameter-builder.js` |
@@ -43,6 +49,7 @@ A page may not implement an owned concern. It may only consume it.
 | `ROUTING-OUTSIDE-ROUTER` | `pushState`, `popstate`, `location.hash` outside `router.js` | `rules.mdc` Minimal Checks |
 | `BASECOMPONENT-DUP` | `class BaseComponent` declared outside its owner | `rules.mdc` Minimal Checks |
 | `INLINE-STYLE-CSSTEXT` | `element.style.cssText = ...` or `element.style.<prop> = ...` in tool/section files | `.cursorrules` Inline Styles |
+| `DEAD-CSS-REF` | Any reference to `styles.css` (dead legacy monolith; live system is `index.css` → modular files) | `rules.mdc` CSS File Routing |
 
 ## Checklist files
 
@@ -76,6 +83,7 @@ Source: `blog/docs/guides/standards/`.
 | `semiotics.md` | Every glyph/symbol and DOM structure |
 | `text-treatment.md` | Case, size, alignment, padding per context |
 | `component-patterns.md` | Component selection, space division, build recipes, density law |
+| `composite-components.md` | Building a component from subcomponents bound into one bordered partition: shared boundaries, no gaps, single-owner `1px` dividers, stack-aware per-edge borders (`borders`/`embedded`/`topBorder`) |
 | `tool-standards.md` | Minimum-functionality by output type, composition, registration |
 | `p5-generator-standards.md` | p5 script structure, callbacks, frame purity, forbidden patterns |
 | `gpu-compute.md` | GPU compute decisions |

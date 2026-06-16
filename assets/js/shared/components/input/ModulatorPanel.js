@@ -2,27 +2,15 @@
  * ModulatorPanel — expanded driver/shape/range/combine/sync panel.
  *
  * Renders driver-specific parameter fields by reading the driver's
- * parameters[] schema from driver-registry.js. Replaces AnimateParamControl.
+ * parameters[] schema from driver-registry.js.
  *
  * Emits: onChange(targetKey, modulator) whenever any field changes.
- *
- * Layout (collapsed by default, expanded by ModulatorChip click):
- *   ┌──────────────────────────────────────────────┐
- *   │ [Enable ☐]  DRIVER [dropdown]                │
- *   │  <driver-specific fields>                    │
- *   │ ─── SHAPE ───                                │
- *   │  Easing [dropdown]  Invert [☐]               │
- *   │ ─── RANGE ───                                │
- *   │  Depth [slider]  Bias [slider]               │
- *   │  Min [input]  Max [input]  Bipolar [☐]       │
- *   │ ─── COMBINE ───                              │
- *   │  Mode [dropdown]                             │
- *   └──────────────────────────────────────────────┘
  *
  * @extends BaseComponent
  */
 
 import { BaseComponent } from '../../foundation.js';
+import { Slider } from './Slider.js';
 import { DriverRegistry } from '../../../tools/generators/core/driver-registry.js';
 
 const COMBINE_MODES = ['add', 'multiply', 'replace', 'drift', 'max', 'min'];
@@ -34,6 +22,7 @@ export class ModulatorPanel extends BaseComponent {
      * @param {string}   options.targetKey  - Param key this panel targets
      * @param {Object}   options.modulator  - ModulatorDescriptor (will be cloned)
      * @param {Function} options.onChange   - (targetKey, modulator) => void
+     * @param {boolean}  [options.topBorder]
      */
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'modulator-panel' }, deps);
@@ -49,8 +38,10 @@ export class ModulatorPanel extends BaseComponent {
             sync:      { clock: 'free', rateMul: 1 },
         });
         this.onChange = options.onChange ?? (() => {});
+        this.topBorder = options.topBorder ?? true;
 
         this._driverFields = [];
+        this._sliderComps = [];
     }
 
     _clone(obj) { return JSON.parse(JSON.stringify(obj)); }
@@ -64,8 +55,11 @@ export class ModulatorPanel extends BaseComponent {
         this.element.style.cssText = `
             display: flex;
             flex-direction: column;
+            gap: 0;
             width: 100%;
             border: 1px solid var(--c-border);
+            border-top: ${this.topBorder ? '1px solid var(--c-border)' : 'none'};
+            box-sizing: border-box;
             background: var(--c-bg);
         `;
 
@@ -82,32 +76,24 @@ export class ModulatorPanel extends BaseComponent {
 
     _buildHeader(F) {
         const row = this._row(F);
-        row.style.borderBottom = '1px solid var(--c-border)';
-        row.style.padding = `0 ${F}px`;
-        row.style.height = `${F * 2}px`;
-
-        const enableLbl = this._label('Enable', F);
-        const enableCheck = this.createElement('input');
-        enableCheck.type = 'checkbox';
-        enableCheck.checked = this.mod.enabled;
-        enableCheck.style.cursor = 'pointer';
-        enableCheck.style.marginLeft = `${F * 0.5}px`;
-        enableCheck.addEventListener('change', (e) => {
+        this._appendLabelCell(row, 'Enable', F, `${F * 5}px`);
+        const check = this.createElement('input');
+        check.type = 'checkbox';
+        check.checked = this.mod.enabled;
+        check.style.cursor = 'pointer';
+        check.addEventListener('change', (e) => {
             this.mod.enabled = e.target.checked;
             this._emit();
         });
-
-        row.appendChild(enableLbl);
-        row.appendChild(enableCheck);
+        this._appendCell(row, check, F, `flex:0 0 ${F * 2}px; justify-content:center;`);
         this.element.appendChild(row);
     }
 
     _buildDriverSection(F) {
         const section = this._section('Driver', F);
 
-        // Driver type dropdown
         const driverRow = this._row(F);
-        const driverLbl = this._label('Type', F);
+        this._appendLabelCell(driverRow, 'Type', F, `${F * 5}px`);
         const driverSel = this._select(
             DriverRegistry.list().map(d => ({ value: d.id, label: d.label })),
             this.mod.driver?.type ?? 'lfo',
@@ -120,12 +106,11 @@ export class ModulatorPanel extends BaseComponent {
             this._rebuildDriverFields(F);
             this._emit();
         });
-        driverRow.appendChild(driverLbl);
-        driverRow.appendChild(driverSel);
+        this._appendCell(driverRow, driverSel, F, 'flex:1;min-width:0;padding:0;');
         section.appendChild(driverRow);
 
-        // Driver-specific fields container
         this._driverFieldsContainer = this.createElement('div', 'modulator-panel__driver-fields');
+        this._driverFieldsContainer.style.cssText = 'display:flex;flex-direction:column;gap:0;';
         section.appendChild(this._driverFieldsContainer);
 
         this._rebuildDriverFields(F);
@@ -134,6 +119,7 @@ export class ModulatorPanel extends BaseComponent {
 
     _rebuildDriverFields(F) {
         if (!this._driverFieldsContainer) return;
+        this._destroySliders();
         this._driverFieldsContainer.innerHTML = '';
         this._driverFields = [];
 
@@ -142,24 +128,26 @@ export class ModulatorPanel extends BaseComponent {
         const driver = DriverRegistry.get(type);
 
         for (const param of (driver.parameters ?? [])) {
-            if (param.type === 'code' || param.type === 'curve-editor') continue; // handled specially later
-            const row = this._row(F);
-            row.appendChild(this._label(param.label, F));
+            if (param.type === 'code' || param.type === 'curve-editor') continue;
 
-            let ctrl;
+            const row = this._row(F);
+            row.style.borderTop = '1px solid var(--c-border)';
+            this._appendLabelCell(row, param.label, F, `${F * 5}px`);
+
             const currentVal = this.mod.driver.config?.[param.key] ?? param.default;
+            let ctrl;
 
             if (param.type === 'slider') {
-                ctrl = this._slider(
+                ctrl = this._makeSliderEl(
                     currentVal,
                     param.min ?? 0, param.max ?? 1, param.step ?? 0.01,
-                    F,
                     (v) => {
                         this.mod.driver.config = this.mod.driver.config ?? {};
                         this.mod.driver.config[param.key] = v;
                         this._emit();
                     }
                 );
+                this._appendCell(row, ctrl, F, 'flex:1;min-width:0;padding:0;');
             } else if (param.type === 'dropdown') {
                 ctrl = this._select(
                     (param.options ?? []).map(o => ({ value: o, label: o })),
@@ -171,15 +159,16 @@ export class ModulatorPanel extends BaseComponent {
                     this.mod.driver.config[param.key] = e.target.value;
                     this._emit();
                 });
+                this._appendCell(row, ctrl, F, 'flex:1;min-width:0;padding:0;');
             } else {
                 ctrl = this._textInput(String(currentVal), F, (v) => {
                     this.mod.driver.config = this.mod.driver.config ?? {};
                     this.mod.driver.config[param.key] = v;
                     this._emit();
                 });
+                this._appendCell(row, ctrl, F, 'flex:1;min-width:0;padding:0;');
             }
 
-            row.appendChild(ctrl);
             this._driverFieldsContainer.appendChild(row);
             this._driverFields.push({ param, ctrl });
         }
@@ -189,30 +178,30 @@ export class ModulatorPanel extends BaseComponent {
         const section = this._section('Shape', F);
 
         const row1 = this._row(F);
-        row1.appendChild(this._label('Easing', F));
-        const easingSel = this._select(EASING_MODES.map(m => ({ value: m, label: m })),
-            this.mod.shape?.easing ?? 'linear', F);
+        this._appendLabelCell(row1, 'Easing', F, `${F * 5}px`);
+        const easingSel = this._select(
+            EASING_MODES.map(m => ({ value: m, label: m })),
+            this.mod.shape?.easing ?? 'linear',
+            F
+        );
         easingSel.addEventListener('change', (e) => {
             this.mod.shape = this.mod.shape ?? {};
             this.mod.shape.easing = e.target.value;
             this._emit();
         });
-        row1.appendChild(easingSel);
+        this._appendCell(row1, easingSel, F, 'flex:1;min-width:0;padding:0;');
 
-        const invertLbl = this._label('Invert', F);
-        invertLbl.style.marginLeft = `${F}px`;
+        this._appendLabelCell(row1, 'Invert', F, `${F * 5}px`);
         const invertCheck = this.createElement('input');
         invertCheck.type = 'checkbox';
         invertCheck.checked = this.mod.shape?.invert ?? false;
         invertCheck.style.cursor = 'pointer';
-        invertCheck.style.marginLeft = `${F * 0.5}px`;
         invertCheck.addEventListener('change', (e) => {
             this.mod.shape = this.mod.shape ?? {};
             this.mod.shape.invert = e.target.checked;
             this._emit();
         });
-        row1.appendChild(invertLbl);
-        row1.appendChild(invertCheck);
+        this._appendCell(row1, invertCheck, F, `flex:0 0 ${F * 2}px; justify-content:center;`);
 
         section.appendChild(row1);
         this.element.appendChild(section);
@@ -222,36 +211,43 @@ export class ModulatorPanel extends BaseComponent {
         const section = this._section('Range', F);
 
         const depthRow = this._row(F);
-        depthRow.appendChild(this._label('Depth', F));
-        depthRow.appendChild(this._slider(this.mod.range?.depth ?? 1, 0, 2, 0.01, F, (v) => {
-            this.mod.range = this.mod.range ?? {};
-            this.mod.range.depth = v;
-            this._emit();
-        }));
+        this._appendLabelCell(depthRow, 'Depth', F, `${F * 5}px`);
+        this._appendCell(depthRow, this._makeSliderEl(
+            this.mod.range?.depth ?? 1, 0, 2, 0.01,
+            (v) => {
+                this.mod.range = this.mod.range ?? {};
+                this.mod.range.depth = v;
+                this._emit();
+            }
+        ), F, 'flex:1;min-width:0;padding:0;');
         section.appendChild(depthRow);
 
         const biasRow = this._row(F);
-        biasRow.appendChild(this._label('Bias', F));
-        biasRow.appendChild(this._slider(this.mod.range?.bias ?? 0, -1, 1, 0.01, F, (v) => {
-            this.mod.range = this.mod.range ?? {};
-            this.mod.range.bias = v;
-            this._emit();
-        }));
+        biasRow.style.borderTop = '1px solid var(--c-border)';
+        this._appendLabelCell(biasRow, 'Bias', F, `${F * 5}px`);
+        this._appendCell(biasRow, this._makeSliderEl(
+            this.mod.range?.bias ?? 0, -1, 1, 0.01,
+            (v) => {
+                this.mod.range = this.mod.range ?? {};
+                this.mod.range.bias = v;
+                this._emit();
+            }
+        ), F, 'flex:1;min-width:0;padding:0;');
         section.appendChild(biasRow);
 
         const bipolarRow = this._row(F);
-        bipolarRow.appendChild(this._label('Bipolar', F));
+        bipolarRow.style.borderTop = '1px solid var(--c-border)';
+        this._appendLabelCell(bipolarRow, 'Bipolar', F, `${F * 5}px`);
         const bipolarCheck = this.createElement('input');
         bipolarCheck.type = 'checkbox';
         bipolarCheck.checked = this.mod.range?.bipolar ?? true;
         bipolarCheck.style.cursor = 'pointer';
-        bipolarCheck.style.marginLeft = `${F * 0.5}px`;
         bipolarCheck.addEventListener('change', (e) => {
             this.mod.range = this.mod.range ?? {};
             this.mod.range.bipolar = e.target.checked;
             this._emit();
         });
-        bipolarRow.appendChild(bipolarCheck);
+        this._appendCell(bipolarRow, bipolarCheck, F, `flex:0 0 ${F * 2}px; justify-content:center;`);
         section.appendChild(bipolarRow);
 
         this.element.appendChild(section);
@@ -260,14 +256,17 @@ export class ModulatorPanel extends BaseComponent {
     _buildCombineSection(F) {
         const section = this._section('Combine', F);
         const row = this._row(F);
-        row.appendChild(this._label('Mode', F));
-        const sel = this._select(COMBINE_MODES.map(m => ({ value: m, label: m })),
-            this.mod.combine ?? 'add', F);
+        this._appendLabelCell(row, 'Mode', F, `${F * 5}px`);
+        const sel = this._select(
+            COMBINE_MODES.map(m => ({ value: m, label: m })),
+            this.mod.combine ?? 'add',
+            F
+        );
         sel.addEventListener('change', (e) => {
             this.mod.combine = e.target.value;
             this._emit();
         });
-        row.appendChild(sel);
+        this._appendCell(row, sel, F, 'flex:1;min-width:0;padding:0;');
         section.appendChild(row);
         this.element.appendChild(section);
     }
@@ -276,18 +275,21 @@ export class ModulatorPanel extends BaseComponent {
 
     _section(title, F) {
         const el = this.createElement('div', 'modulator-panel__section');
-        el.style.cssText = `display:flex;flex-direction:column;border-top:1px solid var(--c-border);`;
+        el.style.cssText = 'display:flex;flex-direction:column;gap:0;border-top:1px solid var(--c-border);';
         const hdr = this.createElement('div', 'modulator-panel__section-header');
         hdr.textContent = title.toUpperCase();
         hdr.style.cssText = `
             padding: 0 ${F}px;
             height: ${F * 1.5}px;
-            display: flex; align-items: center;
+            display: flex;
+            align-items: center;
+            gap: 0;
             font-family: 'Atkinson Hyperlegible', monospace;
             font-size: ${F * 0.75}px;
             color: var(--c-text);
             background: var(--c-border);
             text-transform: uppercase;
+            box-sizing: border-box;
         `;
         el.appendChild(hdr);
         return el;
@@ -296,35 +298,67 @@ export class ModulatorPanel extends BaseComponent {
     _row(F) {
         const row = this.createElement('div', 'modulator-panel__row');
         row.style.cssText = `
-            display:flex; align-items:center; gap:${F * 0.5}px;
-            padding: ${F * 0.25}px ${F}px;
-            min-height: ${F * 2}px;
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            height: ${F * 2}px;
+            box-sizing: border-box;
         `;
+        row._cellIndex = 0;
         return row;
     }
 
-    _label(text, F) {
+    _cellCss(index, F, extra = '') {
+        return `
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            height: 100%;
+            border-top: none;
+            border-bottom: none;
+            border-right: none;
+            border-left: ${index > 0 ? '1px solid var(--c-border)' : 'none'};
+            ${extra}
+        `;
+    }
+
+    _appendLabelCell(row, text, F, width) {
+        const cell = this.createElement('div');
+        cell.style.cssText = this._cellCss(row._cellIndex, F, `flex: 0 0 ${width}; padding: 0 ${F}px;`);
         const lbl = this.createElement('span');
-        lbl.textContent = text;
+        lbl.textContent = String(text).toUpperCase();
         lbl.style.cssText = `
             font-family:'Atkinson Hyperlegible',monospace;
-            font-size:${F}px;
+            font-size:${F * 0.75}px;
             color:var(--c-text);
-            width:${F * 5}px;
-            flex-shrink:0;
             text-transform:uppercase;
+            white-space:nowrap;
+            overflow:hidden;
+            text-overflow:ellipsis;
         `;
-        return lbl;
+        cell.appendChild(lbl);
+        row.appendChild(cell);
+        row._cellIndex += 1;
+    }
+
+    _appendCell(row, content, F, extra) {
+        const cell = this.createElement('div');
+        cell.style.cssText = this._cellCss(row._cellIndex, F, extra);
+        if (content instanceof HTMLElement) cell.appendChild(content);
+        row.appendChild(cell);
+        row._cellIndex += 1;
+        return cell;
     }
 
     _select(options, value, F) {
         const sel = this.createElement('select', 'modulator-panel__select');
         sel.style.cssText = `
-            flex:1; height:${F * 2}px; padding:0 ${F * 0.5}px;
-            border:1px solid var(--c-border);
+            width:100%; height:100%; padding:0 ${F * 0.5}px;
+            border:none;
             background:var(--c-bg); color:var(--c-text);
             font-family:'Atkinson Hyperlegible',monospace;
-            font-size:${F}px; cursor:pointer;
+            font-size:${F * 0.75}px; cursor:pointer;
+            box-sizing:border-box;
         `;
         for (const opt of options) {
             const el = this.createElement('option');
@@ -336,36 +370,29 @@ export class ModulatorPanel extends BaseComponent {
         return sel;
     }
 
-    _slider(value, min, max, step, F, onChange) {
-        const wrap = this.createElement('div');
-        wrap.style.cssText = `display:flex;align-items:center;gap:${F * 0.5}px;flex:1;`;
+    _makeSliderEl(value, min, max, step, onChange) {
+        const slider = new Slider({
+            min, max, step, value,
+            trackHF: 2,
+            borders: { top: false, right: false, bottom: false, left: true },
+            onInput:  onChange,
+            onChange,
+        }, this.deps);
+        this.addChild(slider);
+        this._sliderComps.push(slider);
+        const el = slider.render();
+        el.style.flex = '1';
+        el.style.minWidth = '0';
+        el.style.height = '100%';
+        el.style.width = '100%';
+        return el;
+    }
 
-        const input = this.createElement('input');
-        input.type  = 'range';
-        input.min   = String(min);
-        input.max   = String(max);
-        input.step  = String(step);
-        input.value = String(value);
-        input.style.cssText = `flex:1; cursor:pointer;`;
-
-        const num = this.createElement('span');
-        const prec = step < 0.01 ? 3 : step < 0.1 ? 2 : 1;
-        num.textContent = Number(value).toFixed(prec);
-        num.style.cssText = `
-            font-family:'Atkinson Hyperlegible Mono',monospace;
-            font-size:${F}px; color:var(--c-text);
-            width:${F * 3}px; text-align:right;
-        `;
-
-        input.addEventListener('input', (e) => {
-            const v = parseFloat(e.target.value);
-            num.textContent = v.toFixed(prec);
-            onChange(v);
-        });
-
-        wrap.appendChild(input);
-        wrap.appendChild(num);
-        return wrap;
+    _destroySliders() {
+        for (const s of this._sliderComps) {
+            if (s) this.removeChild(s);
+        }
+        this._sliderComps = [];
     }
 
     _textInput(value, F, onChange) {
@@ -373,11 +400,12 @@ export class ModulatorPanel extends BaseComponent {
         input.type = 'text';
         input.value = value;
         input.style.cssText = `
-            flex:1; height:${F * 2}px; padding:0 ${F * 0.5}px;
-            border:1px solid var(--c-border);
+            width:100%; height:100%; padding:0 ${F * 0.5}px;
+            border:none;
             background:var(--c-bg); color:var(--c-text);
             font-family:'Atkinson Hyperlegible Mono',monospace;
-            font-size:${F}px;
+            font-size:${F * 0.75}px;
+            box-sizing:border-box;
         `;
         input.addEventListener('change', (e) => onChange(e.target.value));
         return input;
@@ -387,16 +415,26 @@ export class ModulatorPanel extends BaseComponent {
         this.onChange(this.targetKey, this._clone(this.mod));
     }
 
-    /** Programmatically update the displayed modulator (e.g. after preset load). */
     setModulator(modulator) {
         this.mod = this._clone(modulator);
         if (this.element) {
+            this._destroySliders();
             this.element.remove();
             this.element = null;
         }
     }
 
+    setTopBorder(on) {
+        this.topBorder = !!on;
+        if (this.element) {
+            this.element.style.borderTop = this.topBorder
+                ? '1px solid var(--c-border)'
+                : 'none';
+        }
+    }
+
     destroy() {
+        this._destroySliders();
         super.destroy();
     }
 }

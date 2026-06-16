@@ -14,7 +14,13 @@ Only these files may own the concern. Others must not implement it.
 - UI components → assets/js/shared/component-library.js
 - Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
 - Sections/page composition → assets/js/sections/*.js
-- All styling → assets/css/styles.css
+- All styling → modular CSS system (entry: assets/css/index.css):
+  - Palette/reset/typography → assets/css/base.css
+  - UI component classes → assets/css/components.css
+  - Page structure → assets/css/layout.css
+  - Tool interfaces → assets/css/tools.css
+  - Utilities & debug → assets/css/utilities.css
+  - ⚠ assets/css/styles.css is DEAD (legacy monolith, do NOT edit)
 - **Generator UI structure (tab layout for all 22 generators) → assets/js/tools/generators/core/parameter-builder.js**
 - **Generator schema + validation → assets/js/tools/generators/core/script-types.js**
 - **Modulation engine (driver→shape→range→combine pipeline) → assets/js/tools/generators/core/modulation-engine.js**
@@ -133,9 +139,25 @@ element.style.property = '...'
 ```
 
 **INSTEAD:**
-- Define CSS classes in styles.css
+- Define CSS classes in the appropriate module (components.css / tools.css / layout.css / utilities.css)
 - Apply classes: `element.className = 'my-class'`
 - Use CSS variables for dynamic values
+
+### CSS File Routing — NEVER Edit styles.css
+`assets/css/styles.css` is a dead legacy monolith. The live system is modular.
+BEFORE writing any CSS, STOP and route to the correct file:
+- Palette vars / reset / typography → `assets/css/base.css`
+- UI component classes (buttons, dropdowns, gallery items) → `assets/css/components.css`
+- Page structure (containers, grids, responsive) → `assets/css/layout.css`
+- Tool interfaces (ToolBase, sidebar, canvas) → `assets/css/tools.css`
+- Utilities, debug, scrollbar → `assets/css/utilities.css`
+
+**FORBIDDEN:**
+```
+// ❌ NEVER:
+editing assets/css/styles.css (dead file)
+creating new .css files (use existing modules)
+```
 
 ### Animation APIs — ONLY AnimationFoundation
 **FORBIDDEN:**
@@ -438,4 +460,18 @@ When adding new features:
 - No performance impact when disabled
 - Categorized debugging (no sifting through noise)
 - Easy to find repetitive/spammy logs (VERBOSE)
+
+## Scraped design rule corpus (general knowledge)
+
+SiteBoy guides (`blog/docs/guides/standards/design-law.md`, `component-patterns.md`, etc.) **take precedence** over scraped rules where they conflict.
+
+| Need | Read |
+| --- | --- |
+| One-off design decision | `blog/docs/guides/ai-routing-map.md` §13 |
+| End-to-end workflow (capture, publish, extract) | `blog/docs/guides/ai-routing-map.md` §14 |
+| Rule lookup by ID | `blog/docs/standards/rules/INDEX.md` → `standards/rules/<category>/<id>.md` |
+| All rules in one category | `blog/docs/standards/<category>.md` |
+| Top MUST/MUST_NOT only | `blog/docs/standards/hot-rules.md` |
+
+Read only what the task requires; do not load the full corpus into context.
 

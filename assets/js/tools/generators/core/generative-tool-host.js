@@ -32,7 +32,6 @@ import { GenerativeCanvasDock } from '../../../shared/components/tool/Generative
 import { P5Canvas } from '../../../shared/p5-integration.js';
 import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
 import { ComputeScheduler } from './compute-scheduler.js';
-import { evaluateModulators } from './modulation-engine.js';
 import { buildContext } from './expression-context.js';
 import { _migrateScriptConfig } from './script-types.js';
 
@@ -76,6 +75,8 @@ export class GenerativeToolHost extends BaseComponent {
         // ComputeScheduler (Tier 2+3 — initialised after script load)
         this._scheduler = null;
         this._redrawScheduled = false; // Tier 1 coalesce flag
+        /** @type {import('../../../shared/components/input/ExpressionParam.js').ExpressionParam[]} */
+        this._expressionParams = [];
         /** @type {import('../../../shared/components/tool/GenerativeCanvasDock.js').GenerativeCanvasDock|null} */
         this.generativeDock = null;
         
@@ -184,12 +185,7 @@ export class GenerativeToolHost extends BaseComponent {
 
         this.appendElement(this.container, this.wrapperEl);
 
-        // X-001: Spacebar play/stop — bound to the host wrapper, not the document,
-        // so it only fires when focus is within the generator page.
         this._onKeyDown = (e) => {
-            if (e.code !== 'Space' || e.repeat) return;
-            // Do not intercept when an input, textarea, select, or contenteditable
-            // element has focus — the user may be typing in a param field.
             const active = document.activeElement;
             if (active && (
                 active.tagName === 'INPUT' ||
@@ -197,10 +193,18 @@ export class GenerativeToolHost extends BaseComponent {
                 active.tagName === 'SELECT' ||
                 active.isContentEditable
             )) return;
-            // Only act when an animating generator is loaded
             if (!this.scriptConfig?.animation || this.scriptConfig.animation.type === 'none') return;
-            e.preventDefault();
-            this.togglePlay();
+
+            if (e.code === 'Space' && !e.repeat) {
+                e.preventDefault();
+                this.togglePlay();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                this.stepFrame(1);
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                this.stepFrame(-1);
+            }
         };
         this.wrapperEl.setAttribute('tabindex', '-1');
         this.wrapperEl.addEventListener('keydown', this._onKeyDown);
@@ -258,9 +262,6 @@ export class GenerativeToolHost extends BaseComponent {
         // Get default parameter values
         this.params = getDefaultParams(this.scriptConfig.parameters);
         
-        // Build modulators array from new schema (post-migration)
-        this.modulators = this.scriptConfig.animation?.modulators ?? [];
-        
         // Check if this is a p5 context script
         this.isP5Context = this.scriptConfig.canvas.context === 'p5';
         
@@ -283,6 +284,9 @@ export class GenerativeToolHost extends BaseComponent {
             Resize: this.deps.Resize
         });
         this.tool.mount(this.toolContentEl);
+        
+        // Collect ExpressionParam components for per-frame evaluation
+        this._collectExpressionParams();
         
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
@@ -407,7 +411,8 @@ export class GenerativeToolHost extends BaseComponent {
                 displayMode: this.displayMode,
                 enableZoom: true,
                 enablePan: true,
-                showControls: false // Controls are in toolbar now
+                enableArrowPan: false,
+                showControls: false
             },
             onInit: (values) => this.handleInit(values),
             onUpdate: (key, value, allValues) => this.handleUpdate(key, value, allValues),
@@ -834,7 +839,6 @@ export class GenerativeToolHost extends BaseComponent {
             getCanvas:    () => this._getActiveCanvas(),
             renderFrame:  (i) => {
                 this.frame = i;
-                this.updatePhaseAnimations();
                 this.draw();
             },
             getState: () => ({ frame: this.frame, params: JSON.parse(JSON.stringify(this.params)) }),
@@ -924,19 +928,13 @@ export class GenerativeToolHost extends BaseComponent {
         }
 
         if (key.startsWith('animParam__')) {
-            // Legacy animParam__ events — no-op; modulator state now managed via mod__ keys
+            // Legacy animParam__ events — no-op
             return;
         }
 
-        // New modulation engine — mod__<targetKey> updates a ModulatorDescriptor
-        if (key.startsWith('mod__')) {
-            const targetKey = key.replace(/^mod__/, '');
-            const modIdx = this.modulators.findIndex(m => m.targetKey === targetKey);
-            if (modIdx >= 0) {
-                this.modulators[modIdx] = { ...this.modulators[modIdx], ...value };
-            } else if (value) {
-                this.modulators.push({ targetKey, ...value });
-            }
+        // Expression text or mode change — re-evaluate and redraw
+        if (key.endsWith('__expr')) {
+            this.draw();
             return;
         }
 
@@ -1037,9 +1035,15 @@ export class GenerativeToolHost extends BaseComponent {
     _handleTransportChange(key, value) {
         if (key === 'playPause')      { this.togglePlay(); return; }
         if (key === 'stopReset')      { this.stop();       return; }
-        if (key === 'animSpeed')      {
-            // Store speed so updatePhaseAnimations and the modulation engine can read it
-            this._animSpeed = value;
+        if (key === 'fpsChange') {
+            this._activeFps = value;
+            if (this.animator) {
+                this.animator.setFPS(value);
+            }
+            return;
+        }
+        if (key === 'startRecord') {
+            this._startStripRecord();
             return;
         }
         if (key === 'toggleTimeline') {
@@ -1049,6 +1053,34 @@ export class GenerativeToolHost extends BaseComponent {
             }
             return;
         }
+    }
+
+    /**
+     * Trigger animation export from the transport strip REC button.
+     * Uses last-known export settings or sensible defaults.
+     */
+    _startStripRecord() {
+        if (!this.animationExporter) return;
+        if (this.animationExporter.state.isExporting) {
+            this.animationExporter.cancelExport();
+            this.transportStrip?.setRecording(false);
+            return;
+        }
+
+        const fps = this._activeFps ?? this.scriptConfig.animation?.defaultFps ?? 60;
+        const loopFrames = this.scriptConfig.animation?.loopFrames || 300;
+
+        this.animationExporter.state.fps        = fps;
+        this.animationExporter.state.frameCount = loopFrames;
+        this.animationExporter.state.duration   = loopFrames / fps;
+        this.animationExporter.state.format     = 'webm';
+
+        this.transportStrip?.setRecording(true);
+        this.animationExporter.onExportComplete = () => {
+            this.transportStrip?.setRecording(false);
+            window.debugLog('TOOLS', '✅ Strip record complete');
+        };
+        this.animationExporter.startExport();
     }
 
     /**
@@ -1237,15 +1269,20 @@ export class GenerativeToolHost extends BaseComponent {
         this._scheduler?.setAnimating(true);
         window.debugLog('TOOLS', '▶️ Animation started');
 
+        // Drive the sequencer when checkpoints exist — its loop applies
+        // interpolated params and redraws; the main animator below yields to it
+        // via the `sequencerV2?.isPlaying()` guard.
+        if (this.sequencerV2 && this.sequencerV2.checkpointCount() >= 2) {
+            this.sequencerV2.startPlayback();
+        }
+
         if (!this.animator) {
             this.animator = new AnimationLoop({
-                fps: this.scriptConfig.animation?.defaultFps || 60,
+                fps: this._activeFps ?? this.scriptConfig.animation?.defaultFps ?? 60,
                 onFrame: () => {
                     if (!this.isPlaying) return;
-                    // Yield to sequencer when it is playing — it drives the frame
-                    if (this.sequencerV2?._isPlaying) return;
+                    if (this.sequencerV2?.isPlaying()) return;
                     this.frame++;
-                    this.updatePhaseAnimations();
                     if (this._scheduler && !this.isP5Context) {
                         this._scheduler.animationFrame();
                     } else {
@@ -1272,6 +1309,9 @@ export class GenerativeToolHost extends BaseComponent {
         this.isPlaying = false;
         this._syncPlayButton();
         this._scheduler?.setAnimating(false);
+        if (this.sequencerV2?.isPlaying()) {
+            this.sequencerV2.pausePlayback();
+        }
         if (this.animator) {
             this.animator.pause();
         }
@@ -1286,7 +1326,11 @@ export class GenerativeToolHost extends BaseComponent {
         this._syncPlayButton();
         this._scheduler?.setAnimating(false);
         this.frame = 0;
-        
+
+        // Stop = reset: rewind the playhead even if the sequencer was paused
+        // or had reached the end of a non-looping sequence.
+        this.sequencerV2?.resetPlayback();
+
         if (this.animator) {
             this.animator.stop();
         }
@@ -1294,21 +1338,53 @@ export class GenerativeToolHost extends BaseComponent {
         this.draw();
         window.debugLog('TOOLS', '⏹️ Animation stopped');
     }
+
+    /**
+     * Advance or rewind by N frames. Pauses if currently playing.
+     */
+    stepFrame(delta = 1) {
+        if (this.isPlaying) this.pause();
+        this.frame = Math.max(0, this.frame + delta);
+        this.draw();
+    }
     
     /**
-     * Evaluate all declared modulators for the current frame, writing output into params.
+     * Gather ExpressionParam component instances from the mounted ToolBase sidebar.
      */
-    updatePhaseAnimations() {
-        if (!this.modulators || this.modulators.length === 0) return;
-        const speed      = this._animSpeed ?? 1;
-        const loopFrames = this.scriptConfig.animation?.loopFrames || 360;
-        const fps        = this.scriptConfig.animation?.defaultFps || 60;
+    _collectExpressionParams() {
+        this._expressionParams = [];
+        if (!this.tool?.componentInstances) return;
+        for (const comp of this.tool.componentInstances) {
+            if (comp.componentType === 'expression-param') {
+                this._expressionParams.push(comp);
+            }
+        }
+    }
+
+    /**
+     * Evaluate expression-mode parameters for the current frame, writing into params.
+     */
+    _evaluateExpressions() {
+        if (!this._expressionParams.length) return;
+
+        const loopFrames = this.scriptConfig?.animation?.loopFrames || 360;
+        const fps        = this._activeFps ?? this.scriptConfig?.animation?.defaultFps ?? 60;
         const t          = loopFrames > 0 ? (this.frame % loopFrames) / loopFrames : 0;
         const ctx = buildContext({
-            t, frame: this.frame, fps, loop: loopFrames, speed,
+            t, frame: this.frame, fps, loop: loopFrames, speed: 1,
             params: this.params, mods: {},
         });
-        evaluateModulators(this.modulators, this.params, this.frame, ctx);
+
+        for (const ep of this._expressionParams) {
+            if (ep.isExpressionMode()) {
+                this.params[ep.paramKey] = ep.evaluate(ctx);
+            }
+        }
+    }
+
+    /** @deprecated Alias — expression evaluation now runs inside draw(). */
+    updatePhaseAnimations() {
+        this._evaluateExpressions();
     }
     
     /**
@@ -1342,6 +1418,8 @@ export class GenerativeToolHost extends BaseComponent {
      * Main draw function
      */
     draw() {
+        this._evaluateExpressions();
+
         // Handle p5.js context
         if (this.isP5Context) {
             if (this.p5Instance) {
@@ -1398,9 +1476,9 @@ export class GenerativeToolHost extends BaseComponent {
         this.sequencerV2 = new SequencerV2({
             fps: this.scriptConfig.animation?.defaultFps || 60,
             loop: true,
-            defaultHold: 2,
+            defaultHold: 0,
             defaultSegmentDuration: 1.5,
-            defaultEasing: 'easeInOutCubic',
+            defaultEasing: 'linear',
             onSave: () => JSON.parse(JSON.stringify(this.params)),
             onLoad: (cpParams) => {
                 Object.assign(this.params, cpParams);

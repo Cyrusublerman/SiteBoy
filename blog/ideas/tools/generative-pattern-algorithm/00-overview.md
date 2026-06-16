@@ -1,4 +1,6 @@
 # Generative Pattern Algorithm — Overview
+**Status:** SPEC | **Cluster:** generative-pattern
+
 
 ## Quick Reference
 
@@ -64,3 +66,24 @@
 | AnimationFoundation | ✅ No raw RAF |
 | Max 4 sidebar tabs | ✅ Design uses 4 tabs |
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Generative Pattern Algorithm (initial)](../../art/generative/initial/generative-pattern-initial.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Interference Figure Generator](../interference-figure-generator/00-overview.md)
+- [Moiré Generator](../moire-generator/00-overview.md)
+- [Unified Pattern Generator](../unified-pattern-generator/00-overview.md)
+- [Ribbon Breeze](../ribbon-breeze/00-overview.md)
+- [Tile Mosaic System](../tile-mosaic-system/00-overview.md)
+- [Wallpaper Groups](../wallpaper-generator/wallpaper-groups-procedural-generation.md)

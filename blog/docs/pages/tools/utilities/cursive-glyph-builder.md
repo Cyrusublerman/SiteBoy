@@ -1,8 +1,65 @@
 # Cursive Glyph Library Builder — Idea & Implementation
 
-**Status:** draft analysis  
-**Target section:** `#tools/cursive-glyph-builder` (utility, not generative)  
-**Owner files (once built):** `assets/js/tools/utilities/cursive-glyph-builder.js`, `assets/js/shared/algorithms/typography/{stroke-capture,bezier-fit,prompt-sequencer}.js`, `assets/js/shared/components/drawing/GlyphCaptureCanvas.js`, `assets/js/shared/typography/opentype-adapter.js`, `assets/js/shared/data/glyph-library-store.js`
+**Status:** live (operator §0 + §15 = shipped UI)  
+**Route:** `#tools/utilities/cursive-glyph-builder` (utility, not generative)  
+**Owner files:** `assets/js/tools/utilities/cursive-glyph-builder.js`, `assets/js/shared/algorithms/typography/{stroke-capture,bezier-fit,prompt-sequencer}.js`, `assets/js/shared/components/drawing/GlyphCaptureCanvas.js`, `assets/js/shared/components/tool/GlyphBuilderToolbar.js`, `assets/js/shared/typography/opentype-adapter.js`, `assets/js/shared/data/glyph-library-store.js`
+
+---
+
+## 0. Operator guide (INFO panel)
+
+**Loop:** SESSION → pick reference font → trace active row → **Enter** (save + next). No mid-flow library browsing.
+
+### Toolbar (canvas column)
+
+| Control | Action |
+| --- | --- |
+| **INFO** | This document (operator section first). |
+| **SCALE** | Click cycles **FIT → FILL → ACTUAL** (label shows current mode). Highlighted in capture view only. |
+| **PREVIEW** | Toggle: recomposed lowercase lorem from captured ink; grey ref for gaps. Click again → capture. |
+| **GLYPHS** | Toggle: label-free atlas of all captures (ink only). Click again → capture. |
+| **EXPORT▾** | PNG (current canvas bitmap) · Export library ZIP · Import ZIP · Import font file. |
+
+Reference font is **not** on the toolbar — use SESSION.
+
+### Sidebar (3 tabs)
+
+| Tab | Contents |
+| --- | --- |
+| **SESSION** | New Library · Reference font dropdown (`sf:` system, `gf:` Google cursives) + status caption · Typography (trace size, leading, tracking, kerning, skew, BOLD/ITALIC/UNDER, LOCK). |
+| **PROMPT** | Status line (`mode — glyphs — coverage%`) · Current (3-col) · Queue (Previous, Next, Skip, Clear Ink). |
+| **VIEW** | Guide overlays · PAN (mutually exclusive with trace) · Ink line thickness + cap. |
+
+### Canvas views
+
+| View | Trace | Shortcuts |
+| --- | --- | --- |
+| **Capture** (default) | On (unless PAN) | Active |
+| **PREVIEW** | Off | Blocked |
+| **GLYPHS** (atlas) | Off | Blocked |
+
+Capture shows a **vertical row stack**: active prompt centred; inactive queue rows show reference paths; **ghost ink** on completed rows above the active index.
+
+### Keyboard (capture only; blocked when PAN on or focus in a form field)
+
+| Key | Action |
+| --- | --- |
+| Enter / → | Save + next |
+| Esc | Skip (defer) |
+| ← | Previous prompt |
+| Backspace | Clear unsaved ink |
+| Ctrl+Z | Undo stroke |
+| Ctrl+Shift+Z | Redo stroke |
+
+Footer rail on canvas repeats the shortcut legend.
+
+### Export / session caveats
+
+- Library ZIP is **simplified** (see §9.2): not the full multi-folder aspirational layout.
+- **Typography and ink settings** persist in IndexedDB (`library.settings`); ZIP import does **not** restore them — reload session or re-set in SESSION/VIEW after import.
+- **PREVIEW** uses lowercase lorem; uppercase captures may not match segments.
+- **GLYPHS** clips when the grid exceeds the viewport (no scroll yet).
+- **BOLD** never synthesised; greys out when the single loaded face lacks bold. One font file only (no separate bold/italic files).
 
 ---
 
@@ -36,8 +93,10 @@ Guided prompt-driven capture tool. User draws one prompt at a time (single glyph
 
 ## 3. Core Data (CORE_DATA)
 
+**Runtime subset (IndexedDB + tool):** `referenceFont`, `queueState`, `drawings`, `settings` (typography + ink), `stats` (often empty). **Not yet built at runtime:** `project`, `indexes`, parallel ZIP folders `raw/` / `vectors/` / `json/`.
+
 ```text
-LibraryFile {
+LibraryFile {   // aspirational full schema
   version, project{name,createdAt,updatedAt},
   referenceFont{ name, source:'upload'|'google', fileName, fontHash,
                  metrics{ unitsPerEm, ascender, xHeight, capHeight, baseline, descender },
@@ -84,33 +143,40 @@ Anchor { id, role:'entry'|'exit'|'tangent',
 
 ---
 
-## 4. Requirements (REQ_LIST, must-do)
+## 4. Requirements (REQ_LIST)
 
-1. All 5 phases present in queue. Phase 1 (singles) is MVP priority; Phases 2–5 ship in same build if time permits, otherwise gated by a feature-flag constant.
-2. Reference font: two sources — **upload** (`.ttf`/`.otf`) OR **Google Fonts list** (reuse `window.googleFontsLoader`). Font file bytes hashed (SHA-256 via `crypto.subtle`) and retained for ZIP export.
-3. Hard-pair list (Phase 4) auto-derived from the font's kerning table (opentype.js `font.kerningPairs`); top-N by absolute adjustment magnitude. No hand curation.
-4. Mandatory overlays on canvas: baseline, x-height, cap-height, ascender line, ascender-band shading (from x-height to ascender band), descender, left/right advance bounds, bbox. Toggle each control from **VIEW** on the utility toolbar (below the site subheader) so sidebar stays within the ≤4 tab ceiling.
-5. Freehand capture via Pointer Events. Mouse, stylus, touch all accepted. Pressure **not** stored.
-6. Per-stroke undo (last stroke removed). No per-point undo.
-7. Stroke order = insertion order; every stroke has a monotonically increasing `order`.
-8. On stroke end: raw polyline → `chaikinSmooth` (2 iterations) → cubic Bezier fit → vector storage. Entry/exit anchors extracted; mid-stroke tangent anchors extracted at curvature extrema.
-9. Normalisation: performed on `Save + Next`. Output coords are glyph-space per §3 invariants.
-10. Completion model: no fixed `requiredVariations`. A prompt is counted "covered" once `variationsDrawn ≥ 1`. Progress metric = **coverage percent** across active queue.
-11. If the loaded font has no glyph for a prompt's character, the prompt is **auto-skipped** and logged in `queueState.history`.
-12. Variable fonts: use the font's default instance. No axis UI.
-13. Autosave to IndexedDB on every `Save + Next`, on `New`, and on `Import`.
-14. `Skip` defers the prompt to the end of the queue (appended to `skipDeferred`). A deferred prompt is re-issued after the main queue completes one pass.
-15. Resume: on tool load, read active library from IndexedDB, restart at `queueState.currentIndex`.
-16. Destructive actions (`New library`, `Import` over existing data, `Clear library`) require confirmation modal. Other actions do not prompt.
-17. Export: **single ZIP** via `jszip` (already a dependency). Folder structure per §9.3. No JSON-only export mode.
-18. Import: ZIP file produced by this tool only. Schema-validated on read.
-19. All persistence is local (IndexedDB). Zero network calls except Google Fonts stylesheet fetch.
-20. Hard fail (halt + full-content error overlay) if: IndexedDB unavailable, `opentype.js` fails to parse the font, Web Crypto missing, or corrupted library on import.
-21. Footer rail: read-only **`2F`** canvas strip summarising Undo / Clear / Skip / Save+Next (shortcut legend). Primary labelled controls remain in SESSION/PROMPT; exports live under toolbar EXPORT/IMPORT.
-22. Header rail: read-only **`2F`** strip on the PCS — prompt text, mode, variation ordinal within the active prompt (`variationsDrawn + 1` display), reference font name.
-23. Keyboard shortcuts: `Enter` = Save+Next, `Esc` = Skip, `Ctrl+Z` = Undo, `Ctrl+Shift+Z` = Redo.
-24. Every sidebar control wired to a real handler; no stubs.
-25. Canvas shows only the **current** prompt's reference glyph; no next-prompt preview.
+Tag: **IMPLEMENTED** | **DEFERRED** | **OBSOLETE** (superseded by row grid / VIEW tab / toolbar).
+
+| # | Tag | Requirement |
+| --- | --- | --- |
+| 1 | IMPLEMENTED | All 5 phases in queue (`phasesEnabled: true` in `buildPromptSet`). |
+| 2 | IMPLEMENTED | Reference font: SESSION dropdown (`sf:` / `gf:`) + EXPORT▾ font upload; bytes hashed; retained for ZIP. |
+| 3 | IMPLEMENTED | Hard-pair phase from font kerning table (top-N, default 50). |
+| 4 | IMPLEMENTED | Overlays: baseline, descender, x-height, cap, ascender, ascender shade, bounds, bbox, ref glyph — toggles in sidebar **VIEW** tab (not toolbar). |
+| 5 | IMPLEMENTED | Pointer Events; mouse/stylus/touch; no pressure. |
+| 6 | IMPLEMENTED | Per-stroke undo/redo. |
+| 7 | IMPLEMENTED | Stroke `order` monotonic. |
+| 8 | IMPLEMENTED | Stroke end: Chaikin ×2 → cubic fit → anchors (`GlyphCaptureCanvas` + `bezier-fit.js`). |
+| 9 | IMPLEMENTED | Normalise on Save + Next (`stroke-capture.js`). |
+| 10 | IMPLEMENTED | Coverage % when `variationsDrawn ≥ 1`. |
+| 11 | IMPLEMENTED | Missing glyph omitted at queue build. |
+| 12 | IMPLEMENTED | Variable fonts: default instance only. |
+| 13 | IMPLEMENTED | Autosave IndexedDB on Save+Next, New, Import, Skip, typography/ink change. |
+| 14 | IMPLEMENTED | Skip → `skipDeferred`; drained after main pass. |
+| 15 | IMPLEMENTED | Resume at `queueState.currentIndex` from IndexedDB. |
+| 16 | IMPLEMENTED | Confirm modal on New library, Import over non-empty library. |
+| 17 | IMPLEMENTED | Export single ZIP via `AssetLoader.ensureJSZip()` (§9.2 actual layout). |
+| 18 | DEFERRED | Import: ZIP from this tool; **no** semver/schema version gate yet. |
+| 19 | IMPLEMENTED | Local persistence; Google Fonts fetch only outbound network. |
+| 20 | IMPLEMENTED | Error overlay on fatal font/DB failures (`ErrorPane`). |
+| 21 | IMPLEMENTED | Footer rail `2F` shortcut legend; PROMPT + toolbar EXPORT. |
+| 22 | IMPLEMENTED | Header rail: prompt · type · variation · font · row count. |
+| 23 | IMPLEMENTED | Keyboard: Enter, Esc, ←, →, Backspace, Ctrl+Z, Ctrl+Shift+Z (capture only). |
+| 24 | IMPLEMENTED | Sidebar controls wired (no stubs). |
+| 25 | OBSOLETE | Was “current prompt only, no preview” — **row grid** shows inactive queue rows + ghost ink; PREVIEW/GLYPHS are separate view modes. |
+| — | IMPLEMENTED | Toolbar SCALE / PREVIEW / GLYPHS; SESSION typography; VIEW PAN + ink (not in original REQ numbering). |
+| — | DEFERRED | Full §9.2 multi-folder ZIP + `library.settings` in manifest round-trip. |
+| — | DEFERRED | `indexes` + populated `stats` on library object. |
 
 ---
 
@@ -120,16 +186,17 @@ Anchor { id, role:'entry'|'exit'|'tangent',
 
 **Tools**, not Art. It is utility (structured data capture), not aesthetic output.
 
-- URL: `#tools/cursive-glyph-builder`
-- Registration: `assets/js/sections/tools_section.js` (pages, toolsSections, getDropdownItems, renderTool switch, renderer).
-- Asset loader entry: `'cursive-glyph-builder': { script: '.../cursive-glyph-builder.js', className: 'CursiveGlyphBuilder', dependencies: ['algorithms'] }`.
+- URL: `#tools/utilities/cursive-glyph-builder`
+- Registration: `assets/js/sections/tools_section.js`
+- Asset loader: `'cursive-glyph-builder': { script: '.../cursive-glyph-builder.js', className: 'CursiveGlyphBuilderTool', dependencies: ['algorithms'] }`
 
 ### 5.2 File ownership (SSoT)
 
 | Concern | Owner file | Note |
 | --- | --- | --- |
 | Tool shell + sidebar + event wiring | `assets/js/tools/utilities/cursive-glyph-builder.js` | ESM ToolBase consumer; render() is entry point |
-| Capture canvas (ink + reference glyph + overlays) | `assets/js/shared/components/drawing/GlyphCaptureCanvas.js` (**new**, extends `BaseComponent`) | New component — see §5.3 for DrawCanvas disposition |
+| Capture canvas (ink + reference + overlays) | `assets/js/shared/components/drawing/GlyphCaptureCanvas.js` | Logic-only attach to ToolBase canvas — §5.3 |
+| Canvas-column toolbar | `assets/js/shared/components/tool/GlyphBuilderToolbar.js` | INFO / SCALE / PREVIEW / GLYPHS / EXPORT▾ |
 | Font parsing + metrics + kerning + glyph outlines | `assets/js/shared/typography/opentype-adapter.js` (**new**) | Wraps `opentype.js`; exposes `loadFromBytes`, `loadFromGoogle`, `getMetrics`, `getGlyphPath`, `getKerningPairs`, `hashBytes` |
 | Chaikin smoothing + glyph-space normalisation | `assets/js/shared/algorithms/typography/stroke-capture.js` (**new**, pure) | Imports existing `chaikinSmooth` from `geometry/curve-geometry.js` |
 | Cubic Bezier fitting + tangent anchor extraction | `assets/js/shared/algorithms/typography/bezier-fit.js` (**new**, pure) | Heuristic fit: anchors at curvature extrema; handles at `1/3` chord length along tangent |
@@ -144,7 +211,9 @@ Anchor { id, role:'entry'|'exit'|'tangent',
 Reasons:
 - `DrawCanvas` stores content as a greyscale bitmap (`getImageData`/`putImageData`). Our model stores vector strokes (cubic Beziers + anchors + order). The two storage models are incompatible.
 - `DrawCanvas` history uses `ImageData` snapshots. Per-stroke undo requires an array of stroke records, not pixel snapshots.
-- We need three stacked layers (reference glyph path, ruled overlays, ink); `DrawCanvas` has two (main + preview) and a bitmap fill model.
+- Vector stroke model vs bitmap history incompatible.
+
+**Shipped rendering:** one ToolBase canvas; `GlyphCaptureCanvas.draw(ctx)` composites reference paths, overlays, and ink in paint order (not three `<canvas>` elements).
 
 Reuse from `DrawCanvas`:
 - Pointer-event wiring pattern (pointerdown/move/up/leave + `e.stopPropagation` on context menu).
@@ -176,57 +245,39 @@ Copy-adapt, do not import. Place shared primitives in `assets/js/shared/utils/po
 
 ## 6. UI Layout (maps to `ui-interface-overview.md §2–3`)
 
-Single archetype: Tool page, PCS = capture canvas.
+Tool page: sidebar + PCS. Canvas column has `GlyphBuilderToolbar` above the PCS; operator detail in **§0**.
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│ Header rail (**2F** canvas strip)                           │
-├─── Session column ──┬──────── PCS ─────────────────────────┤
-│ Sidebar SESSION /     │ Toolbar: VIEW IMPORT EXPORT INFO       │
-│ PROMPT tabs         │ Capture canvas (+ header/footer rails) │
-├─────────────────────┴────────────────────────────────────────┤
-│ Footer rail (**2F** canvas strip — shortcut recap)           │
-└────────────────────────────────────────────────────────────────┘
+│ Site subheader                                              │
+├─── Sidebar (3 tabs) ─┬─ Toolbar: INFO SCALE PREVIEW GLYPHS EXPORT▾ ┤
+│ SESSION / PROMPT /   ├─ PCS: header rail (2F)                  │
+│ VIEW                 │     capture | preview | atlas           │
+│                      ├─ footer rail (2F)                       │
+└──────────────────────┴──────────────────────────────────────────┘
 ```
 
-Header text is a read-only label component. Footer uses `GeneratorToolbar`-style toolbar (design-law §17: action cells `6F`, status cell `flex: 1 min-width: 30F`).
+### 6.1 Sidebar tabs (3)
 
-### 6.1 Sidebar + toolbar surfaces
+| Tab | Blocks |
+| --- | --- |
+| SESSION | New Library · Reference font + status · Typography (trace size, leading, tracking, kerning, skew, style toggles, LOCK) |
+| PROMPT | Status caption · Current 3-col · Queue 4-col (Previous, Next, Skip, Clear Ink) |
+| VIEW | Guide overlays · PAN · Ink thickness + line cap |
 
-**Sidebar tabs (2)** — SESSION, PROMPT — keeps headroom below the workspace tab cap.
+Export PNG/ZIP and font import: **toolbar EXPORT▾ only** (no CANVAS sidebar tab).
 
-```
-[SESSION]
-  Library … New library · Font picker (ZIP import lives under toolbar IMPORT).
-
-[PROMPT]
-  Current labels (prompt · phase · coverage)
-  Queue actions … Save + Next · Skip · Clear ink
-
-Toolbar (below subheader, aligned with PCS column in landscape):
-
-[VIEW]   overlays + drawing height slider
-[IMPORT] library ZIP · font file
-[EXPORT] library ZIP · canvas PNG
-[INFO]   fetched spec markdown
-```
-
-**VIEW toggles**: baseline (`BASE`), descender (`DESC`), x-height (`X-HGT`), cap (`CAP`), reference glyph (`REF`), ascender line (`ASC`), ascender shading (`A-SHD`), left bound (`L-BND`), right bound (`R-BND`), bbox (`BBOX`).
-
-Rails are **`2F`** high label strips painted by `GlyphCaptureCanvas` atop/below the PCS, not sidebar tabs.
-
-Default overlay selection on cold start matches code `DEFAULT_GUIDES`: baseline + descender + x-height + cap + reference glyph; bounds/bbox shading off until enabled in VIEW.
+**VIEW guide toggles:** BASE, DESC, X-HGT, CAP, REF, ASC, A-SHD, L-BND, R-BND, BBOX. Default on cold start: BASE, DESC, X-HGT, CAP, REF.
 
 ### 6.2 Canvas (PCS)
 
-Three stacked layers inside a single `GlyphCaptureCanvas`:
-1. Reference glyph layer — `opentype.js` path → `Path2D` fill, `var(--c-text)` at low alpha.
-2. Overlay layer — ruled guides + optional band shading, `var(--c-border)` lines, shaded bands at very low alpha.
-3. Ink layer — live user strokes:
-   - during drag: raw polyline in `var(--c-text)`;
-   - on `pointerup`: replaced by Chaikin-smoothed polyline, then by the cubic Bezier fit rendered via `ctx.bezierCurveTo`.
+Single ToolBase `Canvas` (`fit` / `fill` / `actual` via SCALE). `GlyphCaptureCanvas` attaches pointer handlers and paints in `onDraw`:
 
-Canvas internal resolution nominal `40F × 28F` (`560 × 392` when `F=14`). Display mode **`fit`** with **`fillContainer`** so buffers snap to occupied PCS after mount. Horizontal origin uses `≥ 1 F` padded inset proportional to nominal `560 px` canvas width. Baseline Y is `canvasHeight × drawHeightFraction` (slider in VIEW, default `0.7`), matching `_resolvePromptLayout` + `GlyphCaptureCanvas._baselineCanvasY()`.
+1. Font-wide metrics guides (not per-prompt bbox boxes).
+2. Row stack: inactive rows (reference paths), ghost ink on completed rows, active prompt ref + ink.
+3. PREVIEW / GLYPHS: tool-owned compose paths (`_drawPreviewView`, `_drawAtlasView`).
+
+Nominal logical size `560×392`; `setLogicalSize` tracks ToolBase CSS size on resize. Row pitch: `bodyPx + traceFontSize × rowMarginEm` from SESSION typography.
 
 ---
 
@@ -251,7 +302,7 @@ Save + Next     → finaliseRecord()
                       scale by font metrics so x spans [0, advanceWidth]
                     compute metrics { bbox, advanceWidth, overflow }
                     write DrawingRecord into LibraryFile.drawings
-                    update indexes + stats.coveragePercent
+                    markDrawn + coveragePercent (indexes deferred)
                     prompt.variationsDrawn += 1
                     queue.advance() → if queue empty, drain skipDeferred into queue
                     IndexedDB.put('active', library)
@@ -306,46 +357,38 @@ Only one active library at a time (Q22). Autosave on every `Save + Next`, `New`,
 
 **Halt condition (Q20, Q35):** if `indexedDB.open` fails or is unavailable, the tool displays a full-content error overlay and disables all controls. No in-memory fallback.
 
-### 9.2 Export — ZIP with folder structure (Q17, Q26, Q27, Q29)
+### 9.2 Export — ZIP (shipped layout)
 
-`jszip` is used to build the following structure:
+`AssetLoader.ensureJSZip()` → `_exportZip`:
 
 ```
-library-YYYY-MM-DD-HHmm.zip
-├── manifest.json                      // LibraryFile core (project, queueState, indexes, stats, settings)
-├── referenceFont/
-│   ├── font.ttf                       // raw font bytes
-│   ├── metrics.json                   // { unitsPerEm, ascender, xHeight, capHeight, baseline, descender, kerningPairs }
-│   └── glyphPaths.json                // per-character SVG-path d-strings used during capture
-├── raw/                               // per-drawing raw pointer input (pre-smoothing)
-│   ├── drawing_000001.json            // { id, promptId, strokes: [{ rawPoints: [{x,y,t}] }] }
-│   └── …
-├── vectors/                           // per-drawing smoothed + cubic-Bezier output in glyph-space
-│   ├── drawing_000001.json            // { id, promptId, strokes: [{ smoothed, beziers }], anchors }
-│   └── …
-├── json/                              // per-drawing full DrawingRecord (spec §8.1)
-│   ├── drawing_000001.json
-│   └── …
-├── prompts/
-│   └── queue.json                     // queueState + full prompts[] + skipDeferred[]
-└── indexes.json                       // byText, byType, byCentreGlyph, byConnection, byDate
+glyph-library-<timestamp>.zip
+├── manifest.json          // version, exportedAt, fontName, fontHash, drawingCount (thin — no settings)
+├── font/reference.ttf
+├── queue/state.json       // queueState
+├── drawings/singles/*.json
+├── drawings/digraphs/*.json
+├── drawings/trigraphs/*.json
+├── drawings/hardpairs/*.json
+├── drawings/variations/*.json
+└── anchors/*_anchors.json // optional per drawing
 ```
 
-- All four per-drawing folders reference the same `id`; these are parallel views, not a hierarchy.
-- ZIP is plain DEFLATE (jszip default). No encryption.
-- No user option to trim folders in MVP — full export every time.
+DEFLATE default. PNG export: current canvas bitmap (includes PREVIEW/GLYPHS if active).
 
-### 9.3 Import (Q18)
+**Aspirational (DEFERRED):** `raw/`, `vectors/`, `json/`, `referenceFont/metrics.json`, `indexes.json`, `settings` in manifest — see §3.
 
-File picker accepts `.zip` only. On select:
-1. Open via `jszip`.
-2. Validate presence of `manifest.json` + `referenceFont/font.ttf`.
-3. Validate `manifest.version` against tool version (semver minor-compatible).
-4. Destructive-action confirmation modal if the active library is non-empty (Q16, Q24).
-5. Write parsed `LibraryFile` + `fontBytes` into IndexedDB under `id:'active'`.
-6. Rehydrate queue at `queueState.currentIndex`.
+### 9.3 Import (shipped)
 
-**Halt condition:** any validation failure triggers the error overlay; no partial recovery.
+EXPORT▾ → Import ZIP. Steps:
+1. `jszip` load; require `manifest.json`, `font/reference.ttf`.
+2. Confirm if library has existing drawings.
+3. Parse `queue/state.json`, `drawings/**/*.json`; load font bytes.
+4. Rebuild in-memory library; autosave IndexedDB.
+
+**Gaps (DEFERRED):** no semver on `manifest.version`; **no** restore of `library.settings` (typography/ink) from ZIP — use IndexedDB session or reconfigure SESSION/VIEW.
+
+**Halt:** missing files or parse errors → `ErrorPane` overlay.
 
 ---
 
@@ -357,7 +400,7 @@ File picker accepts `.zip` only. On select:
 | No RAF / setInterval | Event-driven only |
 | F-based sizing | Canvas `40F × 28F`; sidebar 30F; rails 2F; all paddings `F` or `F/2` |
 | VGA-only colours | Ink/overlays use `var(--c-text)`, `var(--c-border)`, `var(--c-bg)` only; reference glyph drawn with `var(--c-text)` at reduced alpha |
-| Tab count ≤ 4 | 4 tabs (SESSION, PROMPT, OVERLAYS, INFO) — at hard cap |
+| Tab count ≤ 4 | 3 sidebar tabs (SESSION, PROMPT, VIEW) + toolbar INFO dropdown |
 | Algorithm library | `chaikinSmooth` reused; new pure modules live in `shared/algorithms/typography/` |
 | Debug logging | `window.debugLog('TOOLS', …)` only; no raw `console.log`; `console.error` preserved for halt paths |
 | Single owner per concern | Font → `opentype-adapter`; strokes → algorithms; persistence → data module; UI → tool file |
@@ -380,8 +423,8 @@ Bezier editing UI, anchor editing UI, stroke segmentation UI, connection-graph e
 2. **P1** — `npm i opentype.js`; write `opentype-adapter.js` (load bytes, load Google, hash, metrics, glyph path, kerning pairs); write `glyph-library-store.js` (IndexedDB wrapper: `open`, `getActive`, `putActive`, `clear`, `hasAny`).
 3. **P2** — write `stroke-capture.js` (Chaikin wrap + glyph-space normaliser + metric computer) and `bezier-fit.js` (cubic fit + tangent-anchor extraction at curvature extrema).
 4. **P2.5** — write `prompt-sequencer.js` (phase tables, glyph-presence filter, kerning-pair selection, queue advance, skip-defer, coverage metric).
-5. **P3** — build `GlyphCaptureCanvas` component: three stacked `<canvas>` layers, Pointer Events, overlay renderer driven by prop toggles, SVG cursor, per-stroke undo/redo stack, emits `onStrokeEnd(stroke)` and `onDirtyChange()`.
-6. **P3.5** — build tool shell `cursive-glyph-builder.js`: ToolBase sidebar (4 tabs), error-overlay renderer, keyboard shortcut handler, wires `GlyphCaptureCanvas` ↔ store ↔ sequencer ↔ ZIP import/export; confirmation-modal utility.
+5. **P3** — `GlyphCaptureCanvas`: attach to ToolBase canvas, Pointer Events, overlays, undo/redo, `onStrokeEnd` / `onDirtyChange`. ✓
+6. **P3.5** — tool shell: 3 sidebar tabs + `GlyphBuilderToolbar`, views capture/preview/atlas. ✓
 7. **P4** — register in `asset-loader.js` (`dependencies: ['algorithms']`) + `tools_section.js` (5 sites per tool-build-guide §2).
 8. **P5** — parameter verification pass: each sidebar control triggers a visible, correct effect; each shortcut tested.
 9. **P6** — audit via `process-P6.md` checklist; confirm 100% REQ coverage; lint; ReadLints.
@@ -396,7 +439,7 @@ Bezier editing UI, anchor editing UI, stroke segmentation UI, connection-graph e
 | 2 | Phase-4 source | Auto-derived from font kerning table (top-N by abs. magnitude) |
 | 3 | Phase jumping | Allowed in principle; MVP ships linear only |
 | 4 | `requiredVariations` | Removed. Infinite variations; progress = coverage % |
-| 5 | Font source | Upload **and** Google Fonts (radio toggle in SESSION) |
+| 5 | Font source | SESSION dropdown (`sf:` / `gf:`) + EXPORT▾ font file import |
 | 6 | opentype.js delivery | Bundle via npm |
 | 7 | Missing glyph | Auto-skip prompt at queue-build time |
 | 8 | Variable fonts | Use default instance; no axis UI |
@@ -418,42 +461,52 @@ Bezier editing UI, anchor editing UI, stroke segmentation UI, connection-graph e
 | 24 | Destructive action UX | Confirmation modal on `New`, `Import` over existing data, `Clear library` |
 | 25 | Network | 100% local; Google Fonts stylesheet is the only outbound request |
 | 26 | Export format | ZIP (jszip) |
-| 27 | ZIP layout | `manifest.json`, `referenceFont/`, `raw/`, `vectors/`, `json/`, `prompts/`, `indexes.json` |
+| 27 | ZIP layout | Shipped: §9.2; aspirational multi-folder DEFERRED |
 | 28 | SVG export | Not in MVP |
 | 29 | Compression | DEFLATE (jszip default) |
 | 30 | UI minimalism | ToolBase standard layout: sidebar + canvas PCS; no custom chrome |
 | 31 | Dropdown widths | Use ToolBase/ComponentLibrary defaults only; no custom sizes |
-| 32 | Overlay controls | Dedicated OVERLAYS tab in sidebar |
-| 33 | Canvas content | Current prompt only; no preview |
+| 32 | Overlay controls | Sidebar **VIEW** tab (was OVERLAYS) |
+| 33 | Canvas content | Row grid + PREVIEW/GLYPHS view modes |
 | 34 | Error UX | Full-content overlay |
 | 35 | Missing dep | Halt + error overlay; no degrade path |
 | 36 | Corrupted import | Halt + error overlay; no partial recovery |
 | 37 | Tools-TOC thumbnail | N/A — not implemented site-wide |
 | 38 | Shortcuts | `Enter` / `Esc` / `Ctrl+Z` / `Ctrl+Shift+Z` |
 | 39 | Script support | Font-agnostic; no CJK/Arabic-specific work in MVP |
-| 40 | Section | `#tools/cursive-glyph-builder` |
+| 40 | Section | `#tools/utilities/cursive-glyph-builder` |
 | 41 | DrawCanvas reuse | **New** `GlyphCaptureCanvas`; copy pointer pattern but do not extend (bitmap vs vector model incompatibility) |
 
 ---
 
 ## 15. Live implementation (SITE UI)
 
-Canonical doc path fetched by the tool INFO panel: `/blog/docs/pages/tools/utilities/cursive-glyph-builder.md`.
+INFO fetches this file (`DOC_MD_PATH`). Operator truth: **§0**. File map: `blog/docs/temp/cursive-glyph-builder-handover.md` §2.
 
 | Area | Behaviour |
 | --- | --- |
-| PCS | Universal `Canvas` (`fit`/`fill`/`actual`); `GlyphCaptureCanvas` attaches pointer handlers and renders in `ToolBase.onDraw`. |
-| Tabs | SESSION, PROMPT, CANVAS, INFO (four tabs maximum). CANVAS packs display mode radios in one horizontal row plus a 5-item guide toggle grid (`BASE/DESC/X-HGT/CAP/REF`). |
-| Fonts | Dropdown lists heuristic + API-derived system faces (`detectSystemFonts`) with prefixed values `sf:Family`; separator; optional Google cursives prefixed `gf:Name`. Prefer **FONT FILE** for reliable bytes. `Adapter.loadFromLocal` uses Chromium `queryLocalFonts` when user picks `sf:*`. |
-| Errors / confirm | `ErrorPane`, `ModalConfirm` (ComponentLibrary) — overlays are `position:absolute; inset:0` on the tools `content-container` only. |
+| Route | `#tools/utilities/cursive-glyph-builder` |
+| Toolbar | `GlyphBuilderToolbar`: INFO, SCALE (fit/fill/actual cycle), PREVIEW, GLYPHS, EXPORT▾ |
+| Sidebar | SESSION, PROMPT, VIEW (3 tabs) |
+| Views | `_canvasView`: capture \| preview \| atlas |
+| Capture | `getRowWindow` row stack; ghost ink; font-wide guides |
+| Fonts | `detectSystemFonts` → `sf:`; `GF_CURSIVE` → `gf:`; upload via EXPORT▾; TTC failure → `fontStatus` |
+| Persistence | IndexedDB `library.settings`; autosave; ZIP per §9.2 |
+| Errors | `ErrorPane`, `ModalConfirm` on tool overlay |
 
 ## 16. Improvements backlog
 
 | Item | Detail |
 | --- | --- |
-| Export download | Avoid `document.createElement('a')` in `_exportZip` by routing through a sanctioned download helper (`BaseComponent`). |
-| Full REQ §4 | REQ still lists header/footer rails and extra overlays (ascender bands, bbox); PCS currently implements baseline/guides subset + reference toggle. |
+| ZIP settings round-trip | Export/import `library.settings` in manifest |
+| Atlas pagination | Scroll or pages when grid overflows |
+| Preview case | Optional uppercase segmentation or case-normalised match |
+| Import validation | Semver / schema gate on manifest |
+| Full ZIP tree | `raw/`, `vectors/`, `indexes` per aspirational §3 |
+| F4 closure | Browser smoke — `blog/docs/temp/cursive-glyph-builder-handover.md` §14 |
 
 ## 17. Verification
 
-Cross-check `[blog/docs/guides/checklists/process-P6.md](blog/docs/guides/checklists/process-P6.md)` whenever tool changes touch DOM or pipelines.
+- Operator: INFO §0 vs live UI labels.
+- Implementer: `process-P6.md` on owner file changes.
+- Release: handover §14 smoke checklist + F4 Done when (`blog/docs/todo/F4-cursive-glyph-builder-ux.md`).

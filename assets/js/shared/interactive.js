@@ -2023,9 +2023,9 @@ export class SequencerV2 extends BaseComponent {
         // Config
         this.fps = options.fps || 60;
         this.loop = options.loop !== false;
-        this.defaultHold = options.defaultHold || 2;
+        this.defaultHold = options.defaultHold ?? 0;
         this.defaultSegmentDuration = options.defaultSegmentDuration || 1.5;
-        this.defaultEasing = options.defaultEasing || 'easeInOutCubic';
+        this.defaultEasing = options.defaultEasing || 'linear';
 
         // Timeline state
         this.checkpoints = [];
@@ -2384,6 +2384,44 @@ export class SequencerV2 extends BaseComponent {
         const params = this._paramsAtTime(this._currentTime);
         if (params && this.onFrame) this.onFrame(params);
         this._updateScrubberPosition();
+    }
+
+    /**
+     * Public transport API — driven by the host toolbar / spacebar so the
+     * sequencer interpolates checkpoints on play. Returns true when playback
+     * actually started (≥2 checkpoints), false otherwise.
+     */
+    startPlayback() {
+        this._startPlayback();
+        return this._isPlaying;
+    }
+
+    /** Pause playback, preserving the current time for resume. */
+    pausePlayback() {
+        this._stopPlayback();
+    }
+
+    /** Stop playback, reset the playhead to time 0, and apply the start state. */
+    resetPlayback() {
+        this._stopPlayback();
+        this._currentTime = 0;
+        // Re-apply the first checkpoint's params so the canvas returns to the
+        // start state rather than freezing on the last interpolated frame.
+        if (this.checkpoints.length > 0) {
+            const params = this._paramsAtTime(0);
+            if (params && this.onFrame) this.onFrame(params);
+        }
+        this._updateCurrentTime();
+    }
+
+    /** Whether the sequencer playback loop is currently running. */
+    isPlaying() {
+        return this._isPlaying;
+    }
+
+    /** Number of saved checkpoints (≥2 required to play). */
+    checkpointCount() {
+        return this.checkpoints.length;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2835,37 +2873,43 @@ export class SequencerV2 extends BaseComponent {
     // ═══════════════════════════════════════════════════════════════════════
 
     _buildStrip() {
+        const FONT = "'Atkinson Hyperlegible','Atkinson Hyperlegible Mono',monospace";
         const strip = this.createElement('div', 'seq2-strip');
-        strip.style.cssText = 'display:flex;flex-direction:column;height:calc(var(--f)*4);border-top:1px solid var(--c-border);background:var(--c-bg);flex-shrink:0;user-select:none;font-family:inherit;min-width:0;overflow:hidden;';
+        // Lower Cell of the unified chrome Partition: the dock timeline slot owns the
+        // shared divider above (border-top), so this strip declares no top edge (I4/I6).
+        strip.style.cssText = `display:flex;flex-direction:column;height:calc(var(--f)*4);background:var(--c-bg);flex-shrink:0;user-select:none;font-family:${FONT};min-width:0;overflow:hidden;`;
 
-        // ── Row 1: Controls (7 equal-flex buttons) ────────────────────────────
+        // ── Row 1: Controls — duration readout + action Cells ─────────────────
+        // Horizontal stack (I3): the duration readout is the first Cell (no divider);
+        // each action Cell after it owns the divider via border-left; the container
+        // owns the right edge so no Cell declares border-right.
         const controls = this.createElement('div', 'seq2-strip-controls');
         controls.style.cssText = 'display:flex;height:calc(var(--f)*2);border-bottom:1px solid var(--c-border);flex-shrink:0;overflow:auto;min-width:0;';
 
-        const mkCtrl = (text, title, color = '') => {
+        const mkCtrl = (text, title, color = 'var(--c-text)') => {
             const b = this.createElement('button', 'seq2-ctrl-btn');
             b.textContent = text;
             b.title = title;
-            b.style.cssText = `flex:0 0 calc(var(--f)*5.5);height:100%;background:var(--c-bg);border:none;border-right:1px solid var(--c-border);color:${color || 'var(--c-text)'};font-family:inherit;font-size:calc(var(--f)*0.7);cursor:pointer;padding:0;white-space:nowrap;display:flex;align-items:center;justify-content:center;`;
+            b.style.cssText = `flex:0 0 calc(var(--f)*5.5);height:100%;background:var(--c-bg);border:none;border-left:1px solid var(--c-border);color:${color};font-family:${FONT};font-size:calc(var(--f)*0.75);cursor:pointer;padding:0;white-space:nowrap;display:flex;align-items:center;justify-content:center;`;
             b.addEventListener('mouseenter', () => { b.style.background = 'var(--c-text)'; b.style.color = 'var(--c-bg)'; });
-            b.addEventListener('mouseleave', () => { b.style.background = 'var(--c-bg)'; b.style.color = color || 'var(--c-text)'; });
+            b.addEventListener('mouseleave', () => { b.style.background = 'var(--c-bg)'; b.style.color = color; });
             return b;
         };
 
-        // Duration readout — playback is toolbar / sidebar only.
+        // Duration readout — first Cell, no divider. Playback is toolbar / sidebar only.
         this._stripTotalEl = this.createElement('div', 'seq2-strip-duration');
         this._stripTotalEl.textContent = '0.0s';
         this._stripTotalEl.title = 'Total sequence duration';
-        this._stripTotalEl.style.cssText = 'flex:1 1 auto;min-width:calc(var(--f)*8);height:100%;background:var(--c-bg);border:none;border-right:1px solid var(--c-border);color:var(--c-text);font-family:inherit;font-size:calc(var(--f)*0.7);cursor:default;padding:0 calc(var(--f));white-space:nowrap;display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;';
+        this._stripTotalEl.style.cssText = `flex:1 1 auto;min-width:calc(var(--f)*8);height:100%;background:var(--c-bg);border:none;color:var(--c-text);font-family:${FONT};font-size:calc(var(--f)*0.75);cursor:default;padding:0 calc(var(--f));white-space:nowrap;display:flex;align-items:center;justify-content:flex-start;box-sizing:border-box;`;
 
-        const addBtn = mkCtrl('+ ADD', 'Save current state as checkpoint', 'var(--vga-lime)');
+        const addBtn = mkCtrl('+ ADD', 'Save current state as checkpoint');
         addBtn.addEventListener('click', () => this._handleSave());
 
-        const holdBtn = mkCtrl('+ HOLD', 'Add hold state (no tween to next)', '');
+        const holdBtn = mkCtrl('+ HOLD', 'Add hold state (no tween to next)');
         holdBtn.addEventListener('click', () => this._handleAddHold());
 
-        const clearBtn = mkCtrl('CLR ALL', 'Clear all checkpoints', 'var(--vga-red)');
-        clearBtn.style.borderRight = 'none';
+        // Destructive action: marked by accent text (idle), inversion on hover.
+        const clearBtn = mkCtrl('CLR ALL', 'Clear all checkpoints', 'var(--c-accent)');
         clearBtn.addEventListener('click', () => this._handleClearAll());
 
         controls.appendChild(this._stripTotalEl);
@@ -2895,27 +2939,34 @@ export class SequencerV2 extends BaseComponent {
     }
 
     _buildCpBlock(cp, i) {
+        const FONT = "'Atkinson Hyperlegible','Atkinson Hyperlegible Mono',monospace";
         const block = this.createElement('div', 'seq2-cp-block');
         block.dataset.idx = i;
         block.draggable = true;
-        block.style.cssText = 'display:flex;align-items:center;height:100%;border-right:1px solid var(--c-border);flex-shrink:0;background:var(--c-bg);cursor:grab;';
+        // Each block is a Cell in the track's horizontal stack (I3): the first owns
+        // no divider; every later block owns the divider via border-left; the track
+        // (container) owns the right edge so no block declares border-right.
+        const blockDivider = i > 0 ? 'border-left:1px solid var(--c-border);' : '';
+        block.style.cssText = `display:flex;align-items:center;height:100%;${blockDivider}flex-shrink:0;background:var(--c-bg);cursor:grab;`;
 
         const seg = this.segments[i];
 
-        const mkCell = (w, text, title = '') => {
+        // Cells inside a block are a nested horizontal stack: the first (index) owns
+        // no divider; each later cell owns border-left (I3).
+        const mkCell = (w, text, title = '', first = false) => {
             const el = this.createElement('div', 'seq2-cp-cell');
-            el.style.cssText = `display:flex;align-items:center;justify-content:center;height:100%;width:${w};border-right:1px solid var(--c-border);font-size:calc(var(--f)*0.7);flex-shrink:0;padding:0;`;
+            const divider = first ? '' : 'border-left:1px solid var(--c-border);';
+            el.style.cssText = `display:flex;align-items:center;justify-content:center;height:100%;width:${w};${divider}font-family:${FONT};font-size:calc(var(--f)*0.75);flex-shrink:0;padding:0;`;
             el.textContent = text;
             el.title = title;
             return el;
         };
 
-        // # index
-        const numEl = mkCell('calc(var(--f)*1.5)', `${i + 1}`, `Checkpoint ${i + 1}`);
-        numEl.style.color = 'var(--vga-gray)';
-        numEl.style.fontSize = 'calc(var(--f)*0.65)';
+        // # index — first cell, no divider.
+        const numEl = mkCell('calc(var(--f)*1.5)', `${i + 1}`, `Checkpoint ${i + 1}`, true);
+        numEl.style.color = 'var(--c-text)';
 
-        // LOAD button
+        // LOAD button — inversion on hover.
         const loadEl = mkCell('calc(var(--f)*2.5)', 'LOAD', 'Load this checkpoint state');
         loadEl.style.cursor = 'pointer';
         loadEl.addEventListener('click', e => { e.stopPropagation(); this._loadCheckpoint(i); });
@@ -2924,12 +2975,37 @@ export class SequencerV2 extends BaseComponent {
 
         // TWEEN TYPE — cycles PARAM → SEQ → MIX → CUT
         const tweenEl = mkCell('calc(var(--f)*3.5)', '', 'Click to cycle tween type');
-        const durInput = this.createElement('input', 'seq2-cp-dur');
+        // Frames field — leaf primitive Cell (border-left divider); reuse the shared
+        // spinner-hide class; UI tokens + F-sizing only.
+        const durInput = this.createElement('input', 'seq2-cp-dur numeric-input-field');
         durInput.type = 'number';
         durInput.min = 0; durInput.max = 9999; durInput.step = 1;
-        durInput.style.cssText = 'width:calc(var(--f)*3.5);height:100%;background:var(--c-bg);border:none;border-right:1px solid var(--c-border);color:var(--c-text);font-family:inherit;font-size:calc(var(--f)*0.7);text-align:center;padding:0;flex-shrink:0;box-sizing:border-box;';
+        durInput.style.cssText = `width:calc(var(--f)*3.5);height:100%;background:var(--c-bg);border:none;border-left:1px solid var(--c-border);color:var(--c-text);font-family:${FONT};font-size:calc(var(--f)*0.75);text-align:center;padding:0;flex-shrink:0;box-sizing:border-box;-moz-appearance:textfield;`;
 
-        if (seg) {
+        // EASE — cycles through easing functions for this tween; click to advance.
+        const easeEl = mkCell('calc(var(--f)*4)', '', 'Click to cycle easing');
+
+        if (cp.type === 'hold') {
+            // Manual hold checkpoint: the frame field edits the dwell (cp.hold),
+            // not a tween. No easing applies to a static dwell.
+            tweenEl.textContent = 'HOLD';
+            tweenEl.style.color = 'var(--c-accent)';
+            tweenEl.title = 'Hold — dwell on this state';
+
+            durInput.value = Math.round((cp.hold || 0) * this.fps);
+            durInput.disabled = false;
+            durInput.title = 'Hold duration (frames)';
+            durInput.addEventListener('change', e => {
+                e.stopPropagation();
+                cp.hold = Math.max(0, (parseInt(durInput.value, 10) || 0)) / this.fps;
+                this._updateCurrentTime();
+            });
+            durInput.addEventListener('click', e => e.stopPropagation());
+            durInput.addEventListener('mousedown', e => e.stopPropagation());
+
+            easeEl.textContent = '—';
+            easeEl.style.color = 'var(--c-text)';
+        } else if (seg) {
             const labels = ['PARAM', 'SEQ', 'MIX', 'CUT'];
             const getIdx = (s) => {
                 if (s.strategy === 'cut') return 3;
@@ -2940,7 +3016,7 @@ export class SequencerV2 extends BaseComponent {
             let tweenIdx = getIdx(seg);
             tweenEl.textContent = labels[tweenIdx];
             tweenEl.style.cursor = 'pointer';
-            tweenEl.style.color = 'var(--vga-aqua)';
+            tweenEl.style.color = 'var(--c-accent)';
             tweenEl.addEventListener('click', e => {
                 e.stopPropagation();
                 tweenIdx = (tweenIdx + 1) % labels.length;
@@ -2955,10 +3031,11 @@ export class SequencerV2 extends BaseComponent {
                 } else {
                     seg.strategy = 'parameter'; seg.paramMode = 'simultaneous'; durInput.disabled = false;
                 }
+                refreshEase();
                 this._updateCurrentTime();
             });
-            tweenEl.addEventListener('mouseenter', () => { tweenEl.style.background = 'var(--vga-navy)'; });
-            tweenEl.addEventListener('mouseleave', () => { tweenEl.style.background = ''; });
+            tweenEl.addEventListener('mouseenter', () => { tweenEl.style.background = 'var(--c-text)'; tweenEl.style.color = 'var(--c-bg)'; });
+            tweenEl.addEventListener('mouseleave', () => { tweenEl.style.background = ''; tweenEl.style.color = 'var(--c-accent)'; });
 
             durInput.value = Math.round(seg.duration * this.fps);
             durInput.disabled = seg.strategy === 'cut';
@@ -2970,33 +3047,80 @@ export class SequencerV2 extends BaseComponent {
             });
             durInput.addEventListener('click', e => e.stopPropagation());
             durInput.addEventListener('mousedown', e => e.stopPropagation());
+
+            // EASE cell — disabled for 'cut' (no interpolation), otherwise cycles
+            // the segment easing and shows the abbreviated current curve.
+            let easeIdx = Math.max(0, EASING_KEYS.indexOf(seg.easing || this.defaultEasing));
+            const refreshEase = () => {
+                if (seg.strategy === 'cut') {
+                    easeEl.textContent = '—';
+                    easeEl.style.cursor = 'default';
+                    easeEl.style.color = 'var(--c-text)';
+                    easeEl.title = 'No easing (cut)';
+                } else {
+                    seg.easing = EASING_KEYS[easeIdx];
+                    easeEl.textContent = this._easeLabel(seg.easing);
+                    easeEl.style.cursor = 'pointer';
+                    easeEl.style.color = 'var(--c-text)';
+                    easeEl.title = `Easing: ${seg.easing} — click to cycle`;
+                }
+            };
+            refreshEase();
+            easeEl.addEventListener('click', e => {
+                e.stopPropagation();
+                if (seg.strategy === 'cut') return;
+                easeIdx = (easeIdx + 1) % EASING_KEYS.length;
+                refreshEase();
+            });
+            easeEl.addEventListener('mouseenter', () => {
+                if (seg.strategy === 'cut') return;
+                easeEl.style.background = 'var(--c-text)'; easeEl.style.color = 'var(--c-bg)';
+            });
+            easeEl.addEventListener('mouseleave', () => { easeEl.style.background = ''; easeEl.style.color = 'var(--c-text)'; });
         } else {
             tweenEl.textContent = 'END';
-            tweenEl.style.color = 'var(--vga-gray)';
-            tweenEl.style.borderRight = 'none';
+            tweenEl.style.color = 'var(--c-text)';
             durInput.value = '';
             durInput.disabled = true;
-            durInput.style.color = 'var(--vga-gray)';
-            durInput.style.borderRight = 'none';
+            durInput.style.color = 'var(--c-text)';
+            easeEl.textContent = '—';
+            easeEl.style.color = 'var(--c-text)';
         }
 
-        // DELETE button
+        // DELETE button — destructive: accent text idle, inversion on hover.
         const delEl = mkCell('calc(var(--f)*2)', '✕', 'Delete this checkpoint');
         delEl.style.cursor = 'pointer';
-        delEl.style.color = 'var(--vga-red)';
-        delEl.style.borderRight = 'none';
+        delEl.style.color = 'var(--c-accent)';
         delEl.addEventListener('click', e => { e.stopPropagation(); this._deleteCheckpoint(i); });
-        delEl.addEventListener('mouseenter', () => { delEl.style.background = 'var(--vga-red)'; delEl.style.color = 'var(--vga-white)'; });
-        delEl.addEventListener('mouseleave', () => { delEl.style.background = ''; delEl.style.color = 'var(--vga-red)'; });
+        delEl.addEventListener('mouseenter', () => { delEl.style.background = 'var(--c-text)'; delEl.style.color = 'var(--c-bg)'; });
+        delEl.addEventListener('mouseleave', () => { delEl.style.background = ''; delEl.style.color = 'var(--c-accent)'; });
 
         block.appendChild(numEl);
         block.appendChild(loadEl);
         block.appendChild(tweenEl);
         block.appendChild(durInput);
+        block.appendChild(easeEl);
         block.appendChild(delEl);
 
         this._wireBlockDrag(block, i);
         return block;
+    }
+
+    /**
+     * Abbreviate an easing key for the compact strip cell.
+     * e.g. 'linear' → 'LIN', 'easeInOutCubic' → 'IO·CUB', 'easeOutBounce' → 'O·BNC'.
+     */
+    _easeLabel(key) {
+        if (!key || key === 'linear') return 'LIN';
+        const dir = key.startsWith('easeInOut') ? 'IO'
+            : key.startsWith('easeIn') ? 'I'
+            : key.startsWith('easeOut') ? 'O' : '';
+        const fam = key.replace(/^ease(InOut|In|Out)/, '');
+        const famMap = {
+            Cubic: 'CUB', Quad: 'QAD', Quart: 'QRT', Sine: 'SIN',
+            Expo: 'EXP', Elastic: 'ELA', Bounce: 'BNC'
+        };
+        return `${dir}·${famMap[fam] || fam.slice(0, 3).toUpperCase()}`;
     }
 
     _renderTrack() {
@@ -3006,7 +3130,7 @@ export class SequencerV2 extends BaseComponent {
         }
         if (this.checkpoints.length === 0) {
             const empty = this.createElement('div', '');
-            empty.style.cssText = 'display:flex;align-items:center;padding:0 calc(var(--f));color:var(--vga-gray);font-size:calc(var(--f)*0.75);flex-shrink:0;height:100%;white-space:nowrap;';
+            empty.style.cssText = 'display:flex;align-items:center;padding:0 calc(var(--f));color:var(--c-text);font-size:calc(var(--f)*0.75);flex-shrink:0;height:100%;white-space:nowrap;';
             empty.textContent = 'No checkpoints — use + ADD to save a state.';
             this._stripTrackEl.appendChild(empty);
             return;
@@ -3061,6 +3185,9 @@ export class SequencerV2 extends BaseComponent {
         if (!params) return;
         const cp = this._makeCheckpoint(params);
         cp.type = 'hold';
+        // Manual holds carry an explicit, editable dwell (defaultHold is 0, so
+        // seed from the segment default to make the hold immediately functional).
+        cp.hold = this.defaultSegmentDuration;
         if (this.checkpoints.length > 0) {
             const seg = this._makeSegment();
             seg.strategy = 'cut';

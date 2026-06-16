@@ -20,7 +20,7 @@ A `.gen.js` file must not own:
 | DOM operations | `assets/js/core/base-component.js` |
 | Animation loop management | `assets/js/core/animation-foundation.js` via the host |
 | Layout math / dimensions outside canvas | `assets/js/core/mathematical-foundation.js` |
-| Stylesheet mutation | `assets/css/styles.css` |
+| Stylesheet mutation | `assets/css/` modular system (`components.css` / `tools.css` / etc.) |
 | Routing / navigation | `assets/js/core/router.js` |
 
 If a generator script contains code that belongs to any of the above owners, that code is misplaced and must be flagged as a WARN in `issues-and-conflicts.md`.

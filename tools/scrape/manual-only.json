@@ -1,5 +1,7 @@
 [
   "medium.com",
   "*.medium.com",
-  "link.medium.com"
+  "link.medium.com",
+  "uxplanet.org",
+  "uxdesign.cc"
 ]

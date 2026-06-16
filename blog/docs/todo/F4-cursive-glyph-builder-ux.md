@@ -2,31 +2,59 @@
 
 **Status**: REVIEW
 **Priority**: P1
-**Owner file(s)**: `assets/js/tools/utilities/cursive-glyph-builder.js`, `assets/js/shared/components/tool/GlyphBuilderToolbar.js`, `assets/js/tools/core/tool-base.js`, `assets/js/shared/components/input/Dropdown.js`
+**Owner file(s)**: `assets/js/tools/utilities/cursive-glyph-builder.js`, `assets/js/shared/components/drawing/GlyphCaptureCanvas.js`, `assets/js/shared/components/tool/GlyphBuilderToolbar.js`, `assets/js/tools/core/tool-base.js`, `assets/js/shared/layout.js`, `assets/js/shared/components/input/Dropdown.js`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-15
+**Last touched**: 2026-05-21
 
 ## Goal
 
-Align glyph builder chrome with generator tools; fix canvas-column toolbar; restore font/session actions; denser PROMPT sidebar.
+Align glyph builder chrome with generator tools; canvas-column toolbar; SESSION font/typography; VIEW tab; row-grid capture; PREVIEW/GLYPHS views. Docs: page spec §0 + §15 (`blog/docs/pages/tools/utilities/cursive-glyph-builder.md`).
 
 ## Done when
 
-(a) Top bar uses generator-equivalent controls (reference font left, INFO / FIT / FILL / ACTUAL / EXPORT), lives only above the canvas column (`ToolBase.setTopBar` inset layout), and export includes import + PNG + library ZIP. **predicate**: code in `GlyphBuilderToolbar.js` + `setTopBar` inserts before `tool-canvas-slot`.
+(a) Canvas-column toolbar only: INFO, SCALE (cycles fit→fill→actual), PREVIEW, GLYPHS, EXPORT▾; no font control on toolbar. **predicate**: `GlyphBuilderToolbar.js` grid; `TOOL_CONFIG` SESSION has `fontFamily` dropdown.
 
-(b) Font pick and New Library advance queue/session (`Dropdown` fires change including optional `__noop__` handling; `setValueSilent` avoids duplicate loads; modal confirm still uses `ModalConfirm` + `showFloatingOverlay`). **predicate**: `_onFontDropdownChange` + `_confirmAndNewLibrary` wired; no `fontFamily` ToolBase control.
+(b) Font pick and New Library advance queue/session (`Dropdown` + `setValueSilent`; modal on destructive actions). **predicate**: `_handleUpdate` `fontFamily`; `_rebuildFontDropdown`; `_confirmAndNewLibrary`.
 
-(c) PROMPT tab shows status line `mode — glyphs — coverage%`, Current and Queue use three columns via `contentColumns: 3`. **predicate**: `TOOL_CONFIG` + `_updatePromptUI`.
+(c) PROMPT tab: status line `mode — glyphs — coverage%`; Current 3-col; Queue 4-col. **predicate**: `TOOL_CONFIG` + `_updatePromptUI` `sessionLine`.
+
+(d) Tool route container keeps `tool-viewport` padding after resize. **predicate**: `PageContainer.setSubheaderState` respects `tool-viewport` class (`layout.js`).
+
+(e) Capture uses vertical row grid (`getRowWindow`, `_resolvePromptLayout`); inactive rows + ghost ink; not a two-upcoming-preview strip. **predicate**: `setInactiveRows`, `setGhostInk`, `setUpcoming([])` in `_renderCurrentPrompt`.
+
+(f) TTC-only or failed font pick clears adapter, `__noop__` dropdown, `fontStatus` caption. **predicate**: `_handleFontLoadFailure`.
+
+(g) No CANVAS sidebar tab; canvas display via SCALE; export PNG/ZIP via EXPORT▾ only. **predicate**: `TOOL_CONFIG` has SESSION, PROMPT, VIEW only; no `canvasWidth`/`exportPng` sidebar keys.
+
+(h) ZIP via `AssetLoader.ensureJSZip()` only. **predicate**: `_loadJSZip()`; no `import('jszip')` in tool file.
+
+(i) Rail typography `F×0.75` (active), idle `F`. **predicate**: `GlyphCaptureCanvas._drawRails` / `_drawIdleHint`.
+
+(j) Page doc §0 operator guide matches shipped UI (INFO panel). **predicate**: `blog/docs/pages/tools/utilities/cursive-glyph-builder.md` §0 + §15 aligned with code (2026-05-21).
+
+(k) Browser smoke checklist passed (handover §8). **predicate**: all items in `blog/docs/temp/cursive-glyph-builder-handover.md` §8 checked in browser at `#tools/utilities/cursive-glyph-builder`.
 
 ## Sub-tasks
 
-- [x] ToolBase canvas slot + inset top bar
-- [x] GlyphBuilderToolbar + library export
-- [x] Dropdown `setValueSilent` / noop select
-- [x] Sidebar VIEW tab for guides + draw height
+- [x] ToolBase canvas slot + GlyphBuilderToolbar
+- [x] SCALE / PREVIEW / GLYPHS view modes
+- [x] Sidebar SESSION / PROMPT / VIEW (guides, PAN, ink)
+- [x] Row-grid capture + ghost ink
+- [x] SESSION typography + font capabilities UI
+- [x] Tool viewport padding on resize
+- [x] Font load failure / TTC messaging
+- [x] AssetLoader JSZip
+- [x] Page doc §0 + §4–§9 + §15 sync (INFO alignment)
+- [ ] Browser verify Done when (a)–(k) — handover §14
+
+## Notes
+
+- 2026-05-21: Static INFO cross-check — page §0 labels (INFO, SCALE, PREVIEW, GLYPHS, EXPORT▾, SESSION, PROMPT, VIEW) match `GlyphBuilderToolbar` + `TOOL_CONFIG`. Browser smoke §14 remains for (k).
 
 ## References
 
+- `blog/docs/pages/tools/utilities/cursive-glyph-builder.md` §0 (operator), §15 (live UI)
+- `blog/docs/temp/cursive-glyph-builder-handover.md` §3–§7, §14
 - `assets/js/shared/components/tool/GeneratorToolbar.js`
 - `blog/docs/todo/F1-cursive-glyph-builder.md`

@@ -1,0 +1,44 @@
+[
+  {
+    "path": "blog/ideas/tools/external/linux-screen-to-markdown-capture.md",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "category_hint": "process",
+    "notes": "First-party design spec — Linux screen capture → Markdown pipeline"
+  },
+  {
+    "path": "blog/ideas/tools/external/voice-to-note.md",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "category_hint": "interaction",
+    "notes": "First-party design spec — voice-to-note tool"
+  },
+  {
+    "path": "blog/ideas/tools/external/note-capture-pipeline.md",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "category_hint": "process",
+    "notes": "First-party design spec — note capture pipeline"
+  },
+  {
+    "path": "blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "category_hint": "information-architecture",
+    "notes": "First-party design spec — notebook decomposition and publishing"
+  },
+  {
+    "path": "blog/ideas/tools/external/Date_Standardization_Design_Doc.md",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "category_hint": "naming",
+    "notes": "First-party design spec — date standardisation"
+  },
+  {
+    "path": "blog/ideas/create rules for ai/design-knowledge-corpus-extraction-system.md",
+    "authority_class": "domain-expert",
+    "weight": 0.6,
+    "category_hint": "process",
+    "notes": "First-party meta-doc — corpus extraction methodology (process rules)"
+  }
+]

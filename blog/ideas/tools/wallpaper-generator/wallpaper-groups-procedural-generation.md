@@ -1,4 +1,6 @@
 # Wallpaper Groups — Procedural Generation Analysis
+**Status:** DESIGN | **Cluster:** generative-pattern
+
 
 ## Overview
 17 distinct plane crystallographic groups exist. Each defined by specific symmetry operations: translations, rotations, reflections, glide reflections.
@@ -1226,3 +1228,15 @@ User Input → Motif Canvas → Motif Bitmap
 - IUCr: International Union of Crystallography notation
 - Conway (1992): Orbifold notation system
 
+
+
+---
+
+## Related ideas
+
+- [Generative Pattern Algorithm](../generative-pattern-algorithm/00-overview.md)
+- [Interference Figure Generator](../interference-figure-generator/00-overview.md)
+- [Moiré Generator](../moire-generator/00-overview.md)
+- [Unified Pattern Generator](../unified-pattern-generator/00-overview.md)
+- [Ribbon Breeze](../ribbon-breeze/00-overview.md)
+- [Tile Mosaic System](../tile-mosaic-system/00-overview.md)

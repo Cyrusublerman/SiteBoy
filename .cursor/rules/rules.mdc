@@ -23,7 +23,13 @@ Only these files may own the concern. Others must not implement it.
 - UI components → assets/js/shared/component-library.js
 - Specialised widgets (graphs/canvas) → assets/js/shared/specialized-components.js
 - Sections/page composition → assets/js/sections/*.js
-- All styling → assets/css/styles.css
+- All styling → modular CSS system (entry: assets/css/index.css):
+  - Palette/reset/typography → assets/css/base.css
+  - UI component classes → assets/css/components.css
+  - Page structure → assets/css/layout.css
+  - Tool interfaces → assets/css/tools.css
+  - Utilities & debug → assets/css/utilities.css
+  - ⚠ assets/css/styles.css is DEAD (legacy monolith, do NOT edit)
 - Distort GPU dispatch → assets/js/tools/processors/distort/core/GPURenderPath.js
 - Distort node shaders → assets/js/tools/processors/distort/shaders/*.shader.js
 - **Generator UI structure (tab layout for all 22 generators) → assets/js/tools/generators/core/parameter-builder.js**
@@ -95,6 +101,17 @@ Only these files may own the concern. Others must not implement it.
 - Disallow: gradients, shadows, rounded corners.
 - Use math/tokens for dimensions (no ad-hoc px for layout logic).
 
+## CSS File Routing (MANDATORY)
+- **NEVER edit `assets/css/styles.css`** — it is a dead legacy monolith.
+- The live CSS system is `assets/css/index.css` which imports modular files.
+- Route new CSS to the correct module:
+  - Palette/reset/typography → `base.css`
+  - UI component classes → `components.css`
+  - Page structure → `layout.css`
+  - Tool interfaces → `tools.css`
+  - Utilities/debug → `utilities.css`
+- Do NOT create new `.css` files; use the existing modules.
+
 ## Build Chronology (observable path)
 app → router → destroy → section → subheader → JSON → blocks → render → URL
 
@@ -161,9 +178,13 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 | Which symbol or glyph to use for any purpose | `blog/docs/guides/standards/semiotics.md` |
 | How to style, case, size, align, or pad any text | `blog/docs/guides/standards/text-treatment.md` |
 | Which component to use for any UI need | `blog/docs/guides/standards/component-patterns.md` |
+| How to build a component from subcomponents, or bind controls into one bordered partition | `blog/docs/guides/standards/composite-components.md` |
 | Where to place any feature (toolbar vs sidebar vs other) | `blog/docs/guides/standards/component-patterns.md §4` |
 | How to divide space in a toolbar, sidebar, or canvas area | `blog/docs/guides/standards/component-patterns.md §3` |
 | Any visual or aesthetic design decision not covered above | `blog/docs/guides/standards/design-law.md` |
+| Any single scraped design decision (typography, grid, charts, etc.) | `blog/docs/guides/ai-routing-map.md` §13 |
+| Any multi-step workflow (capture pipeline, notebook publish, corpus extract, etc.) | `blog/docs/guides/ai-routing-map.md` §14 |
+| Looking up a scraped rule by ID | `blog/docs/standards/rules/INDEX.md` → `standards/rules/<category>/<id>.md` |
 | How to lay out a tool page or what the standard tool structure is | `blog/docs/site/ui-interface-overview.md` |
 | What task phase you are in or what checklist to use | `blog/docs/guides/ai-routing-map.md` |
 | Any compute scheduling, worker tiering, or adaptive resolution decision | `blog/docs/guides/standards/compute-scheduler.md` |
@@ -171,6 +192,20 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 | Writing a WGSL or GLSL shader for a distort node | `blog/docs/guides/tools/gpu-shader-authoring.md` |
 
 **Prohibited:** Making any decision in the left column without first reading the file in the right column. If you have already read it in this session, re-reading is not required — but you must have read it before writing the relevant code.
+
+## Scraped design rule corpus (general knowledge)
+
+SiteBoy guides (`design-law.md`, `component-patterns.md`, etc.) **take precedence** over scraped rules where they conflict.
+
+| Need | Read |
+| --- | --- |
+| One-off decision | `blog/docs/guides/ai-routing-map.md` §13 |
+| End-to-end workflow | `blog/docs/guides/ai-routing-map.md` §14 |
+| Rule by ID | `blog/docs/standards/rules/INDEX.md` |
+| Category dump | `blog/docs/standards/<category>.md` |
+| Top MUST/MUST_NOT only | `blog/docs/standards/hot-rules.md` |
+
+Read only what the task requires; do not load the full corpus.
 
 ## AI Routing
 - Routing map: `blog/docs/guides/ai-routing-map.md` (choice tree).

@@ -88,6 +88,7 @@ import { VGAGrid, MathematicalCanvas, SVGDisplay, AnimationControls, InlineCarou
 // Import drawing components
 import { DrawCanvas } from './components/drawing/DrawCanvas.js';
 import { DrawMaskOverlay } from './components/drawing/DrawMaskOverlay.js';
+import { GlyphAtlasGrid } from './components/drawing/GlyphAtlasGrid.js';
 
 // Import feedback components
 import LoadingOverlay from './components/feedback/LoadingOverlay.js';
@@ -124,6 +125,7 @@ import {
     TransportStrip,
     EffectStack,
     NodePanel,
+    // GlyphAtlasGrid imported separately from drawing
     DriverPicker,
     CategoryPicker,
     ViewportCanvas,
@@ -176,8 +178,15 @@ import {
 
 // Import generator modulation + animation components
 import { ModulatorChip }       from './components/input/ModulatorChip.js';
+import { ExpressionParam }     from './components/input/ExpressionParam.js';
+import { Slider }              from './components/input/Slider.js';
 import { ModulatorPanel }      from './components/input/ModulatorPanel.js';
 import { PaletteRow }          from './components/input/PaletteRow.js';
+import { PresetToolbar }       from './components/input/PresetToolbar.js';
+import { CanvasSizePair }      from './components/input/CanvasSizePair.js';
+import { PostEffectRow }       from './components/input/PostEffectRow.js';
+import { PaletteTable }        from './components/input/PaletteTable.js';
+import { LineListInput }       from './components/input/LineListInput.js';
 import { GradientStops }       from './components/input/GradientStops.js';
 import { GeneratorTransportStrip } from './components/tool/TransportStrip.js';
 
@@ -250,6 +259,7 @@ const ComponentLibrary = {
             'input': Input,
             'select': Select,
             'numeric-input': NumericInput,
+            'slider': Slider,
             'progress-bar': ProgressBar,
             'button-group': ButtonGroup,
             'collapsible-section': CollapsibleSection,
@@ -414,6 +424,7 @@ ComponentLibrary.Button = Button;
 ComponentLibrary.Input = Input;
 ComponentLibrary.Select = Select;
 ComponentLibrary.NumericInput = NumericInput;
+ComponentLibrary.Slider = Slider;
 ComponentLibrary.ProgressBar = ProgressBar;  // Interactive progress bar
 ComponentLibrary.ButtonGroup = ButtonGroup;
 ComponentLibrary.CollapsibleSection = CollapsibleSection;
@@ -489,6 +500,7 @@ ComponentLibrary.CanvasModeTabs = CanvasModeTabs;
 ComponentLibrary.CategoryTabsBar = CategoryTabsBar;
 ComponentLibrary.GeneratorToolbar = GeneratorToolbar;
 ComponentLibrary.GlyphBuilderToolbar = GlyphBuilderToolbar;
+ComponentLibrary.GlyphAtlasGrid = GlyphAtlasGrid;
 ComponentLibrary.GenerativeCanvasDock = GenerativeCanvasDock;
 ComponentLibrary.ToolToolbar = ToolToolbar;
 ComponentLibrary.ToolbarPanelStack = ToolbarPanelStack;
@@ -518,9 +530,15 @@ ComponentLibrary.DiagnosticPreviewToggle = DiagnosticPreviewToggle;
 ComponentLibrary.LuminanceCurveEditor = LuminanceCurveEditor;
 
 // Assign generator modulation + animation components
+ComponentLibrary.ExpressionParam         = ExpressionParam;
 ComponentLibrary.ModulatorChip           = ModulatorChip;
 ComponentLibrary.ModulatorPanel          = ModulatorPanel;
 ComponentLibrary.PaletteRow              = PaletteRow;
+ComponentLibrary.PresetToolbar           = PresetToolbar;
+ComponentLibrary.CanvasSizePair          = CanvasSizePair;
+ComponentLibrary.PostEffectRow           = PostEffectRow;
+ComponentLibrary.PaletteTable            = PaletteTable;
+ComponentLibrary.LineListInput           = LineListInput;
 ComponentLibrary.GradientStops           = GradientStops;
 ComponentLibrary.GeneratorTransportStrip = GeneratorTransportStrip;
 
@@ -546,13 +564,14 @@ if (typeof window !== 'undefined') {
 // COMPONENT_TYPES list is duplicated here and checked at startup; a console.error fires if any is absent.
 (function _assertComponentRegistrations() {
     const REQUIRED = [
-        'NumericInput', 'TextInput', 'Dropdown', 'ToggleGroup', 'ColorInput',
+        'NumericInput', 'Slider', 'TextInput', 'Dropdown', 'ToggleGroup', 'ColorInput',
         'FileInput', 'DropZone', 'Button', 'EquationEditor', 'FilamentPicker',
         'NavigationDropdown', 'CanvasTabs', 'Text',
         'ImageViewport', 'PalettePreview', 'ProgressBar', 'AdjustmentBundle',
         'Section', 'Grid', 'FileTable',
-        'ModulatorChip', 'ModulatorPanel', 'PaletteRow', 'GradientStops',
-        'GeneratorTransportStrip',
+        'ModulatorChip', 'ModulatorPanel', 'ExpressionParam', 'PaletteRow',
+        'PresetToolbar', 'CanvasSizePair', 'PostEffectRow', 'PaletteTable',
+        'LineListInput', 'GradientStops', 'GeneratorTransportStrip',
     ];
     for (const name of REQUIRED) {
         if (!ComponentLibrary[name]) {
@@ -608,6 +627,7 @@ export {
     Input,
     Select,
     NumericInput,
+    Slider,
     ProgressBar,
     ButtonGroup,
     CollapsibleSection,
@@ -657,6 +677,7 @@ export {
     CategoryTabsBar,
     GeneratorToolbar,
     GlyphBuilderToolbar,
+    GlyphAtlasGrid,
     GenerativeCanvasDock,
     ToolToolbar,
     ToolbarPanelStack,
@@ -689,9 +710,14 @@ export {
     ProfessionalBundle,
 
     // Generator modulation + animation components
+    ExpressionParam,
     ModulatorChip,
     ModulatorPanel,
     PaletteRow,
+    PresetToolbar,
+    CanvasSizePair,
+    PostEffectRow,
+    PaletteTable,
     GradientStops,
     GeneratorTransportStrip
 };

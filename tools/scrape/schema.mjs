@@ -10,49 +10,19 @@
  */
 
 import { z } from 'zod';
+import {
+  CATEGORIES,
+  MODALITY_VALUES,
+  AUTHORITY_CLASSES,
+  AUTHORITY_WEIGHTS,
+} from './taxonomy.mjs';
 
 export const SCHEMA_VERSION = '1.0.0';
 
-// ── Taxonomy ─────────────────────────────────────────────────────────────────
-
-export const CATEGORIES = /** @type {const} */ ([
-  'colour',
-  'typography',
-  'hierarchy',
-  'contrast',
-  'iconography',
-  'grid',
-  'alignment',
-  'spacing',
-  'density',
-  'composition',
-  'motion',
-  'interaction',
-  'feedback',
-  'affordance',
-  'state',
-  'labelling',
-  'casing',
-  'voice',
-  'navigation',
-  'information-architecture',
-  'print-production',
-  'data-visualisation',
-  'tokens',
-  'naming',
-  'modularity',
-  'file-ownership',
-  'process',
-  'accessibility', // added: Q-018
-]);
-
-export const MODALITIES = /** @type {const} */ ([
-  'MUST',
-  'MUST_NOT',
-  'SHOULD',
-  'SHOULD_NOT',
-  'MAY',
-]);
+// Re-export taxonomy (plan 1b owner: taxonomy.mjs)
+export { CATEGORIES, AUTHORITY_CLASSES, AUTHORITY_WEIGHTS };
+export const MODALITIES = MODALITY_VALUES;
+export const WEIGHT_BY_CLASS = AUTHORITY_WEIGHTS;
 
 /** Ternary decidability — resolves H-001 (binary was insufficient). */
 export const DECIDABILITY = /** @type {const} */ ([
@@ -94,24 +64,6 @@ export const MOVEMENTS = /** @type {const} */ ([
   'material',
   'maximalism',
 ]);
-
-// ── Authority weights (mirrors plan.md §7) ───────────────────────────────────
-
-export const AUTHORITY_CLASSES = /** @type {const} */ ([
-  'established-design-system', // 1.0 — Material, HIG, GOV.UK, W3C, WCAG
-  'reputable-publisher',        // 0.7 — Figma, Webflow, Smashing, NN/g
-  'domain-expert',              // 0.6 — named author + publication history
-  'generic-medium',             // 0.3 — Medium / dev.to
-  'forum',                      // 0.2 — Reddit / BBS
-]);
-
-export const WEIGHT_BY_CLASS = /** @type {Record<typeof AUTHORITY_CLASSES[number], number>} */ ({
-  'established-design-system': 1.0,
-  'reputable-publisher': 0.7,
-  'domain-expert': 0.6,
-  'generic-medium': 0.3,
-  'forum': 0.2,
-});
 
 /**
  * Deterministic priority formula — resolves Q-012.
@@ -171,8 +123,8 @@ const SourceSchema = z.object({
   author: z.string().nullable().default(null),
   quote: z.string().min(1),
   weight: z.number().min(0).max(1),
-  /** Populated by emit stage for Tier-3 sources. */
-  sourced: z.enum(['fetched', 'puppeteer', 'manual-paste']).default('fetched'),
+  /** Populated by ingest/emit stages. 'local' = Tier-0 local .md file. */
+  sourced: z.enum(['fetched', 'puppeteer', 'manual-paste', 'local']).default('fetched'),
 });
 
 const DetectorSchema = z.discriminatedUnion('kind', [
@@ -287,6 +239,10 @@ export function validateRule(raw) {
   if (parsed.descriptive_origin && parsed.movements.length === 0) {
     throw new Error(`Rule ${parsed.id}: descriptive_origin=true requires at least one movement tag.`);
   }
+  // Q-017: examples.bad is mandatory for decidable rules so the detector can be regression-tested.
+  if (parsed.decidable !== 'judgment' && parsed.examples.bad.length === 0) {
+    throw new Error(`Rule ${parsed.id}: decidable='${parsed.decidable}' requires at least one examples.bad entry (Q-017).`);
+  }
 
   const confidence = computeConfidence(parsed.sources);
   const priority = computePriority(parsed.modality, confidence);
@@ -368,31 +324,77 @@ export const DraftSourceSchema = z.object({
   author: z.string().nullable().default(null),
   quote: z.string().min(1),
   weight: z.number().min(0).max(1),
-  sourced: z.enum(['fetched', 'puppeteer', 'manual-paste']).default('fetched'),
+  sourced: z.enum(['fetched', 'puppeteer', 'manual-paste', 'local']).default('fetched'),
 });
 
-export const DraftRuleSchema = z
-  .object({
-    id: z.string().min(1),
-    category: z.enum(CATEGORIES),
-    modality: z.enum(MODALITIES),
-    statement: z.string().max(140),
-    rationale: z.string().max(300),
-    scope: z.array(z.enum(SCOPE_KEYS)).min(1),
-    decidable: z.literal('judgment'),
-    descriptive_origin: z.boolean().default(false),
-    movements: z.array(z.enum(MOVEMENTS)).default([]),
-    medium: z.array(z.enum(SURFACES)).default([]),
-    sources: z.array(DraftSourceSchema).min(1),
-    cluster_id: z.number().int().optional(),
-    member_claim_ids: z.array(z.string()).optional(),
-  })
-  .refine(d => !d.descriptive_origin || d.movements.length > 0, {
-    message: 'H-013: descriptive_origin requires at least one movement tag',
-  });
+/**
+ * Base object for DraftRuleSchema — exported so downstream schemas can extend it
+ * without hitting the .refine() wrapper which returns ZodEffects (not extendable).
+ */
+export const _DraftRuleBase = z.object({
+  id: z.string().min(1),
+  category: z.enum(CATEGORIES),
+  modality: z.enum(MODALITIES),
+  statement: z.string().max(140),
+  rationale: z.string().max(300),
+  scope: z.array(z.enum(SCOPE_KEYS)).min(1),
+  decidable: z.literal('judgment'),
+  descriptive_origin: z.boolean().default(false),
+  movements: z.array(z.enum(MOVEMENTS)).default([]),
+  medium: z.array(z.enum(SURFACES)).default([]),
+  sources: z.array(DraftSourceSchema).min(1),
+  cluster_id: z.number().int().optional(),
+  member_claim_ids: z.array(z.string()).optional(),
+});
+
+export const DraftRuleSchema = _DraftRuleBase.refine(
+  d => !d.descriptive_origin || d.movements.length > 0,
+  { message: 'H-013: descriptive_origin requires at least one movement tag' },
+);
 
 export const DraftRulesFileSchema = z.object({
   draft_rules: z.array(DraftRuleSchema),
+  schema_version: z.string().default(SCHEMA_VERSION),
+});
+
+// ── Stage 9: conflict schemas ─────────────────────────────────────────────────
+
+export const ConflictPairSchema = z.object({
+  rule_a_id: z.string(),
+  rule_b_id: z.string(),
+  statement_a: z.string(),
+  statement_b: z.string(),
+  modality_a: z.enum(MODALITIES),
+  modality_b: z.enum(MODALITIES),
+  cosine_sim: z.number().min(0).max(1),
+  overlapping_scope: z.array(z.string()),
+  /** True when movements arrays are non-empty and disjoint (profile-scoped coexistence). */
+  movement_partitioned: z.boolean().default(false),
+  resolved: z.boolean().default(false),
+  resolution_note: z.string().default(''),
+});
+
+export const ConflictFreeRulesFileSchema = z.object({
+  draft_rules: z.array(DraftRuleSchema),
+  conflicts: z.array(ConflictPairSchema),
+  schema_version: z.string().default(SCHEMA_VERSION),
+});
+
+// ── Stage 10: categorised rule schema ─────────────────────────────────────────
+
+export const CategorisedRuleSchema = _DraftRuleBase
+  .extend({
+    nearest_category: z.enum(CATEGORIES),
+    category_confidence: z.number().min(0).max(1),
+    category_review: z.boolean().default(false),
+  })
+  .refine(
+    d => !d.descriptive_origin || d.movements.length > 0,
+    { message: 'H-013: descriptive_origin requires at least one movement tag' },
+  );
+
+export const CategorisedRulesFileSchema = z.object({
+  draft_rules: z.array(CategorisedRuleSchema),
   schema_version: z.string().default(SCHEMA_VERSION),
 });
 
@@ -421,3 +423,20 @@ export const SourceEntrySchema = z.object({
 });
 
 export const SourceListSchema = z.array(SourceEntrySchema);
+
+// ── Local source entry schema (local-sources.json) ────────────────────────────
+
+/**
+ * One entry in local-sources.json.
+ * path: relative to workspace root (stable across machines for hash computation).
+ * Hash: sha256('local:' + path)[:12] — never collides with URL-based hashes.
+ */
+export const LocalSourceEntrySchema = z.object({
+  path: z.string().min(1),
+  authority_class: z.enum(AUTHORITY_CLASSES),
+  weight: z.number().min(0).max(1),
+  category_hint: z.enum([...CATEGORIES, '']).optional(),
+  notes: z.string().default(''),
+});
+
+export const LocalSourceListSchema = z.array(LocalSourceEntrySchema);

@@ -1,4 +1,6 @@
 # Blender G-code Workflow — Overview
+**Status:** DESIGN
+
 
 ## Quick Reference
 

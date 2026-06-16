@@ -17,18 +17,69 @@ import decompressWoff2 from 'woff2-encoder/decompress';
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
 /**
- * Return the y position of the xHeight guide in font-unit space.
- * opentype.js exposes tables.os2.sxHeight when available; we fall back to
- * measuring the glyph for 'x' directly.
- *
+ * Bounding box for a glyph path at baseline y=0 (canvas-style coords from getPath).
  * @param {opentype.Font} font
- * @returns {number} y in font units
+ * @param {string} ch
+ * @returns {{ y1:number, y2:number } | null}
  */
+function _glyphCanvasBBox(font, ch) {
+    const glyph = font.charToGlyph(ch);
+    if (!glyph || glyph.index === 0) return null;
+    const path = glyph.getPath(0, 0, font.unitsPerEm);
+    const bb = path.getBoundingBox();
+    if (!bb || !Number.isFinite(bb.y1)) return null;
+    return bb;
+}
+
+/** Font-unit distance above baseline from a path bbox at baseline y=0 (canvas y-down). */
+function _aboveBaselineUnits(bb) {
+    if (!bb) return 0;
+    return Math.max(0, -bb.y1);
+}
+
+/** Font-unit distance below baseline from a path bbox at baseline y=0 (canvas y-down). */
+function _belowBaselineUnits(bb) {
+    if (!bb) return 0;
+    return Math.max(0, bb.y2);
+}
+
+/**
+ * Ascender in font units — top of ink from cap/latin samples, not hhea line box alone.
+ * @param {opentype.Font} font
+ */
+function _ascenderUnits(font) {
+    let maxAbove = 0;
+    for (const ch of ['H', 'A', 'O', '0', 'W', 'D', 'B', 'T']) {
+        const bb = _glyphCanvasBBox(font, ch);
+        if (bb) maxAbove = Math.max(maxAbove, _aboveBaselineUnits(bb));
+    }
+    if (maxAbove > 0) return maxAbove;
+    const os2 = font.tables?.os2;
+    if (os2?.sTypoAscender > 0) return os2.sTypoAscender;
+    return font.ascender;
+}
+
+/**
+ * Descender in font units (negative). Deepest ink from sample glyphs, then OS2/hhea.
+ * @param {opentype.Font} font
+ */
+function _descenderUnits(font) {
+    let maxBelow = 0;
+    for (const ch of ['g', 'p', 'y', 'q', 'j', 'f', ',', ';']) {
+        const bb = _glyphCanvasBBox(font, ch);
+        if (bb) maxBelow = Math.max(maxBelow, _belowBaselineUnits(bb));
+    }
+    if (maxBelow > 0) return -maxBelow;
+    const os2 = font.tables?.os2;
+    if (os2?.sTypoDescender < 0) return os2.sTypoDescender;
+    return font.descender;
+}
+
 function _xHeightUnits(font) {
+    const bb = _glyphCanvasBBox(font, 'x');
+    if (bb) return _aboveBaselineUnits(bb);
     const os2 = font.tables?.os2;
     if (os2 && os2.sxHeight > 0) return os2.sxHeight;
-    const xGlyph = font.charToGlyph('x');
-    if (xGlyph && xGlyph.yMax != null) return xGlyph.yMax;
     return Math.round(font.ascender * 0.5);
 }
 
@@ -38,10 +89,12 @@ function _xHeightUnits(font) {
  * @returns {number}
  */
 function _capHeightUnits(font) {
+    const hBb = _glyphCanvasBBox(font, 'H');
+    if (hBb) return _aboveBaselineUnits(hBb);
+    const bBb = _glyphCanvasBBox(font, 'b');
+    if (bBb) return _aboveBaselineUnits(bBb);
     const os2 = font.tables?.os2;
     if (os2 && os2.sCapHeight > 0) return os2.sCapHeight;
-    const hGlyph = font.charToGlyph('H');
-    if (hGlyph && hGlyph.yMax != null) return hGlyph.yMax;
     return Math.round(font.ascender * 0.72);
 }
 
@@ -143,10 +196,11 @@ export async function loadFromLocal(familyName) {
 }
 
 /**
- * Extract normalised metric bands from an AdapterFont.
+ * Extract normalised metric bands from an AdapterFont (font-wide, not per prompt).
  *
- * All values are in font units (positive = upward from baseline).
- * baseline is always 0.
+ * All values are in font units (positive = upward from baseline; descender ≤ 0).
+ * Ascender, cap, x-height, and descender use fixed reference glyphs + OS2 fallbacks,
+ * never the active queue character or raw hhea line box alone.
  *
  * @param {AdapterFont} adapterFont
  * @returns {{ unitsPerEm:number, ascender:number, xHeight:number, capHeight:number, baseline:number, descender:number }}
@@ -155,11 +209,74 @@ export function getMetrics(adapterFont) {
     const font = adapterFont._font;
     return {
         unitsPerEm: font.unitsPerEm,
-        ascender:   font.ascender,
+        ascender:   _ascenderUnits(font),
         xHeight:    _xHeightUnits(font),
         capHeight:  _capHeightUnits(font),
         baseline:   0,
-        descender:  font.descender, // negative value
+        descender:  _descenderUnits(font),
+    };
+}
+
+/** OS/2 fsSelection bits (OpenType). */
+const FS_SELECTION_ITALIC = 0x01;
+const FS_SELECTION_BOLD = 0x20;
+const FS_SELECTION_OBLIQUE = 0x200;
+
+/** head macStyle bits. */
+const MAC_STYLE_BOLD = 1;
+const MAC_STYLE_ITALIC = 2;
+
+/**
+ * Font-wide style capabilities from OpenType tables (single loaded face).
+ *
+ * @param {AdapterFont} adapterFont
+ * @returns {{
+ *   hasUnderline:boolean,
+ *   underlinePosition:number|null,
+ *   underlineThickness:number|null,
+ *   hasItalic:boolean,
+ *   italicAngle:number,
+ *   hasBold:boolean,
+ *   usWeightClass:number
+ * }}
+ */
+export function getFontCapabilities(adapterFont) {
+    const font = adapterFont._font;
+    const post = font.tables?.post;
+    const os2 = font.tables?.os2;
+    const head = font.tables?.head;
+
+    const underlinePosition = post?.underlinePosition;
+    const underlineThickness = post?.underlineThickness ?? 0;
+    const hasUnderline = post != null
+        && Number.isFinite(underlinePosition)
+        && Number.isFinite(underlineThickness)
+        && underlineThickness > 0;
+
+    const italicAngle = Number.isFinite(post?.italicAngle)
+        ? post.italicAngle
+        : (Number.isFinite(font.italicAngle) ? font.italicAngle : 0);
+    const fsSelection = os2?.fsSelection ?? 0;
+    const macStyle = head?.macStyle ?? 0;
+    const hasItalic = Math.abs(italicAngle) > 0.01
+        || (fsSelection & FS_SELECTION_ITALIC) !== 0
+        || (fsSelection & FS_SELECTION_OBLIQUE) !== 0
+        || (macStyle & MAC_STYLE_ITALIC) !== 0;
+
+    const usWeightClass = os2?.usWeightClass ?? 400;
+    // Bold face only — not semibold weight on a regular master (usWeightClass ≥ 600 was too loose).
+    const hasBold = (fsSelection & FS_SELECTION_BOLD) !== 0
+        || usWeightClass >= 700
+        || ((macStyle & MAC_STYLE_BOLD) !== 0 && usWeightClass > 500);
+
+    return {
+        hasUnderline,
+        underlinePosition: hasUnderline ? underlinePosition : null,
+        underlineThickness: hasUnderline ? underlineThickness : null,
+        hasItalic,
+        italicAngle,
+        hasBold,
+        usWeightClass,
     };
 }
 
@@ -184,6 +301,25 @@ export function getGlyphPath(adapterFont, ch, x = 0, y = 0, fontSize = 72) {
     const scale   = fontSize / font.unitsPerEm;
     const advance = glyph.advanceWidth * scale;
     return { d: svgPath, advance, exists: true };
+}
+
+/**
+ * Pair kerning in em (font table + zero for missing pairs).
+ *
+ * @param {AdapterFont} adapterFont
+ * @param {string}      leftCh
+ * @param {string}      rightCh
+ * @returns {number}
+ */
+export function getKerningEm(adapterFont, leftCh, rightCh) {
+    if (!adapterFont || !leftCh || !rightCh) return 0;
+    const font = adapterFont._font;
+    const upm = font.unitsPerEm;
+    if (!upm) return 0;
+    const g0 = font.charToGlyph(leftCh);
+    const g1 = font.charToGlyph(rightCh);
+    const kern = font.getKerningValue(g0, g1);
+    return kern / upm;
 }
 
 /**
@@ -213,10 +349,12 @@ export function boundingBoxPromptCanvas(adapterFont, text, startX, baselineY, fo
         if (!glyph || glyph.index === 0) continue;
         const path = glyph.getPath(xCursor, baselineY, fontSize);
         const bb = path.getBoundingBox();
-        xMin = Math.min(xMin, bb.x1, bb.x2);
-        xMax = Math.max(xMax, bb.x1, bb.x2);
-        yMin = Math.min(yMin, bb.y1, bb.y2);
-        yMax = Math.max(yMax, bb.y1, bb.y2);
+        if (bb) {
+            xMin = Math.min(xMin, bb.x1, bb.x2);
+            xMax = Math.max(xMax, bb.x1, bb.x2);
+            yMin = Math.min(yMin, bb.y1, bb.y2);
+            yMax = Math.max(yMax, bb.y1, bb.y2);
+        }
         const scale = fontSize / font.unitsPerEm;
         xCursor += glyph.advanceWidth * scale;
         advanceTot = xCursor;

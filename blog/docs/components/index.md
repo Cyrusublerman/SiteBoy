@@ -23,6 +23,7 @@ Use this as the entry point for all component docs.
 - `input/FileInput.md`
 - `input/ColorInput.md`
 - `input/EquationEditor.md`
+- `input/ExpressionParam.md`
 
 ### Output
 - `output/Text.md`

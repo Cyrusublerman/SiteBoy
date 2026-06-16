@@ -1,4 +1,6 @@
 # Ribbon Breeze — Overview
+**Status:** SPEC | **Cluster:** generative-pattern
+
 
 ## Quick Reference
 
@@ -31,3 +33,24 @@
 - `Animation.loopTime` — perfect loop phase
 - `Animation.createLFO` — low frequency oscillators
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Ribbon Breeze (initial)](../../art/generative/initial/ribbon-breeze-initial.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Generative Pattern Algorithm](../generative-pattern-algorithm/00-overview.md)
+- [Interference Figure Generator](../interference-figure-generator/00-overview.md)
+- [Moiré Generator](../moire-generator/00-overview.md)
+- [Unified Pattern Generator](../unified-pattern-generator/00-overview.md)
+- [Tile Mosaic System](../tile-mosaic-system/00-overview.md)
+- [Wallpaper Groups](../wallpaper-generator/wallpaper-groups-procedural-generation.md)

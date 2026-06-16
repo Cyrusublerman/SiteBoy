@@ -27,6 +27,8 @@ This file defines feature minimums only. It does not own spacing, typography, bo
 Canvas integration rule:
 - zoom, pan, and display mode belong to the canvas system, not custom per-tool transform code
 
+**Exception — fillContainer canvas sizing:** Tools using `fillContainer: true` with `enableZoom` satisfy the canvas sizing requirement via viewport fill and zoom/pan rather than explicit width/height sidebar controls.
+
 ### 1.2 Animation Output
 
 | Feature | Required | Typical Component |
@@ -80,6 +82,7 @@ Animation integration rule:
 3. Do not duplicate shared logic when an existing component, utility, or foundation owns it.
 4. Canvas tools draw at `(0, 0)` and let the owning canvas system handle display transforms.
 5. Export actions must be explicit and discoverable.
+6. A control built from several subcomponents bound into one bordered unit follows `composite-components.md` — one outer border, no gaps, single-owner `1px` dividers, stack-aware per-edge borders.
 
 ---
 

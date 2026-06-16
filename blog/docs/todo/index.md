@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-05-15 (F4 glyph builder UX).
+Last touched: 2026-05-25 (F5 handwriting vector compose).
 
 ---
 
@@ -71,6 +71,7 @@ Last touched: 2026-05-15 (F4 glyph builder UX).
 | D1 | [D1-new-generators.md](D1-new-generators.md) | Ship queued generators | P1 | TODO | — |
 | D2 | [D2-animation-export.md](D2-animation-export.md) | TransportStrip record button | P1 | WIP | — |
 | D3 | [D3-generator-audit.md](D3-generator-audit.md) | Compliance audit per generator | P2 | TODO | → D1 |
+| D4 | [D4-sequencer-transport-wiring.md](D4-sequencer-transport-wiring.md) | Sequencer transport wiring | P1 | REVIEW | — |
 
 ## E. Distort
 
@@ -93,6 +94,7 @@ Last touched: 2026-05-15 (F4 glyph builder UX).
 | F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | TODO | → A3 |
 | F3 | [F3-uncommitted-work.md](F3-uncommitted-work.md) | Land current uncommitted work | P0 | WIP | — |
 | F4 | [F4-cursive-glyph-builder-ux.md](F4-cursive-glyph-builder-ux.md) | Cursive glyph builder toolbar + sidebar UX | P1 | REVIEW | — |
+| F5 | [F5-handwriting-vector-compose.md](F5-handwriting-vector-compose.md) | Handwriting vector compose SVG export | P2 | REVIEW | — |
 
 ## G. Authoring & operations
 
@@ -111,6 +113,8 @@ Last touched: 2026-05-15 (F4 glyph builder UX).
 | H3 | [H3-dist-hygiene.md](H3-dist-hygiene.md) | Remove dist/ churn from commits | P1 | TODO | — |
 | H4 | [H4-design-rule-pass-b.md](H4-design-rule-pass-b.md) | Design-rule corpus: Pass-B LLM extract | P3 | DONE | — |
 | H5 | [H5-design-rule-embed-cluster-synth.md](H5-design-rule-embed-cluster-synth.md) | Design-rule corpus: embed / cluster / synth | P3 | DONE | — |
+| H6 | [H6-design-rule-conflict-emit-lint.md](H6-design-rule-conflict-emit-lint.md) | Design-rule corpus: conflict / emit / lint / test | P3 | WIP | → H4, H5 |
+| H7 | [H7-slider-component.md](H7-slider-component.md) | Standalone Slider primitive; replace raw range inputs | P2 | WIP | — |
 
 ---
 

@@ -2,6 +2,8 @@ import { BaseComponent } from '../../../../shared/foundation.js';
 import { AnimationLoop } from '../../../../core/animation-foundation.js';
 import { drawVariationGrid } from './VariationGrid.js';
 
+const POINTER_NON_PASSIVE = { passive: false };
+
 /**
  * ViewportCanvas — renders DISTORT pipeline output with zoom/pan.
  *
@@ -121,10 +123,10 @@ export class ViewportCanvas extends BaseComponent {
     this._emptyOverlay.addEventListener('click', () => this._fileInput?.click());
     this.element.appendChild(this._emptyOverlay);
 
-    this._canvas.addEventListener('pointerdown', this._boundPointerDown);
-    this._canvas.addEventListener('pointermove', this._boundPointerMove);
-    this._canvas.addEventListener('pointerup',   this._boundPointerUp);
-    this._canvas.addEventListener('pointerleave', this._boundPointerUp);
+    this._canvas.addEventListener('pointerdown', this._boundPointerDown, POINTER_NON_PASSIVE);
+    this._canvas.addEventListener('pointermove', this._boundPointerMove, POINTER_NON_PASSIVE);
+    this._canvas.addEventListener('pointerup',   this._boundPointerUp, POINTER_NON_PASSIVE);
+    this._canvas.addEventListener('pointerleave', this._boundPointerUp, POINTER_NON_PASSIVE);
     this._canvas.addEventListener('wheel', this._boundWheel, { passive: false });
     this.element.addEventListener('dragover', this._boundDragOver);
     this.element.addEventListener('drop', this._boundDrop);
@@ -491,10 +493,10 @@ export class ViewportCanvas extends BaseComponent {
     this._drawLoop?.destroy();
     this._drawLoop = null;
     if (this._canvas) {
-      this._canvas.removeEventListener('pointerdown', this._boundPointerDown);
-      this._canvas.removeEventListener('pointermove', this._boundPointerMove);
-      this._canvas.removeEventListener('pointerup',   this._boundPointerUp);
-      this._canvas.removeEventListener('pointerleave', this._boundPointerUp);
+      this._canvas.removeEventListener('pointerdown', this._boundPointerDown, POINTER_NON_PASSIVE);
+      this._canvas.removeEventListener('pointermove', this._boundPointerMove, POINTER_NON_PASSIVE);
+      this._canvas.removeEventListener('pointerup',   this._boundPointerUp, POINTER_NON_PASSIVE);
+      this._canvas.removeEventListener('pointerleave', this._boundPointerUp, POINTER_NON_PASSIVE);
       this._canvas.removeEventListener('wheel', this._boundWheel);
     }
     if (this.element) {

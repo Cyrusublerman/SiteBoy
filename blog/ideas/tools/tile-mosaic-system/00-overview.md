@@ -1,4 +1,6 @@
 # Tile Mosaic System — Overview
+**Status:** SPEC | **Cluster:** generative-pattern
+
 
 ## Quick Reference
 
@@ -18,3 +20,25 @@
 - `Animation.morphLayout` — layout transitions
 - `Noise.simplex2D` — procedural texture
 
+
+
+---
+
+## Feeder files
+
+The following earlier drafts were superseded by this 6-pack:
+
+- [Tile Mosaic Full Spec](../../art/generative/tile-mosaic/tile-mosaic-full-spec.md) — ARCHIVED
+- [Tile Mosaic Page Design](../../art/generative/tile-mosaic/tile-mosaic-page-design.md) — ARCHIVED
+
+
+---
+
+## Related ideas
+
+- [Generative Pattern Algorithm](../generative-pattern-algorithm/00-overview.md)
+- [Interference Figure Generator](../interference-figure-generator/00-overview.md)
+- [Moiré Generator](../moire-generator/00-overview.md)
+- [Unified Pattern Generator](../unified-pattern-generator/00-overview.md)
+- [Ribbon Breeze](../ribbon-breeze/00-overview.md)
+- [Wallpaper Groups](../wallpaper-generator/wallpaper-groups-procedural-generation.md)
