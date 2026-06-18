@@ -1,0 +1,43 @@
+# Mirrors .gitignore-production — exclude heavy media and dev-only paths from upload
+
+# Media blobs (served from R2 CDN)
+art/**/*.jpg
+art/**/*.jpeg
+art/**/*.png
+art/**/*.webp
+art/**/*.mp4
+art/**/*.gif
+projects/**/*.jpg
+projects/**/*.jpeg
+projects/**/*.png
+art/**/*.webp
+projects/**/*.mp4
+projects/**/*.gif
+blog/**/*.jpg
+blog/**/*.jpeg
+blog/**/*.png
+
+# Reference and dev tooling
+reference/
+**/reference/
+tools/scrape/cache/
+tools/**/output/
+scripts/migration/uploaded/
+scripts/migration/*.log
+**/processed/
+**/temp/
+**/tmp/
+
+# Build artefacts (rebuilt on Vercel)
+dist/
+node_modules/
+
+# Local env
+.env
+.env.*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

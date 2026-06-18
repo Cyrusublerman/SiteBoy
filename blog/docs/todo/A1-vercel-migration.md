@@ -1,11 +1,11 @@
 # A1 — Migrate to dynamic host
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `blog/docs/site/adr-A1-host.md` (to author), `vite.config.js`, deploy config (to author)
 **Blockers**: none
 **Blocks**: A2, A3, A4, B2, C2, G1, F2
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,15 +17,15 @@ One ADR at `blog/docs/site/adr-A1-host.md` names the host, the runtime, the buil
 
 ## Sub-tasks
 
-- [ ] Evaluate options: Vercel (Next/Nuxt + serverless), Cloudflare Pages + Workers, Netlify, fly.io, self-hosted Node.
-- [ ] Choose runtime model: SSR vs SSG-with-edge-functions vs hybrid.
-- [ ] Write ADR `blog/docs/site/adr-A1-host.md` recording decision + rejected alternatives.
-- [ ] Add `deploy.<host>.json` / `vercel.json` / `wrangler.toml` (whichever applies).
-- [ ] Map `dist/` build artefact to the host's expected input.
-- [ ] Verify SPA hash-routing still works (`router.js` uses `window.location.hash`).
+- [x] Evaluate options: Vercel (Next/Nuxt + serverless), Cloudflare Pages + Workers, Netlify, fly.io, self-hosted Node.
+- [x] Choose runtime model: SSR vs SSG-with-edge-functions vs hybrid.
+- [x] Write ADR `blog/docs/site/adr-A1-host.md` recording decision + rejected alternatives.
+- [x] Add `deploy.<host>.json` / `vercel.json` / `wrangler.toml` (whichever applies).
+- [x] Map `dist/` build artefact to the host's expected input.
+- [x] Verify SPA hash-routing still works (`router.js` uses `window.location.hash`).
 - [ ] Wire preview deploys to PRs.
 - [ ] Configure custom domain.
-- [ ] Document rollback procedure in the ADR.
+- [x] Document rollback procedure in the ADR.
 
 ## Notes / decisions
 
