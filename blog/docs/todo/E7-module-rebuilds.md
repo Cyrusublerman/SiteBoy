@@ -1,11 +1,11 @@
 # E7 — Phase 10: per-module rebuilds
 
-**Status**: BLOCKED
+**Status**: REVIEW
 **Priority**: P1
 **Owner file(s)**: per-module node + shader files in `assets/js/tools/processors/distort/`
-**Blockers**: → E1, E2, E5
+**Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,16 +17,16 @@ Every module listed below has zero open `ERROR` or `WARN` rows in `distort-issue
 
 ## Critical rebuilds (≥5 PARITY issues)
 
-- [ ] stipple
-- [ ] chromaticab
-- [ ] serpentine
-- [ ] lumflow
-- [ ] reactiondiffusion
-- [ ] moire
-- [ ] truchet
-- [ ] scanlines
-- [ ] contour
-- [ ] dilateerode
+- [x] stipple
+- [x] chromaticab
+- [x] serpentine
+- [x] lumflow
+- [x] reactiondiffusion
+- [x] moire
+- [x] truchet
+- [x] scanlines
+- [x] contour
+- [x] dilateerode
 
 ## Moderate rebuilds (2–4 issues)
 
@@ -43,21 +43,21 @@ Every module listed below has zero open `ERROR` or `WARN` rows in `distort-issue
 
 ## Named bugs (not G1-blocked)
 
-- [ ] bilateral hang (see E4)
+- [x] bilateral hang (see E4)
 - [ ] bandshift STEPPED + NOISE modes
-- [ ] dilateerode SHAPE param non-functional
+- [x] dilateerode SHAPE param non-functional
 - [ ] histogrameq STRENGTH no-op
 - [ ] moduleflowlines full rebuild
 
 ## Sub-tasks (process)
 
-- [ ] For each module: re-read its `review2403_*.md`, its `*-build-guide.md`, and its issue-register rows.
-- [ ] Rebuild against the build guide.
+- [x] For each module: re-read its `review2403_*.md`, its `*-build-guide.md`, and its issue-register rows.
+- [x] Rebuild against the build guide.
 - [ ] Re-audit; close issue-register rows.
 
 ## Notes / decisions
 
-(append-only)
+2026-06-18: Critical rebuilds landed in node code (prior sessions + dilateerode shape/isotropic fix). Remaining PARITY rows in issue register are `blocked-by-algorithm` — need row-by-row closure audit before DONE.
 
 ## References
 

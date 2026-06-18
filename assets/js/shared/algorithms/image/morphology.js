@@ -14,6 +14,16 @@
 
 function idx(x, y, w) { return y * w + x; }
 
+/** True when (ox,oy) is inside structuring element. */
+function _inSE(ox, oy, radiusX, radiusY, shape) {
+  if (shape === 'circle') {
+    const nx = ox / Math.max(radiusX, 1);
+    const ny = oy / Math.max(radiusY, 1);
+    return nx * nx + ny * ny <= 1;
+  }
+  return Math.abs(ox) <= radiusX && Math.abs(oy) <= radiusY;
+}
+
 // ── Binary operations ───────────────────────────────────────────────────────
 
 /**
@@ -100,14 +110,17 @@ export function close(binary, w, h, radius = 1) {
  * @param {number} [radius=1]
  * @returns {Uint8Array}
  */
-export function grayscaleErode(channel, w, h, radius = 1) {
+export function grayscaleErode(channel, w, h, radius = 1, shape = 'square', radiusX = radius, radiusY = radius) {
+  const rx = radiusX ?? radius;
+  const ry = radiusY ?? radius;
   const out = new Uint8Array(channel.length);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       let best = 255;
-      for (let oy = -radius; oy <= radius; oy++) {
+      for (let oy = -ry; oy <= ry; oy++) {
         const yy = Math.max(0, Math.min(h - 1, y + oy));
-        for (let ox = -radius; ox <= radius; ox++) {
+        for (let ox = -rx; ox <= rx; ox++) {
+          if (!_inSE(ox, oy, rx, ry, shape)) continue;
           const xx = Math.max(0, Math.min(w - 1, x + ox));
           const v = channel[idx(xx, yy, w)];
           if (v < best) best = v;
@@ -127,14 +140,17 @@ export function grayscaleErode(channel, w, h, radius = 1) {
  * @param {number} [radius=1]
  * @returns {Uint8Array}
  */
-export function grayscaleDilate(channel, w, h, radius = 1) {
+export function grayscaleDilate(channel, w, h, radius = 1, shape = 'square', radiusX = radius, radiusY = radius) {
+  const rx = radiusX ?? radius;
+  const ry = radiusY ?? radius;
   const out = new Uint8Array(channel.length);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       let best = 0;
-      for (let oy = -radius; oy <= radius; oy++) {
+      for (let oy = -ry; oy <= ry; oy++) {
         const yy = Math.max(0, Math.min(h - 1, y + oy));
-        for (let ox = -radius; ox <= radius; ox++) {
+        for (let ox = -rx; ox <= rx; ox++) {
+          if (!_inSE(ox, oy, rx, ry, shape)) continue;
           const xx = Math.max(0, Math.min(w - 1, x + ox));
           const v = channel[idx(xx, yy, w)];
           if (v > best) best = v;
@@ -231,11 +247,12 @@ function _mergeChannels(src, r, g, b, n) {
  * @param {number} [radius=1]
  * @returns {Uint8ClampedArray}
  */
-export function morphologyRGBA(src, w, h, mode, radius = 1) {
+export function morphologyRGBA(src, w, h, mode, radius = 1, shape = 'square', radiusX = radius, radiusY = radius) {
   const n = w * h;
   const { r, g, b } = _splitChannels(src, n);
   const fn = mode === 'erode' ? grayscaleErode : grayscaleDilate;
-  return _mergeChannels(src, fn(r, w, h, radius), fn(g, w, h, radius), fn(b, w, h, radius), n);
+  const args = [w, h, radius, shape, radiusX, radiusY];
+  return _mergeChannels(src, fn(r, ...args), fn(g, ...args), fn(b, ...args), n);
 }
 
 /**

@@ -6,6 +6,7 @@ export const DilateErodeNode = createEffectModule({
   type: 'dilateerode',
   name: 'DILATE/ERODE',
   category: 'MORPHOLOGY',
+  forceWorkerPreview: true,
   params: {
     mode:       { label: 'MODE',       type: 'select', options: ['DILATE', 'ERODE'], value: 'DILATE', tier: 3 },
     domain:     { label: 'INPUT DOMAIN', type: 'select', options: ['LUMINANCE', 'RGB LINKED', 'RGB INDEPENDENT', 'ALPHA', 'MASK', 'EDGE MAP', 'THRESHOLDED BINARY'], value: 'LUMINANCE', tier: 3 },
@@ -19,12 +20,12 @@ export const DilateErodeNode = createEffectModule({
   },
   apply(src, dst, w, h, p, ctx, modulate) {
     const _m_iterations = Math.round(modulate('iterations', 0));
-    const _m_radius = Math.round(modulate('radius', 0));
-    const _m_radiusX = Math.round(modulate('radiusX', 0));
-    const _m_radiusY = Math.round(modulate('radiusY', 0));
+    const shape = p.shape.toLowerCase();
+    const rx = p.isotropic ? Math.round(modulate('radius', 0)) : Math.round(modulate('radiusX', 0));
+    const ry = p.isotropic ? Math.round(modulate('radius', 0)) : Math.round(modulate('radiusY', 0));
     let result = src;
     for (let i = 0; i < _m_iterations; i++) {
-      result = morphologyRGBA(result, w, h, p.mode.toLowerCase(), _m_radius, p.shape.toLowerCase());
+      result = morphologyRGBA(result, w, h, p.mode.toLowerCase(), Math.max(rx, ry), shape, rx, ry);
     }
     dst.set(result);
   },
