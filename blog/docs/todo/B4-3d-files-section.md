@@ -1,11 +1,11 @@
 # B4 — 3D files section + viewer
 
-**Status**: TODO
+**Status**: WIP
 **Priority**: P2
 **Owner file(s)**: `assets/js/sections/three_d_section.js` (to author), `assets/js/shared/components/three-d/ModelViewer.js` (to author)
 **Blockers**: → A4
 **Blocks**: B5
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,15 +17,15 @@ Section renders a thumbnail grid. Clicking any item opens an in-browser viewer. 
 
 ## Sub-tasks
 
-- [ ] Define section spec: list view, detail view, model formats supported.
-- [ ] Decide viewer tech: Google `<model-viewer>` web component vs custom three.js wrapper.
-- [ ] Author `ModelViewer` component (extends `BaseComponent`; lives in `assets/js/shared/components/three-d/`).
-- [ ] Register `ModelViewer` in `component-library.js` per component-rules.
+- [x] Define section spec: list view, detail view, model formats supported.
+- [x] Decide viewer tech: Google `<model-viewer>` web component vs custom three.js wrapper.
+- [x] Author `ModelViewer` component (extends `BaseComponent`; lives in `assets/js/shared/components/three-d/`).
+- [x] Register `ModelViewer` in `component-library.js` per component-rules.
 - [ ] Author component doc at `blog/docs/components/three-d/ModelViewer.md`.
-- [ ] Author `three_d_section.js` (JSON-driven; ComponentLibrary only).
+- [x] Author `three_d_section.js` (JSON-driven; ComponentLibrary only).
 - [ ] Wire signed-URL download via A4.
 - [ ] Generate model thumbnails (depends on C3 pipeline; see B4 thumbnail sub-task).
-- [ ] Register section in router + nav.
+- [x] Register section in router + nav.
 - [ ] Pass `page-compliance-audit` (component + section).
 
 ## Notes / decisions

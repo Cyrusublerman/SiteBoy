@@ -1,0 +1,22 @@
+{
+  "header": "3D FILES",
+  "subheader": "Downloadable models with in-browser preview",
+  "items": [
+    {
+      "id": "demo-cube",
+      "title": "DEMO CUBE",
+      "format": "glb",
+      "src": "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+      "thumbnail": "",
+      "description": "Sample GLB for ModelViewer smoke test."
+    },
+    {
+      "id": "demo-splat",
+      "title": "DEMO SPLAT",
+      "format": "splat",
+      "src": "",
+      "thumbnail": "",
+      "description": "SplatViewer stub placeholder (B5)."
+    }
+  ]
+}

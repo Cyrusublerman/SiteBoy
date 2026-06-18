@@ -104,6 +104,8 @@ import { MasonryGallery, GalleryLightbox, ImageGrid, ArtworkPage, HorizontalImag
 // Import output components
 import { AnimationExport } from './components/output/AnimationExport.js';
 import { IframeSandbox } from './components/output/IframeSandbox.js';
+import { ModelViewer } from './components/three-d/ModelViewer.js';
+import { SplatViewer } from './components/three-d/SplatViewer.js';
 
 // Import tool components
 import {
@@ -344,6 +346,8 @@ const ComponentLibrary = {
             'imageviewport': ImageViewport,
             'image-viewport': ImageViewport,
             'iframe-sandbox': IframeSandbox,
+            'model-viewer': ModelViewer,
+            'splat-viewer': SplatViewer,
             'palettepreview': PalettePreview,
             'palette-preview': PalettePreview,
             'svg': SVG,
@@ -477,6 +481,8 @@ ComponentLibrary.Text = Text;
 ComponentLibrary.Canvas = Canvas;
 ComponentLibrary.ImageViewport = ImageViewport;
 ComponentLibrary.IframeSandbox = IframeSandbox;
+ComponentLibrary.ModelViewer = ModelViewer;
+ComponentLibrary.SplatViewer = SplatViewer;
 ComponentLibrary.PalettePreview = PalettePreview;
 ComponentLibrary.SVG = SVG;
 ComponentLibrary.Media = Media;
@@ -702,6 +708,8 @@ export {
     Collection,
     FileTable,
     AnimationExport,
+    ModelViewer,
+    SplatViewer,
 
     // Image Adjustment Bundles
     AdjustmentBundle,
