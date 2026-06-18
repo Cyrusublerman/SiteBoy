@@ -31,6 +31,7 @@ import { GeneratorTransportStrip } from '../../../shared/components/tool/Transpo
 import { GenerativeCanvasDock } from '../../../shared/components/tool/GenerativeCanvasDock.js';
 import { P5Canvas } from '../../../shared/p5-integration.js';
 import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
+import { uploadGalleryBlob } from '../../../shared/gallery-upload.js';
 import { ComputeScheduler } from './compute-scheduler.js';
 import { buildContext } from './expression-context.js';
 import { _migrateScriptConfig } from './script-types.js';
@@ -1084,9 +1085,38 @@ export class GenerativeToolHost extends BaseComponent {
         this.animationExporter.state.format     = 'webm';
 
         this.transportStrip?.setRecording(true);
-        this.animationExporter.onExportComplete = () => {
+        const prevComplete = this.animationExporter.onExportComplete;
+        this.animationExporter.onExportComplete = async (format, blob) => {
             this.transportStrip?.setRecording(false);
             window.debugLog('TOOLS', '✅ Strip record complete');
+
+            if (blob && this.scriptConfig?.canvas) {
+                const canvas = this._getActiveCanvas();
+                const collection = `digital/generative/${this.scriptId || 'export'}`;
+                const ext = format === 'mp4' ? 'mp4' : 'webm';
+                try {
+                    this.transportStrip?.setUploadProgress(0, 'UP');
+                    await uploadGalleryBlob(blob, {
+                        filename: `${this.scriptId || 'animation'}-${Date.now()}.${ext}`,
+                        mime: blob.type || `video/${ext}`,
+                        collection,
+                        title: this.scriptConfig.title || this.scriptId,
+                        sourceTool: this.scriptId,
+                        width: canvas?.width,
+                        height: canvas?.height,
+                        duration: this.animationExporter.state.duration,
+                    }, {
+                        onProgress: (p) => this.transportStrip?.setUploadProgress(p * 100),
+                    });
+                    this.transportStrip?.setUploadProgress(100, 'OK');
+                    window.debugLog('TOOLS', '✅ Gallery upload complete');
+                } catch (err) {
+                    console.error('Gallery upload failed:', err);
+                    this.transportStrip?.setUploadProgress(null);
+                }
+            }
+
+            if (typeof prevComplete === 'function') prevComplete(format, blob);
         };
         this.animationExporter.startExport();
     }

@@ -6,6 +6,8 @@
  * @module export-utils
  */
 
+import { uploadGalleryBlob, formatFromMime } from '../../gallery-upload.js';
+
 export const ExportUtils = {
     /**
      * Export canvas as PNG with timestamped filename
@@ -67,5 +69,28 @@ export const ExportUtils = {
     
     buildSVGFooter() {
         return '</svg>';
-    }
+    },
+
+    /**
+     * Metadata helper for canvas recording (C4). Capture runs in AnimationExport.
+     */
+    recordCanvasMeta(canvas, opts = {}) {
+        return {
+            width: canvas?.width ?? opts.width ?? 0,
+            height: canvas?.height ?? opts.height ?? 0,
+            fps: opts.fps ?? 60,
+            duration: opts.duration ?? 0,
+            mime: opts.mime || 'video/webm',
+        };
+    },
+
+    /**
+     * Upload recorded animation blob to gallery via C2 pipeline.
+     */
+    async uploadToGallery(blob, meta = {}, opts = {}) {
+        return uploadGalleryBlob(blob, {
+            ...meta,
+            format: meta.format || formatFromMime(blob.type),
+        }, opts);
+    },
 };

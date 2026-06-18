@@ -26,6 +26,7 @@ export class GeneratorTransportStrip extends BaseComponent {
         super({ ...options, componentType: 'transport-strip' }, deps);
 
         this.showTimeline   = options.showTimeline ?? false;
+        this.showRecord     = options.showRecord   ?? true;
         this.onChange        = options.onChange     ?? (() => {});
 
         this._fps      = options.defaultFps ?? 60;
@@ -59,6 +60,7 @@ export class GeneratorTransportStrip extends BaseComponent {
         const d = this._dims();
 
         this.element = this.createElement('div', 'transport-strip component');
+        this.element.setAttribute('data-generator-transport-strip', '');
         // First Cell of the unified chrome Partition: the dock chrome stack owns
         // the outer top border, so this row declares none (I4/I6).
         this.element.style.cssText = `
@@ -71,7 +73,9 @@ export class GeneratorTransportStrip extends BaseComponent {
 
         this._renderPlaybackCells(d);
         this._renderFpsCell(d);
-        this._renderRecCell(d);
+        if (this.showRecord) {
+            this._renderRecCell(d);
+        }
 
         if (this.showTimeline) {
             this._renderTimelineBtn(d);
@@ -321,7 +325,19 @@ export class GeneratorTransportStrip extends BaseComponent {
             this._els.recBtn.style.background = 'var(--c-bg)';
             this._els.recBtn.style.color = 'var(--c-text)';
             this._els.recDot.style.color = 'var(--c-accent)';
+            if (this._els.recLabel) this._els.recLabel.textContent = 'REC';
         }
+    }
+
+  /** Upload progress while REC uploads to gallery (C4). */
+    setUploadProgress(percent, message) {
+        if (!this._els.recLabel) return;
+        if (percent == null) {
+            this._els.recLabel.textContent = this._recording ? 'REC' : 'REC';
+            return;
+        }
+        const pct = Math.round(Math.min(100, Math.max(0, percent)));
+        this._els.recLabel.textContent = message || `${pct}%`;
     }
 
     setFps(fps) {
@@ -352,6 +368,20 @@ export class GeneratorTransportStrip extends BaseComponent {
     applyScriptTransportOptions(opts = {}) {
         if (opts.defaultFps != null) this.setFps(Number(opts.defaultFps));
         if (opts.showTimeline != null) this.setTimelineControlVisible(opts.showTimeline);
+        if (opts.showRecord != null && opts.showRecord !== this.showRecord) {
+            this.showRecord = !!opts.showRecord;
+            if (this.element) {
+                const hasRec = !!this._els.recBtn;
+                if (this.showRecord && !hasRec) {
+                    this._renderRecCell(this._dims());
+                } else if (!this.showRecord && hasRec) {
+                    this._els.recBtn.remove();
+                    this._els.recBtn = null;
+                    this._els.recDot = null;
+                    this._els.recLabel = null;
+                }
+            }
+        }
     }
 
     destroy() {

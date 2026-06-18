@@ -1,11 +1,11 @@
 # C4 — Generator animation → gallery
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `assets/js/shared/components/tool/TransportStrip.js`, `assets/js/shared/algorithms/export/export-utils.js`
 **Blockers**: → C2, D2
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,12 +17,12 @@ One "record + upload" action in `TransportStrip` produces a gallery row whose `m
 
 ## Sub-tasks
 
-- [ ] Define recording params: FPS, duration, codec (mp4 H.264 vs webm VP9 vs animated PNG).
-- [ ] Implement `recordCanvas(canvas, opts)` in `export-utils.js`.
-- [ ] Add a record button + progress bar to `TransportStrip`.
-- [ ] Wire recording → C2 upload endpoint with metadata (`sourceTool`, default `title`, dimensions, duration).
-- [ ] Per-generator: confirm the recording integrates with the deterministic frame loop (D2 ensures locked FPS).
-- [ ] Audit pass on `TransportStrip.js`.
+- [x] Define recording params: FPS, duration, codec (webm default from D2 strip).
+- [x] Implement `recordCanvasMeta` + `uploadToGallery` in `export-utils.js`.
+- [x] REC button + upload progress on `TransportStrip` (`setUploadProgress`).
+- [x] Wire recording → C2 upload in `generative-tool-host.js`.
+- [x] Per-generator: integrates with locked-FPS `AnimationExport` (D2).
+- [ ] Audit pass on `TransportStrip.js` (→ D3).
 
 ## Notes / decisions
 
@@ -31,5 +31,4 @@ One "record + upload" action in `TransportStrip` produces a gallery row whose `m
 ## References
 
 - `assets/js/shared/components/tool/TransportStrip.js`
-- `assets/js/shared/algorithms/export/export-utils.js`
-- D2 (locked-FPS dependency)
+- `assets/js/tools/generators/core/generative-tool-host.js`
