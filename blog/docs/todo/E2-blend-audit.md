@@ -1,11 +1,11 @@
 # E2 — WU-4: G13 blend-mode audit
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `assets/js/tools/processors/distort/core/Pipeline.js` (`_blend`, `ch`)
 **Blockers**: → E1
 **Blocks**: E7
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,16 +17,16 @@ A regression harness over a fixed set of input-pair tests passes for every blend
 
 ## Sub-tasks
 
-- [ ] Decide reference: SVG/CSS spec vs Photoshop semantics. Record in an ADR.
-- [ ] Verify softlight formula variant (current implementation produces incorrect output in some edge cases).
-- [ ] Verify alpha handling in the blend loop.
-- [ ] Decide on sRGB vs linear blend space (linear is more correct; sRGB is current — flag scope creep).
-- [ ] Build a regression harness: known input-pair → expected output, asserted with per-pixel tolerance.
-- [ ] Fix divergences.
+- [x] Decide reference: SVG/CSS spec vs Photoshop semantics. Record in an ADR.
+- [x] Verify softlight formula variant (current implementation produces incorrect output in some edge cases).
+- [x] Verify alpha handling in the blend loop.
+- [x] Decide on sRGB vs linear blend space (linear is more correct; sRGB is current — flag scope creep).
+- [x] Build a regression harness: known input-pair → expected output, asserted with per-pixel tolerance.
+- [x] Fix divergences.
 
 ## Notes / decisions
 
-(append-only)
+2026-06-18: Reference = SVG/CSS compositing in **linear light** (Pipeline already converts sRGB↔linear). Harness: `test/distort-blend.test.js` — 14 tests, all modes, ±2 byte tolerance. Exports: `blendChannel`, `srgbByteToLinear`, `linearToSrgbByte` from Pipeline.js.
 
 ## References
 

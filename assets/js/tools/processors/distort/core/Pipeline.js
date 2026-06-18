@@ -447,3 +447,14 @@ export class Pipeline {
     node.apply(input, output, w, h, ctx);
   }
 }
+
+/** @internal exported for G13 blend regression harness */
+export function srgbByteToLinear(v) {
+  return _srgbByteToLinear(v);
+}
+export function linearToSrgbByte(lin) {
+  return _linearToSrgbByte(lin);
+}
+export function blendChannel(base, layer, mode, opacity, maskVal = 1) {
+  return _blend(base, layer, mode, opacity, maskVal);
+}
