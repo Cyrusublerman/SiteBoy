@@ -149,17 +149,28 @@ function buildOutputTab(scriptConfig) {
 }
 
 /**
+ * Whether the script canvas supports strip-based frame recording.
+ * @param {import('./script-types.js').ScriptConfig} scriptConfig
+ * @returns {boolean}
+ */
+function isRecordableContext(scriptConfig) {
+    const ctx = scriptConfig?.canvas?.context ?? '2d';
+    return ctx === 'p5' || ctx === '2d' || ctx === 'canvas2d';
+}
+
+/**
  * Build the config object for a GeneratorTransportStrip instance.
  * Called by GenerativeToolHost._buildContainerLayout().
  *
  * @param {import('./script-types.js').ScriptConfig} scriptConfig
- * @returns {{ defaultSpeed: number, showTimeline: boolean }}
+ * @returns {{ defaultFps: number, showTimeline: boolean, showRecord: boolean }}
  */
 export function buildTransportConfig(scriptConfig) {
     const anim = scriptConfig.animation;
     return {
         defaultFps:   anim?.defaultFps ?? 60,
         showTimeline: anim?.sequencer  === true,
+        showRecord:   isRecordableContext(scriptConfig),
     };
 }
 

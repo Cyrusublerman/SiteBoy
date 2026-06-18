@@ -2,3 +2,5 @@
 tools/scrape/cache/
 node_modules/
 dist/
+.env
+.env.local
