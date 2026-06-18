@@ -1,11 +1,11 @@
 # B5 — Point cloud / Gaussian splat viewer
 
-**Status**: TODO
+**Status**: WIP
 **Priority**: P3
 **Owner file(s)**: `assets/js/shared/components/three-d/SplatViewer.js` (to author)
 **Blockers**: → B4
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -19,10 +19,10 @@ Render a `.splat` / `.ply` point-cloud or Gaussian-splat asset inside any `Canva
 
 - [ ] Survey splat libraries (e.g. `gsplat.js`, `@spectacles-vue/gaussian-splatting`, raw WebGL2 implementations).
 - [ ] Decide loader: streaming vs whole-file.
-- [ ] Author `SplatViewer` (extends `BaseComponent`; reuse `gpu-foundation.js` for GPU access).
-- [ ] Register in `component-library.js`.
+- [x] Author `SplatViewer` (extends `BaseComponent`; reuse `gpu-foundation.js` for GPU access).
+- [x] Register in `component-library.js`.
 - [ ] Author component doc.
-- [ ] Create demo page in `three_d_section.js`.
+- [x] Create demo page in `three_d_section.js`.
 - [ ] Verify on low-end GPU; document min-spec.
 
 ## Notes / decisions
