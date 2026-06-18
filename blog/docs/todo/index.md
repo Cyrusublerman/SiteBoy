@@ -40,7 +40,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| A1 | [A1-vercel-migration.md](A1-vercel-migration.md) | Migrate to dynamic host (Vercel) | P1 | TODO | — |
+| A1 | [A1-vercel-migration.md](A1-vercel-migration.md) | Migrate to dynamic host (Vercel) | P1 | DONE | — |
 | A2 | [A2-auth.md](A2-auth.md) | Auth / login mechanism | P1 | TODO | → A1 |
 | A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | TODO | → A1 |
 | A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | TODO | → A1 |
@@ -50,10 +50,10 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | B1 | [B1-projects-section.md](B1-projects-section.md) | Complete projects section | P1 | DONE | — |
-| B2 | [B2-store-section.md](B2-store-section.md) | Add store section | P2 | TODO | → A1, A3 |
-| B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | TODO | — |
-| B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | TODO | → A4 |
-| B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | TODO | → B4 |
+| B2 | [B2-store-section.md](B2-store-section.md) | Add store section | P2 | WIP | → A1, A3 |
+| B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | WIP | — |
+| B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | WIP | → A4 |
+| B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | WIP | → B4 |
 
 ## C. Gallery
 
@@ -92,7 +92,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | F1 | [F1-cursive-glyph-builder.md](F1-cursive-glyph-builder.md) | Cursive glyph builder MVP completion | P1 | DONE | — |
-| F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | TODO | → A3 |
+| F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | WIP | → A3 |
 | F3 | [F3-uncommitted-work.md](F3-uncommitted-work.md) | Land current uncommitted work | P0 | WIP | — |
 | F4 | [F4-cursive-glyph-builder-ux.md](F4-cursive-glyph-builder-ux.md) | Cursive glyph builder toolbar + sidebar UX | P1 | DONE | — |
 | F5 | [F5-handwriting-vector-compose.md](F5-handwriting-vector-compose.md) | Handwriting vector compose SVG export | P2 | DONE | — |
@@ -101,7 +101,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | TODO | → A2, A3 |
+| G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | WIP | → A2, A3 |
 | G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | REVIEW | — |
 | G3 | [G3-portal-index.md](G3-portal-index.md) | Documentation portal index refresh | P2 | TODO | → G2 |
 

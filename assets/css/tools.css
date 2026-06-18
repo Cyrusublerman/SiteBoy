@@ -462,3 +462,94 @@
     width: 100%;
     height: 100%;
 }
+
+/* =================================================================
+   GENERATOR TRANSPORT STRIP
+   ================================================================= */
+
+/* FPS slider embedded in transport strip — F-based range input */
+.transport-fps input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--generator-transport-thumb-d, var(--f));
+    height: var(--generator-transport-thumb-d, var(--f));
+    background: var(--c-text);
+    border: 1px solid var(--c-text);
+    cursor: pointer;
+}
+
+.transport-fps input[type="range"]::-moz-range-thumb {
+    width: var(--generator-transport-thumb-d, var(--f));
+    height: var(--generator-transport-thumb-d, var(--f));
+    background: var(--c-text);
+    border: 1px solid var(--c-text);
+    cursor: pointer;
+}
+
+.transport-fps input[type="range"]::-webkit-slider-runnable-track {
+    height: var(--generator-transport-track-h, calc(var(--f) * 0.25));
+    background: var(--c-bg);
+    border: 1px solid var(--c-text);
+}
+
+.transport-fps input[type="range"]::-moz-range-track {
+    height: var(--generator-transport-track-h, calc(var(--f) * 0.25));
+    background: var(--c-bg);
+    border: 1px solid var(--c-text);
+}
+
+/* ── B3/B2/B4/G1 section shells ─────────────────────────────────────────── */
+
+.about-section,
+.store-section,
+.three-d-section,
+.admin-section {
+    max-width: calc(var(--f) * 48);
+    margin: 0 auto;
+    padding: calc(var(--f) * 2);
+    box-sizing: border-box;
+}
+
+.about-section-subheader,
+.store-product-row,
+.three-d-item-row,
+.admin-section-row,
+.store-cart-link {
+    margin-bottom: calc(var(--f) * 0.5);
+}
+
+.model-viewer-host {
+    width: 100%;
+    min-height: calc(var(--f) * 30);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    box-sizing: border-box;
+}
+
+.model-viewer-host model-viewer {
+    width: 100%;
+    height: calc(var(--f) * 30);
+    background: var(--c-bg);
+}
+
+.splat-viewer-host {
+    width: 100%;
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    box-sizing: border-box;
+}
+
+.splat-viewer-status {
+    padding: calc(var(--f) * 0.5) var(--f);
+    font-family: 'Atkinson Hyperlegible', monospace;
+    font-size: var(--f);
+    color: var(--c-text);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.splat-viewer-canvas {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+}

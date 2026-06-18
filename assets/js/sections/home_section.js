@@ -192,6 +192,7 @@ class HomeSectionComponent extends BaseComponent {
                 this._buildTools(),
                 this._buildDocs(),
                 this._buildProjects(),
+                this._buildAbout(),
                 this._buildContact(),
             ],
         };
@@ -252,6 +253,17 @@ class HomeSectionComponent extends BaseComponent {
         };
     }
 
+    _buildAbout() {
+        return {
+            label: 'ABOUT',
+            description: 'Bio, links, and timeline',
+            _data: { section: 'about' },
+            children: [
+                { label: 'Read bio', _data: { section: 'about' } },
+            ],
+        };
+    }
+
     _buildContact() {
         return {
             label: 'CONTACT',
@@ -289,6 +301,7 @@ class HomeSectionComponent extends BaseComponent {
         if (item.section === 'art')       { this._navigate('art',      item.slug);  return; }
         if (item.section === 'tools')     { this._navigate('tools',    item.slug);  return; }
         if (item.section === 'projects')  { this._navigate('projects', item.slug);  return; }
+        if (item.section === 'about')     { this._navigate('about');                return; }
         if (item.section === 'blog')      { this._navigate('blog',     item.slug);  return; }
         if (item.slug)                    { this._navigate('blog',     item.slug); }
     }

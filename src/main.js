@@ -25,12 +25,18 @@ import '../assets/js/sections/projects_section.js';
 import '../assets/js/sections/project-page.js';  // Generic JSON-driven project page renderer
 import '../assets/js/sections/contact_section.js';
 import '../assets/js/sections/qr_section.js';
+import '../assets/js/sections/about_section.js';
+import '../assets/js/sections/store_section.js';
+import '../assets/js/sections/three_d_section.js';
+import '../assets/js/sections/admin_section.js';
 import '../projects/Synthetic Biophilia/synthetic-biophilia.js';
 
 import { SiteBoyApp } from '../assets/js/core/app.js';
+import { Auth } from '../assets/js/admin/auth.js';
 
 // Initialize the application
 window.debugLog('INIT', '🚀 SiteBoy Framework v4.0.0 - Modern ES Module Architecture');
 window.debugLog('INIT', '📦 Loading via VITE bundler...');
 
 SiteBoyApp.init();
+Auth.bootstrap();

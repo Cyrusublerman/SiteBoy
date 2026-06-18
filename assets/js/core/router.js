@@ -26,7 +26,11 @@ const Router = {
         'tools': 'ToolsSection',
         'projects': 'ProjectsSection',
         'contact': 'ContactSection',
-        'qr': 'QrHubSection'
+        'qr': 'QrHubSection',
+        'about': 'AboutSection',
+        'store': 'StoreSection',
+        'three-d': 'ThreeDSection',
+        'admin': 'AdminSection'
     },
 
     /**

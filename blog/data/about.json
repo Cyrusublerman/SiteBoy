@@ -1,0 +1,25 @@
+{
+  "header": "ABOUT",
+  "subheader": "Ali Einoder — generative art, tools, and fabrication",
+  "url": "/about",
+  "blocks": [
+    {
+      "type": "markdown",
+      "content": "Ali Einoder builds creative tools, generative systems, and physical artefacts. This site documents the work: open tools, long-form projects, and process notes."
+    },
+    {
+      "type": "markdown",
+      "content": "## Background\n\nDesign-engineering practice spanning parametric geometry, image pipelines, and browser-native tooling. Focus: deterministic export, owned concerns, and VGA-native interfaces."
+    }
+  ],
+  "links": [
+    { "label": "Instagram", "url": "https://www.instagram.com/a.einoder/", "external": true },
+    { "label": "Contact", "url": "#contact", "external": false },
+    { "label": "Projects", "url": "#projects", "external": false }
+  ],
+  "timeline": [
+    { "year": "2024", "title": "SiteBoy framework", "detail": "Modular JS/CSS tool host with router and design system." },
+    { "year": "2025", "title": "Distort pipeline", "detail": "GPU image-processing graph with deterministic export." },
+    { "year": "2026", "title": "Notes + store", "detail": "Corpus tooling and commerce sections in progress." }
+  ]
+}
