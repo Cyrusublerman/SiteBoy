@@ -24,7 +24,7 @@
   "crons": [
     {
       "path": "/api/cron/thumb-worker",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
