@@ -482,7 +482,7 @@ function draw() {
       if (MODE === 'record' && !recording) {
         capturer.start();
         recording = true;
-        console.log("Capture Started");
+        window.debugLog('TOOLS', "Capture Started");
       }
 
       if(_draw) _draw();

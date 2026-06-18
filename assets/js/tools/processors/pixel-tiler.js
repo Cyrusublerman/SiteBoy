@@ -450,4 +450,4 @@ export class PixelTiler {
 // Export as default for tools_section.js
 export default PixelTiler;
 
-console.log('✅ PixelTiler loaded (ES Module)');
+window.debugLog('TOOLS', '✅ PixelTiler loaded (ES Module)');

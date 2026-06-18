@@ -337,7 +337,7 @@ export class MoireGeneratorTool {
             this.tool.mount(this.container);
             this.tool.draw();
 
-            console.log('✅ MoireGeneratorTool rendered');
+            window.debugLog('TOOLS', '✅ MoireGeneratorTool rendered');
         } catch (error) {
             console.error('❌ MoireGeneratorTool error:', error);
             this.container.innerHTML =
@@ -364,5 +364,5 @@ export class MoireGeneratorTool {
 // Export as default for tools_section.js
 export default MoireGeneratorTool;
 
-console.log('✅ MoireGeneratorTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ MoireGeneratorTool loaded (ES Module)');
 

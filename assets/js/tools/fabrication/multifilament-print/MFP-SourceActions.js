@@ -35,11 +35,11 @@ export class MFPSourceActions {
             
             // Debug: List all files in ZIP
             const allFiles = Object.keys(zipData.files);
-            console.log('📂 ZIP contents:');
+            window.debugLog('TOOLS', '📂 ZIP contents:');
             allFiles.forEach(path => {
-                console.log(`  - ${path}`);
+                window.debugLog('TOOLS', `  - ${path}`);
             });
-            console.log('✅ ZIP loaded, files:', allFiles.length);
+            window.debugLog('TOOLS', '✅ ZIP loaded, files:', allFiles.length);
             
             // Helper to find file in nested structure (handles subdirectories)
             const findFile = (...patterns) => {
@@ -65,17 +65,17 @@ export class MFPSourceActions {
             let layout = null;
             const layoutFile = findFile('grid-layout.json', 'data/grid-layout.json', 'layout.json');
             if (layoutFile) {
-                console.log(`📋 Layout file found: ${layoutFile.name}`);
+                window.debugLog('LAYOUT', `📋 Layout file found: ${layoutFile.name}`);
                 const layoutText = await layoutFile.async('text');
                 layout = JSON.parse(layoutText);
-                console.log('✅ Loaded grid-layout.json');
+                window.debugLog('LAYOUT', '✅ Loaded grid-layout.json');
             }
             
             // Fallback: try grid-config.json
             if (!layout) {
                 const configFile = findFile('grid-config.json', 'data/grid-config.json', 'config.json');
                 if (configFile) {
-                    console.log(`📋 Config file found: ${configFile.name}`);
+                    window.debugLog('TOOLS', `📋 Config file found: ${configFile.name}`);
                     const configText = await configFile.async('text');
                     const config = JSON.parse(configText);
                     // Convert config to layout format
@@ -95,7 +95,7 @@ export class MFPSourceActions {
                             baseLayers: config.baseLayers || 2
                         }
                     };
-                    console.log('✅ Migrated grid-config.json to layout format');
+                    window.debugLog('LAYOUT', '✅ Migrated grid-config.json to layout format');
                 }
             }
             
@@ -103,10 +103,10 @@ export class MFPSourceActions {
             if (!layout) {
                 const csvFile = findFile('sequences.csv', 'data/sequences.csv', 'grid.csv', 'data/grid.csv');
                 if (csvFile) {
-                    console.log(`📋 CSV file found: ${csvFile.name}, reconstructing layout...`);
+                    window.debugLog('LAYOUT', `📋 CSV file found: ${csvFile.name}, reconstructing layout...`);
                     const csvText = await csvFile.async('text');
                     layout = this._reconstructLayoutFromCSV(csvText, file.name);
-                    console.log('✅ Reconstructed layout from CSV');
+                    window.debugLog('LAYOUT', '✅ Reconstructed layout from CSV');
                 }
             }
             
@@ -158,7 +158,7 @@ export class MFPSourceActions {
                 return;
             }
             
-            console.log('✅ Parsed layout, meta:', meta);
+            window.debugLog('LAYOUT', '✅ Parsed layout, meta:', meta);
             
             this.state.gridData = {
                 sequences,
@@ -277,11 +277,11 @@ export class MFPSourceActions {
                     const bundle = toolBase.components?.get('imageAdjust');
                     if (bundle && typeof bundle.setValues === 'function') {
                         bundle.setValues(adj);
-                        console.log('✅ Image adjustment values restored');
+                        window.debugLog('TOOLS', '✅ Image adjustment values restored');
                     } else if (bundle && bundle.values) {
                         // Fallback: set values directly
                         Object.assign(bundle.values, adj);
-                        console.log('✅ Image adjustment values restored (direct)');
+                        window.debugLog('TOOLS', '✅ Image adjustment values restored (direct)');
                     }
                 }
             }
@@ -316,7 +316,7 @@ export class MFPSourceActions {
             // EXPORT tab
             toolBase.setValue('exportProjectStatus', `✅ Project loaded: ${gridSummary} grid ready for export`);
             
-            console.log('✅ All UI controls updated from imported project (ALL tabs)');
+            window.debugLog('TOOLS', '✅ All UI controls updated from imported project (ALL tabs)');
             
             // Save to localStorage
             localStorage.setItem('lastGridData', JSON.stringify(this.state.gridData));
@@ -339,7 +339,7 @@ export class MFPSourceActions {
                     const loadedImg = await loadPromise;
                     this.state.scanImageElement = loadedImg;
                     scanDataLoaded = true;
-                    console.log(`✅ Scan image loaded: ${loadedImg.width}×${loadedImg.height}px`);
+                    window.debugLog('LAYOUT', `✅ Scan image loaded: ${loadedImg.width}×${loadedImg.height}px`);
                     
                     // Resize canvas if on SCAN tab
                     const canvasComponent = toolBase.canvasComponent;
@@ -362,7 +362,7 @@ export class MFPSourceActions {
                     if (alignmentData.gridCornersPixel && alignmentData.gridCornersPixel.length === 4) {
                         this.state.gridCornersPixel = alignmentData.gridCornersPixel;
                         scanDataLoaded = true;
-                        console.log('✅ Grid alignment loaded from grid-alignment.json');
+                        window.debugLog('LAYOUT', '✅ Grid alignment loaded from grid-alignment.json');
                     }
                 } catch (alignErr) {
                     console.warn('⚠️ Could not load grid alignment:', alignErr);
@@ -371,7 +371,7 @@ export class MFPSourceActions {
                 // Fallback to layout.json
                 this.state.gridCornersPixel = meta.scanSettings.gridCornersPixel;
                 scanDataLoaded = true;
-                console.log('✅ Grid alignment restored from layout.json');
+                window.debugLog('LAYOUT', '✅ Grid alignment restored from layout.json');
             }
             
             // 3. Load analysis data
@@ -382,7 +382,7 @@ export class MFPSourceActions {
                     const analysisData = JSON.parse(analysisText);
                     this.state.scanAnalysis = Array.isArray(analysisData) ? analysisData : (analysisData.tiles || []);
                     scanDataLoaded = true;
-                    console.log(`✅ Loaded scan analysis: ${this.state.scanAnalysis.length} tiles`);
+                    window.debugLog('TOOLS', `✅ Loaded scan analysis: ${this.state.scanAnalysis.length} tiles`);
                     toolBase.setValue('exportScanStatus', `✅ Scan analysis loaded: ${this.state.scanAnalysis.length} tiles analysed`);
                     toolBase.setValue('scanStatus', `✅ Analysis loaded: ${this.state.scanAnalysis.length} tiles (from project)`);
                 } catch (analysisErr) {
@@ -395,7 +395,7 @@ export class MFPSourceActions {
             const quantConfigFile = findFile('scans/quantization-config.json', 'quantization-config.json');
             const calibPaletteFile = findFile('scans/calibration-palette.json', 'calibration-palette.json');
             
-            console.log('📦 Palette file search:', {
+            window.debugLog('TOOLS', '📦 Palette file search:', {
                 quantConfigFile: !!quantConfigFile,
                 calibPaletteFile: !!calibPaletteFile,
                 hasGridData: !!this.state.gridData
@@ -406,7 +406,7 @@ export class MFPSourceActions {
                     const quantText = await quantConfigFile.async('text');
                     this.state.quantizationConfig = JSON.parse(quantText);
                     paletteLoaded = true;
-                    console.log('✅ Loaded quantization config');
+                    window.debugLog('TOOLS', '✅ Loaded quantization config');
                 } catch (quantErr) {
                     console.warn('⚠️ Could not load quantization config:', quantErr);
                 }
@@ -439,7 +439,7 @@ export class MFPSourceActions {
                         tileData: null
                     };
                     paletteLoaded = true;
-                    console.log(`✅ Loaded calibration palette: ${colors.length} colours`);
+                    window.debugLog('TOOLS', `✅ Loaded calibration palette: ${colors.length} colours`);
                 } catch (paletteErr) {
                     console.warn('⚠️ Could not load calibration palette:', paletteErr);
                 }
@@ -449,11 +449,11 @@ export class MFPSourceActions {
             if (!paletteLoaded && this.state.gridData) {
                 this._generatePredictedQuantizationConfig(this.state.gridData);
                 paletteLoaded = true;
-                console.log('✅ Generated predicted quantization config from grid data');
+                window.debugLog('LAYOUT', '✅ Generated predicted quantization config from grid data');
             }
             
             // Update QUANTIZE tab status
-            console.log('📊 Palette status update:', {
+            window.debugLog('TOOLS', '📊 Palette status update:', {
                 paletteLoaded,
                 hasQuantConfig: !!this.state.quantizationConfig,
                 colorCount: this.state.quantizationConfig?.colorMap?.length
@@ -463,7 +463,7 @@ export class MFPSourceActions {
                 const colorCount = this.state.quantizationConfig.colorMap?.length || 0;
                 const type = this.state.quantizationConfig.type || 'loaded';
                 toolBase.setValue('paletteStatus', `✅ Palette ready: ${colorCount} colours (${type})`);
-                console.log(`✅ Set paletteStatus: Palette ready: ${colorCount} colours (${type})`);
+                window.debugLog('TOOLS', `✅ Set paletteStatus: Palette ready: ${colorCount} colours (${type})`);
             } else {
                 console.warn('⚠️ No quantizationConfig after import!');
             }
@@ -494,7 +494,7 @@ export class MFPSourceActions {
                 try {
                     const blob = await sourceImgFile.async('blob');
                     this.state.sourceImageElement = await _loadImage(blob);
-                    console.log(`✅ Source image restored: ${this.state.sourceImageElement.width}×${this.state.sourceImageElement.height}px`);
+                    window.debugLog('LAYOUT', `✅ Source image restored: ${this.state.sourceImageElement.width}×${this.state.sourceImageElement.height}px`);
                 } catch (err) {
                     console.warn('⚠️ Could not restore source image:', err);
                 }
@@ -506,7 +506,7 @@ export class MFPSourceActions {
                     const blob = await quantImgFile.async('blob');
                     this.state.quantizedImageElement = await _loadImage(blob);
                     toolBase.setValue('quantizeStatus', `✅ Quantised image restored from project (${this.state.quantizedImageElement.width}×${this.state.quantizedImageElement.height}px)`);
-                    console.log(`✅ Quantized image restored: ${this.state.quantizedImageElement.width}×${this.state.quantizedImageElement.height}px`);
+                    window.debugLog('LAYOUT', `✅ Quantized image restored: ${this.state.quantizedImageElement.width}×${this.state.quantizedImageElement.height}px`);
                 } catch (err) {
                     console.warn('⚠️ Could not restore quantized image:', err);
                 }
@@ -522,7 +522,7 @@ export class MFPSourceActions {
                         map: new Uint16Array(data.map),
                         palette: data.palette
                     };
-                    console.log(`✅ Quantized sequence map restored: ${data.width}×${data.height}px, ${data.palette?.length || 0} palette entries`);
+                    window.debugLog('LAYOUT', `✅ Quantized sequence map restored: ${data.width}×${data.height}px, ${data.palette?.length || 0} palette entries`);
                 } catch (err) {
                     console.warn('⚠️ Could not restore quantized sequence map:', err);
                 }
@@ -541,7 +541,7 @@ export class MFPSourceActions {
      * EXACT copy from working monolith - DO NOT MODIFY
      */
     generateLivePreview(values, toolBase) {
-        console.log('🔧 generateLivePreview called', {
+        window.debugLog('TOOLS', '🔧 generateLivePreview called', {
             selectedFilaments: this.state.selectedFilaments,
             values
         });
@@ -549,12 +549,12 @@ export class MFPSourceActions {
         // Generate preview grid without validation - just show what it would look like
         const selectedCount = this.state.selectedFilaments ? this.state.selectedFilaments.length : 0;
         if (selectedCount < 2) {
-            console.log('❌ Not enough filaments:', selectedCount);
+            window.debugLog('TOOLS', '❌ Not enough filaments:', selectedCount);
             return; // Requires at least 2 colors
         }
         
         const selectedColors = this.state.selectedFilaments.map(idx => FILAMENT_COLOURS[idx]);
-        console.log('✅ Selected colors:', selectedColors);
+        window.debugLog('TOOLS', '✅ Selected colors:', selectedColors);
         
         // Generate sequences using algorithm
         this.state.sequences = generateSequences(selectedColors.length, values.layerCount);
@@ -1249,7 +1249,7 @@ export class MFPSourceActions {
                         stlFolder.file(filename, new Blob(parts, { type: 'text/plain' }));
                     });
                     
-                    console.log(`✅ Added ${Object.keys(stls).length} STL files to ZIP`);
+                    window.debugLog('TOOLS', `✅ Added ${Object.keys(stls).length} STL files to ZIP`);
                 } catch (stlErr) {
                     console.error('STL generation error:', stlErr);
                     // Continue with other exports even if STL fails
@@ -1292,7 +1292,7 @@ export class MFPSourceActions {
                         imagesFolder.file(`grid-layer-${layer}.png`, layerBlob);
                     }
                     
-                    console.log('✅ Added grid images to ZIP');
+                    window.debugLog('LAYOUT', '✅ Added grid images to ZIP');
                 } catch (imgErr) {
                     console.error('Image generation error:', imgErr);
                     // Continue with other exports even if image fails
@@ -1319,7 +1319,7 @@ export class MFPSourceActions {
                         ctx.drawImage(this.state.scanImageElement, 0, 0);
                         const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                         scanFolder.file('scan.png', imageBlob);
-                        console.log('✅ Saved scan.png to ZIP');
+                        window.debugLog('TOOLS', '✅ Saved scan.png to ZIP');
                     } catch (imgErr) {
                         console.error('❌ Failed to save scan image:', imgErr);
                     }
@@ -1334,19 +1334,19 @@ export class MFPSourceActions {
                         savedAt: new Date().toISOString()
                     };
                     scanFolder.file('grid-alignment.json', JSON.stringify(alignmentData, null, 2));
-                    console.log('✅ Saved grid-alignment.json to ZIP');
+                    window.debugLog('LAYOUT', '✅ Saved grid-alignment.json to ZIP');
                 }
                 
                 // Save analysis data if exists
                 if (hasAnalysis) {
                     scanFolder.file('analysis.json', JSON.stringify(this.state.scanAnalysis, null, 2));
-                    console.log('✅ Saved analysis.json to ZIP');
+                    window.debugLog('TOOLS', '✅ Saved analysis.json to ZIP');
                 }
                 
                 // Save quantization config if exists
                 if (hasQuantConfig) {
                     scanFolder.file('quantization-config.json', JSON.stringify(this.state.quantizationConfig, null, 2));
-                    console.log('✅ Saved quantization-config.json to ZIP');
+                    window.debugLog('TOOLS', '✅ Saved quantization-config.json to ZIP');
                 }
                 
                 // Generate and save EXPECTED colours grid PNG (predicted from filament stacking)
@@ -1354,7 +1354,7 @@ export class MFPSourceActions {
                     const expectedPng = await this._generateColourGridPNG(grid, 'expected');
                     if (expectedPng) {
                         scanFolder.file('expected-colours-grid.png', expectedPng);
-                        console.log('✅ Saved expected-colours-grid.png to ZIP');
+                        window.debugLog('LAYOUT', '✅ Saved expected-colours-grid.png to ZIP');
                     }
                 } catch (expErr) {
                     console.warn('⚠️ Could not generate expected colours grid:', expErr);
@@ -1366,7 +1366,7 @@ export class MFPSourceActions {
                         const analysedPng = await this._generateColourGridPNG(grid, 'analysed', this.state.scanAnalysis);
                         if (analysedPng) {
                             scanFolder.file('analysed-colours-grid.png', analysedPng);
-                            console.log('✅ Saved analysed-colours-grid.png to ZIP');
+                            window.debugLog('LAYOUT', '✅ Saved analysed-colours-grid.png to ZIP');
                         }
                     } catch (anaErr) {
                         console.warn('⚠️ Could not generate analysed colours grid:', anaErr);
@@ -1376,7 +1376,7 @@ export class MFPSourceActions {
                 // Generate and save CALIBRATION PALETTE JSON (RGB → sequence mapping)
                 const paletteJson = this._generateCalibrationPaletteJSON(grid, hasAnalysis ? this.state.scanAnalysis : null);
                 scanFolder.file('calibration-palette.json', JSON.stringify(paletteJson, null, 2));
-                console.log('✅ Saved calibration-palette.json to ZIP');
+                window.debugLog('TOOLS', '✅ Saved calibration-palette.json to ZIP');
                 
                 // Save calibrated palette GPL if we have analysis
                 if (hasAnalysis) {
@@ -1414,9 +1414,9 @@ export class MFPSourceActions {
                         quantizeFolder.file('quantized-sequence-map.json', JSON.stringify({
                             width, height, map: Array.from(map), palette
                         }));
-                        console.log('✅ Saved quantized-sequence-map.json to ZIP');
+                        window.debugLog('TOOLS', '✅ Saved quantized-sequence-map.json to ZIP');
                     }
-                    console.log('✅ Saved quantized images to ZIP');
+                    window.debugLog('TOOLS', '✅ Saved quantized images to ZIP');
                 } catch (qErr) {
                     console.warn('⚠️ Could not save quantized image:', qErr);
                 }
@@ -1429,7 +1429,7 @@ export class MFPSourceActions {
                     Object.entries(this.state.exportSTLData.stls).forEach(([filename, parts]) => {
                         artworkFolder.file(filename, new Blob(parts, { type: 'text/plain' }));
                     });
-                    console.log(`✅ Saved ${Object.keys(this.state.exportSTLData.stls).length} artwork STL files to ZIP`);
+                    window.debugLog('TOOLS', `✅ Saved ${Object.keys(this.state.exportSTLData.stls).length} artwork STL files to ZIP`);
                 } catch (astlErr) {
                     console.warn('⚠️ Could not save artwork STLs:', astlErr);
                 }
@@ -1686,7 +1686,7 @@ export class MFPSourceActions {
             }
         }
         
-        console.log(`📐 Created layer maps: ${baseLayers} base + ${sequenceLayers} sequence + ${topLayers} top = ${totalLayers} total`);
+        window.debugLog('TOOLS', `📐 Created layer maps: ${baseLayers} base + ${sequenceLayers} sequence + ${topLayers} top = ${totalLayers} total`);
         
         return layerMaps;
     }
@@ -1825,7 +1825,7 @@ Print settings are in grid-layout.json.
             tileData: null  // No tile data until scan
         };
         
-        console.log(`✅ Predicted quantization config generated: ${colorMap.length} unique colours`);
+        window.debugLog('TOOLS', `✅ Predicted quantization config generated: ${colorMap.length} unique colours`);
     }
     
     /**

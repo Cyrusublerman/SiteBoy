@@ -407,7 +407,7 @@ export class InterferenceFigureTool {
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ InterferenceFigureTool rendered');
+            window.debugLog('TOOLS', '✅ InterferenceFigureTool rendered');
         } catch (error) {
             console.error('❌ InterferenceFigureTool error:', error);
             this.container.innerHTML = 
@@ -429,5 +429,5 @@ export class InterferenceFigureTool {
 // Export as default for tools_section.js
 export default InterferenceFigureTool;
 
-console.log('✅ InterferenceFigureTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ InterferenceFigureTool loaded (ES Module)');
 

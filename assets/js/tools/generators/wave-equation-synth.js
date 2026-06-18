@@ -612,7 +612,7 @@ export class WaveEquationSynthTool {
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ WaveEquationSynthTool rendered');
+            window.debugLog('TOOLS', '✅ WaveEquationSynthTool rendered');
         } catch (error) {
             console.error('❌ WaveEquationSynthTool error:', error);
             this.container.innerHTML = 
@@ -652,5 +652,5 @@ export class WaveEquationSynthTool {
 // Export as default for tools_section.js
 export default WaveEquationSynthTool;
 
-console.log('✅ WaveEquationSynthTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ WaveEquationSynthTool loaded (ES Module)');
 

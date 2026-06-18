@@ -96,7 +96,7 @@ const ToolsSection = {
         this.componentInstances.push(tocComponent);
         this.currentContainer.appendChild(tocComponent.render());
         
-        console.log('✅ Tools index rendered with TreeTOC component');
+        window.debugLog('TOOLS', '✅ Tools index rendered with TreeTOC component');
     },
     
     /**
@@ -341,7 +341,7 @@ const ToolsSection = {
     handleToolClick(item) {
         const toolId = item.slug || item.id;
         this.navigateToTool(toolId);
-        console.log(`🔧 Tool clicked: ${item.title} -> ${toolId}`);
+        window.debugLog('NAVIGATION', `🔧 Tool clicked: ${item.title} -> ${toolId}`);
     },
     
     /**
@@ -445,7 +445,7 @@ const ToolsSection = {
      * @param {string} sectionId - Section ID
      */
     handleSectionClick(sectionId) {
-        console.log(`🔧 Section clicked: ${sectionId}`);
+        window.debugLog('NAVIGATION', `🔧 Section clicked: ${sectionId}`);
         // Find the TOC component and toggle the section
         const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.SimpleTOC);
         if (tocComponent) {
@@ -458,7 +458,7 @@ const ToolsSection = {
      * @param {string} path - Navigation path
      */
     handleSubsectionClick(path) {
-        console.log(`🔧 Subsection clicked: ${path}`);
+        window.debugLog('NAVIGATION', `🔧 Subsection clicked: ${path}`);
         
         // Extract section and subsection from path (e.g., '#tools/font-analysis')
         const hashPath = path.replace('#', '');
@@ -862,7 +862,7 @@ const ToolsSection = {
             cols: 4,
             showHex: true,
             onItemClick: (color, index) => {
-                console.log(`Color clicked: ${color.value}`);
+                window.debugLog('NAVIGATION', `Color clicked: ${color.value}`);
                 if (navigator.clipboard) {
                     navigator.clipboard.writeText(color.value);
                 }
@@ -1082,7 +1082,7 @@ const ToolsSection = {
      * Render a ToolBase-powered tool (generative art tools)
      */
     renderToolBaseTool(toolClassName) {
-        console.log(`🎨 Rendering ToolBase tool: ${toolClassName}`);
+        window.debugLog('TOOLS', `🎨 Rendering ToolBase tool: ${toolClassName}`);
         
         try {
             const ToolClass = window[toolClassName];
@@ -1096,7 +1096,7 @@ const ToolsSection = {
             });
             this.componentInstances.push(tool);
             tool.render();
-            console.log(`✅ ${toolClassName} rendered successfully`);
+            window.debugLog('TOOLS', `✅ ${toolClassName} rendered successfully`);
         } catch (err) {
             console.error(`❌ ${toolClassName} error:`, err);
             this.currentContainer.innerHTML = `
@@ -1143,7 +1143,7 @@ const ToolsSection = {
      * Handle component section click (expansion toggle)
      */
     handleComponentSectionClick(sectionId) {
-        console.log(`🧪 Component section clicked: ${sectionId}`);
+        window.debugLog('NAVIGATION', `🧪 Component section clicked: ${sectionId}`);
         // Find the TOC component and toggle the section
         const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.SimpleTOC);
         if (tocComponent) {
@@ -1390,7 +1390,7 @@ const ToolsSection = {
                         { label: 'Services', value: 'services', url: '#services' },
                         { label: 'Contact', value: 'contact', url: '#contact' }
                     ],
-                    onItemClick: (item) => console.log('BaseNav selected:', item)
+                    onItemClick: (item) => window.debugLog('NAVIGATION', 'BaseNav selected:', item)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(baseNavDropdown);
                 
@@ -1429,7 +1429,7 @@ const ToolsSection = {
                     triggerText: 'Select Option',
                     items: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
                     position: 'bottom-left',
-                    onItemClick: (item, index) => console.log('Selected:', item)
+                    onItemClick: (item, index) => window.debugLog('NAVIGATION', 'Selected:', item)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(dropdown);
                 return dropdown.render();
@@ -1449,7 +1449,7 @@ const ToolsSection = {
                         { label: 'Profile', value: 'profile', url: '#profile' }
                     ],
                     current: 'dashboard',
-                    onSelect: (item) => console.log('Menu selected:', item)
+                    onSelect: (item) => window.debugLog('TOOLS', 'Menu selected:', item)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(menu);
                 return menu.render();
@@ -1468,7 +1468,7 @@ const ToolsSection = {
                         { label: 'Font Analysis', value: 'font-analysis', url: '#tools/font-analysis' }
                     ],
                     current: 'font-analysis',
-                    onSelect: (item) => console.log('Breadcrumb selected:', item)
+                    onSelect: (item) => window.debugLog('TOOLS', 'Breadcrumb selected:', item)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(breadcrumb);
                 return breadcrumb.render();
@@ -1526,8 +1526,8 @@ const ToolsSection = {
                 const grid = new ComponentLibrary.Grid({
                     items: galleryItems,
                     fillEmptyCells: true,    // Complete the grid rows
-                    onItemClick: (item, index) => console.log('Gallery item clicked:', item.title),
-                    onCaptionArrowClick: (item, index) => console.log('Caption arrow clicked:', item.title)
+                    onItemClick: (item, index) => window.debugLog('NAVIGATION', 'Gallery item clicked:', item.title),
+                    onCaptionArrowClick: (item, index) => window.debugLog('NAVIGATION', 'Caption arrow clicked:', item.title)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(grid);
                 return grid.render();
@@ -1761,9 +1761,9 @@ const ToolsSection = {
             () => {
                 const buttonGroup = new ComponentLibrary.ButtonGroup({
                     buttons: [
-                        { text: 'Action 1', onClick: () => console.log('Action 1') },
-                        { text: 'Action 2', onClick: () => console.log('Action 2') },
-                        { text: 'Action 3', onClick: () => console.log('Action 3') }
+                        { text: 'Action 1', onClick: () => window.debugLog('NAVIGATION', 'Action 1') },
+                        { text: 'Action 2', onClick: () => window.debugLog('NAVIGATION', 'Action 2') },
+                        { text: 'Action 3', onClick: () => window.debugLog('NAVIGATION', 'Action 3') }
                     ]
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(buttonGroup);
@@ -1786,7 +1786,7 @@ const ToolsSection = {
                     items: vgaColors,
                     cols: 4,
                     showHex: true,
-                    onItemClick: (color, index) => console.log('Color:', color.value)
+                    onItemClick: (color, index) => window.debugLog('NAVIGATION', 'Color:', color.value)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(vgaGrid);
                 return vgaGrid.render();
@@ -1872,8 +1872,8 @@ const ToolsSection = {
                 ];
                 const toc = new ComponentLibrary.HierarchicalTOC({
                     sections: tocSections,
-                    onSectionClick: (id) => console.log('TOC section:', id),
-                    onSubsectionClick: (path) => console.log('TOC subsection:', path)
+                    onSectionClick: (id) => window.debugLog('NAVIGATION', 'TOC section:', id),
+                    onSubsectionClick: (path) => window.debugLog('NAVIGATION', 'TOC subsection:', path)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(toc);
                 return toc.render();
@@ -1891,14 +1891,14 @@ const ToolsSection = {
                 const textInput = new ComponentLibrary.Input({
                     type: 'text',
                     placeholder: 'Enter text...',
-                    onChange: (value) => console.log('Input:', value)
+                    onChange: (value) => window.debugLog('NAVIGATION', 'Input:', value)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(textInput);
                 
                 const emailInput = new ComponentLibrary.Input({
                     type: 'email',
                     placeholder: 'Enter email...',
-                    onChange: (value) => console.log('Email:', value)
+                    onChange: (value) => window.debugLog('NAVIGATION', 'Email:', value)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(emailInput);
                 
@@ -1921,7 +1921,7 @@ const ToolsSection = {
                         { value: 'option2', label: 'Option 2' },
                         { value: 'option3', label: 'Option 3' }
                     ],
-                    onChange: (value) => console.log('Selected:', value)
+                    onChange: (value) => window.debugLog('TOOLS', 'Selected:', value)
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(select);
                 return select.render();
@@ -2115,7 +2115,7 @@ const ToolsSection = {
             () => {
                 const collapsible = new ComponentLibrary.CollapsibleBase({
                     isExpanded: false,
-                    onToggle: (expanded) => console.log('Collapsible:', expanded ? 'expanded' : 'collapsed')
+                    onToggle: (expanded) => window.debugLog('NAVIGATION', 'Collapsible:', expanded ? 'expanded' : 'collapsed')
                 }, { MF: window.MathematicalFoundation });
                 this.componentInstances.push(collapsible);
                 return collapsible.render();
@@ -2184,15 +2184,15 @@ const ToolsSection = {
      * Test utility methods
      */
     runAllTests() {
-        console.log('Running all UI tests...');
+        window.debugLog('NAVIGATION', 'Running all UI tests...');
     },
     
     runVGATest() {
-        console.log('Running VGA test...');
+        window.debugLog('NAVIGATION', 'Running VGA test...');
     },
     
     runCanvasTest() {
-        console.log('Running canvas test...');
+        window.debugLog('NAVIGATION', 'Running canvas test...');
     },
     
     clearTestArea() {
@@ -2226,7 +2226,7 @@ const ToolsSection = {
      * Initialize section (legacy support)
      */
     init() {
-        console.log(`🔧 Tools Section v${this.version} initialized`);
+        window.debugLog('NAVIGATION', `🔧 Tools Section v${this.version} initialized`);
     },
     
     /**

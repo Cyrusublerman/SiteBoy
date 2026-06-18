@@ -29,7 +29,7 @@ const BlogSection = {
      */
     async handleRoute(subsection, container, callbacks) {
         callbacks = callbacks || {};
-        console.log(`📝 Blog Section v${this.version} handling route: ${subsection || 'index'}`);
+        window.debugLog('NAVIGATION', `📝 Blog Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
@@ -43,7 +43,7 @@ const BlogSection = {
         
         // Apply proper body sizing for blog section (with subheader)
         // Content container positioning now handled by PageContainer like headers/footers
-        console.log('✅ Blog section loaded with deterministic container positioning');
+        window.debugLog('LAYOUT', '✅ Blog section loaded with deterministic container positioning');
         
         // Setup unified navigation (same code for all sections)
         window.NavigationController.setupNavigation('blog', subsection, this.getNavigationPages(), this.navigationCallbacks);
@@ -98,7 +98,7 @@ const BlogSection = {
                 this.slugIndex.set(file.slug, file);
             });
             this.manifestReady = true;
-            console.log(`🗂️ Loaded blog manifest with ${this.slugIndex.size} documents`);
+            window.debugLog('NAVIGATION', `🗂️ Loaded blog manifest with ${this.slugIndex.size} documents`);
         } else {
             console.warn('⚠️ Blog manifest not found or invalid');
         }
@@ -171,7 +171,7 @@ const BlogSection = {
         if (this.navigationCallbacks && this.navigationCallbacks.navigateToSection) {
             this.navigationCallbacks.navigateToSection('blog', item.slug);
         }
-        console.log(`📝 Blog TOC item clicked: ${item.title}`);
+        window.debugLog('NAVIGATION', `📝 Blog TOC item clicked: ${item.title}`);
     },
     
     
@@ -182,7 +182,7 @@ const BlogSection = {
      * Render individual article
      */
     async renderArticle(entry) {
-        console.log(`📝 Rendering article: ${entry.slug}`);
+        window.debugLog('TOOLS', `📝 Rendering article: ${entry.slug}`);
         
         // Clear container 
         this.currentContainer.innerHTML = '';
@@ -206,7 +206,7 @@ const BlogSection = {
         // Load and render markdown content
         await this.loadAndRenderMarkdown(entry);
         
-        console.log('✅ Article rendered');
+        window.debugLog('TOOLS', '✅ Article rendered');
     },
 
     /**
@@ -215,7 +215,7 @@ const BlogSection = {
     async loadAndRenderMarkdown(entry) {
         try {
             const markdownPath = `blog/${entry.slug}.md`;
-            console.log(`📝 Loading markdown from: ${markdownPath}`);
+            window.debugLog('NAVIGATION', `📝 Loading markdown from: ${markdownPath}`);
             
             // Show loading message
             const loadingMsg = new ComponentLibrary.Paragraph({
@@ -244,7 +244,7 @@ const BlogSection = {
             this.componentInstances.push(markdownBody);
             this.currentContainer.appendChild(markdownBody.render());
             
-            console.log('✅ Markdown content loaded and rendered');
+            window.debugLog('TOOLS', '✅ Markdown content loaded and rendered');
             
         } catch (error) {
             console.error(`❌ Error loading markdown content:`, error);
@@ -301,7 +301,7 @@ const BlogSection = {
      * Cleanup section - destroy all component instances
      */
     cleanup() {
-        console.log('🧹 Destroying previous blog section components...');
+        window.debugLog('NAVIGATION', '🧹 Destroying previous blog section components...');
         
         if (this.currentContainer) {
             this.currentContainer.innerHTML = '';
@@ -314,7 +314,7 @@ const BlogSection = {
         this.currentArticle = null;
         this.currentCategory = null;
         
-        console.log('✅ Blog section cleanup complete');
+        window.debugLog('VERBOSE', '✅ Blog section cleanup complete');
     },
     
     /**
@@ -335,7 +335,7 @@ const BlogSection = {
      * Initialize section (legacy support)
      */
     init() {
-        console.log(`📝 Blog Section v${this.version} initialized - TOC + Articles Structure`);
+        window.debugLog('NAVIGATION', `📝 Blog Section v${this.version} initialized - TOC + Articles Structure`);
     },
     
     /**

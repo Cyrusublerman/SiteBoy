@@ -277,5 +277,5 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     // Export
     window.AsteroidBeltTool = AsteroidBeltTool;
     
-    console.log('✅ AsteroidBeltTool loaded (ToolBase)');
+    window.debugLog('TOOLS', '✅ AsteroidBeltTool loaded (ToolBase)');
 })();

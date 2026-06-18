@@ -98,10 +98,10 @@ export const DynamicFManager = {
             window.dispatchEvent(new Event('resize'));
             
             // 7. Log the change (values calculated automatically via getters)
-            console.log(`✅ F system updated to ${newF}px`);
-            console.log(`📊 Header height: ${window.Config.sizing.header}px`);
-            console.log(`📊 Desktop margin: ${window.Config.margins.desktop}px`);
-            console.log(`📊 Mobile margin: ${window.Config.margins.mobile}px`);
+            window.debugLog('LAYOUT', `✅ F system updated to ${newF}px`);
+            window.debugLog('LAYOUT', `📊 Header height: ${window.Config.sizing.header}px`);
+            window.debugLog('LAYOUT', `📊 Desktop margin: ${window.Config.margins.desktop}px`);
+            window.debugLog('LAYOUT', `📊 Mobile margin: ${window.Config.margins.mobile}px`);
             
             return true;
             
@@ -162,19 +162,19 @@ export const DynamicFManager = {
      * Usage: DynamicFManager.testDifferentSizes()
      */
     testDifferentSizes() {
-        console.log('🧪 Testing different F sizes...');
+        window.debugLog('LAYOUT', '🧪 Testing different F sizes...');
         const values = this.getTestValues();
         let index = 0;
         
         const testNext = () => {
             if (index < values.length) {
                 const test = values[index];
-                console.log(`🔬 Testing: ${test.description}`);
+                window.debugLog('LAYOUT', `🔬 Testing: ${test.description}`);
                 this.setF(test.F);
                 index++;
                 setTimeout(testNext, 2000); // 2 second intervals
             } else {
-                console.log('✅ F size testing complete!');
+                window.debugLog('LAYOUT', '✅ F size testing complete!');
                 this.setF(12); // Reset to default
             }
         };
@@ -240,11 +240,11 @@ export const DynamicFManager = {
             }
         };
         
-        console.log('🔍 F System Validation Report:', report);
+        window.debugLog('LAYOUT', '🔍 F System Validation Report:', report);
         if (report.isConsistent) {
-            console.log('✅ All F system values are consistent!');
+            window.debugLog('LAYOUT', '✅ All F system values are consistent!');
         } else {
-            console.log('❌ F system inconsistencies found:', report.warnings);
+            window.debugLog('LAYOUT', '❌ F system inconsistencies found:', report.warnings);
         }
         
         return report;
@@ -254,13 +254,13 @@ export const DynamicFManager = {
      * Complete F system test - changes F and validates everything updates
      */
     async testCompleteFSystem() {
-        console.log('🧪 Starting Complete F System Test...');
+        window.debugLog('LAYOUT', '🧪 Starting Complete F System Test...');
         
         const originalF = this.getCurrentF();
         const testValues = [8, 16, 20, originalF];
         
         for (const testF of testValues) {
-            console.log(`\n🔬 Testing F = ${testF}px`);
+            window.debugLog('LAYOUT', `\n🔬 Testing F = ${testF}px`);
             
             // Set F value
             this.setF(testF);
@@ -272,21 +272,21 @@ export const DynamicFManager = {
             const report = this.validateFSystem();
             
             if (report.isConsistent) {
-                console.log(`✅ F=${testF}px: All systems consistent`);
+                window.debugLog('LAYOUT', `✅ F=${testF}px: All systems consistent`);
             } else {
-                console.log(`❌ F=${testF}px: Inconsistencies found`);
-                console.log(report.warnings);
+                window.debugLog('LAYOUT', `❌ F=${testF}px: Inconsistencies found`);
+                window.debugLog('LAYOUT', report.warnings);
             }
             
             // Log some key values to verify
-            console.log(`   Header: ${window.Config?.sizing?.header}px`);
-            console.log(`   Desktop Margin: ${window.Config?.margins?.desktop}px`);
-            console.log(`   CSS --f: ${getComputedStyle(document.documentElement).getPropertyValue('--f')}`);
-            console.log(`   CSS --header-height: ${getComputedStyle(document.documentElement).getPropertyValue('--header-height')}`);
+            window.debugLog('LAYOUT', `   Header: ${window.Config?.sizing?.header}px`);
+            window.debugLog('LAYOUT', `   Desktop Margin: ${window.Config?.margins?.desktop}px`);
+            window.debugLog('LAYOUT', `   CSS --f: ${getComputedStyle(document.documentElement).getPropertyValue('--f')}`);
+            window.debugLog('LAYOUT', `   CSS --header-height: ${getComputedStyle(document.documentElement).getPropertyValue('--header-height')}`);
         }
         
-        console.log('\n🎯 Complete F System Test finished!');
-        console.log('Result: Change Config.F and EVERYTHING should update automatically');
+        window.debugLog('LAYOUT', '\n🎯 Complete F System Test finished!');
+        window.debugLog('LAYOUT', 'Result: Change Config.F and EVERYTHING should update automatically');
     },
     
 };
@@ -294,4 +294,4 @@ export const DynamicFManager = {
 // Make available globally for console testing
 window.DynamicFManager = DynamicFManager;
 
-console.log('🎛️ Dynamic F Manager loaded - Try: DynamicFManager.setF(16)');
+window.debugLog('LAYOUT', '🎛️ Dynamic F Manager loaded - Try: DynamicFManager.setF(16)');

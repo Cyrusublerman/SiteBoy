@@ -108,7 +108,7 @@ import ComponentLibrary from '../../shared/component-library.js';
         },
         
         onInit: async function(values) {
-            console.log('🔤 Font Analysis Tool initialized');
+            window.debugLog('TOOLS', '🔤 Font Analysis Tool initialized');
 
             // Load initial fonts
             const fonts = [values.font1Family, values.font2Family, values.font3Family];
@@ -116,7 +116,7 @@ import ComponentLibrary from '../../shared/component-library.js';
                 if (font && font !== 'Space Mono') {
                     try {
                         await fontLoader.loadFont(font);
-                        console.log(`✅ Loaded font: ${font}`);
+                        window.debugLog('TOOLS', `✅ Loaded font: ${font}`);
                     } catch (e) {
                         console.warn(`❌ Failed to load font: ${font}`);
                     }
@@ -129,7 +129,7 @@ import ComponentLibrary from '../../shared/component-library.js';
             if (key.endsWith('Family') && value && value !== 'Space Mono') {
                 try {
                     await fontLoader.loadFont(value);
-                    console.log(`✅ Loaded font: ${value}`);
+                    window.debugLog('TOOLS', `✅ Loaded font: ${value}`);
                 } catch (e) {
                     console.warn(`❌ Failed to load font: ${value}`);
                 }
@@ -537,4 +537,4 @@ export class FontAnalysisTool {
 // Export config for direct ToolBase usage
 export { TOOL_CONFIG as FontAnalysisToolConfig };
 
-console.log('🔤 Font Analysis Tool (ES Module) ready');
+window.debugLog('TOOLS', '🔤 Font Analysis Tool (ES Module) ready');

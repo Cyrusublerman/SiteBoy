@@ -972,7 +972,7 @@ export class UnifiedPatternTool {
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ Tile Mosaic Generator v2.2.0');
+            window.debugLog('TOOLS', '✅ Tile Mosaic Generator v2.2.0');
         } catch (error) {
             console.error('❌ UnifiedPatternTool error:', error);
             this.container.innerHTML = 

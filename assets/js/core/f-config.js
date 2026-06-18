@@ -95,9 +95,9 @@ margin: var(--target-margin);  // Always F × 4
 
 // Dynamic changes:
 import { F } from './f-config.js';
-console.log(`Current F: ${F}px`);
-console.log(`Header will be: ${F * 2}px`);
-console.log(`Desktop margin will be: ${F * 4}px`);
+window.debugLog('LAYOUT', `Current F: ${F}px`);
+window.debugLog('LAYOUT', `Header will be: ${F * 2}px`);
+window.debugLog('LAYOUT', `Desktop margin will be: ${F * 4}px`);
 
 // To change F:
 // 1. Edit the F value at the top of this file
@@ -106,7 +106,7 @@ console.log(`Desktop margin will be: ${F * 4}px`);
 // 4. Everything resizes automatically!
 */
 
-console.log(`🎯 F Configuration loaded - F = ${F}px`);
-console.log(`📏 Header height: ${DERIVED_VALUES.header}px`);
-console.log(`📐 Desktop margin: ${DERIVED_VALUES.desktopMargin}px`);
-console.log(`📱 Mobile margin: ${DERIVED_VALUES.mobileMargin}px`);
+window.debugLog('LAYOUT', `🎯 F Configuration loaded - F = ${F}px`);
+window.debugLog('LAYOUT', `📏 Header height: ${DERIVED_VALUES.header}px`);
+window.debugLog('LAYOUT', `📐 Desktop margin: ${DERIVED_VALUES.desktopMargin}px`);
+window.debugLog('LAYOUT', `📱 Mobile margin: ${DERIVED_VALUES.mobileMargin}px`);

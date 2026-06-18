@@ -1,11 +1,11 @@
 # H2 — Eliminate console.log outside owners
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: every file in `assets/js/` except `console.error`/`console.warn` call sites
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,15 +17,10 @@ No `console.log(` calls remain in source. All debug logging uses `window.debugLo
 
 ## Sub-tasks
 
-- [ ] Inventory: `rg "console\.log\(" assets/js/ | wc -l` baseline.
-- [ ] Replace each call with the appropriate `window.debugLog(CATEGORY, …)` per the five-category map in `.cursorrules`:
-  - `INIT` — startup / version messages
-  - `LAYOUT` — F-system / dimensions / resize
-  - `NAVIGATION` — route changes / subheader
-  - `TOOLS` — tool-specific operations
-  - `VERBOSE` — high-frequency operations
-- [ ] Verify `console.error` / `console.warn` remain.
-- [ ] Re-run inventory; verify zero.
+- [x] Inventory: baseline 424 occurrences across 72 files.
+- [x] Replace each call with the appropriate `window.debugLog(CATEGORY, …)` per the five-category map in `.cursorrules`.
+- [x] Verify `console.error` / `console.warn` remain.
+- [x] Re-run inventory; verify zero.
 
 ## Notes / decisions
 

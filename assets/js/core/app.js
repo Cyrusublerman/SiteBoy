@@ -450,7 +450,7 @@ const SiteBoyApp = {
 
         const modeStr = isFullMode ? ' [FULL MODE]' : '';
         window.debugLog('NAVIGATION', `🧭 Route change: ${section}${subsection ? '/' + subsection : ''}${modeStr}`);
-        console.log(`🔍 FULL MODE DEBUG: isFullMode=${isFullMode}, type=${typeof isFullMode}`);
+        window.debugLog('INIT', `🔍 FULL MODE DEBUG: isFullMode=${isFullMode}, type=${typeof isFullMode}`);
 
         // Home mode body class — read by setSubheaderState to branch positioning/visibility
         if (section === 'home') {

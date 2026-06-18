@@ -53,7 +53,7 @@ export class ToolTestUI {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     _onInit(values) {
-        console.log('🎯 Tool Test UI initialized with values:', values);
+        window.debugLog('TOOLS', '🎯 Tool Test UI initialized with values:', values);
 
         // Initialize mode-specific state based on current mode
         switch (this.currentMode) {
@@ -81,7 +81,7 @@ export class ToolTestUI {
     }
 
     _onUpdate(key, value, allValues) {
-        console.log('📝 ' + key + ' changed to:', value);
+        window.debugLog('TOOLS', '📝 ' + key + ' changed to:', value);
 
         // Update mode-specific parameters
         switch (this.currentMode) {
@@ -166,7 +166,7 @@ export class ToolTestUI {
             onDraw: (ctx, canvas, values) => this._onDraw(ctx, canvas, values)
         };
         
-        console.log('🎨 ToolTestUI creating config with canvas:', config.canvas);
+        window.debugLog('TOOLS', '🎨 ToolTestUI creating config with canvas:', config.canvas);
         return config;
     }
 
@@ -308,7 +308,7 @@ export class ToolTestUI {
             // Build ToolBase with initial mode
             this._rebuildToolForMode(this.currentMode);
 
-            console.log('✅ ToolTestUI rendered');
+            window.debugLog('TOOLS', '✅ ToolTestUI rendered');
         } catch (error) {
             console.error('❌ ToolTestUI error:', error);
             this.container.innerHTML =
@@ -906,4 +906,4 @@ export { ToolTestUI as ToolTest };
 // Export as default for default export lookup
 export default ToolTestUI;
 
-console.log('✅ ToolTestUI loaded (ES Module)');
+window.debugLog('TOOLS', '✅ ToolTestUI loaded (ES Module)');

@@ -539,5 +539,5 @@
     // ═══════════════════════════════════════════════════════════════════
     
     window.ColourQuantizer = ColourQuantizer;
-    console.log('✅ ColourQuantizer loaded');
+    window.debugLog('TOOLS', '✅ ColourQuantizer loaded');
 })();

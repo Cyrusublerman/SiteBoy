@@ -547,7 +547,7 @@ import { WaveSolver } from '../../shared/algorithms/index.js';
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ CymaticsTool rendered');
+            window.debugLog('TOOLS', '✅ CymaticsTool rendered');
         } catch (error) {
             console.error('❌ CymaticsTool error:', error);
             this.container.innerHTML =
@@ -581,4 +581,4 @@ if (typeof window !== 'undefined') {
     window.CymaticsTool = CymaticsTool;
 }
 
-console.log('✅ CymaticsTool loaded (ToolBase)');
+window.debugLog('TOOLS', '✅ CymaticsTool loaded (ToolBase)');

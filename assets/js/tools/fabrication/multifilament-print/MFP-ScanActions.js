@@ -157,7 +157,7 @@ export class MFPScanActions {
                         toolBase.draw();
                     };
                     scanImg.src = URL.createObjectURL(scanBlob);
-                    console.log('✅ Scan image loaded from ZIP');
+                    window.debugLog('TOOLS', '✅ Scan image loaded from ZIP');
                 } catch (scanErr) {
                     console.warn('Could not load scan image:', scanErr);
                 }
@@ -170,7 +170,7 @@ export class MFPScanActions {
                     const analysisText = await zip.file(analysisPath).async('string');
                     this.state.scanAnalysis = JSON.parse(analysisText);
                     toolBase.setValue('scanStatus', `✅ Analysis loaded: ${this.state.scanAnalysis.length} tiles`);
-                    console.log('✅ Analysis data loaded from ZIP:', this.state.scanAnalysis.length, 'tiles');
+                    window.debugLog('TOOLS', '✅ Analysis data loaded from ZIP:', this.state.scanAnalysis.length, 'tiles');
                 } catch (analysisErr) {
                     console.warn('Could not load analysis:', analysisErr);
                 }
@@ -184,7 +184,7 @@ export class MFPScanActions {
                     const alignmentData = JSON.parse(alignmentText);
                     if (alignmentData.gridCornersPixel && alignmentData.gridCornersPixel.length === 4) {
                         this.state.gridCornersPixel = alignmentData.gridCornersPixel;
-                        console.log('✅ Grid alignment restored from grid-alignment.json');
+                        window.debugLog('LAYOUT', '✅ Grid alignment restored from grid-alignment.json');
                     }
                 } catch (alignErr) {
                     console.warn('Could not load grid alignment:', alignErr);
@@ -192,11 +192,11 @@ export class MFPScanActions {
             } else if (layout.scanSettings?.gridCornersPixel) {
                 // Fallback to layout.json if no separate alignment file
                 this.state.gridCornersPixel = layout.scanSettings.gridCornersPixel;
-                console.log('✅ Grid corner positions restored from layout');
+                window.debugLog('LAYOUT', '✅ Grid corner positions restored from layout');
             }
             
             toolBase.draw();
-            console.log('✅ Project imported on SCAN tab');
+            window.debugLog('TOOLS', '✅ Project imported on SCAN tab');
             
         } catch (err) {
             console.error('❌ Import error:', err);
@@ -400,7 +400,7 @@ export class MFPScanActions {
             const canvasComponent = toolBase.canvasComponent;
             if (canvasComponent) {
                 canvasComponent.resize(img.width, img.height);
-                console.log(`📐 Canvas resized to scan: ${img.width}×${img.height}px (1:1 mapping)`);
+                window.debugLog('LAYOUT', `📐 Canvas resized to scan: ${img.width}×${img.height}px (1:1 mapping)`);
             }
             
             // Store image bounds (now same as canvas since 1:1)
@@ -453,7 +453,7 @@ export class MFPScanActions {
             { x: x, y: y + scaledHeight }
         ];
         
-        console.log('✅ Grid corners (pixel) initialized:', this.state.gridCornersPixel);
+        window.debugLog('LAYOUT', '✅ Grid corners (pixel) initialized:', this.state.gridCornersPixel);
     }
     
     /**
@@ -488,18 +488,18 @@ export class MFPScanActions {
      * Analyze scan - COMPLETE (pixel sampling, statistics, color extraction)
      */
     async analyzeScan(values, toolBase) {
-        console.log('🔬 analyzeScan called');
-        console.log('  - scanImageElement:', !!this.state.scanImageElement);
-        console.log('  - referenceGridData:', !!this.state.referenceGridData);
-        console.log('  - gridCornersPixel:', this.state.gridCornersPixel);
+        window.debugLog('TOOLS', '🔬 analyzeScan called');
+        window.debugLog('TOOLS', '  - scanImageElement:', !!this.state.scanImageElement);
+        window.debugLog('LAYOUT', '  - referenceGridData:', !!this.state.referenceGridData);
+        window.debugLog('LAYOUT', '  - gridCornersPixel:', this.state.gridCornersPixel);
         
         if (!this.state.scanImageElement) {
-            console.log('❌ No scan image');
+            window.debugLog('TOOLS', '❌ No scan image');
             toolBase.setValue('scanStatus', '❌ Load scan image first');
             return;
         }
         if (!this.state.referenceGridData) {
-            console.log('❌ No reference grid data');
+            window.debugLog('LAYOUT', '❌ No reference grid data');
             toolBase.setValue('scanStatus', '❌ Load grid first (CSV or generate)');
             return;
         }
@@ -507,12 +507,12 @@ export class MFPScanActions {
         // CRITICAL: Use the actual corner positions for perspective-correct sampling
         const corners = this.state.gridCornersPixel;
         if (!corners || corners.length !== 4) {
-            console.log('❌ No grid corners');
+            window.debugLog('LAYOUT', '❌ No grid corners');
             toolBase.setValue('scanStatus', '❌ Grid overlay not aligned. Drag corners to align with scan.');
             return;
         }
         
-        console.log('✅ All prerequisites met, starting analysis...');
+        window.debugLog('TOOLS', '✅ All prerequisites met, starting analysis...');
         toolBase.setValue('scanStatus', '⏳ Analyzing scan (perspective-correct sampling)...');
         
         // Small delay for UI update
@@ -663,12 +663,12 @@ export class MFPScanActions {
             
             // Store analysis data
             this.state.scanAnalysis = analysisData;
-            console.log('✅ Analysis data stored:', analysisData.length, 'tiles');
+            window.debugLog('TOOLS', '✅ Analysis data stored:', analysisData.length, 'tiles');
             
             // Generate quantization config
             if (typeof this._generateQuantizationConfig === 'function') {
                 this.state.quantizationConfig = this._generateQuantizationConfig(analysisData, gridData);
-                console.log('✅ Quantization config generated');
+                window.debugLog('TOOLS', '✅ Quantization config generated');
             } else {
                 console.warn('⚠️ _generateQuantizationConfig not found');
             }
@@ -679,7 +679,7 @@ export class MFPScanActions {
             
             toolBase.setValue('scanStatus', `✅ Analyzed ${analysisData.length} tiles (${totalPixelsSampled.toLocaleString()} pixels) | Avg deviation: ${avgDeviation}`);
             
-            console.log('📊 Scan analysis complete:', {
+            window.debugLog('TOOLS', '📊 Scan analysis complete:', {
                 tilesAnalyzed: analysisData.length,
                 totalPixels: totalPixelsSampled,
                 avgPixelsPerTile: analysisData.length > 0 ? Math.round(totalPixelsSampled / analysisData.length) : 0,
@@ -698,12 +698,12 @@ export class MFPScanActions {
      * Shows interactive grid with all analysis data
      */
     viewAnalysis(toolBase) {
-        console.log('👁️ viewAnalysis called');
-        console.log('  - scanAnalysis:', this.state.scanAnalysis?.length, 'tiles');
-        console.log('  - referenceGridData:', !!this.state.referenceGridData);
+        window.debugLog('TOOLS', '👁️ viewAnalysis called');
+        window.debugLog('TOOLS', '  - scanAnalysis:', this.state.scanAnalysis?.length, 'tiles');
+        window.debugLog('LAYOUT', '  - referenceGridData:', !!this.state.referenceGridData);
         
         if (!this.state.scanAnalysis || !this.state.referenceGridData) {
-            console.log('❌ Missing analysis or grid data');
+            window.debugLog('LAYOUT', '❌ Missing analysis or grid data');
             toolBase.setValue('scanStatus', '❌ No analysis data available. Run "Analyze Scan" first.');
             return;
         }
@@ -717,7 +717,7 @@ export class MFPScanActions {
             return;
         }
         
-        console.log('📊 Showing analysis view with', analysis.length, 'tiles');
+        window.debugLog('TOOLS', '📊 Showing analysis view with', analysis.length, 'tiles');
         
         // Get canvas area container
         const canvasArea = toolBase.container?.querySelector('.tool-canvas-area');
@@ -1079,7 +1079,7 @@ export class MFPScanActions {
             ]
         };
         
-        console.log('✅ Grid overlay auto-calculated');
+        window.debugLog('LAYOUT', '✅ Grid overlay auto-calculated');
     }
     
     _generateQuantizationConfig(analysisData, gridData) {

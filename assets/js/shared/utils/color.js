@@ -180,6 +180,6 @@ export const ColorUtils = {
 // UMD export for non-module usage (ToolBase compatibility)
 if (typeof window !== 'undefined') {
     window.ColorUtils = ColorUtils;
-    console.log('🎨 ColorUtils v1.0.0 ready - VGA palette, depth interpolation');
+    window.debugLog('INIT', '🎨 ColorUtils v1.0.0 ready - VGA palette, depth interpolation');
 }
 

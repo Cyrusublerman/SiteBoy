@@ -410,7 +410,7 @@ export class SmartHalftoneTool {
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ SmartHalftoneTool rendered');
+            window.debugLog('TOOLS', '✅ SmartHalftoneTool rendered');
         } catch (error) {
             console.error('❌ SmartHalftoneTool error:', error);
             this.container.innerHTML = 
@@ -436,5 +436,5 @@ export class SmartHalftoneTool {
 // Export as default for tools_section.js
 export default SmartHalftoneTool;
 
-console.log('✅ SmartHalftoneTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ SmartHalftoneTool loaded (ES Module)');
 

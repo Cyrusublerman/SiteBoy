@@ -446,7 +446,7 @@ export class TileMosaicTool {
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ TileMosaicTool rendered');
+            window.debugLog('TOOLS', '✅ TileMosaicTool rendered');
         } catch (error) {
             console.error('❌ TileMosaicTool error:', error);
             this.container.innerHTML = 
@@ -476,5 +476,5 @@ export class TileMosaicTool {
 // Export as default for tools_section.js
 export default TileMosaicTool;
 
-console.log('✅ TileMosaicTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ TileMosaicTool loaded (ES Module)');
 

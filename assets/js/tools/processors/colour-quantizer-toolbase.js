@@ -384,14 +384,14 @@ export const TOOL_CONFIG = {
             
             // Wire up callbacks now that we have access to 'this'
             state.adjustmentBundle.options.onChange = function(adjustedImage, settings) {
-                console.log('📊 Adjustment bundle onChange:', settings);
+                window.debugLog('TOOLS', '📊 Adjustment bundle onChange:', settings);
                 state.previewImageData = adjustedImage;
                 state.currentImageData = adjustedImage;
                 self.draw();
             };
             
             state.adjustmentBundle.options.onTransform = function(transformedImage, transform) {
-                console.log('🔄 Transform applied:', transform.type);
+                window.debugLog('TOOLS', '🔄 Transform applied:', transform.type);
                 state.originalImageData = transformedImage;
                 
                 if (transform.type === 'resize') {
@@ -405,7 +405,7 @@ export const TOOL_CONFIG = {
                 self.draw();
             };
             
-            console.log('✅ Adjustment bundle initialized:', state.adjustmentBundle);
+            window.debugLog('TOOLS', '✅ Adjustment bundle initialized:', state.adjustmentBundle);
 
             // Wire add colour button
             var addColourBtn = this.getComponent('addColour');
@@ -590,11 +590,11 @@ export const TOOL_CONFIG = {
         onUpdate: function(key, value, allValues) {
             var self = this;
             
-            console.log('🔄 onUpdate called:', key, value ? '(value exists)' : '(no value)');
+            window.debugLog('TOOLS', '🔄 onUpdate called:', key, value ? '(value exists)' : '(no value)');
 
             // Handle file upload
             if (key === 'imageFile' && value) {
-                console.log('📁 File upload detected, calling loadImage');
+                window.debugLog('TOOLS', '📁 File upload detected, calling loadImage');
                 loadImage(self, value);
                 return;
             }
@@ -634,7 +634,7 @@ export const TOOL_CONFIG = {
                         var displayHeight = allValues.canvasHeight || 420;
                         this.canvas.width = Math.ceil(displayWidth);
                         this.canvas.height = Math.ceil(displayHeight);
-                        console.log('📐 Canvas resized to:', this.canvas.width, 'x', this.canvas.height);
+                        window.debugLog('LAYOUT', '📐 Canvas resized to:', this.canvas.width, 'x', this.canvas.height);
                     }
                 }
                 
@@ -689,12 +689,12 @@ export const TOOL_CONFIG = {
                 state.originalImageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
                 state.originalFileName = file.name.replace(/\.[^/.]+$/, '');
                 
-                console.log('📸 Image loaded:', img.naturalWidth, 'x', img.naturalHeight);
+                window.debugLog('LAYOUT', '📸 Image loaded:', img.naturalWidth, 'x', img.naturalHeight);
                 
                 // Pass image to adjustment bundle
                 if (state.adjustmentBundle) {
                     state.adjustmentBundle.setImage(state.originalImageData);
-                    console.log('🎨 Image passed to adjustment bundle');
+                    window.debugLog('TOOLS', '🎨 Image passed to adjustment bundle');
                 }
                 
                 // Set flag to prevent onUpdate from triggering during setValue
@@ -714,7 +714,7 @@ export const TOOL_CONFIG = {
                 if (tool.canvas) {
                     tool.canvas.width = img.naturalWidth;
                     tool.canvas.height = img.naturalHeight;
-                    console.log('📐 Canvas resized to:', tool.canvas.width, 'x', tool.canvas.height);
+                    window.debugLog('LAYOUT', '📐 Canvas resized to:', tool.canvas.width, 'x', tool.canvas.height);
                     
                     // Apply display mode via Canvas component
                     if (tool.canvasComponent) {
@@ -734,7 +734,7 @@ export const TOOL_CONFIG = {
                 updatePreview(tool);
                 tool.setStatus('Image loaded: ' + img.naturalWidth + 'x' + img.naturalHeight);
                 
-                console.log('✅ Image processing complete');
+                window.debugLog('TOOLS', '✅ Image processing complete');
             };
             img.onerror = function() {
                 console.error('❌ Failed to load image');
@@ -752,7 +752,7 @@ export const TOOL_CONFIG = {
     function updatePreview(tool) {
         // Adjustment bundle now handles preview updates via onChange callback
         // This function kept for backwards compatibility but does nothing
-        console.log('⚠️ updatePreview called (deprecated - bundle handles this)');
+        window.debugLog('TOOLS', '⚠️ updatePreview called (deprecated - bundle handles this)');
     }
 
     function updateCustomCount(tool) {
@@ -1080,8 +1080,8 @@ export const TOOL_CONFIG = {
                 
                 // Reconstruct ImageData from worker result
                 // result.data is already Uint8ClampedArray from transfer - don't copy it!
-                console.log('📥 Main: Received result data type:', result.data?.constructor?.name);
-                console.log('📥 Main: Is Uint8ClampedArray?', result.data instanceof Uint8ClampedArray);
+                window.debugLog('TOOLS', '📥 Main: Received result data type:', result.data?.constructor?.name);
+                window.debugLog('TOOLS', '📥 Main: Is Uint8ClampedArray?', result.data instanceof Uint8ClampedArray);
                 
                 var data = result.data instanceof Uint8ClampedArray 
                     ? result.data 
@@ -1090,12 +1090,12 @@ export const TOOL_CONFIG = {
                 if (!(result.data instanceof Uint8ClampedArray)) {
                     console.warn('⚠️ Main: Had to copy result data');
                 } else {
-                    console.log('✅ Main: Using transferred data directly (zero-copy)');
+                    window.debugLog('TOOLS', '✅ Main: Using transferred data directly (zero-copy)');
                 }
                 
                 var processedImageData = new ImageData(data, result.width, result.height);
                 result = processedImageData;
-                console.log('⏱️ Worker total time:', (performance.now() - startTime).toFixed(2), 'ms');
+                window.debugLog('TOOLS', '⏱️ Worker total time:', (performance.now() - startTime).toFixed(2), 'ms');
             } catch (workerErr) {
                 // Fallback to synchronous processing
                 console.warn('Worker processing failed, using synchronous fallback:', workerErr);
@@ -1109,7 +1109,7 @@ export const TOOL_CONFIG = {
                         resolve();
                     }, 50);
                 });
-                console.log('⏱️ Synchronous total time:', (performance.now() - syncStartTime).toFixed(2), 'ms');
+                window.debugLog('TOOLS', '⏱️ Synchronous total time:', (performance.now() - syncStartTime).toFixed(2), 'ms');
             }
 
             var endTime = performance.now();
@@ -1256,7 +1256,7 @@ export class ColourQuantizerTool {
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ ColourQuantizerTool rendered');
+            window.debugLog('TOOLS', '✅ ColourQuantizerTool rendered');
         } catch (error) {
             console.error('❌ ColourQuantizerTool error:', error);
             // Use ComponentLibrary Text for error display
@@ -1288,5 +1288,5 @@ if (typeof window !== 'undefined') {
     window.ColourQuantizerTool = ColourQuantizerTool;
 }
 
-console.log('✅ ColourQuantizerTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ ColourQuantizerTool loaded (ES Module)');
 

@@ -237,7 +237,7 @@ export class GenerativeGallery extends BaseComponent {
      */
     openScript(scriptId) {
         window.debugLog('TOOLS', `🎨 Opening script: ${scriptId}`);
-        console.log('Gallery: Navigating to #tools/generators?script=' + scriptId);
+        window.debugLog('NAVIGATION', 'Gallery: Navigating to #tools/generators?script=' + scriptId);
         
         // Navigate to generators route with script param
         window.location.hash = `#tools/generators?script=${scriptId}`;

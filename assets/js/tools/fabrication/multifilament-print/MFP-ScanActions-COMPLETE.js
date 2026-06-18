@@ -372,7 +372,7 @@ export class MFPScanActions {
             
             toolBase.setValue('scanStatus', `✅ Analyzed ${analysisData.length} tiles (${totalPixelsSampled.toLocaleString()} pixels) | Avg deviation: ${avgDeviation}`);
             
-            console.log('📊 Scan analysis complete:', {
+            window.debugLog('TOOLS', '📊 Scan analysis complete:', {
                 tilesAnalyzed: analysisData.length,
                 totalPixels: totalPixelsSampled,
                 avgPixelsPerTile: Math.round(totalPixelsSampled / analysisData.length),
@@ -725,7 +725,7 @@ export class MFPScanActions {
             ]
         };
         
-        console.log('✅ Grid overlay auto-calculated');
+        window.debugLog('LAYOUT', '✅ Grid overlay auto-calculated');
     }
     
     _generateQuantizationConfig(analysisData, gridData) {

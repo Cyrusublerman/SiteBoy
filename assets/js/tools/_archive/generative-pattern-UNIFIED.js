@@ -704,7 +704,7 @@ import {
         window.GenerativePatternToolUnified = GenerativePatternTool;
     }
     
-    console.log('✅ GenerativePatternTool v5.0.0 (UNIFIED)');
+    window.debugLog('TOOLS', '✅ GenerativePatternTool v5.0.0 (UNIFIED)');
 
 
 

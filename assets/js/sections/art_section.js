@@ -176,7 +176,7 @@ const ArtSection = {
     async handleRoute(subsection, container, callbacks) {
         callbacks = callbacks || {};
         await this._ensureRegistry();
-        console.log(`Art Section v${this.version} route: ${subsection || 'index'}`);
+        window.debugLog('NAVIGATION', `Art Section v${this.version} route: ${subsection || 'index'}`);
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
         this.cleanup();

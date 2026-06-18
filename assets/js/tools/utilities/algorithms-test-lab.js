@@ -908,7 +908,7 @@ import { imageToImageData, BatchDrawer } from '../../shared/utils/canvas.js';
     }
 
     function handlePlaybackAction(fullId, action) {
-        console.log(`[Algorithms Test Lab] ${action} triggered for ${fullId}`);
+        window.debugLog('TOOLS', `[Algorithms Test Lab] ${action} triggered for ${fullId}`);
     }
 
     /**
@@ -3746,7 +3746,7 @@ export class AlgorithmsTestLab {
         } else {
             window.addEventListener('algorithmsReady', () => {
                 this.algorithmsReady = true;
-                console.log('✅ Algorithms ready, tool can now render properly');
+                window.debugLog('TOOLS', '✅ Algorithms ready, tool can now render properly');
             });
         }
     }
@@ -3934,7 +3934,7 @@ export class AlgorithmsTestLab {
 // Register globally for backward compatibility
 if (typeof window !== 'undefined') {
     window.AlgorithmsTestLab = AlgorithmsTestLab;
-    console.log('✅ AlgorithmsTestLab (ES Module) loaded');
+    window.debugLog('TOOLS', '✅ AlgorithmsTestLab (ES Module) loaded');
 }
 
 // Default export for ES module loader (tools_section.js expects default or *Tool named export)

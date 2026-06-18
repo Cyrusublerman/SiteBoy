@@ -83,10 +83,10 @@ export class Grid extends BaseComponent {
             
             // Schedule calculation for after DOM insertion with more delay
             setTimeout(() => {
-                console.log('🚨🚨🚨 NEW GRID CODE IS RUNNING 🚨🚨🚨');
-                console.log('🔧 Grid render timeout triggered');
+                window.debugLog('LAYOUT', '🚨🚨🚨 NEW GRID CODE IS RUNNING 🚨🚨🚨');
+                window.debugLog('LAYOUT', '🔧 Grid render timeout triggered');
                 if (this.element && this.element.parentElement) {
-                    console.log('🔧 Grid has parent, calculating...');
+                    window.debugLog('LAYOUT', '🔧 Grid has parent, calculating...');
                     this.calculateAndRender();
                     if (this.onItemClick || this.onCaptionArrowClick) {
                         this.bindEvents();
@@ -97,7 +97,7 @@ export class Grid extends BaseComponent {
                         this.containerObserver.observe(this.element.parentElement);
                     }
                 } else {
-                    console.log('🚨 Grid render failed - no parent element');
+                    window.debugLog('LAYOUT', '🚨 Grid render failed - no parent element');
                     this.element.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--vga-red);">❌ Grid failed to initialize</div>';
                 }
             }, 100); // Increased delay
@@ -126,9 +126,9 @@ export class Grid extends BaseComponent {
         // FORCE: Measure the IMMEDIATE parent container only - no parent chain walking
         const immediateParent = this.element.parentElement;
         
-        console.log('🔧 CONTAINER TRACING:');
-        console.log(`   Element: ${this.element.className}`);
-        console.log(`   Immediate Parent: ${immediateParent?.tagName} class="${immediateParent?.className}" id="${immediateParent?.id}"`);
+        window.debugLog('LAYOUT', '🔧 CONTAINER TRACING:');
+        window.debugLog('LAYOUT', `   Element: ${this.element.className}`);
+        window.debugLog('LAYOUT', `   Immediate Parent: ${immediateParent?.tagName} class="${immediateParent?.className}" id="${immediateParent?.id}"`);
         
         // Walk up to see the container hierarchy
         let current = this.element;
@@ -136,7 +136,7 @@ export class Grid extends BaseComponent {
         while (current && level < 6) {
             const rect = current.getBoundingClientRect();
             const computed = getComputedStyle(current);
-            console.log(`   Level ${level}: ${current.tagName}${current.id ? '#' + current.id : ''}${current.className ? '.' + current.className.split(' ').join('.') : ''} → ${Math.round(rect.width)}px (computed: ${computed.width})`);
+            window.debugLog('LAYOUT', `   Level ${level}: ${current.tagName}${current.id ? '#' + current.id : ''}${current.className ? '.' + current.className.split(' ').join('.') : ''} → ${Math.round(rect.width)}px (computed: ${computed.width})`);
             current = current.parentElement;
             level++;
         }
@@ -157,7 +157,7 @@ export class Grid extends BaseComponent {
         
         // Use the found target container (46F container) instead of immediate parent
         const containerToMeasure = targetContainer || immediateParent;
-        console.log(`🎯 Using container: ${containerToMeasure.tagName}${containerToMeasure.id ? '#' + containerToMeasure.id : ''} for measurement`);
+        window.debugLog('LAYOUT', `🎯 Using container: ${containerToMeasure.tagName}${containerToMeasure.id ? '#' + containerToMeasure.id : ''} for measurement`);
         
         const parentRect = containerToMeasure.getBoundingClientRect();
         const parentStyle = getComputedStyle(containerToMeasure);
@@ -185,7 +185,7 @@ export class Grid extends BaseComponent {
         if (!cols) {
             // Use your elegant mathematical equation
             cols = this.calculateColumns(availableWidth, availableWidth);
-            console.log(`🔧 Mathematical equation: ${cols} cols for ${availableWidth}px (3.982 * 1.0 - 1.088 = ${3.982 * 1.0 - 1.088})`);
+            window.debugLog('LAYOUT', `🔧 Mathematical equation: ${cols} cols for ${availableWidth}px (3.982 * 1.0 - 1.088 = ${3.982 * 1.0 - 1.088})`);
         }
         
         const gap = 1; // 1px gap like reference (not F-based, this is outline)
@@ -195,11 +195,11 @@ export class Grid extends BaseComponent {
         const boxSize = Math.floor((availableWidth - totalGaps) / cols);
         const gridWidth = boxSize * cols + totalGaps;
         
-        console.log(`🔧 Universal calculation: ${cols} × ${boxSize}px + ${totalGaps}px gaps = ${gridWidth}px (fits in ${availableWidth}px)`);
+        window.debugLog('LAYOUT', `🔧 Universal calculation: ${cols} × ${boxSize}px + ${totalGaps}px gaps = ${gridWidth}px (fits in ${availableWidth}px)`);
         
         // Verify mathematical precision - should never overflow
         if (gridWidth > availableWidth) {
-            console.log(`🚨 MATH ERROR: ${gridWidth}px > ${availableWidth}px - this should never happen`);
+            window.debugLog('LAYOUT', `🚨 MATH ERROR: ${gridWidth}px > ${availableWidth}px - this should never happen`);
         }
         
         const marginLeft = 0;
@@ -246,13 +246,13 @@ export class Grid extends BaseComponent {
         
         // Debug logging to understand sizing issues - DETAILED CONTAINER ANALYSIS
         if (window.location.hash.includes('ui-test')) {
-            console.log('🔧 Grid Container Debug - MEASURING ISSUE ANALYSIS:');
-            console.log(`   📏 Measured Container Width: ${containerWidth}px`);
-            console.log(`   📐 Calculated Available Width: ${availableWidth}px`);
-            console.log(`   📊 Calculated Columns: ${cols}`);
-            console.log(`   📦 Calculated Box Size: ${boxSize}px`);
-            console.log(`   📏 Calculated Grid Width: ${gridWidth}px`);
-            console.log(`   📋 Immediate Parent ID: ${this.element.parentElement?.id || 'no-id'}`);
+            window.debugLog('LAYOUT', '🔧 Grid Container Debug - MEASURING ISSUE ANALYSIS:');
+            window.debugLog('LAYOUT', `   📏 Measured Container Width: ${containerWidth}px`);
+            window.debugLog('LAYOUT', `   📐 Calculated Available Width: ${availableWidth}px`);
+            window.debugLog('LAYOUT', `   📊 Calculated Columns: ${cols}`);
+            window.debugLog('LAYOUT', `   📦 Calculated Box Size: ${boxSize}px`);
+            window.debugLog('LAYOUT', `   📏 Calculated Grid Width: ${gridWidth}px`);
+            window.debugLog('LAYOUT', `   📋 Immediate Parent ID: ${this.element.parentElement?.id || 'no-id'}`);
             
             // Walk up the container chain to see what we're measuring vs what we should measure
             let current = this.element.parentElement;
@@ -261,7 +261,7 @@ export class Grid extends BaseComponent {
                 const rect = current.getBoundingClientRect();
                 const style = getComputedStyle(current);
                 const computedWidth = parseFloat(style.width);
-                console.log(`   🔗 Parent ${level}: ${current.tagName}${current.id ? '#' + current.id : ''} = Rect:${Math.round(rect.width)}px | Computed:${computedWidth || 'auto'}px | Padding:${style.padding}`);
+                window.debugLog('LAYOUT', `   🔗 Parent ${level}: ${current.tagName}${current.id ? '#' + current.id : ''} = Rect:${Math.round(rect.width)}px | Computed:${computedWidth || 'auto'}px | Padding:${style.padding}`);
                 current = current.parentElement;
                 level++;
             }
@@ -269,7 +269,7 @@ export class Grid extends BaseComponent {
             // VERIFY: Are we measuring the immediate parent correctly?
             const immediateParent = this.element.parentElement;
             if (!immediateParent) {
-                console.log('   🚨 ERROR: Grid element has no parent - cannot measure container');
+                window.debugLog('LAYOUT', '   🚨 ERROR: Grid element has no parent - cannot measure container');
                 return;
             }
             const immediateMeasurement = immediateParent.getBoundingClientRect();
@@ -280,15 +280,15 @@ export class Grid extends BaseComponent {
                 parseFloat(immediateStyle.borderLeftWidth) - 
                 parseFloat(immediateStyle.borderRightWidth);
             
-            console.log(`   🎯 IMMEDIATE PARENT (${immediateParent.tagName}${immediateParent.id ? '#' + immediateParent.id : ''}):`);
-            console.log(`      Total: ${immediateMeasurement.width}px`);
-            console.log(`      Inner: ${immediateInnerWidth}px (after padding/borders)`);
-            console.log(`      Used:  ${availableWidth}px (what we calculated)`);
-            console.log(`   ⚠️  FINAL CHECK: Grid ${gridWidth}px ${gridWidth > immediateInnerWidth ? 'OVERFLOWS' : 'FITS'} in ${immediateInnerWidth}px available space`);
+            window.debugLog('LAYOUT', `   🎯 IMMEDIATE PARENT (${immediateParent.tagName}${immediateParent.id ? '#' + immediateParent.id : ''}):`);
+            window.debugLog('LAYOUT', `      Total: ${immediateMeasurement.width}px`);
+            window.debugLog('LAYOUT', `      Inner: ${immediateInnerWidth}px (after padding/borders)`);
+            window.debugLog('LAYOUT', `      Used:  ${availableWidth}px (what we calculated)`);
+            window.debugLog('LAYOUT', `   ⚠️  FINAL CHECK: Grid ${gridWidth}px ${gridWidth > immediateInnerWidth ? 'OVERFLOWS' : 'FITS'} in ${immediateInnerWidth}px available space`);
             
             // Show if we're using the right measurement
             if (Math.abs(availableWidth - immediateInnerWidth) > 1) {
-                console.log(`   🚨 CALCULATION ERROR: Expected ${immediateInnerWidth}px but calculated ${availableWidth}px`);
+                window.debugLog('LAYOUT', `   🚨 CALCULATION ERROR: Expected ${immediateInnerWidth}px but calculated ${availableWidth}px`);
             }
         }
         
@@ -1591,13 +1591,13 @@ export class Subheader extends BaseComponent {
         
         // Force re-render of subheader to ensure clean state
         if (this.element) {
-            console.log('🔄 Force re-rendering subheader for clean state');
+            window.debugLog('NAVIGATION', '🔄 Force re-rendering subheader for clean state');
             this.element.remove();
             this.element = null;
             this.dropdownComponent = null;
         }
         
-        console.log('🧹 Subheader cleared and will re-render on next use');
+        window.debugLog('NAVIGATION', '🧹 Subheader cleared and will re-render on next use');
     }
     
     /**
@@ -1770,7 +1770,7 @@ export class Subheader extends BaseComponent {
             }
         }
         
-        console.log('🧭 Subheader navigation updated');
+        window.debugLog('NAVIGATION', '🧭 Subheader navigation updated');
     }
     
     /**
@@ -1908,11 +1908,11 @@ export class Subheader extends BaseComponent {
             const section = pathParts[0];
             const subsection = pathParts.length > 1 ? pathParts.slice(1).join('/') : null;
             
-            console.log(`🧭 Subheader navigateToItem: ${item.path} → section=${section}, subsection=${subsection}`);
+            window.debugLog('NAVIGATION', `🧭 Subheader navigateToItem: ${item.path} → section=${section}, subsection=${subsection}`);
             navigateCallback(section, subsection);
         } else if (item.id && this.currentSection) {
             // Use current section with item id
-            console.log(`🧭 Subheader navigateToItem: ${this.currentSection}/${item.id}`);
+            window.debugLog('NAVIGATION', `🧭 Subheader navigateToItem: ${this.currentSection}/${item.id}`);
             navigateCallback(this.currentSection, item.id);
         }
     }
@@ -2017,14 +2017,14 @@ export class Subheader extends BaseComponent {
             // Store reference to the trigger for positioning
             this.dropdownTrigger = triggerElement;
             
-            console.log(`🧭 Subheader dropdown created with ${items.length} items using BaseNavigationDropdown`);
+            window.debugLog('NAVIGATION', `🧭 Subheader dropdown created with ${items.length} items using BaseNavigationDropdown`);
         } else {
             // Fallback to simple title
             const pageCount = items ? items.length : 0;
             if (pageCount > 0) {
                 titleElement.title = `${pageCount} pages available in this section`;
             }
-            console.log(`🧭 Subheader dropdown content set: ${pageCount} items`);
+            window.debugLog('NAVIGATION', `🧭 Subheader dropdown content set: ${pageCount} items`);
         }
     }
     

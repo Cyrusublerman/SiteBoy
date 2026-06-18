@@ -9,14 +9,14 @@ import { SimpleCurveEditor } from './SimpleCurveEditor.js';
 
 export class ProfessionalBundle extends AdjustmentBundleBase {
     constructor(options = {}, deps = {}) {
-        console.log('🎨 ProfessionalBundle constructor called');
+        window.debugLog('INIT', '🎨 ProfessionalBundle constructor called');
         super({ ...options, componentType: 'professional-bundle' }, deps);
         
         this.sections = [];
         this.sliders = new Map();
         this.buttons = [];
         
-        console.log('✅ ProfessionalBundle initialized');
+        window.debugLog('INIT', '✅ ProfessionalBundle initialized');
     }
     
     getDefaultSettings() {
@@ -29,7 +29,7 @@ export class ProfessionalBundle extends AdjustmentBundleBase {
     }
     
     render() {
-        console.log('🎨 ProfessionalBundle.render() called');
+        window.debugLog('INIT', '🎨 ProfessionalBundle.render() called');
         
         const { Stack, Section, NumericInput, Button } = this.deps.ComponentLibrary;
         
@@ -149,7 +149,7 @@ export class ProfessionalBundle extends AdjustmentBundleBase {
         this.components.push(buttonStack);
         mainStack.addChild(buttonStack);
         
-        console.log('✅ ProfessionalBundle render complete');
+        window.debugLog('INIT', '✅ ProfessionalBundle render complete');
         return mainStack.render();
     }
     

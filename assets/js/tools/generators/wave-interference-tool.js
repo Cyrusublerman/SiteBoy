@@ -555,7 +555,7 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
         try {
             var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
             if (!gl) {
-                console.log('WebGL not available, using CPU renderer');
+                window.debugLog('TOOLS', 'WebGL not available, using CPU renderer');
                 return;
             }
             
@@ -601,7 +601,7 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
             gl.useProgram(program);
             
             webglRenderer = { gl: gl, program: program, canvas: canvas };
-            console.log('✅ WebGL renderer initialized');
+            window.debugLog('TOOLS', '✅ WebGL renderer initialized');
         } catch (e) {
             console.warn('WebGL init failed:', e);
         }
@@ -745,7 +745,7 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
             toolInstance.canvasArea.appendChild(stripEl);
         }
 
-        console.log('✅ WaveInterference SequencerV2 created');
+        window.debugLog('TOOLS', '✅ WaveInterference SequencerV2 created');
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -758,7 +758,7 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
         var hasPhaseEnabled = Object.values(animationState.phaseAnimations).some(function(p) { return p.enabled; });
         
         if (!hasPhaseEnabled) {
-            console.log('Enable phase animation to use the phase animator');
+            window.debugLog('TOOLS', 'Enable phase animation to use the phase animator');
             return;
         }
         
@@ -904,7 +904,7 @@ export class WaveInterferenceTool {
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ WaveInterferenceTool rendered (v2.0 full features)');
+            window.debugLog('TOOLS', '✅ WaveInterferenceTool rendered (v2.0 full features)');
         } catch (error) {
             console.error('❌ WaveInterferenceTool error:', error);
             this.container.innerHTML = '<div style="padding:20px;color:var(--c-text);"><h2>WAVE INTERFERENCE ERROR</h2><p style="color:red;">' + error.message + '</p></div>';

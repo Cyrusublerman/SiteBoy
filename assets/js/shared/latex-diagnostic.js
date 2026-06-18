@@ -12,37 +12,37 @@ export const LaTeXDiagnostic = {
      * Run comprehensive LaTeX diagnostic
      */
     runDiagnostic() {
-        console.log('🔍 LaTeX Diagnostic Report');
-        console.log('========================');
+        window.debugLog('INIT', '🔍 LaTeX Diagnostic Report');
+        window.debugLog('INIT', '========================');
         
         // Check MathJax availability
         const mathJaxStatus = this.checkMathJax();
-        console.log(`📚 MathJax Status: ${mathJaxStatus ? '✅ Available' : '❌ Not Available'}`);
+        window.debugLog('INIT', `📚 MathJax Status: ${mathJaxStatus ? '✅ Available' : '❌ Not Available'}`);
         
         if (mathJaxStatus) {
-            console.log(`   Version: ${window.MathJax?.version || 'Unknown'}`);
-            console.log(`   TypesetPromise available: ${!!window.MathJax?.typesetPromise}`);
+            window.debugLog('INIT', `   Version: ${window.MathJax?.version || 'Unknown'}`);
+            window.debugLog('INIT', `   TypesetPromise available: ${!!window.MathJax?.typesetPromise}`);
         }
         
         // Check for LaTeX content
         const latexContent = this.findLaTeXContent();
-        console.log(`🧮 LaTeX Content Found: ${latexContent.total} instances`);
-        console.log(`   Display Math ($$): ${latexContent.displayMath}`);
-        console.log(`   Inline Math ($): ${latexContent.inlineMath}`);
-        console.log(`   LaTeX Commands (\\): ${latexContent.commands}`);
+        window.debugLog('INIT', `🧮 LaTeX Content Found: ${latexContent.total} instances`);
+        window.debugLog('INIT', `   Display Math ($$): ${latexContent.displayMath}`);
+        window.debugLog('INIT', `   Inline Math ($): ${latexContent.inlineMath}`);
+        window.debugLog('INIT', `   LaTeX Commands (\\): ${latexContent.commands}`);
         
         // Check rendered math elements
         const renderedMath = this.checkRenderedMath();
-        console.log(`🎨 Rendered Math Elements: ${renderedMath.total}`);
-        console.log(`   With SiteBoy styling: ${renderedMath.withStyling}`);
-        console.log(`   Display math: ${renderedMath.display}`);
-        console.log(`   Inline math: ${renderedMath.inline}`);
+        window.debugLog('INIT', `🎨 Rendered Math Elements: ${renderedMath.total}`);
+        window.debugLog('INIT', `   With SiteBoy styling: ${renderedMath.withStyling}`);
+        window.debugLog('INIT', `   Display math: ${renderedMath.display}`);
+        window.debugLog('INIT', `   Inline math: ${renderedMath.inline}`);
         
         // Check CSS variables
         const cssStatus = this.checkCSSVariables();
-        console.log(`🎨 CSS Variables:`);
-        console.log(`   --f: ${cssStatus.f}`);
-        console.log(`   Math font size: ${cssStatus.mathFontSize}`);
+        window.debugLog('INIT', `🎨 CSS Variables:`);
+        window.debugLog('INIT', `   --f: ${cssStatus.f}`);
+        window.debugLog('INIT', `   Math font size: ${cssStatus.mathFontSize}`);
         
         return {
             mathJaxStatus,
@@ -140,7 +140,7 @@ export const LaTeXDiagnostic = {
         }
         
         try {
-            console.log('🔄 Force re-rendering all math...');
+            window.debugLog('INIT', '🔄 Force re-rendering all math...');
             
             // Clear existing math
             const mathElements = document.querySelectorAll('mjx-container');
@@ -149,7 +149,7 @@ export const LaTeXDiagnostic = {
             // Re-render with MathJax
             await window.MathJax.typesetPromise();
             
-            console.log('✅ Math re-rendering complete');
+            window.debugLog('INIT', '✅ Math re-rendering complete');
             return true;
             
         } catch (error) {
@@ -178,13 +178,13 @@ export const LaTeXDiagnostic = {
         document.body.appendChild(testContainer);
         
         try {
-            console.log('🧪 Testing LaTeX rendering...');
+            window.debugLog('INIT', '🧪 Testing LaTeX rendering...');
             await window.MathJax.typesetPromise([testContainer]);
-            console.log('✅ Test rendering successful');
+            window.debugLog('INIT', '✅ Test rendering successful');
             
             // Check results
             const renderedMath = testContainer.querySelectorAll('mjx-container');
-            console.log(`📊 Rendered ${renderedMath.length} math elements in test`);
+            window.debugLog('INIT', `📊 Rendered ${renderedMath.length} math elements in test`);
             
         } catch (error) {
             console.error('❌ Test rendering failed:', error);
@@ -200,4 +200,4 @@ export const LaTeXDiagnostic = {
 // Make available globally for console debugging
 window.LaTeXDiagnostic = LaTeXDiagnostic;
 
-console.log('🔍 LaTeX Diagnostic tools loaded (MathJax) - Try: LaTeXDiagnostic.runDiagnostic()');
+window.debugLog('INIT', '🔍 LaTeX Diagnostic tools loaded (MathJax) - Try: LaTeXDiagnostic.runDiagnostic()');

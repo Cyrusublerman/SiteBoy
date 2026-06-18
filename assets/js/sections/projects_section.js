@@ -51,7 +51,7 @@ const ProjectsSection = {
      */
     handleRoute(subsection, container, callbacks) {
         callbacks = callbacks || {};
-        console.log(`🚀 Projects Section v${this.version} handling route: ${subsection || 'index'}`);
+        window.debugLog('NAVIGATION', `🚀 Projects Section v${this.version} handling route: ${subsection || 'index'}`);
         
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
@@ -72,7 +72,7 @@ const ProjectsSection = {
      * Render projects index using ComponentLibrary SimpleTOC
      */
     renderProjectsIndex() {
-        console.log('🚀 Rendering projects index with SimpleTOC component');
+        window.debugLog('TOOLS', '🚀 Rendering projects index with SimpleTOC component');
         
         // Clear container and add TOC container class for proper CSS styling
         this.currentContainer.innerHTML = '';
@@ -85,7 +85,7 @@ const ProjectsSection = {
                 const F = window.MathematicalFoundation.F;
                 contentContainer.style.setProperty('--comp-min-h', `calc(100vh - ${F * 4}px)`);
                 contentContainer.style.setProperty('--top-offset', `${F * 2}px`);
-                console.log('✅ Applied no-subheader body sizing for projects index');
+                window.debugLog('NAVIGATION', '✅ Applied no-subheader body sizing for projects index');
             }
         }
         
@@ -102,7 +102,7 @@ const ProjectsSection = {
         this.componentInstances.push(tocComponent);
         this.currentContainer.appendChild(tocComponent.render());
         
-        console.log('✅ Projects index rendered with SimpleTOC component');
+        window.debugLog('TOOLS', '✅ Projects index rendered with SimpleTOC component');
     },
     
     /**
@@ -110,7 +110,7 @@ const ProjectsSection = {
      */
     handleProjectClick(item) {
         this.navigateToProject(item.id);
-        console.log(`🚀 Project clicked: ${item.title} -> ${item.id}`);
+        window.debugLog('NAVIGATION', `🚀 Project clicked: ${item.title} -> ${item.id}`);
     },
     
     /**
@@ -129,7 +129,7 @@ const ProjectsSection = {
      * @param {string} sectionId - Section ID
      */
     handleSectionClick(sectionId) {
-        console.log(`🚀 Section clicked: ${sectionId}`);
+        window.debugLog('NAVIGATION', `🚀 Section clicked: ${sectionId}`);
         // Find the TOC component and toggle the section
         const tocComponent = this.componentInstances.find(comp => comp instanceof ComponentLibrary.SimpleTOC);
         if (tocComponent) {
@@ -142,7 +142,7 @@ const ProjectsSection = {
      * @param {string} path - Navigation path
      */
     handleSubsectionClick(path) {
-        console.log(`🚀 Subsection clicked: ${path}`);
+        window.debugLog('NAVIGATION', `🚀 Subsection clicked: ${path}`);
         
         // Extract section and subsection from path (e.g., '#projects/siteboy')
         const hashPath = path.replace('#', '');
@@ -203,7 +203,7 @@ const ProjectsSection = {
      * - unknown ids render a minimal not-found placeholder via ComponentLibrary
      */
     async renderProject(projectId) {
-        console.log(`🚀 Rendering project: ${projectId}`);
+        window.debugLog('TOOLS', `🚀 Rendering project: ${projectId}`);
 
         const entry = this.PROJECT_REGISTRY.find(p => p.id === projectId);
 
@@ -293,7 +293,7 @@ const ProjectsSection = {
      * Initialize section (legacy support)
      */
     init() {
-        console.log(`🚀 Projects Section v${this.version} initialized`);
+        window.debugLog('NAVIGATION', `🚀 Projects Section v${this.version} initialized`);
     },
     
     /**

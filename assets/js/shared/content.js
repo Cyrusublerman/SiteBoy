@@ -499,7 +499,7 @@ export class MarkdownBody extends BaseComponent {
     
     processP5Components(element) {
         const p5Divs = element.querySelectorAll('[data-p5-component]');
-        console.log(`🎨 Found ${p5Divs.length} p5.js components to process`);
+        window.debugLog('INIT', `🎨 Found ${p5Divs.length} p5.js components to process`);
         
         p5Divs.forEach(div => {
             const componentType = div.getAttribute('data-p5-component');
@@ -508,7 +508,7 @@ export class MarkdownBody extends BaseComponent {
             const useSiteBoyGUI = div.getAttribute('data-siteboy-gui') === 'true';
             
             if (scriptPath && targetId) {
-                console.log(`🎨 Processing p5.js component: ${targetId} from ${scriptPath} (SiteBoy GUI: ${useSiteBoyGUI})`);
+                window.debugLog('INIT', `🎨 Processing p5.js component: ${targetId} from ${scriptPath} (SiteBoy GUI: ${useSiteBoyGUI})`);
                 
                 let p5Component;
                 
@@ -738,7 +738,7 @@ export class MarkdownBody extends BaseComponent {
         const currentF = window.Config?.F || 12;
         
         if (mathElements.length > 0) {
-            console.log(`🎨 MathJax elements found: ${mathElements.length} (F=${currentF}px) - applying CSS styling`);
+            window.debugLog('INIT', `🎨 MathJax elements found: ${mathElements.length} (F=${currentF}px) - applying CSS styling`);
             
             // Force styling on each element
             mathElements.forEach(mathEl => {
@@ -1092,7 +1092,7 @@ export class NumberedTOC extends BaseComponent {
             this.expandedSections.add(sectionIndex);
         }
         this.rebuildTOC();
-        console.log(`📚 Toggled section ${sectionIndex}: ${this.expandedSections.has(sectionIndex) ? 'expanded' : 'collapsed'}`);
+        window.debugLog('INIT', `📚 Toggled section ${sectionIndex}: ${this.expandedSections.has(sectionIndex) ? 'expanded' : 'collapsed'}`);
     }
     
     toggleFolder(folderId) {

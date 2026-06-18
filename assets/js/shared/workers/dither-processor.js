@@ -32,12 +32,12 @@ export function processDither(params) {
     // Reconstruct ImageData if it's a plain object (from worker transfer)
     if (imageData && !(imageData instanceof ImageData)) {
         // Data is structured cloned (not transferred) so we need to wrap it in Uint8ClampedArray
-        console.log('🔧 Worker: Input data type:', imageData.data?.constructor?.name);
-        console.log('🔧 Worker: Data length:', imageData.data?.length);
+        window.debugLog('VERBOSE', '🔧 Worker: Input data type:', imageData.data?.constructor?.name);
+        window.debugLog('VERBOSE', '🔧 Worker: Data length:', imageData.data?.length);
         
         // Create Uint8ClampedArray from cloned data
         const data = new Uint8ClampedArray(imageData.data);
-        console.log('✅ Worker: Created Uint8ClampedArray from cloned data');
+        window.debugLog('VERBOSE', '✅ Worker: Created Uint8ClampedArray from cloned data');
         
         imageData = new ImageData(data, imageData.width, imageData.height);
     }

@@ -179,7 +179,7 @@ export function applyMinDetailFilter(imageData, palette, minDetailMM, printWidth
  * 
  * // Check if specific pixel should be printed:
  * if (layerMaps[2][1].has('100,50')) {
- *   console.log('Print filament 1 at (100,50) on layer 2');
+ *   window.debugLog('INIT', 'Print filament 1 at (100,50) on layer 2');
  * }
  */
 export function expandToLayers(imageData, sequenceMap, filamentCount) {

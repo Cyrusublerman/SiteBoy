@@ -258,7 +258,7 @@ const AssetLoader = {
             script.onload = () => {
                 this.loadedScripts.add(src);
                 this.loadingPromises.delete(src);
-                console.log(`✅ Loaded: ${src}`);
+                window.debugLog('INIT', `✅ Loaded: ${src}`);
                 resolve();
             };
             
@@ -356,7 +356,7 @@ const AssetLoader = {
             return window[tool.className];
         }
 
-        console.log(`📦 Loading tool: ${toolId}`);
+        window.debugLog('INIT', `📦 Loading tool: ${toolId}`);
 
         // Load dependencies first
         if (tool.dependencies && tool.dependencies.length > 0) {
@@ -366,8 +366,8 @@ const AssetLoader = {
         try {
             // Use ES module dynamic import instead of script loading
             const module = await import(/* @vite-ignore */ tool.script);
-            console.log(`🔍 Module loaded: ${tool.script}, keys:`, Object.keys(module));
-            console.log(`🔍 Looking for class: ${tool.className}`);
+            window.debugLog('INIT', `🔍 Module loaded: ${tool.script}, keys:`, Object.keys(module));
+            window.debugLog('INIT', `🔍 Looking for class: ${tool.className}`);
             const ToolClass = module[tool.className] || module.default;
 
             if (!ToolClass) {
@@ -378,7 +378,7 @@ const AssetLoader = {
             // Make globally available for backward compatibility
             window[tool.className] = ToolClass;
 
-            console.log(`✅ Tool ready: ${toolId} (${tool.className})`);
+            window.debugLog('INIT', `✅ Tool ready: ${toolId} (${tool.className})`);
             return ToolClass;
         } catch (error) {
             console.error(`❌ Failed to load tool module: ${tool.script}`, error);
@@ -402,13 +402,13 @@ const AssetLoader = {
             return libId === 'jszip' ? window.JSZip : window.RecordRTC;
         }
         
-        console.log(`📦 Loading export library: ${libId}`);
+        window.debugLog('INIT', `📦 Loading export library: ${libId}`);
         await this.loadScript(lib.script);
         
         // Wait for global
         await this.waitFor(lib.check, 50, 10);
         
-        console.log(`✅ Export library ready: ${libId}`);
+        window.debugLog('INIT', `✅ Export library ready: ${libId}`);
         return libId === 'jszip' ? window.JSZip : window.RecordRTC;
     },
     

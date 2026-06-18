@@ -295,7 +295,7 @@ export class TopographicDotHalftoneTool {
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ TopographicDotHalftoneTool rendered');
+            window.debugLog('TOOLS', '✅ TopographicDotHalftoneTool rendered');
         } catch (error) {
             console.error('❌ TopographicDotHalftoneTool error:', error);
             this.container.innerHTML = 
@@ -322,5 +322,5 @@ export class TopographicDotHalftoneTool {
 // Export as default for tools_section.js
 export default TopographicDotHalftoneTool;
 
-console.log('✅ TopographicDotHalftoneTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ TopographicDotHalftoneTool loaded (ES Module)');
 

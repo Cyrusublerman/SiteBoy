@@ -17,7 +17,7 @@ import { MFPExportActions } from './MFP-ExportActions.js';
 
 export class MultifilamentPrintTool {
     constructor(container, deps = {}) {
-        console.log('🏗️ MFP Constructor called');
+        window.debugLog('TOOLS', '🏗️ MFP Constructor called');
         this.container = container;
         this.deps = {
             ComponentLibrary,
@@ -40,7 +40,7 @@ export class MultifilamentPrintTool {
             exportSTLData: null  // { stls, layerMaps, filamentNames, palette, config }
         };
         
-        console.log('🏗️ MFP sharedState initialized:', this.sharedState);
+        window.debugLog('TOOLS', '🏗️ MFP sharedState initialized:', this.sharedState);
         
         // Action modules (NO DOM manipulation - pure logic)
         this.sourceActions = new MFPSourceActions(this.sharedState);
@@ -48,7 +48,7 @@ export class MultifilamentPrintTool {
         this.quantizeActions = new MFPQuantizeActions(this.sharedState);
         this.exportActions = new MFPExportActions(this.sharedState);
         
-        console.log('🏗️ MFP Action modules created');
+        window.debugLog('TOOLS', '🏗️ MFP Action modules created');
         
         // Build config with ALL tabs and controls
         const config = {
@@ -66,11 +66,11 @@ export class MultifilamentPrintTool {
             onDraw: (ctx, canvas, values) => this._handleDraw(ctx, canvas, values)
         };
         
-        console.log('🏗️ MFP Creating ToolBase with config:', config);
+        window.debugLog('TOOLS', '🏗️ MFP Creating ToolBase with config:', config);
         this.toolBase = new ToolBase(config, this.deps);
-        console.log('🏗️ MFP Mounting ToolBase to container');
+        window.debugLog('LAYOUT', '🏗️ MFP Mounting ToolBase to container');
         this.toolBase.mount(container);
-        console.log('🏗️ MFP Mount complete');
+        window.debugLog('TOOLS', '🏗️ MFP Mount complete');
         
         // Add info button to canvas area
         this._addInfoButton();
@@ -1332,7 +1332,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
     _updateFilamentDropdowns() {
         // Get new options based on selected filaments
         const newOptions = this._getSelectedFilamentNames();
-        console.log('🔄 Updating filament dropdowns with options:', newOptions);
+        window.debugLog('VERBOSE', '🔄 Updating filament dropdowns with options:', newOptions);
         
         // Update each filament dropdown
         const dropdownKeys = ['baseFilament', 'topFilament', 'gapFilament'];
@@ -1340,9 +1340,9 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             const dropdown = this.toolBase.components.get(key);
             if (dropdown && typeof dropdown.setOptions === 'function') {
                 dropdown.setOptions(newOptions);
-                console.log(`✅ Updated ${key} dropdown`);
+                window.debugLog('VERBOSE', `✅ Updated ${key} dropdown`);
             } else {
-                console.log(`⚠️ Dropdown ${key} not found or missing setOptions`);
+                window.debugLog('VERBOSE', `⚠️ Dropdown ${key} not found or missing setOptions`);
             }
         }
     }
@@ -1566,11 +1566,11 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
     }
     
     _handleInit(values) {
-        console.log('🎬 MFP _handleInit called:', { values });
+        window.debugLog('TOOLS', '🎬 MFP _handleInit called:', { values });
         window.debugLog('TOOLS', `MFP: Init`);
         
         // Initialize SOURCE tab (always first tab)
-        console.log('🎬 Initializing SOURCE tab');
+        window.debugLog('TOOLS', '🎬 Initializing SOURCE tab');
         this.sourceActions.updateSequenceCount(this.toolBase);
         
         // Wire adjustment bundle for QUANTIZE tab
@@ -1580,9 +1580,9 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 // Store adjusted image for quantization
                 this.sharedState.sourceImageData = adjustedImageData;
                 this.toolBase.draw();
-                console.log('✅ Image adjustments applied');
+                window.debugLog('TOOLS', '✅ Image adjustments applied');
             };
-            console.log('✅ AdjustmentBundle wired');
+            window.debugLog('TOOLS', '✅ AdjustmentBundle wired');
         }
         
         // Setup scan canvas interaction for corner dragging
@@ -1782,7 +1782,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
     }
     
     _handleUpdate(key, value, allValues) {
-        console.log('🔄 MFP _handleUpdate called:', { key, value, allValues });
+        window.debugLog('TOOLS', '🔄 MFP _handleUpdate called:', { key, value, allValues });
         window.debugLog('TOOLS', `MFP: Update ${key}`);
         
         // Handle all buttons and inputs from ALL tabs
@@ -1798,9 +1798,9 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 });
                 break;
             case 'filamentPicker_indices':  // ToolBase sends '_indices' suffix!
-                console.log('🎨 filamentPicker_indices changed:', value);
+                window.debugLog('TOOLS', '🎨 filamentPicker_indices changed:', value);
                 this.sharedState.selectedFilaments = value || [];
-                console.log('🎨 Updated sharedState.selectedFilaments:', this.sharedState.selectedFilaments);
+                window.debugLog('TOOLS', '🎨 Updated sharedState.selectedFilaments:', this.sharedState.selectedFilaments);
                 this.sourceActions.updateSequenceCount(this.toolBase);
                 
                 // Update filament dropdown options dynamically
@@ -1808,10 +1808,10 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 
                 // Live preview - generate as soon as 2+ filaments selected (EXACT behavior from monolith)
                 if (this.sharedState.selectedFilaments.length >= 2) {
-                    console.log('🎨 Triggering generateLivePreview...');
+                    window.debugLog('TOOLS', '🎨 Triggering generateLivePreview...');
                     this.sourceActions.generateLivePreview(allValues, this.toolBase);
                 } else {
-                    console.log('🎨 Not enough filaments to preview (need 2+)');
+                    window.debugLog('TOOLS', '🎨 Not enough filaments to preview (need 2+)');
                 }
                 break;
             case 'layerCount':
@@ -1894,7 +1894,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 // Reset canvas zoom/pan to default
                 if (this.toolBase.canvasComponent) {
                     this.toolBase.canvasComponent.resetViewport(true);
-                    console.log('🔄 View reset to default');
+                    window.debugLog('TOOLS', '🔄 View reset to default');
                 }
                 break;
             
@@ -1921,7 +1921,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
                 break;
             
             case 'analyzeScan': 
-                console.log('🔘 Analyze Scan button clicked');
+                window.debugLog('TOOLS', '🔘 Analyze Scan button clicked');
                 this.scanActions.analyzeScan(allValues, this.toolBase).then(() => {
                     if (this.sharedState.scanAnalysis && this.sharedState.scanAnalysis.length > 0) {
                         // Enable "Show Analysed Colors" overlay
@@ -2166,7 +2166,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
         
         // Debug log for analysis visibility
         if (analysisData && showAnalysed) {
-            console.log(`🎨 Drawing ${analysisData.length} analysed tiles`);
+            window.debugLog('TOOLS', `🎨 Drawing ${analysisData.length} analysed tiles`);
         }
         
         // Helper: linear interpolation
@@ -2341,7 +2341,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             y: c.y
         }));
         
-        console.log('🔄 Grid flipped horizontally');
+        window.debugLog('LAYOUT', '🔄 Grid flipped horizontally');
     }
     
     /**
@@ -2361,7 +2361,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             y: centerY + (centerY - c.y)
         }));
         
-        console.log('🔄 Grid flipped vertically');
+        window.debugLog('LAYOUT', '🔄 Grid flipped vertically');
     }
     
     /**
@@ -2385,7 +2385,7 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
             };
         });
         
-        console.log('🔄 Grid rotated 90° clockwise');
+        window.debugLog('LAYOUT', '🔄 Grid rotated 90° clockwise');
     }
     
     /**
@@ -2483,16 +2483,16 @@ sharedState.exportSTLData         // { stls, layerMaps, filamentNames, config }
         }
         
         this.toolBase.setValue('scanStatus', message);
-        console.log(`📊 Tile Details [${row}, ${col}]:`);
-        console.log(`  Sequence: ${sequence.join('')}`);
+        window.debugLog('TOOLS', `📊 Tile Details [${row}, ${col}]:`);
+        window.debugLog('TOOLS', `  Sequence: ${sequence.join('')}`);
         sequence.forEach((filIdx, layer) => {
             const fil = gridData.colours?.[filIdx - 1];
-            console.log(`  Layer ${layer}: ${filIdx === 0 ? 'Empty' : (fil?.n || `Fil ${filIdx}`)}`);
+            window.debugLog('TOOLS', `  Layer ${layer}: ${filIdx === 0 ? 'Empty' : (fil?.n || `Fil ${filIdx}`)}`);
         });
         if (analysis) {
-            console.log(`  Scanned RGB: ${analysis.hex} (${analysis.rgb.r}, ${analysis.rgb.g}, ${analysis.rgb.b})`);
-            console.log(`  Pixels sampled: ${analysis.pixelsSampled}`);
-            console.log(`  Color deviation: ${analysis.colorDeviation.toFixed(2)}`);
+            window.debugLog('TOOLS', `  Scanned RGB: ${analysis.hex} (${analysis.rgb.r}, ${analysis.rgb.g}, ${analysis.rgb.b})`);
+            window.debugLog('TOOLS', `  Pixels sampled: ${analysis.pixelsSampled}`);
+            window.debugLog('TOOLS', `  Color deviation: ${analysis.colorDeviation.toFixed(2)}`);
         }
     }
     
@@ -3106,4 +3106,4 @@ if (typeof window !== 'undefined') {
     window.MultifilamentPrintTool = MultifilamentPrintTool;
 }
 
-console.log('✅ MultifilamentPrintTool loaded (FULL VERSION with ALL controls)');
+window.debugLog('TOOLS', '✅ MultifilamentPrintTool loaded (FULL VERSION with ALL controls)');

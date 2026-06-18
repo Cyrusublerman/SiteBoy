@@ -2384,7 +2384,7 @@
         
         // Find all block headers and make them selectable
         const blockHeaders = this.tool.element.querySelectorAll('.tool-block-header');
-        console.log(`setupAlgorithmSelection: Found ${blockHeaders.length} block headers`);
+        window.debugLog('TOOLS', `setupAlgorithmSelection: Found ${blockHeaders.length} block headers`);
         
         blockHeaders.forEach((header, index) => {
             const blockTitle = header.textContent.trim();
@@ -2418,7 +2418,7 @@
                 
                 // Add click handler
                 header.addEventListener('click', () => {
-                    console.log(`Block header clicked: ${algorithmId}`);
+                    window.debugLog('TOOLS', `Block header clicked: ${algorithmId}`);
                     this.selectAlgorithm(algorithmId);
                 });
                 

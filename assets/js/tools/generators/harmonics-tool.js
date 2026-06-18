@@ -282,7 +282,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ HarmonicsTool rendered');
+            window.debugLog('TOOLS', '✅ HarmonicsTool rendered');
         } catch (error) {
             console.error('❌ HarmonicsTool error:', error);
             this.container.innerHTML =
@@ -314,5 +314,5 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         window.HarmonicsTool = HarmonicsTool;
     }
     
-    console.log('✅ HarmonicsTool loaded (ToolBase)');
+    window.debugLog('TOOLS', '✅ HarmonicsTool loaded (ToolBase)');
 

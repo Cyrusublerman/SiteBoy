@@ -589,7 +589,7 @@ export const ComponentCalculator = LayoutCalculator;
  */
 export function debugLog(category, ...args) {
     if (Config.debug && Config.debug[category]) {
-        console.log(...args);
+        console.info(...args);
     }
 }
 
@@ -609,7 +609,7 @@ export function debugToggle(categories, enabled = true) {
         Object.keys(Config.debug).forEach(key => {
             Config.debug[key] = enabled;
         });
-        console.log(`✅ ${enabled ? 'Enabled' : 'Disabled'} all debug categories`);
+        console.info(`✅ ${enabled ? 'Enabled' : 'Disabled'} all debug categories`);
         return;
     }
 
@@ -619,7 +619,7 @@ export function debugToggle(categories, enabled = true) {
                 Config.debug[key] = value;
             }
         });
-        console.log('✅ Debug configuration updated:', Config.debug);
+        console.info('✅ Debug configuration updated:', Config.debug);
         return;
     }
 
@@ -629,7 +629,7 @@ export function debugToggle(categories, enabled = true) {
             Config.debug[cat] = enabled;
         }
     });
-    console.log(`✅ ${enabled ? 'Enabled' : 'Disabled'} debug categories:`, categoryList);
+    console.info(`✅ ${enabled ? 'Enabled' : 'Disabled'} debug categories:`, categoryList);
 }
 
 // Make globals available for all scripts

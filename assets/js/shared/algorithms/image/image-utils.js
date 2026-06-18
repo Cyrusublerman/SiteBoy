@@ -37,7 +37,7 @@ import { rgb_to_key, avgColour } from '../color/color-utils.js';
  *   scaleY: 11.81
  * });
  * 
- * console.log(`Extracted ${palette.length} unique colors`);
+ * window.debugLog('INIT', `Extracted ${palette.length} unique colors`);
  * // palette[0] is most frequent color
  */
 export function extractColors(canvas, gridData, alignment) {

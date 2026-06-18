@@ -297,7 +297,7 @@ export class CirclesTool {
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ CirclesTool rendered');
+            window.debugLog('TOOLS', '✅ CirclesTool rendered');
         } catch (error) {
             console.error('❌ CirclesTool error:', error);
             this.container.innerHTML =
@@ -322,4 +322,4 @@ export class CirclesTool {
     }
 }
 
-console.log('✅ CirclesTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ CirclesTool loaded (ES Module)');

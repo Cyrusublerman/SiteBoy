@@ -57,7 +57,7 @@ export class CollapsibleBase extends BaseComponent {
             this.onToggle(this.isOpen);
         }
         
-        console.log(`🔄 ${this.constructor.name}: ${this.isOpen ? 'opened' : 'closed'}`);
+        window.debugLog('VERBOSE', `🔄 ${this.constructor.name}: ${this.isOpen ? 'opened' : 'closed'}`);
     }
     
     /**

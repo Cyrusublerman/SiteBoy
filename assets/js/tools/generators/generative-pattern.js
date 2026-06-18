@@ -700,5 +700,5 @@ export class GenerativePatternTool {
 // Export as default for tools_section.js
 export default GenerativePatternTool;
 
-console.log('✅ GenerativePatternTool v5.0.0 (UNIFIED)');
+window.debugLog('TOOLS', '✅ GenerativePatternTool v5.0.0 (UNIFIED)');
 

@@ -630,7 +630,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ SquaresTool rendered (v2.0 - Full Timeline)');
+            window.debugLog('TOOLS', '✅ SquaresTool rendered (v2.0 - Full Timeline)');
         } catch (error) {
             console.error('❌ SquaresTool error:', error);
         }

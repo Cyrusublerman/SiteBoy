@@ -23,7 +23,7 @@
  *     // Heavy computation
  *   }
  * }, (progress) => {
- *   console.log(`${Math.floor(progress * 100)}% complete`);
+ *   window.debugLog('INIT', `${Math.floor(progress * 100)}% complete`);
  * });
  */
 export async function processInChunks(totalIterations, chunkSize, processChunk, onProgress = null) {

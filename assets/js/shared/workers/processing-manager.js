@@ -127,7 +127,7 @@ class ProcessingManager {
             case 'COMPLETE':
                 const duration = task.startTime ? (performance.now() - task.startTime).toFixed(2) : '?';
                 window.debugLog('TOOLS', `Task ${id} complete in ${duration}ms`);
-                console.log(`⏱️ Worker round-trip time: ${duration}ms`);
+                window.debugLog('VERBOSE', `⏱️ Worker round-trip time: ${duration}ms`);
                 task.resolve(result);
                 this._completeTask(id, worker);
                 break;
@@ -302,7 +302,7 @@ class ProcessingManager {
      *     imageData: myImageData,
      *     palette: ['#000000', '#FFFFFF']
      * }, {
-     *     onProgress: (p) => console.log(`${p}% complete`)
+     *     onProgress: (p) => window.debugLog('VERBOSE', `${p}% complete`)
      * });
      */
     async process(algorithmName, data, options = {}) {

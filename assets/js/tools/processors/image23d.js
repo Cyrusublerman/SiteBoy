@@ -521,4 +521,4 @@ export class Image23DTool {
 // Export config for direct ToolBase usage
 export { TOOL_CONFIG as Image23DToolConfig };
 
-console.log('🖼️ Image23D Tool (ES Module) ready');
+window.debugLog('TOOLS', '🖼️ Image23D Tool (ES Module) ready');

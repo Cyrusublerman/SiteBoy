@@ -441,5 +441,5 @@ import ComponentLibrary from '../../shared/component-library.js';
         // Export
         window.PolygonCalculator = PolygonCalculator;
 
-        console.log('✅ PolygonCalculator loaded (ES Module with ToolBase)');
+        window.debugLog('TOOLS', '✅ PolygonCalculator loaded (ES Module with ToolBase)');
     }

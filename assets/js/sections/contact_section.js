@@ -21,7 +21,7 @@ const ContactSection = {
      * @param {Object} callbacks - Navigation callbacks (injected from router)
      */
     handleRoute(subsection, container, callbacks = {}) {
-        console.log(`📧 Contact Section v${this.version} handling route: ${subsection || 'main'}`);
+        window.debugLog('NAVIGATION', `📧 Contact Section v${this.version} handling route: ${subsection || 'main'}`);
         
         this.currentContainer = container;
         this.navigationCallbacks = callbacks;
@@ -30,7 +30,7 @@ const ContactSection = {
         // Hide subheader for contact page
         if (window.Subheader) {
             window.Subheader.hide();
-            console.log('✅ Hidden subheader for contact page');
+            window.debugLog('NAVIGATION', '✅ Hidden subheader for contact page');
         }
         
         this.renderContactPage();
@@ -40,7 +40,7 @@ const ContactSection = {
      * Render contact form following ColorQuantizer layout pattern
      */
     renderContactPage() {
-        console.log('📧 Rendering contact page...');
+        window.debugLog('TOOLS', '📧 Rendering contact page...');
         
         const F = window.MathematicalFoundation?.F || 12;
         
@@ -60,7 +60,7 @@ const ContactSection = {
         // Create all the control sections
         this.createFormSections(controls, F);
         
-        console.log('✅ Contact page rendered');
+        window.debugLog('TOOLS', '✅ Contact page rendered');
     },
     
     /**
@@ -190,7 +190,7 @@ const ContactSection = {
      * Cleanup section resources
      */
     cleanup() {
-        console.log('🧹 Cleaning up Contact Section...');
+        window.debugLog('NAVIGATION', '🧹 Cleaning up Contact Section...');
         
         if (this.currentContainer) {
             this.currentContainer.innerHTML = '';
@@ -200,7 +200,7 @@ const ContactSection = {
             window.ComponentLibrary.destroyTracked(this.componentInstances);
         }
         
-        console.log('✅ Contact Section cleanup completed');
+        window.debugLog('VERBOSE', '✅ Contact Section cleanup completed');
     }
 };
 

@@ -50,7 +50,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         },
         
         onInit: function(values, tool) {
-            console.log('🔵 Nested Circles Tool initialized');
+            window.debugLog('TOOLS', '🔵 Nested Circles Tool initialized');
             frame = 0;
             
             // Start animation loop
@@ -207,6 +207,6 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
     // Also expose the config
     window.NestedCirclesToolConfig = TOOL_CONFIG;
 
-    console.log('🔵 Nested Circles Tool ready');
+    window.debugLog('TOOLS', '🔵 Nested Circles Tool ready');
 })();
 

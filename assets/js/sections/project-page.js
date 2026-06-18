@@ -84,13 +84,23 @@
 
                 if (section.type === 'embed') {
                     const embedLoader = async () => {
-                        const iframe = document.createElement('iframe');
-                        iframe.src = section.src;
-                        iframe.style.width = '100%';
-                        iframe.style.height = `${section.height || 720}px`;
-                        iframe.style.border = '0';
-                        iframe.loading = 'lazy';
-                        return iframe;
+                        const embedHeight = section.height || F * 60;
+                        const embedWidth = Math.round(embedHeight * (16 / 9));
+                        const sandbox = new ComponentLibrary.IframeSandbox({
+                            width: embedWidth,
+                            height: embedHeight,
+                            displayMode: 'fill',
+                            className: 'project-embed-iframe'
+                        }, deps);
+                        tracked(sandbox);
+                        const el = sandbox.render();
+                        el.classList.add('project-embed-host');
+                        const iframe = sandbox.getIframe();
+                        if (iframe) {
+                            iframe.src = section.src;
+                            iframe.loading = 'lazy';
+                        }
+                        return el;
                     };
                     const wrapper = tracked(new ComponentLibrary.CollapsibleSection({
                         title: section.title,
@@ -111,17 +121,18 @@
                 container.appendChild(collapsible.render());
             });
 
-            this.addBackLink(container, F);
+            this.addBackLink(container);
         },
 
-        addBackLink(container, F) {
-            const backLink = new ComponentLibrary.Button({
-                text: '← BACK TO PROJECTS',
+        addBackLink(container) {
+            const backLink = new ComponentLibrary.Paragraph({
+                content: '← BACK TO PROJECTS',
+                isClickable: true,
                 onClick: () => { window.location.hash = '#projects'; }
             });
             this.componentInstances.push(backLink);
             const el = backLink.render();
-            el.style.marginTop = `${F * 2}px`;
+            el.classList.add('project-page-back-link');
             container.appendChild(el);
         },
 
@@ -155,5 +166,5 @@
     };
 
     window.ProjectPage = ProjectPage;
-    console.log(`🚀 ProjectPage engine v${ProjectPage.version} loaded`);
+    window.debugLog('NAVIGATION', `🚀 ProjectPage engine v${ProjectPage.version} loaded`);
 })();

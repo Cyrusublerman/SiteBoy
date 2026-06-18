@@ -299,7 +299,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             this.tool = new ToolBase(TOOL_CONFIG, this.deps);
             this.tool.mount(this.container);
             this.tool.draw();
-            console.log('✅ TorusTool rendered');
+            window.debugLog('TOOLS', '✅ TorusTool rendered');
         } catch (error) {
             console.error('❌ TorusTool error:', error);
             this.container.innerHTML =
@@ -331,4 +331,4 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         window.TorusTool = TorusTool;
     }
     
-    console.log('✅ TorusTool loaded (ToolBase)');
+    window.debugLog('TOOLS', '✅ TorusTool loaded (ToolBase)');

@@ -28,7 +28,7 @@
  * const slider = new Scrollbar({
  *     orientation: 'horizontal',
  *     range: { min: 0, max: 100, value: 50 },
- *     onChange: (value) => console.log(value)
+ *     onChange: (value) => window.debugLog('INIT', value)
  * });
  * 
  * @extends BaseComponent

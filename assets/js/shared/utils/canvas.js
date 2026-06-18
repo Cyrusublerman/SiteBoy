@@ -347,6 +347,6 @@ export const CanvasUtils = {
 // UMD export for non-module usage (ToolBase compatibility)
 if (typeof window !== 'undefined') {
     window.CanvasUtils = CanvasUtils;
-    console.log('🎨 CanvasUtils v1.1.0 ready - Motion blur, batch drawing, interactive rotation, off-screen canvas');
+    window.debugLog('INIT', '🎨 CanvasUtils v1.1.0 ready - Motion blur, batch drawing, interactive rotation, off-screen canvas');
 }
 

@@ -29,7 +29,7 @@ class MediaAssetManager {
                        hostname.startsWith('10.0.') ||
                        hostname === '';  // File protocol
         
-        console.log(`🔍 Environment detection: ${hostname} → ${isLocal ? 'LOCAL' : 'PRODUCTION'}`);
+        window.debugLog('INIT', `🔍 Environment detection: ${hostname} → ${isLocal ? 'LOCAL' : 'PRODUCTION'}`);
         return isLocal;
     }
     
@@ -43,14 +43,14 @@ class MediaAssetManager {
         }
         
         if (this.isLocalDev) {
-            console.log('📂 Local development mode - using local assets');
-            console.log('   All media paths will resolve to local files');
+            window.debugLog('INIT', '📂 Local development mode - using local assets');
+            window.debugLog('INIT', '   All media paths will resolve to local files');
             this.initialized = true;
             return;
         }
         
         // Production: Load manifest
-        console.log('☁️ Production mode - loading media manifest...');
+        window.debugLog('INIT', '☁️ Production mode - loading media manifest...');
         
         try {
             const response = await fetch('/assets/media-manifest.json');
@@ -62,10 +62,10 @@ class MediaAssetManager {
             this.manifest = await response.json();
             this.baseUrl = this.manifest.baseUrl;
             
-            console.log(`✅ Media manifest loaded`);
-            console.log(`   Provider: ${this.manifest.cloudProvider}`);
-            console.log(`   Base URL: ${this.baseUrl}`);
-            console.log(`   Assets: ${this.manifest.totalAssets || Object.keys(this.manifest.assets).length}`);
+            window.debugLog('INIT', `✅ Media manifest loaded`);
+            window.debugLog('INIT', `   Provider: ${this.manifest.cloudProvider}`);
+            window.debugLog('INIT', `   Base URL: ${this.baseUrl}`);
+            window.debugLog('INIT', `   Assets: ${this.manifest.totalAssets || Object.keys(this.manifest.assets).length}`);
             
         } catch (err) {
             console.warn('⚠️ Failed to load media manifest:', err.message);
@@ -234,15 +234,15 @@ class MediaAssetManager {
      */
     debug() {
         console.group('🔍 MediaAssetManager Debug Info');
-        console.log('Mode:', this.isLocalDev ? 'LOCAL DEV' : 'PRODUCTION');
-        console.log('Initialized:', this.initialized);
-        console.log('Manifest loaded:', !!this.manifest);
-        console.log('Fallback to local:', this.fallbackToLocal);
-        console.log('Base URL:', this.baseUrl || 'N/A');
+        window.debugLog('INIT', 'Mode:', this.isLocalDev ? 'LOCAL DEV' : 'PRODUCTION');
+        window.debugLog('INIT', 'Initialized:', this.initialized);
+        window.debugLog('INIT', 'Manifest loaded:', !!this.manifest);
+        window.debugLog('INIT', 'Fallback to local:', this.fallbackToLocal);
+        window.debugLog('INIT', 'Base URL:', this.baseUrl || 'N/A');
         
         if (this.manifest) {
-            console.log('Total assets:', Object.keys(this.manifest.assets).length);
-            console.log('Provider:', this.manifest.cloudProvider);
+            window.debugLog('INIT', 'Total assets:', Object.keys(this.manifest.assets).length);
+            window.debugLog('INIT', 'Provider:', this.manifest.cloudProvider);
         }
         
         console.groupEnd();
@@ -257,5 +257,5 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = MediaAssetManager;
 }
 
-console.log('✅ MediaAssetManager loaded');
+window.debugLog('INIT', '✅ MediaAssetManager loaded');
 

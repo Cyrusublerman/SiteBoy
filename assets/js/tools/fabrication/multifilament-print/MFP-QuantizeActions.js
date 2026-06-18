@@ -72,7 +72,7 @@ export class MFPQuantizeActions {
                 const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
                 
                 adjustBundle.setSourceImage(imageData);
-                console.log('✅ Source image loaded into adjustment bundle');
+                window.debugLog('TOOLS', '✅ Source image loaded into adjustment bundle');
             }
             
             toolBase.draw();
@@ -1073,7 +1073,7 @@ export class MFPQuantizeActions {
             
             const colorCount = this.state.quantizationConfig.colorMap.length;
             toolBase.setValue('paletteStatus', `✅ Palette loaded: ${colorCount} colours (${this.state.quantizationConfig.type})`);
-            console.log(`✅ Palette loaded from JSON: ${colorCount} colours`);
+            window.debugLog('TOOLS', `✅ Palette loaded from JSON: ${colorCount} colours`);
             
         } catch (err) {
             console.error('❌ Palette load error:', err);

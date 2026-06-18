@@ -119,7 +119,7 @@ class AboutYouTool {
         // Setup heatmap
         this.setupHeatmap();
         
-        console.log('🔍 About You tool rendered - tracking active');
+        window.debugLog('TOOLS', '🔍 About You tool rendered - tracking active');
     }
     
     createStatsBox(F) {
@@ -707,7 +707,7 @@ class AboutYouTool {
     }
     
     destroy() {
-        console.log('🧹 Cleaning up About You tool...');
+        window.debugLog('TOOLS', '🧹 Cleaning up About You tool...');
         
         // Use CleanupManager to automatically clean everything
         CleanupManager.cleanupTool(this);
@@ -721,7 +721,7 @@ class AboutYouTool {
             this.container.classList.remove('tool-viewport');
         }
         
-        console.log('✅ About You tool cleaned up - all tracking stopped');
+        window.debugLog('TOOLS', '✅ About You tool cleaned up - all tracking stopped');
     }
 }
 
@@ -732,6 +732,6 @@ export default AboutYouTool;
 // Register globally for backward compatibility
 if (typeof window !== 'undefined') {
     window.AboutYouTool = AboutYouTool;
-    console.log('🔍 About You Tool v1.0.0 ready');
+    window.debugLog('TOOLS', '🔍 About You Tool v1.0.0 ready');
 }
 

@@ -398,7 +398,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             toolInstance.canvasArea.appendChild(stripEl);
         }
 
-        console.log('✅ Lissajous SequencerV2 created');
+        window.debugLog('TOOLS', '✅ Lissajous SequencerV2 created');
     }
     
     // ═══════════════════════════════════════════════════════════════════
@@ -838,7 +838,7 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
             this.tool.mount(this.container);
             this.tool.draw();
             
-            console.log('✅ LissajousTool v3.7 rendered');
+            window.debugLog('TOOLS', '✅ LissajousTool v3.7 rendered');
         } catch (error) {
             console.error('❌ LissajousTool error:', error);
             this.container.innerHTML = '<div style="padding:20px;color:var(--c-text)"><h2>ERROR</h2><p style="color:red">' + error.message + '</p></div>';
@@ -870,4 +870,4 @@ import { AnimationLoop } from '../../core/animation-foundation.js';
         window.LissajousTool = LissajousTool;
     }
     
-    console.log('✅ LissajousTool v3.7 loaded (reset/presets reset delta mode)');
+    window.debugLog('TOOLS', '✅ LissajousTool v3.7 loaded (reset/presets reset delta mode)');

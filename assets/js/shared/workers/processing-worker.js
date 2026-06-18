@@ -6,7 +6,7 @@
  * @module workers/processing-worker
  */
 
-console.log('🔧 Processing worker starting...');
+window.debugLog('VERBOSE', '🔧 Processing worker starting...');
 
 // Import algorithm modules
 let Algorithms = null;
@@ -18,15 +18,15 @@ let isInitialized = false;
 async function initialize() {
     if (isInitialized) return;
     
-    console.log('🔧 Worker initializing, importing algorithms...');
+    window.debugLog('VERBOSE', '🔧 Worker initializing, importing algorithms...');
     
     try {
         // Import algorithms bundle
         const module = await import('./algorithms-bundle.js');
         Algorithms = module;
         isInitialized = true;
-        console.log('✅ Worker initialized successfully');
-        console.log('✅ Available algorithms:', Object.keys(module));
+        window.debugLog('VERBOSE', '✅ Worker initialized successfully');
+        window.debugLog('VERBOSE', '✅ Available algorithms:', Object.keys(module));
         self.postMessage({ type: 'READY' });
     } catch (err) {
         console.error('❌ Worker initialization failed:', err);
@@ -44,7 +44,7 @@ async function initialize() {
  * Execute algorithm by name
  */
 function executeAlgorithm(algorithmPath, data, options, taskId) {
-    console.log('🔧 Worker executing algorithm:', algorithmPath);
+    window.debugLog('VERBOSE', '🔧 Worker executing algorithm:', algorithmPath);
     
     if (!isInitialized) {
         throw new Error('Worker not initialized');
@@ -54,7 +54,7 @@ function executeAlgorithm(algorithmPath, data, options, taskId) {
     const parts = algorithmPath.split('.');
     let fn = Algorithms;
     
-    console.log('🔧 Navigating to algorithm:', parts);
+    window.debugLog('NAVIGATION', '🔧 Navigating to algorithm:', parts);
     
     for (const part of parts) {
         fn = fn[part];
@@ -71,11 +71,11 @@ function executeAlgorithm(algorithmPath, data, options, taskId) {
         throw new Error(`${algorithmPath} is not a function`);
     }
     
-    console.log('✅ Found algorithm function, executing...');
+    window.debugLog('VERBOSE', '✅ Found algorithm function, executing...');
     
     // Execute the algorithm with data (no onProgress since functions can't be cloned)
     const result = fn(data, options);
-    console.log('✅ Algorithm execution complete');
+    window.debugLog('VERBOSE', '✅ Algorithm execution complete');
     return result;
 }
 
@@ -85,7 +85,7 @@ function executeAlgorithm(algorithmPath, data, options, taskId) {
 self.onmessage = async function(e) {
     const { type, id, algorithmName, data, options } = e.data;
     
-    console.log('🔧 Worker received message:', type, id ? `(task ${id})` : '');
+    window.debugLog('VERBOSE', '🔧 Worker received message:', type, id ? `(task ${id})` : '');
     
     try {
         switch (type) {
@@ -94,27 +94,27 @@ self.onmessage = async function(e) {
                 break;
                 
             case 'RUN':
-                console.log('🔧 Processing RUN command for task:', id);
+                window.debugLog('VERBOSE', '🔧 Processing RUN command for task:', id);
                 const runStartTime = performance.now();
                 
                 if (!isInitialized) {
-                    console.log('🔧 Worker not initialized, initializing now...');
+                    window.debugLog('VERBOSE', '🔧 Worker not initialized, initializing now...');
                     await initialize();
                 }
                 
-                console.log('🔧 Executing algorithm at:', (performance.now() - runStartTime).toFixed(2), 'ms');
+                window.debugLog('VERBOSE', '🔧 Executing algorithm at:', (performance.now() - runStartTime).toFixed(2), 'ms');
                 
                 // Execute algorithm with progress reporting
                 let result = executeAlgorithm(algorithmName, data, options, id);
                 
-                console.log('🔧 Algorithm complete at:', (performance.now() - runStartTime).toFixed(2), 'ms');
+                window.debugLog('VERBOSE', '🔧 Algorithm complete at:', (performance.now() - runStartTime).toFixed(2), 'ms');
                 
                 // Use transferable objects for ImageData (zero-copy transfer)
                 const transferList = [];
                 if (result && result.data && result.width && result.height) {
-                    console.log('🔧 Preparing ImageData result for transfer');
-                    console.log('🔧 Result data type:', result.data.constructor.name);
-                    console.log('🔧 Result data length:', result.data.length);
+                    window.debugLog('VERBOSE', '🔧 Preparing ImageData result for transfer');
+                    window.debugLog('VERBOSE', '🔧 Result data type:', result.data.constructor.name);
+                    window.debugLog('VERBOSE', '🔧 Result data length:', result.data.length);
                     // Get the underlying ArrayBuffer (transferable)
                     const buffer = result.data.buffer;
                     transferList.push(buffer);
@@ -126,8 +126,8 @@ self.onmessage = async function(e) {
                     };
                 }
                 
-                console.log('✅ Sending result back to main thread at:', (performance.now() - runStartTime).toFixed(2), 'ms');
-                console.log('🔧 Transfer list length:', transferList.length);
+                window.debugLog('VERBOSE', '✅ Sending result back to main thread at:', (performance.now() - runStartTime).toFixed(2), 'ms');
+                window.debugLog('VERBOSE', '🔧 Transfer list length:', transferList.length);
                 // Return result with transfer list for zero-copy performance
                 self.postMessage({
                     type: 'COMPLETE',
@@ -137,7 +137,7 @@ self.onmessage = async function(e) {
                 break;
                 
             case 'CANCEL':
-                console.log('🔧 Task cancelled:', id);
+                window.debugLog('VERBOSE', '🔧 Task cancelled:', id);
                 // Worker cancellation (future enhancement)
                 self.postMessage({
                     type: 'CANCELLED',
@@ -163,6 +163,6 @@ self.onmessage = async function(e) {
 };
 
 // Auto-initialize on load
-console.log('🔧 Worker loaded, auto-initializing...');
+window.debugLog('VERBOSE', '🔧 Worker loaded, auto-initializing...');
 initialize();
 

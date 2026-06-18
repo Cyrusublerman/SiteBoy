@@ -50,16 +50,16 @@ export class P5Canvas extends BaseComponent {
     
     static async ensureP5Loaded() {
         if (typeof window.p5 !== 'undefined') {
-            console.log('✅ p5.js already loaded');
+            window.debugLog('INIT', '✅ p5.js already loaded');
             return Promise.resolve();
         }
         
-        console.log('📦 Loading p5.js library...');
+        window.debugLog('INIT', '📦 Loading p5.js library...');
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js';
             script.onload = () => {
-                console.log('✅ p5.js library loaded successfully');
+                window.debugLog('INIT', '✅ p5.js library loaded successfully');
                 resolve();
             };
             script.onerror = (error) => {
@@ -302,7 +302,7 @@ export class P5EmbeddedSketch extends P5Canvas {
             const script = document.createElement('script');
             script.src = this.scriptPath;
             script.onload = () => {
-                console.log(`✅ P5.js sketch loaded: ${this.scriptPath}`);
+                window.debugLog('INIT', `✅ P5.js sketch loaded: ${this.scriptPath}`);
             };
             script.onerror = (error) => {
                 console.error(`❌ Failed to load P5.js sketch: ${this.scriptPath}`, error);
@@ -910,7 +910,7 @@ export class P5ControlledSketch extends BaseComponent {
                 await this.loadExternalSketch();
             }
             
-            console.log(`✅ P5ControlledSketch initialized: ${this.targetElementId}`);
+            window.debugLog('INIT', `✅ P5ControlledSketch initialized: ${this.targetElementId}`);
         } catch (error) {
             console.error(`❌ Failed to initialize P5ControlledSketch: ${this.targetElementId}`, error);
         }
@@ -943,7 +943,7 @@ export class P5ControlledSketch extends BaseComponent {
             scriptElement.textContent = scriptContent;
             document.head.appendChild(scriptElement);
             
-            console.log(`✅ P5.js sketch loaded: ${this.scriptPath}`);
+            window.debugLog('INIT', `✅ P5.js sketch loaded: ${this.scriptPath}`);
         } catch (error) {
             console.error(`❌ Failed to load P5.js sketch: ${this.scriptPath}`, error);
         }

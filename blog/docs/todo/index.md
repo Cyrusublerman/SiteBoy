@@ -49,7 +49,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| B1 | [B1-projects-section.md](B1-projects-section.md) | Complete projects section | P1 | WIP | — |
+| B1 | [B1-projects-section.md](B1-projects-section.md) | Complete projects section | P1 | DONE | — |
 | B2 | [B2-store-section.md](B2-store-section.md) | Add store section | P2 | TODO | → A1, A3 |
 | B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | TODO | — |
 | B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | TODO | → A4 |
@@ -68,17 +68,17 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| D1 | [D1-new-generators.md](D1-new-generators.md) | Ship queued generators | P1 | TODO | — |
-| D2 | [D2-animation-export.md](D2-animation-export.md) | TransportStrip record button | P1 | WIP | — |
+| D1 | [D1-new-generators.md](D1-new-generators.md) | Ship queued generators | P1 | DONE | — |
+| D2 | [D2-animation-export.md](D2-animation-export.md) | TransportStrip record button | P1 | DONE | — |
 | D3 | [D3-generator-audit.md](D3-generator-audit.md) | Compliance audit per generator | P2 | TODO | → D1 |
 | D3.1 | [D3.1-canvas-resize-audit.md](D3.1-canvas-resize-audit.md) | Canvas resize consistency audit | P2 | DONE | — |
-| D4 | [D4-sequencer-transport-wiring.md](D4-sequencer-transport-wiring.md) | Sequencer transport wiring | P1 | REVIEW | — |
+| D4 | [D4-sequencer-transport-wiring.md](D4-sequencer-transport-wiring.md) | Sequencer transport wiring | P1 | DONE | — |
 
 ## E. Distort
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| E1 | [E1-driver-fix.md](E1-driver-fix.md) | WU-3 — G1 driver (+D) fix | P0 | TODO | — |
+| E1 | [E1-driver-fix.md](E1-driver-fix.md) | WU-3 — G1 driver (+D) fix | P0 | DONE | — |
 | E2 | [E2-blend-audit.md](E2-blend-audit.md) | WU-4 — G13 blend-mode audit | P1 | TODO | → E1 |
 | E3 | [E3-residuals.md](E3-residuals.md) | WU-5 — G5 + G9 residuals | P2 | TODO | — |
 | E4 | [E4-worker-offload.md](E4-worker-offload.md) | WU-6 — G12 worker offload + bilateral fix | P1 | TODO | — |
@@ -102,7 +102,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | TODO | → A2, A3 |
-| G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | TODO | — |
+| G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | REVIEW | — |
 | G3 | [G3-portal-index.md](G3-portal-index.md) | Documentation portal index refresh | P2 | TODO | → G2 |
 
 ## H. Cross-cutting
@@ -110,7 +110,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | H1 | [H1-page-audit.md](H1-page-audit.md) | Every page passes page-compliance-audit | P0 | TODO | — |
-| H2 | [H2-console-log.md](H2-console-log.md) | Eliminate console.log outside owners | P1 | WIP | — |
+| H2 | [H2-console-log.md](H2-console-log.md) | Eliminate console.log outside owners | P1 | DONE | — |
 | H3 | [H3-dist-hygiene.md](H3-dist-hygiene.md) | Remove dist/ churn from commits | P1 | TODO | — |
 | H4 | [H4-design-rule-pass-b.md](H4-design-rule-pass-b.md) | Design-rule corpus: Pass-B LLM extract | P3 | DONE | — |
 | H5 | [H5-design-rule-embed-cluster-synth.md](H5-design-rule-embed-cluster-synth.md) | Design-rule corpus: embed / cluster / synth | P3 | DONE | — |

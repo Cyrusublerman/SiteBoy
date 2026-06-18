@@ -16,5 +16,5 @@ export { validateScriptConfig, SCRIPT_CATEGORIES } from './core/script-types.js'
 export * as Evaluation from './shared/evaluation.js';
 export * as Presets from './shared/presets.js';
 
-console.log('✅ Generators module loaded');
+window.debugLog('TOOLS', '✅ Generators module loaded');
 

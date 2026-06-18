@@ -466,7 +466,7 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
                     selectedPlanets = [];
                 }
                 selectedPlanets.push(planet);
-                console.log('Selected:', planet.name);
+                window.debugLog('TOOLS', 'Selected:', planet.name);
                 planetClicked = true;
                 break;
             }
@@ -483,7 +483,7 @@ import { ExportUtils } from '../../shared/algorithms/index.js';
             .then(function(data) {
                 longitude = data.longitude;
                 latitude = data.latitude;
-                console.log('Location from IP: ' + data.city + ', ' + data.country_name);
+                window.debugLog('TOOLS', 'Location from IP: ' + data.city + ', ' + data.country_name);
             })
             .catch(function(error) {
                 console.warn('IP geolocation failed:', error);
@@ -628,4 +628,4 @@ export class SolarSystemTool {
     }
 }
 
-console.log('✅ SolarSystemTool loaded (ES Module)');
+window.debugLog('TOOLS', '✅ SolarSystemTool loaded (ES Module)');

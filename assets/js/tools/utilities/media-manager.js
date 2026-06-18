@@ -989,7 +989,7 @@ class MediaManagerTool {
         // Clear input
         if (nameInput?.element) nameInput.element.value = '';
         
-        console.log('Added folder:', newName, 'at path:', this.selectedPath || '/');
+        window.debugLog('TOOLS', 'Added folder:', newName, 'at path:', this.selectedPath || '/');
     }
 
     onInputChange(key, value) {

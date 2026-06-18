@@ -604,7 +604,7 @@ export class BaseNavigationDropdown extends BaseComponent {
                 this.dropdownElement.style.top = `${triggerRect.bottom}px`;
                 this.dropdownElement.style.left = `${triggerRect.left}px`; // Align with trigger left edge
                 this.dropdownElement.style.width = `${triggerRect.width}px`; // Match trigger width exactly
-                console.log('🔄 Positioned dropdown to body at:', {
+                window.debugLog('VERBOSE', '🔄 Positioned dropdown to body at:', {
                     top: triggerRect.bottom,
                     left: triggerRect.left,
                     width: triggerRect.width,

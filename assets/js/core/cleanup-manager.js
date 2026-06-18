@@ -62,7 +62,7 @@ const CleanupManager = {
      * @param {Object} section - Section object with cleanup resources
      */
     cleanupSection(section) {
-        console.log('🧹 CleanupManager: Cleaning section...');
+        window.debugLog('VERBOSE', '🧹 CleanupManager: Cleaning section...');
         
         // Clear container
         if (section.currentContainer) {
@@ -94,7 +94,7 @@ const CleanupManager = {
             window.ComponentLibrary.destroyTracked(section.componentInstances);
         }
         
-        console.log('✅ CleanupManager: Section cleaned');
+        window.debugLog('VERBOSE', '✅ CleanupManager: Section cleaned');
     },
     
     /**
@@ -102,7 +102,7 @@ const CleanupManager = {
      * @param {Object} tool - Tool instance with cleanup resources
      */
     cleanupTool(tool) {
-        console.log('🧹 CleanupManager: Cleaning tool...');
+        window.debugLog('VERBOSE', '🧹 CleanupManager: Cleaning tool...');
         
         // Clean up event handlers
         if (tool.eventHandlers?.cleanup) {
@@ -134,7 +134,7 @@ const CleanupManager = {
             window.ComponentLibrary.destroyTracked(tool.componentInstances);
         }
         
-        console.log('✅ CleanupManager: Tool cleaned');
+        window.debugLog('VERBOSE', '✅ CleanupManager: Tool cleaned');
     },
     
     /**
@@ -165,7 +165,7 @@ const CleanupManager = {
                 target.removeEventListener(event, handler, options);
             });
             this.handlers = [];
-            console.log('  ✓ Event listeners removed');
+            window.debugLog('VERBOSE', '  ✓ Event listeners removed');
         }
         
         /**
@@ -211,7 +211,7 @@ const CleanupManager = {
         cleanup() {
             this.intervals.forEach(id => clearInterval(id));
             this.intervals = [];
-            console.log('  ✓ Intervals cleared');
+            window.debugLog('VERBOSE', '  ✓ Intervals cleared');
         }
         
         /**
@@ -257,7 +257,7 @@ const CleanupManager = {
         cleanup() {
             this.timeouts.forEach(id => clearTimeout(id));
             this.timeouts = [];
-            console.log('  ✓ Timeouts cleared');
+            window.debugLog('VERBOSE', '  ✓ Timeouts cleared');
         }
         
         /**
@@ -308,7 +308,7 @@ const CleanupManager = {
                 }
             });
             this.elements = [];
-            console.log('  ✓ Body elements removed');
+            window.debugLog('VERBOSE', '  ✓ Body elements removed');
         }
         
         /**
@@ -337,5 +337,5 @@ const CleanupManager = {
 // Export to window
 window.CleanupManager = CleanupManager;
 
-console.log('🧹 CleanupManager v1.0.0 ready - Centralized cleanup utilities loaded');
+window.debugLog('VERBOSE', '🧹 CleanupManager v1.0.0 ready - Centralized cleanup utilities loaded');
 

@@ -156,7 +156,7 @@ class GoogleFontsLoader {
             this.loadedFonts.add(fontKey);
             this.loadingPromises.delete(fontKey);
             
-            console.log(`✅ Google Font loaded: ${fontFamily}`);
+            window.debugLog('TOOLS', `✅ Google Font loaded: ${fontFamily}`);
             return fontFamily;
             
         } catch (error) {
@@ -304,6 +304,6 @@ if (typeof window !== 'undefined') {
     window.GoogleFontsLoader = GoogleFontsLoader;
     window.googleFontsLoader = new GoogleFontsLoader();
 
-    console.log('🔤 Google Fonts Loader ready - Dynamic font loading available');
+    window.debugLog('TOOLS', '🔤 Google Fonts Loader ready - Dynamic font loading available');
 }
 

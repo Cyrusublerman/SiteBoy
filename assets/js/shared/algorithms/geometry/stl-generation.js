@@ -102,7 +102,7 @@ export function vectorizePixels(pixelSet, width, height) {
  * 
  * @example
  * const stl = generateBox(0, 0, 0, 10, 10, 0.08);
- * console.log(stl);
+ * window.debugLog('INIT', stl);
  * // facet normal 0 0 -1
  * //   outer loop
  * //     vertex 0 0 0

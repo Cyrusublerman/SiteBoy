@@ -195,7 +195,7 @@ import { GeneratorTransportStrip } from './components/tool/TransportStrip.js';
  * Used by ToolBase to handle ['adjustment-bundle', 'standard'] config
  */
 const AdjustmentBundle = function(options = {}, deps = {}) {
-    console.log('🏭 AdjustmentBundle factory called with:', { bundleType: options.bundleType, options, deps });
+    window.debugLog('INIT', '🏭 AdjustmentBundle factory called with:', { bundleType: options.bundleType, options, deps });
     
     const { bundleType = 'standard' } = options;
     
@@ -211,11 +211,11 @@ const AdjustmentBundle = function(options = {}, deps = {}) {
         return null;
     }
     
-    console.log('✅ Creating bundle of type:', bundleType, BundleClass.name);
+    window.debugLog('INIT', '✅ Creating bundle of type:', bundleType, BundleClass.name);
     
     // Return instance of the correct bundle
     const instance = new BundleClass(options, deps);
-    console.log('✅ Bundle instance created:', instance);
+    window.debugLog('INIT', '✅ Bundle instance created:', instance);
     return instance;
 };
 

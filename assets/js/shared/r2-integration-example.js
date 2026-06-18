@@ -173,7 +173,7 @@ export class PreloadingGallery {
     const results = await R2Helper.preloadImages(thumbUrls);
     
     const successCount = results.filter(r => r.success).length;
-    console.log(`Preloaded ${successCount}/${thumbUrls.length} thumbnails`);
+    window.debugLog('INIT', `Preloaded ${successCount}/${thumbUrls.length} thumbnails`);
   }
 }
 
@@ -222,14 +222,14 @@ export function configureR2ForEnvironment() {
       useFallback: true,
       localBasePath: './art',
     });
-    console.log('R2 Helper: Using local fallback paths');
+    window.debugLog('INIT', 'R2 Helper: Using local fallback paths');
   } else {
     // Use R2 in production
     R2Helper.configureR2({
       useFallback: false,
       baseUrl: 'https://media.einoder.net',
     });
-    console.log('R2 Helper: Using Cloudflare R2');
+    window.debugLog('INIT', 'R2 Helper: Using Cloudflare R2');
   }
 }
 
@@ -244,7 +244,7 @@ export async function initR2() {
     console.warn('R2 health check failed, falling back to local paths');
     R2Helper.configureR2({ useFallback: true });
   } else {
-    console.log('✓ R2 is healthy and accessible');
+    window.debugLog('INIT', '✓ R2 is healthy and accessible');
   }
 }
 
