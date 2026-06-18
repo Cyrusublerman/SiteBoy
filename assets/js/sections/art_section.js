@@ -343,6 +343,53 @@ const ArtSection = {
         return found ? found.title : subId.toUpperCase();
     },
 
+    /** Map API gallery items to static manifest image rows (C1 adapter). */
+    _manifestFromApiItems(data, galleryType, galleryName) {
+        const name = galleryName.split('/').pop() || galleryName;
+        const images = (data.items || []).map((item) => {
+            const urls = item.urls || {
+                thumb: item.thumbUrl,
+                web: item.mediaUrl,
+                zoom: item.urls?.zoom || item.mediaUrl,
+            };
+            return {
+                id: item.slug || item.id,
+                filename: item.filename || `${item.slug || item.id}.${item.format || 'jpg'}`,
+                urls,
+                title: item.title,
+                caption: item.description,
+                tags: item.tags,
+            };
+        });
+        return {
+            gallery_name: name,
+            gallery_type: galleryType,
+            base_url: data.baseUrl || '',
+            images,
+            cards: data.cards,
+            groups: data.groups,
+        };
+    },
+
+    /**
+     * Fetch gallery manifest — API first (A3), static JSON fallback.
+     */
+    async _fetchManifest(galleryType, galleryName) {
+        const slug = `${galleryType}/${galleryName}`;
+        try {
+            const res = await fetch(`/api/content/art/${encodeURIComponent(slug)}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.items?.length) {
+                    return this._manifestFromApiItems(data, galleryType, galleryName);
+                }
+            }
+        } catch {
+            /* static fallback */
+        }
+        return R2Helper.fetchManifest(galleryType, galleryName);
+    },
+
     /**
      * Returns true when the final path segment matches a page card on the parent gallery.
      * Data-driven: reads manifest.cards (or legacy image.page) — no depth heuristics.
@@ -356,7 +403,7 @@ const ArtSection = {
         const galleryName = parts.slice(1, -1).join('/');
         if (!galleryName) return false;
         try {
-            const manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+            const manifest = await this._fetchManifest(galleryType, galleryName);
             return (manifest.cards || []).some(c => c.type === 'page' && c.id === pageId);
         } catch {
             return false;
@@ -474,7 +521,7 @@ const ArtSection = {
 
         let manifest;
         try {
-            manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+            manifest = await this._fetchManifest(galleryType, galleryName);
         } catch {
             this.navigationCallbacks?.navigateToSection?.('art', `${galleryType}/${galleryName}`);
             return;
@@ -554,7 +601,7 @@ const ArtSection = {
      * Returns: [{ id, title, images: [{thumb,src,zoom,title}], text }]
      */
     async _manifestGroups(galleryType, galleryName, labelPrefix) {
-        const manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+        const manifest = await this._fetchManifest(galleryType, galleryName);
 
         if (manifest.cards?.length) {
             const items = manifest.cards.map(c => this._cardToMasonryItem(c)).filter(Boolean);
@@ -700,7 +747,7 @@ const ArtSection = {
             return null;
         }
         try {
-            const manifest = await R2Helper.fetchManifest(r2Type, path);
+            const manifest = await this._fetchManifest(r2Type, path);
             return this._thumbFromManifest(manifest);
         } catch {
             return null;
@@ -789,7 +836,7 @@ const ArtSection = {
             return items;
         }
         try {
-            const manifest = await R2Helper.fetchManifest(r2Type, path);
+            const manifest = await this._fetchManifest(r2Type, path);
             const images = manifest.images || [];
             return this._spreadPick(images, 4).map(img => ({
                 id: img.id, title: img.id, image: img.urls?.thumb ?? null,
@@ -852,7 +899,7 @@ const ArtSection = {
         for (const sub of subsections) {
             try {
                 const subPath = relBase ? `${relBase}/${sub.id}` : sub.id;
-                const manifest = await R2Helper.fetchManifest(r2Type, subPath);
+                const manifest = await this._fetchManifest(r2Type, subPath);
                 (manifest.images || []).forEach(img => allImages.push({
                     thumb:   img.urls?.thumb,
                     src:     img.urls?.web,
@@ -891,7 +938,7 @@ const ArtSection = {
         let allImages = [];
         let cards = null;
         try {
-            manifest = await R2Helper.fetchManifest(galleryType, galleryName);
+            manifest = await this._fetchManifest(galleryType, galleryName);
             if (manifest.cards?.length) {
                 cards     = manifest.cards;
                 allImages = cards.map(c => this._cardToMasonryItem(c)).filter(Boolean);
@@ -1125,7 +1172,7 @@ const ArtSection = {
 
     async _photoManifestImages(setName) {
         try {
-            const manifest = await R2Helper.fetchManifest('photos', setName);
+            const manifest = await this._fetchManifest('photos', setName);
             const cap = setName.charAt(0).toUpperCase() + setName.slice(1);
             return (manifest.images || []).map(img => ({
                 thumb:   img.urls?.thumb,

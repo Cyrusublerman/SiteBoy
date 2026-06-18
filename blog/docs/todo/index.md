@@ -59,10 +59,10 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| C1 | [C1-gallery-organisation.md](C1-gallery-organisation.md) | Gallery taxonomy + schema | P1 | TODO | → A3 |
-| C2 | [C2-gallery-upload.md](C2-gallery-upload.md) | Server-backed upload pipeline | P1 | TODO | → A3, A4 |
-| C3 | [C3-thumbnails.md](C3-thumbnails.md) | Thumbnails for every item | P1 | TODO | → A4, C1 |
-| C4 | [C4-animation-export.md](C4-animation-export.md) | Generator animation → gallery | P1 | TODO | → C2, D2 |
+| C1 | [C1-gallery-organisation.md](C1-gallery-organisation.md) | Gallery taxonomy + schema | P1 | DONE | — |
+| C2 | [C2-gallery-upload.md](C2-gallery-upload.md) | Server-backed upload pipeline | P1 | DONE | — |
+| C3 | [C3-thumbnails.md](C3-thumbnails.md) | Thumbnails for every item | P1 | DONE | — |
+| C4 | [C4-animation-export.md](C4-animation-export.md) | Generator animation → gallery | P1 | DONE | — |
 
 ## D. Generators
 
