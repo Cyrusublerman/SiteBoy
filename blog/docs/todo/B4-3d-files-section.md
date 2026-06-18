@@ -1,6 +1,6 @@
 # B4 — 3D files section + viewer
 
-**Status**: WIP
+**Status**: REVIEW
 **Priority**: P2
 **Owner file(s)**: `assets/js/sections/three_d_section.js` (to author), `assets/js/shared/components/three-d/ModelViewer.js` (to author)
 **Blockers**: → A4
@@ -30,7 +30,7 @@ Section renders a thumbnail grid. Clicking any item opens an in-browser viewer. 
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: `ModelViewer` renders demo GLB (`demo-cube` → Astronaut.glb). Section + router registered. A4 signed-URL download and component doc still pending.
 
 ## References
 

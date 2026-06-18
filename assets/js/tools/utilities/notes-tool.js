@@ -5,6 +5,7 @@
  * @version 0.1.0
  */
 
+import { BaseComponent } from '../../shared/foundation.js';
 import { ToolBase } from '../core/tool-base.js';
 
 const TOOL_CONFIG = {
@@ -70,8 +71,7 @@ export class NotesTool {
         this.tool = null;
         this.componentInstances = [];
         if (this.container) {
-            this.container.classList.remove('tool-viewport');
-            this.container.innerHTML = '';
+            BaseComponent.clearSectionContainer(this.container, ['tool-viewport']);
         }
     }
 }

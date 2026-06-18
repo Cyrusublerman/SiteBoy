@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-06-08 (D3.1 canvas resize audit).
+Last touched: 2026-06-18 (B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
 
 ---
 
@@ -50,9 +50,9 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | B1 | [B1-projects-section.md](B1-projects-section.md) | Complete projects section | P1 | DONE | — |
-| B2 | [B2-store-section.md](B2-store-section.md) | Add store section | P2 | WIP | → A1, A3 |
-| B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | WIP | — |
-| B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | WIP | → A4 |
+| B2 | [B2-store-section.md](B2-store-section.md) | Add store section | P2 | REVIEW | → A1, A3 |
+| B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | DONE | — |
+| B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | REVIEW | → A4 |
 | B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | WIP | → B4 |
 
 ## C. Gallery
@@ -93,7 +93,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | --- | --- | --- | --- | --- | --- |
 | F1 | [F1-cursive-glyph-builder.md](F1-cursive-glyph-builder.md) | Cursive glyph builder MVP completion | P1 | DONE | — |
 | F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | WIP | → A3 |
-| F3 | [F3-uncommitted-work.md](F3-uncommitted-work.md) | Land current uncommitted work | P0 | WIP | — |
+| F3 | [F3-uncommitted-work.md](F3-uncommitted-work.md) | Land current uncommitted work | P0 | DONE | — |
 | F4 | [F4-cursive-glyph-builder-ux.md](F4-cursive-glyph-builder-ux.md) | Cursive glyph builder toolbar + sidebar UX | P1 | DONE | — |
 | F5 | [F5-handwriting-vector-compose.md](F5-handwriting-vector-compose.md) | Handwriting vector compose SVG export | P2 | DONE | — |
 
@@ -111,7 +111,7 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | --- | --- | --- | --- | --- | --- |
 | H1 | [H1-page-audit.md](H1-page-audit.md) | Every page passes page-compliance-audit | P0 | TODO | — |
 | H2 | [H2-console-log.md](H2-console-log.md) | Eliminate console.log outside owners | P1 | DONE | — |
-| H3 | [H3-dist-hygiene.md](H3-dist-hygiene.md) | Remove dist/ churn from commits | P1 | TODO | — |
+| H3 | [H3-dist-hygiene.md](H3-dist-hygiene.md) | Remove dist/ churn from commits | P1 | DONE | — |
 | H4 | [H4-design-rule-pass-b.md](H4-design-rule-pass-b.md) | Design-rule corpus: Pass-B LLM extract | P3 | DONE | — |
 | H5 | [H5-design-rule-embed-cluster-synth.md](H5-design-rule-embed-cluster-synth.md) | Design-rule corpus: embed / cluster / synth | P3 | DONE | — |
 | H6 | [H6-design-rule-conflict-emit-lint.md](H6-design-rule-conflict-emit-lint.md) | Design-rule corpus: conflict / emit / lint / test | P3 | REVIEW | → H4, H5 |

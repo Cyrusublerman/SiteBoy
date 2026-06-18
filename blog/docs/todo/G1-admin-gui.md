@@ -20,6 +20,7 @@ One `#admin` route from which every manageable section is editable: gallery uplo
 - [x] Decide single-app vs per-section admin shell.
 - [x] Author `admin_section.js` as the index shell.
 - [x] Gate every `#admin/*` route behind A2 auth middleware.
+- [x] Wire `admin_section.js` to `assets/js/admin/auth.js` (replaces localStorage stub).
 - [ ] Gallery editor (consumes C2 upload pipeline + C1 schema).
 - [ ] Project editor (CRUD on A3 `projects`; preview rendering matches `projects_section.js`).
 - [ ] Store SKU editor (CRUD on A3 `products`).
@@ -30,7 +31,7 @@ One `#admin` route from which every manageable section is editable: gallery uplo
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: `admin_section.js` now calls `window.Auth.bootstrap/login/logout/isAuthenticated` from `assets/js/admin/auth.js`. Per-section CRUD editors still placeholder shells.
 
 ## References
 

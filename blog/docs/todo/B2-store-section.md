@@ -1,6 +1,6 @@
 # B2 — Store section
 
-**Status**: WIP
+**Status**: REVIEW
 **Priority**: P2
 **Owner file(s)**: `assets/js/sections/store_section.js` (to author), `blog/docs/site/store-spec.md` (to author)
 **Blockers**: → A1, A3
@@ -30,7 +30,7 @@ Section registers in the router. Browsing → cart → checkout works on preview
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: Skeleton complete — router registered (`#store`, `#store/cart`, `#store/checkout`, `#store/{sku}`, `#store/receipt/{id}`). Cart persists via `localStorage` key `siteboy:store:cart`. Checkout is Stripe test-mode stub (no live charge). A3 product schema + preview checkout pending.
 
 ## References
 

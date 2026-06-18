@@ -4,16 +4,209 @@
  * Product browse, cart (localStorage), Stripe test-mode checkout stub.
  * See blog/docs/site/store-spec.md.
  *
- * @version 1.0.0
- * @dependencies ['ComponentLibrary']
+ * @version 1.1.0
+ * @dependencies ['ComponentLibrary', 'BaseComponent']
  */
 
+class StorePageView extends BaseComponent {
+    constructor(mode, options = {}, deps = {}) {
+        super({ componentType: 'store-page' }, deps);
+        this.mode = mode;
+        this.products = options.products || [];
+        this.product = options.product || null;
+        this.orderId = options.orderId || '';
+        this.cartKey = options.cartKey || 'siteboy:store:cart';
+        this.onNavigate = options.onNavigate;
+        this.formatPrice = options.formatPrice;
+        this.formatCents = options.formatCents;
+        this.getCart = options.getCart;
+        this.addToCart = options.addToCart;
+        this.runCheckoutStub = options.runCheckoutStub;
+        this.tracked = [];
+    }
+
+    _track(component) {
+        this.tracked.push(component);
+        this.children.add(component);
+        return component;
+    }
+
+    render() {
+        if (this.element) return this.element;
+
+        const classMap = {
+            index: 'store-section-index',
+            product: 'store-section-detail',
+            cart: 'store-section-cart',
+            checkout: 'store-section-checkout',
+            receipt: 'store-section-receipt'
+        };
+        this.element = this.createElement('div', `store-section ${classMap[this.mode] || ''} toc-container`.trim());
+
+        switch (this.mode) {
+            case 'index': this._renderIndex(); break;
+            case 'product': this._renderProduct(); break;
+            case 'cart': this._renderCart(); break;
+            case 'checkout': this._renderCheckout(); break;
+            case 'receipt': this._renderReceipt(); break;
+            default: break;
+        }
+
+        return this.element;
+    }
+
+    _renderIndex() {
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({ level: 1, content: 'STORE' }, this.deps)).render());
+        this.products.filter((p) => p.active).forEach((product) => {
+            const line = this._track(new ComponentLibrary.Paragraph({
+                content: `${product.title} — ${this.formatPrice(product)}`,
+                isClickable: true,
+                onClick: () => this.onNavigate?.(product.sku)
+            }, this.deps));
+            const lineEl = line.render();
+            lineEl.classList.add('store-product-row');
+            this.appendElement(this.element, lineEl);
+        });
+        this._appendCartLink();
+    }
+
+    _renderProduct() {
+        const product = this.product;
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({ level: 1, content: product.title }, this.deps)).render());
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({ content: product.description || '' }, this.deps)).render());
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({ content: this.formatPrice(product) }, this.deps)).render());
+        const addBtn = this._track(new ComponentLibrary.Button({
+            text: 'ADD TO CART',
+            onClick: () => {
+                this.addToCart?.(product.sku, 1);
+                window.debugLog('TOOLS', `🛒 Added ${product.sku} to cart`);
+            }
+        }, this.deps));
+        this.appendElement(this.element, addBtn.render());
+        this._appendCartLink();
+    }
+
+    _renderCart() {
+        const cart = this.getCart?.() || [];
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({ level: 1, content: 'CART' }, this.deps)).render());
+
+        if (!cart.length) {
+            this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({ content: 'Cart is empty.' }, this.deps)).render());
+            this._appendStoreLink();
+            return;
+        }
+
+        let total = 0;
+        cart.forEach((line) => {
+            const product = this.products.find((p) => p.sku === line.sku);
+            if (!product) return;
+            const lineTotal = product.price_cents * line.qty;
+            total += lineTotal;
+            this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({
+                content: `${product.title} × ${line.qty} — ${this.formatCents(lineTotal, product.currency)}`
+            }, this.deps)).render());
+        });
+
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({
+            content: `SUBTOTAL — ${this.formatCents(total, 'aud')}`
+        }, this.deps)).render());
+
+        const checkoutBtn = this._track(new ComponentLibrary.Button({
+            text: 'CHECKOUT',
+            onClick: () => this.onNavigate?.('checkout')
+        }, this.deps));
+        this.appendElement(this.element, checkoutBtn.render());
+    }
+
+    _renderCheckout() {
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({ level: 1, content: 'CHECKOUT' }, this.deps)).render());
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({
+            content: 'Stripe test-mode stub. Backend session endpoint pending A1/A3.'
+        }, this.deps)).render());
+
+        const emailInput = this._track(new ComponentLibrary.TextInput({
+            label: 'EMAIL',
+            placeholder: 'you@example.com',
+            key: 'checkoutEmail'
+        }, this.deps));
+        this.appendElement(this.element, emailInput.render());
+
+        const payBtn = this._track(new ComponentLibrary.Button({
+            text: 'PAY (TEST MODE)',
+            onClick: () => this.runCheckoutStub?.(emailInput.getValue?.() || '')
+        }, this.deps));
+        this.appendElement(this.element, payBtn.render());
+    }
+
+    _renderReceipt() {
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({ level: 1, content: 'ORDER RECEIVED' }, this.deps)).render());
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({
+            content: `Test order ${this.orderId}. No charge applied.`
+        }, this.deps)).render());
+        this._appendStoreLink();
+    }
+
+    _appendCartLink() {
+        const cart = this._track(new ComponentLibrary.Paragraph({
+            content: `CART (${(this.getCart?.() || []).reduce((n, l) => n + l.qty, 0)})`,
+            isClickable: true,
+            onClick: () => this.onNavigate?.('cart')
+        }, this.deps));
+        const cartEl = cart.render();
+        cartEl.classList.add('store-cart-link');
+        this.appendElement(this.element, cartEl);
+    }
+
+    _appendStoreLink() {
+        const back = this._track(new ComponentLibrary.Paragraph({
+            content: '← BACK TO STORE',
+            isClickable: true,
+            onClick: () => this.onNavigate?.(null)
+        }, this.deps));
+        this.appendElement(this.element, back.render());
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
+class StoreErrorView extends BaseComponent {
+    constructor(message, deps = {}) {
+        super({ componentType: 'store-error' }, deps);
+        this.message = message;
+        this.tracked = [];
+    }
+
+    render() {
+        if (this.element) return this.element;
+        this.element = this.createElement('div', 'store-section toc-container');
+        const para = new ComponentLibrary.Paragraph({ content: `⚠ ${this.message}` }, this.deps);
+        this.tracked.push(para);
+        this.appendElement(this.element, para.render());
+        return this.element;
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
 const StoreSection = {
-    version: '1.0.0',
+    version: '1.1.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
     cartKey: 'siteboy:store:cart',
+    _view: null,
 
     STUB_PRODUCTS: [
         { sku: 'print-a3', title: 'A3 PRINT', description: 'Signed A3 generative print.', price_cents: 4500, currency: 'aud', active: true },
@@ -36,125 +229,51 @@ const StoreSection = {
         window.NavigationController.setupNavigation('store', subsection, this.pages, callbacks);
 
         if (!subsection) {
-            this.renderIndex();
+            this._mount('index');
         } else if (subsection === 'cart') {
-            this.renderCart();
+            this._mount('cart');
         } else if (subsection === 'checkout') {
-            this.renderCheckout();
+            this._mount('checkout');
         } else if (subsection.startsWith('receipt/')) {
-            this.renderReceipt(subsection.split('/')[1]);
+            this._mount('receipt', { orderId: subsection.split('/')[1] });
         } else {
-            this.renderProduct(subsection);
-        }
-    },
-
-    renderIndex() {
-        this._prepareContainer('store-section-index');
-        const deps = this._deps();
-        const tracked = this._track();
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({ level: 1, content: 'STORE' }, deps)).render());
-
-        const items = this.STUB_PRODUCTS.filter((p) => p.active);
-        items.forEach((product) => {
-            const line = tracked(new ComponentLibrary.Paragraph({
-                content: `${product.title} — ${this.formatPrice(product)}`,
-                isClickable: true,
-                onClick: () => this._navigate(product.sku)
-            }, deps));
-            const lineEl = line.render();
-            lineEl.classList.add('store-product-row');
-            this.currentContainer.appendChild(lineEl);
-        });
-
-        this._appendCartLink(deps, tracked);
-    },
-
-    renderProduct(sku) {
-        const product = this.STUB_PRODUCTS.find((p) => p.sku === sku);
-        if (!product) {
-            this.renderError(`Unknown product: ${sku}`);
-            return;
-        }
-
-        this._prepareContainer('store-section-detail');
-        const deps = this._deps();
-        const tracked = this._track();
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({ level: 1, content: product.title }, deps)).render());
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({ content: product.description || '' }, deps)).render());
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({ content: this.formatPrice(product) }, deps)).render());
-
-        const addBtn = tracked(new ComponentLibrary.Button({
-            text: 'ADD TO CART',
-            onClick: () => {
-                this.addToCart(product.sku, 1);
-                window.debugLog('TOOLS', `🛒 Added ${product.sku} to cart`);
+            const product = this.STUB_PRODUCTS.find((p) => p.sku === subsection);
+            if (!product) {
+                this._mountError(`Unknown product: ${subsection}`);
+                return;
             }
-        }, deps));
-        this.currentContainer.appendChild(addBtn.render());
-
-        this._appendCartLink(deps, tracked);
-    },
-
-    renderCart() {
-        this._prepareContainer('store-section-cart');
-        const deps = this._deps();
-        const tracked = this._track();
-        const cart = this.getCart();
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({ level: 1, content: 'CART' }, deps)).render());
-
-        if (!cart.length) {
-            this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({ content: 'Cart is empty.' }, deps)).render());
-            this._appendStoreLink(deps, tracked);
-            return;
+            this._mount('product', { product });
         }
-
-        let total = 0;
-        cart.forEach((line) => {
-            const product = this.STUB_PRODUCTS.find((p) => p.sku === line.sku);
-            if (!product) return;
-            const lineTotal = product.price_cents * line.qty;
-            total += lineTotal;
-            this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({
-                content: `${product.title} × ${line.qty} — ${this.formatCents(lineTotal, product.currency)}`
-            }, deps)).render());
-        });
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({
-            content: `SUBTOTAL — ${this.formatCents(total, 'aud')}`
-        }, deps)).render());
-
-        const checkoutBtn = tracked(new ComponentLibrary.Button({
-            text: 'CHECKOUT',
-            onClick: () => this._navigate('checkout')
-        }, deps));
-        this.currentContainer.appendChild(checkoutBtn.render());
     },
 
-    renderCheckout() {
-        this._prepareContainer('store-section-checkout');
-        const deps = this._deps();
-        const tracked = this._track();
+    _deps() {
+        return { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
+    },
 
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({ level: 1, content: 'CHECKOUT' }, deps)).render());
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({
-            content: 'Stripe test-mode stub. Backend session endpoint pending A1/A3.'
-        }, deps)).render());
+    _viewOptions(extra = {}) {
+        return {
+            products: this.STUB_PRODUCTS,
+            cartKey: this.cartKey,
+            onNavigate: (sub) => this._navigate(sub),
+            formatPrice: (p) => this.formatPrice(p),
+            formatCents: (c, cur) => this.formatCents(c, cur),
+            getCart: () => this.getCart(),
+            addToCart: (sku, qty) => this.addToCart(sku, qty),
+            runCheckoutStub: (email) => this.runCheckoutStub(email),
+            ...extra
+        };
+    },
 
-        const emailInput = tracked(new ComponentLibrary.TextInput({
-            label: 'EMAIL',
-            placeholder: 'you@example.com',
-            key: 'checkoutEmail'
-        }, deps));
-        this.currentContainer.appendChild(emailInput.render());
+    _mount(mode, extra = {}) {
+        this._view = new StorePageView(mode, this._viewOptions(extra), this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
+    },
 
-        const payBtn = tracked(new ComponentLibrary.Button({
-            text: 'PAY (TEST MODE)',
-            onClick: () => this.runCheckoutStub(emailInput.getValue?.() || '')
-        }, deps));
-        this.currentContainer.appendChild(payBtn.render());
+    _mountError(message) {
+        this._view = new StoreErrorView(message, this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
     },
 
     runCheckoutStub(email) {
@@ -173,18 +292,6 @@ const StoreSection = {
 
         this.clearCart();
         this._navigate(`receipt/${orderId}`);
-    },
-
-    renderReceipt(orderId) {
-        this._prepareContainer('store-section-receipt');
-        const deps = this._deps();
-        const tracked = this._track();
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({ level: 1, content: 'ORDER RECEIVED' }, deps)).render());
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({
-            content: `Test order ${orderId}. No charge applied.`
-        }, deps)).render());
-        this._appendStoreLink(deps, tracked);
     },
 
     getCart() {
@@ -231,57 +338,17 @@ const StoreSection = {
         }
     },
 
-    _appendCartLink(deps, tracked) {
-        const cart = tracked(new ComponentLibrary.Paragraph({
-            content: `CART (${this.getCart().reduce((n, l) => n + l.qty, 0)})`,
-            isClickable: true,
-            onClick: () => this._navigate('cart')
-        }, deps));
-        const cartEl = cart.render();
-        cartEl.classList.add('store-cart-link');
-        this.currentContainer.appendChild(cartEl);
-    },
-
-    _appendStoreLink(deps, tracked) {
-        const back = tracked(new ComponentLibrary.Paragraph({
-            content: '← BACK TO STORE',
-            isClickable: true,
-            onClick: () => this._navigate(null)
-        }, deps));
-        this.currentContainer.appendChild(back.render());
-    },
-
-    _prepareContainer(className) {
-        this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('store-section', className, 'toc-container');
-    },
-
-    _deps() {
-        return { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
-    },
-
-    _track() {
-        return (component) => {
-            this.componentInstances.push(component);
-            return component;
-        };
-    },
-
-    renderError(message) {
-        this.currentContainer.innerHTML = '';
-        const para = new ComponentLibrary.Paragraph({ content: `⚠ ${message}` }, this._deps());
-        this.componentInstances.push(para);
-        this.currentContainer.appendChild(para.render());
-    },
-
     cleanup() {
         window.debugLog('VERBOSE', '🧹 Cleaning up Store Section...');
-        if (this.currentContainer) {
-            this.currentContainer.innerHTML = '';
-            this.currentContainer.classList.remove('store-section', 'store-section-index', 'store-section-detail', 'store-section-cart', 'store-section-checkout', 'store-section-receipt', 'toc-container');
+        if (this._view) {
+            this._view.destroy();
+            this._view = null;
         }
-        if (this.componentInstances.length && window.ComponentLibrary) {
-            ComponentLibrary.destroyTracked(this.componentInstances);
+        if (this.currentContainer) {
+            BaseComponent.clearSectionContainer(this.currentContainer, [
+                'store-section', 'store-section-index', 'store-section-detail',
+                'store-section-cart', 'store-section-checkout', 'store-section-receipt', 'toc-container'
+            ]);
         }
         this.componentInstances = [];
     }

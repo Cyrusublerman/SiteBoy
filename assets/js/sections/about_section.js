@@ -2,18 +2,150 @@
  * About Section - SiteBoy Framework
  *
  * JSON-driven bio page from blog/data/about.json.
- * ComponentLibrary blocks only; no manual DOM in section handlers.
+ * ComponentLibrary blocks only; DOM via BaseComponent views.
  *
- * @version 1.0.0
- * @dependencies ['ComponentLibrary']
+ * @version 1.1.0
+ * @dependencies ['ComponentLibrary', 'BaseComponent']
  */
 
+class AboutPageView extends BaseComponent {
+    constructor(data, options = {}, deps = {}) {
+        super({ componentType: 'about-page' }, deps);
+        this.data = data;
+        this.onNavigate = options.onNavigate;
+        this.tracked = [];
+    }
+
+    _track(component) {
+        this.tracked.push(component);
+        this.children.add(component);
+        return component;
+    }
+
+    render() {
+        if (this.element) return this.element;
+
+        this.element = this.createElement('div', 'about-section toc-container');
+        const data = this.data;
+
+        const title = this._track(new ComponentLibrary.Heading({
+            level: 1,
+            content: data.header || 'ABOUT'
+        }, this.deps));
+        this.appendElement(this.element, title.render());
+
+        if (data.subheader) {
+            const sub = this._track(new ComponentLibrary.Paragraph({ content: data.subheader }, this.deps));
+            const subEl = sub.render();
+            subEl.classList.add('about-section-subheader');
+            this.appendElement(this.element, subEl);
+        }
+
+        if (data.hero?.src) {
+            const hero = this._track(new ComponentLibrary.Image({
+                src: data.hero.src,
+                caption: data.hero.caption || '',
+                size: (data.hero.size || 'm').toLowerCase()
+            }, this.deps));
+            this.appendElement(this.element, hero.render());
+        }
+
+        if (Array.isArray(data.blocks)) {
+            data.blocks.forEach((block) => {
+                const el = window.BlockRenderer?.renderBlock(block, this.tracked)
+                    ?? this._renderBlockFallback(block);
+                if (el) this.appendElement(this.element, el);
+            });
+        }
+
+        if (Array.isArray(data.links) && data.links.length) {
+            const linksHeading = this._track(new ComponentLibrary.Heading({ level: 2, content: 'LINKS' }, this.deps));
+            this.appendElement(this.element, linksHeading.render());
+
+            data.links.forEach((link) => {
+                const para = this._track(new ComponentLibrary.Paragraph({
+                    content: link.label || link.url,
+                    isClickable: true,
+                    onClick: () => this.onNavigate?.(link)
+                }, this.deps));
+                const paraEl = para.render();
+                paraEl.classList.add('about-section-link');
+                this.appendElement(this.element, paraEl);
+            });
+        }
+
+        if (Array.isArray(data.timeline) && data.timeline.length) {
+            const timelineHeading = this._track(new ComponentLibrary.Heading({ level: 2, content: 'TIMELINE' }, this.deps));
+            this.appendElement(this.element, timelineHeading.render());
+
+            data.timeline.forEach((entry) => {
+                const md = this._track(new ComponentLibrary.MarkdownBody({
+                    markdownText: `**${entry.year} — ${entry.title}**\n\n${entry.detail || ''}`
+                }, this.deps));
+                this.appendElement(this.element, md.render());
+            });
+        }
+
+        return this.element;
+    }
+
+    _renderBlockFallback(block) {
+        if (block.type === 'markdown') {
+            const md = this._track(new ComponentLibrary.MarkdownBody({ markdownText: block.content || '' }, this.deps));
+            return md.render();
+        }
+        if (block.type === 'media' && block.src) {
+            const img = this._track(new ComponentLibrary.Image({
+                src: block.src,
+                caption: block.caption || '',
+                size: (block.size || 'm').toLowerCase()
+            }, this.deps));
+            return img.render();
+        }
+        return null;
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
+class AboutErrorView extends BaseComponent {
+    constructor(message, deps = {}) {
+        super({ componentType: 'about-error' }, deps);
+        this.message = message;
+        this.tracked = [];
+    }
+
+    render() {
+        if (this.element) return this.element;
+        this.element = this.createElement('div', 'about-section toc-container');
+        const para = new ComponentLibrary.Paragraph({ content: `⚠ ${this.message}` }, this.deps);
+        this.tracked.push(para);
+        this.appendElement(this.element, para.render());
+        return this.element;
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
 const AboutSection = {
-    version: '1.0.0',
+    version: '1.1.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
     dataUrl: 'blog/data/about.json',
+    _view: null,
 
     async handleRoute(subsection, container, callbacks = {}) {
         window.debugLog('NAVIGATION', `👤 About Section v${this.version} handling route: ${subsection || 'main'}`);
@@ -23,7 +155,7 @@ const AboutSection = {
         this.cleanup();
 
         if (subsection) {
-            this.renderError(`Unknown about route: ${subsection}`);
+            this._mountError(`Unknown about route: ${subsection}`);
             return;
         }
 
@@ -31,10 +163,10 @@ const AboutSection = {
 
         try {
             const data = await this.loadData();
-            this.renderPage(data);
+            this._mountPage(data);
         } catch (err) {
             console.error('About section load failed:', err);
-            this.renderError(err.message);
+            this._mountError(err.message);
         }
     },
 
@@ -44,91 +176,23 @@ const AboutSection = {
         return response.json();
     },
 
-    renderPage(data) {
-        const deps = { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
-        const tracked = (component) => {
-            this.componentInstances.push(component);
-            return component;
-        };
+    _deps() {
+        return { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
+    },
 
-        this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('about-section', 'toc-container');
-
-        const title = tracked(new ComponentLibrary.Heading({
-            level: 1,
-            content: data.header || 'ABOUT'
-        }, deps));
-        this.currentContainer.appendChild(title.render());
-
-        if (data.subheader) {
-            const sub = tracked(new ComponentLibrary.Paragraph({ content: data.subheader }, deps));
-            const subEl = sub.render();
-            subEl.classList.add('about-section-subheader');
-            this.currentContainer.appendChild(subEl);
-        }
-
-        if (data.hero?.src) {
-            const hero = tracked(new ComponentLibrary.Image({
-                src: data.hero.src,
-                caption: data.hero.caption || '',
-                size: (data.hero.size || 'm').toLowerCase()
-            }, deps));
-            this.currentContainer.appendChild(hero.render());
-        }
-
-        if (Array.isArray(data.blocks)) {
-            data.blocks.forEach((block) => {
-                const el = window.BlockRenderer?.renderBlock(block, this.componentInstances)
-                    ?? this._renderBlockFallback(block, tracked, deps);
-                if (el) this.currentContainer.appendChild(el);
-            });
-        }
-
-        if (Array.isArray(data.links) && data.links.length) {
-            const linksHeading = tracked(new ComponentLibrary.Heading({ level: 2, content: 'LINKS' }, deps));
-            this.currentContainer.appendChild(linksHeading.render());
-
-            data.links.forEach((link) => {
-                const para = tracked(new ComponentLibrary.Paragraph({
-                    content: link.label || link.url,
-                    isClickable: true,
-                    onClick: () => this._openLink(link)
-                }, deps));
-                const paraEl = para.render();
-                paraEl.classList.add('about-section-link');
-                this.currentContainer.appendChild(paraEl);
-            });
-        }
-
-        if (Array.isArray(data.timeline) && data.timeline.length) {
-            const timelineHeading = tracked(new ComponentLibrary.Heading({ level: 2, content: 'TIMELINE' }, deps));
-            this.currentContainer.appendChild(timelineHeading.render());
-
-            data.timeline.forEach((entry) => {
-                const md = tracked(new ComponentLibrary.MarkdownBody({
-                    markdownText: `**${entry.year} — ${entry.title}**\n\n${entry.detail || ''}`
-                }, deps));
-                this.currentContainer.appendChild(md.render());
-            });
-        }
-
+    _mountPage(data) {
+        this._view = new AboutPageView(data, {
+            onNavigate: (link) => this._openLink(link)
+        }, this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
         window.debugLog('NAVIGATION', '✅ About page rendered from JSON');
     },
 
-    _renderBlockFallback(block, tracked, deps) {
-        if (block.type === 'markdown') {
-            const md = tracked(new ComponentLibrary.MarkdownBody({ markdownText: block.content || '' }, deps));
-            return md.render();
-        }
-        if (block.type === 'media' && block.src) {
-            const img = tracked(new ComponentLibrary.Image({
-                src: block.src,
-                caption: block.caption || '',
-                size: (block.size || 'm').toLowerCase()
-            }, deps));
-            return img.render();
-        }
-        return null;
+    _mountError(message) {
+        this._view = new AboutErrorView(message, this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
     },
 
     _openLink(link) {
@@ -148,23 +212,14 @@ const AboutSection = {
         }
     },
 
-    renderError(message) {
-        this.currentContainer.innerHTML = '';
-        const para = new ComponentLibrary.Paragraph({ content: `⚠ ${message}` }, {
-            MF: window.MathematicalFoundation
-        });
-        this.componentInstances.push(para);
-        this.currentContainer.appendChild(para.render());
-    },
-
     cleanup() {
         window.debugLog('VERBOSE', '🧹 Cleaning up About Section...');
-        if (this.currentContainer) {
-            this.currentContainer.innerHTML = '';
-            this.currentContainer.classList.remove('about-section', 'toc-container');
+        if (this._view) {
+            this._view.destroy();
+            this._view = null;
         }
-        if (this.componentInstances.length && window.ComponentLibrary) {
-            ComponentLibrary.destroyTracked(this.componentInstances);
+        if (this.currentContainer) {
+            BaseComponent.clearSectionContainer(this.currentContainer, ['about-section', 'toc-container']);
         }
         this.componentInstances = [];
     }

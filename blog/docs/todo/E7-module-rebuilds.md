@@ -57,7 +57,24 @@ Every module listed below has zero open `ERROR` or `WARN` rows in `distort-issue
 
 ## Notes / decisions
 
-2026-06-18: Critical rebuilds landed in node code (prior sessions + dilateerode shape/isotropic fix). Remaining PARITY rows in issue register are `blocked-by-algorithm` — need row-by-row closure audit before DONE.
+2026-06-18: Critical rebuilds landed in node code (prior sessions + dilateerode shape/isotropic fix). Remaining open PARITY rows (blocked-by-algorithm, not G1-blocked):
+
+| Module | Open PARITY rows |
+| --- | --- |
+| filmgrain | overlay-only grain; no multi-scale, chromatic, tonal zones, field output, temporal |
+| vignette | (moderate — see issue register) |
+| halftonepattern | hardcoded dot pattern; luminance/curve locked |
+| grating | static overlay; not field-driven |
+| domainwarp | whole-image warp only; limited field types |
+| cellularautomata | no image coupling, stepping, or colour mapping |
+| wavedistortion | (moderate — see issue register) |
+| delaunaymesh | uniform seeds; no density field or topology options |
+| sdfshape | (moderate — see issue register) |
+| bandshift | NOISE + STEPPED modes broken |
+| histogrameq | STRENGTH param no-op |
+| moduleflowlines | full rebuild pending |
+
+Row-by-row closure audit required before DONE. Issue register: `distort-issue-register.md`.
 
 ## References
 

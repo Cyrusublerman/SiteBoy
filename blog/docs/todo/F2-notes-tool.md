@@ -18,11 +18,7 @@ All four sub-items (F2.a–F2.d) DONE.
 ## Sub-tasks
 
 ### F2.a — Scope doc
-- [x] Enumerate input formats: `.md`, `.txt`, `.pdf`, image scans (OCR yes/no?), other.
-- [x] Enumerate source locations: filesystem path(s), Notion export, Apple Notes export, etc.
-- [x] Enumerate target operations with IN/OUT contract per op:
-- [x] Decide LLM dependency (yes/no; provider; cost ceiling).
-- [x] Write `blog/docs/site/notes-tool-scope.md`.
+- [x] DONE — `blog/docs/site/notes-tool-scope.md` committed.
 
 ### F2.b — Ingest pipeline
 - [ ] Parser per format.
@@ -38,9 +34,10 @@ All four sub-items (F2.a–F2.d) DONE.
 - [ ] Hybrid lexical + vector query.
 - [ ] Verify p95 query latency < 500ms on N=10k notes.
 
-### F2.d — UI
+### F2.d — UI (skeleton WIP)
 - [x] Tool registered at `#tools/utilities/notes`.
 - [x] Sidebar tabs (≤4): SEARCH / LIBRARY / INFO (or equivalent).
+- [x] Skeleton mounted via `ToolBase` with stub search handler.
 - [ ] List view (paginated).
 - [ ] Detail view (per note).
 - [ ] Search input + results.
@@ -50,7 +47,7 @@ All four sub-items (F2.a–F2.d) DONE.
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: F2.a DONE (scope doc). F2.d skeleton WIP — tool mounts at `#tools/utilities/notes` with SEARCH/LIBRARY/INFO tabs; ingest (F2.b) and index (F2.c) pending A3.
 
 ## References
 

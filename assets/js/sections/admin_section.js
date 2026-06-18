@@ -3,16 +3,172 @@
  *
  * Index shell for section CRUD. Gated by auth stub until A2 ships.
  *
- * @version 1.0.0
- * @dependencies ['ComponentLibrary']
+ * @version 1.1.0
+ * @dependencies ['ComponentLibrary', 'BaseComponent']
  */
 
+class AdminLoginView extends BaseComponent {
+    constructor(options = {}, deps = {}) {
+        super({ componentType: 'admin-login' }, deps);
+        this.onLogin = options.onLogin;
+        this.tracked = [];
+    }
+
+    _track(component) {
+        this.tracked.push(component);
+        this.children.add(component);
+        return component;
+    }
+
+    render() {
+        if (this.element) return this.element;
+
+        this.element = this.createElement('div', 'admin-section admin-section-login toc-container');
+
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({
+            level: 1,
+            content: 'ADMIN LOGIN'
+        }, this.deps)).render());
+
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({
+            content: 'Auth provider pending A2. Stub login for development only.'
+        }, this.deps)).render());
+
+        const emailInput = this._track(new ComponentLibrary.TextInput({
+            label: 'EMAIL',
+            placeholder: 'admin@example.com'
+        }, this.deps));
+        this.appendElement(this.element, emailInput.render());
+
+        const loginBtn = this._track(new ComponentLibrary.Button({
+            text: 'LOGIN (STUB)',
+            onClick: () => this.onLogin?.(emailInput.getValue())
+        }, this.deps));
+        this.appendElement(this.element, loginBtn.render());
+
+        return this.element;
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
+class AdminIndexView extends BaseComponent {
+    constructor(sections, options = {}, deps = {}) {
+        super({ componentType: 'admin-index' }, deps);
+        this.sections = sections;
+        this.onNavigate = options.onNavigate;
+        this.onLogout = options.onLogout;
+        this.tracked = [];
+    }
+
+    _track(component) {
+        this.tracked.push(component);
+        this.children.add(component);
+        return component;
+    }
+
+    render() {
+        if (this.element) return this.element;
+
+        this.element = this.createElement('div', 'admin-section admin-section-index toc-container');
+
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({
+            level: 1,
+            content: 'ADMIN'
+        }, this.deps)).render());
+
+        this.sections.forEach((section) => {
+            const row = this._track(new ComponentLibrary.Paragraph({
+                content: section.title,
+                isClickable: true,
+                onClick: () => this.onNavigate?.(section.route.replace(/^admin\//, ''))
+            }, this.deps));
+            const rowEl = row.render();
+            rowEl.classList.add('admin-section-row');
+            this.appendElement(this.element, rowEl);
+        });
+
+        const logout = this._track(new ComponentLibrary.Button({
+            text: 'LOGOUT',
+            onClick: () => this.onLogout?.()
+        }, this.deps));
+        this.appendElement(this.element, logout.render());
+
+        return this.element;
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
+class AdminSubView extends BaseComponent {
+    constructor(subsection, entry, options = {}, deps = {}) {
+        super({ componentType: 'admin-sub' }, deps);
+        this.subsection = subsection;
+        this.entry = entry;
+        this.onNavigate = options.onNavigate;
+        this.tracked = [];
+    }
+
+    _track(component) {
+        this.tracked.push(component);
+        this.children.add(component);
+        return component;
+    }
+
+    render() {
+        if (this.element) return this.element;
+
+        this.element = this.createElement('div', 'admin-section admin-section-sub toc-container');
+
+        this.appendElement(this.element, this._track(new ComponentLibrary.Heading({
+            level: 1,
+            content: this.entry?.title || this.subsection.toUpperCase()
+        }, this.deps)).render());
+
+        this.appendElement(this.element, this._track(new ComponentLibrary.Paragraph({
+            content: this.entry
+                ? `Editor shell placeholder. Depends on ${this.entry.blocker}.`
+                : 'Unknown admin route.'
+        }, this.deps)).render());
+
+        const back = this._track(new ComponentLibrary.Paragraph({
+            content: '← BACK TO ADMIN',
+            isClickable: true,
+            onClick: () => this.onNavigate?.(null)
+        }, this.deps));
+        this.appendElement(this.element, back.render());
+
+        return this.element;
+    }
+
+    destroy() {
+        if (this.tracked.length && window.ComponentLibrary) {
+            ComponentLibrary.destroyTracked(this.tracked);
+        }
+        this.tracked = [];
+        super.destroy();
+    }
+}
+
 const AdminSection = {
-    version: '1.0.0',
+    version: '1.1.0',
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
     authStorageKey: 'siteboy:admin:session',
+    _view: null,
 
     EDITABLE_SECTIONS: [
         { id: 'gallery', title: 'GALLERY', route: 'admin/gallery', blocker: 'C2' },
@@ -37,14 +193,14 @@ const AdminSection = {
         window.NavigationController.setupNavigation('admin', subsection, this.pages, callbacks);
 
         if (!this.isAuthenticated()) {
-            this.renderLoginGate();
+            this._mountLogin();
             return;
         }
 
         if (!subsection) {
-            this.renderIndex();
+            this._mountIndex();
         } else {
-            this.renderSubPage(subsection);
+            this._mountSub(subsection);
         }
     },
 
@@ -71,92 +227,41 @@ const AdminSection = {
         localStorage.removeItem(this.authStorageKey);
     },
 
-    renderLoginGate() {
-        const deps = this._deps();
-        const tracked = this._track();
-        this._prepareContainer('admin-section-login');
+    _deps() {
+        return { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
+    },
 
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({
-            level: 1,
-            content: 'ADMIN LOGIN'
-        }, deps)).render());
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({
-            content: 'Auth provider pending A2. Stub login for development only.'
-        }, deps)).render());
-
-        const emailInput = tracked(new ComponentLibrary.TextInput({
-            label: 'EMAIL',
-            placeholder: 'admin@example.com'
-        }, deps));
-        this.currentContainer.appendChild(emailInput.render());
-
-        const loginBtn = tracked(new ComponentLibrary.Button({
-            text: 'LOGIN (STUB)',
-            onClick: () => {
-                this.setSession(emailInput.getValue());
+    _mountLogin() {
+        this._view = new AdminLoginView({
+            onLogin: (email) => {
+                this.setSession(email);
                 window.debugLog('NAVIGATION', '🔐 Admin stub session created');
                 this.handleRoute(null, this.currentContainer, this.navigationCallbacks);
             }
-        }, deps));
-        this.currentContainer.appendChild(loginBtn.render());
+        }, this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
     },
 
-    renderIndex() {
-        const deps = this._deps();
-        const tracked = this._track();
-        this._prepareContainer('admin-section-index');
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({
-            level: 1,
-            content: 'ADMIN'
-        }, deps)).render());
-
-        this.EDITABLE_SECTIONS.forEach((section) => {
-            const row = tracked(new ComponentLibrary.Paragraph({
-                content: section.title,
-                isClickable: true,
-                onClick: () => this._navigate(section.route.replace(/^admin\//, ''))
-            }, deps));
-            const rowEl = row.render();
-            rowEl.classList.add('admin-section-row');
-            this.currentContainer.appendChild(rowEl);
-        });
-
-        const logout = tracked(new ComponentLibrary.Button({
-            text: 'LOGOUT',
-            onClick: () => {
+    _mountIndex() {
+        this._view = new AdminIndexView(this.EDITABLE_SECTIONS, {
+            onNavigate: (sub) => this._navigate(sub),
+            onLogout: () => {
                 this.clearSession();
-                this.renderLoginGate();
+                this._mountLogin();
             }
-        }, deps));
-        this.currentContainer.appendChild(logout.render());
+        }, this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
     },
 
-    renderSubPage(subsection) {
-        const deps = this._deps();
-        const tracked = this._track();
+    _mountSub(subsection) {
         const entry = this.EDITABLE_SECTIONS.find((s) => s.route === `admin/${subsection}`);
-
-        this._prepareContainer('admin-section-sub');
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Heading({
-            level: 1,
-            content: entry?.title || subsection.toUpperCase()
-        }, deps)).render());
-
-        this.currentContainer.appendChild(tracked(new ComponentLibrary.Paragraph({
-            content: entry
-                ? `Editor shell placeholder. Depends on ${entry.blocker}.`
-                : 'Unknown admin route.'
-        }, deps)).render());
-
-        const back = tracked(new ComponentLibrary.Paragraph({
-            content: '← BACK TO ADMIN',
-            isClickable: true,
-            onClick: () => this._navigate(null)
-        }, deps));
-        this.currentContainer.appendChild(back.render());
+        this._view = new AdminSubView(subsection, entry, {
+            onNavigate: (sub) => this._navigate(sub)
+        }, this._deps());
+        BaseComponent.mountSectionView(this.currentContainer, this._view);
+        this.componentInstances = this._view.tracked;
     },
 
     _navigate(subsection) {
@@ -167,30 +272,16 @@ const AdminSection = {
         }
     },
 
-    _prepareContainer(className) {
-        this.currentContainer.innerHTML = '';
-        this.currentContainer.classList.add('admin-section', className, 'toc-container');
-    },
-
-    _deps() {
-        return { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
-    },
-
-    _track() {
-        return (component) => {
-            this.componentInstances.push(component);
-            return component;
-        };
-    },
-
     cleanup() {
         window.debugLog('VERBOSE', '🧹 Cleaning up Admin Section...');
-        if (this.currentContainer) {
-            this.currentContainer.innerHTML = '';
-            this.currentContainer.classList.remove('admin-section', 'admin-section-login', 'admin-section-index', 'admin-section-sub', 'toc-container');
+        if (this._view) {
+            this._view.destroy();
+            this._view = null;
         }
-        if (this.componentInstances.length && window.ComponentLibrary) {
-            ComponentLibrary.destroyTracked(this.componentInstances);
+        if (this.currentContainer) {
+            BaseComponent.clearSectionContainer(this.currentContainer, [
+                'admin-section', 'admin-section-login', 'admin-section-index', 'admin-section-sub', 'toc-container'
+            ]);
         }
         this.componentInstances = [];
     }

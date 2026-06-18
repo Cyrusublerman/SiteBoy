@@ -1,6 +1,6 @@
 # B3 — About-me section
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P3
 **Owner file(s)**: `assets/js/sections/about_section.js` (to author), `blog/data/about.json` (to author)
 **Blockers**: none
@@ -22,11 +22,11 @@ Single-page section: bio + image + links + (optional) timeline.
 - [x] Author `about_section.js` (ComponentLibrary blocks only).
 - [x] Register in `router.js` section map and the main nav.
 - [ ] Add to `SITEBOY_DOCUMENTATION_PORTAL.md` if appropriate.
-- [ ] Run audit.
+- [x] Run audit.
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: `page-compliance-audit` static sweep PASS — no CONSOLE-LOG, RAW-COLOUR, RAF, or routing violations. Container `innerHTML`/`appendChild` matches established section lifecycle contract (same as `projects_section.js`).
 
 ## References
 

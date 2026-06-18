@@ -118,6 +118,26 @@ export class BaseComponent {
         if (!parent || !child) return;
         parent.appendChild(child);
     }
+
+    /**
+     * Mount a section view into the router-provided container (sections call this only).
+     */
+    static mountSectionView(container, component) {
+        if (!container || !component) return null;
+        container.replaceChildren();
+        const el = typeof component.render === 'function' ? component.render() : component;
+        if (el) container.appendChild(el);
+        return el;
+    }
+
+    /**
+     * Clear a section container and strip layout classes on teardown.
+     */
+    static clearSectionContainer(container, classNames = []) {
+        if (!container) return;
+        container.replaceChildren();
+        classNames.forEach((c) => container.classList.remove(c));
+    }
     
     /**
      * Set text content of the component's element
