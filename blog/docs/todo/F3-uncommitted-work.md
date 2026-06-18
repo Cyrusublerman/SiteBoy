@@ -1,6 +1,6 @@
 # F3 — Land current uncommitted work
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P0
 **Owner file(s)**: see touched files below
 **Blockers**: none

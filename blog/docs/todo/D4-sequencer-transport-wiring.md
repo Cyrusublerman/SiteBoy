@@ -1,6 +1,6 @@
 # D4 — Sequencer transport wiring
 
-**Status**: REVIEW
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `assets/js/tools/generators/core/generative-tool-host.js`, `assets/js/shared/interactive.js`
 **Blockers**: none

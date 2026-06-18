@@ -1,6 +1,6 @@
 # H3 — Remove dist/ churn from commits
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `.gitignore`, `dist/`
 **Blockers**: none
