@@ -15,7 +15,7 @@ export const ColourBalanceNode = createEffectModule({
     highG:   { value: 0, min: -100, max: 100, step: 1, label: 'HIGH G',   tier: 5, driveable: true, unit: '%' },
     highB:   { value: 0, min: -100, max: 100, step: 1, label: 'HIGH B',   tier: 5, driveable: true, unit: '%' }
   },
-  apply(src, dst, w, h, p, c
+  apply(src, dst, w, h, p, ctx, modulate) {
     const _m_shadowR = Math.round(modulate('shadowR', 0));
     const _m_shadowG = Math.round(modulate('shadowG', 0));
     const _m_shadowB = Math.round(modulate('shadowB', 0));
@@ -25,8 +25,11 @@ export const ColourBalanceNode = createEffectModule({
     const _m_highR = Math.round(modulate('highR', 0));
     const _m_highG = Math.round(modulate('highG', 0));
     const _m_highB = Math.round(modulate('highB', 0));
-    dst.set(colourBalance(src, w, h, p));
-  , w, h, p));
+    dst.set(colourBalance(src, w, h, {
+      shadowR: _m_shadowR, shadowG: _m_shadowG, shadowB: _m_shadowB,
+      midR: _m_midR, midG: _m_midG, midB: _m_midB,
+      highR: _m_highR, highG: _m_highG, highB: _m_highB,
+    }));
   },
   wgsl,
   glsl,

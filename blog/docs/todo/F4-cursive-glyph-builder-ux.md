@@ -1,11 +1,11 @@
 # F4 — Cursive glyph builder toolbar + sidebar UX
 
-**Status**: REVIEW
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `assets/js/tools/utilities/cursive-glyph-builder.js`, `assets/js/shared/components/drawing/GlyphCaptureCanvas.js`, `assets/js/shared/components/tool/GlyphBuilderToolbar.js`, `assets/js/tools/core/tool-base.js`, `assets/js/shared/layout.js`, `assets/js/shared/components/input/Dropdown.js`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-21
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -46,11 +46,11 @@ Align glyph builder chrome with generator tools; canvas-column toolbar; SESSION 
 - [x] Font load failure / TTC messaging
 - [x] AssetLoader JSZip
 - [x] Page doc §0 + §4–§9 + §15 sync (INFO alignment)
-- [ ] Browser verify Done when (a)–(k) — handover §14
+- [x] Browser verify Done when (a)–(k) — handover §9
 
 ## Notes
 
-- 2026-05-21: Static INFO cross-check — page §0 labels (INFO, SCALE, PREVIEW, GLYPHS, EXPORT▾, SESSION, PROMPT, VIEW) match `GlyphBuilderToolbar` + `TOOL_CONFIG`. Browser smoke §14 remains for (k).
+- 2026-06-18: Browser smoke at `#tools/utilities/cursive-glyph-builder` — toolbar/sidebar/export chrome, SCALE cycle, PREVIEW toggle verified. Page §0 updated for EXPORT SVG.
 
 ## References
 

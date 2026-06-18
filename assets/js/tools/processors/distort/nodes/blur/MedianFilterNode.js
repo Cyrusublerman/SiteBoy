@@ -8,10 +8,9 @@ export const MedianFilterNode = createEffectModule({
   params: {
     radius: { value: 1, min: 1, max: 5, step: 1, label: 'RADIUS', tier: 3, previewMax: 2, driveable: true, unit: 'px' }
   },
-  apply(src, dst, w, h, p, c
+  apply(src, dst, w, h, p, ctx, modulate) {
     const _m_radius = Math.round(modulate('radius', 0));
     dst.set(medianFilter(src, w, h, _m_radius));
-   p.radius));
   },
   wgsl,
   glsl,

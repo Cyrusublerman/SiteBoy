@@ -1,11 +1,11 @@
 # F5 — Handwriting vector compose export
 
-**Status**: REVIEW
+**Status**: DONE
 **Priority**: P2
 **Owner file(s)**: `assets/js/shared/algorithms/typography/handwriting-compose.js`, `assets/js/tools/utilities/cursive-glyph-builder.js`, `assets/js/shared/components/tool/GlyphBuilderToolbar.js`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-25
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -23,7 +23,7 @@ Compose captured cursive glyph strokes into vector SVG output (stroke-only paths
 
 - [x] Algorithm module `handwriting-compose.js`
 - [x] Tool `_exportComposedSvg` wired to EXPORT▾
-- [ ] Browser verify SVG paths match composed preview ink
+- [x] Browser verify SVG paths match composed preview ink
 
 ## Notes
 

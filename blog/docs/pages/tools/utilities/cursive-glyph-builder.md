@@ -18,7 +18,7 @@
 | **SCALE** | Click cycles **FIT → FILL → ACTUAL** (label shows current mode). Highlighted in capture view only. |
 | **PREVIEW** | Toggle: recomposed lowercase lorem from captured ink; grey ref for gaps. Click again → capture. |
 | **GLYPHS** | Toggle: label-free atlas of all captures (ink only). Click again → capture. |
-| **EXPORT▾** | PNG (current canvas bitmap) · Export library ZIP · Import ZIP · Import font file. |
+| **EXPORT▾** | Import ZIP · Load font file · Export PNG · Export SVG (stroke-only vector) · Export library ZIP. |
 
 Reference font is **not** on the toolbar — use SESSION.
 
@@ -486,7 +486,7 @@ INFO fetches this file (`DOC_MD_PATH`). Operator truth: **§0**. File map: `blog
 | Area | Behaviour |
 | --- | --- |
 | Route | `#tools/utilities/cursive-glyph-builder` |
-| Toolbar | `GlyphBuilderToolbar`: INFO, SCALE (fit/fill/actual cycle), PREVIEW, GLYPHS, EXPORT▾ |
+| Toolbar | `GlyphBuilderToolbar`: INFO, SCALE (fit/fill/actual cycle), PREVIEW, GLYPHS, EXPORT▾ (PNG · SVG · ZIP · import) |
 | Sidebar | SESSION, PROMPT, VIEW (3 tabs) |
 | Views | `_canvasView`: capture \| preview \| atlas |
 | Capture | `getRowWindow` row stack; ghost ink; font-wide guides |

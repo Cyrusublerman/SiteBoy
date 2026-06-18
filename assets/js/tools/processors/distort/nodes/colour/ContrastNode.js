@@ -12,7 +12,7 @@ export const ContrastNode = createEffectModule({
     pivot:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'PIVOT',    tier: 4, driveable: true, unit: 'n' },
     vibrance: { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'VIBRANCE', tier: 4, driveable: true, unit: 'n' }
   },
-  apply(src, dst, w, h, p, c
+  apply(src, dst, w, h, p, ctx, modulate) {
     const _m_lift = modulate('lift', 0);
     const _m_gamma = modulate('gamma', 0);
     const _m_gain = modulate('gain', 0);
@@ -21,7 +21,6 @@ export const ContrastNode = createEffectModule({
     const _m_vibrance = modulate('vibrance', 0);
     const toned = liftGammaGain(src, w, h, _m_lift, _m_gamma, _m_gain, _m_contrast, _m_pivot);
     dst.set(_m_vibrance !== 0 ? applyVibrance(toned, w, h, _m_vibrance) : toned);
-  e) : toned);
   },
   wgsl,
   glsl,

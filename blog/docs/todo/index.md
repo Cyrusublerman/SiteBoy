@@ -94,8 +94,8 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | F1 | [F1-cursive-glyph-builder.md](F1-cursive-glyph-builder.md) | Cursive glyph builder MVP completion | P1 | DONE | — |
 | F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | TODO | → A3 |
 | F3 | [F3-uncommitted-work.md](F3-uncommitted-work.md) | Land current uncommitted work | P0 | WIP | — |
-| F4 | [F4-cursive-glyph-builder-ux.md](F4-cursive-glyph-builder-ux.md) | Cursive glyph builder toolbar + sidebar UX | P1 | REVIEW | — |
-| F5 | [F5-handwriting-vector-compose.md](F5-handwriting-vector-compose.md) | Handwriting vector compose SVG export | P2 | REVIEW | — |
+| F4 | [F4-cursive-glyph-builder-ux.md](F4-cursive-glyph-builder-ux.md) | Cursive glyph builder toolbar + sidebar UX | P1 | DONE | — |
+| F5 | [F5-handwriting-vector-compose.md](F5-handwriting-vector-compose.md) | Handwriting vector compose SVG export | P2 | DONE | — |
 
 ## G. Authoring & operations
 

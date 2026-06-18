@@ -9,12 +9,11 @@ export const UnsharpMaskNode = createEffectModule({
     radius:    { value: 2, min: 0.1, max: 20,  step: 0.1, label: 'RADIUS',    tier: 3, previewMax: 5, driveable: true, unit: 'px' },
     threshold: { value: 0, min: 0,   max: 255, step: 1,   label: 'THRESHOLD', tier: 4, driveable: true, unit: 'lvl' }
   },
-  apply(src, dst, w, h, p, c
+  apply(src, dst, w, h, p, ctx, modulate) {
     const _m_amount = modulate('amount', 0);
     const _m_radius = modulate('radius', 0);
     const _m_threshold = Math.round(modulate('threshold', 0));
     dst.set(unsharpMask(src, w, h, _m_amount, _m_radius, _m_threshold));
-  threshold));
   },
   wgsl,
   glsl,

@@ -9,12 +9,11 @@ export const HSLAdjustNode = createEffectModule({
     saturation: { value: 1,   min: 0,    max: 3,   step: 0.01, label: 'SATURATION', tier: 3, driveable: true, unit: 'n' },
     lightness:  { value: 0,   min: -1,   max: 1,   step: 0.01, label: 'LIGHTNESS',  tier: 4, driveable: true, unit: 'n' }
   },
-  apply(src, dst, w, h, p, c
+  apply(src, dst, w, h, p, ctx, modulate) {
     const _m_hue = Math.round(modulate('hue', 0));
     const _m_saturation = modulate('saturation', 0);
     const _m_lightness = modulate('lightness', 0);
     dst.set(hslAdjust(src, w, h, _m_hue, _m_saturation, _m_lightness));
-  lightness));
   },
   wgsl,
   glsl,
