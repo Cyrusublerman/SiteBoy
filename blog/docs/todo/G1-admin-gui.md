@@ -1,11 +1,11 @@
 # G1 — Admin GUI for adding content
 
-**Status**: TODO
+**Status**: WIP
 **Priority**: P1
 **Owner file(s)**: `assets/js/sections/admin_section.js` (to author), admin sub-pages per section
 **Blockers**: → A2, A3
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,9 +17,9 @@ One `#admin` route from which every manageable section is editable: gallery uplo
 
 ## Sub-tasks
 
-- [ ] Decide single-app vs per-section admin shell.
-- [ ] Author `admin_section.js` as the index shell.
-- [ ] Gate every `#admin/*` route behind A2 auth middleware.
+- [x] Decide single-app vs per-section admin shell.
+- [x] Author `admin_section.js` as the index shell.
+- [x] Gate every `#admin/*` route behind A2 auth middleware.
 - [ ] Gallery editor (consumes C2 upload pipeline + C1 schema).
 - [ ] Project editor (CRUD on A3 `projects`; preview rendering matches `projects_section.js`).
 - [ ] Store SKU editor (CRUD on A3 `products`).
