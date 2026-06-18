@@ -70,7 +70,7 @@ Last touched: 2026-06-18 (B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
 | --- | --- | --- | --- | --- | --- |
 | D1 | [D1-new-generators.md](D1-new-generators.md) | Ship queued generators | P1 | DONE | — |
 | D2 | [D2-animation-export.md](D2-animation-export.md) | TransportStrip record button | P1 | DONE | — |
-| D3 | [D3-generator-audit.md](D3-generator-audit.md) | Compliance audit per generator | P2 | TODO | → D1 |
+| D3 | [D3-generator-audit.md](D3-generator-audit.md) | Compliance audit per generator | P2 | DONE | → D1 |
 | D3.1 | [D3.1-canvas-resize-audit.md](D3.1-canvas-resize-audit.md) | Canvas resize consistency audit | P2 | DONE | — |
 | D4 | [D4-sequencer-transport-wiring.md](D4-sequencer-transport-wiring.md) | Sequencer transport wiring | P1 | DONE | — |
 
@@ -102,14 +102,14 @@ Last touched: 2026-06-18 (B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | WIP | → A2, A3 |
-| G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | REVIEW | — |
-| G3 | [G3-portal-index.md](G3-portal-index.md) | Documentation portal index refresh | P2 | TODO | → G2 |
+| G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | DONE | — |
+| G3 | [G3-portal-index.md](G3-portal-index.md) | Documentation portal index refresh | P2 | DONE | → G2 |
 
 ## H. Cross-cutting
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| H1 | [H1-page-audit.md](H1-page-audit.md) | Every page passes page-compliance-audit | P0 | TODO | — |
+| H1 | [H1-page-audit.md](H1-page-audit.md) | Every page passes page-compliance-audit | P0 | REVIEW | — |
 | H2 | [H2-console-log.md](H2-console-log.md) | Eliminate console.log outside owners | P1 | DONE | — |
 | H3 | [H3-dist-hygiene.md](H3-dist-hygiene.md) | Remove dist/ churn from commits | P1 | DONE | — |
 | H4 | [H4-design-rule-pass-b.md](H4-design-rule-pass-b.md) | Design-rule corpus: Pass-B LLM extract | P3 | DONE | — |

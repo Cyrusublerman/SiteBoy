@@ -159,17 +159,11 @@ export const SCRIPT_CONFIG = (() => {
 
     // ── AUDIO-008 — WAV file exporter ─────────────────────────────────────────
     /**
-     * Encode Float32Array to 16-bit PCM WAV (mono) and trigger browser download.
-     *
-     * RIFF layout: RIFF/WAVE header + fmt chunk (16 B, PCM) + data chunk.
-     * Samples: signed Int16LE = round(clamp(y, −1, 1) × 32767).
-     *
-     * NOTE: Uses document.createElement and URL.createObjectURL — unavoidable
-     * browser API exception for file download. No UI trigger exists in the
-     * current host; function is available for programmatic invocation only.
+     * Encode Float32Array to 16-bit PCM WAV (mono). Returns Blob for host export wiring.
      *
      * @param {Float32Array} floatBuffer
      * @param {number}       sampleRate
+     * @returns {Blob}
      */
     function wavExporter(floatBuffer, sampleRate) {
         const nSamples       = floatBuffer.length;
@@ -201,15 +195,7 @@ export const SCRIPT_CONFIG = (() => {
             dv.setInt16(44 + i * 2, Math.round(clamp(floatBuffer[i], -1, 1) * 32767), true);
         }
 
-        const blob = new Blob([buf], { type: 'audio/wav' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = 'wave-equation-synth.wav';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        return new Blob([buf], { type: 'audio/wav' });
     }
 
     // ── CANVAS-014 — Oscilloscope renderer ───────────────────────────────────

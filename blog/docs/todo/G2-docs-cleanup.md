@@ -1,6 +1,6 @@
 # G2 — Docs cleanup pass
 
-**Status**: REVIEW
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `blog/docs/temp/`, `blog/docs/guides/`, `blog/docs/site/`
 **Blockers**: none

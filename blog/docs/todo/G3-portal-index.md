@@ -1,11 +1,11 @@
 # G3 — Documentation portal index refresh
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P2
 **Owner file(s)**: `blog/docs/SITEBOY_DOCUMENTATION_PORTAL.md`, `blog/docs/index.md`
 **Blockers**: → G2
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,11 +17,11 @@ A link-check pass over the portal returns zero 404s within the repo. Every top-l
 
 ## Sub-tasks
 
-- [ ] Run a link-extraction + existence check on the portal.
-- [ ] Update every broken link.
-- [ ] Add entries for any new docs landing in G2.
-- [ ] Remove entries for deleted/archived docs.
-- [ ] Sync `blog/docs/index.md` to the same shape.
+- [x] Run a link-extraction + existence check on the portal.
+- [x] Update every broken link (40 fixed; portal rewrite).
+- [x] Add entries for ADRs, store-spec, notes-tool-scope, gallery-status.
+- [x] Remove entries for deleted/archived docs (redirect to old-docs/).
+- [x] Sync `blog/docs/index.md` to the same shape.
 
 ## Notes / decisions
 

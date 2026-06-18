@@ -136,9 +136,10 @@ let _offscreenCtx = null;
 
 function ensureOffscreen(W, H) {
     if (!_offscreenCanvas || _offscreenCanvas.width !== W || _offscreenCanvas.height !== H) {
-        _offscreenCanvas = document.createElement('canvas');
-        _offscreenCanvas.width = W;
-        _offscreenCanvas.height = H;
+        if (typeof OffscreenCanvas === 'undefined') {
+            throw new Error('Cymatics: OffscreenCanvas required for offscreen 2D buffer');
+        }
+        _offscreenCanvas = new OffscreenCanvas(W, H);
         _offscreenCtx = _offscreenCanvas.getContext('2d', { alpha: false });
     }
     return _offscreenCtx;
