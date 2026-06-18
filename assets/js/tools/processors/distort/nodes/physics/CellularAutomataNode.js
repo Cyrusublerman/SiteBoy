@@ -409,14 +409,26 @@ export const CellularAutomataNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_seedThreshold = Math.round(modulate('seedThreshold', 0));
+    const _m_initDensity = modulate('initDensity', 0);
+    const _m_initSoftness = Math.round(modulate('initSoftness', 0));
+    const _m_seed = Math.round(modulate('seed', 0));
+    const _m_cyclicStates = Math.round(modulate('cyclicStates', 0));
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_warmupSteps = Math.round(modulate('warmupSteps', 0));
+    const _m_stepsPerFrame = Math.round(modulate('stepsPerFrame', 0));
+    const _m_maxSteps = Math.round(modulate('maxSteps', 0));
+    const _m_outputContrast = modulate('outputContrast', 0);
+    const _m_outputGain = modulate('outputGain', 0);
+    const _m_blendAmt = modulate('blendAmt', 0);
     const n        = w * h;
-    const rngSeed  = hashSeed(p.seed | 0, ctx?.nodeIndex ?? 0, ctx?.nodeId ?? 0);
+    const rngSeed  = hashSeed(_m_seed | 0, ctx?.nodeIndex ?? 0, ctx?.nodeId ?? 0);
     const isCyclic = p.rule === 'CYCLIC';
     const isBrain  = p.rule === 'BRIANS BRAIN';
-    const states   = (p.cyclicStates | 0) || 4;
+    const states   = (_m_cyclicStates | 0) || 4;
 
     // State cache key — invalidate on any init-affecting param change
-    const stateKey = `${p.seed}|${p.rule}|${p.ruleString}|${p.seedMode}|${p.seedThreshold}|${p.initDensity}|${p.initSoftness}|${p.invertInit}|${w}|${h}`;
+    const stateKey = `${_m_seed}|${p.rule}|${p.ruleString}|${p.seedMode}|${_m_seedThreshold}|${_m_initDensity}|${_m_initSoftness}|${p.invertInit}|${w}|${h}`;
 
     const needsInit = !this._state || !p.retainState || this._state.key !== stateKey;
 
@@ -447,7 +459,7 @@ export const CellularAutomataNode = createEffectModule({
       };
 
       // Apply warmup steps immediately on init
-      const warmup = p.warmupSteps | 0;
+      const warmup = _m_warmupSteps | 0;
       if (warmup > 0) _runSteps(state, w, h, p, warmup);
 
       this._state = state;
@@ -463,8 +475,8 @@ export const CellularAutomataNode = createEffectModule({
 
     if (p.retainState) {
       // Stateful: advance by stepsPerFrame capped by frame driver
-      let steps = p.stepsPerFrame | 0;
-      steps = capByFrame(steps, p.frame);
+      let steps = _m_stepsPerFrame | 0;
+      steps = capByFrame(steps, _m_frame);
       _runSteps(state, w, h, p, steps);
 
       if (p.autoStop && !isCyclic && !isBrain) {
@@ -474,8 +486,8 @@ export const CellularAutomataNode = createEffectModule({
       }
     } else {
       // Stateless: run warmup + maxSteps each call (state is fresh from needsInit above)
-      let totalRemaining = p.maxSteps | 0;
-      totalRemaining = capByFrame(totalRemaining, p.frame);
+      let totalRemaining = _m_maxSteps | 0;
+      totalRemaining = capByFrame(totalRemaining, _m_frame);
       _runSteps(state, w, h, p, totalRemaining);
     }
 

@@ -13,6 +13,8 @@ export const OtsuThresholdNode = createEffectModule({
     softness: { label: 'SOFTNESS',         min: 0, max: 64, step: 1, value: 8, tier: 3, driveable: true, unit: '', when: { param: 'mode', equals: 'SOFT MASK' } }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_offset = Math.round(modulate('offset', 0));
+    const _m_softness = Math.round(modulate('softness', 0));
     const n = w * h;
     const domain = p.domain ?? 'LUMINANCE';
     const luma = new Uint8Array(n);
@@ -52,9 +54,9 @@ export const OtsuThresholdNode = createEffectModule({
     }
 
     const { threshold: t } = otsuThreshold(luma);
-    const tEff = Math.max(0, Math.min(255, t + (p.offset ?? 0)));
+    const tEff = Math.max(0, Math.min(255, t + (_m_offset ?? 0)));
     const mode = p.mode;
-    const softness = Math.max(1, p.softness ?? 8);
+    const softness = Math.max(1, _m_softness ?? 8);
 
     for (let i = 0; i < n; i++) {
       const j = i * 4;

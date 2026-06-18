@@ -30,16 +30,18 @@ export const DomainWarpNode = createEffectModule({
     directionalMode: { label: 'DIRECTIONAL MODE', type: 'select', value: 'scalar_xy', options: ['scalar_x','scalar_y','scalar_xy','gradient','curl','two_noise'], tier: 3 }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_octaves = Math.round(modulate('octaves', 0));
+    const _m_layers = Math.round(modulate('layers', 0));
     const noise = new PerlinNoise(ctx?.nodeSeed ?? 42);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const i = y * w + x;
       const strength = modulate('strength', i);
       const scale    = modulate('scale', i);
       let wx = x, wy = y;
-      for (let l = 0; l < p.layers; l++) {
+      for (let l = 0; l < _m_layers; l++) {
         const sc = scale * Math.pow(2, l), str = strength / Math.pow(2, l);
-        wx += noise.fbm(wx / w * sc, wy / h * sc, p.octaves) * str;
-        wy += noise.fbm(wx / w * sc + 5.2, wy / h * sc + 1.3, p.octaves) * str;
+        wx += noise.fbm(wx / w * sc, wy / h * sc, _m_octaves) * str;
+        wy += noise.fbm(wx / w * sc + 5.2, wy / h * sc + 1.3, _m_octaves) * str;
       }
       _bilerp(src, w, h, wx, wy, dst, i * 4);
     }

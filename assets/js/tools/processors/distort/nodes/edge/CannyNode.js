@@ -11,7 +11,10 @@ export const CannyNode = createEffectModule({
     highThreshold: { value: 0.3, min: 0.05, max: 1,   step: 0.01, label: 'HIGH THRESH', tier: 3, unit: '0–1' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    dst.set(cannyEdge(src, w, h, p.sigma, p.lowThreshold, p.highThreshold));
+    const _m_sigma = modulate('sigma', 0);
+    const _m_lowThreshold = modulate('lowThreshold', 0);
+    const _m_highThreshold = modulate('highThreshold', 0);
+    dst.set(cannyEdge(src, w, h, _m_sigma, _m_lowThreshold, _m_highThreshold));
   },
   wgsl,
   glsl,

@@ -23,11 +23,19 @@ export const ContourNode = createEffectModule({
     fieldExport:     { label: 'FIELD EXPORT',  type: 'select', options: ['NONE', 'BAND INDEX', 'CONTOUR MASK', 'CONTOUR DISTANCE'], value: 'NONE', tier: 4, when: { outputMode: 'FIELD' } }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_levels = Math.round(modulate('levels', 0));
+    const _m_strokeW = modulate('strokeW', 0);
+    const _m_strokeLevel = Math.round(modulate('strokeLevel', 0));
+    const _m_strokeR = Math.round(modulate('strokeR', 0));
+    const _m_strokeG = Math.round(modulate('strokeG', 0));
+    const _m_strokeB = Math.round(modulate('strokeB', 0));
+    const _m_blendAmt = modulate('blendAmt', 0);
+    const _m_fillOpacity = modulate('fillOpacity', 0);
     // Resolve stroke level from colour mode
-    let strokeLvl = p.strokeLevel;
+    let strokeLvl = _m_strokeLevel;
     if (p.strokeColourMode === 'RGB') {
-      strokeLvl = Math.round(0.299 * p.strokeR + 0.587 * p.strokeG + 0.114 * p.strokeB);
+      strokeLvl = Math.round(0.299 * _m_strokeR + 0.587 * _m_strokeG + 0.114 * _m_strokeB);
     }
-    dst.set(contourRGBA(src, w, h, p.levels, p.strokeW, strokeLvl, p.blendAmt));
+    dst.set(contourRGBA(src, w, h, _m_levels, _m_strokeW, strokeLvl, _m_blendAmt));
   }
 });

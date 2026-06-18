@@ -14,11 +14,14 @@ export const VignetteNode = createEffectModule({
     renderMode: { label: 'RENDER MODE', type: 'select', options: ['overlay', 'field'], value: 'overlay', tier: 3 }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    const cx  = p.centreX * w;
-    const cy  = p.centreY * h;
+    const _m_roundness = modulate('roundness', 0);
+    const _m_centreX = modulate('centreX', 0);
+    const _m_centreY = modulate('centreY', 0);
+    const cx  = _m_centreX * w;
+    const cy  = _m_centreY * h;
     const maxWH = Math.max(w, h);
-    const rx = p.roundness + (1 - p.roundness) * (w / maxWH);
-    const ry = p.roundness + (1 - p.roundness) * (h / maxWH);
+    const rx = _m_roundness + (1 - _m_roundness) * (w / maxWH);
+    const ry = _m_roundness + (1 - _m_roundness) * (h / maxWH);
     const isField = p.renderMode === 'field';
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {

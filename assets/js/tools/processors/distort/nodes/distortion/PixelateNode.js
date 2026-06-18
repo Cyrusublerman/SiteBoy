@@ -7,8 +7,10 @@ export const PixelateNode = createEffectModule({
   params: {
     blockSize: { value: 8, min: 2, max: 100, step: 1, label: 'BLOCK SIZE', tier: 3, previewMax: 20, driveable: true, unit: 'px' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(pixelate(src, w, h, p.blockSize));
+  apply(src, dst, w, h, p, c
+    const _m_blockSize = Math.round(modulate('blockSize', 0));
+    dst.set(pixelate(src, w, h, _m_blockSize));
+  blockSize));
   },
   wgsl,
   glsl,

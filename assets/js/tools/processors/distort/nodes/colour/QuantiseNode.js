@@ -43,19 +43,26 @@ export const QuantiseNode = createEffectModule({
     lLevels:        { value: 4, min: 2, max: 32, step: 1, label: 'L LEVELS', tier: 4, driveable: true, unit: 'steps', when: { param: 'posteriseSpace', equals: 'hsl' } }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_ditherStrength = modulate('ditherStrength', 0);
+    const _m_rLevels = Math.round(modulate('rLevels', 0));
+    const _m_gLevels = Math.round(modulate('gLevels', 0));
+    const _m_bLevels = Math.round(modulate('bLevels', 0));
+    const _m_hLevels = Math.round(modulate('hLevels', 0));
+    const _m_sLevels = Math.round(modulate('sLevels', 0));
+    const _m_lLevels = Math.round(modulate('lLevels', 0));
     if (p.mode === 'posterise') {
       if (p.posteriseSpace === 'hsl') {
-        dst.set(posterizeHSL(src, w, h, p.hLevels, p.sLevels, p.lLevels));
+        dst.set(posterizeHSL(src, w, h, _m_hLevels, _m_sLevels, _m_lLevels));
       } else {
-        dst.set(posterizeRGB(src, w, h, p.rLevels, p.gLevels, p.bLevels));
+        dst.set(posterizeRGB(src, w, h, _m_rLevels, _m_gLevels, _m_bLevels));
       }
       return;
     }
     let result = quantiseToPalette(src, w, h, PALETTES[p.palette] ?? PALETTES['1-bit']);
     if (p.ditherMode === 'bayer') {
-      result = ditherBayer(result, w, h, 2, p.ditherStrength);
+      result = ditherBayer(result, w, h, 2, _m_ditherStrength);
     } else if (p.ditherMode === 'floyd-steinberg') {
-      result = ditherFloydSteinberg(result, w, h, 2, p.ditherStrength);
+      result = ditherFloydSteinberg(result, w, h, 2, _m_ditherStrength);
     }
     dst.set(result);
   }

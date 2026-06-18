@@ -250,19 +250,31 @@ export const ReactionDiffusionNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_seedSize = Math.round(modulate('seedSize', 0));
+    const _m_seedDensity = modulate('seedDensity', 0);
+    const _m_seedRandomness = modulate('seedRandomness', 0);
+    const _m_imageSeedStrength = modulate('imageSeedStrength', 0);
+    const _m_f = modulate('f', 0);
+    const _m_k = modulate('k', 0);
+    const _m_dA = modulate('dA', 0);
+    const _m_dB = modulate('dB', 0);
+    const _m_couplingStrength = modulate('couplingStrength', 0);
+    const _m_timestep = modulate('timestep', 0);
+    const _m_stepsPerFrame = Math.round(modulate('stepsPerFrame', 0));
     const n = w * h;
 
     // ── Resolve preset into base params, allow manual override ────────────────
     const presetKey = (p.preset || 'CORAL').toUpperCase();
     const base = PRESETS[presetKey] ?? PRESETS.CORAL;
-    const dA = p.dA !== base.dA || presetKey === 'CUSTOM' ? p.dA : base.dA;
-    const dB = p.dB !== base.dB || presetKey === 'CUSTOM' ? p.dB : base.dB;
-    const f  = p.f  !== base.f  || presetKey === 'CUSTOM' ? p.f  : base.f;
-    const k  = p.k  !== base.k  || presetKey === 'CUSTOM' ? p.k  : base.k;
+    const dA = _m_dA !== base.dA || presetKey === 'CUSTOM' ? _m_dA : base.dA;
+    const dB = _m_dB !== base.dB || presetKey === 'CUSTOM' ? _m_dB : base.dB;
+    const f  = _m_f  !== base.f  || presetKey === 'CUSTOM' ? _m_f  : base.f;
+    const k  = _m_k  !== base.k  || presetKey === 'CUSTOM' ? _m_k  : base.k;
 
     // ── Preset-sync: when preset changes, update param values and reset state ──
     const sigPreset = `${p.preset}`;
-    const sigSeed   = `${p.seedMode}|${p.seedSize}|${p.seedDensity}|${p.seedRandomness}`;
+    const sigSeed   = `${p.seedMode}|${_m_seedSize}|${_m_seedDensity}|${_m_seedRandomness}`;
     const sigSize   = `${w}|${h}`;
 
     const needReset = !this._stateA
@@ -275,7 +287,7 @@ export const ReactionDiffusionNode = createEffectModule({
       let seedSrc = src;
       const { stateA, stateB } = initState(
         seedSrc, w, h,
-        p.seedMode, p.seedSize, p.seedDensity, p.seedRandomness, p.imageSeedStrength
+        p.seedMode, _m_seedSize, _m_seedDensity, _m_seedRandomness, _m_imageSeedStrength
       );
       this._stateA   = stateA;
       this._stateB   = stateB;
@@ -287,12 +299,12 @@ export const ReactionDiffusionNode = createEffectModule({
     }
 
     // ── Frame cap (G9) ────────────────────────────────────────────────────────
-    let steps = p.stepsPerFrame;
-    steps = capByFrame(steps, p.frame);
+    let steps = _m_stepsPerFrame;
+    steps = capByFrame(steps, _m_frame);
 
     // ── Image coupling: build parameter driver fields ─────────────────────────
     let feedField = null, killField = null;
-    if (p.imageCoupling !== 'none' && p.couplingStrength > 0) {
+    if (p.imageCoupling !== 'none' && _m_couplingStrength > 0) {
       const driver = 'luminance';
       const field = extractDriverField(src, n, driver);
       if (p.imageCoupling === 'feed-rate') feedField = field;
@@ -304,8 +316,8 @@ export const ReactionDiffusionNode = createEffectModule({
     runSteps(
       this._stateA, this._stateB,
       this._tmpA, this._tmpB,
-      w, h, dA, dB, f, k, p.timestep, steps,
-      feedField, killField, p.couplingStrength
+      w, h, dA, dB, f, k, _m_timestep, steps,
+      feedField, killField, _m_couplingStrength
     );
 
     // ── Render channel ────────────────────────────────────────────────────────

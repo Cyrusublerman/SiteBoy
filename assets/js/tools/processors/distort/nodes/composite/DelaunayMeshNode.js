@@ -429,19 +429,32 @@ export const MosaicNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_baseDensity = Math.round(modulate('baseDensity', 0));
+    const _m_gradBoost = modulate('gradBoost', 0);
+    const _m_edgeBoost = modulate('edgeBoost', 0);
+    const _m_edgeFalloff = modulate('edgeFalloff', 0);
+    const _m_pointCount = modulate('pointCount', 0);
+    const _m_seed = Math.round(modulate('seed', 0));
+    const _m_wireWidth = modulate('wireWidth', 0);
+    const _m_wireColourR = Math.round(modulate('wireColourR', 0));
+    const _m_wireColourG = Math.round(modulate('wireColourG', 0));
+    const _m_wireColourB = Math.round(modulate('wireColourB', 0));
+    const _m_colourJitter = modulate('colourJitter', 0);
+    const _m_quantiseLevels = Math.round(modulate('quantiseLevels', 0));
+    const _m_hueShift = Math.round(modulate('hueShift', 0));
     const isPreview = ctx?.quality === 'preview';
-    const count = p.pointCount; // already preview-capped by _resolveParams
-    const rngSeed = (ctx?.nodeSeed ?? 0) ^ (p.seed | 0);
+    const count = _m_pointCount; // already preview-capped by _resolveParams
+    const rngSeed = (ctx?.nodeSeed ?? 0) ^ (_m_seed | 0);
     const rng = new SeededRNG(rngSeed);
 
     // Stage 2: build density field
     const density = buildDensityField(
       src, w, h,
       p.densityMode,
-      p.baseDensity,
-      p.gradBoost,
-      p.edgeBoost,
-      p.edgeFalloff,
+      _m_baseDensity,
+      _m_gradBoost,
+      _m_edgeBoost,
+      _m_edgeFalloff,
       p.densityCurve
     );
 
@@ -451,13 +464,13 @@ export const MosaicNode = createEffectModule({
 
     // Stage 4: (relaxation — reserved for future phase)
 
-    const wr = Math.round(p.wireColourR);
-    const wg = Math.round(p.wireColourG);
-    const wb = Math.round(p.wireColourB);
-    const ww = p.wireWidth;
-    const jitter = p.colourJitter;
-    const quant = Math.round(p.quantiseLevels);
-    const hShift = p.hueShift;
+    const wr = Math.round(_m_wireColourR);
+    const wg = Math.round(_m_wireColourG);
+    const wb = Math.round(_m_wireColourB);
+    const ww = _m_wireWidth;
+    const jitter = _m_colourJitter;
+    const quant = Math.round(_m_quantiseLevels);
+    const hShift = _m_hueShift;
 
     // Stage 5 + 6 + 7: topology, cell colour, render
     if (p.renderMode === 'VORONOI') {

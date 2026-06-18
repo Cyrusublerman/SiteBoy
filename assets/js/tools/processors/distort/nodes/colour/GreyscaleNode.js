@@ -9,8 +9,12 @@ export const GreyscaleNode = createEffectModule({
     wg: { value: 0.587, min: 0, max: 1, step: 0.01, label: 'G WEIGHT', tier: 3, driveable: true, unit: '0–1' },
     wb: { value: 0.114, min: 0, max: 1, step: 0.01, label: 'B WEIGHT', tier: 4, driveable: true, unit: '0–1' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(greyscale(src, w, h, p.wr, p.wg, p.wb));
+  apply(src, dst, w, h, p, c
+    const _m_wr = modulate('wr', 0);
+    const _m_wg = modulate('wg', 0);
+    const _m_wb = modulate('wb', 0);
+    dst.set(greyscale(src, w, h, _m_wr, _m_wg, _m_wb));
+  .wg, p.wb));
   },
   wgsl,
   glsl,

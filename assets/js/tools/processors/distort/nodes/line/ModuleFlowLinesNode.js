@@ -35,16 +35,23 @@ export const ModuleFlowLinesNode = createEffectModule({
     return { lines: set.lines, strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255], strokeWidth: p.strokeW, clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255] };
   },
   apply(src, dst, w, h, p, _ctx, _modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_spacing = Math.round(modulate('spacing', 0));
+    const _m_iterations = Math.round(modulate('iterations', 0));
+    const _m_stepSize = modulate('stepSize', 0);
+    const _m_strokeW = modulate('strokeW', 0);
+    const _m_bgColor = Math.round(modulate('bgColor', 0));
+    const _m_strokeColor = Math.round(modulate('strokeColor', 0));
     const field = normalizeField(buildBaseGradient(src, w, h, true));
-    const seeds = _seedGrid(w, h, Math.max(2, p.spacing));
-    let iters = p.iterations;
-    iters = capByFrame(iters, p.frame);
-    const set = buildFlowLines({ field, seeds, iterations: iters, step: p.stepSize });
+    const seeds = _seedGrid(w, h, Math.max(2, _m_spacing));
+    let iters = _m_iterations;
+    iters = capByFrame(iters, _m_frame);
+    const set = buildFlowLines({ field, seeds, iterations: iters, step: _m_stepSize });
     dst.set(vectorToRaster({
       basePixels: src, width: w, height: h, lines: set.lines,
-      strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255],
-      strokeWidth: p.strokeW,
-      clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255],
+      strokeRGBA: [_m_strokeColor, _m_strokeColor, _m_strokeColor, 255],
+      strokeWidth: _m_strokeW,
+      clearRGBA: [_m_bgColor, _m_bgColor, _m_bgColor, 255],
       opacity: 1
     }));
   },

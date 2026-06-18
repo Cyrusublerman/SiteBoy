@@ -13,9 +13,16 @@ export const AffineTransformNode = createEffectModule({
     centreX:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE X',    tier: 5, unit: '0–1' },
     centreY:    { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE Y',    tier: 5, unit: '0–1' }
   },
-  apply(src, dst, w, h, p, ctx) {
+  apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_translateX = modulate('translateX', 0);
+    const _m_translateY = modulate('translateY', 0);
+    const _m_rotate = modulate('rotate', 0);
+    const _m_scaleX = modulate('scaleX', 0);
+    const _m_scaleY = modulate('scaleY', 0);
+    const _m_centreX = modulate('centreX', 0);
+    const _m_centreY = modulate('centreY', 0);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    dst.set(affineTransform(src, w, h, p.translateX, p.translateY, p.rotate, p.scaleX, p.scaleY, p.centreX, p.centreY, interp));
+    dst.set(affineTransform(src, w, h, _m_translateX, _m_translateY, _m_rotate, _m_scaleX, _m_scaleY, _m_centreX, _m_centreY, interp));
   },
   wgsl,
   glsl,

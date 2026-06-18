@@ -18,9 +18,13 @@ export const DilateErodeNode = createEffectModule({
     shape:      { label: 'SHAPE',     type: 'select', options: ['SQUARE', 'CIRCLE'], value: 'SQUARE', tier: 4 }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_iterations = Math.round(modulate('iterations', 0));
+    const _m_radius = Math.round(modulate('radius', 0));
+    const _m_radiusX = Math.round(modulate('radiusX', 0));
+    const _m_radiusY = Math.round(modulate('radiusY', 0));
     let result = src;
-    for (let i = 0; i < p.iterations; i++) {
-      result = morphologyRGBA(result, w, h, p.mode.toLowerCase(), p.radius, p.shape.toLowerCase());
+    for (let i = 0; i < _m_iterations; i++) {
+      result = morphologyRGBA(result, w, h, p.mode.toLowerCase(), _m_radius, p.shape.toLowerCase());
     }
     dst.set(result);
   },

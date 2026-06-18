@@ -29,6 +29,7 @@ export const SDFShapeNode = createEffectModule({
     grainByField: { label: 'GRAIN BY FIELD', min: 0, max: 50, step: 1, value: 0, tier: 4, driveable: true, when: { outputMode: 'IMAGE MODIFY' } }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_blurByField = modulate('blurByField', 0);
     const n = w * h;
     const minDim = Math.min(w, h);
     const cosR = Math.cos((p.rotation ?? 0) * Math.PI / 180);

@@ -280,10 +280,41 @@ export const FilmGrainNode = createEffectModule({
   ],
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_size = Math.round(modulate('size', 0));
+    const _m_temporalCoherence = modulate('temporalCoherence', 0);
+    const _m_temporalSeed = Math.round(modulate('temporalSeed', 0));
+    const _m_l1seed = Math.round(modulate('l1seed', 0));
+    const _m_l1offsetX = modulate('l1offsetX', 0);
+    const _m_l1offsetY = modulate('l1offsetY', 0);
+    const _m_l1octaves = Math.round(modulate('l1octaves', 0));
+    const _m_l1lacunarity = modulate('l1lacunarity', 0);
+    const _m_l1persistence = modulate('l1persistence', 0);
+    const _m_l1threshold = modulate('l1threshold', 0);
+    const _m_l1quantise = Math.round(modulate('l1quantise', 0));
+    const _m_l1tPhase = modulate('l1tPhase', 0);
+    const _m_l2seed = Math.round(modulate('l2seed', 0));
+    const _m_l2offsetX = modulate('l2offsetX', 0);
+    const _m_l2offsetY = modulate('l2offsetY', 0);
+    const _m_l2octaves = Math.round(modulate('l2octaves', 0));
+    const _m_l2lacunarity = modulate('l2lacunarity', 0);
+    const _m_l2persistence = modulate('l2persistence', 0);
+    const _m_l2threshold = modulate('l2threshold', 0);
+    const _m_l2quantise = Math.round(modulate('l2quantise', 0));
+    const _m_l2tPhase = modulate('l2tPhase', 0);
+    const _m_l3seed = Math.round(modulate('l3seed', 0));
+    const _m_l3offsetX = modulate('l3offsetX', 0);
+    const _m_l3offsetY = modulate('l3offsetY', 0);
+    const _m_l3octaves = Math.round(modulate('l3octaves', 0));
+    const _m_l3lacunarity = modulate('l3lacunarity', 0);
+    const _m_l3persistence = modulate('l3persistence', 0);
+    const _m_l3threshold = modulate('l3threshold', 0);
+    const _m_l3quantise = Math.round(modulate('l3quantise', 0));
+    const _m_l3tPhase = modulate('l3tPhase', 0);
     const baseSeed = ctx?.nodeSeed ?? 42;
-    const frame    = ctx?.frame ?? (p.frame | 0);
+    const frame    = ctx?.frame ?? (_m_frame | 0);
     const driftSpd = modulate('driftSpeed', 0);
-    const effSeed  = resolveTemporalSeed(baseSeed, p.temporalSeed, p.temporalMode, frame, driftSpd);
+    const effSeed  = resolveTemporalSeed(baseSeed, _m_temporalSeed, p.temporalMode, frame, driftSpd);
 
     // Modulated primary params
     const amount        = modulate('amount',            0) / 100;
@@ -306,7 +337,7 @@ export const FilmGrainNode = createEffectModule({
     const chromaPerturb = modulate('chromaPerturbation', 0);
     const hueJit        = modulate('hueJitter',         0);
     const satJit        = modulate('satJitter',         0);
-    const size          = Math.max(1, p.size | 0);
+    const size          = Math.max(1, _m_size | 0);
 
     const opMode     = p.operatingMode;
     const chanMode   = p.channelMode;
@@ -326,24 +357,24 @@ export const FilmGrainNode = createEffectModule({
     const gh = Math.ceil(h / size);
 
     const layers = [
-      { enabled: p.l1enabled, algorithm: p.l1algorithm, seed: p.l1seed,
+      { enabled: p.l1enabled, algorithm: p.l1algorithm, seed: _m_l1seed,
         scale: modulate('l1scale', 0), amplitude: modulate('l1amplitude', 0),
-        offsetX: p.l1offsetX, offsetY: p.l1offsetY,
-        octaves: p.l1octaves, lacunarity: p.l1lacunarity, persistence: p.l1persistence,
-        threshold: p.l1threshold, quantisation: p.l1quantise,
-        temporalPhase: p.l1tPhase, temporalSpeed: modulate('l1tSpeed', 0) },
-      { enabled: p.l2enabled, algorithm: p.l2algorithm, seed: p.l2seed,
+        offsetX: _m_l1offsetX, offsetY: _m_l1offsetY,
+        octaves: _m_l1octaves, lacunarity: _m_l1lacunarity, persistence: _m_l1persistence,
+        threshold: _m_l1threshold, quantisation: _m_l1quantise,
+        temporalPhase: _m_l1tPhase, temporalSpeed: modulate('l1tSpeed', 0) },
+      { enabled: p.l2enabled, algorithm: p.l2algorithm, seed: _m_l2seed,
         scale: modulate('l2scale', 0), amplitude: modulate('l2amplitude', 0),
-        offsetX: p.l2offsetX, offsetY: p.l2offsetY,
-        octaves: p.l2octaves, lacunarity: p.l2lacunarity, persistence: p.l2persistence,
-        threshold: p.l2threshold, quantisation: p.l2quantise,
-        temporalPhase: p.l2tPhase, temporalSpeed: modulate('l2tSpeed', 0) },
-      { enabled: p.l3enabled, algorithm: p.l3algorithm, seed: p.l3seed,
+        offsetX: _m_l2offsetX, offsetY: _m_l2offsetY,
+        octaves: _m_l2octaves, lacunarity: _m_l2lacunarity, persistence: _m_l2persistence,
+        threshold: _m_l2threshold, quantisation: _m_l2quantise,
+        temporalPhase: _m_l2tPhase, temporalSpeed: modulate('l2tSpeed', 0) },
+      { enabled: p.l3enabled, algorithm: p.l3algorithm, seed: _m_l3seed,
         scale: modulate('l3scale', 0), amplitude: modulate('l3amplitude', 0),
-        offsetX: p.l3offsetX, offsetY: p.l3offsetY,
-        octaves: p.l3octaves, lacunarity: p.l3lacunarity, persistence: p.l3persistence,
-        threshold: p.l3threshold, quantisation: p.l3quantise,
-        temporalPhase: p.l3tPhase, temporalSpeed: modulate('l3tSpeed', 0) },
+        offsetX: _m_l3offsetX, offsetY: _m_l3offsetY,
+        octaves: _m_l3octaves, lacunarity: _m_l3lacunarity, persistence: _m_l3persistence,
+        threshold: _m_l3threshold, quantisation: _m_l3quantise,
+        temporalPhase: _m_l3tPhase, temporalSpeed: modulate('l3tSpeed', 0) },
     ];
 
     const layerFields = layers.map((cfg, li) =>

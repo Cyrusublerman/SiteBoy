@@ -13,7 +13,10 @@ export const ScanlinesNode = createEffectModule({
     scOpacity: { label: 'LINE OPACITY', min: 0, max: 1,  step: 0.01, value: 0.3, tier: 3, driveable: true, unit: '0–1' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    dst.set(scanlines(src, w, h, p.spacing, p.thickness, modulate('scOpacity', 0), p.frame));
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_spacing = Math.round(modulate('spacing', 0));
+    const _m_thickness = modulate('thickness', 0);
+    dst.set(scanlines(src, w, h, _m_spacing, _m_thickness, modulate('scOpacity', 0), _m_frame));
   },
   wgsl,
   glsl,

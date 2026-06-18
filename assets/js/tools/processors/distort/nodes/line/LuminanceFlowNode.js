@@ -33,20 +33,29 @@ export const LuminanceFlowNode = createEffectModule({
     return { lines: set.lines, strokeRGBA: [255, 255, 255, 204], strokeWidth: p.strokeWeight, clearRGBA: [p.bgBrightness, p.bgBrightness, p.bgBrightness, 255] };
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    let iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 2) : p.iterations;
-    iters = capByFrame(iters, p.frame);
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_spacing = Math.round(modulate('spacing', 0));
+    const _m_strokeWeight = modulate('strokeWeight', 0);
+    const _m_resolution = Math.round(modulate('resolution', 0));
+    const _m_amplitude = Math.round(modulate('amplitude', 0));
+    const _m_lumExp = modulate('lumExp', 0);
+    const _m_damping = modulate('damping', 0);
+    const _m_iterations = Math.round(modulate('iterations', 0));
+    const _m_bgBrightness = Math.round(modulate('bgBrightness', 0));
+    let iters = ctx?.quality === 'preview' ? Math.min(_m_iterations, 2) : _m_iterations;
+    iters = capByFrame(iters, _m_frame);
     const set = buildGradientDisplacedLines({
       src, width: w, height: h,
       pattern: p.patternType.toLowerCase(),
-      spacing: p.spacing, resolution: p.resolution,
-      amplitude: p.amplitude, lumExp: p.lumExp,
-      damping: p.damping, iterations: iters
+      spacing: _m_spacing, resolution: _m_resolution,
+      amplitude: _m_amplitude, lumExp: _m_lumExp,
+      damping: _m_damping, iterations: iters
     });
     dst.set(vectorToRaster({
       basePixels: src, width: w, height: h, lines: set.lines,
       strokeRGBA: [255, 255, 255, 204],
-      strokeWidth: p.strokeWeight,
-      clearRGBA: [p.bgBrightness, p.bgBrightness, p.bgBrightness, 255],
+      strokeWidth: _m_strokeWeight,
+      clearRGBA: [_m_bgBrightness, _m_bgBrightness, _m_bgBrightness, 255],
       opacity: 1
     }));
   },

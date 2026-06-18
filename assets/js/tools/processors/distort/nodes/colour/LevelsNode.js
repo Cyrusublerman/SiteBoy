@@ -12,8 +12,14 @@ export const LevelsNode = createEffectModule({
     outBlack:   { value: 0,   min: 0,   max: 255, step: 1,    label: 'BLACK OUT', tier: 4, driveable: true, unit: 'lvl' },
     outWhite:   { value: 255, min: 0,   max: 255, step: 1,    label: 'WHITE OUT', tier: 4, driveable: true, unit: 'lvl' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(applyLevels(src, w, h, p.blackPoint, p.whitePoint, p.midGamma, p.outBlack, p.outWhite));
+  apply(src, dst, w, h, p, c
+    const _m_blackPoint = Math.round(modulate('blackPoint', 0));
+    const _m_whitePoint = Math.round(modulate('whitePoint', 0));
+    const _m_midGamma = modulate('midGamma', 0);
+    const _m_outBlack = Math.round(modulate('outBlack', 0));
+    const _m_outWhite = Math.round(modulate('outWhite', 0));
+    dst.set(applyLevels(src, w, h, _m_blackPoint, _m_whitePoint, _m_midGamma, _m_outBlack, _m_outWhite));
+  .outWhite));
   },
   wgsl,
   glsl,

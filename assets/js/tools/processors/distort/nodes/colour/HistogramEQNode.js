@@ -7,8 +7,10 @@ export const HistogramEQNode = createEffectModule({
   params: {
     strength: { value: 1, min: 0, max: 1, step: 0.01, label: 'STRENGTH', tier: 3, driveable: true, unit: '0–1' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(histogramEqualise(src, w, h, p.strength));
+  apply(src, dst, w, h, p, c
+    const _m_strength = modulate('strength', 0);
+    dst.set(histogramEqualise(src, w, h, _m_strength));
+  .strength));
   },
   wgsl,
   glsl,

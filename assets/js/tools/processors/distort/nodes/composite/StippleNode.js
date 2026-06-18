@@ -420,29 +420,48 @@ export const StippleNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_toneGamma = modulate('toneGamma', 0);
+    const _m_dotCount = modulate('dotCount', 0);
+    const _m_shadowThreshold = modulate('shadowThreshold', 0);
+    const _m_highlightThreshold = modulate('highlightThreshold', 0);
+    const _m_randomness = modulate('randomness', 0);
+    const _m_seed = Math.round(modulate('seed', 0));
+    const _m_relaxIterations = Math.round(modulate('relaxIterations', 0));
+    const _m_relaxStrength = modulate('relaxStrength', 0);
+    const _m_minSpacing = modulate('minSpacing', 0);
+    const _m_minDotSize = modulate('minDotSize', 0);
+    const _m_maxDotSize = modulate('maxDotSize', 0);
+    const _m_dotOpacity = modulate('dotOpacity', 0);
+    const _m_dotColourR = Math.round(modulate('dotColourR', 0));
+    const _m_dotColourG = Math.round(modulate('dotColourG', 0));
+    const _m_dotColourB = Math.round(modulate('dotColourB', 0));
+    const _m_bgColourR = Math.round(modulate('bgColourR', 0));
+    const _m_bgColourG = Math.round(modulate('bgColourG', 0));
+    const _m_bgColourB = Math.round(modulate('bgColourB', 0));
+    const _m_frame = Math.round(modulate('frame', 0));
     const n = w * h;
     const isPreview = ctx?.quality === 'preview';
 
     // ── Resolve driveable params ──────────────────────────────────────────────
     const m = (key, fallback) => modulate ? modulate(key, fallback) : fallback;
-    const dotCount      = Math.max(1, Math.round(m('dotCount',      p.dotCount)));
-    const minSpacing    = Math.max(0, m('minSpacing',    p.minSpacing));
-    const minDotSize    = Math.max(0.5, m('minDotSize',  p.minDotSize));
-    const maxDotSize    = Math.max(minDotSize, m('maxDotSize', p.maxDotSize));
-    const dotOpacity    = Math.max(0, Math.min(1, m('dotOpacity',   p.dotOpacity)));
-    const relaxIters    = Math.max(0, Math.round(m('relaxIterations', p.relaxIterations)));
-    const relaxStrength = Math.max(0, Math.min(1, m('relaxStrength', p.relaxStrength)));
-    const randomness    = Math.max(0, Math.min(1, m('randomness',   p.randomness)));
-    const toneGamma     = Math.max(0.01, m('toneGamma',  p.toneGamma));
-    const shadowThr     = Math.max(0, Math.min(1, m('shadowThreshold',    p.shadowThreshold)));
-    const highlightThr  = Math.max(shadowThr + 0.001, Math.min(1, m('highlightThreshold', p.highlightThreshold)));
-    const seed          = Math.round(m('seed', p.seed)) + (p.frame | 0);
-    const dotColourR    = Math.round(m('dotColourR', p.dotColourR));
-    const dotColourG    = Math.round(m('dotColourG', p.dotColourG));
-    const dotColourB    = Math.round(m('dotColourB', p.dotColourB));
-    const bgColourR     = Math.round(m('bgColourR', p.bgColourR));
-    const bgColourG     = Math.round(m('bgColourG', p.bgColourG));
-    const bgColourB     = Math.round(m('bgColourB', p.bgColourB));
+    const dotCount      = Math.max(1, Math.round(m('dotCount',      _m_dotCount)));
+    const minSpacing    = Math.max(0, m('minSpacing',    _m_minSpacing));
+    const minDotSize    = Math.max(0.5, m('minDotSize',  _m_minDotSize));
+    const maxDotSize    = Math.max(minDotSize, m('maxDotSize', _m_maxDotSize));
+    const dotOpacity    = Math.max(0, Math.min(1, m('dotOpacity',   _m_dotOpacity)));
+    const relaxIters    = Math.max(0, Math.round(m('relaxIterations', _m_relaxIterations)));
+    const relaxStrength = Math.max(0, Math.min(1, m('relaxStrength', _m_relaxStrength)));
+    const randomness    = Math.max(0, Math.min(1, m('randomness',   _m_randomness)));
+    const toneGamma     = Math.max(0.01, m('toneGamma',  _m_toneGamma));
+    const shadowThr     = Math.max(0, Math.min(1, m('shadowThreshold',    _m_shadowThreshold)));
+    const highlightThr  = Math.max(shadowThr + 0.001, Math.min(1, m('highlightThreshold', _m_highlightThreshold)));
+    const seed          = Math.round(m('seed', _m_seed)) + (_m_frame | 0);
+    const dotColourR    = Math.round(m('dotColourR', _m_dotColourR));
+    const dotColourG    = Math.round(m('dotColourG', _m_dotColourG));
+    const dotColourB    = Math.round(m('dotColourB', _m_dotColourB));
+    const bgColourR     = Math.round(m('bgColourR', _m_bgColourR));
+    const bgColourG     = Math.round(m('bgColourG', _m_bgColourG));
+    const bgColourB     = Math.round(m('bgColourB', _m_bgColourB));
 
     const rng = new SeededRNG(seed >>> 0);
 

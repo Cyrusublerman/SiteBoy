@@ -13,6 +13,9 @@ export const LaplacianNode = createEffectModule({
     normalize:  { value: 1, min: 0, max: 1, step: 1, label: 'NORMALISE', type: 'toggle', tier: 5 }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_preBlur = modulate('preBlur', 0);
+    const _m_gain = modulate('gain', 0);
+    const _m_threshold = modulate('threshold', 0);
     dst.set(laplacianEdge(src, w, h, p.mode, !!p.normalize));
   },
   wgsl,

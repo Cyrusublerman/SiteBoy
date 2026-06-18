@@ -10,9 +10,13 @@ export const TwirlNode = createEffectModule({
     centreX: { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE X', tier: 4, driveable: true, unit: '0–1' },
     centreY: { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE Y', tier: 4, driveable: true, unit: '0–1' }
   },
-  apply(src, dst, w, h, p, ctx) {
+  apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_angle = modulate('angle', 0);
+    const _m_radius = modulate('radius', 0);
+    const _m_centreX = modulate('centreX', 0);
+    const _m_centreY = modulate('centreY', 0);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    dst.set(twirl(src, w, h, p.angle, p.centreX, p.centreY, p.radius, interp));
+    dst.set(twirl(src, w, h, _m_angle, _m_centreX, _m_centreY, _m_radius, interp));
   },
   wgsl,
   glsl,

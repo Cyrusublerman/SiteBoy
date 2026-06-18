@@ -14,15 +14,19 @@ export const AdvectionNode = createEffectModule({
     noiseScale:   { value: 3,  min: 0.1, max: 20, step: 0.1, label: 'NOISE SC',   tier: 4, driveable: true, unit: '×', when: { param: 'velocityType', equals: 'noise' } }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_steps = Math.round(modulate('steps', 0));
+    const _m_speed = modulate('speed', 0);
+    const _m_noiseScale = modulate('noiseScale', 0);
     const seed = ctx?.nodeSeed ?? 42;
     if (!this._noise || this._noiseSeed !== seed) {
       this._noise = new PerlinNoise(seed);
       this._noiseSeed = seed;
     }
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    let st = p.steps;
-    st = capByFrame(st, p.frame);
-    dst.set(advectionWarp(src, w, h, p.velocityType, st, p.speed, p.noiseScale, this._noise, interp));
+    let st = _m_steps;
+    st = capByFrame(st, _m_frame);
+    dst.set(advectionWarp(src, w, h, p.velocityType, st, _m_speed, _m_noiseScale, this._noise, interp));
   },
   wgsl,
   glsl,

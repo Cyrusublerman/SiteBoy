@@ -507,8 +507,21 @@ export const WaveDistortionNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_wavelength = Math.round(modulate('wavelength', 0));
+    const _m_direction = Math.round(modulate('direction', 0));
+    const _m_octaves = Math.round(modulate('octaves', 0));
+    const _m_initAmplitude = modulate('initAmplitude', 0);
+    const _m_initRadius = modulate('initRadius', 0);
+    const _m_seedThreshold = modulate('seedThreshold', 0);
+    const _m_stepsPerFrame = Math.round(modulate('stepsPerFrame', 0));
+    const _m_warmupSteps = modulate('warmupSteps', 0);
+    const _m_emitterCount = Math.round(modulate('emitterCount', 0));
+    const _m_forcingInterval = Math.round(modulate('forcingInterval', 0));
+    const _m_stiffness = modulate('stiffness', 0);
+    const _m_decay = modulate('decay', 0);
     const n = w * h;
-    const frame = p.frame;
+    const frame = _m_frame;
 
     // ── Resolve per-frame (non-per-pixel) modulated scalars ────────────────
     // Spatial modulation is applied at pixel sampling time (amplitude, phaseOffset).
@@ -520,7 +533,7 @@ export const WaveDistortionNode = createEffectModule({
 
     // ── State signature — detect resets ───────────────────────────────────
     const sigSize  = `${w}|${h}`;
-    const sigInit  = `${p.initType}|${p.initAmplitude}|${p.initRadius}|${p.seedSource}|${p.seedThreshold}`;
+    const sigInit  = `${p.initType}|${_m_initAmplitude}|${_m_initRadius}|${p.seedSource}|${_m_seedThreshold}`;
     const sigSim   = `${simSpeed}|${p.boundaryMode}`;
     const needReset = !this._cur
       || !p.retainState
@@ -528,7 +541,7 @@ export const WaveDistortionNode = createEffectModule({
       || this._sigInit  !== sigInit;
 
     if (needReset) {
-      const { cur, prev } = _initFields(src, w, h, p.initType, p.initAmplitude, p.initRadius, p.seedThreshold, p.seedSource);
+      const { cur, prev } = _initFields(src, w, h, p.initType, _m_initAmplitude, _m_initRadius, _m_seedThreshold, p.seedSource);
       this._cur   = cur;
       this._prev  = prev;
       this._tmp   = new Float32Array(n);
@@ -538,8 +551,8 @@ export const WaveDistortionNode = createEffectModule({
       this._sigSim  = sigSim;
 
       // Warmup steps before first display.
-      if (p.warmupSteps > 0) {
-        for (let s = 0; s < p.warmupSteps; s++) {
+      if (_m_warmupSteps > 0) {
+        for (let s = 0; s < _m_warmupSteps; s++) {
           const { cur: nc, prev: np } = _stepWave2D(this._cur, this._prev, this._tmp, w, h, simSpeed, damping, p.boundaryMode, dispersion, viscosity);
           this._tmp  = this._prev;
           this._cur  = nc;
@@ -549,10 +562,10 @@ export const WaveDistortionNode = createEffectModule({
     }
 
     // ── Emitter injection ─────────────────────────────────────────────────
-    if (p.emitterCount > 0) {
+    if (_m_emitterCount > 0) {
       _injectEmitters(
         this._cur, w, h,
-        p.emitterCount, p.emitterMode, frame,
+        _m_emitterCount, p.emitterMode, frame,
         modulate('emitterFreq', 0), modulate('emitterPhase', 0) * TWO_PI,
         modulate('emitterAmp', 0), modulate('emitterRadius', 0)
       );
@@ -560,7 +573,7 @@ export const WaveDistortionNode = createEffectModule({
 
     // ── Image forcing (ongoing) ───────────────────────────────────────────
     const fstr = modulate('forcingStrength', 0);
-    if (fstr > 0 && (frame % Math.max(1, p.forcingInterval | 0) === 0)) {
+    if (fstr > 0 && (frame % Math.max(1, _m_forcingInterval | 0) === 0)) {
       for (let i = 0; i < n; i++) {
         const j = i * 4;
         const lum = (src[j] * 0.299 + src[j + 1] * 0.587 + src[j + 2] * 0.114) / 255;
@@ -569,17 +582,17 @@ export const WaveDistortionNode = createEffectModule({
     }
 
     // ── Simulation advance ────────────────────────────────────────────────
-    let steps = p.stepsPerFrame;
+    let steps = _m_stepsPerFrame;
     steps = capByFrame(steps, frame);
 
     for (let s = 0; s < steps; s++) {
       // stiffness: restoring force pulls toward zero
-      if (p.stiffness > 0) {
-        for (let i = 0; i < n; i++) this._cur[i] -= p.stiffness * 0.01 * this._cur[i];
+      if (_m_stiffness > 0) {
+        for (let i = 0; i < n; i++) this._cur[i] -= _m_stiffness * 0.01 * this._cur[i];
       }
       // decay: extra amplitude reduction
-      if (p.decay > 0) {
-        for (let i = 0; i < n; i++) this._cur[i] *= (1 - p.decay * 0.01);
+      if (_m_decay > 0) {
+        for (let i = 0; i < n; i++) this._cur[i] *= (1 - _m_decay * 0.01);
       }
 
       const { cur: nc, prev: np } = _stepWave2D(
@@ -598,13 +611,13 @@ export const WaveDistortionNode = createEffectModule({
     // The analytical wave modulates the field or can drive displacement directly.
     // When outputMode is DISPLACEMENT and waveType != NOISE with default params,
     // the analytic wave displaces on top of the sim field.
-    const dirRad = (p.direction * Math.PI) / 180;
+    const dirRad = (_m_direction * Math.PI) / 180;
     const cosDir = Math.cos(dirRad), sinDir = Math.sin(dirRad);
     const analyticalSpeed = modulate('speed', 0);
     const useAnalytic = analyticalSpeed > 0 || p.waveType !== 'SINE';
 
     if (useAnalytic) {
-      const wl = Math.max(1, p.wavelength);
+      const wl = Math.max(1, _m_wavelength);
       const timePhase = analyticalSpeed * frame / 60;
 
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -613,7 +626,7 @@ export const WaveDistortionNode = createEffectModule({
         const phase = proj - timePhase + modulate('phaseOffset', i);
         const fracPhase = phase - Math.floor(phase);
         const noiseVal = p.waveType === 'NOISE'
-          ? _fbm(x, y, modulate('noiseScale', i), p.octaves | 0)
+          ? _fbm(x, y, modulate('noiseScale', i), _m_octaves | 0)
           : 0;
         const wv = _waveform(p.waveType, fracPhase, noiseVal);
         // Blend: analytic wave modulates the field value.

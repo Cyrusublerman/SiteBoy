@@ -45,9 +45,10 @@ export const MoireNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_threshold = modulate('threshold', 0);
     const combineKey = p.combineMode.toLowerCase();
     const blendKey   = p.internalBlend.toLowerCase();
-    const doThresh   = p.threshold > 0;
+    const doThresh   = _m_threshold > 0;
     const aaWidth    = p.antiAlias ? 0.08 : 0;
 
     for (let y = 0; y < h; y++) {
@@ -78,8 +79,8 @@ export const MoireNode = createEffectModule({
 
         if (doThresh) {
           v = aaWidth > 0
-            ? thresholdGrating(v, p.threshold, true, aaWidth)
-            : thresholdGrating(v, p.threshold, false, 0);
+            ? thresholdGrating(v, _m_threshold, true, aaWidth)
+            : thresholdGrating(v, _m_threshold, false, 0);
         }
 
         if (p.invertPattern) v = 1 - v;

@@ -11,8 +11,12 @@ export const SpherizeNode = createEffectModule({
     centreY: { value: 0.5, min: 0,    max: 1,   step: 0.01, label: 'CENTRE Y', tier: 4, driveable: true, unit: '0–1' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_amount = modulate('amount', 0);
+    const _m_radius = modulate('radius', 0);
+    const _m_centreX = modulate('centreX', 0);
+    const _m_centreY = modulate('centreY', 0);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    dst.set(spherize(src, w, h, p.amount, p.centreX, p.centreY, p.radius, interp));
+    dst.set(spherize(src, w, h, _m_amount, _m_centreX, _m_centreY, _m_radius, interp));
   },
   wgsl,
   glsl,

@@ -12,9 +12,15 @@ export const RadialRippleNode = createEffectModule({
     phase:     { value: 0,   min: 0,   max: 6.28, step: 0.01, label: 'PHASE',   tier: 4, driveable: true, unit: 'rad' },
     falloff:   { value: 1,   min: 0,   max: 5,  step: 0.1,  label: 'FALLOFF',   tier: 4, unit: 'n' }
   },
-  apply(src, dst, w, h, p, ctx) {
+  apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_centreX = modulate('centreX', 0);
+    const _m_centreY = modulate('centreY', 0);
+    const _m_amplitude = modulate('amplitude', 0);
+    const _m_frequency = modulate('frequency', 0);
+    const _m_phase = modulate('phase', 0);
+    const _m_falloff = modulate('falloff', 0);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    dst.set(radialRipple(src, w, h, p.centreX, p.centreY, p.amplitude, p.frequency, p.phase, p.falloff, interp));
+    dst.set(radialRipple(src, w, h, _m_centreX, _m_centreY, _m_amplitude, _m_frequency, _m_phase, _m_falloff, interp));
   },
   wgsl,
   glsl,

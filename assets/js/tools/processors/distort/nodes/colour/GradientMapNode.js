@@ -13,12 +13,12 @@ export const GradientMapNode = createEffectModule({
     lightB: { value: 150, min: 0, max: 255, step: 1, label: 'LIGHT B', tier: 4, driveable: true, unit: 'lvl' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    const darkR  = modulate ? this.getModulated('darkR',  0, ctx) : p.darkR;
-    const darkG  = modulate ? this.getModulated('darkG',  0, ctx) : p.darkG;
-    const darkB  = modulate ? this.getModulated('darkB',  0, ctx) : p.darkB;
-    const lightR = modulate ? this.getModulated('lightR', 0, ctx) : p.lightR;
-    const lightG = modulate ? this.getModulated('lightG', 0, ctx) : p.lightG;
-    const lightB = modulate ? this.getModulated('lightB', 0, ctx) : p.lightB;
+    const darkR  = Math.round(modulate('darkR',  0));
+    const darkG  = Math.round(modulate('darkG',  0));
+    const darkB  = Math.round(modulate('darkB',  0));
+    const lightR = Math.round(modulate('lightR', 0));
+    const lightG = Math.round(modulate('lightG', 0));
+    const lightB = Math.round(modulate('lightB', 0));
     const gradient = [[darkR, darkG, darkB], [lightR, lightG, lightB]];
     dst.set(applyGradientMap(src, w, h, gradient));
   },

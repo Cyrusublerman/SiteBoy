@@ -19,16 +19,24 @@ export const FlowFieldNode = createEffectModule({
   _noise: null,
   _noiseSeed: null,
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_noiseScale = modulate('noiseScale', 0);
+    const _m_strength = Math.round(modulate('strength', 0));
+    const _m_curl = modulate('curl', 0);
+    const _m_octaves = Math.round(modulate('octaves', 0));
+    const _m_lacunarity = modulate('lacunarity', 0);
+    const _m_gain = modulate('gain', 0);
+    const _m_advectSteps = Math.round(modulate('advectSteps', 0));
     const seed = ctx?.nodeSeed ?? 42;
     if (!this._noise || this._noiseSeed !== seed) {
       this._noise = new PerlinNoise(seed);
       this._noiseSeed = seed;
     }
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    const str = p.strength * (ctx?.quality === 'preview' && ctx?.previewScale ? ctx.previewScale : 1);
-    let adv = p.advectSteps;
-    adv = capByFrame(adv, p.frame);
-    dst.set(flowFieldWarp(src, w, h, p.noiseScale, p.octaves, p.lacunarity, p.gain, str, p.curl, adv, this._noise, interp));
+    const str = _m_strength * (ctx?.quality === 'preview' && ctx?.previewScale ? ctx.previewScale : 1);
+    let adv = _m_advectSteps;
+    adv = capByFrame(adv, _m_frame);
+    dst.set(flowFieldWarp(src, w, h, _m_noiseScale, _m_octaves, _m_lacunarity, _m_gain, str, _m_curl, adv, this._noise, interp));
   },
   wgsl,
   glsl,

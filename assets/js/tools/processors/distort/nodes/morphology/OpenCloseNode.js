@@ -13,9 +13,11 @@ export const OpenCloseNode = createEffectModule({
     iterations: { label: 'ITERATIONS', min: 1, max: 10, step: 1, value: 1, tier: 3, previewMax: 3, unit: '×', driveable: true }
   },
   apply(src, dst, w, h, p, _ctx, _modulate) {
-    const iters = Math.round(p.iterations);
+    const _m_radius = Math.round(modulate('radius', 0));
+    const _m_iterations = Math.round(modulate('iterations', 0));
+    const iters = Math.round(_m_iterations);
     let buf = src;
-    for (let i = 0; i < iters; i++) buf = morphologyOpenCloseRGBA(buf, w, h, p.mode.toLowerCase(), p.radius);
+    for (let i = 0; i < iters; i++) buf = morphologyOpenCloseRGBA(buf, w, h, p.mode.toLowerCase(), _m_radius);
     dst.set(buf);
   },
   wgsl,

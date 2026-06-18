@@ -16,6 +16,15 @@ export const ChannelMixerNode = createEffectModule({
     bb: { value: 1, min: -2, max: 2, step: 0.01, label: 'B→B', tier: 5, driveable: true, unit: 'n' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_rr = modulate('rr', 0);
+    const _m_rg = modulate('rg', 0);
+    const _m_rb = modulate('rb', 0);
+    const _m_gr = modulate('gr', 0);
+    const _m_gg = modulate('gg', 0);
+    const _m_gb = modulate('gb', 0);
+    const _m_br = modulate('br', 0);
+    const _m_bg = modulate('bg', 0);
+    const _m_bb = modulate('bb', 0);
     dst.set(channelMix(src, w, h, p));
   },
   wgsl,

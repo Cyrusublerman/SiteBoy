@@ -42,23 +42,34 @@ export const StaticHalftoneNode = createEffectModule({
     return { lines: set.lines, strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255], strokeWidth: p.strokeW, clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255] };
   },
   apply(src, dst, w, h, p, _ctx, _modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_spacing = Math.round(modulate('spacing', 0));
+    const _m_maxAmplitude = modulate('maxAmplitude', 0);
+    const _m_frequency = Math.round(modulate('frequency', 0));
+    const _m_sampleStep = modulate('sampleStep', 0);
+    const _m_phaseOffset = modulate('phaseOffset', 0);
+    const _m_phaseInc = modulate('phaseInc', 0);
+    const _m_curveStrength = modulate('curveStrength', 0);
+    const _m_strokeW = modulate('strokeW', 0);
+    const _m_bgColor = Math.round(modulate('bgColor', 0));
+    const _m_strokeColor = Math.round(modulate('strokeColor', 0));
     const n = w * h, lum = new Float32Array(n);
     for (let i = 0; i < n; i++) { const j = i * 4; lum[i] = (0.2126 * src[j] + 0.7152 * src[j + 1] + 0.0722 * src[j + 2]) / 255; }
-    const phaseOff = p.phaseOffset + p.frame * 0.02;
+    const phaseOff = _m_phaseOffset + _m_frame * 0.02;
     const set = applyStaticDisplacement({
       width: w, height: h,
       luminanceAt: (cx, cy) => _lumAt(lum, w, h, cx, cy),
-      lineSpacing: p.spacing, sampleStep: p.sampleStep,
-      maxAmplitude: p.maxAmplitude, frequency: p.frequency,
-      phaseOffset: phaseOff, phaseIncrement: p.phaseInc,
-      ampCurve: p.ampCurve.toLowerCase(), ampCurveStrength: p.curveStrength,
+      lineSpacing: _m_spacing, sampleStep: _m_sampleStep,
+      maxAmplitude: _m_maxAmplitude, frequency: _m_frequency,
+      phaseOffset: phaseOff, phaseIncrement: _m_phaseInc,
+      ampCurve: p.ampCurve.toLowerCase(), ampCurveStrength: _m_curveStrength,
       horizontal: p.orientation === 'HORIZONTAL', padding: 2
     });
     dst.set(vectorToRaster({
       basePixels: src, width: w, height: h, lines: set.lines,
-      strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255],
-      strokeWidth: p.strokeW,
-      clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255],
+      strokeRGBA: [_m_strokeColor, _m_strokeColor, _m_strokeColor, 255],
+      strokeWidth: _m_strokeW,
+      clearRGBA: [_m_bgColor, _m_bgColor, _m_bgColor, 255],
       opacity: 1
     }));
   },

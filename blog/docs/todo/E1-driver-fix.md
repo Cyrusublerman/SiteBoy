@@ -1,6 +1,6 @@
 # E1 — WU-3: G1 driver (+D) fix
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P0
 **Owner file(s)**: `assets/js/tools/processors/distort/ui/NodePanel.js`, `core/Pipeline.js`, `core/EffectNode.js`, `ui/DriverPicker.js`, multiple node files
 **Blockers**: none
@@ -32,5 +32,5 @@ End-to-end fix of the `+D` driver slot. 48+ modules currently have a non-functio
 
 ## References
 
-- `blog/docs/temp/distort-next-steps.md` §WU-3
-- `blog/docs/temp/distort-issue-register.md` (G1 rows)
+- `blog/docs/pages/tools/processors/distort/distort-next-steps.md` §WU-3
+- `blog/docs/pages/tools/processors/distort/distort-issue-register.md` (G1 rows)

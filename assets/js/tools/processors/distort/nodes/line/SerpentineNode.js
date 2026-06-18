@@ -48,6 +48,8 @@ export const SerpentineNode = createEffectModule({
     return { lines: set.lines, strokeRGBA: [p.strokeColor, p.strokeColor, p.strokeColor, 255], strokeWidth: p.strokeW, clearRGBA: [p.bgColor, p.bgColor, p.bgColor, 255] };
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_iterations = modulate('iterations', 0);
     const n = w * h, lum = new Float32Array(n);
     for (let i = 0; i < n; i++) { const j = i * 4; lum[i] = (0.2126 * src[j] + 0.7152 * src[j + 1] + 0.0722 * src[j + 2]) / 255; }
     // Frame-level modulation: sample at pixel 0 (geometry params are whole-frame, not per-pixel)
@@ -65,8 +67,8 @@ export const SerpentineNode = createEffectModule({
     const topBound     = modulate('topBound', 0);
     const bottomBound  = modulate('bottomBound', 0);
     const curveStrength = modulate('curveStrength', 0);
-    let iters = ctx?.quality === 'preview' ? Math.min(p.iterations, 60) : p.iterations;
-    iters = capByFrame(iters, p.frame);
+    let iters = ctx?.quality === 'preview' ? Math.min(_m_iterations, 60) : _m_iterations;
+    iters = capByFrame(iters, _m_frame);
     const set = buildWavefrontLines({
       width: w, height: h,
       luminanceAt: (cx, cy) => _lumAt(lum, w, h, cx, cy),

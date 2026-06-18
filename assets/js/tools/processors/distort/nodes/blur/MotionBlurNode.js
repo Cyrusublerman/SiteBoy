@@ -9,7 +9,9 @@ export const MotionBlurNode = createEffectModule({
     distance: { value: 10, min: 1, max: 100, step: 1, label: 'DISTANCE', tier: 3, previewMax: 20, driveable: true, unit: 'px' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    dst.set(motionBlur(src, w, h, p.angle, p.distance));
+    const _m_angle = Math.round(modulate('angle', 0));
+    const _m_distance = Math.round(modulate('distance', 0));
+    dst.set(motionBlur(src, w, h, _m_angle, _m_distance));
   },
   wgsl,
   glsl,

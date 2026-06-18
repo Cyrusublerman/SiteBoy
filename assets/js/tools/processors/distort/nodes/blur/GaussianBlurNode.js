@@ -9,7 +9,9 @@ export const GaussianBlurNode = createEffectModule({
     passes: { value: 1, min: 1,   max: 3,  step: 1,   label: 'PASSES', tier: 4, previewMax: 1, driveable: true, unit: 'n' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    dst.set(gaussianBlurSeparable(src, w, h, p.sigma, p.passes));
+    const _m_sigma = modulate('sigma', 0);
+    const _m_passes = Math.round(modulate('passes', 0));
+    dst.set(gaussianBlurSeparable(src, w, h, _m_sigma, _m_passes));
   },
   wgsl,
   glsl,

@@ -10,9 +10,11 @@ export const DoGNode = createEffectModule({
     threshold: { value: 5,   min: 0,   max: 50, step: 1,   label: 'THRESHOLD', tier: 4, driveable: true, unit: 'lvl' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    const s1 = Math.min(p.sigma1, p.sigma2 - 0.1);
-    const s2 = p.sigma2;
-    const threshold = modulate ? modulate('threshold', 0, ctx) : p.threshold;
+    const _m_sigma1 = modulate('sigma1', 0);
+    const _m_sigma2 = modulate('sigma2', 0);
+    const s1 = Math.min(_m_sigma1, _m_sigma2 - 0.1);
+    const s2 = _m_sigma2;
+    const threshold = modulate('threshold', 0);
     dst.set(differenceOfGaussiansRGBA(src, w, h, s1, s2, threshold));
   },
   wgsl,

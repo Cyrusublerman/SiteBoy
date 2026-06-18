@@ -9,8 +9,10 @@ export const PolarCoordsNode = createEffectModule({
     centreX: { value: 0.5, min: 0, max: 1, step: 0.01, label: 'CENTRE X', tier: 4, driveable: true, unit: '0–1' },
     centreY: { value: 0.5, min: 0, max: 1, step: 0.01, label: 'CENTRE Y', tier: 4, driveable: true, unit: '0–1' }
   },
-  apply(src, dst, w, h, p, ctx) {
-    dst.set(polarCoords(src, w, h, p.mode, p.centreX, p.centreY));
+  apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_centreX = modulate('centreX', 0);
+    const _m_centreY = modulate('centreY', 0);
+    dst.set(polarCoords(src, w, h, p.mode, _m_centreX, _m_centreY));
   },
   wgsl,
   glsl,

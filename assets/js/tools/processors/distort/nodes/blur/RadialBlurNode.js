@@ -12,10 +12,11 @@ export const RadialBlurNode = createEffectModule({
     samples: { value: 12,  min: 4, max: 32, step: 1,    label: 'SAMPLES',  tier: 4, previewMax: 6, driveable: true, unit: 'n' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_samples = Math.round(modulate('samples', 0));
     const cx = modulate('centreX', 0);
     const cy = modulate('centreY', 0);
     const am = modulate('amount', 0);
-    dst.set(radialBlur(src, w, h, p.type, cx, cy, am, p.samples));
+    dst.set(radialBlur(src, w, h, p.type, cx, cy, am, _m_samples));
   },
   wgsl,
   glsl,

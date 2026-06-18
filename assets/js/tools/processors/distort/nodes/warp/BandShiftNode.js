@@ -16,11 +16,16 @@ export const BandShiftNode = createEffectModule({
     noiseScale: { value: 2,   min: 0.1, max: 10,  step: 0.1,  label: 'NOISE SC',   tier: 5, driveable: true, unit: 'n', when: { param: 'offsetType', equals: 'noise' } }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_intensity = Math.round(modulate('intensity', 0));
+    const _m_bandSize = Math.round(modulate('bandSize', 0));
+    const _m_phase = modulate('phase', 0);
+    const _m_freq = modulate('freq', 0);
+    const _m_noiseScale = modulate('noiseScale', 0);
     const seed = ctx?.nodeSeed ?? 42;
     const noise = new PerlinNoise(seed);
     const rng = new SeededRNG(seed);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    dst.set(bandShift(src, w, h, p.axis, p.bandSize, p.intensity, p.offsetType, p.phase, p.freq, p.noiseScale, noise, rng, interp));
+    dst.set(bandShift(src, w, h, p.axis, _m_bandSize, _m_intensity, p.offsetType, _m_phase, _m_freq, _m_noiseScale, noise, rng, interp));
   },
   wgsl,
   glsl,

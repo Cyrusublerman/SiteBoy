@@ -13,9 +13,16 @@ export const CurvesNode = createEffectModule({
     highIn:    { value: 255, min: 0, max: 255, step: 1, label: 'HIGH IN',    tier: 4, driveable: true, unit: 'lvl' },
     highOut:   { value: 255, min: 0, max: 255, step: 1, label: 'HIGH OUT',   tier: 4, driveable: true, unit: 'lvl' }
   },
-  apply(src, dst, w, h, p) {
-    const lut = buildCurvesLUT(p.shadowIn, p.shadowOut, p.midIn, p.midOut, p.highIn, p.highOut);
+  apply(src, dst, w, h, p, c
+    const _m_shadowIn = Math.round(modulate('shadowIn', 0));
+    const _m_shadowOut = Math.round(modulate('shadowOut', 0));
+    const _m_midIn = Math.round(modulate('midIn', 0));
+    const _m_midOut = Math.round(modulate('midOut', 0));
+    const _m_highIn = Math.round(modulate('highIn', 0));
+    const _m_highOut = Math.round(modulate('highOut', 0));
+    const lut = buildCurvesLUT(_m_shadowIn, _m_shadowOut, _m_midIn, _m_midOut, _m_highIn, _m_highOut);
     dst.set(applyCurvesLUT(src, w, h, lut));
+  w, h, lut));
   },
   wgsl,
   glsl,

@@ -22,9 +22,9 @@ export const PerlinOverlayNode = createEffectModule({
       this._noiseCache = new PerlinNoise(seed);
       this._noiseSeed  = seed;
     }
-    const scale    = modulate ? modulate('scale',    0) : p.scale;
-    const octaves  = modulate ? modulate('octaves',  0) : p.octaves;
-    const strength = modulate ? modulate('strength', 0) : p.strength;
+    const scale    = modulate('scale',    0);
+    const octaves  = Math.round(modulate('octaves',  0));
+    const strength = modulate('strength', 0);
     dst.set(perlinOverlayRGBA(src, w, h, scale, octaves, strength, p.blendMode.toLowerCase(), this._noiseCache));
   },
   wgsl,

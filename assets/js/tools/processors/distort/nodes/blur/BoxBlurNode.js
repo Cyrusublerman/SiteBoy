@@ -8,8 +8,11 @@ export const BoxBlurNode = createEffectModule({
     radius: { value: 3, min: 1, max: 50, step: 1, label: 'RADIUS', tier: 3, previewMax: 10, driveable: true, unit: 'px' },
     passes: { value: 1, min: 1, max: 5,  step: 1, label: 'PASSES', tier: 4, previewMax: 2, driveable: true, unit: '×' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(boxBlurSeparable(src, w, h, p.radius, p.passes));
+  apply(src, dst, w, h, p, c
+    const _m_radius = Math.round(modulate('radius', 0));
+    const _m_passes = Math.round(modulate('passes', 0));
+    dst.set(boxBlurSeparable(src, w, h, _m_radius, _m_passes));
+   p.passes));
   },
   wgsl,
   glsl,

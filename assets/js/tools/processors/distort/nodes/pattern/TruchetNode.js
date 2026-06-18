@@ -183,7 +183,8 @@ export const TruchetNode = createEffectModule({
   },
 
   apply(src, dst, w, h, p, ctx, modulate) {
-    const baseSeed = ((p.seed ?? 0) + (ctx?.nodeSeed ?? 0)) >>> 0;
+    const _m_seed = Math.round(modulate('seed', 0));
+    const baseSeed = ((_m_seed ?? 0) + (ctx?.nodeSeed ?? 0)) >>> 0;
     const motif    = p.tileMotif      ?? 'QUARTER ARC';
     const oriMode  = p.orientationMode ?? 'RANDOM';
     const modMode  = p.modificationMode ?? 'NONE';

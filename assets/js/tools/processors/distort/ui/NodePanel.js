@@ -866,9 +866,10 @@ export class NodePanel extends BaseComponent {
     wrap.appendChild(picker.render());
     this._driverPickers[key] = picker;
     syncDriverState();
-    requestAnimationFrame(() => {
+    window.debugLog?.('TOOLS', 'DriverPicker opened for', key);
+    setTimeout(() => {
       try { picker.element?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }); } catch (_) { /* ignore */ }
-    });
+    }, 0);
   }
 
   _closeDriverPicker() {

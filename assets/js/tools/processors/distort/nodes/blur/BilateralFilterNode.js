@@ -10,8 +10,9 @@ export const BilateralFilterNode = createEffectModule({
     rangeSigma:   { value: 30, min: 5, max: 100, step: 1,   label: 'RANGE σ',   tier: 3, driveable: true, unit: 'σ' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    const rangeSigma = modulate ? modulate('rangeSigma', 0, ctx) : p.rangeSigma;
-    dst.set(bilateralFilter(src, w, h, p.spatialSigma, rangeSigma));
+    const _m_spatialSigma = modulate('spatialSigma', 0);
+    const rangeSigma = modulate('rangeSigma', 0);
+    dst.set(bilateralFilter(src, w, h, _m_spatialSigma, rangeSigma));
   },
   wgsl,
   glsl,

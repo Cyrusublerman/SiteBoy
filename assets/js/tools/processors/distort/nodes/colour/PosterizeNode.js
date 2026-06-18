@@ -8,8 +8,10 @@ export const PosterizeNode = createEffectModule({
   params: {
     levels: { value: 4, min: 2, max: 32, step: 1, label: 'LEVELS', tier: 3, driveable: true, unit: 'n' }
   },
-  apply(src, dst, w, h, p) {
-    dst.set(posterize(src, w, h, p.levels));
+  apply(src, dst, w, h, p, c
+    const _m_levels = Math.round(modulate('levels', 0));
+    dst.set(posterize(src, w, h, _m_levels));
+   p.levels));
   },
   wgsl,
   glsl,

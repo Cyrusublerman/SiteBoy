@@ -13,11 +13,16 @@ export const LensBubblesNode = createEffectModule({
     edgeSoft:      { value: 0.2,  min: 0,    max: 1,   step: 0.01, label: 'EDGE SOFT',  tier: 4, driveable: true, unit: '0–1' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_count = Math.round(modulate('count', 0));
+    const _m_magnification = modulate('magnification', 0);
+    const _m_minRadius = modulate('minRadius', 0);
+    const _m_maxRadius = modulate('maxRadius', 0);
+    const _m_edgeSoft = modulate('edgeSoft', 0);
     const rng = new SeededRNG(ctx?.nodeSeed ?? 42);
     const interp = ctx?.quality === 'preview' ? 'nearest' : 'bilinear';
-    const minR = p.minRadius;
-    const maxR = Math.max(minR, p.maxRadius);
-    dst.set(lensBubbles(src, w, h, p.count, minR, maxR, p.magnification, p.edgeSoft, rng, interp));
+    const minR = _m_minRadius;
+    const maxR = Math.max(minR, _m_maxRadius);
+    dst.set(lensBubbles(src, w, h, _m_count, minR, maxR, _m_magnification, _m_edgeSoft, rng, interp));
   },
   wgsl,
   glsl,

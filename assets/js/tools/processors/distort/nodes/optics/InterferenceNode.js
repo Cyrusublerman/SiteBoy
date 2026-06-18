@@ -15,8 +15,14 @@ export const InterferenceNode = createEffectModule({
     blendAmt:      { label: 'BLEND',       min: 0,   max: 1,   step: 0.01, value: 0.5, tier: 3, driveable: true, unit: '0–1' }
   },
   apply(src, dst, w, h, p, ctx, modulate) {
-    const thick = p.filmThickness + p.frame * 2 + (p.thicknessOffset ?? 0);
-    dst.set(thinFilmInterferenceRGBA(src, w, h, thick, p.viewAngle, p.couplingStrength, p.blendAmt));
+    const _m_frame = Math.round(modulate('frame', 0));
+    const _m_filmThickness = modulate('filmThickness', 0);
+    const _m_viewAngle = Math.round(modulate('viewAngle', 0));
+    const _m_couplingStrength = modulate('couplingStrength', 0);
+    const _m_thicknessOffset = modulate('thicknessOffset', 0);
+    const _m_blendAmt = modulate('blendAmt', 0);
+    const thick = _m_filmThickness + _m_frame * 2 + (_m_thicknessOffset ?? 0);
+    dst.set(thinFilmInterferenceRGBA(src, w, h, thick, _m_viewAngle, _m_couplingStrength, _m_blendAmt));
   },
   wgsl,
   glsl,

@@ -104,18 +104,41 @@ export const PaintStrokeNode = createEffectModule({
   ],
 
   apply(src, dst, w, h, p, ctx, modulate) {
+    const _m_brushMin = Math.round(modulate('brushMin', 0));
+    const _m_brushMax = Math.round(modulate('brushMax', 0));
+    const _m_minOpacity = Math.round(modulate('minOpacity', 0));
+    const _m_maxOpacity = Math.round(modulate('maxOpacity', 0));
+    const _m_passCount = Math.round(modulate('passCount', 0));
+    const _m_iterations = Math.round(modulate('iterations', 0));
+    const _m_maxAverageLayers = Math.round(modulate('maxAverageLayers', 0));
+    const _m_maxPixelLayers = Math.round(modulate('maxPixelLayers', 0));
+    const _m_extractCount = Math.round(modulate('extractCount', 0));
+    const _m_brushHardness = modulate('brushHardness', 0);
+    const _m_brushLength = Math.round(modulate('brushLength', 0));
+    const _m_brushJitter = Math.round(modulate('brushJitter', 0));
+    const _m_manualAngle = Math.round(modulate('manualAngle', 0));
+    const _m_strokeAngleJitter = Math.round(modulate('strokeAngleJitter', 0));
+    const _m_overshoot = modulate('overshoot', 0);
+    const _m_paletteBlend = modulate('paletteBlend', 0);
+    const _m_colourJitter = Math.round(modulate('colourJitter', 0));
+    const _m_coverageTarget = modulate('coverageTarget', 0);
+    const _m_errorThreshold = Math.round(modulate('errorThreshold', 0));
+    const _m_strokeLogLimit = modulate('strokeLogLimit', 0);
+    const _m_edgeInfluence = modulate('edgeInfluence', 0);
+    const _m_contrastInfluence = modulate('contrastInfluence', 0);
+    const _m_luminanceInfluence = modulate('luminanceInfluence', 0);
     const seed = ctx?.nodeSeed ?? 42;
     const rng = new SeededRNG(seed);
 
     const wp = {
       ...p,
-      brushMin: Math.min(p.brushMin, p.brushMax),
-      brushMax: Math.max(p.brushMin + 1, p.brushMax),
+      brushMin: Math.min(_m_brushMin, _m_brushMax),
+      brushMax: Math.max(_m_brushMin + 1, _m_brushMax),
       backgroundColour: p.backgroundColour ?? '#000000',
       paletteColours: p.paletteColours,
     };
 
-    wp.iterations = Math.max(1, p.iterations ?? 5000);
+    wp.iterations = Math.max(1, _m_iterations ?? 5000);
 
     const strokes = (p.outputMode === 'raster+strokes' || p.outputMode === 'raster+debug') ? [] : null;
     const debug = p.outputMode === 'raster+debug' ? {} : null;
