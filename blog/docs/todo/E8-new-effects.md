@@ -1,11 +1,11 @@
 # E8 — Add new distort effects
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P2
 **Owner file(s)**: `assets/js/tools/processors/distort/nodes/`, `shaders/`, `nodes/registry.js`
 **Blockers**: → E1
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -15,22 +15,22 @@ Effects beyond the current 58 — every effect that has a build guide but no shi
 
 For every new effect: shader + Node + registry entry + review doc exist; module passes audit; modulation works (post-E1).
 
-## Queue (to be populated)
+## Queue
 
 | Effect | Category | Spec | Shader | Node | Status |
 | --- | --- | --- | --- | --- | --- |
-| _TBD_ |  |  |  |  |  |
+| _none_ | — | all 58 build guides have matching registry entries | — | — | DONE |
 
-(Populate by enumerating `blog/docs/pages/tools/processors/distort/build-guides/archive/*-build-guide.md` entries without a matching `<Effect>Node.js`. Per current scan, all 58 build guides have matching nodes — extend with new candidate effects when raised.)
+(`delaunaymesh` build guide maps to `mosaic` registry type.)
 
 ## Sub-tasks
 
-- [ ] Run the cross-reference scan to confirm the queue is empty.
+- [x] Run the cross-reference scan to confirm the queue is empty.
 - [ ] When new effects are proposed, add a row and follow the build-guide template.
 
 ## Notes / decisions
 
-(append-only)
+2026-06-18: Scan via `scripts/e-track-e8-scan.mjs` — 58 guides, 62 registry types, 0 missing.
 
 ## References
 
