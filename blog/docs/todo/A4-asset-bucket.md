@@ -1,11 +1,11 @@
 # A4 — Binary asset bucket
 
-**Status**: TODO
+**Status**: REVIEW
 **Priority**: P1
-**Owner file(s)**: `blog/docs/site/adr-A4-storage.md` (to author)
+**Owner file(s)**: `blog/docs/site/adr-A4-storage.md`, `api/admin/media/sign.js`
 **Blockers**: → A1
 **Blocks**: B4, B5, C2, C3, C4, F2.b
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,20 +17,21 @@ Bucket configured. From the preview env: upload via signed URL succeeds; signed 
 
 ## Sub-tasks
 
-- [ ] Decide provider: Cloudflare R2 / Vercel Blob / AWS S3 / Supabase Storage / Backblaze B2.
-- [ ] Write ADR `blog/docs/site/adr-A4-storage.md`.
+- [x] Decide provider: Cloudflare R2 (existing `media.einoder.net`).
+- [x] Write ADR `blog/docs/site/adr-A4-storage.md`.
 - [ ] Configure bucket with CORS for the site's origin.
 - [ ] Set lifecycle rules (e.g. expiry for tmp uploads).
-- [ ] Wire signed-upload endpoint in A1 runtime.
+- [x] Wire signed-upload endpoint (`POST /api/admin/media/sign`).
 - [ ] Wire signed-GET endpoint (or use CDN with token auth).
-- [ ] Decide path scheme: `gallery/<id>/<format>`, `projects/<slug>/<asset>`, etc.
-- [ ] Store object metadata (key, size, mime, sha256) in A3.
-- [ ] Test 100 MB upload + retrieval round-trip.
+- [x] Decide path scheme: `{scope}/{ulid}/{filename}`.
+- [ ] Store object metadata (key, size, mime, sha256) in A3 (`/api/admin/media/confirm` deferred to C2).
+- [ ] Test 100 MB upload + retrieval round-trip on preview env.
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: Keeps existing R2 bucket; signed PUT via AWS SDK presigner. Public CDN URL returned as `publicUrl`.
 
 ## References
 
-- A1 ADR (host may bundle a storage offering)
+- `blog/docs/site/adr-A4-storage.md`
+- `assets/js/shared/r2-url-helper.js`

@@ -41,9 +41,9 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | A1 | [A1-vercel-migration.md](A1-vercel-migration.md) | Migrate to dynamic host (Vercel) | P1 | DONE | — |
-| A2 | [A2-auth.md](A2-auth.md) | Auth / login mechanism | P1 | TODO | → A1 |
-| A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | TODO | → A1 |
-| A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | TODO | → A1 |
+| A2 | [A2-auth.md](A2-auth.md) | Auth / login mechanism | P1 | REVIEW | → A1 |
+| A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | REVIEW | → A1 |
+| A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | → A1 |
 
 ## B. Sections
 
