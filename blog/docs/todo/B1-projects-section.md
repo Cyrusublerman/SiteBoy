@@ -1,11 +1,11 @@
 # B1 — Complete projects section
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P1
-**Owner file(s)**: `assets/js/sections/projects_section.js`, `blog/projects/<slug>/`
+**Owner file(s)**: `assets/js/sections/projects_section.js`, `assets/js/sections/project-page.js`, `blog/projects/<slug>/`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-13
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -19,12 +19,12 @@ Every entry in the section's project list resolves to a working page. Each page 
 
 ## Sub-tasks
 
-- [ ] Enumerate every project slug declared in `projects_section.js`.
-- [ ] For each slug, confirm an IIFE module exists at `blog/projects/<slug>/<slug>.js`.
-- [ ] For missing slugs, author the module per `blog/docs/guides/project-page-build-guide.md §7`.
-- [ ] Run audit on each module: only `CollapsibleSection`, `Carousel`, `MarkdownBody`, `Paragraph` allowed.
-- [ ] Fix all audit FAILs.
-- [ ] Add a project index / TOC at `#projects` root.
+- [x] Enumerate every project slug declared in `projects_section.js`.
+- [x] For each slug, confirm an IIFE module exists at `blog/projects/<slug>/<slug>.js`.
+- [x] For missing slugs, author the module per `blog/docs/guides/project-page-build-guide.md §7`.
+- [x] Run audit on each module: only `CollapsibleSection`, `Carousel`, `MarkdownBody`, `Paragraph` allowed.
+- [x] Fix all audit FAILs.
+- [x] Add a project index / TOC at `#projects` root.
 
 ## Notes / decisions
 

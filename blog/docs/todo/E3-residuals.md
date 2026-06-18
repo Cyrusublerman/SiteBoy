@@ -31,4 +31,4 @@ Close out the three small G5/G9 residuals.
 
 ## References
 
-- `blog/docs/temp/distort-next-steps.md` §WU-5
+- `blog/docs/pages/tools/processors/distort/distort-next-steps.md` §WU-5

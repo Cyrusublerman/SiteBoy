@@ -134,3 +134,13 @@
 .dropdown-subsection-children {
     /* Add styles here if needed */
 }
+
+/* Project page — manifest renderer embed + back link */
+.project-embed-host {
+    width: 100%;
+    height: calc(var(--f) * 60);
+}
+
+.project-page-back-link {
+    margin-top: calc(var(--f) * 2);
+}

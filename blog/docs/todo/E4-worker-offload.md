@@ -34,5 +34,5 @@ No heavy module blocks the main thread >50ms. `bilateral` no longer hangs at hig
 
 ## References
 
-- `blog/docs/temp/distort-next-steps.md` §WU-6
-- `blog/docs/temp/distort-worker-audit.md`
+- `blog/docs/pages/tools/processors/distort/distort-next-steps.md` §WU-6
+- `blog/docs/pages/tools/processors/distort/distort-worker-audit.md`

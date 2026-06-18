@@ -2,7 +2,7 @@
 
 **Status**: TODO
 **Priority**: P2
-**Owner file(s)**: `assets/js/shared/algorithms/`, `blog/docs/temp/distort-algorithm-audit.md`
+**Owner file(s)**: `assets/js/shared/algorithms/`, `blog/docs/pages/tools/processors/distort/distort-algorithm-audit.md`
 **Blockers**: none
 **Blocks**: E7
 **Last touched**: 2026-05-12
@@ -28,5 +28,5 @@ A single table records, per algorithm: `EXISTS_CORRECT` | `EXISTS_NEEDS_FIX` | `
 
 ## References
 
-- `blog/docs/temp/distort-algorithm-audit.md`
+- `blog/docs/pages/tools/processors/distort/distort-algorithm-audit.md`
 - `assets/js/shared/algorithms/index.js`

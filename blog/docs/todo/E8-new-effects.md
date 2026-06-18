@@ -21,7 +21,7 @@ For every new effect: shader + Node + registry entry + review doc exist; module 
 | --- | --- | --- | --- | --- | --- |
 | _TBD_ |  |  |  |  |  |
 
-(Populate by enumerating `blog/docs/temp/*-build-guide.md` entries without a matching `<Effect>Node.js`. Per current scan, all 58 build guides have matching nodes — extend with new candidate effects when raised.)
+(Populate by enumerating `blog/docs/pages/tools/processors/distort/build-guides/archive/*-build-guide.md` entries without a matching `<Effect>Node.js`. Per current scan, all 58 build guides have matching nodes — extend with new candidate effects when raised.)
 
 ## Sub-tasks
 
@@ -34,5 +34,5 @@ For every new effect: shader + Node + registry entry + review doc exist; module 
 
 ## References
 
-- `blog/docs/temp/*-build-guide.md`
+- `blog/docs/pages/tools/processors/distort/build-guides/archive/*-build-guide.md`
 - `assets/js/tools/processors/distort/nodes/registry.js`

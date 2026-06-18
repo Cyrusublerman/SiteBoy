@@ -1,11 +1,11 @@
 # G2 — Docs cleanup pass
 
-**Status**: TODO
+**Status**: REVIEW
 **Priority**: P1
 **Owner file(s)**: `blog/docs/temp/`, `blog/docs/guides/`, `blog/docs/site/`
 **Blockers**: none
 **Blocks**: G3
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -19,11 +19,12 @@
 
 ## Sub-tasks
 
-- [ ] Inventory `blog/docs/temp/`: `ls | wc -l` baseline (~180 files).
-- [ ] For each `*-build-guide.md`: check it has a matching Node + shader; if yes and module is shipped, the guide is superseded — move to `blog/docs/pages/tools/processors/distort/build-guides/archive/` or delete.
-- [ ] For each `*-complete.md`: confirm DONE in this todo system; delete or archive.
-- [ ] For each `*-fix-*.md` / `*-debug-*.md`: extract any unresolved issue into a todo file; delete the original.
-- [ ] For evergreen analyses (e.g. architecture reviews, spec specs), promote to `blog/docs/site/` or `blog/docs/guides/`.
+- [x] Inventory `blog/docs/temp/`: baseline 187 files (2026-06-18).
+- [x] For each `*-build-guide.md`: archived 58 to `blog/docs/pages/tools/processors/distort/build-guides/archive/`.
+- [x] For each `*-complete.md`: deleted (superseded).
+- [x] For each `*-fix-*.md` / `*-debug-*.md`: deleted (issues tracked in todo system).
+- [x] Promoted evergreen analyses: 4 distort ops docs → `pages/tools/processors/distort/`; `gallery-status.md` → `site/`.
+- [x] Deleted 119 ephemeral files >30 days old; 5 recent files remain in `temp/`.
 - [ ] Run a density rewrite pass on every promoted doc.
 - [ ] Update cross-links.
 

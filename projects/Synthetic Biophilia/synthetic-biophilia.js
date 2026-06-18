@@ -15,7 +15,6 @@
         render(container) {
             this.cleanup(container);
             
-            const F = window.MathematicalFoundation ? window.MathematicalFoundation.F : 12;
             const deps = { MF: window.MathematicalFoundation, Resize: window.ResizeManager };
 
             // Define a reusable content loader function for markdown files
@@ -99,18 +98,19 @@
             });
 
             // Add the "Back to Projects" link
-            this.addBackLink(container, F);
+            this.addBackLink(container);
         },
 
-        addBackLink(container, F) {
-            const backLink = new ComponentLibrary.Button({
-                text: '← BACK TO PROJECTS',
+        addBackLink(container) {
+            const backLink = new ComponentLibrary.Paragraph({
+                content: '← BACK TO PROJECTS',
+                isClickable: true,
                 onClick: () => { window.location.hash = '#projects'; }
             });
 
             this.componentInstances.push(backLink);
             const backLinkElement = backLink.render();
-            backLinkElement.style.marginTop = `${F * 2}px`;
+            backLinkElement.classList.add('project-page-back-link');
             container.appendChild(backLinkElement);
         },
 
@@ -125,5 +125,5 @@
 
     // Export to window
     window.SyntheticBiophiliaProject = SyntheticBiophiliaProject;
-    console.log(`🚀 Synthetic Biophilia Project v${SyntheticBiophiliaProject.version} loaded - Now architecturally compliant`);
+    window.debugLog('INIT', `🚀 Synthetic Biophilia Project v${SyntheticBiophiliaProject.version} loaded`);
 })();

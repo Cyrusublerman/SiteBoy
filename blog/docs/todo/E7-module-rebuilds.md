@@ -61,6 +61,6 @@ Every module listed below has zero open `ERROR` or `WARN` rows in `distort-issue
 
 ## References
 
-- `blog/docs/temp/distort-issue-register.md`
+- `blog/docs/pages/tools/processors/distort/distort-issue-register.md`
 - `blog/docs/pages/tools/processors/distort/review2403/`
-- `blog/docs/temp/*-build-guide.md`
+- `blog/docs/pages/tools/processors/distort/build-guides/archive/*-build-guide.md`

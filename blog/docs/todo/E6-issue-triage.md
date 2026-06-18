@@ -2,7 +2,7 @@
 
 **Status**: WIP
 **Priority**: P2
-**Owner file(s)**: `blog/docs/temp/distort-issue-register.md`
+**Owner file(s)**: `blog/docs/pages/tools/processors/distort/distort-issue-register.md`
 **Blockers**: none
 **Blocks**: —
 **Last touched**: 2026-05-12
@@ -28,5 +28,5 @@ Every row in `distort-issue-register.md` has a non-empty `triage` cell. Standalo
 
 ## References
 
-- `blog/docs/temp/distort-issue-register.md`
-- `blog/docs/temp/distort-next-steps.md` §WU-8
+- `blog/docs/pages/tools/processors/distort/distort-issue-register.md`
+- `blog/docs/pages/tools/processors/distort/distort-next-steps.md` §WU-8
