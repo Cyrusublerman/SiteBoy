@@ -40,4 +40,4 @@ Source attribution lets viewers verify figures and assess credibility.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > If you include summary statistics in your graphic, clearly indicate the information source you used to calculate those figures.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

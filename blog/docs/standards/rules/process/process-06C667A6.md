@@ -39,4 +39,4 @@ Overlapping content may represent distinct assets requiring separate extraction.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > do not discard overlapping regions automatically
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

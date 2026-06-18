@@ -41,4 +41,4 @@ Fighting for users aligns design decisions with the visitor's interests.
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > When in doubt, do what [Tron](https://en.wikipedia.org/wiki/Tron) does: fight for the users.
+  > https://brutalist-web.design/

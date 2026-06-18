@@ -40,4 +40,4 @@ Same inputs always yielding the same outputs simplifies reasoning about call sit
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > As much as possible, the functions I write are _idempotent_.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

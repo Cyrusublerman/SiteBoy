@@ -41,4 +41,4 @@ Minimal chart presentation keeps viewers focused on information rather than desi
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Tufte advocates for a minimalistic presentation of charts that directs viewers to the information presented rather than to the designer’s artistic additions.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

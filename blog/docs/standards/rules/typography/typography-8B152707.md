@@ -43,4 +43,4 @@ Type was chosen for neutrality and function, exemplified by Akzidenz Grotesk.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > The most preferred typeface was Akzidenz Grotesk which they saw as functional without being stylized as well as carrying no political baggage.
+  > https://vanseodesign.com/web-design/swiss-design/

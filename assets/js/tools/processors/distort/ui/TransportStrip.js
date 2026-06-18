@@ -1,5 +1,6 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
 import { AnimationLoop } from '../../../../core/animation-foundation.js';
+import { Slider } from '../../../../shared/components/input/Slider.js';
 
 export class TransportStrip extends BaseComponent {
   constructor(options = {}, deps = {}) {
@@ -15,6 +16,7 @@ export class TransportStrip extends BaseComponent {
     this._prevBtn = null;
     this._playBtn = null;
     this._nextBtn = null;
+    this._scrubberComp = null;
     this._scrubber = null;
     this._frameLabel = null;
     this._fpsLabel = null;
@@ -40,24 +42,26 @@ export class TransportStrip extends BaseComponent {
     this._playBtn = this._buildButton('▶',      () => this._togglePlay(), true,  true,  false);
     this._nextBtn = this._buildButton('NEXT →', () => this._goNext(), false,     true,  true);
 
-    this._scrubber = this.createElement('input', 'distort-transport-scrubber');
-    this._scrubber.type = 'range';
-    this._scrubber.min = '0';
-    this._scrubber.max = String(Math.max(0, this._frameCount - 1));
-    this._scrubber.step = '1';
-    this._scrubber.value = '0';
+    this._scrubberComp = new Slider({
+      min: 0,
+      max: Math.max(0, this._frameCount - 1),
+      step: 1,
+      value: 0,
+      borders: { top: false, right: false, bottom: false, left: false },
+      onInput: (v) => {
+        this._pause();
+        this._seekTo(v);
+      },
+    }, this.deps);
+    this.componentInstances.push(this._scrubberComp);
+    this._scrubber = this._scrubberComp.render();
     this._scrubber.style.cssText = `
       flex: 1;
       height: ${F * 2}px;
       margin: 0 0 0 ${F}px;
-      accent-color: var(--c-text);
       cursor: pointer;
       min-width: 0;
     `;
-    this._scrubber.addEventListener('input', () => {
-      this._pause();
-      this._seekTo(Number(this._scrubber.value));
-    });
 
     this._frameLabel = this._buildReadout('1 / 1', `${F * 5}px`);
     this._fpsLabel   = this._buildReadout(`${this._fps} FPS`, `${F * 4}px`, true);
@@ -184,7 +188,7 @@ export class TransportStrip extends BaseComponent {
   }
 
   _syncUI() {
-    if (this._scrubber) this._scrubber.value = String(this._frameIdx);
+    if (this._scrubberComp) this._scrubberComp.setValue(this._frameIdx);
     if (this._frameLabel) this._frameLabel.textContent = `${this._frameIdx + 1} / ${this._frameCount}`;
     if (this._fpsLabel) this._fpsLabel.textContent = `${this._fps} FPS`;
   }
@@ -192,7 +196,7 @@ export class TransportStrip extends BaseComponent {
   setFrameCount(n) {
     this._frameCount = Math.max(1, n);
     if (this._frameIdx >= this._frameCount) this._frameIdx = this._frameCount - 1;
-    if (this._scrubber) this._scrubber.max = String(Math.max(0, this._frameCount - 1));
+    if (this._scrubberComp) this._scrubberComp.setRange(0, Math.max(0, this._frameCount - 1));
     if (this._frameCount <= 1) this._pause();
     this._syncUI();
   }
@@ -211,6 +215,8 @@ export class TransportStrip extends BaseComponent {
   destroy() {
     this._loop?.destroy();
     this._loop = null;
+    this._scrubberComp?.destroy();
+    this._scrubberComp = null;
     super.destroy();
   }
 }

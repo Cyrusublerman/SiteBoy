@@ -39,4 +39,4 @@ BW line art, colour drawings, and collages need different isolation methods.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > Background removal must be branch-specific.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

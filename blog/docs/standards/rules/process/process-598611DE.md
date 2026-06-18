@@ -39,4 +39,4 @@ Leading and trailing spaces cause otherwise valid dates to fail parsing.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > // Trim whitespace to handle " Dec 3 " → "Dec 3"
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

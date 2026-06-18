@@ -39,4 +39,4 @@ Prevents noisy or incorrect automatic linking in the knowledge base.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Suggested wikilinks only when confidence is sufficient
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

@@ -41,4 +41,4 @@ Artificial pagination interrupts reading to satisfy advertisers or engagement me
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > there's rarely need to artificially paginate articles, blog posts, or other medium-length content simply to satisfy advertisers or inflate engagement numbers.
+  > https://brutalist-web.design/

@@ -39,4 +39,4 @@ Generative images must not stand in for what was physically drawn in the noteboo
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > do not use generated images as evidence of original content
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

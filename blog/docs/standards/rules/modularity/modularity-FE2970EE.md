@@ -39,4 +39,4 @@ Separates brittle screenshot triggers from extensible OCR, layout, and vision mo
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Modular Python for processing; shell for capture orchestration only.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

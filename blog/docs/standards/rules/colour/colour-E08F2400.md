@@ -41,4 +41,4 @@ Few distinct colors focus attention better than many competing hues.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Choose a limited color palette
+  > https://www.nngroup.com/articles/designing-effective-infographics/

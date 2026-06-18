@@ -39,4 +39,4 @@ Hashes verify that derived outputs trace to unchanged source files.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > preserve source hashes
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

@@ -39,4 +39,4 @@ Default-off privacy settings prevent unintended surveillance or data exfiltratio
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Continuous capture | off
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

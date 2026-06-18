@@ -4,22 +4,22 @@
 
 3 rules in this category.
 
-## tokens-87247CFB
+## tokens-1012E5E7
 
-**MUST:** Output dates in standardized MM/DD/YYYY format.
+**MUST:** Verify output format matches requirements before production deploy.
 
-*A single output token format eliminates ambiguity across downstream consumers.*
+*Output must conform to MM/DD/YYYY before users rely on the column.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md
 
 ---
 
-## tokens-1012E5E7
+## tokens-87247CFB
 
-**MUST:** Verify output format matches requirements before production deploy.
+**MUST:** Output dates in standardized MM/DD/YYYY format.
 
-*Output must conform to MM/DD/YYYY before users rely on the column.*
+*A single output token format eliminates ambiguity across downstream consumers.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

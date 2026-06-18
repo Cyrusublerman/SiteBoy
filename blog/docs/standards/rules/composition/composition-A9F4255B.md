@@ -44,4 +44,4 @@ Early Swiss-school training used simple geometric shapes as techniques later ado
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > Keller used simple geometric shapes
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

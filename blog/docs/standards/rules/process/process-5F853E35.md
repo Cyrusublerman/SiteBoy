@@ -41,4 +41,4 @@ B&W path options handle line art without colour quantisation overhead.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > B&W path: threshold, or apply same preprocessing options.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

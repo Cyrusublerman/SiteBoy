@@ -39,4 +39,4 @@ Sidecars and processing metadata allow rerunning improved engines on the same ra
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Store metadata sufficient for future reprocessing.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

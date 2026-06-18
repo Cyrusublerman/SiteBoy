@@ -41,4 +41,4 @@ Semantic HTML defaults already support all screen sizes; custom design should no
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > and has no custom styling will be readable on all screens and devices.
+  > https://brutalist-web.design/

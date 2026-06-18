@@ -5,6 +5,7 @@
  */
 
 import { AdjustmentBundleBase } from './AdjustmentBundleBase.js';
+import { Slider } from '../components/input/Slider.js';
 
 export class MinimalBundle extends AdjustmentBundleBase {
     constructor(options = {}, deps = {}) {
@@ -33,25 +34,26 @@ export class MinimalBundle extends AdjustmentBundleBase {
             const label = document.createElement('label');
             label.textContent = control.label;
             
-            const slider = document.createElement('input');
-            slider.type = 'range';
-            slider.min = control.min;
-            slider.max = control.max;
-            slider.step = control.step;
-            slider.value = control.default;
-            slider.className = 'adjustment-slider';
-            
             const valueDisplay = document.createElement('span');
             valueDisplay.className = 'value-display';
             valueDisplay.textContent = this.formatValue(control.default, control.key);
             
-            slider.addEventListener('input', () => {
-                const value = parseFloat(slider.value);
-                this.updateSetting(control.key, value);
-                valueDisplay.textContent = this.formatValue(value, control.key);
-            });
+            const sliderComp = new Slider({
+                min: control.min,
+                max: control.max,
+                step: control.step,
+                value: control.default,
+                borders: { top: false, right: false, bottom: false, left: false },
+                onInput: (v) => {
+                    this.updateSetting(control.key, v);
+                    valueDisplay.textContent = this.formatValue(v, control.key);
+                },
+            }, this.deps);
+            this.components.push(sliderComp);
+            const slider = sliderComp.render();
+            slider.className = 'adjustment-slider';
             
-            this.sliders[control.key] = slider;
+            this.sliders[control.key] = sliderComp;
             this.valueDisplays[control.key] = valueDisplay;
             
             row.appendChild(label);
@@ -81,7 +83,7 @@ export class MinimalBundle extends AdjustmentBundleBase {
         const s = this.state.settings;
         Object.keys(this.sliders).forEach(key => {
             if (this.sliders[key]) {
-                this.sliders[key].value = s[key] || 0;
+                this.sliders[key].setValue(s[key] || 0);
                 this.valueDisplays[key].textContent = this.formatValue(s[key] || 0, key);
             }
         });

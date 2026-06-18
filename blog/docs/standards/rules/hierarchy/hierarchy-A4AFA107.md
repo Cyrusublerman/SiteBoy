@@ -43,4 +43,4 @@ Clarity and order were explicit ideals that structured every layout and typograp
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Their ideal of design was to achieve clarity and order
+  > https://vanseodesign.com/web-design/swiss-design/

@@ -39,4 +39,4 @@ Pages simultaneously hold text, drawings, metadata, and publishing assets that r
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > The system should never flatten these roles into a single output.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

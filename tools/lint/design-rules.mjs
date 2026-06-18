@@ -41,10 +41,37 @@ function isExcluded(file, patterns, rootDir) {
 
 // ── Check functions ───────────────────────────────────────────────────────────
 
+// Rule: interaction-A604F5FC [MUST_NOT]
+// Do not use JavaScript to assist browser scrolling.
+async function check_interaction_A604F5FC(rootDir) {
+  const re = new RegExp("scrollIntoView|scrollTo\\s*\\(|window\\.scroll", 'g');
+  const excludes = ["node_modules/**","dist/**",".vite/**","cache/**"];
+  const violations = [];
+  const files = await getAllFiles(rootDir, f => true && !isExcluded(f, excludes, rootDir));
+  for (const file of files) {
+    let text;
+    try { text = await readFile(file, 'utf8'); } catch { continue; }
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const lineNum = text.slice(0, m.index).split('\n').length;
+      violations.push({
+        ruleId: "interaction-A604F5FC",
+        modality: "MUST_NOT",
+        statement: "Do not use JavaScript to assist browser scrolling.",
+        file,
+        line: lineNum,
+        match: m[0],
+      });
+    }
+  }
+  return violations;
+}
 
 // ── Runner ────────────────────────────────────────────────────────────────────
 
-const CHECKS = [];
+const CHECKS = [
+  check_interaction_A604F5FC
+];
 
 export async function runAll(rootDir) {
   const all = [];

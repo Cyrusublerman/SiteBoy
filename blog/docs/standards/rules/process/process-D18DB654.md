@@ -39,4 +39,4 @@ Raw OCR remains usable when structure inference fails.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Fall back to raw OCR section
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

@@ -43,4 +43,4 @@ Repetition reinforces visual coherence across disparate layout zones.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Unity was also maintained through a heavy use of repetition in color and shapes
+  > https://vanseodesign.com/web-design/swiss-design/

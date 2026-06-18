@@ -40,4 +40,4 @@ Pre-filing classification enables retrieval, conflict detection, and normalisati
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md**
   - weight: 0.6
   - sourced: local
-  > Multi-dimensional classification before filing.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md

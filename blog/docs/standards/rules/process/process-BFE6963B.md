@@ -39,4 +39,4 @@ Timezone offsets can shift parsed dates by one day.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > **Solution:** Verify your source data doesn't include timezone offsets
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

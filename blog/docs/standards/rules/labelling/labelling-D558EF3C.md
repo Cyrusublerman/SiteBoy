@@ -39,4 +39,4 @@ Controlled tags keep search, book assembly, and metadata consistent across the a
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > Classification must use controlled vocabularies, not uncontrolled AI-generated tag sprawl.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

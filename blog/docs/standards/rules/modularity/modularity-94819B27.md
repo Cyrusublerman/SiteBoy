@@ -40,4 +40,4 @@ Coupling fetch and format forces coordinated changes when either storage or shap
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > you should have one module that only handles getting data from the DB, and another module that only handles data formatting
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

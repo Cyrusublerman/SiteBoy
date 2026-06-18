@@ -43,4 +43,4 @@ A deliberate size scale organises reading order and visual rhythm across the lay
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > They used a [scale of size](http://www.vanseodesign.com/web-design/size-scale-proportion/) in their type to control flow through their design and create rhythm within it.
+  > https://vanseodesign.com/web-design/swiss-design/

@@ -44,4 +44,4 @@ Large corporations adopted Swiss style for its simplicity and intuitive understa
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > focusing on its simplicity and intuitive understanding across cultures
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

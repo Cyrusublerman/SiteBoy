@@ -40,4 +40,4 @@ Raw-text synthesis skips structured claim validation and normalisation.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md**
   - weight: 0.6
   - sourced: local
-  > do not synthesise from raw webpage text
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md

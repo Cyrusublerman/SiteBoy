@@ -40,4 +40,4 @@ Library linkage keeps voice captures discoverable within the broader note ecosys
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Stored and linked to the Generative Note Library (see `tools/generative-note-library.md`).
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

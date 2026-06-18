@@ -41,4 +41,4 @@ Websites exist to deliver consumable content; readability across browsers honour
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > the content must be readable in all browsers
+  > https://brutalist-web.design/

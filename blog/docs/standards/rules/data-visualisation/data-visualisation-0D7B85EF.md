@@ -40,4 +40,4 @@ Scale choices must show trends without distorting the magnitude of values.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Choose a scale for your charts that strikes a balance between demonstrating trends clearly and conveying the scale of the original dataset.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

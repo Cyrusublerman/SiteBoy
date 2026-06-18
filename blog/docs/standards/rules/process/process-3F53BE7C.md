@@ -40,4 +40,4 @@ Working but wrong code must be corrected before performance tuning.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > things that work aren't always doing the right thing, so next you ask: is is right?
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

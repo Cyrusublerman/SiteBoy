@@ -40,4 +40,4 @@ Unregistered sources cannot be inventoried, captured, or audited for coverage.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md**
   - weight: 0.6
   - sourced: local
-  > Every in-scope source is registered.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md

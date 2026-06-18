@@ -39,4 +39,4 @@ Platform coverage matches the stated deployment environments for the tool.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > Works in Excel 2016+ (Windows/Mac) and Excel Online
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

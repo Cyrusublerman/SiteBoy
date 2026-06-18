@@ -41,4 +41,4 @@ Buttons agree to submit visitor information; disguising that action betrays the 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Hiding this interaction behind a hyperlink or unadorned text betrays the core nature of a website.
+  > https://brutalist-web.design/

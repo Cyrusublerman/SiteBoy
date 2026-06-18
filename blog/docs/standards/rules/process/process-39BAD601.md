@@ -40,4 +40,4 @@ Over-merging claims reduces retrieval precision and audit granularity.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md**
   - weight: 0.6
   - sourced: local
-  > Do not compress multiple distinct claims into one record unless semantically inseparable.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md

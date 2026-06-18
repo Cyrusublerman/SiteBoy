@@ -40,4 +40,4 @@ Dense unstructured text creates information overload and hurts scannability.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Long, unstructured paragraphs create an overload of information.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

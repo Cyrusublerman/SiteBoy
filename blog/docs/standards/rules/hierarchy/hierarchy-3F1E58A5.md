@@ -40,4 +40,4 @@ Differentiated text sizes create a clear reading order within the graphic.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > titles, headings, quotes, statistics, and captions should be sized differently to establish a clear hierarchy within the graphic.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

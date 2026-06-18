@@ -39,4 +39,4 @@ Text.From is the documented correct invocation for mixed-type columns.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > each ParseAnyDate(Text.From([DateColumn]))  // Correct
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

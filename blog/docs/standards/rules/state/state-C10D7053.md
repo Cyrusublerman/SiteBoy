@@ -40,4 +40,4 @@ Research flags mark items that need follow-up without blocking initial capture.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > "Research further" flag for items requiring investigation.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

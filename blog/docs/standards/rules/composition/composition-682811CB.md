@@ -43,4 +43,4 @@ Werkbund industrial and functional applied forms influenced the functional conce
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > focus on functional applied forms
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

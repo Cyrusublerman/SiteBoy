@@ -39,4 +39,4 @@ Direct date columns trigger conversion errors in the parse function.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > each ParseAnyDate([DateColumn])              // Wrong if column is already date type
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

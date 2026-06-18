@@ -40,4 +40,4 @@ Tags enable routing and retrieval across library areas and pipelines.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Apply classification tags.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

@@ -40,4 +40,4 @@ Late-added unclear copy detracts from the overall graphic quality.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Many infographics designers add text in at the very end of the design process and use unclear copy that detracts from the overall graphic.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

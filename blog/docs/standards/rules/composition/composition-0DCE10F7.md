@@ -43,4 +43,4 @@ Over-abstraction undermines the objective clarity the style demands.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > the shapes could at times become so abstract as to lose meaning and ultimately be little more than ornamental.
+  > https://vanseodesign.com/web-design/swiss-design/

@@ -40,4 +40,4 @@ Coverage ledgers prove all content units were reviewed before extraction closes.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md**
   - weight: 0.6
   - sourced: local
-  > Do not treat a page as complete without a coverage ledger.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/create%20rules%20for%20ai/design-knowledge-corpus-extraction-system.md

@@ -44,4 +44,4 @@ White space on the page is named among the basic principles refined within Swiss
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > white space on the page
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

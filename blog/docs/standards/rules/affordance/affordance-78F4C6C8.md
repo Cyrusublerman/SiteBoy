@@ -41,4 +41,4 @@ Brutalist web design stays close to the OS visual language for collecting visito
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > An operating system has a visual language for collecting input from a visitor, and a Brutalist Web Design stays as close to that as possible.
+  > https://brutalist-web.design/

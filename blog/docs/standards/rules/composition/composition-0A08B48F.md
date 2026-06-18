@@ -43,4 +43,4 @@ Objective simplicity was a guiding principle linking clarity to effective messag
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Communication through objective simplicity was a guiding principle of Swiss Design.
+  > https://vanseodesign.com/web-design/swiss-design/

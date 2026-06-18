@@ -41,4 +41,4 @@ Needless decoration distracts visitors from the reason for visiting and makes co
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Decoration for its own sake, often to satisfy the vanity of the designer, goes counter to Brutalist Web Design.
+  > https://brutalist-web.design/

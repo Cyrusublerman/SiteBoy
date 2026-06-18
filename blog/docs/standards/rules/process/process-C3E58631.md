@@ -39,4 +39,4 @@ Remote debugging access is a security-sensitive capability requiring explicit op
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Connect to Chrome DevTools (`localhost:9222`) only when user explicitly requests chrome-tabs capture.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

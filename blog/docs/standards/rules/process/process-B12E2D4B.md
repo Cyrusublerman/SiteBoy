@@ -39,4 +39,4 @@ Index mode is the safest first browser integration and avoids fragile deep autom
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Chrome tabs v1 | Index mode only | Safest; avoids deep browser automation
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

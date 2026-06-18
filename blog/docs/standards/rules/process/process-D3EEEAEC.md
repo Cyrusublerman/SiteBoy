@@ -40,4 +40,4 @@ Targeted cropping keeps captures focused and reduces post-capture cleanup.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Crop screenshot to region or highlight text.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

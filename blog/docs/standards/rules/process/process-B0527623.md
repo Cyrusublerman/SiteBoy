@@ -41,4 +41,4 @@ Multiple output formats let downstream tools consume diagrams in native formats.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > **Output:** Vector diagram, structured graph spec, or Python plotting code.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

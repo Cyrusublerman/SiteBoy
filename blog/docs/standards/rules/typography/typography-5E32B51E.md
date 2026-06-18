@@ -44,4 +44,4 @@ Simple sans-serif fonts functioned as a minimalist component and practical moder
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > Simple fonts were used as a minimalist component
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

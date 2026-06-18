@@ -41,4 +41,4 @@ Resorting to JavaScript click heroics on arbitrary elements is unnecessary for m
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > the vast majority of websites should have no need to resort to such heroics in order to allow the visitor to navigate or submit data.
+  > https://brutalist-web.design/

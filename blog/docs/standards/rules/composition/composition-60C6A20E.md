@@ -43,4 +43,4 @@ Swiss graphics used International Typographic Style principles as a platform but
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > Swiss graphics used these principles as a basic platform, but reworked them into a new, streamlined style.
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

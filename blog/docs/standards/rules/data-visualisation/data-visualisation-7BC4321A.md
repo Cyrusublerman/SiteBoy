@@ -40,4 +40,4 @@ Accurate scaling prevents misrepresentation of the underlying dataset.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Scale your charts in a way that shows the differences in the data and communicates the range of values accurately.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

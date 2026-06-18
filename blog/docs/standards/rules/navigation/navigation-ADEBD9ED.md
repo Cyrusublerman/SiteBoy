@@ -41,4 +41,4 @@ Websites are viewed in browsers where scrolling lets visitors read content that 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > users can scroll the browser's viewport to read content that can't fit on one screen
+  > https://brutalist-web.design/

@@ -40,4 +40,4 @@ Complex designs built upfront tend not to work; simple working systems can evolv
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > keep yourself from designing complex systems before you have a simple system that works
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

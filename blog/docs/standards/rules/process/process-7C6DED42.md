@@ -40,4 +40,4 @@ A second copy confirms similarity without premature abstraction.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > you …literally copy-and-paste it and make the few changed you need
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

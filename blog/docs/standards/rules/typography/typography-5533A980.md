@@ -43,4 +43,4 @@ Sans-serif flush-left setting was the typographic standard of Swiss style poster
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > The type preference of Swiss style was sans-serif, flush left with a ragged right edge.
+  > https://vanseodesign.com/web-design/swiss-design/

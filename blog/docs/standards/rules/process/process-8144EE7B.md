@@ -39,4 +39,4 @@ Wide pattern coverage is the stated goal of the automated transformer.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > 1. Identifying and parsing 40+ distinct date format patterns
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

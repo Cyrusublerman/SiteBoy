@@ -41,4 +41,4 @@ A website is for content, not an application or video game; design must serve th
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > It is for content, and so its design must serve that purpose.
+  > https://brutalist-web.design/

@@ -6,7 +6,7 @@ schema_version: 1.0.0
 category: process
 modality: MUST
 statement: Remove filler words from date inputs without losing meaning.
-rationale: "Linguistic fillers like \"the\" and \"of\" block standard date parsers."
+rationale: "Linguistic fillers like \\\"the\\\" and \\\"of\\\" block standard date parsers."
 scope: 
   - algorithm
 applies_to: []
@@ -32,11 +32,11 @@ detector:
 
 ## Rationale
 
-Linguistic fillers like "the" and "of" block standard date parsers.
+Linguistic fillers like \"the\" and \"of\" block standard date parsers.
 
 ## Sources
 
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > Must remove filler words without semantic loss:
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

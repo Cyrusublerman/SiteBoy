@@ -40,4 +40,4 @@ Interactivity should serve user data-exploration goals, not be added by default.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Consider the needs of the piece you are creating before adding interactive elements.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

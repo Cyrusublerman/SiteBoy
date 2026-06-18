@@ -43,4 +43,4 @@ Swiss designers pursued objective, repeatable principles instead of subjective t
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > believed that design should be grounded in rational universal principles discovered through a scientific approach
+  > https://vanseodesign.com/web-design/swiss-design/

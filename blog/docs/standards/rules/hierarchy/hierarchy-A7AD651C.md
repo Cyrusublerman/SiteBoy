@@ -40,4 +40,4 @@ Formatting inference reduces manual structuring of spoken or written notes.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Formatting inference — titles, bullets, numbered lists from natural structure.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

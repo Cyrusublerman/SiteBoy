@@ -40,4 +40,4 @@ Iteration reveals presentation improvements that make content easier to understa
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Iterate the graphics that you generate in order to discover how to better present your content in a way that is easily understood by your intended audience.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

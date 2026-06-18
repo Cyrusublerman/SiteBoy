@@ -40,4 +40,4 @@ Voice append supports incremental note building without switching input modes.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Append to existing notes by voice command.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

@@ -41,4 +41,4 @@ Simple visuals keep viewer focus on relevant data rather than ornate graphics.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Present simple illustrations
+  > https://www.nngroup.com/articles/designing-effective-infographics/

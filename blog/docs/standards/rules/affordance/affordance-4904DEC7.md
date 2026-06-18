@@ -41,4 +41,4 @@ Ambiguous click targets cause unwanted actions and cause visitors to miss real l
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > clickable areas of a page that are not obviously hyperlinks or buttons can confuse the visitor
+  > https://brutalist-web.design/

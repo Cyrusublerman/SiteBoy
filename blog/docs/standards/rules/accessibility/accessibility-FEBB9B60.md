@@ -40,4 +40,4 @@ Accessible clear presentation matters more than flawless execution on first pass
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > When you create an infographic, strive for clarity and accessibility rather than absolute perfection.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

@@ -41,4 +41,4 @@ Breaking back navigation requires deliberate engineering and shows contempt for 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > To break this core and enduring feature of the web requires a confluence of design and programming
+  > https://brutalist-web.design/

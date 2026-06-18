@@ -2,6 +2,7 @@ import { BaseComponent } from '../../../../shared/foundation.js';
 import { DriverPicker } from './DriverPicker.js';
 import { Dropdown } from '../../../../shared/components/input/Dropdown.js';
 import { DrawMaskOverlay } from '../../../../shared/components/drawing/DrawMaskOverlay.js';
+import { Slider } from '../../../../shared/components/input/Slider.js';
 
 const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'difference', 'darken', 'lighten', 'softlight', 'hardlight', 'colordodge', 'colorburn'];
 const MASK_MODES = ['none', 'upload', 'luminance', 'gradient', 'draw'];
@@ -385,16 +386,20 @@ export class NodePanel extends BaseComponent {
     `;
 
     const label = this._rowLabel(config.label);
-    const slider = this.createElement('input', 'distort-param-slider');
-    slider.type = 'range';
-    slider.min = String(config.min);
-    slider.max = String(config.max);
-    slider.step = String(config.step);
-    slider.value = String(config.value ?? config.min);
+    const sliderComp = new Slider({
+      min: config.min,
+      max: config.max,
+      step: config.step,
+      value: config.value ?? config.min,
+      borders: { top: false, right: false, bottom: false, left: false },
+      onInput: () => writeReadout(Number(sliderComp.getValue())),
+      onChange: (n) => config.onChange(n),
+    }, this.deps);
+    this.componentInstances.push(sliderComp);
+    const slider = sliderComp.render();
     slider.style.cssText = `
       flex: 1;
       margin: 0;
-      accent-color: var(--c-text);
       cursor: pointer;
       opacity: 1;
     `;
@@ -415,7 +420,7 @@ export class NodePanel extends BaseComponent {
     const parseReadout = () => {
       const raw = (valueEl.value || '').trim().split(/\s+/)[0] ?? '';
       let n = Number.parseFloat(raw);
-      if (!Number.isFinite(n)) n = Number(slider.value);
+      if (!Number.isFinite(n)) n = Number(sliderComp.getValue());
       const lo = Number(config.min);
       const hi = Number(config.max);
       n = Math.max(lo, Math.min(hi, n));
@@ -423,7 +428,7 @@ export class NodePanel extends BaseComponent {
     };
     const applyNumeric = (commit = false) => {
       const n = parseReadout();
-      slider.value = String(n);
+      sliderComp.setValue(n);
       writeReadout(n);
       if (commit) config.onChange(n);
     };
@@ -444,8 +449,6 @@ export class NodePanel extends BaseComponent {
       height: ${F * 2}px;
     `;
     valueEl.title = unitSuffix ? `UNIT: ${unitSuffix}` : '';
-    slider.addEventListener('input', () => writeReadout(Number(slider.value)));
-    slider.addEventListener('change', () => config.onChange(Number(slider.value)));
     valueEl.addEventListener('focus', () => {
       valueEl.value = String(parseReadout());
       valueEl.select?.();
@@ -457,7 +460,7 @@ export class NodePanel extends BaseComponent {
     valueEl.addEventListener('dblclick', e => {
       e.preventDefault();
       if (!Number.isFinite(defNum)) return;
-      slider.value = String(defNum);
+      sliderComp.setValue(defNum);
       writeReadout(defNum);
       config.onChange(defNum);
     });

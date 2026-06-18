@@ -41,4 +41,4 @@ Colour-path presets normalise photographed drawings for asset-library storage.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Colour path: quantise, equalise, or apply pre-made processing preset.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

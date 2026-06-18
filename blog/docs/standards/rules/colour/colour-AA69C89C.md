@@ -40,4 +40,4 @@ Excessive color overwhelms viewers and dilutes communicative intent.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > but too many colors are overwhelming.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

@@ -40,4 +40,4 @@ The core flow starts only on explicit user action via headphone or phone button.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Press shortcut (headphone button or phone hardware button).
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

@@ -40,4 +40,4 @@ Three cases expose what can be simplified and whether one abstraction fits all.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > only _then_ do you look at the now three implementations you have and generalise them into a single implementation that can handle all three cases
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

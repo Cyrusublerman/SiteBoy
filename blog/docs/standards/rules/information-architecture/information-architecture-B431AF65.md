@@ -40,4 +40,4 @@ Category inference enables automatic filing without user intervention at capture
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > LLM processes audio: transcribes, infers note category (idea, task, lyric fragment, research prompt, etc.), and routes to the correct storage location.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

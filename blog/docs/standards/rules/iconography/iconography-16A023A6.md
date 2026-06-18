@@ -40,4 +40,4 @@ Infographics are a hybrid medium where decorative elements are acceptable and ex
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Elements of visual interest such as illustrations, photos, and icons are acceptable and even expected in the medium.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

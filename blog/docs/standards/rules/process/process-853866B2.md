@@ -40,4 +40,4 @@ Three implementations reveal the real abstraction level before generalising.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > you should only refactor (or optimise) code once you've written the same code three times
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

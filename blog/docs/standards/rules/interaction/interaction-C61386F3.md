@@ -40,4 +40,4 @@ Hands-free capture is the primary entry point; without a hardware shortcut the w
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Trigger a voice capture from a headphone shortcut or phone button.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

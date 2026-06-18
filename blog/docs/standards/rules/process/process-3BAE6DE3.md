@@ -39,4 +39,4 @@ Ambiguous DD/MM versus MM/DD strings need explicit locale handling.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > **Workaround:** Pre-process international dates separately with explicit parsing
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

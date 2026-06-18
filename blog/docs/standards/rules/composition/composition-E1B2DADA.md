@@ -42,4 +42,4 @@ Müller-Brockmann pursued objective presentation as the path to universally legi
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Brockmann sought an absolute and universal language of graphic expression through objective presentation.
+  > https://vanseodesign.com/web-design/swiss-design/

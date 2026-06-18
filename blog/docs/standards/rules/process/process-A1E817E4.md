@@ -43,4 +43,4 @@ Design was treated as a profession with social responsibility and universal reac
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Their attitude toward design was to make it socially useful, universal, and scientific.
+  > https://vanseodesign.com/web-design/swiss-design/

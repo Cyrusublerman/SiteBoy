@@ -39,4 +39,4 @@ Non-throwing parse attempts keep batch transforms from halting on bad rows.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > tryStandard = try Date.From(dateText) otherwise null
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

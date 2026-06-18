@@ -39,4 +39,4 @@ Feb 29 is a common edge case that distinguishes valid from invalid dates.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > - [ ] Verify leap year handling (Feb 29)
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

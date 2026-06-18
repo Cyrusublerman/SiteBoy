@@ -43,4 +43,4 @@ Form-follows-function was a core belief linking visual structure to the purpose 
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > In other words they believed form follows function.
+  > https://vanseodesign.com/web-design/swiss-design/

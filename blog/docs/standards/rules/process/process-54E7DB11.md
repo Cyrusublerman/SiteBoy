@@ -41,4 +41,4 @@ Problem-driven styling avoids unnecessary decoration and embraces brutalist web 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > apply styling only to solve a specific problem
+  > https://brutalist-web.design/

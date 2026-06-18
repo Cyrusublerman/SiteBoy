@@ -42,4 +42,4 @@ Stripping ornamentation recentres design on core principles rather than surface 
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > The removal of ornamentation and a return to fundamental design principles is a guiding force behind the move from skeuomorphism to flat design.
+  > https://vanseodesign.com/web-design/swiss-design/

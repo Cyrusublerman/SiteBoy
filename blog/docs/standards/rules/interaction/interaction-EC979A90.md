@@ -41,4 +41,4 @@ A website must deliver information and interact honestly with its visitor.
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > To trick or deceive the visitor goes against the nature of a website, which is to deliver information and interact honestly with a visitor.
+  > https://brutalist-web.design/

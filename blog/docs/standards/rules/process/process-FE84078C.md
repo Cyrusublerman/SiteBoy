@@ -43,4 +43,4 @@ The International Style framed design as rational communication rather than pers
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > They saw designers as communicators, not artists
+  > https://vanseodesign.com/web-design/swiss-design/

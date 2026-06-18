@@ -40,4 +40,4 @@ Several and-clauses indicate multiple concerns bundled in one function.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > Multiple "and" when describing what the function does.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

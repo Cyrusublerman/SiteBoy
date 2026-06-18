@@ -43,4 +43,4 @@ Swiss design refined typographic principles to favour simple sans-serif typeface
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > choosing simple sans-serif fonts
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

@@ -40,4 +40,4 @@ Broken code cannot be judged for correctness or performance until it runs.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > If the answer is no, then you focus on making the code work. You don't care about anything else. Just make it work.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

@@ -40,4 +40,4 @@ Pre-made assets speed matching and improve reconstruction fidelity.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Allow access to pre-made vectors or graphics for matching.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

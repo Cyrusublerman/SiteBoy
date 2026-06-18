@@ -40,4 +40,4 @@ Visible truncation disclosure prevents viewers from misreading exaggerated trend
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > as long as the chart clearly shows that the scale has been truncated
+  > https://www.nngroup.com/articles/designing-effective-infographics/

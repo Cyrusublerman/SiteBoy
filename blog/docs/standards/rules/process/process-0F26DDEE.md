@@ -41,4 +41,4 @@ Even with decoration and advertising, brutalist sites should not waste visitor r
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > a website embracing Brutalist Web Design will respect your visitor's time, bandwidth, and battery.
+  > https://brutalist-web.design/

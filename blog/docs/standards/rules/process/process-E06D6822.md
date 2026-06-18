@@ -39,4 +39,4 @@ Full-resolution input wastes compute and exceeds typical model input limits.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > Vision models should not receive full-resolution notebook scans except for coarse page overview tasks.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

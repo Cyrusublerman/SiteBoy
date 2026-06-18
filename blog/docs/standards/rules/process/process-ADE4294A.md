@@ -41,4 +41,4 @@ Embracing a website's nature and materials lets network, browser, and OS work to
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > a website adhering to Brutalist Web Design is fast.
+  > https://brutalist-web.design/

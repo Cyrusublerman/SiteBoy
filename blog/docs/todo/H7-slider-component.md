@@ -1,11 +1,11 @@
 # H7 — Standalone Slider primitive; replace raw range inputs
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P2
 **Owner file(s)**: `assets/js/shared/components/input/Slider.js` (new); CSS in `assets/css/components.css`; consumers `NumericInput.js`, `TransportStrip.js`, `ModulatorPanel.js (AnimateParamControl deleted)`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-06-03
+**Last touched**: 2026-06-18
 
 ## Goal
 

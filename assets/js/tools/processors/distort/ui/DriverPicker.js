@@ -1,5 +1,6 @@
 import { BaseComponent } from '../../../../shared/foundation.js';
 import { Dropdown } from '../../../../shared/components/input/Dropdown.js';
+import { Slider } from '../../../../shared/components/input/Slider.js';
 import { ExpressionEval } from '../core/ExpressionEval.js';
 
 const MODES = ['none', 'expr', 'image', 'source'];
@@ -324,18 +325,6 @@ export class DriverPicker extends BaseComponent {
     // AMOUNT slider row — same layout as NodePanel param rows
     const amountRow = this._row(F);
     amountRow.appendChild(this._labelEl(F, 'AMOUNT'));
-    const amount = this.createElement('input', 'distort-driver-amount');
-    amount.type = 'range';
-    amount.min = '0';
-    amount.max = '1';
-    amount.step = '0.01';
-    amount.value = String(this._driver.amount ?? 1);
-    amount.style.cssText = `
-      flex: 1;
-      accent-color: var(--c-text);
-      margin: 0;
-      min-width: 0;
-    `;
     const amountValue = this.createElement('span', 'distort-driver-amount-value', Number(this._driver.amount ?? 1).toFixed(2));
     amountValue.style.cssText = `
       width: ${this.getF().F * 4}px;
@@ -345,8 +334,22 @@ export class DriverPicker extends BaseComponent {
       color: var(--c-text);
       flex-shrink: 0;
     `;
-    amount.addEventListener('input', () => { amountValue.textContent = Number(amount.value).toFixed(2); });
-    amount.addEventListener('change', () => { this._driver.amount = Number(amount.value); this._emit(); });
+    this._amountSlider = new Slider({
+      min: 0,
+      max: 1,
+      step: 0.01,
+      value: this._driver.amount ?? 1,
+      borders: { top: false, right: false, bottom: false, left: false },
+      onInput: (v) => { amountValue.textContent = Number(v).toFixed(2); },
+      onChange: (v) => { this._driver.amount = v; this._emit(); },
+    }, this.deps);
+    this.componentInstances.push(this._amountSlider);
+    const amount = this._amountSlider.render();
+    amount.style.cssText = `
+      flex: 1;
+      margin: 0;
+      min-width: 0;
+    `;
     amountRow.append(amount, amountValue);
     this.element.appendChild(amountRow);
 

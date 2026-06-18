@@ -4,6 +4,17 @@
 
 4 rules in this category.
 
+## colour-AA69C89C
+
+**SHOULD_NOT:** Avoid using too many colors in an infographic.
+
+*Excessive color overwhelms viewers and dilutes communicative intent.*
+
+Sources:
+- https://www.nngroup.com/articles/designing-effective-infographics/
+
+---
+
 ## colour-E08F2400
 
 **SHOULD:** Choose a limited color palette for infographics.
@@ -11,17 +22,6 @@
 *Few distinct colors focus attention better than many competing hues.*
 
 Movements: `minimalism`
-
-Sources:
-- https://www.nngroup.com/articles/designing-effective-infographics/
-
----
-
-## colour-AA69C89C
-
-**SHOULD_NOT:** Avoid using too many colors in an infographic.
-
-*Excessive color overwhelms viewers and dilutes communicative intent.*
 
 Sources:
 - https://www.nngroup.com/articles/designing-effective-infographics/

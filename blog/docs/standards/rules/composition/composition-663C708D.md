@@ -41,4 +41,4 @@ Content focus benefits both the site and its visitors.
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Focus on your content and your visitors will enjoy you and your website.
+  > https://brutalist-web.design/

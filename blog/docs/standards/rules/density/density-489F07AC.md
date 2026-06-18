@@ -41,4 +41,4 @@ Non-data ink dilutes the signal and lowers the chart's informational density.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > His approach removes all decoration — a chart with a perfect data–ink ratio not only omits illustrations but also removes items such as background images, decorations of chart items, and even gridlines.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

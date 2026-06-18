@@ -27,33 +27,11 @@ Sources:
 
 ---
 
-## labelling-D558EF3C
-
-**MUST:** Use controlled vocabularies for classification, not uncontrolled AI tag sprawl.
-
-*Controlled tags keep search, book assembly, and metadata consistent across the archive.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
 ## labelling-08860125
 
 **MUST_NOT:** Do not use unrestricted AI tag invention as the main metadata system.
 
 *Freeform AI tags prevent consistent search, filtering, and book rule matching.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## labelling-3EC08932
-
-**MUST:** Use a controlled tag registry for all stored tags.
-
-*A registry enforces namespaces, aliases, and review requirements for metadata.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
@@ -71,66 +49,11 @@ Sources:
 
 ---
 
-## labelling-AE120A20
+## labelling-3EC08932
 
-**MUST_NOT:** Never use freeform tagging as the main classification prompt output.
+**MUST:** Use a controlled tag registry for all stored tags.
 
-*Controlled-field prompts keep classifications mappable to the tag registry.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## labelling-B7501390
-
-**MUST:** Auto-apply classification tags at confidence >= 0.85.
-
-*High-confidence tags can enter the archive without manual review delay.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## labelling-B7478B30
-
-**MUST_NOT:** Do not apply tags with confidence below 0.55; mark uncertain instead.
-
-*Low-confidence tags would pollute metadata and book selection rules.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## labelling-8A8EC3B7
-
-**MUST:** Label generative outputs as generative derivatives.
-
-*Clear labelling distinguishes AI-generated content from archival truth.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## labelling-E061F9E0
-
-**MUST:** Enforce the tag registry for all stored metadata tags.
-
-*Registry enforcement prevents uncontrolled tag sprawl in the archive.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## labelling-C30C6105
-
-**MUST:** Map tag aliases to controlled registry entries.
-
-*Alias mapping normalises variant labels into canonical tags.*
+*A registry enforces namespaces, aliases, and review requirements for metadata.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
@@ -159,6 +82,83 @@ Sources:
 
 ---
 
+## labelling-8A8EC3B7
+
+**MUST:** Label generative outputs as generative derivatives.
+
+*Clear labelling distinguishes AI-generated content from archival truth.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## labelling-AE120A20
+
+**MUST_NOT:** Never use freeform tagging as the main classification prompt output.
+
+*Controlled-field prompts keep classifications mappable to the tag registry.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## labelling-B7478B30
+
+**MUST_NOT:** Do not apply tags with confidence below 0.55; mark uncertain instead.
+
+*Low-confidence tags would pollute metadata and book selection rules.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## labelling-B7501390
+
+**MUST:** Auto-apply classification tags at confidence >= 0.85.
+
+*High-confidence tags can enter the archive without manual review delay.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## labelling-C30C6105
+
+**MUST:** Map tag aliases to controlled registry entries.
+
+*Alias mapping normalises variant labels into canonical tags.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## labelling-D558EF3C
+
+**MUST:** Use controlled vocabularies for classification, not uncontrolled AI tag sprawl.
+
+*Controlled tags keep search, book assembly, and metadata consistent across the archive.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## labelling-E061F9E0
+
+**MUST:** Enforce the tag registry for all stored metadata tags.
+
+*Registry enforcement prevents uncontrolled tag sprawl in the archive.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
 ## labelling-2EE3CCB0
 
 **SHOULD:** Add a watermark or logo to infographics shared on social media.
@@ -167,17 +167,6 @@ Sources:
 
 Sources:
 - https://www.nngroup.com/articles/designing-effective-infographics/
-
----
-
-## labelling-9C4E9CBD
-
-**SHOULD:** Store tags with confidence 0.55–0.85 as suggestions and send to review.
-
-*Mid-confidence tags need human confirmation before archival application.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---
 
@@ -203,14 +192,14 @@ Sources:
 
 ---
 
-## labelling-EC371448
+## labelling-9C4E9CBD
 
-**SHOULD:** Add tags and save processed doodles to the visual asset library.
+**SHOULD:** Store tags with confidence 0.55–0.85 as suggestions and send to review.
 
-*Tagging and library persistence make processed doodles discoverable downstream.*
+*Mid-confidence tags need human confirmation before archival application.*
 
 Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---
 
@@ -222,5 +211,16 @@ Sources:
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
+## labelling-EC371448
+
+**SHOULD:** Add tags and save processed doodles to the visual asset library.
+
+*Tagging and library persistence make processed doodles discoverable downstream.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md
 
 ---

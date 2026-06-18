@@ -41,4 +41,4 @@ Prioritising decoration or ad trickery makes content and the visitor experience 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Focus on decoration or tricking your visitors into clicking ads, and your content will suffer, along with your visitors.
+  > https://brutalist-web.design/

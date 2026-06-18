@@ -44,4 +44,4 @@ Swiss-school prototypes emphasised fundamentally simple graphic solutions over o
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > based on fundamentally simple graphic solutions
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

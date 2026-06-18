@@ -40,4 +40,4 @@ Supportive visuals should reinforce data without competing for viewer attention.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Elements that do not distract from the charts and add meaning to the numbers can be helpful additions.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

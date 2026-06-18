@@ -41,4 +41,4 @@ Uncluttered illustration style prevents visual competition with chart content.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Choosing simple and clean illustrations allows the focus of the infographic to remain fixed on relevant data.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

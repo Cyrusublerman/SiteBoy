@@ -40,4 +40,4 @@ Repeated iteration patterns often mean separate abstraction levels should be ext
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > Multiple loops or iterations over data.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

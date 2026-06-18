@@ -40,4 +40,4 @@ Colorblind and visually impaired users cannot decode meaning from color alone.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > it should never be used as the only visual distinction.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

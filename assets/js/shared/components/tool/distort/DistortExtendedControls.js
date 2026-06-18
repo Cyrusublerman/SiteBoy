@@ -6,6 +6,7 @@ import { BaseComponent } from '../../../foundation.js';
 import { Dropdown } from '../../input/Dropdown.js';
 import { ColorInput } from '../../input/ColorInput.js';
 import { NumericInput } from '../../input/NumericInput.js';
+import { Slider } from '../../input/Slider.js';
 class DistortCtrlBase extends BaseComponent {
   _lbl(F, text) {
     const s = this.createElement('span', 'distort-ctrl-lbl', text);
@@ -17,6 +18,22 @@ class DistortCtrlBase extends BaseComponent {
     const el = this.createElement('div', 'distort-ctrl-stack');
     el.style.cssText = `display:flex;flex-direction:column;gap:${F / 2}px;width:100%;box-sizing:border-box;`;
     return el;
+  }
+
+  _sliderRow(F, label, val, min, max, step, onChange) {
+    const row = this.createElement('div');
+    row.style.cssText = `display:flex;align-items:center;gap:${F / 2}px;`;
+    row.appendChild(this._lbl(F, label));
+    const comp = new Slider({
+      min, max, step, value: val,
+      borders: { top: false, right: false, bottom: false, left: false },
+      onChange: (v) => onChange(v),
+    }, this.deps);
+    this.componentInstances.push(comp);
+    const el = comp.render();
+    el.style.flex = '1';
+    row.appendChild(el);
+    return row;
   }
 }
 
@@ -235,17 +252,7 @@ export class NoiseSourceControl extends DistortCtrlBase {
   }
 
   _numRow(F, label, val, min, max, step, cb) {
-    const row = this.createElement('div');
-    row.style.cssText = `display:flex;align-items:center;gap:${F / 2}px;`;
-    row.appendChild(this._lbl(F, label));
-    const s = this.createElement('input');
-    s.type = 'range';
-    s.min = String(min); s.max = String(max); s.step = String(step); s.value = String(val);
-    s.style.flex = '1';
-    s.style.accentColor = 'var(--c-text)';
-    s.addEventListener('change', () => cb(Number(s.value)));
-    row.appendChild(s);
-    return row;
+    return this._sliderRow(F, label, val, min, max, step, cb);
   }
 
   render() {
@@ -343,17 +350,10 @@ export class MaskControls extends DistortCtrlBase {
   render() {
     super.render();
     const { F } = this.getF();
-    const row = this.createElement('div');
-    row.style.cssText = `display:flex;align-items:center;gap:${F / 2}px;`;
-    row.appendChild(this._lbl(F, 'MASK MIX'));
-    const s = this.createElement('input');
-    s.type = 'range';
-    s.min = '0'; s.max = '1'; s.step = '0.01'; s.value = String(this._strength);
-    s.style.flex = '1';
-    s.style.accentColor = 'var(--c-text)';
-    s.addEventListener('change', () => { this._strength = Number(s.value); this._onChange?.({ strength: this._strength }); });
-    row.appendChild(s);
-    this.element.appendChild(row);
+    this.element.appendChild(this._sliderRow(F, 'MASK MIX', this._strength, 0, 1, 0.01, x => {
+      this._strength = x;
+      this._onChange?.({ strength: this._strength });
+    }));
     return this.element;
   }
 }
@@ -554,17 +554,7 @@ export class LuminanceCurveEditor extends DistortCtrlBase {
     const { F } = this.getF();
     const outer = this._vstack(F);
     this.element.appendChild(outer);
-    const mk = (lab, v, cb) => {
-      const row = this.createElement('div');
-      row.style.cssText = `display:flex;align-items:center;gap:${F / 2}px;`;
-      row.appendChild(this._lbl(F, lab));
-      const s = this.createElement('input');
-      s.type = 'range'; s.min = '0'; s.max = '1'; s.step = '0.01'; s.value = String(v);
-      s.style.flex = '1'; s.style.accentColor = 'var(--c-text)';
-      s.addEventListener('change', () => cb(Number(s.value)));
-      row.appendChild(s);
-      return row;
-    };
+    const mk = (lab, v, cb) => this._sliderRow(F, lab, v, 0, 1, 0.01, cb);
     outer.appendChild(mk('SHADOW', this._shadow, x => { this._shadow = x; this._bump(); }));
     outer.appendChild(mk('MID', this._midtone, x => { this._midtone = x; this._bump(); }));
     outer.appendChild(mk('HIGH', this._highlight, x => { this._highlight = x; this._bump(); }));

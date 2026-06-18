@@ -43,6 +43,19 @@ Sources:
 
 ---
 
+## affordance-78F4C6C8
+
+**SHOULD:** Keep form elements visually consistent with the operating system input language.
+
+*Brutalist web design stays close to the OS visual language for collecting visitor input.*
+
+Movements: `brutalism`
+
+Sources:
+- https://brutalist-web.design/
+
+---
+
 ## affordance-97184D53
 
 **SHOULD:** Underline hyperlinks to reveal their existence.
@@ -61,19 +74,6 @@ Sources:
 **SHOULD:** Style buttons to look like buttons on the visitor's operating system.
 
 *Browsers already render native buttons; matching OS button language keeps function obvious.*
-
-Movements: `brutalism`
-
-Sources:
-- https://brutalist-web.design/
-
----
-
-## affordance-78F4C6C8
-
-**SHOULD:** Keep form elements visually consistent with the operating system input language.
-
-*Brutalist web design stays close to the OS visual language for collecting visitor input.*
 
 Movements: `brutalism`
 

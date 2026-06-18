@@ -114,8 +114,8 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | H3 | [H3-dist-hygiene.md](H3-dist-hygiene.md) | Remove dist/ churn from commits | P1 | TODO | — |
 | H4 | [H4-design-rule-pass-b.md](H4-design-rule-pass-b.md) | Design-rule corpus: Pass-B LLM extract | P3 | DONE | — |
 | H5 | [H5-design-rule-embed-cluster-synth.md](H5-design-rule-embed-cluster-synth.md) | Design-rule corpus: embed / cluster / synth | P3 | DONE | — |
-| H6 | [H6-design-rule-conflict-emit-lint.md](H6-design-rule-conflict-emit-lint.md) | Design-rule corpus: conflict / emit / lint / test | P3 | WIP | → H4, H5 |
-| H7 | [H7-slider-component.md](H7-slider-component.md) | Standalone Slider primitive; replace raw range inputs | P2 | WIP | — |
+| H6 | [H6-design-rule-conflict-emit-lint.md](H6-design-rule-conflict-emit-lint.md) | Design-rule corpus: conflict / emit / lint / test | P3 | REVIEW | → H4, H5 |
+| H7 | [H7-slider-component.md](H7-slider-component.md) | Standalone Slider primitive; replace raw range inputs | P2 | DONE | — |
 
 ---
 

@@ -41,4 +41,4 @@ Truth to materials requires click targets to look like what they are.
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > the appearance of these elements should also be honest and clear.
+  > https://brutalist-web.design/

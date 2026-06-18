@@ -43,4 +43,4 @@ Grids systematise layout and support the clarity-and-order ideal.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > The goal for visual order and organization naturally calls for a heavy use of [typographic grids](http://www.vanseodesign.com/web-design/grid-anatomy/), which offer a systemized way to present a clear message.
+  > https://vanseodesign.com/web-design/swiss-design/

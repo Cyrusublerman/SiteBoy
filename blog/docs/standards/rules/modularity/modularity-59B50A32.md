@@ -40,4 +40,4 @@ Isolating non-idempotent effects limits duplicate-call hazards from retries or d
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > you can split that off into its own function and then make _that_ idempotent
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

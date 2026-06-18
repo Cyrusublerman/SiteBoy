@@ -40,4 +40,4 @@ Integration with existing vaults avoids siloed notes outside the user's workflow
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Connect to Obsidian vault or known storage locations.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

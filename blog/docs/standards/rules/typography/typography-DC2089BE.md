@@ -41,4 +41,4 @@ This baseline keeps focus on content before any styling is applied.
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > start with left-aligned black text on a white background
+  > https://brutalist-web.design/

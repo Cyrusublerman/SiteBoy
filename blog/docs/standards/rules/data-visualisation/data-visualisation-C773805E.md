@@ -40,4 +40,4 @@ Informational honesty is the most important principle when designing infographic
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > present data clearly and truthfully
+  > https://www.nngroup.com/articles/designing-effective-infographics/

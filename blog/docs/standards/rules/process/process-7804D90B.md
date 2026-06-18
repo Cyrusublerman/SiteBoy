@@ -40,4 +40,4 @@ Crude-first reference attachment keeps capture fast while preserving link intent
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Reference attachment (crude first pass, refine later).
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

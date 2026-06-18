@@ -43,4 +43,4 @@ Shape transformation extends repetition into variation while preserving cohesion
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > further emphasized through transformation of the shapes.
+  > https://vanseodesign.com/web-design/swiss-design/

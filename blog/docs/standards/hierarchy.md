@@ -26,11 +26,11 @@ Sources:
 
 ---
 
-## hierarchy-A4AFA107
+## hierarchy-38B6F686
 
-**SHOULD:** Achieve clarity and order in design.
+**SHOULD:** Vary type size for visual impact and to signal information hierarchy.
 
-*Clarity and order were explicit ideals that structured every layout and typographic decision.*
+*Size variation communicates both emphasis and the relative importance of content.*
 
 Movements: `swiss`
 
@@ -39,11 +39,22 @@ Sources:
 
 ---
 
-## hierarchy-38B6F686
+## hierarchy-95699E69
 
-**SHOULD:** Vary type size for visual impact and to signal information hierarchy.
+**SHOULD:** Add an HTML confidence comment to medium-confidence detected headings.
 
-*Size variation communicates both emphasis and the relative importance of content.*
+*Signals uncertainty to reviewers without suppressing probable heading structure.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
+## hierarchy-A4AFA107
+
+**SHOULD:** Achieve clarity and order in design.
+
+*Clarity and order were explicit ideals that structured every layout and typographic decision.*
 
 Movements: `swiss`
 
@@ -63,33 +74,22 @@ Sources:
 
 ---
 
-## hierarchy-EEC8BA89
-
-**SHOULD:** Render high-confidence detected headings as Markdown heading markup.
-
-*Maps confident structure detection to readable heading levels in the output note.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
-
----
-
-## hierarchy-95699E69
-
-**SHOULD:** Add an HTML confidence comment to medium-confidence detected headings.
-
-*Signals uncertainty to reviewers without suppressing probable heading structure.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
-
----
-
 ## hierarchy-C0DB6778
 
 **SHOULD:** Render low-confidence headings as bold Possible heading text, not heading markup.
 
 *Prevents false heading hierarchy from entering the knowledge base.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
+## hierarchy-EEC8BA89
+
+**SHOULD:** Render high-confidence detected headings as Markdown heading markup.
+
+*Maps confident structure detection to readable heading levels in the output note.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

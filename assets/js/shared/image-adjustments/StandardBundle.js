@@ -5,6 +5,7 @@
  */
 
 import { AdjustmentBundleBase } from './AdjustmentBundleBase.js';
+import { Slider } from '../components/input/Slider.js';
 
 export class StandardBundle extends AdjustmentBundleBase {
     constructor(options = {}, deps = {}) {
@@ -85,26 +86,24 @@ export class StandardBundle extends AdjustmentBundleBase {
         const labelEl = document.createElement('label');
         labelEl.textContent = label;
         
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.min = min;
-        slider.max = max;
-        slider.step = step;
-        slider.value = defaultValue;
-        
         const valueDisplay = document.createElement('span');
         valueDisplay.className = 'value-display';
         valueDisplay.textContent = this.formatValue(defaultValue, step) + suffix;
         
-        slider.addEventListener('input', () => {
-            const value = parseFloat(slider.value);
-            this.updateSettingNested(key, value);
-            valueDisplay.textContent = this.formatValue(value, step) + suffix;
-        });
+        const sliderComp = new Slider({
+            min, max, step, value: defaultValue,
+            borders: { top: false, right: false, bottom: false, left: false },
+            onInput: (v) => {
+                this.updateSettingNested(key, v);
+                valueDisplay.textContent = this.formatValue(v, step) + suffix;
+            },
+        }, this.deps);
+        this.components.push(sliderComp);
+        const slider = sliderComp.render();
         
         if (!this.sliders) this.sliders = {};
         if (!this.valueDisplays) this.valueDisplays = {};
-        this.sliders[key] = slider;
+        this.sliders[key] = sliderComp;
         this.valueDisplays[key] = valueDisplay;
         
         row.appendChild(labelEl);
@@ -209,14 +208,14 @@ export class StandardBundle extends AdjustmentBundleBase {
                 const [parent, child] = key.split('.');
                 const value = this.state.settings[parent]?.[child];
                 if (value !== undefined) {
-                    this.sliders[key].value = value;
-                    this.valueDisplays[key].textContent = this.formatValue(value, parseFloat(this.sliders[key].step));
+                    this.sliders[key].setValue(value);
+                    this.valueDisplays[key].textContent = this.formatValue(value, this.sliders[key].step);
                 }
             } else {
                 const value = this.state.settings[key];
                 if (value !== undefined) {
-                    this.sliders[key].value = value;
-                    this.valueDisplays[key].textContent = this.formatValue(value, parseFloat(this.sliders[key].step));
+                    this.sliders[key].setValue(value);
+                    this.valueDisplays[key].textContent = this.formatValue(value, this.sliders[key].step);
                 }
             }
         });

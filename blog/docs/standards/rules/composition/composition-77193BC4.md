@@ -40,4 +40,4 @@ Visual elements should reinforce the message rather than compete with it.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > The graphical elements of an infographic should add interest and enhance the infographic’s main point.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

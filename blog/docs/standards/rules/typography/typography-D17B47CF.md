@@ -43,4 +43,4 @@ Sans-serif fonts are a named basic principle and a distinctive marker of the Swi
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > sans-serif fonts
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

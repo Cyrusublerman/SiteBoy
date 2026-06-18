@@ -39,4 +39,4 @@ Ordinals such as 3rd must become 3 before numeric parsing succeeds.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > Must strip ordinal suffixes while preserving day values:
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

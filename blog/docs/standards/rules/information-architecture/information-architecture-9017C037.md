@@ -39,4 +39,4 @@ Downstream assets remain auditable only when full lineage metadata is retained.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > Every processed output must remain linked to the source notebook, source page, page coordinates, processing pipeline version, and review status.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

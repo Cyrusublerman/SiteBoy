@@ -43,4 +43,4 @@ Objective photography was valued as a direct, unembellished communicative medium
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Objective photography was seen as an excellent way to communicate.
+  > https://vanseodesign.com/web-design/swiss-design/

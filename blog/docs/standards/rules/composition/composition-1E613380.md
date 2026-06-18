@@ -40,4 +40,4 @@ Illustrations should reinforce the narrative even when not directly interpreting
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > These illustrations should support the overall message of the piece but do not necessarily need to directly interpret the data.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

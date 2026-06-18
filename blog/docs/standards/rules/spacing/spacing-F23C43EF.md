@@ -44,4 +44,4 @@ Free space in Swiss tradition was intended to improve perceived balance and unde
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > The free space was intended to create a better sense of balance within the design.
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

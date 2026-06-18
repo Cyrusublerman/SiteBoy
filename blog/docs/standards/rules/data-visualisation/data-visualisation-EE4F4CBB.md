@@ -40,4 +40,4 @@ A meaningful baseline anchors interpretation of values and changes over time.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > The y-axis of a data visualization should show a **baseline state of the data set**.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

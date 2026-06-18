@@ -39,4 +39,4 @@ Stage 1 scope is region capture, OCR, and basic Markdown without layout heuristi
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Do not attempt heading preservation in stage 1.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

@@ -43,4 +43,4 @@ Size variation communicates both emphasis and the relative importance of content
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Swiss designers varied the size of type to generate a greater visual impact and also to hint at the hierarchy of information.
+  > https://vanseodesign.com/web-design/swiss-design/

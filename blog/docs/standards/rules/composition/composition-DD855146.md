@@ -41,4 +41,4 @@ Visual-weight centring improves balance when subject is off-centre in the frame.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Optional: centre on visual weight (full-blur + transform so darkest average area is in centre).
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

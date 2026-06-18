@@ -6,7 +6,7 @@ schema_version: 1.0.0
 category: process
 modality: MUST
 statement: Remove linguistic filler words during normalisation.
-rationale: "Fillers like \"the\" and \"of\" must be stripped before token replacement."
+rationale: "Fillers like \\\"the\\\" and \\\"of\\\" must be stripped before token replacement."
 scope: 
   - algorithm
 applies_to: []
@@ -32,11 +32,11 @@ detector:
 
 ## Rationale
 
-Fillers like "the" and "of" must be stripped before token replacement.
+Fillers like \"the\" and \"of\" must be stripped before token replacement.
 
 ## Sources
 
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > 3. Removing linguistic filler words
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

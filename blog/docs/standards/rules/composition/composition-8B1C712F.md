@@ -43,4 +43,4 @@ Swiss Design held that beauty is a by-product of function, not an end in itself.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Aesthetic beauty wasn't itself the purpose.
+  > https://vanseodesign.com/web-design/swiss-design/

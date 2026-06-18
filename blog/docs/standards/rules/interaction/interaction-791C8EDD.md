@@ -41,4 +41,4 @@ Restricting clicks to native hypertext controls maintains transparent interactio
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > only hyperlinks and buttons should respond to clicks, since this maintains an honest and transparent interaction with a visitor.
+  > https://brutalist-web.design/

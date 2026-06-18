@@ -44,4 +44,4 @@ Early Swiss-school training paired intense colours with simple geometric shapes 
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > intense colors
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

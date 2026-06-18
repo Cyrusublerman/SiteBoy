@@ -16,25 +16,25 @@ Sources:
 
 ---
 
-## information-architecture-54C9E564
+## information-architecture-1B086081
 
-**MUST:** Preserve provenance at every pipeline stage.
+**MUST:** Preserve prompt, model, seed, and settings for generative derivatives.
 
-*Traceability from physical notebooks to all derived digital outputs is the core archival requirement.*
+*Generative provenance requires full reproduction metadata.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---
 
-## information-architecture-9017C037
+## information-architecture-21A2D356
 
-**MUST:** Link every output to notebook, page, coordinates, pipeline version, and review status.
+**MUST_NOT:** Do not auto-create excessive suggested backlinks.
 
-*Downstream assets remain auditable only when full lineage metadata is retained.*
+*Large backlink sets reduce signal and clutter review workflows.*
 
 Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
 
 ---
 
@@ -43,6 +43,28 @@ Sources:
 **MUST:** Treat the physical notebook as the canonical source for all digital outputs.
 
 *Derived artefacts must never supersede or replace the original scanned notebook.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## information-architecture-49168620
+
+**MUST:** Connect to an Obsidian vault or other known storage locations.
+
+*Integration with existing vaults avoids siloed notes outside the user's workflow.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md
+
+---
+
+## information-architecture-54C9E564
+
+**MUST:** Preserve provenance at every pipeline stage.
+
+*Traceability from physical notebooks to all derived digital outputs is the core archival requirement.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
@@ -60,28 +82,6 @@ Sources:
 
 ---
 
-## information-architecture-A1B2E015
-
-**MUST:** Preserve source file path and hash at ingest.
-
-*Path and hash records enable deduplication and provenance verification.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## information-architecture-1B086081
-
-**MUST:** Preserve prompt, model, seed, and settings for generative derivatives.
-
-*Generative provenance requires full reproduction metadata.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
 ## information-architecture-888CFCF9
 
 **MUST:** Preserve source hashes across reprocessing.
@@ -93,11 +93,22 @@ Sources:
 
 ---
 
-## information-architecture-FE3FA353
+## information-architecture-9017C037
 
-**MUST:** Ensure every output answers notebook, page, location, process, model, parameters, review, and archival type questions.
+**MUST:** Link every output to notebook, page, coordinates, pipeline version, and review status.
 
-*Complete provenance metadata distinguishes a reliable archive from an untraceable asset dump.*
+*Downstream assets remain auditable only when full lineage metadata is retained.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## information-architecture-A1B2E015
+
+**MUST:** Preserve source file path and hash at ingest.
+
+*Path and hash records enable deduplication and provenance verification.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
@@ -126,33 +137,11 @@ Sources:
 
 ---
 
-## information-architecture-49168620
+## information-architecture-FE3FA353
 
-**MUST:** Connect to an Obsidian vault or other known storage locations.
+**MUST:** Ensure every output answers notebook, page, location, process, model, parameters, review, and archival type questions.
 
-*Integration with existing vaults avoids siloed notes outside the user's workflow.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md
-
----
-
-## information-architecture-21A2D356
-
-**MUST_NOT:** Do not auto-create excessive suggested backlinks.
-
-*Large backlink sets reduce signal and clutter review workflows.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
-
----
-
-## information-architecture-836C695A
-
-**SHOULD:** Record provider, model, version, prompt, input, output, confidence, cost, and time for each model output.
-
-*Full model-output metadata supports audit, cost tracking, and reprocessing.*
+*Complete provenance metadata distinguishes a reliable archive from an untraceable asset dump.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
@@ -164,6 +153,17 @@ Sources:
 **SHOULD:** Log input file, provider, model, timestamp, cost, and output for every cloud API call.
 
 *Cloud call logs support privacy audit, cost control, and reproducibility.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## information-architecture-836C695A
+
+**SHOULD:** Record provider, model, version, prompt, input, output, confidence, cost, and time for each model output.
+
+*Full model-output metadata supports audit, cost tracking, and reprocessing.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

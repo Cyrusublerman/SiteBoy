@@ -43,4 +43,4 @@ Müller-Brockmann sought universal graphic expression through objective presenta
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > sought an absolute and universal form of graphic expression through objective presentation, communicating with the audience without the interference of the designer's subjective feelings or propaganda techniques of persuasion.
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

@@ -40,4 +40,4 @@ Multiple and-clauses in one sentence signal multiple responsibilities in one pla
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > If you find yourself saying "_and_", then it probably has multiple responsibilities and should be split up.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

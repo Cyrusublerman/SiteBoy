@@ -40,4 +40,4 @@ Arbitrary layout makes the infographic message difficult to discern.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > When items are sized arbitrarily and sequenced without apparent reason, the message of the infographic becomes difficult to discern.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

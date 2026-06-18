@@ -16,36 +16,14 @@ Sources:
 
 ---
 
-## naming-97661BB6
+## naming-0CC52AA1
 
-**MUST:** Assign notebook and page IDs before any processing.
+**MUST:** Change the column name in the parse call to match your data.
 
-*All downstream outputs derive identity from IDs assigned at ingest.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## naming-DD8920CA
-
-**MUST:** Use stable IDs for all canonical archive objects.
-
-*Stable IDs prevent broken links when reprocessing or exporting.*
+*ParseAnyDate must read the column that holds raw date strings.*
 
 Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## naming-B38A0ADB
-
-**MUST_NOT:** Do not rename canonical objects after creation.
-
-*Renaming breaks references across metadata, exports, and book manifests.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md
 
 ---
 
@@ -54,17 +32,6 @@ Sources:
 **MUST:** Change the table name in the Source line to match your workbook.
 
 *The Source expression must reference the actual registered table name.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md
-
----
-
-## naming-0CC52AA1
-
-**MUST:** Change the column name in the parse call to match your data.
-
-*ParseAnyDate must read the column that holds raw date strings.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md
@@ -82,6 +49,28 @@ Sources:
 
 ---
 
+## naming-8CC6437C
+
+**MUST:** Normalise tags to lowercase hyphenated form with no spaces.
+
+*Consistent tag formatting prevents duplicate tags and eases vocabulary matching.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
+## naming-97661BB6
+
+**MUST:** Assign notebook and page IDs before any processing.
+
+*All downstream outputs derive identity from IDs assigned at ingest.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
 ## naming-A6516137
 
 **MUST:** Use safe characters only in capture note filenames.
@@ -93,14 +82,25 @@ Sources:
 
 ---
 
-## naming-8CC6437C
+## naming-B38A0ADB
 
-**MUST:** Normalise tags to lowercase hyphenated form with no spaces.
+**MUST_NOT:** Do not rename canonical objects after creation.
 
-*Consistent tag formatting prevents duplicate tags and eases vocabulary matching.*
+*Renaming breaks references across metadata, exports, and book manifests.*
 
 Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
+
+---
+
+## naming-DD8920CA
+
+**MUST:** Use stable IDs for all canonical archive objects.
+
+*Stable IDs prevent broken links when reprocessing or exporting.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---
 

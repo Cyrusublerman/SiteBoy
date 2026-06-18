@@ -43,4 +43,4 @@ Geometric abstraction was the visual vocabulary of the International Style.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > The International style sought an extreme abstraction based on simple geometric shapes.
+  > https://vanseodesign.com/web-design/swiss-design/

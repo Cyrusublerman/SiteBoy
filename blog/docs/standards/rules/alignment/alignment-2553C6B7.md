@@ -43,4 +43,4 @@ Left alignment is listed among refined Swiss principles and became a central, di
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > left alignment
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

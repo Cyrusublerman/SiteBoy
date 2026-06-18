@@ -40,4 +40,4 @@ Plans change before anticipated needs arrive; writing ahead adds complexity with
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > warns you against writing code that you anticipate needing in the future, but don't need now
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

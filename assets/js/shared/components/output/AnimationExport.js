@@ -12,6 +12,8 @@
  */
 
 import { BaseComponent } from '../../foundation.js';
+import { FrameSequencer } from '../../../core/animation-foundation.js';
+import { Slider } from '../input/Slider.js';
 
 /**
  * Animation metadata interface
@@ -82,6 +84,9 @@ export class AnimationExport extends BaseComponent {
         
         // RecordRTC instance
         this.recorder = null;
+
+        /** @type {import('../../../core/animation-foundation.js').FrameSequencer|null} */
+        this._exportSequencer = null;
         
         // Frame buffer for pre-render
         this.frameBuffer = [];
@@ -410,19 +415,22 @@ export class AnimationExport extends BaseComponent {
         const qualityLabel = this.createElement('label', 'export-label');
         qualityLabel.textContent = 'Quality';
         
-        const qualityInput = this.createElement('input', 'export-input');
-        qualityInput.type = 'range';
-        qualityInput.min = 50;
-        qualityInput.max = 100;
-        qualityInput.value = Math.round(this.state.quality * 100);
-        
         const qualityValue = this.createElement('span', 'export-value');
         qualityValue.textContent = Math.round(this.state.quality * 100) + '%';
-        
-        qualityInput.addEventListener('input', (e) => {
-            this.state.quality = parseInt(e.target.value) / 100;
-            qualityValue.textContent = e.target.value + '%';
-        });
+
+        this._qualitySlider = new Slider({
+            min: 50,
+            max: 100,
+            step: 1,
+            value: Math.round(this.state.quality * 100),
+            borders: { top: false, right: false, bottom: false, left: false },
+            onInput: (v) => {
+                this.state.quality = v / 100;
+                qualityValue.textContent = Math.round(v) + '%';
+            },
+        }, this.deps);
+        this.componentInstances.push(this._qualitySlider);
+        const qualityInput = this._qualitySlider.render();
         
         qualityRow.appendChild(qualityLabel);
         qualityRow.appendChild(qualityInput);
@@ -642,6 +650,10 @@ export class AnimationExport extends BaseComponent {
      * Cancel ongoing export
      */
     cancelExport() {
+        if (this._exportSequencer) {
+            this._exportSequencer.destroy();
+            this._exportSequencer = null;
+        }
         if (this.recorder) {
             this.recorder.stopRecording?.();
             this.recorder = null;
@@ -649,6 +661,51 @@ export class AnimationExport extends BaseComponent {
         this.state.isExporting = false;
         this.frameBuffer = [];
         this._showProgress(false);
+    }
+
+    /**
+     * Render N frames at the locked export FPS via FrameSequencer (AnimationFoundation).
+     * @param {number} totalFrames
+     * @param {(frameIndex: number, total: number) => void|Promise<void>} onFrame
+     * @returns {Promise<void>}
+     */
+    _runLockedFrameLoop(totalFrames, onFrame) {
+        if (totalFrames <= 0) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            let finished = false;
+            const finish = () => {
+                if (finished) return;
+                finished = true;
+                if (this._exportSequencer) {
+                    this._exportSequencer.destroy();
+                    this._exportSequencer = null;
+                }
+                resolve();
+            };
+
+            const seq = new FrameSequencer({
+                frameCount: totalFrames,
+                fps: this.state.fps,
+                loop: false,
+                startFrame: 0,
+                onFrame: (frameIndex) => {
+                    if (!this.state.isExporting) {
+                        seq.stop();
+                        finish();
+                        return;
+                    }
+                    Promise.resolve(onFrame(frameIndex, totalFrames)).catch((err) => {
+                        this.onExportError(err);
+                        seq.stop();
+                        finish();
+                    });
+                },
+                onStop: finish,
+            });
+            this._exportSequencer = seq;
+            seq.start();
+        });
     }
     
     // ═══════════════════════════════════════════════════════════════════
@@ -781,22 +838,15 @@ export class AnimationExport extends BaseComponent {
         
         this.recorder.startRecording();
         
-        // Render frames
         const totalFrames = this.state.frameCount;
-        const frameInterval = 1000 / this.state.fps;
         const originalState = this.metadata.getState?.();
         
-        for (let i = 0; i < totalFrames; i++) {
-            if (!this.state.isExporting) break;
-            
+        await this._runLockedFrameLoop(totalFrames, (i) => {
             if (this.metadata.renderFrame) {
                 this.metadata.renderFrame(i, totalFrames);
             }
-            
             this._updateProgress(i + 1, totalFrames, `Recording frame ${i + 1}/${totalFrames}`);
-            
-            await new Promise(resolve => setTimeout(resolve, frameInterval));
-        }
+        });
         
         // Restore state
         if (originalState && this.metadata.setState) {
@@ -897,26 +947,20 @@ export class AnimationExport extends BaseComponent {
     
     async _renderFramesForRecording(stream, recorder) {
         const totalFrames = this.state.frameCount;
-        const frameInterval = 1000 / this.state.fps;
         const originalState = this.metadata.getState?.();
         
-        for (let i = 0; i < totalFrames; i++) {
-            if (!this.state.isExporting) break;
-            
+        await this._runLockedFrameLoop(totalFrames, (i) => {
             if (this.metadata.renderFrame) {
                 this.metadata.renderFrame(i, totalFrames);
             }
-            
-            // Request frame capture
+
             const track = stream.getVideoTracks()[0];
             if (track?.requestFrame) {
                 track.requestFrame();
             }
-            
+
             this._updateProgress(i + 1, totalFrames, `Recording frame ${i + 1}/${totalFrames}`);
-            
-            await new Promise(resolve => setTimeout(resolve, frameInterval));
-        }
+        });
         
         // Restore state
         if (originalState && this.metadata.setState) {
@@ -953,22 +997,15 @@ export class AnimationExport extends BaseComponent {
         
         this.recorder.startRecording();
         
-        // Render frames
         const totalFrames = this.state.frameCount;
-        const frameInterval = 1000 / this.state.fps;
         const originalState = this.metadata.getState?.();
         
-        for (let i = 0; i < totalFrames; i++) {
-            if (!this.state.isExporting) break;
-            
+        await this._runLockedFrameLoop(totalFrames, (i) => {
             if (this.metadata.renderFrame) {
                 this.metadata.renderFrame(i, totalFrames);
             }
-            
             this._updateProgress(i + 1, totalFrames, `Recording frame ${i + 1}/${totalFrames}`);
-            
-            await new Promise(resolve => setTimeout(resolve, frameInterval));
-        }
+        });
         
         // Restore state
         if (originalState && this.metadata.setState) {

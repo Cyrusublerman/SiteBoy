@@ -41,4 +41,4 @@ Web convention uses underlines because they have no place in modern typesetting,
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > convention dictates a hyperlink use an underline to reveal its existence
+  > https://brutalist-web.design/

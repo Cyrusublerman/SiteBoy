@@ -44,4 +44,4 @@ Reduction to essentials was a deliberate method for sharpening the message.
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > They attempted to remove all that was unnecessary and emphasize only the necessary.
+  > https://vanseodesign.com/web-design/swiss-design/

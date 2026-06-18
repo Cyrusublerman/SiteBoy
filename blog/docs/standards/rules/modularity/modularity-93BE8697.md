@@ -40,4 +40,4 @@ Hiding ORM details behind one module avoids leaking storage mechanics across the
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > the rest of your code should have _no idea_ how that works
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

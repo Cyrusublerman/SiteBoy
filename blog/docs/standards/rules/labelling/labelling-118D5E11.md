@@ -39,4 +39,4 @@ Suggested tags must resolve to canonical registry entries, not freeform strings.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > AI systems may suggest tags, but final storage must map suggestions back to the controlled registry.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

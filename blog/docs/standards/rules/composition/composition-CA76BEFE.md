@@ -40,4 +40,4 @@ Heavy thematic decoration pulls attention away from the intended message.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Relying too heavily on a theme or a visual pun takes viewers’ attention away from the message you are trying to send.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

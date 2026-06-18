@@ -40,4 +40,4 @@ Single-purpose functions are easier to reason about and reuse across call sites.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > make sure each function only does one thing
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

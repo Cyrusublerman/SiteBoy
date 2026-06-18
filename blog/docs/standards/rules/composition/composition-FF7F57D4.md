@@ -41,4 +41,4 @@ Unified aesthetics make an infographic feel cohesive and visually pleasing.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Maintaining a simple but consistent style for all graphical elements makes an infographic feel like a unified and visually pleasing whole.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

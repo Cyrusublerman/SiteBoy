@@ -39,4 +39,4 @@ The first version should deliver core ingest, OCR, regions, tags, and index only
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > Do not include full vectorisation, Gaussian splats, advanced AI classification, or full book generation in the first version.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

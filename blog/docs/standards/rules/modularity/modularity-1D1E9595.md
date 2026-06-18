@@ -40,4 +40,4 @@ Single responsibility lets you treat units as black boxes when reasoning about t
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > should have "only one reason to change."
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

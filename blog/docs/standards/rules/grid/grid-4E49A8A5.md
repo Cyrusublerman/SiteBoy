@@ -39,4 +39,4 @@ Explicit confidence mapping avoids false structure entering the knowledge base.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > Layout confidence | Explicit mapping | Avoid false structure in knowledge base
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

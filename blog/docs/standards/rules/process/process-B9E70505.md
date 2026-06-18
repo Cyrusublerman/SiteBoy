@@ -40,14 +40,14 @@ Optimising broken code wastes time because the implementation will be replaced.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > It's a waste of time optimising code that doesn't work yet
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/
 
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > If your code doesn't even work yet, there's no need to worry about whether or not the broken code is right.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/
 
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > stop yourself from optimising code that doesn't work yet
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

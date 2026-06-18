@@ -4,28 +4,6 @@
 
 13 rules in this category.
 
-## interaction-516861FC
-
-**MUST:** Provide a review UI for accuracy and publishing quality.
-
-*Human review is required to correct crops, tags, OCR, and derivative approval.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
-
----
-
-## interaction-C61386F3
-
-**MUST:** Trigger voice capture from a headphone shortcut or phone hardware button.
-
-*Hands-free capture is the primary entry point; without a hardware shortcut the workflow fails.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md
-
----
-
 ## interaction-3A100675
 
 **MUST:** Begin capture when the user presses the configured hardware shortcut.
@@ -34,6 +12,28 @@ Sources:
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md
+
+---
+
+## interaction-4789C0A1
+
+**MUST:** Provide standard LLM actions including analysis and search across notes.
+
+*Analysis and cross-note search extend capture into a usable knowledge workflow.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md
+
+---
+
+## interaction-516861FC
+
+**MUST:** Provide a review UI for accuracy and publishing quality.
+
+*Human review is required to correct crops, tags, OCR, and derivative approval.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---
 
@@ -59,11 +59,24 @@ Sources:
 
 ---
 
-## interaction-4789C0A1
+## interaction-A604F5FC
 
-**MUST:** Provide standard LLM actions including analysis and search across notes.
+**MUST_NOT:** Do not use JavaScript to assist browser scrolling.
 
-*Analysis and cross-note search extend capture into a usable knowledge workflow.*
+*All browsers scroll properly without assistance; breaking scroll requires intentional careless implementation.*
+
+Movements: `brutalism`
+
+Sources:
+- https://brutalist-web.design/
+
+---
+
+## interaction-C61386F3
+
+**MUST:** Trigger voice capture from a headphone shortcut or phone hardware button.
+
+*Hands-free capture is the primary entry point; without a hardware shortcut the workflow fails.*
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md
@@ -96,19 +109,6 @@ Sources:
 
 ---
 
-## interaction-A604F5FC
-
-**MUST_NOT:** Do not use JavaScript to assist browser scrolling.
-
-*All browsers scroll properly without assistance; breaking scroll requires intentional careless implementation.*
-
-Movements: `brutalism`
-
-Sources:
-- https://brutalist-web.design/
-
----
-
 ## interaction-1C68E822
 
 **SHOULD:** Consider the piece's needs before adding interactive elements.
@@ -117,17 +117,6 @@ Sources:
 
 Sources:
 - https://www.nngroup.com/articles/designing-effective-infographics/
-
----
-
-## interaction-E758085A
-
-**SHOULD:** Require review for low-confidence background-removal masks.
-
-*Uncertain masks may clip content and need human approval before use.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---
 
@@ -154,5 +143,16 @@ Movements: `brutalism`
 
 Sources:
 - https://brutalist-web.design/
+
+---
+
+## interaction-E758085A
+
+**SHOULD:** Require review for low-confidence background-removal masks.
+
+*Uncertain masks may clip content and need human approval before use.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md
 
 ---

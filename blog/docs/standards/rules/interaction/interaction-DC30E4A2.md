@@ -41,4 +41,4 @@ Websites are hypertext documents whose primary interactions are navigation and f
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Only hyperlinks and buttons respond to clicks.
+  > https://brutalist-web.design/

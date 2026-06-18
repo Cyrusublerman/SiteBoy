@@ -40,4 +40,4 @@ Decorative typefaces distract from the many visual information points viewers sc
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Script fonts and overly complex serif fonts should be avoided as they often distract from the many points of visual information that the eye takes in when viewing an infographic.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

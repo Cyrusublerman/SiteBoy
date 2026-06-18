@@ -40,4 +40,4 @@ Distorted charts give a false impression of the available data.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Charts within an infographic that have been cropped, stretched or otherwise distorted give a false impression of the available data.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

@@ -40,4 +40,4 @@ Performance work on broken or wrong code is discarded when the implementation is
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > Only then, when your code works and your code is right, do you ask: is it fast?
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

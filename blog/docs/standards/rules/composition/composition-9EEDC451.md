@@ -43,4 +43,4 @@ The Swiss school elevated asymmetry from inherited tradition into the stable sta
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > The Swiss school made asymmetry the basis of the graphic style
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

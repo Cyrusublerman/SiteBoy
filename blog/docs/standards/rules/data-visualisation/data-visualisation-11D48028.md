@@ -41,4 +41,4 @@ Text-to-graph stubs let users sketch diagram intent without drawing.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md**
   - weight: 0.6
   - sourced: local
-  > Describe-a-graph mode — textual description that generates a graph stub.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/note-capture-pipeline.md

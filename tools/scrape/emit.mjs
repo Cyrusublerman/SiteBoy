@@ -28,6 +28,7 @@ import {
   CATEGORIES,
   SCHEMA_VERSION,
 } from './schema.mjs';
+import { parseRuleMd } from './pipeline-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = resolve(__dirname, 'cache');
@@ -76,6 +77,34 @@ function promoteToRule(draft) {
   return validateRule(raw);
 }
 
+/** Preserve hand-authored decidable / detector / examples from an existing rule .md file. */
+async function mergeHandAuthored(full) {
+  const mdPath = resolve(RULES_DIR, full.category, `${full.id}.md`);
+  if (!existsSync(mdPath)) return full;
+  const content = await readFile(mdPath, 'utf8');
+  const parsed = parseRuleMd(content);
+  if (!parsed || parsed.decidable === 'judgment' || !parsed.decidable) return full;
+
+  const detector = (parsed.detector?.kind && parsed.detector?.pattern)
+    ? parsed.detector
+    : (parsed.kind && parsed.pattern)
+      ? { kind: parsed.kind, pattern: parsed.pattern }
+      : full.detector;
+
+  const examples = {
+    bad: parsed.examples?.bad ?? parsed.bad ?? full.examples?.bad ?? [],
+    good: parsed.examples?.good ?? parsed.good ?? full.examples?.good ?? [],
+  };
+
+  const merged = {
+    ...full,
+    decidable: parsed.decidable,
+    detector,
+    examples,
+  };
+  return validateRule(merged);
+}
+
 // ── YAML-ish front-matter serialiser ─────────────────────────────────────────
 
 function yamlValue(v) {
@@ -115,6 +144,17 @@ function serializeFrontMatter(rule) {
     lines.push(`detector:`);
     for (const [k, v] of Object.entries(rule.detector)) {
       lines.push(`  ${k}: ${yamlValue(v)}`);
+    }
+  }
+  if (rule.examples && (rule.examples.bad?.length || rule.examples.good?.length)) {
+    lines.push(`examples:`);
+    if (rule.examples.bad?.length) {
+      lines.push(`  bad:`);
+      for (const ex of rule.examples.bad) lines.push(`    - ${yamlValue(ex)}`);
+    }
+    if (rule.examples.good?.length) {
+      lines.push(`  good:`);
+      for (const ex of rule.examples.good) lines.push(`    - ${yamlValue(ex)}`);
     }
   }
   lines.push('---');
@@ -335,11 +375,16 @@ async function main() {
   const { draft_rules: categorisedRules } = CategorisedRulesFileSchema.parse(raw);
   process.stdout.write(`Loaded ${categorisedRules.length} categorised rules.\n`);
 
+  if (categorisedRules.length === 0) {
+    console.error('No categorised rules — run scrape:categorise first.');
+    process.exit(1);
+  }
+
   // Promote to full RuleSchema
   const rules = [];
   for (const draft of categorisedRules) {
     try {
-      const full = promoteToRule(draft);
+      const full = await mergeHandAuthored(promoteToRule(draft));
       rules.push({ ...full, category_review: draft.category_review ?? false });
     } catch (e) {
       console.error(`Skipping ${draft.id}: ${e.message}`);

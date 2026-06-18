@@ -41,4 +41,4 @@ Browsers already render native buttons; matching OS button language keeps functi
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > buttons rendered in a browser should look like buttons rendered on the computer operating system running said browser.
+  > https://brutalist-web.design/

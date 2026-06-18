@@ -41,4 +41,4 @@ The back button is a core, enduring web feature and often the visitor's only mea
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > The back button works as expected.
+  > https://brutalist-web.design/

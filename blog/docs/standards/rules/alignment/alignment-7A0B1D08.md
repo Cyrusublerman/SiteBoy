@@ -43,4 +43,4 @@ Asymmetrical layout is a named basic principle and became the stable standard of
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > asymmetrical layout
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

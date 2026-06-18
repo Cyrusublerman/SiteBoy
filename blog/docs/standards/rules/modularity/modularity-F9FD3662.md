@@ -40,4 +40,4 @@ Repeated identical logic is harder to maintain when behaviour must change.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > Don't write code that does the same thing in multiple places
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

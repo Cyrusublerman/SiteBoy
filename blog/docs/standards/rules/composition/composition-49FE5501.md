@@ -42,4 +42,4 @@ Mobile-first design ensures content remains readable on the smallest reasonable 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Try designing for a small screen by default.
+  > https://brutalist-web.design/

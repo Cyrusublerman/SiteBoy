@@ -42,4 +42,4 @@ Swiss-influenced flat design strips decoration while retaining pictorial depth c
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > It's ornamentation that was removed, not depth
+  > https://vanseodesign.com/web-design/swiss-design/

@@ -40,4 +40,4 @@ Mixed detail levels force the reader to shift mental focus line by line.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > a function shouldn't just do one thing, but also only operate at one level of abstraction
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

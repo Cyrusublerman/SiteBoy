@@ -43,4 +43,4 @@ Left alignment became fundamental in the Swiss school, practically displacing ot
 - **https://en.wikipedia.org/wiki/Swiss_Style_(design)**
   - weight: 0.6
   - sourced: fetched
-  > In the system of the Swiss school, this technique became fundamental, practically displacing other principles of layout.
+  > https://en.wikipedia.org/wiki/Swiss_Style_(design)

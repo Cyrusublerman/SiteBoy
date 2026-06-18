@@ -40,4 +40,4 @@ Attribution helps viewers find the original source when graphics are reposted un
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Consider adding a watermark or logo to any infographics that you create.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

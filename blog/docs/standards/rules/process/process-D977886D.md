@@ -39,4 +39,4 @@ Raster originals remain authoritative; vectors are optional processed outputs.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md**
   - weight: 0.6
   - sourced: local
-  > Vectorisation should be treated as a derivative branch, not as replacement for the raster original.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/notebook_decomposition_publishing_system_design_doc.md

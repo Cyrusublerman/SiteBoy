@@ -40,4 +40,4 @@ Most time is spent reading and reasoning; unreadable fast code slows delivery.
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > the easier it is to read and reason about the code, the faster we can write the right code
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

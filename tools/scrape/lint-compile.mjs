@@ -65,7 +65,6 @@ function generateCheckFn(rule) {
   const fileFilter = cssOnly
     ? `f.endsWith('.css')`
     : `true`;
-  const escapedPattern = escapeForRegExp(pattern);
   const escapedId = JSON.stringify(id);
   const escapedStatement = JSON.stringify(statement);
   const escapedModality = JSON.stringify(modality);
@@ -75,7 +74,7 @@ function generateCheckFn(rule) {
 // Rule: ${id} [${modality}]
 // ${statement}
 async function check_${id.replace(/[^a-zA-Z0-9_]/g, '_')}(rootDir) {
-  const re = new RegExp(${JSON.stringify(escapedPattern)}, 'g');
+  const re = new RegExp(${JSON.stringify(pattern)}, 'g');
   const excludes = ${escapedExcludes};
   const violations = [];
   const files = await getAllFiles(rootDir, f => ${fileFilter} && !isExcluded(f, excludes, rootDir));

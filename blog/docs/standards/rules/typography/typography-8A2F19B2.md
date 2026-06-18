@@ -40,4 +40,4 @@ Infographics require distinct sizes for titles, headings, stats, and captions.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Selecting a font that scales well is key.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

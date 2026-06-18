@@ -43,4 +43,4 @@ Personal expression was seen as incompatible with universal, objective communica
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > they saw no room for eccentricity or personal expression
+  > https://vanseodesign.com/web-design/swiss-design/

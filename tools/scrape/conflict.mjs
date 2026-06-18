@@ -27,7 +27,7 @@ import {
   ConflictFreeRulesFileSchema,
   SCHEMA_VERSION,
 } from './schema.mjs';
-import { listArticleHashes, l2Normalise } from './pipeline-lib.mjs';
+import { listArticleHashes, l2Normalise, loadDraftRulesFromMd } from './pipeline-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = resolve(__dirname, 'cache');
@@ -229,8 +229,21 @@ function renderQueueMd(conflicts) {
 
 async function main() {
   if (!existsSync(DRAFT_PATH)) {
-    console.error('Missing draft-rules.json — run scrape:synth first.');
-    process.exit(1);
+    const rulesDir = resolve(STANDARDS_DIR, 'rules');
+    if (!existsSync(rulesDir)) {
+      console.error('Missing draft-rules.json — run scrape:synth first.');
+      process.exit(1);
+    }
+    process.stdout.write('Missing draft-rules.json — bootstrapping from emitted rule .md files.\n');
+    await mkdir(CORPUS_DIR, { recursive: true });
+    const bootstrapped = await loadDraftRulesFromMd(rulesDir);
+    if (bootstrapped.length === 0) {
+      console.error('Bootstrap found 0 rules in blog/docs/standards/rules — run scrape:synth first.');
+      process.exit(1);
+    }
+    const bootDoc = { schema_version: SCHEMA_VERSION, draft_rules: bootstrapped };
+    await writeFile(DRAFT_PATH, JSON.stringify(bootDoc, null, 2), 'utf8');
+    process.stdout.write(`Bootstrapped ${bootstrapped.length} draft rules → ${DRAFT_PATH}\n`);
   }
   if (!FORCE && existsSync(OUT_JSON)) {
     process.stdout.write(`Exists: ${OUT_JSON} (use --force)\n`);

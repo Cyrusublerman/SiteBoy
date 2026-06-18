@@ -43,4 +43,4 @@ Asymmetrical balance emphasises whitespace while maintaining compositional equil
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Swiss designers were after an [asymmetrical balance](http://www.vanseodesign.com/web-design/symmetry-asymmetry/) between the positive and negative elements in a design.
+  > https://vanseodesign.com/web-design/swiss-design/

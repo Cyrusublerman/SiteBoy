@@ -41,4 +41,4 @@ Readable type supports scanning the many text sizes present in infographics.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Choose fonts that are readable rather than decorative
+  > https://www.nngroup.com/articles/designing-effective-infographics/

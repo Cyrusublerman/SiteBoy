@@ -41,4 +41,4 @@ The visitor is the entire reason the website exists and should drive every desig
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > put the visitor to your site—the entire reason your website exists—front and center in all things
+  > https://brutalist-web.design/

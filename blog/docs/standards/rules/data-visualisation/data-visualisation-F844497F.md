@@ -40,4 +40,4 @@ Charts and imagery should carry data or explanatory value rather than decorative
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Every item on an infographic — from charts to the imagery that illustrates them — should convey meaningful information.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

@@ -40,4 +40,4 @@ Automated classification routes notes to the correct storage without manual fili
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Use an LLM to determine the note type, categorise, and store.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

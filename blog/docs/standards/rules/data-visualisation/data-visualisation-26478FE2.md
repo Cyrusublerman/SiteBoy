@@ -40,4 +40,4 @@ Inaccurate scale gives an incorrect impression of the original data.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > When the scale of a chart does not accurately represent differences between data points then it gives an incorrect impression of the original data.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

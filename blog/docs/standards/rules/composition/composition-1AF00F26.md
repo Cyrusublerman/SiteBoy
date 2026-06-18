@@ -43,4 +43,4 @@ Swiss designers believed beauty emerges from purposeful function rather than dec
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > and believed aesthetic beauty arose out of the purpose of the thing being designed
+  > https://vanseodesign.com/web-design/swiss-design/

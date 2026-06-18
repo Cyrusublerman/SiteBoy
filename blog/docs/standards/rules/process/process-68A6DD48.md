@@ -39,4 +39,4 @@ Hidden encoding characters prevent otherwise valid strings from parsing.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md**
   - weight: 0.6
   - sourced: local
-  > **Solution:** Check for BOM markers, non-breaking spaces
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/Date_Standardization_Design_Doc.md

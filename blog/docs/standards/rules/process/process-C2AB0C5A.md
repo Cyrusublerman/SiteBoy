@@ -39,4 +39,4 @@ Foundation architecture matters more than which OCR backend is plugged in first.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md**
   - weight: 0.6
   - sourced: local
-  > note structure, asset paths, frontmatter, raw/derived separation — not OCR engine choice
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md

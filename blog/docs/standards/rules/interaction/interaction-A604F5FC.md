@@ -11,7 +11,7 @@ scope:
   - ui-styling
 applies_to: []
 excludes: []
-decidable: judgment
+decidable: partial
 confidence: 0.3
 consensus: 1
 priority: 550
@@ -25,7 +25,19 @@ descriptive_origin: false
 suppressed_by: null
 tags: []
 detector:
-  kind: none
+  kind: regex
+  pattern: scrollIntoView|scrollTo\s*\(|window\.scroll
+  exclude_paths: 
+  - node_modules/**
+  - dist/**
+  - .vite/**
+  - cache/**
+examples:
+  bad:
+    - "element.scrollIntoView({ behavior: 'smooth' })"
+    - window.scrollTo(0, y)
+  good:
+    - window.addEventListener('resize', onResize)
 ---
 
 # interaction-A604F5FC
@@ -36,9 +48,20 @@ detector:
 
 All browsers scroll properly without assistance; breaking scroll requires intentional careless implementation.
 
+## Examples
+
+### Bad
+
+- `element.scrollIntoView({ behavior: 'smooth' })`
+- `window.scrollTo(0, y)`
+
+### Good
+
+- `window.addEventListener('resize', onResize)`
+
 ## Sources
 
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > all browsers are able to scroll properly and don't need any assistance from JavaScript
+  > https://brutalist-web.design/

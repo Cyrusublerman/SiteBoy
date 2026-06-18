@@ -40,4 +40,4 @@ Truncation exaggerates differences and leads to erroneous relative-value inferen
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > However, truncating the y-axis would not be acceptable if the main user task were to compare different values on the graph.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

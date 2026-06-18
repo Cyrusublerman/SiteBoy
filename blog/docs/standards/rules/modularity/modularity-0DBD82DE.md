@@ -41,4 +41,4 @@ Semantic HTML supports readable, honest websites that work across browsers and a
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Understand the semantic meaning of HTML elements.
+  > https://brutalist-web.design/

@@ -40,4 +40,4 @@ Analysis and cross-note search extend capture into a usable knowledge workflow.
 - **file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md**
   - weight: 0.6
   - sourced: local
-  > Standard LLM actions: analysis, search across notes.
+  > file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/voice-to-note.md

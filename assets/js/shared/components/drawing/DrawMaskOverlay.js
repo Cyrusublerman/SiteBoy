@@ -13,6 +13,7 @@
  */
 import { BaseComponent } from '../../foundation.js';
 import { DrawCanvas } from './DrawCanvas.js';
+import { Slider } from '../input/Slider.js';
 
 const TOOL_DEFS = [
   { id: 'pen',    label: 'PEN' },
@@ -341,14 +342,6 @@ export class DrawMaskOverlay extends BaseComponent {
       white-space: nowrap;
     `;
 
-    const slider = this.createElement('input', 'draw-adj-slider');
-    slider.type = 'range';
-    slider.min   = String(min);
-    slider.max   = String(max);
-    slider.step  = String(step);
-    slider.value = String(value);
-    slider.style.cssText = `flex: 1; min-width: 0;`;
-
     const readout = this.createElement('span', 'draw-adj-readout');
     readout.textContent = String(value);
     readout.style.cssText = `
@@ -360,11 +353,17 @@ export class DrawMaskOverlay extends BaseComponent {
       color: var(--c-text);
     `;
 
-    slider.addEventListener('input', () => {
-      const v = Number(slider.value);
-      readout.textContent = String(v);
-      onChange(v);
-    });
+    const sliderComp = new Slider({
+      min, max, step, value,
+      borders: { top: false, right: false, bottom: false, left: false },
+      onInput: (v) => {
+        readout.textContent = String(v);
+        onChange(v);
+      },
+    }, this.deps);
+    this.componentInstances.push(sliderComp);
+    const slider = sliderComp.render();
+    slider.style.cssText = `flex: 1; min-width: 0;`;
 
     row.append(lbl, slider, readout);
     return row;

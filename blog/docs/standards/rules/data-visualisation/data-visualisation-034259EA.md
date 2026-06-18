@@ -40,4 +40,4 @@ Zero is not always a natural baseline; forcing it can obscure meaningful variati
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > it is not necessary to force a visualization to begin at 0 when another logical starting point exists.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

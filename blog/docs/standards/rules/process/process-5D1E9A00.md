@@ -40,4 +40,4 @@ Kent Beck's ordering avoids wasted effort on correctness or speed of broken code
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > Make it work, make it right, make it fast
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/

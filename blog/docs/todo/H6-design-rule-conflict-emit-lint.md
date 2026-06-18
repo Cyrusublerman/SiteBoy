@@ -1,11 +1,11 @@
 # H6 — Design-rule corpus: conflict-detect / emit / lint / test
 
-**Status:** WIP
+**Status:** REVIEW
 **Priority:** P3
 **Owner file(s):** tools/scrape/conflict.mjs, tools/scrape/categorise.mjs, tools/scrape/emit.mjs, tools/scrape/lint-compile.mjs, tools/scrape/test-rules.mjs, tools/lint/design-rules.mjs
 **Blockers:** → H4, H5 (pipeline must have produced draft-rules.json)
 **Blocks:** —
-**Last touched:** 2026-05-22
+**Last touched:** 2026-06-18
 
 ## Goal
 
@@ -29,9 +29,9 @@ Implement pipeline stages 9–13 to transform `draft-rules.json` into:
 - [x] Stage 13: test-rules.mjs — examples.bad/good assertions, CI-blocking exit code
 - [x] Schema: ConflictPairSchema, CategorisedRuleSchema, Q-017 examples.bad enforcement
 - [x] npm scripts: scrape:conflict, scrape:categorise, scrape:emit, scrape:lint-compile, lint:design, test:design-rules
-- [ ] Hand-author detectors on ≥1 rule to exercise the full compile + test path
-- [ ] Resolve conflicts.queue.md entries after full pipeline run
-- [ ] Wire lint:design and test:design-rules to CI workflow
+- [x] Hand-author detectors on ≥1 rule to exercise the full compile + test path
+- [x] Resolve conflicts.queue.md entries after full pipeline run
+- [x] Wire lint:design and test:design-rules to CI workflow
 - [ ] Inject hot-rules block into .cursorrules (build-order step 9) — **deferred**; corpus access via §13/§14 + lookup table in `.cursorrules` / `rules.mdc` instead
 - [x] Wire scraped corpus into agent routing — §13 + §14 in `ai-routing-map.md`; pre-decision rows + corpus table in `rules.mdc` and `.cursorrules`
 

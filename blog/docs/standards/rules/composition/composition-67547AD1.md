@@ -41,4 +41,4 @@ Unrelated misleading or sensationalist content pulls visitors away from the site
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > unrelated content, such as misleading links, sensationalist headlines, or distracting images
+  > https://brutalist-web.design/

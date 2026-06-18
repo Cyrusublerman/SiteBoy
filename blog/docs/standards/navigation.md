@@ -41,11 +41,11 @@ Sources:
 
 ---
 
-## navigation-ADEBD9ED
+## navigation-69AFD67E
 
-**SHOULD:** Allow visitors to consume content by scrolling the viewport.
+**SHOULD_NOT:** Avoid artificially paginating medium-length articles to inflate engagement.
 
-*Websites are viewed in browsers where scrolling lets visitors read content that exceeds one screen.*
+*Artificial pagination interrupts reading to satisfy advertisers or engagement metrics rather than visitor needs.*
 
 Movements: `brutalism`
 
@@ -54,11 +54,11 @@ Sources:
 
 ---
 
-## navigation-69AFD67E
+## navigation-ADEBD9ED
 
-**SHOULD_NOT:** Avoid artificially paginating medium-length articles to inflate engagement.
+**SHOULD:** Allow visitors to consume content by scrolling the viewport.
 
-*Artificial pagination interrupts reading to satisfy advertisers or engagement metrics rather than visitor needs.*
+*Websites are viewed in browsers where scrolling lets visitors read content that exceeds one screen.*
 
 Movements: `brutalism`
 

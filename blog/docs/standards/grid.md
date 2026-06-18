@@ -4,6 +4,28 @@
 
 10 rules in this category.
 
+## grid-4E49A8A5
+
+**MUST:** Map layout confidence explicitly to Markdown output forms.
+
+*Explicit confidence mapping avoids false structure entering the knowledge base.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
+## grid-C76FF0FC
+
+**MUST_NOT:** Do not force Markdown table syntax when table structure is uncertain.
+
+*False table structure corrupts knowledge-base readability and search quality.*
+
+Sources:
+- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
 ## grid-D2A1F7D4
 
 **MUST:** Record confidence for layout inference because it is probabilistic.
@@ -23,41 +45,6 @@ Sources:
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
-
----
-
-## grid-C76FF0FC
-
-**MUST_NOT:** Do not force Markdown table syntax when table structure is uncertain.
-
-*False table structure corrupts knowledge-base readability and search quality.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
-
----
-
-## grid-4E49A8A5
-
-**MUST:** Map layout confidence explicitly to Markdown output forms.
-
-*Explicit confidence mapping avoids false structure entering the knowledge base.*
-
-Sources:
-- file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
-
----
-
-## grid-BA58DB96
-
-**SHOULD:** Use typographic grids heavily to achieve visual order.
-
-*Grids systematise layout and support the clarity-and-order ideal.*
-
-Movements: `swiss`
-
-Sources:
-- https://vanseodesign.com/web-design/swiss-design/
 
 ---
 
@@ -95,6 +82,19 @@ Sources:
 
 Sources:
 - file:///home/aeinoder/Documents/Cursor/SiteBoy/blog/ideas/tools/external/linux-screen-to-markdown-capture.md
+
+---
+
+## grid-BA58DB96
+
+**SHOULD:** Use typographic grids heavily to achieve visual order.
+
+*Grids systematise layout and support the clarity-and-order ideal.*
+
+Movements: `swiss`
+
+Sources:
+- https://vanseodesign.com/web-design/swiss-design/
 
 ---
 

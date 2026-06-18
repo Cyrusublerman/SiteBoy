@@ -40,4 +40,4 @@ High data density helps viewers extract value from every mark in a visualization
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Ideally, data visualizations have a high data–ink ratio: all or most of the visual elements in the graphic convey meaningful information about the dataset.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

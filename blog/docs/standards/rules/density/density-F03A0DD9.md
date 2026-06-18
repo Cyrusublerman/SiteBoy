@@ -41,4 +41,4 @@ Reduced visual complexity helps viewers process dense information more easily.
 - **https://www.nngroup.com/articles/designing-effective-infographics/**
   - weight: 0.7
   - sourced: fetched
-  > Although the rules of design are fairly relaxed in the world of infographics, a minimalistic approach is helpful.
+  > https://www.nngroup.com/articles/designing-effective-infographics/

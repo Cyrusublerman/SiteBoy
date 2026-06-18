@@ -41,4 +41,4 @@ Typography knowledge helps keep content readable and appropriately styled.
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Learn about typography.
+  > https://brutalist-web.design/

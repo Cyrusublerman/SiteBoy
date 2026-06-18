@@ -43,4 +43,4 @@ Ornamentation was stripped away so only essential communicative elements remaine
 - **https://vanseodesign.com/web-design/swiss-design/**
   - weight: 0.6
   - sourced: fetched
-  > Swiss designs were clean and free from ornamentation.
+  > https://vanseodesign.com/web-design/swiss-design/

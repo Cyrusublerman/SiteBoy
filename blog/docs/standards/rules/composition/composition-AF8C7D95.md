@@ -41,4 +41,4 @@ Content drives engagement; trickery wastes effort that should go into what visit
 - **https://brutalist-web.design/**
   - weight: 0.6
   - sourced: fetched
-  > Effort should be spent on compelling content, not trickery. Content drives engagement.
+  > https://brutalist-web.design/

@@ -4,11 +4,13 @@
 
 5 rules in this category.
 
-## density-CDAFD8B7
+## density-489F07AC
 
-**SHOULD:** Maximise data–ink ratio so visual elements convey meaningful dataset information.
+**SHOULD:** Remove background images, chart decorations, and gridlines when maximising data–ink ratio.
 
-*High data density helps viewers extract value from every mark in a visualization.*
+*Non-data ink dilutes the signal and lowers the chart's informational density.*
+
+Movements: `minimalism`
 
 Sources:
 - https://www.nngroup.com/articles/designing-effective-infographics/
@@ -28,13 +30,11 @@ Sources:
 
 ---
 
-## density-489F07AC
+## density-CDAFD8B7
 
-**SHOULD:** Remove background images, chart decorations, and gridlines when maximising data–ink ratio.
+**SHOULD:** Maximise data–ink ratio so visual elements convey meaningful dataset information.
 
-*Non-data ink dilutes the signal and lowers the chart's informational density.*
-
-Movements: `minimalism`
+*High data density helps viewers extract value from every mark in a visualization.*
 
 Sources:
 - https://www.nngroup.com/articles/designing-effective-infographics/

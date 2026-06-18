@@ -40,4 +40,4 @@ The first implementation should solve the present case without speculative gener
 - **https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/**
   - weight: 0.6
   - sourced: fetched
-  > The first time you write the code, you just write it. It does _the thing_ and only _the thing_.
+  > https://piccalil.li/blog/programming-principles-for-self-taught-front-end-developers/
