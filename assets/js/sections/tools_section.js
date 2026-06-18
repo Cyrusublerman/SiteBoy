@@ -31,6 +31,7 @@ const ToolsSection = {
         '#tools/utilities/about-you',
         '#tools/utilities/media-manager',
         '#tools/utilities/cursive-glyph-builder',
+        '#tools/utilities/notes',
         // Processors subsection
         '#tools/processors/colour-quantizer',
         '#tools/processors/pixel-tiler',
@@ -329,6 +330,12 @@ const ToolsSection = {
                         title: 'Cursive Glyph Builder',
                         description: 'Capture hand-drawn cursive glyphs over a reference font',
                         slug: 'cursive-glyph-builder'
+                    },
+                    {
+                        id: 'notes',
+                        title: 'Notes',
+                        description: 'Corpus search and library (skeleton)',
+                        slug: 'notes'
                     }
                 ]
             }
@@ -609,7 +616,8 @@ const ToolsSection = {
             'about-you': () => import('../tools/utilities/about-you-tool.js'),
             'algorithms-test-lab': () => import('../tools/utilities/algorithms-test-lab.js'),
             'media-manager': () => import('../tools/utilities/media-manager.js'),
-            'cursive-glyph-builder': () => import('../tools/utilities/cursive-glyph-builder.js')
+            'cursive-glyph-builder': () => import('../tools/utilities/cursive-glyph-builder.js'),
+            'notes': () => import('../tools/utilities/notes-tool.js')
         };
 
         // Special handling for unified generators system

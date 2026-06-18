@@ -187,6 +187,11 @@ const AssetLoader = {
             script: '/assets/js/tools/utilities/cursive-glyph-builder.js',
             className: 'CursiveGlyphBuilderTool',
             dependencies: []
+        },
+        'notes': {
+            script: '/assets/js/tools/utilities/notes-tool.js',
+            className: 'NotesTool',
+            dependencies: []
         }
     },
     
