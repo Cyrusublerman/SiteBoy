@@ -79,13 +79,13 @@ Last touched: 2026-06-08 (D3.1 canvas resize audit).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | E1 | [E1-driver-fix.md](E1-driver-fix.md) | WU-3 — G1 driver (+D) fix | P0 | DONE | — |
-| E2 | [E2-blend-audit.md](E2-blend-audit.md) | WU-4 — G13 blend-mode audit | P1 | TODO | → E1 |
-| E3 | [E3-residuals.md](E3-residuals.md) | WU-5 — G5 + G9 residuals | P2 | TODO | — |
-| E4 | [E4-worker-offload.md](E4-worker-offload.md) | WU-6 — G12 worker offload + bilateral fix | P1 | TODO | — |
-| E5 | [E5-algorithm-verification.md](E5-algorithm-verification.md) | WU-7 — 38-algorithm verification | P2 | TODO | — |
-| E6 | [E6-issue-triage.md](E6-issue-triage.md) | WU-8 — per-module issue triage | P2 | WIP | — |
-| E7 | [E7-module-rebuilds.md](E7-module-rebuilds.md) | Phase 10 — per-module rebuilds | P1 | BLOCKED | → E1, E2, E5 |
-| E8 | [E8-new-effects.md](E8-new-effects.md) | Add new distort effects | P2 | TODO | → E1 |
+| E2 | [E2-blend-audit.md](E2-blend-audit.md) | WU-4 — G13 blend-mode audit | P1 | DONE | — |
+| E3 | [E3-residuals.md](E3-residuals.md) | WU-5 — G5 + G9 residuals | P2 | DONE | — |
+| E4 | [E4-worker-offload.md](E4-worker-offload.md) | WU-6 — G12 worker offload + bilateral fix | P1 | DONE | — |
+| E5 | [E5-algorithm-verification.md](E5-algorithm-verification.md) | WU-7 — 38-algorithm verification | P2 | DONE | — |
+| E6 | [E6-issue-triage.md](E6-issue-triage.md) | WU-8 — per-module issue triage | P2 | DONE | — |
+| E7 | [E7-module-rebuilds.md](E7-module-rebuilds.md) | Phase 10 — per-module rebuilds | P1 | REVIEW | — |
+| E8 | [E8-new-effects.md](E8-new-effects.md) | Add new distort effects | P2 | DONE | — |
 
 ## F. In-flight tools
 

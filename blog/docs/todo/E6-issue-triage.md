@@ -1,11 +1,11 @@
 # E6 — WU-8: Per-module issue triage
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P2
 **Owner file(s)**: `blog/docs/pages/tools/processors/distort/distort-issue-register.md`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,14 +17,14 @@ Every row in `distort-issue-register.md` has a non-empty `triage` cell. Standalo
 
 ## Sub-tasks
 
-- [ ] Add `triage` column to the issue register table.
-- [ ] Walk every row; classify.
-- [ ] Cross-reference with E1 (G1 blockers) and E5 (algorithm blockers).
-- [ ] Promote `standalone-fix` rows to new todo files.
+- [x] Add `triage` column to the issue register table.
+- [x] Walk every row; classify.
+- [x] Cross-reference with E1 (G1 blockers) and E5 (algorithm blockers).
+- [x] Promote `standalone-fix` rows to new todo files.
 
 ## Notes / decisions
 
-(append-only)
+2026-06-18: 220 rows classified via `scripts/e-track-triage.mjs`. G1 rows → `already-fixed-by-WU2` (E1 DONE). Standalone-fix rows tracked under E7 named bugs.
 
 ## References
 
