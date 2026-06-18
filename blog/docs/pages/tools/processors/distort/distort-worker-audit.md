@@ -1,7 +1,9 @@
-# Distort worker offload audit (WU-6)
+# Distort worker offload audit (WU-6 / E4)
 
-**`forceWorkerPreview: true` (8):** bilateral, median, canny, cellularautomata, reactiondiffusion, wavedistortion, delaunaymesh, stipple.
+**`forceWorkerPreview: true` (17):** bilateral, median, canny, cellularautomata, reactiondiffusion, wavedistortion, delaunaymesh, stipple, paintstroke, boxblur, gaussblur, motionblur, dilateerode, domainwarp, flowfield, advection, serpentine, lumflow, tileblend.
 
-**Heavy nodes without flag (consider adding):** boxblur, gaussianblur, motionblur (preview at large radius), morph dilate/erode if radius large, paintstroke, domainwarp, flowfield, advection, tileblend, lumflow batch, serpentine.
+**Bilateral (WU-6b):** kernel radius capped at 10px in `blur-filters.js` (`BILATERAL_MAX_RADIUS`); range LUT precomputed; `previewMax: 5` on spatial σ.
 
-**Bilateral (WU-6b):** kernel radius capped at 10px in `blur-filters.js` (`BILATERAL_MAX_RADIUS`); `previewMax` on σ remains on node.
+**previewMax caps (E4):** CA `stepsPerFrame`/`maxSteps`, RD `stepsPerFrame`, stipple `dotCount`/`relaxIterations`, delaunay `pointCount`.
+
+**Perf harness:** `test/distort-blend.test.js` (blend); bilateral timing verified via capped radius O(441) kernel per pixel.

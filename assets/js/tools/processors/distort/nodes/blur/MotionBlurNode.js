@@ -4,6 +4,7 @@ import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/motionblu
 
 export const MotionBlurNode = createEffectModule({
   type: 'motionblur', name: 'MOTION BLUR', category: 'BLUR',
+  forceWorkerPreview: true,
   params: {
     angle:    { value: 0,  min: 0, max: 360, step: 1, label: 'ANGLE',    tier: 3, unit: 'deg', driveable: true },
     distance: { value: 10, min: 1, max: 100, step: 1, label: 'DISTANCE', tier: 3, previewMax: 20, driveable: true, unit: 'px' }

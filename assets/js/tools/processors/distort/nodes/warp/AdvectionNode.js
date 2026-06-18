@@ -6,6 +6,7 @@ import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/advection
 
 export const AdvectionNode = createEffectModule({
   type: 'advection', name: 'ADVECTION', category: 'WARP',
+  forceWorkerPreview: true,
   params: {
     frame:        { value: 0, min: 0, max: 240, step: 1, label: 'FRAME', tier: 3, driveable: true, unit: 'frames' },
     velocityType: { value: 'noise', type: 'select', options: ['noise', 'radial', 'vortex'], label: 'VELOCITY', tier: 3 },

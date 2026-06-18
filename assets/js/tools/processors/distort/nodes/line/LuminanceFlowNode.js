@@ -6,6 +6,7 @@ import { vectorToRaster } from '../bridge/node-adapters.js';
 export const LuminanceFlowNode = createEffectModule({
   type: 'lumflow',
   name: 'LUMINANCE FLOW',
+  forceWorkerPreview: true,
   category: 'LINE',
   isVector: true,
   params: {

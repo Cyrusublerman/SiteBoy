@@ -5,6 +5,7 @@ import { tileBlend } from '../../../../../shared/algorithms/image/compositing.js
 export const TileBlendNode = createEffectModule({
   type: 'tileblend',
   name: 'TILE BLEND',
+  forceWorkerPreview: true,
   category: 'COMPOSITE',
   params: {
     frame:       { label: 'FRAME',    min: 0, max: 240, step: 1,   value: 0,   tier: 3, driveable: true, unit: 'frames' },

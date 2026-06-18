@@ -10,6 +10,7 @@ function _lumAt(lum, w, h, cx, cy) {
 export const SerpentineNode = createEffectModule({
   type: 'serpentine',
   name: 'SERPENTINE',
+  forceWorkerPreview: true,
   category: 'LINE',
   isVector: true,
   params: {

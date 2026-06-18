@@ -6,6 +6,7 @@ import { wgsl, glsl, gpuBindings as _gpuBindings } from '../../shaders/flowfield
 
 export const FlowFieldNode = createEffectModule({
   type: 'flowfield', name: 'FLOW FIELD', category: 'WARP',
+  forceWorkerPreview: true,
   params: {
     frame:       { value: 0,   min: 0,   max: 240, step: 1,    label: 'FRAME',       tier: 3, driveable: true, unit: 'frames' },
     noiseScale:  { value: 3,   min: 0.1, max: 20,  step: 0.1,  label: 'NOISE SCALE', tier: 3, driveable: true, unit: 'n' },

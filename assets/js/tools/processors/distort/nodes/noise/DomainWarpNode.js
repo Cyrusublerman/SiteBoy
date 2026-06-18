@@ -19,6 +19,7 @@ function _bilerp(src, w, h, fx, fy, dst, oi) {
 export const DomainWarpNode = createEffectModule({
   type: 'domainwarp',
   name: 'DOMAIN WARP',
+  forceWorkerPreview: true,
   category: 'NOISE',
   params: {
     strength: { label: 'STRENGTH', min: 0,   max: 200, step: 1,   value: 30,  tier: 3, previewMax: 50, unit: 'px', driveable: true },
