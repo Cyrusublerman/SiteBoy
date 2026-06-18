@@ -5,6 +5,7 @@
 import { BaseComponent } from '../../../foundation.js';
 import { Dropdown } from '../../input/Dropdown.js';
 import { ColorInput } from '../../input/ColorInput.js';
+import { NumericInput } from '../../input/NumericInput.js';
 class DistortCtrlBase extends BaseComponent {
   _lbl(F, text) {
     const s = this.createElement('span', 'distort-ctrl-lbl', text);
@@ -150,84 +151,47 @@ export class FrameSlider extends DistortCtrlBase {
     this._frame = options.frame ?? 0;
     this._frameCount = Math.max(1, options.frameCount ?? 1);
     this._onChange = options.onChange ?? null;
-    this._sliderEl = null;
-    this._fieldEl = null;
+    this._numericInput = null;
   }
 
   setFrameCount(n) {
     this._frameCount = Math.max(1, n);
     this._frame = Math.min(this._frame, this._frameCount - 1);
-    if (this._sliderEl) {
-      this._sliderEl.max = String(this._frameCount - 1);
-      this._sliderEl.value = String(this._frame);
+    if (this._numericInput) {
+      this._numericInput.setRange(0, this._frameCount - 1);
+      this._numericInput.setValue(this._frame, false);
     }
-    if (this._fieldEl) this._fieldEl.value = String(this._frame);
   }
 
   getValue() { return this._frame; }
 
-  _applyFrame(raw, emit) {
-    const maxF = this._frameCount - 1;
-    let n = Math.round(Number(raw));
-    if (!Number.isFinite(n)) n = this._frame;
-    n = Math.max(0, Math.min(maxF, n));
-    this._frame = n;
-    if (this._sliderEl) this._sliderEl.value = String(n);
-    if (this._fieldEl) this._fieldEl.value = String(n);
-    if (emit) this._onChange?.(n);
-  }
-
   render() {
     super.render();
-    const { F, F2 } = this.getF();
-    this.element.style.cssText = `display:flex;align-items:center;gap:${F / 2}px;min-height:${F * 2}px;`;
+    const { F } = this.getF();
+    this.element.style.cssText = `display:flex;align-items:stretch;gap:0;width:100%;min-height:${F * 2}px;`;
     const lab = this._lbl(F, 'FRAME');
-    const slider = this.createElement('input', 'frame-slider-range');
-    this._sliderEl = slider;
-    slider.type = 'range';
-    slider.min = '0';
-    slider.max = String(this._frameCount - 1);
-    slider.step = '1';
-    slider.value = String(this._frame);
-    slider.style.cssText = `flex:1;accent-color:var(--c-text);`;
-    const field = this.createElement('input', 'frame-slider-readout');
-    this._fieldEl = field;
-    field.type = 'text';
-    field.inputMode = 'numeric';
-    field.value = String(this._frame);
-    field.style.cssText = `
-      width:${F * 4}px;
-      text-align:right;
-      font-family:'Atkinson Hyperlegible','Atkinson Hyperlegible Mono',monospace;
-      font-size:${F * 0.75}px;
-      color:var(--c-text);
-      border:1px solid var(--c-border);
-      background:var(--c-bg);
-      padding:0 ${F2}px;
-      min-height:${F * 2}px;
-      box-sizing:border-box;
-    `;
-    slider.addEventListener('input', () => {
-      field.value = slider.value;
-    });
-    slider.addEventListener('change', () => {
-      this._applyFrame(slider.value, true);
-    });
-    const commitField = () => this._applyFrame(field.value, true);
-    field.addEventListener('change', () => {
-      commitField();
-    });
-    field.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        commitField();
-        field.blur();
-      }
-    });
-    field.addEventListener('dblclick', () => {
-      this._applyFrame(0, true);
-    });
-    this.element.append(lab, slider, field);
+    this._numericInput = new NumericInput({
+      display: 'both',
+      embedded: true,
+      showSteppers: true,
+      min: 0,
+      max: this._frameCount - 1,
+      step: 1,
+      value: this._frame,
+      defaultValue: 0,
+      unit: 'frames',
+      precision: 0,
+      fieldWidthF: 4,
+      onChange: (v) => {
+        this._frame = Math.round(v);
+        this._onChange?.(this._frame);
+      },
+    }, this.deps);
+    this.addChild(this._numericInput);
+    const ctrl = this._numericInput.render();
+    ctrl.style.flex = '1';
+    ctrl.style.minWidth = '0';
+    this.element.append(lab, ctrl);
     return this.element;
   }
 }

@@ -1,11 +1,11 @@
 # E3 — WU-5: G5 + G9 residuals
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P2
 **Owner file(s)**: `assets/js/shared/components/.../NumericInput.js`, `DistortExtendedControls.js`, `nodes/accumulation/IterativeRewarpNode.js`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -19,15 +19,15 @@ Close out the three small G5/G9 residuals.
 
 ## Sub-tasks
 
-- [ ] Add `ondblclick` handler to NumericInput field; reset to schema default.
-- [ ] Refactor FrameSlider to use NumericInput.
-- [ ] Add `frame` param to `IterativeRewarpNode` per the G9 spec.
-- [ ] Add `capByFrame` modifier to `samples` param in the same node.
-- [ ] Run audit on every touched file.
+- [x] Add `ondblclick` handler to NumericInput field; reset to schema default.
+- [x] Refactor FrameSlider to use NumericInput.
+- [x] Add `frame` param to `IterativeRewarpNode` per the G9 spec.
+- [x] Add `capByFrame` modifier to `samples` param in the same node.
+- [x] Run audit on every touched file.
 
 ## Notes / decisions
 
-(append-only)
+2026-06-18: NumericInput dblclick + IterativeRewarp frame/capByFrame were pre-landed. FrameSlider refactored to embedded NumericInput (slider + field + steppers + dblclick default).
 
 ## References
 
