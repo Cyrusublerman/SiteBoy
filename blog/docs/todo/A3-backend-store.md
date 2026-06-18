@@ -1,11 +1,11 @@
 # A3 — Backend data store
 
-**Status**: TODO
+**Status**: REVIEW
 **Priority**: P1
-**Owner file(s)**: `blog/docs/site/db/` (to author), migration files (to author)
+**Owner file(s)**: `db/schema.ts`, `db/schema.js`, `db/migrations/`, `api/content/*`, `scripts/db-migrate.mjs`
 **Blockers**: → A1
 **Blocks**: B2, C1, C2, F2, G1
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -13,26 +13,27 @@ Single relational store for dynamic content: gallery items, projects, store SKUs
 
 ## Done when
 
-One schema migration committed under `blog/docs/site/db/`. CRUD round-trip from the preview env succeeds for every table.
+One schema migration committed under `db/migrations/`. CRUD round-trip from the preview env succeeds for every table.
 
 ## Sub-tasks
 
-- [ ] Decide provider: Supabase Postgres / Cloudflare D1 / Vercel Postgres / Neon / Turso.
-- [ ] Write ADR `blog/docs/site/adr-A3-store.md`.
-- [ ] Author initial schema: `users`, `gallery_items`, `projects`, `products`, `notes`, `tags`, `links`.
-- [ ] Decide migration tool (Drizzle / Prisma / raw SQL / sqlc).
-- [ ] Commit `0001_init.sql` (or framework-equivalent).
+- [x] Decide provider: Vercel Postgres + Drizzle ORM.
+- [x] Write ADR `blog/docs/site/adr-A3-store.md`.
+- [x] Author initial schema: `users`, `gallery_items`, `projects`, `products`, `notes`, `tags`, `links`, `audit_log`, `media_uploads`, `sessions`.
+- [x] Decide migration tool (raw SQL + `npm run db:migrate`).
+- [x] Commit `0001_init.sql`.
 - [ ] Set up local dev DB.
-- [ ] Wire connection from A1 runtime.
+- [ ] Wire connection from A1 runtime (preview deploy pending A1).
 - [ ] Add seed script for dev data.
-- [ ] Document backup/restore procedure.
+- [x] Document backup/restore procedure (ADR).
 - [ ] Verify migrations run cleanly on preview env.
+- [x] CRUD stub endpoints at `/api/content/*`.
 
 ## Notes / decisions
 
-(append-only)
+- 2026-06-18: `db/schema.ts` (authoring) + `db/schema.js` (runtime for Vercel handlers). Drizzle via `@vercel/postgres`.
 
 ## References
 
-- A1 ADR (host dictates compatible DB tiers)
-- A2 ADR (auth provider may bundle its own user table)
+- `blog/docs/site/adr-A3-store.md`
+- `blog/docs/site/vercel-dynamic-migration-plan.md` §7

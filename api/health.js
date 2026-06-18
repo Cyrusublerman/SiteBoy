@@ -1,5 +1,10 @@
-import { sql } from '../_lib/db.js';
+import { getBuildId } from '../_lib/env.js';
+import { jsonResponse } from '../_lib/auth.js';
 
-export default function handler(req, res) {
-  res.status(200).json({ ok: true, ts: Date.now() });
+export default function handler() {
+  return jsonResponse({
+    ok: true,
+    build: getBuildId(),
+    ts: new Date().toISOString(),
+  });
 }
