@@ -20,6 +20,8 @@ export function toApiRequest(vercelReq) {
   const host = vercelReq.headers?.host || 'localhost';
   const url = new URL(vercelReq.url || '/', `https://${host}`);
 
+  const rawBody = vercelReq.body;
+
   return {
     method: vercelReq.method || 'GET',
     url,
@@ -32,7 +34,12 @@ export function toApiRequest(vercelReq) {
       },
     },
     query: vercelReq.query || {},
-    body: vercelReq.body,
+    body: rawBody,
+    async json() {
+      if (rawBody == null || rawBody === '') return {};
+      if (typeof rawBody === 'object') return rawBody;
+      return JSON.parse(String(rawBody));
+    },
   };
 }
 

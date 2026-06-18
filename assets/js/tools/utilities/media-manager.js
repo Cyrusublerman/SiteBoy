@@ -6,7 +6,9 @@
  */
 import { ToolBase } from '../core/tool-base.js';
 import ComponentLibrary from '../../shared/component-library.js';
+import { uploadGalleryBlob } from '../../shared/gallery-upload.js';
 
+const SITE_API = '/api';
 const API_BASE = 'http://localhost:5555/api';
 
 // Tool configuration for UPLOAD tab
@@ -396,6 +398,9 @@ class MediaManagerTool {
         this.librarySelectedPath = '';
         this.libraryExpandedPaths = new Set(['art']);
         this.r2FolderStructure = {};  // Actual structure from R2
+        this.localFiles = new Map();
+        this.uploadProgressBar = null;
+        this.componentInstances = [];
     }
 
     render() {
@@ -540,10 +545,10 @@ class MediaManagerTool {
         
         if (tab === 'UPLOAD') {
             await this.checkApiConnection();
-            await this.loadR2FolderStructure();  // Use real R2 structure for destinations
+            await this.loadR2FolderStructure();
             this.renderFolderTree();
-            await this.loadStagedFiles();
-            // renderGrid() already handles empty state
+            this.mountUploadProgress();
+            this.renderGrid();
         } else if (tab === 'LIBRARY') {
             await this.loadR2FolderStructure();
             // Small delay to ensure DOM is ready
@@ -1146,138 +1151,130 @@ class MediaManagerTool {
 
     async checkApiConnection() {
         try {
-            const response = await fetch(`${API_BASE}/health`);
+            const response = await fetch(`${SITE_API}/health`);
             if (response.ok) {
                 this.apiConnected = true;
-                this.updateLabel('apiStatus', '✅ API Connected');
+                this.updateLabel('apiStatus', '✅ Upload API ready');
             } else {
                 throw new Error('API not responding');
             }
         } catch (error) {
             this.apiConnected = false;
-            this.updateLabel('apiStatus', '❌ API Offline - Run: python tools/media-manager/media-manager-server.py');
+            this.updateLabel('apiStatus', '❌ Upload API offline — deploy /api or set ADMIN_BYPASS');
         }
+    }
+
+    mountUploadProgress() {
+        const status = this.tool?.components.get('apiStatus');
+        if (!status?.element?.parentElement) return;
+        if (this.uploadProgressBar) {
+            this.uploadProgressBar.destroy();
+            this.uploadProgressBar = null;
+        }
+        const bar = new ComponentLibrary.ProgressBar({
+            value: 0,
+            max: 100,
+            showPercent: true,
+            label: 'Upload',
+        }, this.deps);
+        this.componentInstances.push(bar);
+        this.uploadProgressBar = bar;
+        const el = bar.render();
+        el.style.marginTop = 'calc(var(--f) * 0.5)';
+        status.element.parentElement.appendChild(el);
+    }
+
+    setUploadProgress(percent, label) {
+        if (!this.uploadProgressBar) return;
+        this.uploadProgressBar.setValue(Math.min(100, Math.max(0, percent)));
+        if (label) this.updateLabel('stagedCount', label);
     }
 
     async loadStagedFiles() {
-        if (!this.apiConnected) {
-            // Still render empty state even if API is offline
-            this.stagedFiles = [];
-            this.renderGrid();
-            return;
-        }
-        
-        try {
-            const response = await fetch(`${API_BASE}/staged`);
-            const data = await response.json();
-            this.stagedFiles = data.files || [];
-            this.updateLabel('stagedCount', `${this.stagedFiles.length} files staged`);
-            this.renderGrid();
-        } catch (error) {
-            console.error('Failed to load staged files:', error);
-            this.stagedFiles = [];
-            this.renderGrid();
-        }
+        this.updateLabel('stagedCount', `${this.stagedFiles.length} files staged`);
+        this.renderGrid();
     }
 
     async stageFiles(files) {
-        if (!this.apiConnected) {
-            alert('API not connected. Run: python tools/media-manager/media-manager-server.py');
-            return;
-        }
-        
-        const formData = new FormData();
-        for (const file of files) {
-            formData.append('files', file);
-        }
-        
-        try {
-            const response = await fetch(`${API_BASE}/stage`, {
-                method: 'POST',
-                body: formData,
-            });
-            
-            if (response.ok) {
-                await this.loadStagedFiles();
-            }
-        } catch (error) {
-            console.error('Failed to stage files:', error);
-        }
-    }
-
-    async processFiles(ids = null) {
-        if (!this.apiConnected) return;
-        
-        this.updateLabel('apiStatus', '⏳ Processing...');
-        
-        try {
-            const response = await fetch(`${API_BASE}/process`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids }),
-            });
-            
-            const data = await response.json();
-            this.updateLabel('apiStatus', `✅ Processed ${data.processed} files`);
-            await this.loadStagedFiles();
-        } catch (error) {
-            this.updateLabel('apiStatus', '❌ Processing failed');
-            console.error('Failed to process:', error);
-        }
+        const filesWithPaths = files.map((file) => ({ file, path: '' }));
+        await this.stageFilesWithPaths(filesWithPaths);
     }
 
     async uploadFiles(ids = null) {
-        if (!this.apiConnected) return;
-        
-        const galleryName = this.getInputValue('galleryName');
-        const galleryType = this.getInputValue('galleryType');
-        
-        if (!galleryName) {
-            alert('Please enter a gallery name');
+        if (!this.apiConnected) {
+            alert('Upload API not available');
             return;
         }
-        
+
+        const collection = (this.selectedPath || 'digital/staged')
+            .replace(/^art\//, '')
+            .replace(/^\/+/, '');
+        const defaultAlt = this.getInputValue('defaultAlt');
+        const defaultTags = (this.getInputValue('defaultTags') || '')
+            .split(',').map((t) => t.trim()).filter(Boolean);
+        const targetIds = ids ? [...ids] : this.stagedFiles.map((f) => f.id);
+        const filesToUpload = targetIds.filter((id) => this.localFiles.has(id));
+
+        if (!filesToUpload.length) {
+            alert('No staged files to upload');
+            return;
+        }
+
         this.updateLabel('apiStatus', '⏳ Uploading...');
-        
+        this.setUploadProgress(0, 'Upload');
+
+        let uploaded = 0;
         try {
-            const response = await fetch(`${API_BASE}/upload`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ids,
-                    gallery: galleryName,
-                    gallery_type: galleryType,
-                }),
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                this.updateLabel('apiStatus', `✅ Uploaded! ${data.stats.uploaded} files`);
-                await this.loadStagedFiles();
-            } else {
-                this.updateLabel('apiStatus', `⚠️ ${data.error || 'Upload failed'}`);
+            for (let i = 0; i < filesToUpload.length; i++) {
+                const id = filesToUpload[i];
+                const file = this.localFiles.get(id);
+                const staged = this.stagedFiles.find((f) => f.id === id);
+                const meta = staged?.metadata || {};
+                const tags = meta.tags?.length ? meta.tags : defaultTags;
+
+                await uploadGalleryBlob(file, {
+                    filename: file.name,
+                    mime: file.type,
+                    collection,
+                    title: meta.caption || meta.alt || defaultAlt || file.name,
+                    description: meta.caption || meta.alt || defaultAlt || '',
+                    tags,
+                    sourceTool: 'media-manager',
+                }, {
+                    onProgress: (p) => {
+                        const overall = ((i + p) / filesToUpload.length) * 100;
+                        this.setUploadProgress(overall, `File ${i + 1}/${filesToUpload.length}`);
+                    },
+                });
+
+                uploaded += 1;
+                this.localFiles.delete(id);
+                this.stagedFiles = this.stagedFiles.filter((f) => f.id !== id);
+                this.selectedIds.delete(id);
             }
+
+            this.setUploadProgress(100, 'Done');
+            this.updateLabel('apiStatus', `✅ Uploaded ${uploaded} file(s) to ${collection}`);
+            await this.loadStagedFiles();
         } catch (error) {
             this.updateLabel('apiStatus', '❌ Upload failed');
             console.error('Failed to upload:', error);
         }
     }
 
+    async processFiles(ids = null) {
+        this.updateLabel('apiStatus', 'Process step optional — upload sends originals via signed PUT');
+        window.debugLog('TOOLS', 'processFiles skipped (C2 direct upload)', ids);
+    }
+
     async clearStaging() {
-        if (!this.apiConnected) return;
-        
+        if (!this.stagedFiles.length) return;
         if (!confirm('Clear all staged files?')) return;
-        
-        try {
-            await fetch(`${API_BASE}/clear`, { method: 'POST' });
-            this.stagedFiles = [];
-            this.selectedIds.clear();
-            this.renderGrid();
-            this.updateLabel('stagedCount', '0 files staged');
-        } catch (error) {
-            console.error('Failed to clear:', error);
-        }
+        this.stagedFiles = [];
+        this.localFiles.clear();
+        this.selectedIds.clear();
+        this.renderGrid();
+        this.updateLabel('stagedCount', '0 files staged');
     }
 
     async deleteSelected() {
@@ -1478,37 +1475,25 @@ class MediaManagerTool {
      * Stage files with their folder paths
      */
     async stageFilesWithPaths(filesWithPaths) {
-        if (!this.apiConnected) {
-            alert('API not connected. Run: python tools/media-manager/media-manager-server.py');
-            return;
-        }
-        
-        const formData = new FormData();
-        const paths = {};
-        
         for (const { file, path } of filesWithPaths) {
-            formData.append('files', file);
-            paths[file.name] = path;
-        }
-        
-        // Send paths as JSON string
-        formData.append('paths', JSON.stringify(paths));
-        
-        try {
-            const response = await fetch(`${API_BASE}/stage`, {
-                method: 'POST',
-                body: formData,
+            const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            this.localFiles.set(id, file);
+            this.stagedFiles.push({
+                id,
+                filename: file.name,
+                status: 'staged',
+                local: true,
+                metadata: {
+                    path,
+                    alt: this.getInputValue('defaultAlt') || '',
+                    caption: '',
+                    tags: (this.getInputValue('defaultTags') || '')
+                        .split(',').map((t) => t.trim()).filter(Boolean),
+                },
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                this.updateLabel('apiStatus', `Staged ${data.count} files`);
-                await this.loadStagedFiles();
-            }
-        } catch (error) {
-            this.updateLabel('apiStatus', 'Staging failed');
-            console.error('Failed to stage files:', error);
         }
+        this.updateLabel('apiStatus', `Staged ${filesWithPaths.length} file(s) locally`);
+        await this.loadStagedFiles();
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1564,7 +1549,11 @@ class MediaManagerTool {
         
         // Thumbnail
         const img = document.createElement('img');
-        img.src = `${API_BASE}/staged/${file.id}/thumb`;
+        if (file.local && this.localFiles.has(file.id)) {
+            img.src = URL.createObjectURL(this.localFiles.get(file.id));
+        } else {
+            img.src = `${API_BASE}/staged/${file.id}/thumb`;
+        }
         img.alt = file.metadata?.alt || file.id;
         img.loading = 'lazy';
         img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
@@ -1989,6 +1978,14 @@ class MediaManagerTool {
     }
 
     destroy() {
+        if (this.uploadProgressBar) {
+            this.uploadProgressBar.destroy();
+            this.uploadProgressBar = null;
+        }
+        for (const c of this.componentInstances) {
+            c?.destroy?.();
+        }
+        this.componentInstances = [];
         if (this.tool) {
             this.tool.destroy();
             this.tool = null;

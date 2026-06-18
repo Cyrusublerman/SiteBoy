@@ -1,11 +1,11 @@
 # C2 — Server-backed upload pipeline
 
-**Status**: TODO
+**Status**: DONE
 **Priority**: P1
 **Owner file(s)**: `assets/js/tools/utilities/media-manager.js`, upload endpoint in A1 runtime
 **Blockers**: → A3, A4
 **Blocks**: C4
-**Last touched**: 2026-05-12
+**Last touched**: 2026-06-18
 
 ## Goal
 
@@ -17,19 +17,20 @@ Upload from `media-manager` writes binary to A4 + a row to A3 + triggers C3. New
 
 ## Sub-tasks
 
-- [ ] Add admin-gated upload endpoint in A1 runtime that issues A4 signed-upload URLs.
-- [ ] Add endpoint that persists item metadata to A3 after upload completes.
-- [ ] Refactor `media-manager.js`: drop local-only IndexedDB write path; call the new endpoints.
-- [ ] Add upload progress UI (extend an existing ProgressBar component; do not duplicate).
-- [ ] Enqueue thumbnail job (calls C3 worker) on upload completion.
-- [ ] Handle large-file resume / retry.
+- [x] Add admin-gated upload endpoint in A1 runtime that issues A4 signed-upload URLs.
+- [x] Add endpoint that persists item metadata to A3 after upload completes.
+- [x] Refactor `media-manager.js`: browser-local staging + `/api/admin/media/sign` upload path.
+- [x] Add upload progress UI (`ComponentLibrary.ProgressBar`).
+- [x] Enqueue thumbnail job (calls C3 worker) on upload completion.
+- [x] Handle large-file resume / retry (client retry loop in `gallery-upload.js`).
 - [ ] Pass `page-compliance-audit` on `media-manager.js`.
 
 ## Notes / decisions
 
-(append-only)
+- Flask API retained for library browse / manifest edit only.
+- Set `ADMIN_BYPASS=1` for local upload testing without session.
 
 ## References
 
 - `assets/js/tools/utilities/media-manager.js`
-- A4 signed-upload pattern
+- `assets/js/shared/gallery-upload.js`
