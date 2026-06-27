@@ -162,6 +162,12 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
+    equations: [
+        { caption: 'Golden ratio', latex: '\\varphi = \\frac{1+\\sqrt{5}}{2}' },
+        { caption: 'Split ratio', latex: '\\rho = \\frac{\\varphi^{\\sin 2\\pi t}}{1 + \\varphi^{\\sin 2\\pi t}}' },
+        { caption: 'Subdivision', latex: '\\text{even depth: vertical split; odd depth: horizontal split}' },
+    ],
+
     /**
      * Log normalisation: maps a value in a geometric range [minVal, maxVal] to [0, 1].
      */

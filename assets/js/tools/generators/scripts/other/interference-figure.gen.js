@@ -485,6 +485,12 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
+    equations: [
+        { caption: 'OPD field', latex: 'D = \\sum_i w_i\\,\\phi_i(u,v)' },
+        { caption: 'Physical intensity', latex: 'I_\\lambda = \\sin^2\\bigl(\\pi D \\cdot \\mathrm{OPD}/\\lambda\\bigr)', showWhen: { param: 'spectralMode', value: 'Physical' } },
+        { caption: 'Stylised colour', latex: 'H = \\mathrm{OPD\\ cycles},\\quad L \\propto \\sin^2(\\pi D \\cdot \\mathrm{OPD}/550\\,\\mathrm{nm})', showWhen: { param: 'spectralMode', value: 'Stylised' } },
+    ],
+
     parameters: [
         {
             group: 'Pattern',

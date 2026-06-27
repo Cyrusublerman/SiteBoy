@@ -555,6 +555,13 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
+    equations: [
+        { caption: 'Equal temperament', latex: 'f_{\\mathrm{note}} = f_0 \\cdot 2^{\\mathrm{semitone}/12}' },
+        { caption: 'Spatial frequency', latex: 'f_s = f_{\\mathrm{note}} / 10' },
+        { caption: 'Source wave', latex: '\\psi_s(x,y,t) = A\\sin\\bigl(2\\pi(d/f_s - t)\\bigr)' },
+        { caption: 'Superposition', latex: 'I(x,y,t) = \\sum_s |\\psi_s(x,y,t)|' },
+    ],
+
     parameters: [
         {
             group: 'Visualization',

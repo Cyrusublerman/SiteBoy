@@ -11,7 +11,7 @@
  *   AUDIO-005  waveIndexing
  *   AUDIO-006  equationEvaluator
  *   AUDIO-007  audioBufferSource
- *   AUDIO-008  wavExporter
+ *   AUDIO-008  WAV encode via shared algorithms library (host export not wired)
  *   CANVAS-014 oscilloscopeRenderer
  *   CANVAS-015 circularLoopRenderer
  *   CANVAS-016 gifExporter (stub — suppressed via animationExport:false)
@@ -406,7 +406,7 @@ export const SCRIPT_CONFIG = (() => {
             },
             {
                 heading: 'KNOWN LIMITATIONS',
-                body:    'textarea parameter type not supported by the host: equation input is restricted to predefined dropdown options rather than arbitrary user expressions; the spec intent of free-text equations is architecturally blocked. WAV export (AUDIO-008) is implemented but not UI-accessible: no action button type exists in the generator parameter system and the host export tab has no WAV entry; wavExporter() can be invoked programmatically only. Segmented mode: segmentStartWave (spec range 0–100000) and segmentWaveCount parameters are not exposed; Segmented is currently identical to Oscilloscope. GIF export suppressed: animation type is infinite with no loopFrames. AudioContext may require a user gesture on some browsers (autoplay policy); clicking the Play toggle constitutes the required gesture. safeEquationCompiler uses new Function — blocked by CSPs that prohibit eval-equivalent constructs; Worker-based evaluation is the recommended mitigation (not implemented in this version).'
+                body:    'textarea parameter type not supported by the host: equation input is restricted to predefined dropdown options rather than arbitrary user expressions; the spec intent of free-text equations is architecturally blocked. WAV export (AUDIO-008): encodeWavMono lives in shared/algorithms/audio/wav-encoder.js; host export tab has no WAV entry yet — no download from this script. Segmented mode: segmentStartWave (spec range 0–100000) and segmentWaveCount parameters are not exposed; Segmented is currently identical to Oscilloscope. GIF export suppressed: animation type is infinite with no loopFrames. AudioContext may require a user gesture on some browsers (autoplay policy); clicking the Play toggle constitutes the required gesture. safeEquationCompiler uses new Function — blocked by CSPs that prohibit eval-equivalent constructs; Worker-based evaluation is the recommended mitigation (not implemented in this version).'
             },
             {
                 heading: 'REFERENCES',
@@ -415,6 +415,12 @@ export const SCRIPT_CONFIG = (() => {
         ],
 
         compute: { cost: 'lightweight' },
+
+        equations: [
+            { caption: 'Additive synthesis', latex: 'y = \\frac{1}{N}\\sum_{k=1}^{N} f_k(p)' },
+            { caption: 'Phase index', latex: 'p = \\frac{i \\bmod fpc}{fpc},\\quad w = \\lfloor i/fpc\\rfloor' },
+            { caption: 'Polar map', latex: 'r_i = R_0(1 + \\mathrm{depth}\\cdot y_i)', showWhen: { param: 'mode', value: 'Circular' } },
+        ],
 
         // ── Canvas ────────────────────────────────────────────────────────────
         // Spec: 420×420. Live stub used 800×800 — corrected per issues-and-conflicts.md.
@@ -559,7 +565,7 @@ export const SCRIPT_CONFIG = (() => {
 
         // ── Export ────────────────────────────────────────────────────────────
         // gif/webm suppressed: infinite animation with no defined loopFrames.
-        // WAV export implemented in wavExporter() but not UI-accessible.
+        // WAV encode: shared/algorithms/audio/wav-encoder.js — host export not wired.
         export: { png: true, gif: false, webm: false },
 
         draw,

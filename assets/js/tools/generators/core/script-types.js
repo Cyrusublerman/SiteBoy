@@ -84,6 +84,8 @@
  * @property {string} [background] - Legacy single-colour background (CSS or VGA hex).
  *   Deprecated in favour of colourway[]. Kept for backward compat — scripts that
  *   have not migrated to colourway[] still work.
+ * @property {'2d'|'webgl'} [p5Renderer] - p5 renderer mode when context is 'p5'
+ *   (default: '2d'). Use 'webgl' for WEBGL shaders; host creates canvas once.
  */
 
 /**
@@ -126,6 +128,16 @@
  *   Do not use in new scripts.
  * @property {number} [defaultSpeed] - Default animation speed multiplier
  * @property {number} [defaultFps] - Default frames per second
+ */
+
+/**
+ * Optional equation entry for the canvas-dock equation panel (MathJax display math).
+ * @typedef {Object} EquationDescriptor
+ * @property {string} [latex] - TeX source without surrounding delimiters (static)
+ * @property {(params: Object) => string} [latexFn] - Dynamic TeX from current params; mutually exclusive with latex
+ * @property {string} [caption] - Short plain-text label; uppercased in UI
+ * @property {{ param: string, value: * }} [showWhen] - Visibility gate against current params
+ * @property {Record<string,string>} [valueBindings] - Reserved Phase 3: symbol → param key for live values
  */
 
 /**
@@ -204,6 +216,7 @@
  * @property {RenderFrameFunction} [renderFrame] - Optional frame renderer for export
  * @property {P5SetupFunction} [p5Setup] - p5 setup function (required for p5 context)
  * @property {P5DrawFunction} [p5Draw] - p5 draw function (required for p5 context)
+ * @property {EquationDescriptor[]} [equations] - Optional governing equations for canvas-dock panel
  */
 
 /**
@@ -286,6 +299,15 @@ export function validateScriptConfig(config) {
     const validContexts = ['2d', 'webgl', 'p5'];
     if (!validContexts.includes(config.canvas.context)) {
         throw new Error(`Canvas context must be one of: ${validContexts.join(', ')}`);
+    }
+    if (config.canvas.p5Renderer != null) {
+        const validP5Renderers = ['2d', 'webgl'];
+        if (!validP5Renderers.includes(config.canvas.p5Renderer)) {
+            throw new Error(`Canvas p5Renderer must be one of: ${validP5Renderers.join(', ')}`);
+        }
+        if (config.canvas.context !== 'p5') {
+            throw new Error('Canvas p5Renderer is only valid when context is p5');
+        }
     }
     
     // Draw function validation (depends on context)

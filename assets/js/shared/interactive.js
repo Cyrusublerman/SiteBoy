@@ -2424,6 +2424,22 @@ export class SequencerV2 extends BaseComponent {
         return this.checkpoints.length;
     }
 
+    /**
+     * Total timeline duration in seconds (holds + segment durations).
+     */
+    getTotalDuration() {
+        return this._totalDuration();
+    }
+
+    /**
+     * Interpolated params at a wall-clock time without mutating playhead or scrubber.
+     * @param {number} time seconds
+     * @returns {object|null}
+     */
+    getParamsAtTime(time) {
+        return this._paramsAtTime(time);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // PANEL — CONTROLS ROW
     // ═══════════════════════════════════════════════════════════════════════

@@ -29,6 +29,7 @@ import { AnimationLoop } from '../../../core/animation-foundation.js';
 import { GeneratorToolbar } from '../../../shared/components/tool/GeneratorToolbar.js';
 import { GeneratorTransportStrip } from '../../../shared/components/tool/TransportStrip.js';
 import { GenerativeCanvasDock } from '../../../shared/components/tool/GenerativeCanvasDock.js';
+import { EquationPanel } from '../../../shared/components/tool/EquationPanel.js';
 import { P5Canvas } from '../../../shared/p5-integration.js';
 import { AnimationExport } from '../../../shared/components/output/AnimationExport.js';
 import { uploadGalleryBlob } from '../../../shared/gallery-upload.js';
@@ -80,6 +81,8 @@ export class GenerativeToolHost extends BaseComponent {
         this._expressionParams = [];
         /** @type {import('../../../shared/components/tool/GenerativeCanvasDock.js').GenerativeCanvasDock|null} */
         this.generativeDock = null;
+        /** @type {import('../../../shared/components/tool/EquationPanel.js').EquationPanel|null} */
+        this.equationPanel = null;
         
         // Get all available generators from registry
         this.generators = this._buildGeneratorList();
@@ -162,7 +165,8 @@ export class GenerativeToolHost extends BaseComponent {
             displayMode: this.displayMode,
             onGeneratorChange: (id) => this._handleGeneratorChange(id),
             onDisplayModeChange: (mode) => this._handleDisplayModeChange(mode),
-            onExport: (format, exportState) => this._handleExport(format, exportState)
+            onExport: (format, exportState) => this._handleExport(format, exportState),
+            onExportCancel: () => this._handleExportCancel()
         }, this.deps);
         
         this.appendElement(this.wrapperEl, this.toolbar.render());
@@ -242,6 +246,10 @@ export class GenerativeToolHost extends BaseComponent {
             this.transportStrip = null;
         }
         this._stripEl = null;
+        if (this.equationPanel) {
+            this.equationPanel.destroy();
+            this.equationPanel = null;
+        }
         if (this.generativeDock) {
             this.generativeDock.destroy();
             this.generativeDock = null;
@@ -292,32 +300,46 @@ export class GenerativeToolHost extends BaseComponent {
         // Apply initial display mode
         this.tool.setCanvasDisplayMode(this.displayMode);
 
-        // Mount TransportStrip at the bottom of the canvas column (in-flow dock).
+        // Mount canvas dock (transport, timeline, equations) when animation or equations present.
+        const hasAnimation = this.scriptConfig.animation && this.scriptConfig.animation.type !== 'none';
+        const hasEquations = (this.scriptConfig.equations?.length ?? 0) > 0;
+        const needsDock = hasAnimation || hasEquations;
+
         if (this.transportStrip) {
             this.transportStrip.destroy();
             this.transportStrip = null;
         }
         this._stripEl = null;
-        if (this.scriptConfig.animation && this.scriptConfig.animation.type !== 'none') {
-            const transportConfig = buildTransportConfig(this.scriptConfig);
-            this.transportStrip = new GeneratorTransportStrip({
-                ...transportConfig,
-                onChange: (key, value) => this._handleTransportChange(key, value),
+
+        if (needsDock && this.tool?.canvasArea) {
+            this.generativeDock = new GenerativeCanvasDock({
+                showTimelineSlot: this.scriptConfig.animation?.sequencer === true,
+                showEquationSlot: hasEquations,
             }, this.deps);
-            const stripEl = this.transportStrip.render();
-            if (this.tool?.canvasArea) {
+            this.generativeDock.render();
+            this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
+            this.componentInstances.push(this.generativeDock);
+
+            if (hasAnimation) {
+                const transportConfig = buildTransportConfig(this.scriptConfig);
+                this.transportStrip = new GeneratorTransportStrip({
+                    ...transportConfig,
+                    onChange: (key, value) => this._handleTransportChange(key, value),
+                }, this.deps);
+                const stripEl = this.transportStrip.render();
                 this._stripEl = stripEl;
                 this._stripElClearFixedOverrides(stripEl);
-                this.generativeDock = new GenerativeCanvasDock({
-                    showTimelineSlot: this.scriptConfig.animation.sequencer === true,
-                }, this.deps);
-                this.generativeDock.render();
-                this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
                 this.generativeDock.appendTransportStrip(stripEl);
                 this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
-                this.componentInstances.push(this.generativeDock);
+                this.componentInstances.push(this.transportStrip);
             }
-            this.componentInstances.push(this.transportStrip);
+
+            if (hasEquations) {
+                this._mountEquationPanel();
+            }
+        } else if (this.transportStrip) {
+            this.transportStrip.destroy();
+            this.transportStrip = null;
         }
 
         // Inject SequencerV2 + AnimationExport UI — only for generators that animate.
@@ -330,6 +352,7 @@ export class GenerativeToolHost extends BaseComponent {
                 if (this.scriptConfig.animation.animationExport !== false) {
                     this._injectExportUI();
                 }
+                this._syncExportConfigToToolbar();
             });
         }
         
@@ -420,7 +443,7 @@ export class GenerativeToolHost extends BaseComponent {
             onDraw: (ctx, canvas, values) => this.handleDraw(ctx, canvas, values),
             onAfterRender: (toolBase) => {
                 try {
-                    if (this.scriptConfig?.animation?.type !== 'none' && toolBase?.canvasArea && this.generativeDock) {
+                    if (toolBase?.canvasArea && this.generativeDock) {
                         this._syncGenerativeCanvasDock();
                     }
                 } catch (err) {
@@ -441,12 +464,59 @@ export class GenerativeToolHost extends BaseComponent {
      * Rebuild dock chrome after ToolBase re-render (orientation change rebuild).
      */
     _syncGenerativeCanvasDock() {
-        if (!this.tool?.canvasArea || !this.generativeDock || !this._stripEl) return;
+        if (!this.tool?.canvasArea || !this.generativeDock) return;
         this.generativeDock.mountIntoCanvasArea(this.tool.canvasArea);
-        this.generativeDock.appendTransportStrip(this._stripEl);
-        this._stripElClearFixedOverrides(this._stripEl);
+        if (this._stripEl) {
+            this.generativeDock.appendTransportStrip(this._stripEl);
+            this._stripElClearFixedOverrides(this._stripEl);
+        }
+        this._reattachEquationPanel();
         this._reattachSequencerStrip();
         this.generativeDock.setTimelineVisible(this._sequencerStripVisible);
+    }
+
+    /** Mount or re-mount EquationPanel into the dock equation slot. */
+    _mountEquationPanel() {
+        const slot = this.generativeDock?.getEquationSlot();
+        if (!slot || !this.scriptConfig?.equations?.length) return;
+
+        if (!this.equationPanel) {
+            this.equationPanel = new EquationPanel({}, this.deps);
+            this.componentInstances.push(this.equationPanel);
+        }
+
+        const panelEl = this.equationPanel.render();
+        if (!slot.contains(panelEl)) {
+            this.appendElement(slot, panelEl);
+        }
+
+        this.equationPanel.setEquations(this.scriptConfig.equations, this.params);
+    }
+
+    _reattachEquationPanel() {
+        const slot = this.generativeDock?.getEquationSlot();
+        const panelEl = this.equationPanel?.element;
+        if (!slot || !panelEl) return;
+        if (!slot.contains(panelEl)) {
+            this.appendElement(slot, panelEl);
+        }
+    }
+
+    /** True when any equation entry declares a showWhen gate. */
+    _equationsHaveShowWhen() {
+        return (this.scriptConfig?.equations ?? []).some((eq) => eq.showWhen);
+    }
+
+    /** True when any equation entry uses a live latexFn builder. */
+    _equationsAreDynamic() {
+        return (this.scriptConfig?.equations ?? []).some((eq) => typeof eq.latexFn === 'function');
+    }
+
+    _refreshEquationPanel() {
+        if (!this.equationPanel) return;
+        if (this._equationsHaveShowWhen() || this._equationsAreDynamic()) {
+            this.equationPanel.updateParams(this.params);
+        }
     }
 
     /**
@@ -478,11 +548,18 @@ export class GenerativeToolHost extends BaseComponent {
         
         this.p5Instance = new window.p5((p) => {
             p.setup = () => {
-                // Create canvas with script dimensions
-                const canvas = p.createCanvas(
-                    scriptConfig.canvas.width,
-                    scriptConfig.canvas.height
-                );
+                // Create canvas with script dimensions (WEBGL when p5Renderer: 'webgl')
+                const useWebgl = scriptConfig.canvas.p5Renderer === 'webgl';
+                const canvas = useWebgl
+                    ? p.createCanvas(
+                        scriptConfig.canvas.width,
+                        scriptConfig.canvas.height,
+                        p.WEBGL
+                    )
+                    : p.createCanvas(
+                        scriptConfig.canvas.width,
+                        scriptConfig.canvas.height
+                    );
                 p.pixelDensity(1);
                 
                 // Style to match ToolBase canvas positioning
@@ -514,7 +591,9 @@ export class GenerativeToolHost extends BaseComponent {
                 // Call script's p5Draw
                 if (scriptConfig.p5Draw) {
                     try {
-                        scriptConfig.p5Draw.call(scriptConfig, p, host.params, host.frame);
+                        scriptConfig.p5Draw.call(
+                            scriptConfig, p, host.params, host.frame, host._activeFps
+                        );
                     } catch (error) {
                         console.error('p5Draw error:', error);
                     }
@@ -801,6 +880,14 @@ export class GenerativeToolHost extends BaseComponent {
 
     _handleAnimationExport(exportState) {
         if (!this.animationExporter) return;
+        if (this._hasTimelineExport()) {
+            const maxFrames = this._getTimelineExportFrames(exportState.fps);
+            if (exportState.frames > maxFrames) {
+                window.debugLog('TOOLS', `Export frames clamped ${exportState.frames} → ${maxFrames} (timeline length)`);
+                exportState.frames = maxFrames;
+                exportState.duration = parseFloat((maxFrames / exportState.fps).toFixed(2));
+            }
+        }
         // Push current panel state into the engine before starting
         this.animationExporter.state.format    = exportState.animFormat === 'zip' ? 'frames' : exportState.animFormat;
         this.animationExporter.state.fps       = exportState.fps;
@@ -809,7 +896,180 @@ export class GenerativeToolHost extends BaseComponent {
         this.animationExporter.state.bitrate   = exportState.bitrate;
         // ZIP image type: stored separately on the engine for _createFrameZip to read
         this.animationExporter._zipImageType   = exportState.zipImageType ?? 'png';
+        this.toolbar?.beginExportProgress?.();
         this.animationExporter.startExport();
+    }
+
+    /** Cancel an in-progress animation export from the toolbar CANCEL action. */
+    _handleExportCancel() {
+        if (this.animationExporter?.state?.isExporting) {
+            this.animationExporter.cancelExport();
+        }
+        this.toolbar?.endExportProgress?.(false);
+    }
+
+    /** Whether export should sample the SequencerV2 timeline (≥2 checkpoints). */
+    _hasTimelineExport() {
+        return this.sequencerV2 && this.sequencerV2.checkpointCount() >= 2;
+    }
+
+    /** Frame count for a full timeline pass at the given FPS. */
+    _getTimelineExportFrames(fps) {
+        const seq = this.sequencerV2;
+        if (!seq) return 0;
+        return Math.max(1, Math.round(seq.getTotalDuration() * fps));
+    }
+
+    /** Push script + timeline metadata into the export toolbar panel. */
+    _syncExportConfigToToolbar() {
+        const anim = this.scriptConfig?.animation;
+        if (!anim || !this.toolbar?.setExportConfig) return;
+
+        const defaultFps = anim.defaultFps || 60;
+        const loopFrames = anim.loopFrames || 0;
+        const hasTimeline = this._hasTimelineExport();
+        const expectsSequencer = anim.sequencer === true;
+        let timelineFrames = 0;
+        let timelineSeconds = 0;
+
+        if (hasTimeline) {
+            timelineSeconds = this.sequencerV2.getTotalDuration();
+            timelineFrames = this._getTimelineExportFrames(defaultFps);
+        }
+
+        this.toolbar.setExportConfig({
+            loopFrames,
+            defaultFps,
+            hasTimeline,
+            expectsSequencer,
+            timelineFrames,
+            timelineSeconds,
+        });
+    }
+
+    /**
+     * Keys the sequencer may tween — animatableParams plus every key saved in
+     * checkpoints. Other params (expression-derived, modulator-written, internal
+     * script state) are left to the normal animation path.
+     */
+    _getSequencerOverlayKeys() {
+        const keys = new Set();
+        const anim = this.scriptConfig?.animation;
+        if (anim?.animatableParams?.length) {
+            for (const item of anim.animatableParams) {
+                const key = typeof item === 'string' ? item : item?.key;
+                if (key) keys.add(key);
+            }
+        }
+        if (this.sequencerV2?.checkpoints) {
+            for (const cp of this.sequencerV2.checkpoints) {
+                if (cp.params) {
+                    for (const k of Object.keys(cp.params)) keys.add(k);
+                }
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * Apply timeline-interpolated values onto params without replacing the full
+     * param object (preserves keys not owned by the sequencer).
+     */
+    _applySequencerOverlay(interpolated) {
+        if (!interpolated) return;
+        const keys = this._getSequencerOverlayKeys();
+        if (keys.size === 0) {
+            Object.assign(this.params, interpolated);
+            return;
+        }
+        for (const key of keys) {
+            if (interpolated[key] !== undefined) {
+                this.params[key] = interpolated[key];
+            }
+        }
+    }
+
+    /**
+     * One animation tick: advance frame clock, overlay sequencer params, then
+     * run the standard render path (compute scheduler or draw).
+     */
+    _tickAnimationFrame({ advanceFrame = false, sequencerOverlay = null, forExport = false } = {}) {
+        if (advanceFrame) this.frame++;
+        if (sequencerOverlay) this._applySequencerOverlay(sequencerOverlay);
+
+        if (forExport) {
+            this._drawForExport();
+            return;
+        }
+
+        if (this._scheduler && !this.isP5Context) {
+            this._scheduler.animationFrame();
+        } else {
+            this.draw();
+        }
+    }
+
+    /** Restore canvas state after export completes, errors, or cancels. */
+    _restoreExportSnapshot(savedFrame, savedParams, savedSeqTime) {
+        this.frame = savedFrame;
+        Object.assign(this.params, savedParams);
+        if (this.sequencerV2 && typeof savedSeqTime === 'number') {
+            this.sequencerV2.seekTo(savedSeqTime);
+        } else {
+            this.draw();
+        }
+    }
+
+    /**
+     * Synchronous draw for export capture — must finish before canvas readback.
+     */
+    _drawForExport() {
+        this._evaluateExpressions();
+
+        if (this.isP5Context) {
+            const scriptConfig = this.scriptConfig;
+            if (this.p5Instance && scriptConfig.p5Draw) {
+                try {
+                    scriptConfig.p5Draw.call(
+                        scriptConfig, this.p5Instance, this.params, this.frame, this._activeFps
+                    );
+                } catch (error) {
+                    console.error('p5Draw error (export):', error);
+                }
+            }
+            return;
+        }
+
+        if (!this.tool?.ctx || !this.tool?.canvas) return;
+
+        const ctx = this.tool.ctx;
+        const canvas = this.tool.canvas;
+        const cv = this.scriptConfig.canvas;
+        const bgColour = cv.colourway?.[0]?.colour ?? cv.background ?? null;
+        if (bgColour) {
+            ctx.fillStyle = bgColour;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        try {
+            this.scriptConfig.draw(ctx, canvas, this.params, this.frame);
+        } catch (error) {
+            console.error(`Draw error in "${this.scriptId}" (export):`, error);
+        }
+    }
+
+    /**
+     * Map an engine progress message to a short phase keyword for the toolbar.
+     * Frame phases ("Rendering frame…", "Recording frame…") are granular;
+     * everything else is a non-granular phase (zip assembly, encode, library load).
+     */
+    _exportPhaseFromMessage(message = '') {
+        if (/rendering frame/i.test(message)) return { phase: 'RENDERING', granular: true };
+        if (/recording frame/i.test(message)) return { phase: 'RECORDING', granular: true };
+        if (/zip/i.test(message))             return { phase: 'ZIPPING',   granular: false };
+        if (/loading/i.test(message))         return { phase: 'LOADING',   granular: false };
+        if (/recording|video/i.test(message)) return { phase: 'ENCODING',  granular: false };
+        return { phase: 'EXPORTING', granular: false };
     }
 
     /**
@@ -831,6 +1091,7 @@ export class GenerativeToolHost extends BaseComponent {
 
         let savedFrame  = 0;
         let savedParams = {};
+        let savedSeqTime = 0;
 
         this.animationExporter = new AnimationExport({
             type:         'loop',
@@ -840,29 +1101,56 @@ export class GenerativeToolHost extends BaseComponent {
             getCanvas:    () => this._getActiveCanvas(),
             renderFrame:  (i) => {
                 this.frame = i;
-                this.draw();
+                if (this._hasTimelineExport()) {
+                    const seq = this.sequencerV2;
+                    const fps = this.animationExporter?.state?.fps || seq.fps || defaultFps;
+                    const overlay = seq.getParamsAtTime(i / fps);
+                    this._tickAnimationFrame({ sequencerOverlay: overlay, forExport: true });
+                } else {
+                    this._tickAnimationFrame({ forExport: true });
+                }
             },
-            getState: () => ({ frame: this.frame, params: JSON.parse(JSON.stringify(this.params)) }),
+            getState: () => ({
+                frame:  this.frame,
+                params: JSON.parse(JSON.stringify(this.params)),
+                seqTime: this.sequencerV2?._currentTime ?? 0,
+            }),
             setState: (s) => {
                 this.frame = s.frame ?? 0;
-                Object.assign(this.params, s.params);
-                this.draw();
+                Object.assign(this.params, s.params ?? {});
+                if (this.sequencerV2 && typeof s.seqTime === 'number') {
+                    this.sequencerV2.seekTo(s.seqTime);
+                } else {
+                    this.draw();
+                }
             },
             onExportStart: () => {
                 savedFrame  = this.frame;
                 savedParams = JSON.parse(JSON.stringify(this.params));
+                savedSeqTime = this.sequencerV2?._currentTime ?? 0;
                 if (this.isPlaying) this.pause();
             },
+            onExportProgress: (current, total, percent, message) => {
+                const { phase, granular } = this._exportPhaseFromMessage(message);
+                if (granular) {
+                    this.toolbar?.updateExportProgress?.(current, total, percent, phase);
+                } else {
+                    this.toolbar?.setExportPhase?.(phase);
+                }
+            },
             onExportComplete: () => {
-                this.frame = savedFrame;
-                Object.assign(this.params, savedParams);
-                this.draw();
+                this._restoreExportSnapshot(savedFrame, savedParams, savedSeqTime);
+                this.toolbar?.endExportProgress?.(true);
                 window.debugLog('TOOLS', '✅ Export complete');
+            },
+            onExportError: (err) => {
+                console.error('Animation export failed:', err);
+                this._restoreExportSnapshot(savedFrame, savedParams, savedSeqTime);
+                this.toolbar?.endExportProgress?.(false);
             },
         }, {});
 
-        // Push metadata into toolbar panel so it can seed defaults and show loop info
-        this.toolbar?.setExportConfig?.({ loopFrames, defaultFps });
+        this._syncExportConfigToToolbar();
 
         window.debugLog('TOOLS', `✅ AnimationExport engine ready for "${this.scriptId}"`);
     }
@@ -968,6 +1256,9 @@ export class GenerativeToolHost extends BaseComponent {
 
         // Regular parameter update
         this.params[key] = value;
+        if (this.equationPanel && (this._equationsHaveShowWhen() || this._equationsAreDynamic())) {
+            this.equationPanel.updateParams(this.params);
+        }
         this.scheduleRedraw();
     }
     
@@ -1177,6 +1468,7 @@ export class GenerativeToolHost extends BaseComponent {
             this.tool.setValue('preset', '— Select Preset —');
         }, 100);
         
+        this._refreshEquationPanel();
         this.draw();
     }
     
@@ -1194,6 +1486,7 @@ export class GenerativeToolHost extends BaseComponent {
             this.tool.setValue(key, randomParams[key]);
         }
         
+        this._refreshEquationPanel();
         this.draw();
     }
     
@@ -1224,6 +1517,7 @@ export class GenerativeToolHost extends BaseComponent {
             this.tool.setValue(key, this.params[key]);
         }
 
+        this._refreshEquationPanel();
         this.draw();
     }
     
@@ -1320,12 +1614,7 @@ export class GenerativeToolHost extends BaseComponent {
                 onFrame: () => {
                     if (!this.isPlaying) return;
                     if (this.sequencerV2?.isPlaying()) return;
-                    this.frame++;
-                    if (this._scheduler && !this.isP5Context) {
-                        this._scheduler.animationFrame();
-                    } else {
-                        this.draw();
-                    }
+                    this._tickAnimationFrame({ advanceFrame: true });
                 }
             });
         }
@@ -1526,10 +1815,12 @@ export class GenerativeToolHost extends BaseComponent {
                 this.draw();
             },
             onFrame: (interpolated) => {
-                // Set checkpoint-interpolated base values
-                Object.assign(this.params, interpolated);
-                this.draw();
-            }
+                this._tickAnimationFrame({
+                    advanceFrame: this.sequencerV2?.isPlaying(),
+                    sequencerOverlay: interpolated,
+                });
+            },
+            onTotalDurationChange: () => this._syncExportConfigToToolbar(),
         }, {});
 
         const stripEl = this.sequencerV2.getStripElement();
@@ -1590,6 +1881,11 @@ export class GenerativeToolHost extends BaseComponent {
         if (this.generativeDock) {
             this.generativeDock.destroy();
             this.generativeDock = null;
+        }
+
+        if (this.equationPanel) {
+            this.equationPanel.destroy();
+            this.equationPanel = null;
         }
         
         if (this.toolbar) {

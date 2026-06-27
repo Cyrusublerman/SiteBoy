@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-06-18 (B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
+Last touched: 2026-06-27 (D8 equation panel rollout; B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
 
 ---
 
@@ -73,6 +73,10 @@ Last touched: 2026-06-18 (B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
 | D3 | [D3-generator-audit.md](D3-generator-audit.md) | Compliance audit per generator | P2 | DONE | → D1 |
 | D3.1 | [D3.1-canvas-resize-audit.md](D3.1-canvas-resize-audit.md) | Canvas resize consistency audit | P2 | DONE | — |
 | D4 | [D4-sequencer-transport-wiring.md](D4-sequencer-transport-wiring.md) | Sequencer transport wiring | P1 | DONE | — |
+| D5 | [D5-export-progress-indicator.md](D5-export-progress-indicator.md) | Export recording progress indicator | P1 | REVIEW | — |
+| D6 | [D6-export-timeline-sync.md](D6-export-timeline-sync.md) | Export timeline sync | P1 | REVIEW | — |
+| D7 | [D7-equation-display-panel.md](D7-equation-display-panel.md) | Equation display panel under canvas | P2 | DONE | — |
+| D8 | [D8-equation-panel-rollout.md](D8-equation-panel-rollout.md) | Equation panels for all equation-driven generators | P2 | REVIEW | — |
 
 ## E. Distort
 

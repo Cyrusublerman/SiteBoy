@@ -21,8 +21,10 @@ export class GenerativeCanvasDock extends BaseComponent {
     constructor(options = {}, deps = {}) {
         super({ ...options, componentType: 'generative-canvas-dock' }, deps);
         this.showTimelineSlot = options.showTimelineSlot === true;
+        this.showEquationSlot = options.showEquationSlot !== false;
         this.viewportSlotEl = null;
         this.chromeStackEl = null;
+        this.equationSlotEl = null;
         this.transportAnchorEl = null;
         this.timelineSlotEl = null;
         this._timelineVisible = false;
@@ -88,6 +90,14 @@ export class GenerativeCanvasDock extends BaseComponent {
 
         if (this.transportAnchorEl) {
             this.transportAnchorEl.style.cssText = [
+                'box-sizing:border-box',
+                'flex-shrink:0',
+                'min-width:0',
+            ].join(';');
+        }
+
+        if (this.equationSlotEl && this.showEquationSlot) {
+            this.equationSlotEl.style.cssText = [
                 'box-sizing:border-box',
                 'flex-shrink:0',
                 'min-width:0',
@@ -161,6 +171,11 @@ export class GenerativeCanvasDock extends BaseComponent {
 
         this.chromeStackEl = this.createElement('div', 'generative-canvas-dock-chrome');
 
+        if (this.showEquationSlot) {
+            this.equationSlotEl = this.createElement('div', 'generative-canvas-dock-equations');
+            this.appendElement(this.chromeStackEl, this.equationSlotEl);
+        }
+
         this.transportAnchorEl = this.createElement('div', 'generative-canvas-dock-transport');
         this.appendElement(this.chromeStackEl, this.transportAnchorEl);
 
@@ -182,6 +197,10 @@ export class GenerativeCanvasDock extends BaseComponent {
 
     getViewportSlot() {
         return this.viewportSlotEl;
+    }
+
+    getEquationSlot() {
+        return this.equationSlotEl;
     }
 
     getTimelineSlot() {

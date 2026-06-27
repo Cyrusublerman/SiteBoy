@@ -545,7 +545,11 @@ export const LayoutCalculator = {
             /** GenerativeToolHost canvas column — chrome heights + flex maths (consumers apply via JS). */
             'generative-canvas-dock': {
                 transportStripHeight: transportStripRow,
-                sequencerTimelineMinHeight: F * 4 // matches seq2-strip row stack
+                sequencerTimelineMinHeight: F * 4, // matches seq2-strip row stack
+                equationPanelMaxHeight: F * 12,
+            },
+            'equation-panel': {
+                headerHeight: transportStripRow,
             },
             'export-presets': {
                 // Instagram export presets

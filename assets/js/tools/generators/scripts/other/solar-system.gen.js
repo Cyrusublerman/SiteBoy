@@ -16,6 +16,11 @@ import { TIME_ANCHORS, SCALES, getElapsedLabel } from '../../../../shared/algori
 
 const J2000_MS = 946728000000;
 
+const F = 14;
+const FONT_SM = `${Math.round(F * 0.57)}px "Atkinson Hyperlegible Mono", monospace`;
+const FONT_MD = `${Math.round(F * 0.64)}px "Atkinson Hyperlegible Mono", monospace`;
+const FONT_LG = `${Math.round(F * 0.71)}px "Atkinson Hyperlegible Mono", monospace`;
+
 // SOL-04: Moon data — simplified Keplerian (circular orbit, parent-relative)
 // Fields: parent (planet name), a (AU), period (days), radius (km), color, phase0 (deg)
 const MOON_DATA = [
@@ -209,6 +214,12 @@ export const SCRIPT_CONFIG = {
         { name: 'Default',    values: { distanceScale: 0.45, planetScale: 1.0, asteroidCount: 300,  showAsteroidBelt: true,  showViewer: true,  showLabels: false, showInfo: true,  fovAngle: 30 } },
         { name: 'Dense Belt', values: { distanceScale: 0.45, planetScale: 1.0, asteroidCount: 1000, showAsteroidBelt: true,  showViewer: false, showLabels: true,  showInfo: true,  fovAngle: 30 } },
         { name: 'Minimal',    values: { distanceScale: 0.5,  planetScale: 1.5, asteroidCount: 100,  showAsteroidBelt: false, showViewer: false, showLabels: true,  showInfo: false, fovAngle: 30 } }
+    ],
+
+    equations: [
+        { caption: 'Kepler equation', latex: 'M = E - e\\sin E' },
+        { caption: 'Orbital plane', latex: "x' = a(\\cos E - e),\\quad y' = a\\sqrt{1-e^2}\\sin E" },
+        { caption: 'Display scale', latex: 'd_{\\mathrm{display}} = \\log(AU \\cdot 10 + 1)' },
     ],
 
     // ── Parameters (inert canvasWidth/Height removed) ─────────────────
@@ -472,8 +483,8 @@ export const SCRIPT_CONFIG = {
         ctx.beginPath();
         ctx.arc(px, py, r, 0, TWO_PI);
         ctx.clip();
-        // Dark hemisphere: semicircle on the side away from the sun
-        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.globalAlpha = 0.65;
+        ctx.fillStyle = '#000000';
         ctx.beginPath();
         ctx.arc(px, py, r + 1, sunAngle + Math.PI / 2, sunAngle + (3 * Math.PI / 2));
         ctx.lineTo(px, py);
@@ -506,8 +517,8 @@ export const SCRIPT_CONFIG = {
             ctx.arc(mx, my, r, 0, TWO_PI);
             ctx.fill();
             if (params.showLabels && r >= 2) {
-                ctx.fillStyle  = '#606060';
-                ctx.font       = '8px "Space Mono", monospace';
+                ctx.fillStyle  = '#808080';
+                ctx.font       = FONT_SM;
                 ctx.textAlign  = 'center';
                 ctx.fillText(moon.name, mx, my - r - 3);
             }
@@ -541,7 +552,7 @@ export const SCRIPT_CONFIG = {
         const hh = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
         const mm = String(totalMinutes % 60).padStart(2, '0');
         ctx.fillStyle  = '#00ffff';
-        ctx.font       = '8px "Space Mono", monospace';
+        ctx.font       = FONT_SM;
         ctx.textAlign  = 'center';
         ctx.fillText(`${hh}:${mm}`, vx, vy - RING_R - 4);
         ctx.restore();
@@ -563,13 +574,16 @@ export const SCRIPT_CONFIG = {
         const px     = w - panelW - PAD;
         const py     = PAD;
 
-        ctx.fillStyle = 'rgba(0,0,0,0.82)';
+        ctx.save();
+        ctx.globalAlpha = 0.82;
+        ctx.fillStyle = '#000000';
         ctx.fillRect(px, py, panelW, panelH);
-        ctx.strokeStyle = '#404040';
+        ctx.restore();
+        ctx.strokeStyle = '#808080';
         ctx.lineWidth   = 1;
         ctx.strokeRect(px + 0.5, py + 0.5, panelW - 1, panelH - 1);
 
-        ctx.font      = '9px "Space Mono", monospace';
+        ctx.font      = FONT_MD;
         ctx.textAlign = 'left';
 
         // Title
@@ -581,7 +595,7 @@ export const SCRIPT_CONFIG = {
             const a   = anchors[i];
             const ry  = py + titleH + PAD + i * rowH + 9;
             const ela = getElapsedLabel(a.ms, scale);
-            ctx.fillStyle = '#606060';
+            ctx.fillStyle = '#808080';
             ctx.fillText(ela, px + PAD, ry);
             ctx.fillStyle = '#c0c0c0';
             ctx.fillText(a.label, px + PAD + COL1, ry);
@@ -702,7 +716,7 @@ export const SCRIPT_CONFIG = {
 
             if (params.showLabels) {
                 ctx.fillStyle  = '#808080';
-                ctx.font       = '10px "Space Mono", monospace';
+                ctx.font       = FONT_LG;
                 ctx.textAlign  = 'center';
                 ctx.fillText(planet.name, px, py - planet.screenRadius - 4);
             }
@@ -771,13 +785,16 @@ export const SCRIPT_CONFIG = {
             if (ty < 0)      ty = 0;
             if (ty + th > h) ty = h - th;
 
-            ctx.fillStyle = 'rgba(0,0,0,0.82)';
+            ctx.save();
+            ctx.globalAlpha = 0.82;
+            ctx.fillStyle = '#000000';
             ctx.fillRect(tx, ty, tw, th);
+            ctx.restore();
             ctx.strokeStyle = p.color;
             ctx.lineWidth = 1;
             ctx.strokeRect(tx + 0.5, ty + 0.5, tw - 1, th - 1);
 
-            ctx.font      = '10px "Space Mono", monospace';
+            ctx.font      = FONT_LG;
             ctx.textAlign = 'left';
             for (let i = 0; i < lines.length; i++) {
                 ctx.fillStyle = i === 0 ? p.color : '#c0c0c0';
@@ -788,7 +805,7 @@ export const SCRIPT_CONFIG = {
         if (params.showInfo) {
             const hrs = Math.floor((Date.now() - EMU_WAR_MS) / 3600000);
             ctx.fillStyle = '#808080';
-            ctx.font      = '10px "Space Mono", monospace';
+            ctx.font      = FONT_LG;
             ctx.textAlign = 'center';
             ctx.fillText(hrs.toLocaleString() + ' hours since the Great Emu War', cx, h - 20);
 

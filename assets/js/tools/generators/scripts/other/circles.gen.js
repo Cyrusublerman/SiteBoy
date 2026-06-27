@@ -243,6 +243,12 @@ export const SCRIPT_CONFIG = (() => {
             ]
         },
 
+        equations: [
+            { caption: 'Flat model', latex: 'x_i = x_{i-1} + (r_{i-1}-r_i)\\cos\\theta', showWhen: { param: 'animationModel', value: 'Flat' } },
+            { caption: 'Nested model', latex: '\\theta_i = \\sum_{j\\le i} t\\,2\\pi\\,\\mathrm{rate}_j', showWhen: { param: 'animationModel', value: 'Nested' } },
+            { caption: 'Position', latex: 'x_i = x_{i-1} + (r_{i-1}-r_i)\\cos\\theta_i', showWhen: { param: 'animationModel', value: 'Nested' } },
+        ],
+
         parameters: [
             {
                 group: 'Display',

@@ -297,6 +297,12 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
+    equations: [
+        { caption: 'X coordinate', latex: 'x = (R + r\\cos\\varphi)\\cos\\theta' },
+        { caption: 'Y coordinate', latex: 'y = (R + r\\cos\\varphi)\\sin\\theta' },
+        { caption: 'Z coordinate', latex: 'z = r\\sin\\varphi' },
+    ],
+
     parameters: [
         {
             group: 'Torus',

@@ -52,6 +52,43 @@ function buildEquationLines(p) {
     return [xEq, yEq];
 }
 
+/** Live LaTeX bodies for EquationPanel (MathJax). */
+function buildLissajousLatex(p) {
+    function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ''); }
+    function term(A, fn, w, phi, pw) {
+        if (Math.abs(A) < 0.001) return '';
+        const fnL  = fn === 'cos' ? '\\cos' : '\\sin';
+        const aStr = Math.abs(A) === 1 ? '' : `${fmt(Math.abs(A))}\\,`;
+        const sign = A < 0 ? '-' : '+';
+        const phiStr = Math.abs(phi) > 0.001 ? (phi > 0 ? ' + ' : ' - ') + fmt(Math.abs(phi)) : '';
+        const wStr   = w === 1 ? '' : `${fmt(w)}\\,`;
+        const pwStr  = Math.abs(pw - 1) > 0.01 ? `^{${fmt(pw)}}` : '';
+        return `${sign} ${aStr}${fnL}${pwStr}(${wStr}t${phiStr})`;
+    }
+    function modTerm(M, fn1, w1, phi1, p1, fn2, w2, phi2, p2) {
+        if (Math.abs(M) < 0.001) return '';
+        const f1 = fn1 === 'cos' ? '\\cos' : '\\sin';
+        const f2 = fn2 === 'cos' ? '\\cos' : '\\sin';
+        const pw1 = Math.abs(p1 - 1) > 0.01 ? `^{${fmt(p1)}}` : '';
+        const pw2 = Math.abs(p2 - 1) > 0.01 ? `^{${fmt(p2)}}` : '';
+        const ph1 = Math.abs(phi1) > 0.001 ? (phi1 > 0 ? '+' : '-') + fmt(Math.abs(phi1)) : '';
+        const ph2 = Math.abs(phi2) > 0.001 ? (phi2 > 0 ? '+' : '-') + fmt(Math.abs(phi2)) : '';
+        const sign = M < 0 ? '-' : '+';
+        const M2 = Math.abs(M) === 1 ? '' : `${fmt(Math.abs(M))}\\,`;
+        return `${sign} ${M2}${f1}${pw1}(${w1}t${ph1}) \\cdot ${f2}${pw2}(${w2}t${ph2})`;
+    }
+
+    const xBody = [term(p.Ax1, 'cos', p.wx1, p.phiX1, p.px1), term(p.Ax2, 'cos', p.wx2, p.phiX2, p.px2),
+        modTerm(p.Mx, 'cos', p.wxm1, p.phiXm1, p.pxm1, 'sin', p.wxm2, p.phiXm2, p.pxm2)].filter(Boolean).join(' ').replace(/^\+ /, '');
+    const yBody = [term(p.Ay1, 'sin', p.wy1, p.phiY1, p.py1), term(p.Ay2, 'sin', p.wy2, p.phiY2, p.py2),
+        modTerm(p.My, 'sin', p.wym1, p.phiYm1, p.pym1, 'cos', p.wym2, p.phiYm2, p.pym2)].filter(Boolean).join(' ').replace(/^\+ /, '');
+
+    return {
+        x: xBody ? `x(t) = ${xBody}` : 'x(t) = 0',
+        y: yBody ? `y(t) = ${yBody}` : 'y(t) = 0',
+    };
+}
+
 function preset(name, overrides) {
     return {
         name,
@@ -149,6 +186,11 @@ export const SCRIPT_CONFIG = {
             heading: 'REFERENCES',
             body: 'Algorithm: Lissajous figures — Jules Antoine Lissajous, 1857. The signedPow extension and multi-term per-axis sum are bespoke generalisations not attributed to a named algorithm. Version 1.1.0: phi_* parameter keys renamed to camelCase (phiX1, phiX2, phiXm1, phiXm2, phiY1, phiY2, phiYm1, phiYm2); rotation trig precomputed once per frame; evaluate body inlined into draw loop; off-screen path-break mitigation applied; infoSections added; compute block added; draw moved to inline method on SCRIPT_CONFIG.'
         }
+    ],
+
+    equations: [
+        { caption: 'X axis', latexFn: (params) => buildLissajousLatex(params).x },
+        { caption: 'Y axis', latexFn: (params) => buildLissajousLatex(params).y },
     ],
 
     parameters: [

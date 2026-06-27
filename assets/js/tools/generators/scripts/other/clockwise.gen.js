@@ -54,6 +54,12 @@ export const SCRIPT_CONFIG = {
 
     canvas: { width: 1080, height: 1080, context: 'p5' },
 
+    equations: [
+        { caption: 'Orbit centre', latex: 'c_x = 540 + R\\cos\\alpha,\\quad c_y = 540 + R\\sin\\alpha' },
+        { caption: 'Cell world position', latex: '\\mathrm{world} = c + r\\bigl(\\cos(\\theta_0+\\beta),\\,\\sin(\\theta_0+\\beta)\\bigr)' },
+        { caption: 'Field diffusion', latex: "v' = \\bigl(v + (\\bar v - v)\\kappa + \\Delta\\,g\\,\\mu\\bigr)\\,\\mathrm{decay}" },
+    ],
+
     parameters: [
         {
             group: 'System',

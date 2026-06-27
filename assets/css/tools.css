@@ -553,3 +553,31 @@
     max-width: 100%;
     height: auto;
 }
+
+/* =================================================================
+   EQUATION PANEL (generative canvas dock)
+   ================================================================= */
+
+.equation-panel {
+    box-sizing: border-box;
+    width: 100%;
+    background: var(--c-bg);
+}
+
+.equation-panel-header:hover {
+    background: var(--c-text);
+    color: var(--c-bg);
+}
+
+.equation-panel-header:focus-visible {
+    outline: 1px solid var(--c-text);
+    outline-offset: -1px;
+}
+
+.equation-panel-body mjx-container {
+    color: var(--c-text);
+}
+
+.equation-block-math {
+    overflow-x: auto;
+}

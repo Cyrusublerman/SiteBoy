@@ -194,7 +194,11 @@ p5Draw(p, params, frame) {
 Host manages animation via AnimationFoundation:
 - `p.noLoop()` in setup
 - Host calls `p.redraw()` per frame
-- Frame counter passed to p5Draw
+- Frame counter passed to p5Draw as 3rd argument
+- Optional 4th argument: active FPS (`host._activeFps`) for ms→frame timing
+
+### WEBGL sketches
+Declare `canvas.p5Renderer: 'webgl'` in SCRIPT_CONFIG. Host creates the WEBGL canvas once — scripts must not call `createCanvas()`.
 
 ### Internal Control (Not Recommended)
 If sketch MUST manage own loop:

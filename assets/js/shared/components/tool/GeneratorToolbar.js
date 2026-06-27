@@ -20,7 +20,16 @@ export class GeneratorToolbar extends BaseComponent {
         this.onGeneratorChange    = options.onGeneratorChange    || (() => {});
         this.onDisplayModeChange  = options.onDisplayModeChange  || (() => {});
         this.onExport             = options.onExport             || (() => {});
+        this.onExportCancel       = options.onExportCancel       || (() => {});
         this.onInfo               = options.onInfo               || (() => {});
+
+        // Export recording (progress) state — see design-law §6.3, §14.4
+        this._exportRecording = false;
+        this._exportBtnLabel  = null;
+        this._exportBtnGlyph  = null;
+        this._expProgFill     = null;
+        this._expProgValue    = null;
+        this._expProgWrap     = null;
 
         this.dropdownMenu       = null;
         this.dropdownOpen       = false;
@@ -386,6 +395,9 @@ export class GeneratorToolbar extends BaseComponent {
         labelSpan.textContent = 'EXPORT';
         labelSpan.style.flex = '1';
         labelSpan.style.textAlign = 'left';
+        labelSpan.style.overflow = 'hidden';
+        labelSpan.style.textOverflow = 'ellipsis';
+        labelSpan.style.whiteSpace = 'nowrap';
 
         const glyphSpan = this.createElement('span');
         glyphSpan.textContent = '▾';
@@ -394,6 +406,8 @@ export class GeneratorToolbar extends BaseComponent {
         exportBtn.appendChild(labelSpan);
         exportBtn.appendChild(glyphSpan);
         this.exportBtn = exportBtn;
+        this._exportBtnLabel = labelSpan;
+        this._exportBtnGlyph = glyphSpan;
 
         // Export panel state — persists across re-renders
         this._exportState = {
@@ -406,8 +420,12 @@ export class GeneratorToolbar extends BaseComponent {
             duration:     5,
             bitrate:      8000000,
         };
-        // Loop info supplied by host via setExportConfig()
+        // Loop / timeline info supplied by host via setExportConfig()
         this._exportLoopFrames = 0;
+        this._hasTimeline = false;
+        this._expectsSequencer = false;
+        this._timelineFrames = 0;
+        this._timelineSeconds = 0;
 
         const exportPanel = this.createElement('div', 'export-panel');
         exportPanel.style.cssText = `
@@ -587,35 +605,68 @@ export class GeneratorToolbar extends BaseComponent {
             });
         }
 
-        // LOOP INFO — read-only; label includes unit context
-        if (this._exportLoopFrames > 0) {
+        // TIMELINE / LOOP INFO — read-only; label includes unit context
+        const readOnlySpanStyle = `
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: ${d.rowHeight}px;
+            padding: 0 ${Math.round(F / 2)}px;
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${d.fontSizeSecondary}px;
+            text-transform: uppercase;
+            color: var(--c-text);
+            white-space: nowrap;
+            box-sizing: border-box;
+        `;
+
+        if (this._hasTimeline && this._timelineFrames > 0) {
+            const secs = this._timelineSeconds > 0
+                ? this._timelineSeconds.toFixed(2)
+                : (this._timelineFrames / s.fps).toFixed(2);
+            this._exportRow(panel, F, d, 'TIMELINE LENGTH', (cell) => {
+                const span = this.createElement('span');
+                span.style.cssText = readOnlySpanStyle;
+                span.textContent = `${this._timelineFrames}F / ${secs}S`;
+                cell.appendChild(span);
+            });
+        } else if (this._exportLoopFrames > 0) {
             const loopSecs = (this._exportLoopFrames / s.fps).toFixed(2);
             this._exportRow(panel, F, d, 'LOOP LENGTH', (cell) => {
                 const span = this.createElement('span');
-                span.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    width: 100%;
-                    height: ${d.rowHeight}px;
-                    padding: 0 ${Math.round(F / 2)}px;
-                    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
-                    font-size: ${d.fontSizeSecondary}px;
-                    text-transform: uppercase;
-                    color: var(--c-text);
-                    white-space: nowrap;
-                    box-sizing: border-box;
-                `;
+                span.style.cssText = readOnlySpanStyle;
                 span.textContent = `${this._exportLoopFrames}F / ${loopSecs}S`;
                 cell.appendChild(span);
             });
+        } else if (this._expectsSequencer && !this._hasTimeline) {
+            const hintRow = this.createElement('div', 'export-timeline-hint');
+            hintRow.style.cssText = `
+                display: flex;
+                align-items: center;
+                height: ${d.rowHeight}px;
+                padding: 0 ${F}px;
+                border-top: 1px solid var(--c-border);
+                font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+                font-size: ${d.fontSizeSecondary}px;
+                text-transform: uppercase;
+                color: var(--c-text);
+                box-sizing: border-box;
+            `;
+            hintRow.textContent = 'SAVE ≥2 STATES TO EXPORT TIMELINE';
+            panel.appendChild(hintRow);
         }
 
-        // FPS — re-renders on change to update loop info seconds
+        // FPS — re-renders on change to update length readouts
         this._exportRow(panel, F, d, 'FPS', (cell) => {
             const inp = this._exportNumInput(F, d, s.fps, 1, 120, 1);
             inp.addEventListener('change', () => {
                 s.fps = Math.max(1, Math.min(120, parseInt(inp.value) || s.fps));
-                s.duration = parseFloat((s.frames / s.fps).toFixed(2));
+                if (this._hasTimeline && this._timelineSeconds > 0) {
+                    s.frames = Math.max(1, Math.round(this._timelineSeconds * s.fps));
+                    s.duration = parseFloat((s.frames / s.fps).toFixed(2));
+                } else {
+                    s.duration = parseFloat((s.frames / s.fps).toFixed(2));
+                }
                 this._renderExportPanel();
             });
             cell.appendChild(inp);
@@ -659,6 +710,14 @@ export class GeneratorToolbar extends BaseComponent {
             });
         }
 
+        // While a recording is in progress, the action row is replaced by a
+        // determinate progress partition + CANCEL (design-law §14.4: deterministic
+        // text, no spinner; §6.3: inversion / explicit value change).
+        if (this._exportRecording) {
+            this._renderExportProgress(panel, F, d);
+            return;
+        }
+
         // EXPORT ANIMATION — action row, last in stack.
         // border-top shared with row above. No border-bottom — panel container owns terminal border.
         const actionBtn = this.createElement('button', 'export-anim-go-btn');
@@ -686,6 +745,106 @@ export class GeneratorToolbar extends BaseComponent {
         actionBtn.addEventListener('mouseleave', () => { actionBtn.style.background = 'var(--c-bg)';   actionBtn.style.color = 'var(--c-text)'; });
         actionBtn.addEventListener('click', () => this.onExport('animation', { ...s }));
         panel.appendChild(actionBtn);
+    }
+
+    /**
+     * Render the in-panel recording feedback: a determinate progress partition
+     * (track + fill + value) above a CANCEL action row. Stores live refs for
+     * cheap per-frame updates without re-rendering the whole panel.
+     */
+    _renderExportProgress(panel, F, d) {
+        // Progress row — label cell shows the phase, value cell shows a fill track
+        const row = this.createElement('div', 'export-panel-row');
+        row.style.cssText = `
+            display: flex;
+            height: ${d.rowHeight}px;
+            border-top: 1px solid var(--c-border);
+            box-sizing: border-box;
+            overflow: hidden;
+        `;
+
+        const labelCell = this.createElement('div', 'export-progress-label');
+        labelCell.style.cssText = `
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            padding: 0 ${F}px;
+            height: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+        `;
+        this._expProgValue = this.createElement('span');
+        this._expProgValue.textContent = 'RENDERING…';
+        this._expProgValue.style.cssText = `
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${d.fontSizeSecondary}px;
+            text-transform: uppercase;
+            color: var(--c-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        `;
+        labelCell.appendChild(this._expProgValue);
+        row.appendChild(labelCell);
+
+        const trackCell = this.createElement('div', 'export-progress-track');
+        trackCell.style.cssText = `
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            border-left: 1px solid var(--c-border);
+            height: 100%;
+            background: var(--c-bg);
+            box-sizing: border-box;
+            overflow: hidden;
+        `;
+        this._expProgFill = this.createElement('div');
+        this._expProgFill.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: var(--c-text);
+            transition: width 0.1s linear;
+        `;
+        trackCell.appendChild(this._expProgFill);
+        row.appendChild(trackCell);
+        panel.appendChild(row);
+
+        // CANCEL — action row, terminal
+        const cancelBtn = this.createElement('button', 'export-cancel-btn');
+        cancelBtn.type = 'button';
+        cancelBtn.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: ${d.rowHeight}px;
+            padding: 0 ${F}px;
+            border: none;
+            border-top: 1px solid var(--c-border);
+            background: var(--c-bg);
+            color: var(--c-text);
+            font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Mono', monospace;
+            font-size: ${d.fontSizeSecondary}px;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+            box-sizing: border-box;
+        `;
+        const cancelLabel = this.createElement('span');
+        cancelLabel.textContent = 'CANCEL';
+        const cancelGlyph = this.createElement('span');
+        cancelGlyph.textContent = '×';
+        cancelGlyph.style.flexShrink = '0';
+        cancelBtn.appendChild(cancelLabel);
+        cancelBtn.appendChild(cancelGlyph);
+        cancelBtn.addEventListener('mouseenter', () => { cancelBtn.style.background = 'var(--c-text)'; cancelBtn.style.color = 'var(--c-bg)'; });
+        cancelBtn.addEventListener('mouseleave', () => { cancelBtn.style.background = 'var(--c-bg)';   cancelBtn.style.color = 'var(--c-text)'; });
+        cancelBtn.addEventListener('click', () => this.onExportCancel());
+        panel.appendChild(cancelBtn);
     }
 
     /**
@@ -819,20 +978,31 @@ export class GeneratorToolbar extends BaseComponent {
         this.exportExpanded = !this.exportExpanded;
         if (this.exportExpanded) {
             this.exportPanel.style.display = 'block';
-            this.exportBtn.style.background = 'var(--c-text)';
-            this.exportBtn.style.color = 'var(--c-bg)';
         } else {
-            this._closeExportPanel();
+            this.exportPanel.style.display = 'none';
         }
+        this._applyExportBtnVisual();
     }
 
     _closeExportPanel() {
+        // Keep the panel open while a recording is in progress so the user
+        // retains access to live progress and CANCEL.
+        if (this._exportRecording) return;
         this.exportExpanded = false;
         if (this.exportPanel) this.exportPanel.style.display = 'none';
-        if (this.exportBtn) {
-            this.exportBtn.style.background = 'var(--c-bg)';
-            this.exportBtn.style.color = 'var(--c-text)';
-        }
+        this._applyExportBtnVisual();
+    }
+
+    /**
+     * Apply the export button's background/colour from state precedence:
+     * recording > expanded > default. Inversion is the sanctioned active
+     * signal (design-law §6.3).
+     */
+    _applyExportBtnVisual() {
+        if (!this.exportBtn) return;
+        const inverted = this._exportRecording || this.exportExpanded;
+        this.exportBtn.style.background = inverted ? 'var(--c-text)' : 'var(--c-bg)';
+        this.exportBtn.style.color      = inverted ? 'var(--c-bg)'   : 'var(--c-text)';
     }
 
     // ─── INFO PANEL ────────────────────────────────────────────────────────────
@@ -1052,21 +1222,108 @@ export class GeneratorToolbar extends BaseComponent {
 
     /**
      * Supply animation metadata from the host so the export panel can show
-     * loop length and seed sensible defaults.
-     * @param {{ loopFrames?: number, defaultFps?: number }} config
+     * loop/timeline length and seed sensible defaults.
+     * @param {{
+     *   loopFrames?: number,
+     *   defaultFps?: number,
+     *   hasTimeline?: boolean,
+     *   expectsSequencer?: boolean,
+     *   timelineFrames?: number,
+     *   timelineSeconds?: number,
+     * }} config
      */
     setExportConfig(config = {}) {
         this._exportLoopFrames = config.loopFrames ?? 0;
+        this._hasTimeline = config.hasTimeline ?? false;
+        this._expectsSequencer = config.expectsSequencer ?? false;
+        this._timelineFrames = config.timelineFrames ?? 0;
+        this._timelineSeconds = config.timelineSeconds ?? 0;
+
         if (config.defaultFps && this._exportState) {
             const fps = config.defaultFps;
             this._exportState.fps = fps;
-            this._exportState.frames = config.loopFrames > 0 ? config.loopFrames : Math.round(fps * 5);
-            this._exportState.duration = parseFloat((this._exportState.frames / fps).toFixed(2));
+            if (this._hasTimeline && this._timelineFrames > 0) {
+                this._exportState.frames = this._timelineFrames;
+                this._exportState.duration = this._timelineSeconds > 0
+                    ? parseFloat(this._timelineSeconds.toFixed(2))
+                    : parseFloat((this._timelineFrames / fps).toFixed(2));
+            } else {
+                this._exportState.frames = config.loopFrames > 0 ? config.loopFrames : Math.round(fps * 5);
+                this._exportState.duration = parseFloat((this._exportState.frames / fps).toFixed(2));
+            }
         }
         // Re-render panel if it already exists and is in animation mode
         if (this.exportPanel && this._exportState?.mode === 'animation') {
             this._renderExportPanel();
         }
+    }
+
+    // ─── EXPORT PROGRESS (RECORDING) API ───────────────────────────────────────
+
+    /**
+     * Enter recording state. Inverts the EXPORT cell, opens/keeps the panel open
+     * (ensuring animation mode), and swaps the action row for the progress + cancel
+     * partition.
+     */
+    beginExportProgress() {
+        this._exportRecording = true;
+        if (this._exportState) this._exportState.mode = 'animation';
+        // Ensure panel is visible so progress + cancel are reachable
+        this.exportExpanded = true;
+        if (this.exportPanel) this.exportPanel.style.display = 'block';
+        if (this._exportBtnLabel) this._exportBtnLabel.textContent = 'RENDERING…';
+        if (this._exportBtnGlyph) this._exportBtnGlyph.textContent = '';
+        this._applyExportBtnVisual();
+        this._renderExportPanel();
+    }
+
+    /**
+     * Update live progress.
+     * @param {number} current  frames done
+     * @param {number} total    total frames
+     * @param {number} percent  0–100
+     * @param {string} [phase]  phase microcopy (e.g. 'RENDERING', 'ENCODING', 'ZIPPING')
+     */
+    updateExportProgress(current, total, percent, phase) {
+        const pct = Math.max(0, Math.min(100, percent ?? 0));
+        const phaseLabel = (phase || 'RENDERING').toUpperCase();
+        if (this._exportBtnLabel) {
+            this._exportBtnLabel.textContent = total > 0
+                ? `${phaseLabel} ${current}/${total}`
+                : `${phaseLabel}…`;
+        }
+        if (this._expProgFill)  this._expProgFill.style.width = `${pct}%`;
+        if (this._expProgValue) {
+            this._expProgValue.textContent = total > 0
+                ? `${phaseLabel} ${current}/${total}`
+                : `${phaseLabel}…`;
+        }
+    }
+
+    /**
+     * Set a phase that has no frame-granular progress (e.g. ZIP assembly).
+     * Holds the fill at 100% and shows the phase text.
+     */
+    setExportPhase(phase) {
+        const phaseLabel = (phase || '').toUpperCase();
+        if (this._exportBtnLabel) this._exportBtnLabel.textContent = `${phaseLabel}…`;
+        if (this._expProgValue)   this._expProgValue.textContent   = `${phaseLabel}…`;
+        if (this._expProgFill)    this._expProgFill.style.width    = '100%';
+    }
+
+    /**
+     * Leave recording state and restore the normal export panel + button.
+     * @param {boolean} [ok=true] whether the export completed successfully
+     */
+    endExportProgress(ok = true) {
+        this._exportRecording = false;
+        this._expProgFill  = null;
+        this._expProgValue = null;
+        if (this._exportBtnLabel) this._exportBtnLabel.textContent = 'EXPORT';
+        if (this._exportBtnGlyph) this._exportBtnGlyph.textContent = '▾';
+        this._applyExportBtnVisual();
+        // Rebuild the panel back to its configuration form
+        if (this.exportPanel) this._renderExportPanel();
     }
 
     destroy() {

@@ -184,7 +184,7 @@ export const SCRIPT_CONFIG = {
     category: 'other',
     version: '2.0.0',
 
-    canvas: { width: 800, height: 600, context: 'p5' },
+    canvas: { width: 800, height: 600, context: 'p5', p5Renderer: 'webgl' },
 
     export: { png: true, gif: false, webm: false },
 
@@ -273,11 +273,11 @@ export const SCRIPT_CONFIG = {
         },
         {
             heading: 'ANIMATION',
-            body: 'Infinite, wall-clock driven. p.millis() elapsed time controls each morph cycle; not frame-count-based. Font order randomised by Fisher-Yates on each init. Non-deterministic: font sequence and any interrupted cycle are unrepeatable. loopFrames: 0. GIF and WebM export disabled — wall-clock timing and non-determinism preclude frame-accurate capture. PNG snapshot available at any cycle point.'
+            body: 'Infinite, frame-driven. morphTime (ms) converts to cycleFrames via host FPS; morph progress is t = localFrame / cycleFrames. Font order randomised by Fisher-Yates on each init. Non-deterministic: font sequence is unrepeatable across runs. loopFrames: 0. GIF and WebM export disabled — non-deterministic font shuffle precludes frame-accurate capture. PNG snapshot available at any cycle point.'
         },
         {
             heading: 'KNOWN LIMITATIONS',
-            body: '(1) Text content is selected from preset word lists via dropdown — free-text input is not supported by the SCRIPT_CONFIG parameter system. (2) Google Fonts CDN required; text renders in system fallback until CDN response arrives. (3) Font sequence is non-deterministic; no two runs produce the same order. (4) GIF and WebM export disabled. (5) Host Fit/Fill/Actual display controls are not effective — WEBGL canvas re-creation bypasses the host viewport manager; canvas is centred at native 800x600 resolution.'
+            body: '(1) Custom text mode uses lines parameter; preset dropdowns remain available. (2) Google Fonts CDN required; text renders in system fallback until CDN response arrives. (3) Font sequence is non-deterministic; no two runs produce the same order. (4) GIF and WebM export disabled.'
         },
         {
             heading: 'REFERENCES',
@@ -286,61 +286,34 @@ export const SCRIPT_CONFIG = {
     ],
 
     p5Setup(p, params) {
-        // Use host-configured canvas dimensions so render is always bounded (DEF-03).
-        // p.width/p.height are set by the host before calling p5Setup.
         const W = (p.width  > 0 ? p.width  : SCRIPT_CONFIG.canvas.width);
         const H = (p.height > 0 ? p.height : SCRIPT_CONFIG.canvas.height);
 
-        // Recreate canvas in WEBGL mode — overrides the host 2D canvas
-        const cnv = p.createCanvas(W, H, p.WEBGL);
-        p.pixelDensity(1);
-
-        // Centre the new WEBGL canvas in the host container
-        const el = cnv.elt;
-        el.style.position = 'absolute';
-        el.style.top = '50%';
-        el.style.left = '50%';
-        el.style.transform = 'translate(-50%, -50%)';
-        el.style.display = 'block';
-
-        // Store dimensions for buffer recreation on resize
         this._canvasW = W;
         this._canvasH = H;
+        this._cycleStartFrame = 0;
+        this._lastTextSig = '';
 
-        // DEF-01: Use FontRegistry to inject all canvas fonts (idempotent)
         FontRegistry.ensureLoaded();
 
-        // Initialise shuffled font queue
         const fontNames = [...FONT_NAMES];
         shuffleArray(fontNames);
         this._fontNames = fontNames;
         this._fontQueue = [0, 1, 2];
 
-        // Create GLSL shader
         this._shader = p.createShader(VERT_SRC, FRAG_SRC);
 
-        // Create 2D offscreen graphics buffers — matched to canvas dimensions (DEF-03)
         this._gfx1 = p.createGraphics(W, H);
         this._gfx2 = p.createGraphics(W, H);
-
-        // Create 2D debug overlay buffer (reliable text rendering in WEBGL context)
         this._debugGfx = p.createGraphics(172, 90);
 
-        // Initial text calculations and buffer fills
         this._currentData = calculateSizes(this._gfx1, params, fontNames[this._fontQueue[0]]);
         this._nextData    = calculateSizes(this._gfx1, params, fontNames[this._fontQueue[1]]);
         drawTextToGraphics(this._gfx1, this._currentData, params);
         drawTextToGraphics(this._gfx2, this._nextData, params);
-
-        // Cycle timer and change-detection signature
-        this._startTime    = p.millis();
-        this._lastTextSig  = '';
-
-        // Enable p5 internal loop — wall-clock timing drives this animation
-        p.loop();
     },
 
-    p5Draw(p, params, _frame) {
+    p5Draw(p, params, frame, activeFps) {
         // Recreate graphics buffers if canvas was resized (DEF-03)
         if (p.width !== this._canvasW || p.height !== this._canvasH) {
             this._canvasW = p.width;
@@ -360,11 +333,13 @@ export const SCRIPT_CONFIG = {
             this._nextData     = calculateSizes(this._gfx1, params, this._fontNames[this._fontQueue[1]]);
             drawTextToGraphics(this._gfx1, this._currentData, params);
             drawTextToGraphics(this._gfx2, this._nextData, params);
-            this._startTime    = p.millis();
+            this._cycleStartFrame = frame;
         }
 
-        const elapsed = p.millis() - this._startTime;
-        const t       = Math.min(elapsed / params.morphTime, 1);
+        const fps = activeFps ?? SCRIPT_CONFIG.animation.defaultFps ?? 60;
+        const cycleFrames = Math.max(1, Math.round(params.morphTime * fps / 1000));
+        const localFrame = frame - (this._cycleStartFrame ?? 0);
+        const t = Math.min(localFrame / cycleFrames, 1);
 
         // Symmetric power-curve ease — more time at endpoints, fast middle
         let morphT;
@@ -424,7 +399,7 @@ export const SCRIPT_CONFIG = {
             this._currentData = this._nextData;
             this._nextData    = calculateSizes(this._gfx1, params, this._fontNames[this._fontQueue[1]]);
             drawTextToGraphics(this._gfx2, this._nextData, params);
-            this._startTime   = p.millis();
+            this._cycleStartFrame = frame;
         }
     },
 };

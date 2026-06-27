@@ -25,9 +25,11 @@ A single audit pass report is committed showing PASS for every `.gen.js` in `ass
 
 ## Notes / decisions
 
-(append-only)
+- Pass 2 (2026-06-08): host `canvas.p5Renderer`; defecated frame timing; tile-mosaic offset shadow; solar-system F HUD; wave-synth DOM removed.
+- **solar-system celestial colours**: intentional scientific palette in `PLANET_DATA`/`MOON_DATA` — grep RAW-COLOUR on data lines is NOTE, not FAIL (user confirmed).
 
 ## References
 
 - `.cursor/skills/page-compliance-audit/SKILL.md`
 - `blog/docs/guides/standards/p5-generator-standards.md`
+- `blog/docs/temp/generator-compliance-audit.md`

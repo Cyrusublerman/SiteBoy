@@ -485,6 +485,15 @@ export const SCRIPT_CONFIG = {
         }
     ],
     
+    equations: [
+        { caption: 'Radial grating', latex: 'G_r = \\tfrac{1}{2} + \\tfrac{1}{2}\\sin\\bigl(2\\pi(r/\\lambda + \\varphi)\\bigr)' },
+        { caption: 'Angular grating', latex: 'G_a = \\tfrac{1}{2} + \\tfrac{1}{2}\\sin\\bigl(\\omega\\,\\mathrm{atan2}(y,x) + \\delta\\bigr)' },
+        { caption: 'Combine sum', latex: 'I = \\tfrac{G_A + G_B}{2}', showWhen: { param: 'combineMode', value: 'sum' } },
+        { caption: 'Combine product', latex: 'I = G_A \\cdot G_B', showWhen: { param: 'combineMode', value: 'product' } },
+        { caption: 'Combine min', latex: 'I = \\min(G_A, G_B)', showWhen: { param: 'combineMode', value: 'min' } },
+        { caption: 'Combine max', latex: 'I = \\max(G_A, G_B)', showWhen: { param: 'combineMode', value: 'max' } },
+    ],
+
     parameters: [
         {
             group: 'Gratings',

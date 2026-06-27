@@ -598,7 +598,7 @@ export class AnimationExport extends BaseComponent {
         this.state.currentFrame = current;
         this.state.totalFrames = total;
         
-        this.onExportProgress(current, total, percent);
+        this.onExportProgress(current, total, percent, message);
     }
     
     // ═══════════════════════════════════════════════════════════════════
@@ -743,10 +743,10 @@ export class AnimationExport extends BaseComponent {
             
             this._updateProgress(i + 1, totalFrames, `Rendering frame ${i + 1}/${totalFrames}`);
             
-            // Yield to UI — skipped in silent mode for faster export
-            if (this.state.preview) {
-                await new Promise(resolve => setTimeout(resolve, 0));
-            }
+            // Yield to the event loop so the progress indicator can repaint.
+            // Throttled (~every 40ms) to keep silent export fast while still
+            // letting the DOM paint; preview mode yields every frame.
+            await this._maybeYield();
         }
         
         // Restore original state
@@ -1027,6 +1027,19 @@ export class AnimationExport extends BaseComponent {
     // UTILITIES
     // ═══════════════════════════════════════════════════════════════════
     
+    /**
+     * Yield to the event loop so pending DOM paints (progress indicator) flush.
+     * Throttled to ~40ms in silent mode to avoid slowing export; every frame
+     * when preview is on.
+     */
+    async _maybeYield() {
+        const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        if (this.state.preview || now - (this._lastYieldAt ?? 0) >= 40) {
+            this._lastYieldAt = now;
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+    }
+
     _buildFilename(ext) {
         const base = this.state.filename.trim() || `animation-${Date.now()}`;
         return `${base}.${ext}`;

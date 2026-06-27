@@ -34,6 +34,11 @@ export const SCRIPT_CONFIG = {
     // p.noise() and p.vertex() require the P5 instance so Worker offload is infeasible.
     compute: { cost: 'particle' },
 
+    equations: [
+        { caption: 'Source angle', latex: '\\theta_s = 2\\pi\\,(f \\bmod L)/L' },
+        { caption: 'Influence field', latex: '\\alpha = f(\\|\\mathbf{p}-\\mathbf{s}\\|_\\mathrm{polar},\\,\\Delta\\theta)' },
+    ],
+
     parameters: [
         {
             group: 'Grid',

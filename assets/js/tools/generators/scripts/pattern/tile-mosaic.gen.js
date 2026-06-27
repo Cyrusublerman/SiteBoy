@@ -399,6 +399,23 @@ export const SCRIPT_CONFIG = {
         return tiles;
     },
 
+    // TIL-03: z-stack drop shadow via offset blit (no ctx.shadow* — design-law §10)
+    _drawZStackShadow(ctx, x, y, w, h, z, shadowBlur, shadowSpread, lightAngRad) {
+        const elevation = z * shadowSpread;
+        const baseOx = Math.cos(lightAngRad + Math.PI) * elevation * 4;
+        const baseOy = Math.sin(lightAngRad + Math.PI) * elevation * 4;
+        const layers = Math.max(1, Math.round(shadowBlur / 4));
+        const alphaPerLayer = 0.4 / layers;
+        for (let s = 0; s < layers; s++) {
+            const scale = (s + 1) / layers;
+            ctx.save();
+            ctx.globalAlpha = alphaPerLayer;
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x + baseOx * scale, y + baseOy * scale, w, h);
+            ctx.restore();
+        }
+    },
+
     // ─── Sprite rendering — CANVAS-008 offscreenSprite ───────────────────────
     _spriteKey(type, w, h, colorIdx) {
         return `${type}|${Math.round(w)}|${Math.round(h)}|${colorIdx}`;
@@ -724,18 +741,13 @@ export const SCRIPT_CONFIG = {
             }
             const sprite = this._spriteCache.get(key);
 
-            // TIL-03: apply drop-shadow for z-stacked tiles
+            // TIL-03: offset shadow for z-stacked tiles (no canvas shadow API)
             if (useZStack && (tA.zLayer || 0) > 0) {
-                const z = (tA.zLayer || 0);
-                const elevation = z * shadowSpread;
-                ctx.shadowBlur    = shadowBlur * z;
-                ctx.shadowColor   = 'rgba(0,0,0,0.4)';
-                ctx.shadowOffsetX = Math.cos(lightAngRad + Math.PI) * elevation * 4;
-                ctx.shadowOffsetY = Math.sin(lightAngRad + Math.PI) * elevation * 4;
-            } else {
-                ctx.shadowBlur    = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+                this._drawZStackShadow(
+                    ctx, x, y, w, h,
+                    tA.zLayer || 0,
+                    shadowBlur, shadowSpread, lightAngRad
+                );
             }
 
             if (useBreath) {
@@ -748,9 +760,6 @@ export const SCRIPT_CONFIG = {
                 ctx.drawImage(sprite, x, y, w, h);
             }
         }
-
-        // Reset shadow after tile loop
-        ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
         if (params.overlayMode !== 'None' && this._noiseCanvas && params.textureStrength > 0) {
             ctx.save();

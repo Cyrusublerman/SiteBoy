@@ -300,6 +300,59 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
+    equations: [
+        {
+            caption: 'Intensity field',
+            latex: 'I = R(r) + X(x) + Y(y)',
+            showWhen: { param: 'renderer', value: 'equations' }
+        },
+        {
+            caption: 'Radial component',
+            latex: 'R(r) = \\sum_{i=1}^{2} A_{ri}\\,\\mathrm{sp}(r - O_{ri},\\,p_{ri})\\,\\mathrm{w}(2\\pi f_{ri} r + \\varphi_{ri})',
+            showWhen: { param: 'renderer', value: 'equations' }
+        },
+        {
+            caption: 'Horizontal component',
+            latex: 'X(x) = \\sum_{i=1}^{2} A_{xi}\\,\\mathrm{sp}(x - O_{xi},\\,p_{xi})\\,\\mathrm{w}(2\\pi f_{xi} x + \\varphi_{xi})',
+            showWhen: { param: 'renderer', value: 'equations' }
+        },
+        {
+            caption: 'Vertical component',
+            latex: 'Y(y) = \\sum_{i=1}^{2} A_{yi}\\,\\mathrm{sp}(y - O_{yi},\\,p_{yi})\\,\\mathrm{w}(2\\pi f_{yi} y + \\varphi_{yi})',
+            showWhen: { param: 'renderer', value: 'equations' }
+        },
+        {
+            caption: 'Safe power',
+            latex: '\\mathrm{sp}(b,e) = \\operatorname{sign}(b)\\,|b|^{e}',
+            showWhen: { param: 'renderer', value: 'equations' }
+        },
+        {
+            caption: 'Wave function',
+            latex: '\\mathrm{w}(t) = \\sin(t) \\text{ or } \\cos(t)',
+            showWhen: { param: 'renderer', value: 'equations' }
+        },
+        {
+            caption: 'Wave height',
+            latex: 'h = \\frac{A}{2}\\bigl(\\sin(f\\,d - s\\,t) + 1\\bigr)',
+            showWhen: { param: 'renderer', value: 'normal-map' }
+        },
+        {
+            caption: 'Surface normal',
+            latex: '\\mathbf{n} \\approx \\bigl(-\\tfrac{h_R-h_L}{2},\\,-\\tfrac{h_U-h_D}{2},\\,1\\bigr)',
+            showWhen: { param: 'renderer', value: 'normal-map' }
+        },
+        {
+            caption: 'Complex wave',
+            latex: 'w = A\\,e^{i(f\\,d - s\\,t)},\\quad A = \\frac{\\mathrm{amp}}{1 + d\\,\\mathrm{decay}}',
+            showWhen: { param: 'renderer', value: 'complex-ops' }
+        },
+        {
+            caption: 'Operator blend',
+            latex: '\\mathrm{state} \\leftarrow \\mathrm{lerpPolar}\\bigl(\\mathrm{op}_A(\\mathrm{state}, w),\\,\\mathrm{op}_B(\\mathrm{state}, w),\\,S(t)\\bigr)',
+            showWhen: { param: 'renderer', value: 'complex-ops' }
+        }
+    ],
+
     parameters: [
         {
             group: 'Renderer',

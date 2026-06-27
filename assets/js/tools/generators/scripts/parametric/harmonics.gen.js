@@ -153,6 +153,13 @@ export const SCRIPT_CONFIG = {
         }
     ],
 
+    equations: [
+        { caption: 'Lateral closed', latex: 'x = s\\cos(at),\\quad y = s\\sin(bt)' },
+        { caption: 'Lateral open', latex: 'x = s\\sin(at),\\quad y = s\\sin(bt)' },
+        { caption: 'Concurrent polar', latex: 'r = R(1 + 0.6\\sin(bt)),\\quad \\theta = at' },
+        { caption: 'Counter-current polar', latex: 'r = R(1 + 0.6\\sin(bt)),\\quad \\theta = (a-b)t' },
+    ],
+
     parameters: [
         {
             group: 'Display',

@@ -41,6 +41,12 @@ export const SCRIPT_CONFIG = {
     // worker offload (no ImageData path) or adaptive resolution (SDF is fixed-size).
     compute: { cost: 'sdf' },
 
+    equations: [
+        { caption: 'Gray-Scott u', latex: '\\partial_t u = D_u\\nabla^2 u - uv^2 + F(1-u)' },
+        { caption: 'Gray-Scott v', latex: '\\partial_t v = D_v\\nabla^2 v + uv^2 - (F+k)v' },
+        { caption: 'SDF iso', latex: '\\text{render at } \\mathrm{SDF} = \\tau \\text{ (active when iterations > 0)}' },
+    ],
+
     parameters: [
         {
             group: 'Points',
