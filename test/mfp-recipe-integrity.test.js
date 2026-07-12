@@ -1,5 +1,6 @@
 import { webcrypto } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
+import { MFPExportActions } from '../assets/js/tools/fabrication/multifilament-print/MFP-ExportActions.js';
 import {
     buildAbsoluteLayerMaps,
     createCanonicalRecipeRecord,
@@ -137,6 +138,23 @@ describe('MFP absolute layer expansion', () => {
             map: [0], width: 1, height: 1,
             palette: [{ sequence: [2] }], filamentCount: 1
         })).toThrow(/references filament 2/);
+    });
+
+    it('is used by the live artwork export action without compressing gaps', () => {
+        const exportActions = new MFPExportActions({});
+        const layerMaps = exportActions._expandQuantizedToLayers(
+            new Uint16Array([0]),
+            1,
+            1,
+            [{ sequence: [1, 0, 2] }],
+            2,
+            3
+        );
+
+        expect(layerMaps).toHaveLength(3);
+        expect(layerMaps[0][0].has('0,0')).toBe(true);
+        expect(layerMaps[1][0].size + layerMaps[1][1].size).toBe(0);
+        expect(layerMaps[2][1].has('0,0')).toBe(true);
     });
 });
 
