@@ -7,6 +7,11 @@
  */
 
 import { exportArtworkSTLs, vectorizePixels, generateBox } from '../../../shared/algorithms/geometry/stl-generation.js';
+import {
+    buildAbsoluteLayerMaps,
+    createRecipeManifest,
+    getAbsoluteLayerCount
+} from './MFP-RecipeIntegrity.js';
 
 export class MFPExportActions {
     constructor(sharedState) {
@@ -42,16 +47,40 @@ export class MFPExportActions {
 
             const filamentNames = this._deriveFilamentNames(palette);
             const filamentCount = filamentNames.length;
-            const layerMaps     = this._expandQuantizedToLayers(map, width, height, palette, filamentCount);
+            const declaredLayerCount = this.state.quantizationConfig?.layerCount ?? qsm.layerCount ?? null;
+            const absoluteLayerCount = getAbsoluteLayerCount(palette, declaredLayerCount);
+            const layerMaps = this._expandQuantizedToLayers(
+                map,
+                width,
+                height,
+                palette,
+                filamentCount,
+                absoluteLayerCount
+            );
+            const recipeManifest = await createRecipeManifest(palette, {
+                layerCount: absoluteLayerCount,
+                layerHeight,
+                filamentProfiles: this.state.quantizationConfig?.filaments || [],
+                processProfileRevision: this.state.quantizationConfig?.processProfileRevision ?? null,
+                backingProfileRevision: this.state.quantizationConfig?.backingProfileRevision ?? null,
+                viewingSide: 'front'
+            });
 
             // Set layer maps immediately so artwork layer views work
-            // while contour STL geometry is processed
+            // while contour STL geometry is processed.
             this.state.exportSTLData = {
                 stls: {},
                 layerMaps,
                 filamentNames,
                 palette,
-                config: { imageWidth: width, imageHeight: height, printWidth, layerHeight }
+                recipeManifest,
+                config: {
+                    imageWidth: width,
+                    imageHeight: height,
+                    printWidth,
+                    layerHeight,
+                    layerCount: absoluteLayerCount
+                }
             };
             toolBase.draw();
 
@@ -106,42 +135,18 @@ export class MFPExportActions {
     }
 
     /**
-     * Expand Uint16Array sequence map → layerMaps[layer][filament] = Set("x,y").
+     * Expand Uint16Array sequence map → layerMaps[absoluteLayer][filament].
+     * Internal and trailing zeroes are physical empty layers and retain z-offset.
      */
-    _expandQuantizedToLayers(map, width, height, palette, filamentCount) {
-        let maxLayers = 0;
-        for (const entry of palette) {
-            if (entry.sequence) {
-                const nonZero = entry.sequence.filter(v => v > 0).length;
-                maxLayers = Math.max(maxLayers, nonZero);
-            }
-        }
-        if (maxLayers === 0) maxLayers = 1;
-
-        const layerMaps = Array.from({ length: maxLayers }, () =>
-            Array.from({ length: filamentCount }, () => new Set())
-        );
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const palIdx = map[y * width + x];
-                const entry  = palette[palIdx];
-                if (!entry || !entry.sequence) continue;
-
-                let layerIdx = 0;
-                for (const filRef of entry.sequence) {
-                    if (filRef > 0) {
-                        const filIdx = filRef - 1;
-                        if (filIdx < filamentCount && layerIdx < maxLayers) {
-                            layerMaps[layerIdx][filIdx].add(`${x},${y}`);
-                        }
-                        layerIdx++;
-                    }
-                }
-            }
-        }
-
-        return layerMaps;
+    _expandQuantizedToLayers(map, width, height, palette, filamentCount, layerCount = null) {
+        return buildAbsoluteLayerMaps({
+            map,
+            width,
+            height,
+            palette,
+            filamentCount,
+            layerCount
+        });
     }
 
     /**
@@ -189,6 +194,9 @@ export class MFPExportActions {
 
             for (const [filename, parts] of Object.entries(data.stls)) {
                 zip.file(filename, new Blob(parts, { type: 'text/plain' }));
+            }
+            if (data.recipeManifest) {
+                zip.file('recipe-manifest.json', JSON.stringify(data.recipeManifest, null, 2));
             }
 
             const blob = await zip.generateAsync({ type: 'blob' });
