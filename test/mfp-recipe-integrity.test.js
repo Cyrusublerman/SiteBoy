@@ -1,3 +1,4 @@
+import { webcrypto } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
 import {
     buildAbsoluteLayerMaps,
@@ -10,6 +11,13 @@ import {
     serializeQuantizedSequenceMap,
     stableStringify
 } from '../assets/js/tools/fabrication/multifilament-print/MFP-RecipeIntegrity.js';
+
+if (!globalThis.crypto?.subtle) {
+    Object.defineProperty(globalThis, 'crypto', {
+        configurable: true,
+        value: webcrypto
+    });
+}
 
 function serialiseLayerMaps(layerMaps) {
     return layerMaps.map(layer => layer.map(set => [...set].sort()));
