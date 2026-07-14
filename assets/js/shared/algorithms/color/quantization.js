@@ -23,17 +23,6 @@ import { findClosest, distributeError, rgb_to_key } from '../color/color-utils.j
  * @param {boolean} [options.dither=true] - Apply Floyd-Steinberg dithering
  * @param {Uint8Array} [options.mask=null] - Optional mask (1=keep, 0=filter)
  * @returns {ImageData} The same imageData object (modified)
- * 
- * @example
- * const ctx = canvas.getContext('2d');
- * const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
- * const palette = [
- *   {r: 255, g: 0, b: 0},
- *   {r: 0, g: 255, b: 0},
- *   {r: 0, g: 0, b: 255}
- * ];
- * quantizeImage(imageData, palette, { dither: true });
- * ctx.putImageData(imageData, 0, 0);  // Display result
  */
 export function quantizeImage(imageData, palette, options = {}) {
     const { dither = true, mask = null } = options;
@@ -50,19 +39,16 @@ export function quantizeImage(imageData, palette, options = {}) {
 
             const closest = findClosest({r, g, b}, palette);
 
-            // Apply quantized color
             data[i] = closest.r;
             data[i + 1] = closest.g;
             data[i + 2] = closest.b;
 
-            // Set alpha based on mask
             if (mask && mask[y * w + x] === 0) {
-                data[i + 3] = 128; // Filtered pixel - semi-transparent
+                data[i + 3] = 128;
             } else {
-                data[i + 3] = 255; // Kept pixel - full opacity
+                data[i + 3] = 255;
             }
 
-            // Apply dithering if enabled
             if (dither && (!mask || mask[y * w + x] === 1)) {
                 const er = r - closest.r;
                 const eg = g - closest.g;
@@ -76,35 +62,19 @@ export function quantizeImage(imageData, palette, options = {}) {
 }
 
 /**
- * Apply spatial filter to remove small isolated regions
- * 
- * Filters out pixels that don't have enough similar-colored neighbors within
- * a given radius. This prevents unprintable small details in 3D prints.
- * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/quantize/index.js:67-122
+ * Apply spatial filter to remove small isolated regions.
+ *
  * @param {ImageData} imageData - Image data to analyze
  * @param {Array<{r: number, g: number, b: number}>} palette - Palette for color matching
  * @param {number} minDetailMM - Minimum detail size in mm
  * @param {number} printWidth - Print width in mm
  * @returns {Uint8Array} Mask array where 1=keep pixel, 0=filter pixel
- * 
- * @example
- * const imageData = ctx.getImageData(0, 0, w, h);
- * const palette = [...];  // Your color palette
- * const mask = applyMinDetailFilter(imageData, palette, 1.0, 170);
- * 
- * // Use mask in quantization:
- * quantizeImage(imageData, palette, { dither: true, mask });
- * 
- * // Filtered pixels will be semi-transparent (alpha=128)
- * // Kept pixels will be fully opaque (alpha=255)
  */
 export function applyMinDetailFilter(imageData, palette, minDetailMM, printWidth) {
     const w = imageData.width;
     const h = imageData.height;
     const mask = new Uint8Array(w * h).fill(1);
 
-    // Calculate min detail in pixels
     const pixelsPerMM = w / printWidth;
     const minDetailPx = Math.round(minDetailMM * pixelsPerMM);
 
@@ -118,7 +88,6 @@ export function applyMinDetailFilter(imageData, palette, minDetailMM, printWidth
             };
             const centerClosest = findClosest(centerColor, palette);
 
-            // Count similar neighbors in radius
             let sameCount = 0;
             let totalCount = 0;
 
@@ -146,7 +115,6 @@ export function applyMinDetailFilter(imageData, palette, minDetailMM, printWidth
                 }
             }
 
-            // Filter if less than 50% of neighbors are the same color
             if (sameCount < totalCount * 0.5) {
                 mask[y * w + x] = 0;
             }
@@ -157,76 +125,63 @@ export function applyMinDetailFilter(imageData, palette, minDetailMM, printWidth
 }
 
 /**
- * Expand quantized image into per-layer, per-filament pixel sets
- * 
- * This is the critical step that converts a 2D quantized image into 3D printing
- * instructions. Each pixel's color is looked up in the sequence map to determine
- * which filament should be printed on which layer at that XY position.
- * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/quantize/index.js:132-178
+ * Expand a quantized image into per-absolute-layer, per-filament pixel sets.
+ *
+ * Sequence array positions are physical Z positions. A value of 0 means an
+ * intentional empty layer and must not cause later occupied layers to move down.
+ * This legacy RGB-key API now follows the same absolute-layer contract as
+ * MFP-RecipeIntegrity.buildAbsoluteLayerMaps().
+ *
  * @param {ImageData} imageData - Quantized image data
  * @param {Map<string, Object>} sequenceMap - Map from rgb_to_key() to sequence data
  * @param {number} filamentCount - Number of filaments
  * @returns {Array<Array<Set<string>>>} layerMaps[layer][filament] = Set of "x,y" coords
- * 
- * @example
- * const imageData = quantizedImageData;
- * const sequenceMap = buildSequenceMap(sequences, colours, cols, { simColour, rgb_to_key });
- * const layerMaps = expandToLayers(imageData, sequenceMap, 4);
- * 
- * // Access pixels for layer 2, filament 1:
- * const pixels = layerMaps[2][1];  // Set<string> of "x,y" coordinates
- * 
- * // Check if specific pixel should be printed:
- * if (layerMaps[2][1].has('100,50')) {
- *   window.debugLog('INIT', 'Print filament 1 at (100,50) on layer 2');
- * }
  */
 export function expandToLayers(imageData, sequenceMap, filamentCount) {
     const w = imageData.width;
     const h = imageData.height;
     const data = imageData.data;
 
-    // Find max layers needed
+    if (!Number.isInteger(filamentCount) || filamentCount < 1) {
+        throw new TypeError('filamentCount must be an integer >= 1');
+    }
+
     let maxLayers = 0;
-    for (let seqData of sequenceMap.values()) {
-        const layerCount = seqData.sequence.filter(v => v > 0).length;
-        maxLayers = Math.max(maxLayers, layerCount);
+    for (const seqData of sequenceMap.values()) {
+        if (!seqData?.sequence || typeof seqData.sequence[Symbol.iterator] !== 'function') {
+            throw new TypeError('sequenceMap entries must contain iterable sequence values');
+        }
+        maxLayers = Math.max(maxLayers, Array.from(seqData.sequence).length);
     }
 
-    // Initialize layer maps: [layer][filament] = Set of "x,y"
-    const layerMaps = [];
-    for (let li = 0; li < maxLayers; li++) {
-        layerMaps[li] = Array(filamentCount).fill(null).map(() => new Set());
-    }
+    const layerMaps = Array.from({ length: Math.max(maxLayers, 1) }, () =>
+        Array.from({ length: filamentCount }, () => new Set())
+    );
 
-    // Populate layer maps
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             const i = (y * w + x) * 4;
-            const pixelRGB = {
-                r: data[i],
-                g: data[i + 1],
-                b: data[i + 2]
-            };
-
-            const key = rgb_to_key(pixelRGB);
+            const key = rgb_to_key({ r: data[i], g: data[i + 1], b: data[i + 2] });
             const seqData = sequenceMap.get(key);
-
             if (!seqData) continue;
 
-            // Expand sequence into layers
-            let layerIdx = 0;
-            for (let seqValue of seqData.sequence) {
-                if (seqValue > 0) {
-                    const filIdx = seqValue - 1;
-                    layerMaps[layerIdx][filIdx].add(`${x},${y}`);
-                    layerIdx++;
+            const sequence = Array.from(seqData.sequence, Number);
+            for (let absoluteLayer = 0; absoluteLayer < sequence.length; absoluteLayer++) {
+                const filamentReference = sequence[absoluteLayer];
+                if (!Number.isInteger(filamentReference) || filamentReference < 0) {
+                    throw new TypeError(`sequence layer ${absoluteLayer} must be a non-negative integer`);
                 }
+                if (filamentReference === 0) continue;
+                if (filamentReference > filamentCount) {
+                    throw new RangeError(
+                        `sequence layer ${absoluteLayer} references filament ${filamentReference}, ` +
+                        `but filamentCount is ${filamentCount}`
+                    );
+                }
+                layerMaps[absoluteLayer][filamentReference - 1].add(`${x},${y}`);
             }
         }
     }
 
     return layerMaps;
 }
-
