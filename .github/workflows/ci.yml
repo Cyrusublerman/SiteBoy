@@ -19,7 +19,11 @@ jobs:
 
       - run: npm ci
 
-      - run: npx vitest run test/mfp-recipe-integrity.test.js
+      - name: Run canonical and shared layer integrity tests
+        run: >-
+          npx vitest run
+          test/mfp-recipe-integrity.test.js
+          test/mfp-shared-layer-expansion.test.js
 
   test:
     runs-on: ubuntu-latest
