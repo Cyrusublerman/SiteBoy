@@ -1,4 +1,5 @@
 import { pklContentProvider } from '../shared/pkl-content-provider.js';
+import { renderCslBibliography } from '../shared/pkl-csl-renderer.js';
 import {
   createHeading,
   createMetaLine,
@@ -17,7 +18,7 @@ import {
 } from '../shared/pkl-public-ui.js';
 
 const WikiSection = {
-  version: '0.1.0',
+  version: '0.2.0',
   currentContainer: null,
   componentInstances: [],
   navigationCallbacks: null,
@@ -158,6 +159,7 @@ const WikiSection = {
     }
 
     renderMarkdown(container, object.body, this.componentInstances);
+    renderCslBibliography(container, object.citations ?? [], pklContentProvider);
     renderTags(container, object.tags);
     renderRelatedSections(container, object);
     renderRevisionNavigation(container, current, current.route);

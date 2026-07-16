@@ -1,4 +1,5 @@
 import { pklContentProvider } from '../shared/pkl-content-provider.js';
+import { renderCslBibliography } from '../shared/pkl-csl-renderer.js';
 import {
   createHeading,
   createMetaLine,
@@ -42,7 +43,7 @@ function feedLink(href, text, type) {
 }
 
 const PKLBlogSection = {
-  version: '0.2.0',
+  version: '0.3.0',
   currentContainer: null,
   componentInstances: [],
   navigationCallbacks: null,
@@ -255,6 +256,7 @@ const PKLBlogSection = {
       article.appendChild(summary);
     }
     renderMarkdown(article, object.body, this.componentInstances);
+    renderCslBibliography(article, object.citations ?? [], pklContentProvider);
     renderTags(article, object.tags);
     renderRelatedSections(article, object);
     renderRevisionNavigation(article, current, current.route);

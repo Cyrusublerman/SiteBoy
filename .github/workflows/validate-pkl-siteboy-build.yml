@@ -13,6 +13,7 @@ on:
       - 'assets/js/sections/wiki_section.js'
       - 'assets/js/sections/pkl_blog_section.js'
       - 'assets/js/sections/figure_section.js'
+      - 'assets/csl/**'
       - 'assets/css/pkl-public.css'
       - 'scripts/pkl/**'
       - 'tests/pkl-*.test.js'
@@ -29,6 +30,7 @@ on:
       - 'assets/js/sections/wiki_section.js'
       - 'assets/js/sections/pkl_blog_section.js'
       - 'assets/js/sections/figure_section.js'
+      - 'assets/csl/**'
       - 'assets/css/pkl-public.css'
       - 'scripts/pkl/**'
       - 'tests/pkl-*.test.js'
@@ -66,7 +68,7 @@ jobs:
         id: tests
         if: steps.install.outcome == 'success'
         continue-on-error: true
-        run: npm run test:run -- tests/pkl-content-provider.test.js tests/pkl-public-ui.test.js > "${RUNNER_TEMP}/tests.log" 2>&1
+        run: npm run test:run -- tests/pkl-content-provider.test.js tests/pkl-public-ui.test.js tests/pkl-csl-renderer.test.js > "${RUNNER_TEMP}/tests.log" 2>&1
 
       - name: Run production build
         id: build
@@ -107,23 +109,9 @@ jobs:
               f"- PKL tests: `{tests}`",
               f"- Production build: `{build}`",
               '',
-              '## Install output',
-              '',
-              '```text',
-              read('install.log')[-12000:],
-              '```',
-              '',
-              '## Test output',
-              '',
-              '```text',
-              read('tests.log')[-12000:],
-              '```',
-              '',
-              '## Build output',
-              '',
-              '```text',
-              read('build.log')[-20000:],
-              '```',
+              '## Install output', '', '```text', read('install.log')[-12000:], '```',
+              '', '## Test output', '', '```text', read('tests.log')[-12000:], '```',
+              '', '## Build output', '', '```text', read('build.log')[-20000:], '```',
           ]
           Path('blog/docs/site/pkl-build-validation.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
