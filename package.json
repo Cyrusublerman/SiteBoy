@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/pkl/validate-public-graph.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "build:analyze": "vite build --mode analyze",
@@ -14,6 +15,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "validate": "node scripts/validate-compatibility.js",
+    "pkl:validate": "node scripts/pkl/validate-public-graph.mjs",
     "scrape:pipeline": "node tools/scrape/run-pipeline.mjs --stage=all",
     "scrape:fetch": "node tools/scrape/fetch.mjs",
     "scrape:clean": "node tools/scrape/clean.mjs",
