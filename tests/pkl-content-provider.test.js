@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PKLContentProvider, stableStringify, sha256Hex } from '../assets/js/shared/pkl-content-provider.js';
 
-async function snapshot(objects = []) {
+async function snapshot(objects = [], aliases = {}) {
   const graph = {
     schema_version: 'pkl-public-graph-v0',
     source: { repository: 'test/library', commit: 'abc1234' },
@@ -10,7 +10,7 @@ async function snapshot(objects = []) {
     content_sha256: '',
     objects,
     routes: Object.fromEntries(objects.map((object) => [object.route, object.uid])),
-    aliases: {},
+    aliases,
     indexes: { tags: {}, projects: {}, object_types: {} }
   };
   const { generated_at: _generatedAt, content_sha256: _digest, ...payload } = graph;
@@ -43,11 +43,13 @@ describe('PKLContentProvider', () => {
       route: '/wiki/example',
       public_revision: 1,
       content_hash: 'a'.repeat(64)
-    }]);
+    }], { '/wiki/old-example': 'EXAMPLE' });
     const provider = new PKLContentProvider({ fetchImpl: fetchFrom(values) });
     await provider.load();
     expect(provider.getObject('EXAMPLE')?.title).toBe('Example');
     expect(provider.getByRoute('/wiki/example')?.uid).toBe('EXAMPLE');
+    expect(provider.getByRoute('/wiki/old-example')?.uid).toBe('EXAMPLE');
+    expect(provider.revisionNumbers('EXAMPLE')).toEqual([1]);
     expect(provider.search('test')).toHaveLength(1);
   });
 
