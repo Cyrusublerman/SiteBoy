@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { F, DERIVED_VALUES } from '../assets/js/core/f-config.js';
-import { Config } from '../assets/js/core/config.js';
+
+window.debugLog ??= () => {};
+
+const { F, DERIVED_VALUES } = await import('../assets/js/core/f-config.js');
+const { Config } = await import('../assets/js/core/config.js');
 
 describe('Mathematical Precision', () => {
   it('uses one 14px F unit', () => {
