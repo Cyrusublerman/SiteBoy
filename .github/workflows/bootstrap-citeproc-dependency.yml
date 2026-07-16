@@ -1,0 +1,34 @@
+name: Bootstrap citeproc dependency
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-citeproc-dependency.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm install citeproc@2.4.63 --save
+      - name: Commit generated dependency lock
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            exit 0
+          fi
+          git config user.name "SiteBoy Dependency Bot"
+          git config user.email "siteboy-dependency-bot@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Add citeproc-js dependency"
+          git push origin HEAD:${{ github.head_ref }}
