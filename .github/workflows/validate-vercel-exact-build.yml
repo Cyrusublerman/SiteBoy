@@ -1,0 +1,43 @@
+name: Validate exact Vercel build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate-vercel-exact-build.yml'
+      - 'vercel.json'
+      - 'scripts/vercel-copy-static.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'blog/**'
+      - 'art/**'
+      - 'projects/**'
+      - 'public/**'
+      - 'assets/**'
+      - 'src/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Run exact Vercel build command
+        run: npm run build && node scripts/vercel-copy-static.mjs
+      - name: Report deployment output
+        run: |
+          echo '=== SOURCE TREE SIZES ==='
+          du -sh blog art projects public 2>/dev/null || true
+          echo '=== DIST SIZE ==='
+          du -sh dist
+          echo '=== DIST FILE COUNT ==='
+          find dist -type f | wc -l
+          echo '=== LARGEST DIST FILES ==='
+          find dist -type f -printf '%s %p\n' | sort -nr | head -40
