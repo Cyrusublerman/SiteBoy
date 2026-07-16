@@ -50,7 +50,7 @@ jobs:
         id: tests
         if: steps.install.outcome == 'success'
         continue-on-error: true
-        run: npm run test:run -- tests/pkl-content-provider.test.js > "${RUNNER_TEMP}/tests.log" 2>&1
+        run: npm run test:run -- tests/pkl-content-provider.test.js tests/pkl-public-ui.test.js > "${RUNNER_TEMP}/tests.log" 2>&1
 
       - name: Run production build
         id: build
