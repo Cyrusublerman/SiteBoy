@@ -1,11 +1,29 @@
 {
   "schema_version": "pkl-public-graph-v0",
   "source_repository": "Cyrusublerman/Library",
-  "source_commit": "bootstrap",
-  "generated_at_utc": "2026-07-16T00:00:00Z",
-  "compiler_version": "bootstrap",
-  "object_count": 0,
-  "content_sha256": "2f3f988825a5c31c983d10c748bbadc957e5f35770fec1ffb29a1e3d5caadcaa",
-  "changed_uids": [],
-  "retired_uids": []
+  "source_commit": "bd6704baff7b6e3f0d234c64e7a47dd883eda89f",
+  "generated_at_utc": "2026-07-16T10:58:54Z",
+  "compiler_version": "0.2.0-pilot-sync",
+  "object_count": 13,
+  "content_sha256": "90d729c4dac97f1bcf430ab03aabe03768c0b2ad0571e73971e730732061e62c",
+  "changed_uids": [
+    "FIGURE.PKL_SITEBOY.AUTHORITY_FLOW.0001",
+    "FIGURE.PKL_SITEBOY.PUBLIC_BOUNDARY.0001",
+    "FIGURE.PKL_SITEBOY.REVISION_LIFECYCLE.0001",
+    "PUBLICATION-2026-07-16-PKL-SITEBOY-PUBLIC-INTERFACE",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.AUTHORITY_PROJECTION.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.CONTENT_ROLE_CLASSIFICATION.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.MATERIAL_CHANGE_DETECTION.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.PRIVATE_PUBLIC_TRANSPORT.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.PUBLICATION_DEPENDENCY_GRAPH.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.PUBLIC_GRAPH_COMPILATION.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.PUBLIC_SAFE_HISTORY.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.RELEASE_READY_PUBLICATION.0001",
+    "SUBJECT.KNOWLEDGE_SYSTEMS.SEMANTIC_FIGURE_OBJECT.0001"
+  ],
+  "retired_uids": [],
+  "snapshot_scope": "pilot-public-interface-core",
+  "graph_file": "public-graph.json.gz.b64",
+  "graph_encoding": "gzip-base64",
+  "uncompressed_file_sha256": "e09e22e4d6ec9892edc9a1524fb246700d66af276da2e6ac52248aed5489fc42"
 }

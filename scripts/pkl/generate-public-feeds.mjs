@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { gunzipSync } from 'node:zlib';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -38,10 +39,29 @@ function feedText(publication, graph) {
   });
 }
 
+async function loadGraph(inputPath) {
+  const resolved = path.resolve(inputPath ?? 'public/generated/pkl');
+  const info = await stat(resolved);
+  if (info.isFile()) {
+    return JSON.parse(await readFile(resolved, 'utf8'));
+  }
+
+  const manifest = JSON.parse(await readFile(path.join(resolved, 'manifest.json'), 'utf8'));
+  const graphFile = manifest.graph_file || 'public-graph.json';
+  const encoding = manifest.graph_encoding || 'json';
+  const raw = await readFile(path.join(resolved, graphFile));
+  if (encoding === 'json') return JSON.parse(raw.toString('utf8'));
+  if (encoding === 'gzip-base64') {
+    const compressed = Buffer.from(raw.toString('ascii').replace(/\s+/g, ''), 'base64');
+    return JSON.parse(gunzipSync(compressed).toString('utf8'));
+  }
+  throw new Error(`Unsupported PKL graph encoding: ${encoding}`);
+}
+
 async function main() {
-  const graphPath = path.resolve(process.argv[2] ?? 'public/generated/pkl/public-graph.json');
+  const graphInput = process.argv[2] ?? 'public/generated/pkl';
   const outputDirectory = path.resolve(process.argv[3] ?? 'public');
-  const graph = JSON.parse(await readFile(graphPath, 'utf8'));
+  const graph = await loadGraph(graphInput);
   const baseUrl = siteBaseUrl();
   const publications = graph.objects
     .filter((object) => object.object_type === 'publication')

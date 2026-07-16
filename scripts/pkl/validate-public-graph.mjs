@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -21,10 +22,22 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function readGraph(base, manifest) {
+  const graphFile = manifest.graph_file || 'public-graph.json';
+  const encoding = manifest.graph_encoding || 'json';
+  const value = await readFile(path.join(base, graphFile));
+  if (encoding === 'json') return JSON.parse(value.toString('utf8'));
+  if (encoding === 'gzip-base64') {
+    const compressed = Buffer.from(value.toString('ascii').replace(/\s+/g, ''), 'base64');
+    return JSON.parse(gunzipSync(compressed).toString('utf8'));
+  }
+  throw new Error(`Unsupported PKL graph encoding ${encoding}`);
+}
+
 async function main() {
   const base = path.resolve(process.argv[2] ?? 'public/generated/pkl');
-  const graph = JSON.parse(await readFile(path.join(base, 'public-graph.json'), 'utf8'));
   const manifest = JSON.parse(await readFile(path.join(base, 'manifest.json'), 'utf8'));
+  const graph = await readGraph(base, manifest);
 
   assert(graph.schema_version === 'pkl-public-graph-v0', `Unsupported graph schema ${graph.schema_version}`);
   assert(Array.isArray(graph.objects), 'Graph objects must be an array');
@@ -56,7 +69,9 @@ async function main() {
     ok: true,
     objectCount: graph.objects.length,
     contentSha256: graph.content_sha256,
-    sourceCommit: manifest.source_commit
+    sourceCommit: manifest.source_commit,
+    graphFile: manifest.graph_file || 'public-graph.json',
+    graphEncoding: manifest.graph_encoding || 'json'
   }));
 }
 
