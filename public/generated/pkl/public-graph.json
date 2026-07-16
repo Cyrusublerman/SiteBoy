@@ -1,0 +1,18 @@
+{
+  "schema_version": "pkl-public-graph-v0",
+  "source": {
+    "repository": "Cyrusublerman/Library",
+    "commit": "bootstrap"
+  },
+  "generated_at": "2026-07-16T00:00:00Z",
+  "compiler_version": "bootstrap",
+  "content_sha256": "2f3f988825a5c31c983d10c748bbadc957e5f35770fec1ffb29a1e3d5caadcaa",
+  "objects": [],
+  "routes": {},
+  "aliases": {},
+  "indexes": {
+    "tags": {},
+    "projects": {},
+    "object_types": {}
+  }
+}
