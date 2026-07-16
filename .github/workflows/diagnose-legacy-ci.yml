@@ -1,0 +1,70 @@
+name: Diagnose SiteBoy legacy CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-legacy-ci.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'assets/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'tools/**'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      lint_exit: ${{ steps.checks.outputs.lint_exit }}
+      test_exit: ${{ steps.checks.outputs.test_exit }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Capture legacy checks
+        id: checks
+        shell: bash
+        run: |
+          set +e
+          npm run lint:design > "${RUNNER_TEMP}/lint.log" 2>&1
+          LINT_EXIT=$?
+          npm run test:run > "${RUNNER_TEMP}/tests.log" 2>&1
+          TEST_EXIT=$?
+          echo "lint_exit=${LINT_EXIT}" >> "${GITHUB_OUTPUT}"
+          echo "test_exit=${TEST_EXIT}" >> "${GITHUB_OUTPUT}"
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: siteboy-legacy-ci-diagnostics
+          path: |
+            ${{ runner.temp }}/lint.log
+            ${{ runner.temp }}/tests.log
+      - name: Fail legacy checks
+        if: steps.checks.outputs.lint_exit != '0' || steps.checks.outputs.test_exit != '0'
+        run: exit 1
+
+  diagnostics:
+    if: always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: siteboy-legacy-ci-diagnostics
+          path: diagnostics
+      - name: Print concise failures
+        run: |
+          echo '=== DESIGN LINT ==='
+          cat diagnostics/lint.log
+          echo '=== TESTS ==='
+          cat diagnostics/tests.log
+          test "${{ needs.validate.outputs.lint_exit }}" = '0'
+          test "${{ needs.validate.outputs.test_exit }}" = '0'
