@@ -21,7 +21,7 @@
 
 import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -36,13 +36,8 @@ const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
 const VERBOSE = args.includes('--verbose');
 
-// ── Code generation ───────────────────────────────────────────────────────────
-
-/**
- * Escape a string for safe inclusion in a JS template literal or RegExp literal.
- */
 function escapeForRegExp(pattern) {
-  return pattern.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+  return pattern.replace(/\/g, '\\').replace(/`/g, '\`');
 }
 
 function generateCheckFn(rule) {
@@ -55,16 +50,11 @@ function generateCheckFn(rule) {
     'node_modules/**', 'dist/**', '.vite/**', 'cache/**',
   ];
 
-  if (kind === 'ast') {
-    // AST detectors are not yet implemented — skip with a logged note.
-    return null;
-  }
+  if (kind === 'ast') return null;
 
   const pattern = detector.pattern;
   const cssOnly = kind === 'css-prop';
-  const fileFilter = cssOnly
-    ? `f.endsWith('.css')`
-    : `true`;
+  const fileFilter = cssOnly ? `f.endsWith('.css')` : `true`;
   const escapedId = JSON.stringify(id);
   const escapedStatement = JSON.stringify(statement);
   const escapedModality = JSON.stringify(modality);
@@ -83,7 +73,7 @@ async function check_${id.replace(/[^a-zA-Z0-9_]/g, '_')}(rootDir) {
     try { text = await readFile(file, 'utf8'); } catch { continue; }
     let m;
     while ((m = re.exec(text)) !== null) {
-      const lineNum = text.slice(0, m.index).split('\\n').length;
+      const lineNum = text.slice(0, m.index).split('\n').length;
       violations.push({
         ruleId: ${escapedId},
         modality: ${escapedModality},
@@ -109,7 +99,8 @@ function generateLinterModule(decidableRules, astSkipped) {
 
   const astNote =
     astSkipped.length > 0
-      ? `// AST detectors not yet implemented — skipped rules: ${astSkipped.join(', ')}\n`
+      ? `// AST detectors not yet implemented — skipped rules: ${astSkipped.join(', ')}
+`
       : '';
 
   return `/**
@@ -118,16 +109,14 @@ function generateLinterModule(decidableRules, astSkipped) {
  *
  * Run: npm run lint:design
  */
-/* eslint-disable */
+ /* eslint-disable */
 
 import { readFile } from 'node:fs/promises';
-import { readdir, stat } from 'node:fs/promises';
-import { resolve, relative } from 'node:path';
+import { readdir } from 'node:fs/promises';
+import { resolve, relative, basename } from 'node:path';
 import { minimatch } from 'minimatch';
 
 ${astNote}
-// ── Filesystem helpers ────────────────────────────────────────────────────────
-
 async function getAllFiles(dir, filter) {
   const results = [];
   async function walk(d) {
@@ -153,12 +142,12 @@ function isExcluded(file, patterns, rootDir) {
   });
 }
 
-// ── Check functions ───────────────────────────────────────────────────────────
-${checkFns.join('\n')}
+${checkFns.join('
+')}
 
-// ── Runner ────────────────────────────────────────────────────────────────────
-
-const CHECKS = [${fnNames.map(n => `\n  ${n}`).join(',')}${fnNames.length ? '\n' : ''}];
+const CHECKS = [${fnNames.map(n => `
+  ${n}`).join(',')}${fnNames.length ? '
+' : ''}];
 
 export async function runAll(rootDir) {
   const all = [];
@@ -169,26 +158,22 @@ export async function runAll(rootDir) {
   return all;
 }
 
-// ── CLI entry ─────────────────────────────────────────────────────────────────
-
 if (process.argv[1] === new URL(import.meta.url).pathname ||
-    process.argv[1]?.endsWith('design-rules.mjs')) {
+    basename(process.argv[1] ?? '') === 'design-rules.mjs') {
   const root = process.argv[2] || resolve(new URL(import.meta.url).pathname, '../../../assets');
   const violations = await runAll(root);
   if (violations.length === 0) {
-    process.stdout.write('design-rules: no violations.\\n');
+    process.stdout.write('design-rules: no violations.\n');
     process.exit(0);
   }
   for (const v of violations) {
-    process.stdout.write(\`[VIOLATION] \${v.ruleId} [\${v.modality}] \${v.file}:\${v.line} — \${v.statement}\\n\`);
+    process.stdout.write(\`[VIOLATION] \${v.ruleId} [\${v.modality}] \${v.file}:\${v.line} — \${v.statement}\n\`);
   }
-  process.stdout.write(\`\${violations.length} violation(s) found.\\n\`);
+  process.stdout.write(\`\${violations.length} violation(s) found.\n\`);
   process.exit(1);
 }
 `;
 }
-
-// ── Misfires log initialiser ──────────────────────────────────────────────────
 
 const MISFIRES_HEADER = `# Lint Misfires Log
 
@@ -199,15 +184,14 @@ and demote to \`decidable: 'judgment'\` if the false-positive rate is too high.
 | --- | --- | --- | --- | --- |
 `;
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-
 async function main() {
   if (!existsSync(EMITTED_PATH)) {
     console.error('Missing emitted-rules.json — run scrape:emit first.');
     process.exit(1);
   }
   if (!FORCE && existsSync(OUT_LINTER)) {
-    process.stdout.write(`Exists: ${OUT_LINTER} (use --force)\n`);
+    process.stdout.write(`Exists: ${OUT_LINTER} (use --force)
+`);
     process.exit(0);
   }
 
@@ -220,27 +204,34 @@ async function main() {
   const astSkipped = decidable.filter(r => r.detector?.kind === 'ast').map(r => r.id);
   const compilable = decidable.filter(r => r.detector?.kind !== 'ast');
 
-  process.stdout.write(`Total rules: ${allRules.length}\n`);
-  process.stdout.write(`Decidable (non-judgment): ${decidable.length}\n`);
-  process.stdout.write(`Compilable (regex/css-prop): ${compilable.length}\n`);
+  process.stdout.write(`Total rules: ${allRules.length}
+`);
+  process.stdout.write(`Decidable (non-judgment): ${decidable.length}
+`);
+  process.stdout.write(`Compilable (regex/css-prop): ${compilable.length}
+`);
   if (astSkipped.length) {
-    process.stdout.write(`AST skipped (not yet implemented): ${astSkipped.length}\n`);
+    process.stdout.write(`AST skipped (not yet implemented): ${astSkipped.length}
+`);
   }
 
   await mkdir(LINT_DIR, { recursive: true });
 
   const linterSrc = generateLinterModule(decidable, astSkipped);
   await writeFile(OUT_LINTER, linterSrc, 'utf8');
-  process.stdout.write(`Wrote ${OUT_LINTER}\n`);
+  process.stdout.write(`Wrote ${OUT_LINTER}
+`);
 
   if (!existsSync(MISFIRES_PATH)) {
     await writeFile(MISFIRES_PATH, MISFIRES_HEADER, 'utf8');
-    process.stdout.write(`Created ${MISFIRES_PATH}\n`);
+    process.stdout.write(`Created ${MISFIRES_PATH}
+`);
   }
 
   if (compilable.length === 0) {
     process.stdout.write(
-      'No compilable detectors yet — linter is a no-op until decidable rules are hand-authored.\n',
+      'No compilable detectors yet — linter is a no-op until decidable rules are hand-authored.
+',
     );
   }
 }
