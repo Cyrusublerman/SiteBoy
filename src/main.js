@@ -4,7 +4,7 @@
  * Modern ES module entry point for the SiteBoy framework.
  * Loads core dependencies and initializes the application.
  *
- * @version 1.1.0
+ * @version 1.1.1
  */
 
 import '../assets/css/pkl-public.css';
@@ -45,5 +45,15 @@ import { Auth } from '../assets/js/admin/auth.js';
 window.debugLog('INIT', '🚀 SiteBoy Framework v4.0.0 - Modern ES Module Architecture');
 window.debugLog('INIT', '📦 Loading via VITE bundler...');
 
-SiteBoyApp.init();
+const appReady = SiteBoyApp.init();
+Promise.resolve(appReady).then(() => {
+  const header = SiteBoyApp.pageContainer?.headerComponent;
+  if (!header || header.navigationItems.some((item) => item.title === 'WIKI')) return;
+
+  const wikiItem = { title: 'WIKI', onClick: () => SiteBoyApp.navigateToSection('wiki') };
+  const blogIndex = header.navigationItems.findIndex((item) => item.title === 'BLOG');
+  header.navigationItems.splice(blogIndex >= 0 ? blogIndex : 1, 0, wikiItem);
+  header.navigationDropdown?.populateDropdown(header.navigationItems);
+});
+
 Auth.bootstrap();
