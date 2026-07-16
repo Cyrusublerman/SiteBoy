@@ -17,6 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -31,4 +32,5 @@ jobs:
           git config user.email "siteboy-dependency-bot@users.noreply.github.com"
           git add package.json package-lock.json
           git commit -m "Add citeproc-js dependency"
-          git push origin HEAD:${{ github.head_ref }}
+          git pull --rebase origin "${{ github.head_ref }}"
+          git push origin HEAD:"${{ github.head_ref }}"
