@@ -1,0 +1,106 @@
+name: Diagnose CI repair
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-ci-fix.yml'
+      - 'package.json'
+      - 'test/**'
+      - 'tests/**'
+      - 'tools/lint/**'
+      - 'tools/scrape/lint-compile.mjs'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    outputs:
+      test_exit: ${{ steps.tests.outputs.exit_code }}
+      compile_exit: ${{ steps.compile.outputs.exit_code }}
+      lint_exit: ${{ steps.lint.outputs.exit_code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Capture Vitest JSON
+        id: tests
+        shell: bash
+        run: |
+          set +e
+          npx vitest run --reporter=json --outputFile="${RUNNER_TEMP}/vitest.json"
+          echo "exit_code=$?" >> "${GITHUB_OUTPUT}"
+          exit 0
+      - name: Generate rule corpus
+        shell: bash
+        run: |
+          npm run scrape:conflict -- --force >/dev/null
+          npm run scrape:categorise -- --force >/dev/null
+          npm run scrape:emit -- --force >/dev/null
+      - name: Capture linter compilation
+        id: compile
+        shell: bash
+        run: |
+          set +e
+          npm run scrape:lint-compile -- --force > "${RUNNER_TEMP}/compile.log" 2>&1
+          echo "exit_code=$?" >> "${GITHUB_OUTPUT}"
+          exit 0
+      - name: Capture design lint
+        id: lint
+        shell: bash
+        run: |
+          set +e
+          npm run lint:design > "${RUNNER_TEMP}/lint.log" 2>&1
+          echo "exit_code=$?" >> "${GITHUB_OUTPUT}"
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-repair-diagnostics
+          path: |
+            ${{ runner.temp }}/vitest.json
+            ${{ runner.temp }}/compile.log
+            ${{ runner.temp }}/lint.log
+
+  diagnostics:
+    if: always()
+    needs: capture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-repair-diagnostics
+          path: diagnostics
+      - name: Print concise failures
+        env:
+          TEST_EXIT: ${{ needs.capture.outputs.test_exit }}
+          COMPILE_EXIT: ${{ needs.capture.outputs.compile_exit }}
+          LINT_EXIT: ${{ needs.capture.outputs.lint_exit }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'diagnostics/vitest.json';
+          if (fs.existsSync(path)) {
+            const value = JSON.parse(fs.readFileSync(path, 'utf8'));
+            console.log(`tests: ${value.numPassedTests} passed, ${value.numFailedTests} failed`);
+            for (const file of value.testResults || []) for (const test of file.assertionResults || []) {
+              if (test.status === 'failed') {
+                console.log(`FILE ${file.name}`);
+                console.log(`- ${test.fullName}`);
+                console.log((test.failureMessages || []).join('\n').slice(0, 5000));
+              }
+            }
+          }
+          NODE
+          echo '=== LINTER COMPILER ==='
+          cat diagnostics/compile.log || true
+          echo '=== DESIGN LINT ==='
+          cat diagnostics/lint.log || true
+          test "${TEST_EXIT}" = '0'
+          test "${COMPILE_EXIT}" = '0'
+          test "${LINT_EXIT}" = '0'
