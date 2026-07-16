@@ -39,6 +39,36 @@ function comparePublicDates(a, b) {
   return bValue - aValue || a.title.localeCompare(b.title);
 }
 
+function decodeBase64(value) {
+  if (typeof globalThis.atob === 'function') {
+    const binary = globalThis.atob(value.replace(/\s+/g, ''));
+    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  }
+  if (typeof globalThis.Buffer !== 'undefined') {
+    return new Uint8Array(globalThis.Buffer.from(value, 'base64'));
+  }
+  throw new Error('This runtime cannot decode a base64 PKL graph.');
+}
+
+async function gunzipText(bytes) {
+  if (typeof globalThis.DecompressionStream !== 'function') {
+    throw new Error('This browser does not support compressed PKL graph transport.');
+  }
+  const source = new Response(bytes).body;
+  if (!source) throw new Error('This runtime cannot create a PKL graph byte stream.');
+  const stream = source.pipeThrough(new DecompressionStream('gzip'));
+  return new Response(stream).text();
+}
+
+async function responseGraph(response, manifest) {
+  const encoding = manifest?.graph_encoding ?? 'json';
+  if (encoding === 'json') return response.json();
+  if (encoding === 'gzip-base64') {
+    return JSON.parse(await gunzipText(decodeBase64(await response.text())));
+  }
+  throw new Error(`Unsupported PKL graph encoding: ${encoding}`);
+}
+
 export class PKLContentProvider {
   constructor({ baseUrl = DEFAULT_BASE_URL, fetchImpl = globalThis.fetch } = {}) {
     if (typeof fetchImpl !== 'function') {
@@ -55,20 +85,18 @@ export class PKLContentProvider {
   async load({ force = false } = {}) {
     if (this.graph && !force) return this.graph;
 
-    const [manifestResponse, graphResponse] = await Promise.all([
-      this.fetchImpl(`${this.baseUrl}/manifest.json`, { cache: 'no-cache' }),
-      this.fetchImpl(`${this.baseUrl}/public-graph.json`, { cache: 'no-cache' })
-    ]);
-
+    const manifestResponse = await this.fetchImpl(`${this.baseUrl}/manifest.json`, { cache: 'no-cache' });
     if (!manifestResponse.ok) {
       throw new Error(`Unable to load PKL manifest: HTTP ${manifestResponse.status}`);
     }
+    const manifest = await manifestResponse.json();
+    const graphFile = manifest.graph_file || 'public-graph.json';
+    const graphResponse = await this.fetchImpl(`${this.baseUrl}/${graphFile}`, { cache: 'no-cache' });
     if (!graphResponse.ok) {
       throw new Error(`Unable to load PKL public graph: HTTP ${graphResponse.status}`);
     }
 
-    const manifest = await manifestResponse.json();
-    const graph = await graphResponse.json();
+    const graph = await responseGraph(graphResponse, manifest);
     await this.validateSnapshot(manifest, graph);
 
     this.manifest = manifest;
@@ -230,4 +258,4 @@ export class PKLContentProvider {
 
 export const pklContentProvider = new PKLContentProvider();
 
-export { stableStringify, sha256Hex, safeUid };
+export { stableStringify, sha256Hex, safeUid, responseGraph, decodeBase64, gunzipText };
