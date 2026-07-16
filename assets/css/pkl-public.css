@@ -139,6 +139,34 @@
   border: 1px solid currentColor;
 }
 
+.pkl-figure-embedded {
+  max-width: calc(var(--f, 14px) * 72);
+}
+
+.pkl-figure-label {
+  padding: calc(var(--f, 14px) * 0.75) var(--f, 14px);
+  border-bottom: 1px solid currentColor;
+  font-size: calc(var(--f, 14px) * 0.8);
+  line-height: 1.3;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.pkl-inline-svg {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  max-height: calc(var(--f, 14px) * 42);
+  padding: var(--f, 14px);
+  background: transparent;
+  color: inherit;
+}
+
+.pkl-figure-content {
+  padding: var(--f, 14px);
+}
+
 .pkl-figure-placeholder {
   display: grid;
   min-height: calc(var(--f, 14px) * 20);
@@ -151,6 +179,8 @@
 .pkl-figure-stage figcaption {
   padding: var(--f, 14px);
   border-top: 1px solid currentColor;
+  font-size: calc(var(--f, 14px) * 0.9);
+  line-height: 1.4;
 }
 
 @media (max-width: 767px) {
@@ -169,6 +199,10 @@
   .pkl-index-controls a {
     border-top: 1px solid currentColor;
     border-left: 0;
+  }
+
+  .pkl-inline-svg {
+    padding: calc(var(--f, 14px) * 0.5);
   }
 }
 
@@ -193,5 +227,9 @@
   .pkl-public {
     max-width: none;
     padding: 0;
+  }
+
+  .pkl-figure-stage {
+    break-inside: avoid;
   }
 }
