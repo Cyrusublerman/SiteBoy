@@ -1,9 +1,14 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { F, DERIVED_VALUES } from '../assets/js/core/f-config.js';
-import { Config } from '../assets/js/core/config.js';
-import { Router } from '../assets/js/core/router.js';
-import { BaseComponent } from '../assets/js/shared/foundation.js';
-import { ToolBase } from '../assets/js/tools/core/tool-base.js';
+
+window.debugLog ??= () => {};
+
+document.body.innerHTML = '<div id="app-root"></div><div id="test-container"></div>';
+
+const { F, DERIVED_VALUES } = await import('../assets/js/core/f-config.js');
+const { Config } = await import('../assets/js/core/config.js');
+const { Router } = await import('../assets/js/core/router.js');
+const { BaseComponent } = await import('../assets/js/shared/foundation.js');
+const { ToolBase } = await import('../assets/js/tools/core/tool-base.js');
 
 beforeAll(() => {
   document.body.innerHTML = '<div id="app-root"></div><div id="test-container"></div>';
