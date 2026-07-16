@@ -26,6 +26,19 @@ function normaliseSearchText(value) {
   return String(value ?? '').toLocaleLowerCase();
 }
 
+function safeUid(uid) {
+  return String(uid)
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'object';
+}
+
+function comparePublicDates(a, b) {
+  const aValue = Date.parse(a.updated || a.created || 0) || 0;
+  const bValue = Date.parse(b.updated || b.created || 0) || 0;
+  return bValue - aValue || a.title.localeCompare(b.title);
+}
+
 export class PKLContentProvider {
   constructor({ baseUrl = DEFAULT_BASE_URL, fetchImpl = globalThis.fetch } = {}) {
     if (typeof fetchImpl !== 'function') {
@@ -36,12 +49,11 @@ export class PKLContentProvider {
     this.graph = null;
     this.manifest = null;
     this.objectsByUid = new Map();
+    this.revisionCache = new Map();
   }
 
   async load({ force = false } = {}) {
-    if (this.graph && !force) {
-      return this.graph;
-    }
+    if (this.graph && !force) return this.graph;
 
     const [manifestResponse, graphResponse] = await Promise.all([
       this.fetchImpl(`${this.baseUrl}/manifest.json`, { cache: 'no-cache' }),
@@ -62,6 +74,7 @@ export class PKLContentProvider {
     this.manifest = manifest;
     this.graph = graph;
     this.objectsByUid = new Map(graph.objects.map((object) => [object.uid, object]));
+    if (force) this.revisionCache.clear();
     return graph;
   }
 
@@ -115,6 +128,38 @@ export class PKLContentProvider {
     return uid ? this.getObject(uid) : null;
   }
 
+  async getRevision(uid, revision) {
+    this.requireLoaded();
+    const current = this.getObject(uid);
+    const revisionNumber = Number(revision);
+    if (!current || !Number.isInteger(revisionNumber) || revisionNumber < 1) return null;
+    if (revisionNumber === current.public_revision) return current;
+
+    const cacheKey = `${uid}:${revisionNumber}`;
+    if (this.revisionCache.has(cacheKey)) return this.revisionCache.get(cacheKey);
+
+    const response = await this.fetchImpl(
+      `${this.baseUrl}/revisions/${safeUid(uid)}/${revisionNumber}.json`,
+      { cache: 'no-cache' }
+    );
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`Unable to load PKL revision ${revisionNumber}: HTTP ${response.status}`);
+    }
+    const value = await response.json();
+    if (value.uid !== uid || value.public_revision !== revisionNumber) {
+      throw new Error(`PKL revision identity mismatch for ${uid} revision ${revisionNumber}`);
+    }
+    this.revisionCache.set(cacheKey, value);
+    return value;
+  }
+
+  revisionNumbers(uid) {
+    const object = this.getObject(uid);
+    if (!object) return [];
+    return Array.from({ length: object.public_revision }, (_, index) => index + 1);
+  }
+
   getRelated(uid, { type = null } = {}) {
     const object = this.getObject(uid);
     if (!object) return [];
@@ -133,14 +178,27 @@ export class PKLContentProvider {
     return (object.backlinks ?? []).map((backlinkUid) => this.getObject(backlinkUid)).filter(Boolean);
   }
 
-  list({ objectType = null, tag = null, project = null } = {}) {
+  list({ objectType = null, tag = null, project = null, sort = 'title' } = {}) {
     this.requireLoaded();
-    return this.graph.objects.filter((object) => {
+    const values = this.graph.objects.filter((object) => {
       if (objectType && object.object_type !== objectType) return false;
       if (tag && !(object.tags ?? []).includes(tag)) return false;
       if (project && !(object.projects ?? []).includes(project)) return false;
       return true;
     });
+    if (sort === 'updated') return values.sort(comparePublicDates);
+    return values.sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  groupByObjectType() {
+    this.requireLoaded();
+    const groups = new Map();
+    for (const object of this.list()) {
+      const values = groups.get(object.object_type) ?? [];
+      values.push(object);
+      groups.set(object.object_type, values);
+    }
+    return groups;
   }
 
   search(query, { objectType = null, tag = null, project = null, limit = 50 } = {}) {
@@ -172,4 +230,4 @@ export class PKLContentProvider {
 
 export const pklContentProvider = new PKLContentProvider();
 
-export { stableStringify, sha256Hex };
+export { stableStringify, sha256Hex, safeUid };
