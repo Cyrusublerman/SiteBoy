@@ -51,6 +51,7 @@ describe('Performance Validation', () => {
   });
 
   it('loads ToolBase from its canonical current path', async () => {
+    window.debugLog ??= () => {};
     const start = performance.now();
     const module = await import('../assets/js/tools/core/tool-base.js');
     expect(typeof module.ToolBase).toBe('function');
