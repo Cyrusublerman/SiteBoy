@@ -1,0 +1,125 @@
+name: Validate SiteBoy PKL build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate-pkl-siteboy-build.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'assets/js/core/router.js'
+      - 'assets/js/shared/pkl-*.js'
+      - 'assets/js/sections/wiki_section.js'
+      - 'assets/js/sections/pkl_blog_section.js'
+      - 'assets/js/sections/figure_section.js'
+      - 'assets/css/pkl-public.css'
+      - 'scripts/pkl/**'
+      - 'tests/pkl-*.test.js'
+      - 'public/generated/pkl/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: validate-siteboy-pkl-build
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out SiteBoy
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        id: install
+        continue-on-error: true
+        run: npm ci > "${RUNNER_TEMP}/install.log" 2>&1
+
+      - name: Run PKL tests
+        id: tests
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run test:run -- tests/pkl-content-provider.test.js > "${RUNNER_TEMP}/tests.log" 2>&1
+
+      - name: Run production build
+        id: build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run build > "${RUNNER_TEMP}/build.log" 2>&1
+
+      - name: Write validation report
+        env:
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          mkdir -p blog/docs/site
+          python - <<'PY'
+          from pathlib import Path
+          from datetime import datetime, timezone
+          import os
+
+          runner = Path(os.environ['RUNNER_TEMP'])
+          def read(name):
+              path = runner / name
+              return path.read_text(encoding='utf-8', errors='replace').strip() if path.exists() else '(not run)'
+
+          install = os.environ.get('INSTALL_OUTCOME', 'unknown')
+          tests = os.environ.get('TEST_OUTCOME', 'skipped')
+          build = os.environ.get('BUILD_OUTCOME', 'skipped')
+          passed = install == tests == build == 'success'
+          lines = [
+              '# PKL SiteBoy Build Validation',
+              '',
+              f"Source commit: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
+              f"Generated: `{datetime.now(timezone.utc).replace(microsecond=0).isoformat()}`",
+              f"Result: **{'PASS' if passed else 'FAIL'}**",
+              '',
+              f"- Install: `{install}`",
+              f"- PKL tests: `{tests}`",
+              f"- Production build: `{build}`",
+              '',
+              '## Install output',
+              '',
+              '```text',
+              read('install.log')[-12000:],
+              '```',
+              '',
+              '## Test output',
+              '',
+              '```text',
+              read('tests.log')[-12000:],
+              '```',
+              '',
+              '## Build output',
+              '',
+              '```text',
+              read('build.log')[-20000:],
+              '```',
+          ]
+          Path('blog/docs/site/pkl-build-validation.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          PY
+
+      - name: Commit validation report
+        run: |
+          if git diff --quiet -- blog/docs/site/pkl-build-validation.md; then
+            echo "Build report is unchanged."
+            exit 0
+          fi
+          git config user.name "SiteBoy Validation Bot"
+          git config user.email "siteboy-validation-bot@users.noreply.github.com"
+          git add blog/docs/site/pkl-build-validation.md
+          git commit -m "Record SiteBoy PKL build validation"
+          git pull --rebase origin main
+          git push origin HEAD:main
