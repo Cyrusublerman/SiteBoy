@@ -19,9 +19,9 @@
  * Run:   npm run lint:design  (runs the compiled linter)
  */
 
-import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { resolve, dirname, basename } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -35,10 +35,6 @@ const MISFIRES_PATH = resolve(LINT_DIR, 'lint-misfires.md');
 const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
 const VERBOSE = args.includes('--verbose');
-
-function escapeForRegExp(pattern) {
-  return pattern.replace(/\/g, '\\').replace(/`/g, '\`');
-}
 
 function generateCheckFn(rule) {
   const { id, modality, statement, detector } = rule;
@@ -109,7 +105,7 @@ function generateLinterModule(decidableRules, astSkipped) {
  *
  * Run: npm run lint:design
  */
- /* eslint-disable */
+/* eslint-disable */
 
 import { readFile } from 'node:fs/promises';
 import { readdir } from 'node:fs/promises';
