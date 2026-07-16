@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" version="1.0.2" class="in-text" default-locale="en-US">
+  <info>
+    <title>SiteBoy Author-Date</title>
+    <id>https://siteboy.local/styles/author-date</id>
+    <link href="https://siteboy.local/styles/author-date" rel="self"/>
+    <author><name>Alexander Einoder</name></author>
+    <category citation-format="author-date"/>
+    <updated>2026-07-16T00:00:00+00:00</updated>
+    <rights license="https://creativecommons.org/publicdomain/zero/1.0/">CC0</rights>
+  </info>
+  <macro name="author">
+    <names variable="author">
+      <name and="text" delimiter=", " initialize-with=". " name-as-sort-order="all"/>
+      <substitute>
+        <names variable="editor"/>
+        <text variable="title" form="short"/>
+      </substitute>
+    </names>
+  </macro>
+  <macro name="issued">
+    <date variable="issued">
+      <date-part name="year"/>
+    </date>
+  </macro>
+  <macro name="title">
+    <choose>
+      <if type="book report thesis manuscript" match="any">
+        <text variable="title" font-style="italic"/>
+      </if>
+      <else>
+        <text variable="title" quotes="true"/>
+      </else>
+    </choose>
+  </macro>
+  <macro name="container">
+    <group delimiter=", ">
+      <text variable="container-title" font-style="italic"/>
+      <text variable="publisher"/>
+    </group>
+  </macro>
+  <citation et-al-min="4" et-al-use-first="1" disambiguate-add-year-suffix="true" collapse="year">
+    <sort>
+      <key macro="author"/>
+      <key macro="issued"/>
+    </sort>
+    <layout prefix="(" suffix=")" delimiter="; ">
+      <group delimiter=", ">
+        <text macro="author" form="short"/>
+        <text macro="issued"/>
+        <label variable="locator" form="short"/>
+        <text variable="locator"/>
+      </group>
+    </layout>
+  </citation>
+  <bibliography hanging-indent="true" et-al-min="8" et-al-use-first="6" entry-spacing="0" line-spacing="1.2">
+    <sort>
+      <key macro="author"/>
+      <key macro="issued"/>
+      <key variable="title"/>
+    </sort>
+    <layout suffix=".">
+      <group delimiter=". ">
+        <text macro="author"/>
+        <text macro="issued" prefix="(" suffix=")"/>
+        <text macro="title"/>
+        <text macro="container"/>
+        <text variable="URL"/>
+      </group>
+    </layout>
+  </bibliography>
+</style>
