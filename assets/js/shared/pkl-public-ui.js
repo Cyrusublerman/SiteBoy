@@ -9,6 +9,9 @@ const RELATIONSHIP_GROUPS = [
   { key: 'figures', label: 'FIGURES', types: new Set(['figure']) }
 ];
 
+const FIGURE_DIRECTIVE_RE = /^::figure\[([^\]]+)\]\s*$/gm;
+const UNSAFE_SVG_ELEMENTS = new Set(['script', 'foreignobject', 'iframe', 'object', 'embed', 'audio', 'video']);
+
 function formatLabel(value) {
   return String(value ?? '')
     .replace(/[_-]+/g, ' ')
@@ -67,20 +70,120 @@ function createMetaLine(values) {
   return paragraph;
 }
 
-function renderMarkdown(container, markdown, tracker) {
+function stripLeadingHeading(markdown) {
+  return String(markdown ?? '').replace(/^\s*#\s+[^\n]+\n+/, '');
+}
+
+function renderMarkdownSegment(container, markdown, tracker) {
+  const content = String(markdown ?? '').trim();
+  if (!content) return null;
+
   if (window.ComponentLibrary?.MarkdownBody) {
-    const component = new window.ComponentLibrary.MarkdownBody({ markdownText: markdown || '' });
+    const component = new window.ComponentLibrary.MarkdownBody({ markdownText: content });
     tracker.push(component);
     const element = component.render();
     element.classList.add('pkl-markdown');
     container.appendChild(element);
     return element;
   }
+
   const fallback = document.createElement('pre');
   fallback.className = 'pkl-markdown-fallback';
-  fallback.textContent = markdown || '';
+  fallback.textContent = content;
   container.appendChild(fallback);
   return fallback;
+}
+
+function sanitiseSvg(svgText) {
+  const parsed = new DOMParser().parseFromString(String(svgText), 'image/svg+xml');
+  if (parsed.querySelector('parsererror') || parsed.documentElement.localName.toLowerCase() !== 'svg') {
+    return null;
+  }
+
+  for (const element of [...parsed.querySelectorAll('*')]) {
+    if (UNSAFE_SVG_ELEMENTS.has(element.localName.toLowerCase())) {
+      element.remove();
+      continue;
+    }
+    for (const attribute of [...element.attributes]) {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+      if (name.startsWith('on')) {
+        element.removeAttribute(attribute.name);
+        continue;
+      }
+      if ((name === 'href' || name.endsWith(':href')) && !value.startsWith('#')) {
+        element.removeAttribute(attribute.name);
+        continue;
+      }
+      if (value.includes('javascript:')) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  }
+
+  const svg = document.importNode(parsed.documentElement, true);
+  svg.classList.add('pkl-inline-svg');
+  svg.removeAttribute('width');
+  svg.removeAttribute('height');
+  return svg;
+}
+
+function renderFigureObject(container, figureObject, { embedded = false } = {}) {
+  const figure = document.createElement('figure');
+  figure.className = embedded ? 'pkl-figure-stage pkl-figure-embedded' : 'pkl-figure-stage';
+  figure.dataset.figureUid = figureObject.uid;
+
+  const label = document.createElement('div');
+  label.className = 'pkl-figure-label';
+  label.appendChild(publicLink(figureObject, { text: `FIGURE: ${figureObject.title}` }));
+  figure.appendChild(label);
+
+  const svg = sanitiseSvg(figureObject.body);
+  if (svg) {
+    figure.appendChild(svg);
+  } else {
+    const body = document.createElement('div');
+    body.className = 'pkl-figure-content';
+    renderMarkdownSegment(body, stripLeadingHeading(figureObject.body), []);
+    figure.appendChild(body);
+  }
+
+  if (figureObject.summary) {
+    const caption = document.createElement('figcaption');
+    caption.textContent = figureObject.summary;
+    figure.appendChild(caption);
+  }
+  container.appendChild(figure);
+  return figure;
+}
+
+function renderMissingFigure(container, uid) {
+  const notice = document.createElement('aside');
+  notice.className = 'pkl-version-notice';
+  notice.textContent = `Figure ${uid} is referenced but unavailable in this public graph revision.`;
+  container.appendChild(notice);
+}
+
+function renderMarkdown(container, markdown, tracker, { stripTitle = true, hydrateFigures = true } = {}) {
+  const source = stripTitle ? stripLeadingHeading(markdown) : String(markdown ?? '');
+  if (!hydrateFigures) return renderMarkdownSegment(container, source, tracker);
+
+  let cursor = 0;
+  let match;
+  FIGURE_DIRECTIVE_RE.lastIndex = 0;
+  while ((match = FIGURE_DIRECTIVE_RE.exec(source)) !== null) {
+    renderMarkdownSegment(container, source.slice(cursor, match.index), tracker);
+    const uid = match[1].trim();
+    const figureObject = pklContentProvider.getObject(uid);
+    if (figureObject?.object_type === 'figure') {
+      renderFigureObject(container, figureObject, { embedded: true });
+    } else {
+      renderMissingFigure(container, uid);
+    }
+    cursor = FIGURE_DIRECTIVE_RE.lastIndex;
+  }
+  return renderMarkdownSegment(container, source.slice(cursor), tracker);
 }
 
 function groupRelated(object) {
@@ -227,11 +330,14 @@ export {
   parseVersionedSubsection,
   publicLink,
   renderError,
+  renderFigureObject,
   renderHistory,
   renderMarkdown,
   renderObjectList,
   renderRelatedSections,
   renderRevisionNavigation,
   renderTags,
-  routeLink
+  routeLink,
+  sanitiseSvg,
+  stripLeadingHeading
 };
