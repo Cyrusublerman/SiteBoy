@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<locale xmlns="http://purl.org/net/xbiblio/csl" xml:lang="en-US">
+  <style-options punctuation-in-quote="false"/>
+  <dates>
+    <date form="text">
+      <date-part name="month" suffix=" "/>
+      <date-part name="day" suffix=", "/>
+      <date-part name="year"/>
+    </date>
+    <date form="numeric">
+      <date-part name="month" form="numeric-leading-zeros" suffix="/"/>
+      <date-part name="day" form="numeric-leading-zeros" suffix="/"/>
+      <date-part name="year"/>
+    </date>
+  </dates>
+  <terms>
+    <term name="and">and</term>
+    <term name="and others">and others</term>
+    <term name="et-al">et al.</term>
+    <term name="page" form="long" plural="false">page</term>
+    <term name="page" form="long" plural="true">pages</term>
+    <term name="page" form="short" plural="false">p.</term>
+    <term name="page" form="short" plural="true">pp.</term>
+    <term name="section" form="long" plural="false">section</term>
+    <term name="section" form="long" plural="true">sections</term>
+    <term name="section" form="short">sec.</term>
+    <term name="chapter" form="long" plural="false">chapter</term>
+    <term name="chapter" form="long" plural="true">chapters</term>
+    <term name="chapter" form="short">chap.</term>
+    <term name="paragraph" form="long" plural="false">paragraph</term>
+    <term name="paragraph" form="long" plural="true">paragraphs</term>
+    <term name="paragraph" form="short">para.</term>
+    <term name="no date">n.d.</term>
+    <term name="open-quote">“</term>
+    <term name="close-quote">”</term>
+    <term name="open-inner-quote">‘</term>
+    <term name="close-inner-quote">’</term>
+  </terms>
+</locale>
