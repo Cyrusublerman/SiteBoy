@@ -54,7 +54,9 @@ async function gunzipText(bytes) {
   if (typeof globalThis.DecompressionStream !== 'function') {
     throw new Error('This browser does not support compressed PKL graph transport.');
   }
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  const source = new Response(bytes).body;
+  if (!source) throw new Error('This runtime cannot create a PKL graph byte stream.');
+  const stream = source.pipeThrough(new DecompressionStream('gzip'));
   return new Response(stream).text();
 }
 
