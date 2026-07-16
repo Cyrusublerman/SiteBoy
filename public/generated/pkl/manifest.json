@@ -1,0 +1,11 @@
+{
+  "schema_version": "pkl-public-graph-v0",
+  "source_repository": "Cyrusublerman/Library",
+  "source_commit": "bootstrap",
+  "generated_at_utc": "2026-07-16T00:00:00Z",
+  "compiler_version": "bootstrap",
+  "object_count": 0,
+  "content_sha256": "2f3f988825a5c31c983d10c748bbadc957e5f35770fec1ffb29a1e3d5caadcaa",
+  "changed_uids": [],
+  "retired_uids": []
+}
