@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { PKLContentProvider, stableStringify, sha256Hex } from '../assets/js/shared/pkl-content-provider.js';
 
@@ -23,32 +24,54 @@ async function snapshot(objects = []) {
 
 function fetchFrom(values) {
   return async (url) => {
-    const value = url.endsWith('/manifest.json') ? values.manifest : values.graph;
-    return { ok: true, status: 200, json: async () => structuredClone(value) };
+    if (url.endsWith('/manifest.json')) {
+      return { ok: true, status: 200, json: async () => structuredClone(values.manifest) };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => structuredClone(values.graph),
+      text: async () => values.graphText ?? JSON.stringify(values.graph),
+    };
+  };
+}
+
+function exampleObject() {
+  return {
+    uid: 'EXAMPLE',
+    title: 'Example',
+    object_type: 'concept',
+    summary: 'A test object',
+    body: 'Test body',
+    tags: ['test'],
+    projects: [],
+    relationships: [],
+    backlinks: [],
+    route: '/wiki/example',
+    public_revision: 1,
+    content_hash: 'a'.repeat(64)
   };
 }
 
 describe('PKLContentProvider', () => {
   it('loads, validates and retrieves route content', async () => {
-    const values = await snapshot([{
-      uid: 'EXAMPLE',
-      title: 'Example',
-      object_type: 'concept',
-      summary: 'A test object',
-      body: 'Test body',
-      tags: ['test'],
-      projects: [],
-      relationships: [],
-      backlinks: [],
-      route: '/wiki/example',
-      public_revision: 1,
-      content_hash: 'a'.repeat(64)
-    }]);
+    const values = await snapshot([exampleObject()]);
     const provider = new PKLContentProvider({ fetchImpl: fetchFrom(values) });
     await provider.load();
     expect(provider.getObject('EXAMPLE')?.title).toBe('Example');
     expect(provider.getByRoute('/wiki/example')?.uid).toBe('EXAMPLE');
     expect(provider.search('test')).toHaveLength(1);
+  });
+
+  it('loads a manifest-declared gzip-base64 graph', async () => {
+    const values = await snapshot([exampleObject()]);
+    values.manifest.graph_file = 'public-graph.json.gz.b64';
+    values.manifest.graph_encoding = 'gzip-base64';
+    values.graphText = gzipSync(Buffer.from(JSON.stringify(values.graph))).toString('base64');
+    const provider = new PKLContentProvider({ fetchImpl: fetchFrom(values) });
+    await provider.load();
+    expect(provider.manifest.graph_encoding).toBe('gzip-base64');
+    expect(provider.getObject('EXAMPLE')?.route).toBe('/wiki/example');
   });
 
   it('rejects a tampered graph', async () => {
