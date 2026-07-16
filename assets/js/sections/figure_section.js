@@ -5,8 +5,8 @@ import {
   formatLabel,
   parseVersionedSubsection,
   renderError,
+  renderFigureObject,
   renderHistory,
-  renderMarkdown,
   renderObjectList,
   renderRelatedSections,
   renderRevisionNavigation,
@@ -14,7 +14,7 @@ import {
 } from '../shared/pkl-public-ui.js';
 
 const FigureSection = {
-  version: '0.1.0',
+  version: '0.2.0',
   currentContainer: null,
   componentInstances: [],
 
@@ -96,28 +96,8 @@ const FigureSection = {
       object.updated ? `Updated ${object.updated}` : null,
       `Revision ${object.public_revision}`
     ]));
-    if (object.summary) {
-      const summary = document.createElement('p');
-      summary.className = 'pkl-summary';
-      summary.textContent = object.summary;
-      container.appendChild(summary);
-    }
 
-    const stage = document.createElement('figure');
-    stage.className = 'pkl-figure-stage';
-    stage.setAttribute('aria-label', object.title);
-    const placeholder = document.createElement('div');
-    placeholder.className = 'pkl-figure-placeholder';
-    placeholder.textContent = 'FIGURE RENDERER ADAPTER OUTPUT';
-    stage.appendChild(placeholder);
-    if (object.summary) {
-      const caption = document.createElement('figcaption');
-      caption.textContent = object.summary;
-      stage.appendChild(caption);
-    }
-    container.appendChild(stage);
-
-    renderMarkdown(container, object.body, this.componentInstances);
+    renderFigureObject(container, object);
     renderRelatedSections(container, object);
     renderRevisionNavigation(container, current, current.route);
   },
