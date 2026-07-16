@@ -2,26 +2,27 @@
  * Router - SiteBoy Framework
  *
  * SINGLE SOURCE OF TRUTH FOR ROUTING:
- * - Hash-based navigation (#section/subsection)
+ * - Normal history paths for public knowledge: /wiki, /blog and /figures
+ * - Backward-compatible hash navigation for existing SiteBoy sections
  * - Route parsing and validation
  * - Navigation callbacks and state management
  * - Section loading coordination
  *
- * @version 1.0.0 - Single Source of Truth for Routing
+ * @version 2.0.0 - Hybrid public-path and legacy-hash routing
  * @dependencies ['SiteBoyApp'] - Integrates with app for content building
  */
 
 const Router = {
-    version: '1.0.0',
+    version: '2.0.0',
 
-    // Route state
-    currentRoute: { section: 'home', subsection: null, isFullMode: false },
+    currentRoute: { section: 'home', subsection: null, isFullMode: false, routeMode: 'hash' },
     routeChangeCallbacks: new Set(),
 
-    // Available sections (matches app.js)
     sections: {
         'home': 'HomeSection',
-        'blog': 'BlogSection',
+        'wiki': 'WikiSection',
+        'blog': 'PKLBlogSection',
+        'figures': 'FigureSection',
         'art': 'ArtSection',
         'tools': 'ToolsSection',
         'projects': 'ProjectsSection',
@@ -33,70 +34,86 @@ const Router = {
         'admin': 'AdminSection'
     },
 
-    /**
-     * Initialize router
-     */
+    pathSections: new Set(['wiki', 'blog', 'figures']),
+
     init() {
         window.debugLog('INIT', `🧭 Router v${this.version} initializing...`);
-
-        // Listen for hash changes
         window.addEventListener('hashchange', () => this.handleRouteChange());
-
-        // Handle initial route
+        window.addEventListener('popstate', () => this.handleRouteChange());
         this.handleRouteChange();
-
         window.debugLog('INIT', '✅ Router initialized');
     },
 
-    /**
-     * Parse current URL hash into section, subsection, and display mode
-     * Supports :full modifier for full-page mode (no header/footer)
-     * @returns {Object} { section, subsection, isFullMode }
-     * 
-     * Examples:
-     *   #tools/about-you       → { section: 'tools', subsection: 'about-you', isFullMode: false }
-     *   #tools/about-you:full  → { section: 'tools', subsection: 'about-you', isFullMode: true }
-     *   #home:full             → { section: 'home', subsection: null, isFullMode: true }
-     */
-    parseRoute() {
-        let hash = window.location.hash.slice(1).replace(/^\/+/, ''); // Remove # and any leading slashes
+    parsePathRoute() {
+        const pathname = decodeURIComponent(window.location.pathname || '/')
+            .replace(/\/+/g, '/')
+            .replace(/^\/+|\/+$/g, '');
+
+        if (!pathname) return null;
+
+        const parts = pathname.split('/');
+        const section = parts[0];
+        if (!this.pathSections.has(section)) return null;
+
+        return {
+            section,
+            subsection: parts.length > 1 ? parts.slice(1).join('/') : null,
+            isFullMode: false,
+            routeMode: 'path'
+        };
+    },
+
+    parseHashRoute() {
+        let hash = window.location.hash.slice(1).replace(/^\/+/, '');
         window.debugLog('NAVIGATION', `🔍 Router.parseRoute() - raw hash: "${hash}"`);
 
-        // Check for :full modifier
         const isFullMode = hash.endsWith(':full');
         if (isFullMode) {
-            hash = hash.slice(0, -5); // Remove ':full' suffix
+            hash = hash.slice(0, -5);
             window.debugLog('NAVIGATION', `🖼️ Full mode detected! Stripped hash: "${hash}"`);
         }
 
-        // Handle empty or home route
         if (!hash || hash === 'home') {
-            return { section: 'home', subsection: null, isFullMode };
+            return {
+                section: 'home',
+                subsection: null,
+                isFullMode,
+                routeMode: 'hash'
+            };
         }
 
-        // Parse section/subsection
         const parts = hash.split('/');
-        const section = parts[0] || 'home';
-        const subsection = parts.length > 1 ? parts.slice(1).join('/') : null;
-
-        window.debugLog('NAVIGATION', `🔍 Parsed route: section="${section}", subsection="${subsection}", isFullMode=${isFullMode}`);
-        return { section, subsection, isFullMode };
+        return {
+            section: parts[0] || 'home',
+            subsection: parts.length > 1 ? parts.slice(1).join('/') : null,
+            isFullMode,
+            routeMode: 'hash'
+        };
     },
 
     /**
-     * Handle route changes - notify all callbacks
+     * Parse the current normal path first, falling back to legacy hash routes.
+     * @returns {Object} { section, subsection, isFullMode, routeMode }
      */
+    parseRoute() {
+        const route = this.parsePathRoute() || this.parseHashRoute();
+        window.debugLog(
+            'NAVIGATION',
+            `🔍 Parsed route: section="${route.section}", subsection="${route.subsection}", mode=${route.routeMode}, isFullMode=${route.isFullMode}`
+        );
+        return route;
+    },
+
     handleRouteChange() {
         const newRoute = this.parseRoute();
-        const { section, subsection, isFullMode } = newRoute;
-
+        const { section, subsection, isFullMode, routeMode } = newRoute;
         const modeStr = isFullMode ? ':full' : '';
-        window.debugLog('NAVIGATION', `🧭 Route change: ${section}${subsection ? '/' + subsection : ''}${modeStr}`);
+        window.debugLog(
+            'NAVIGATION',
+            `🧭 Route change: ${section}${subsection ? '/' + subsection : ''}${modeStr} [${routeMode}]`
+        );
 
-        // Update current route
         this.currentRoute = newRoute;
-
-        // Notify all callbacks (including SiteBoyApp)
         this.routeChangeCallbacks.forEach(callback => {
             try {
                 callback(newRoute);
@@ -106,80 +123,69 @@ const Router = {
         });
     },
 
-    /**
-     * Subscribe to route changes
-     * @param {Function} callback - Called with { section, subsection }
-     * @returns {Function} Unsubscribe function
-     */
     subscribe(callback) {
         this.routeChangeCallbacks.add(callback);
         return () => this.routeChangeCallbacks.delete(callback);
     },
 
-    /**
-     * Navigate to a section
-     * @param {string} section - Section name
-     * @param {string|null} subsection - Subsection name
-     * @param {boolean} fullMode - Whether to use full-page mode (no header/footer)
-     */
-    navigateToSection(section, subsection = null, fullMode = false) {
-        const fullSuffix = fullMode ? ':full' : '';
-        const hash = `#${section}${subsection ? '/' + subsection : ''}${fullSuffix}`;
-
-        if (window.location.hash !== hash) {
-            window.location.hash = hash;
-            // hashchange event will trigger handleRouteChange
-        }
+    buildPath(section, subsection = null) {
+        const encodedParts = subsection
+            ? subsection.split('/').filter(Boolean).map(part => encodeURIComponent(part))
+            : [];
+        return `/${section}${encodedParts.length ? '/' + encodedParts.join('/') : ''}`;
     },
 
     /**
-     * Get current route info
-     * @returns {Object} { section, subsection }
+     * Public knowledge routes use history paths. Existing sections retain hashes.
      */
+    navigateToSection(section, subsection = null, fullMode = false, { replace = false } = {}) {
+        if (this.pathSections.has(section)) {
+            const path = this.buildPath(section, subsection);
+            const method = replace ? 'replaceState' : 'pushState';
+            window.history[method]({}, '', path);
+            this.handleRouteChange();
+            return;
+        }
+
+        const fullSuffix = fullMode ? ':full' : '';
+        const hash = `#${section}${subsection ? '/' + subsection : ''}${fullSuffix}`;
+
+        if (this.parsePathRoute()) {
+            const rootWithHash = `/${hash}`;
+            if (replace) {
+                window.location.replace(rootWithHash);
+            } else {
+                window.location.assign(rootWithHash);
+            }
+            return;
+        }
+
+        if (window.location.hash !== hash) {
+            window.location.hash = hash;
+        } else {
+            this.handleRouteChange();
+        }
+    },
+
     getCurrentRoute() {
         return { ...this.currentRoute };
     },
 
-    /**
-     * Check if a route is valid
-     * @param {string} section - Section name
-     * @param {string|null} subsection - Subsection name
-     * @param {boolean} fullMode - Whether route uses full-page mode
-     * @returns {boolean}
-     */
     isValidRoute(section, subsection = null, fullMode = false) {
-        // Check if section exists
-        if (!this.sections[section]) {
-            return false;
-        }
-
-        // Full mode is always valid for any route
-        // Additional validation can be added here
+        if (!this.sections[section]) return false;
+        if (fullMode && this.pathSections.has(section)) return false;
         return true;
     },
 
-    /**
-     * Get available sections
-     * @returns {Object} Section mapping
-     */
     getSections() {
         return { ...this.sections };
     },
 
-    /**
-     * Register a new section (for dynamic loading)
-     * @param {string} sectionName - Section identifier
-     * @param {string} moduleName - Global module name
-     */
     registerSection(sectionName, moduleName) {
         this.sections[sectionName] = moduleName;
         window.debugLog('VERBOSE', `📝 Router registered section: ${sectionName} -> ${moduleName}`);
     },
 
-    /**
-     * Unregister a section
-     * @param {string} sectionName - Section identifier
-     */
     unregisterSection(sectionName) {
         if (this.sections[sectionName]) {
             delete this.sections[sectionName];
@@ -188,25 +194,10 @@ const Router = {
     }
 };
 
-// =================================================================
-// ES MODULE EXPORT & BACKWARD COMPATIBILITY
-// =================================================================
-
-/**
- * ES module export for modern code
- * Provides tree-shakeable access to Router
- */
 export { Router };
 
-/**
- * Global compatibility layer for legacy tools
- * Maintains backward compatibility during migration
- */
 if (typeof window !== 'undefined') {
-  // Global registration
-  window.Router = Router;
+    window.Router = Router;
 }
 
-window.debugLog('INIT', `🧭 Router v${Router.version} loaded - Single source of truth for routing`);
-
-
+window.debugLog('INIT', `🧭 Router v${Router.version} loaded - Hybrid Routing System`);
