@@ -1,0 +1,45 @@
+name: Diagnose gallery editor
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-gallery-editor.yml'
+      - 'assets/js/admin/**'
+      - 'assets/js/sections/admin_section.js'
+      - 'assets/js/shared/gallery-upload.js'
+      - 'assets/css/admin-editor.css'
+      - 'api/admin/media/thumb.js'
+      - 'db/schema.js'
+      - 'src/main.js'
+      - 'tests/gallery-admin-editor.test.js'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --silent
+      - name: Capture focused diagnostics
+        shell: bash
+        run: |
+          set +e
+          npm run test:run -- tests/gallery-admin-editor.test.js > diagnostics.txt 2>&1
+          TEST_STATUS=$?
+          npm run build >> diagnostics.txt 2>&1
+          BUILD_STATUS=$?
+          echo "TEST_STATUS=$TEST_STATUS" >> diagnostics.txt
+          echo "BUILD_STATUS=$BUILD_STATUS" >> diagnostics.txt
+          cat diagnostics.txt
+          if [ "$TEST_STATUS" -ne 0 ] || [ "$BUILD_STATUS" -ne 0 ]; then
+            exit 1
+          fi
