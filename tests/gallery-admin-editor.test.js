@@ -1,15 +1,14 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  buildUploadRows,
-  collectTagSuggestions,
-  mergeGalleryMetadata,
-  normaliseGalleryItem,
-  parseTags,
-  reorderSelectedRows,
-} from '../assets/js/admin/gallery-editor.js';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { adminJsonRequest } from '../assets/js/shared/gallery-upload.js';
 import { Auth } from '../assets/js/admin/auth.js';
 import { galleryItems } from '../db/schema.js';
+
+let galleryModel;
+
+beforeAll(async () => {
+  window.debugLog = () => {};
+  galleryModel = await import('../assets/js/admin/gallery-editor.js');
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -17,12 +16,12 @@ afterEach(() => {
 
 describe('gallery editor data helpers', () => {
   it('normalises and deduplicates tags', () => {
-    expect(parseTags('alpha, beta; alpha')).toEqual(['alpha', 'beta']);
-    expect(parseTags([' alpha ', 'beta', ''])).toEqual(['alpha', 'beta']);
+    expect(galleryModel.parseTags('alpha, beta; alpha')).toEqual(['alpha', 'beta']);
+    expect(galleryModel.parseTags([' alpha ', 'beta', ''])).toEqual(['alpha', 'beta']);
   });
 
   it('preserves metadata while applying group and display mode', () => {
-    expect(mergeGalleryMetadata(
+    expect(galleryModel.mergeGalleryMetadata(
       { source: 'import', group: 'old' },
       { group: 'series-a', displayMode: 'carousel' },
     )).toEqual({ source: 'import', group: 'series-a', displayMode: 'carousel' });
@@ -33,7 +32,7 @@ describe('gallery editor data helpers', () => {
       new File(['a'], 'one.png', { type: 'image/png', lastModified: 1 }),
       new File(['b'], 'two.jpg', { type: 'image/jpeg', lastModified: 2 }),
     ];
-    const rows = buildUploadRows(files, {
+    const rows = galleryModel.buildUploadRows(files, {
       collection: 'digital/test',
       tags: 'one, two',
       group: 'pair',
@@ -59,12 +58,12 @@ describe('gallery editor data helpers', () => {
       { id: 'c', sortIndex: 2 },
       { id: 'd', sortIndex: 3 },
     ];
-    expect(reorderSelectedRows(rows, ['c'], -1).map((row) => row.id)).toEqual(['a', 'c', 'b', 'd']);
-    expect(reorderSelectedRows(rows, ['b', 'c'], 1).map((row) => row.id)).toEqual(['a', 'd', 'b', 'c']);
+    expect(galleryModel.reorderSelectedRows(rows, ['c'], -1).map((row) => row.id)).toEqual(['a', 'c', 'b', 'd']);
+    expect(galleryModel.reorderSelectedRows(rows, ['b', 'c'], 1).map((row) => row.id)).toEqual(['a', 'd', 'b', 'c']);
   });
 
   it('normalises gallery records and derives tag suggestions', () => {
-    const item = normaliseGalleryItem({
+    const item = galleryModel.normaliseGalleryItem({
       id: 'item-1',
       filename: 'image.png',
       gallerySlug: 'digital/test',
@@ -79,7 +78,7 @@ describe('gallery editor data helpers', () => {
       displayMode: 'slideshow',
       previewUrl: 'https://example.test/image.png',
     });
-    expect(collectTagSuggestions([item, { tags: ['alpha', 'beta'] }])).toEqual(['alpha', 'beta', 'zeta']);
+    expect(galleryModel.collectTagSuggestions([item, { tags: ['alpha', 'beta'] }])).toEqual(['alpha', 'beta', 'zeta']);
   });
 });
 
