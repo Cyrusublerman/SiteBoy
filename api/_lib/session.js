@@ -1,9 +1,11 @@
 import { Lucia } from 'lucia';
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { getDb, schema } from './db.js';
 
 const ADMIN_USER_ID = 'admin';
+const CSRF_VERSION = 'v1';
+const CSRF_CONTEXT = 'siteboy-admin-csrf';
 
 let _lucia;
 
@@ -83,34 +85,37 @@ export function hashValue(value) {
   return createHash('sha256').update(String(value)).digest('hex');
 }
 
-function newCsrfToken() {
-  return randomBytes(32).toString('hex');
+function csrfSecret() {
+  const secret = process.env.CSRF_SECRET || process.env.ADMIN_PASSWORD_HASH;
+  if (!secret || String(secret).length < 32) {
+    throw new Error('CSRF_SECRET must be configured with at least 32 characters. ADMIN_PASSWORD_HASH is accepted as a temporary fallback.');
+  }
+  return String(secret);
 }
 
-const csrfBySession = new Map();
+function csrfDigest(sessionId) {
+  return createHmac('sha256', csrfSecret())
+    .update(`${CSRF_CONTEXT}:${sessionId}`)
+    .digest('base64url');
+}
 
 export function issueCsrf(sessionId) {
-  const token = newCsrfToken();
-  csrfBySession.set(sessionId, token);
-  return token;
+  if (!sessionId) throw new Error('Session ID required for CSRF token');
+  return `${CSRF_VERSION}.${csrfDigest(sessionId)}`;
 }
 
 export function verifyCsrf(sessionId, headerToken) {
-  const expected = csrfBySession.get(sessionId);
-  if (!expected || !headerToken) return false;
-  try {
-    return timingSafeEqual(
-      Buffer.from(expected, 'utf8'),
-      Buffer.from(String(headerToken), 'utf8'),
-    );
-  } catch {
-    return false;
-  }
+  if (!sessionId || !headerToken) return false;
+  const expected = issueCsrf(sessionId);
+  const actual = String(headerToken);
+  const expectedBytes = Buffer.from(expected, 'utf8');
+  const actualBytes = Buffer.from(actual, 'utf8');
+  if (expectedBytes.length !== actualBytes.length) return false;
+  return timingSafeEqual(expectedBytes, actualBytes);
 }
 
-export function clearCsrf(sessionId) {
-  csrfBySession.delete(sessionId);
-}
+// Stateless CSRF tokens require no per-process cleanup.
+export function clearCsrf() {}
 
 export async function requireSessionAndCsrf(req) {
   const auth = await requireSession(req);
