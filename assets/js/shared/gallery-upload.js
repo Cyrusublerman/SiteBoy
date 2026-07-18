@@ -1,17 +1,7 @@
-/**
- * Gallery upload client — presigned PUT → confirm (C2).
- * @module gallery-upload
- */
+import { Auth } from '../admin/auth.js';
 
 const SIGN_URL = '/api/admin/media/sign';
 const CONFIRM_URL = '/api/admin/media/confirm';
-
-function adminHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  const csrf = typeof window !== 'undefined' ? window.__adminCsrf : null;
-  if (csrf) headers['X-CSRF'] = csrf;
-  return headers;
-}
 
 export function formatFromMime(mime) {
   const map = {
@@ -31,15 +21,13 @@ export async function sha256Blob(blob) {
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/**
- * PUT blob to signed URL with upload progress (0–1).
- */
+/** PUT a blob to a signed URL with upload progress between 0 and 1. */
 export function putWithProgress(url, blob, mime, fields, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) {
-        onProgress(e.loaded / e.total);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress(event.loaded / event.total);
       }
     };
     xhr.onload = () => {
@@ -50,7 +38,7 @@ export function putWithProgress(url, blob, mime, fields, onProgress) {
 
     if (fields) {
       const form = new FormData();
-      Object.entries(fields).forEach(([k, v]) => form.append(k, v));
+      Object.entries(fields).forEach(([key, value]) => form.append(key, value));
       form.append('Content-Type', mime);
       form.append('file', blob);
       xhr.open('POST', url);
@@ -63,8 +51,15 @@ export function putWithProgress(url, blob, mime, fields, onProgress) {
   });
 }
 
+export async function adminJsonRequest(url, body) {
+  return Auth.apiFetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
 /**
- * Upload a blob to gallery storage and persist metadata row.
+ * Upload a blob to gallery storage and persist its metadata row.
  * @param {Blob} blob
  * @param {object} meta
  * @param {{ onProgress?: (p: number) => void, retries?: number }} opts
@@ -87,60 +82,54 @@ export async function uploadGalleryBlob(blob, meta = {}, opts = {}) {
   const name = filename || `upload-${Date.now()}`;
   const bytes = blob.size;
   const retries = opts.retries ?? 2;
-  let lastErr;
+  let lastError;
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const signRes = await fetch(SIGN_URL, {
-        method: 'POST',
-        headers: adminHeaders(),
-        body: JSON.stringify({
-          filename: name,
-          mime,
-          bytes,
-          collection,
-        }),
+      const signRes = await adminJsonRequest(SIGN_URL, {
+        filename: name,
+        mime,
+        bytes,
+        collection,
       });
       if (!signRes.ok) {
-        throw new Error(`sign failed: ${signRes.status}`);
+        const error = await signRes.json().catch(() => ({}));
+        throw new Error(error.error || `sign failed: ${signRes.status}`);
       }
       const sign = await signRes.json();
 
       await putWithProgress(sign.url, blob, mime, sign.fields, opts.onProgress);
 
       const sha256 = await sha256Blob(blob);
-      const confirmRes = await fetch(CONFIRM_URL, {
-        method: 'POST',
-        headers: adminHeaders(),
-        body: JSON.stringify({
-          key: sign.key,
-          itemId: sign.itemId,
-          mime,
-          bytes,
-          sha256,
-          collection: sign.collection || sign.scope || collection,
-          title: title || name,
-          description,
-          sourceTool,
-          tags,
-          width,
-          height,
-          duration,
-          slug,
-          format: formatFromMime(mime),
-        }),
+      const confirmRes = await adminJsonRequest(CONFIRM_URL, {
+        key: sign.key,
+        itemId: sign.itemId,
+        mime,
+        bytes,
+        sha256,
+        collection: sign.collection || sign.scope || collection,
+        title: title || name,
+        description,
+        sourceTool,
+        tags,
+        width,
+        height,
+        duration,
+        slug,
+        format: formatFromMime(mime),
       });
       if (!confirmRes.ok) {
-        throw new Error(`confirm failed: ${confirmRes.status}`);
+        const error = await confirmRes.json().catch(() => ({}));
+        throw new Error(error.error || `confirm failed: ${confirmRes.status}`);
       }
       return confirmRes.json();
-    } catch (err) {
-      lastErr = err;
+    } catch (error) {
+      lastError = error;
       if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
       }
     }
   }
 
-  throw lastErr;
+  throw lastError;
 }

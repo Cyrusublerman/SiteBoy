@@ -1,36 +1,47 @@
 # C2 — Server-backed upload pipeline
 
-**Status**: DONE
-**Priority**: P1
-**Owner file(s)**: `assets/js/tools/utilities/media-manager.js`, upload endpoint in A1 runtime
-**Blockers**: → A3, A4
-**Blocks**: C4
-**Last touched**: 2026-06-18
+**Status**: REVIEW  
+**Priority**: P1  
+**Owner file(s)**: `assets/js/shared/gallery-upload.js`, `assets/js/admin/gallery-editor.js`, `api/admin/media/*`  
+**Blockers**: → A3, A4  
+**Blocks**: C4  
+**Last touched**: 2026-07-18
 
 ## Goal
 
-Replace `media-manager`'s local-only flow with: presigned upload → store metadata in A3 → enqueue thumbnail job.
+Provide an authenticated browser flow for signed R2 upload, durable metadata storage and thumbnail processing.
 
 ## Done when
 
-Upload from `media-manager` writes binary to A4 + a row to A3 + triggers C3. New item appears in the gallery without a site rebuild.
+A signed-in administrator can upload one or more files through SiteBoy, edit per-file metadata, persist the database records, generate thumbnails and see the new items in the public gallery without rebuilding the site.
 
 ## Sub-tasks
 
-- [x] Add admin-gated upload endpoint in A1 runtime that issues A4 signed-upload URLs.
-- [x] Add endpoint that persists item metadata to A3 after upload completes.
-- [x] Refactor `media-manager.js`: browser-local staging + `/api/admin/media/sign` upload path.
-- [x] Add upload progress UI (`ComponentLibrary.ProgressBar`).
-- [x] Enqueue thumbnail job (calls C3 worker) on upload completion.
-- [x] Handle large-file resume / retry (client retry loop in `gallery-upload.js`).
-- [ ] Pass `page-compliance-audit` on `media-manager.js`.
+- [x] Add admin-gated endpoint that issues R2 signed PUT URLs.
+- [x] Add endpoint that persists upload and gallery metadata after upload completes.
+- [x] Route sign and confirm requests through the authenticated CSRF client.
+- [x] Add multiple-file intake and upload progress in the Gallery editor.
+- [x] Add retry handling in `gallery-upload.js`.
+- [x] Enqueue thumbnail work after upload confirmation.
+- [x] Allow a signed-in administrator to retry pending thumbnails without access to `CRON_SECRET`.
+- [x] Record title, description, tags, collection, checksum, dimensions and display metadata.
+- [ ] Verify browser PUT CORS against the actual Production and Preview origins.
+- [ ] Verify end-to-end upload against configured Preview Postgres and R2 credentials.
+- [ ] Add explicit MIME and maximum-size policy before signing.
+- [ ] Add resumable multipart upload for files that exceed the standard upload threshold.
+- [ ] Pass `page-compliance-audit` on the complete Gallery editor.
 
 ## Notes / decisions
 
-- Flask API retained for library browse / manifest edit only.
-- Set `ADMIN_BYPASS=1` for local upload testing without session.
+- Binary uploads go directly from the browser to R2. Vercel Functions only sign and confirm the operation.
+- `ADMIN_BYPASS=1` remains a local-only compatibility option and must not be enabled in Production.
+- Upload confirmation creates a published item by default. The editor can immediately change its status to draft or archived.
 
 ## References
 
-- `assets/js/tools/utilities/media-manager.js`
+- `assets/js/admin/gallery-editor.js`
 - `assets/js/shared/gallery-upload.js`
+- `api/admin/media/sign.js`
+- `api/admin/media/confirm.js`
+- `api/admin/media/thumb.js`
+- `blog/docs/site/dynamic-production-runbook.md`

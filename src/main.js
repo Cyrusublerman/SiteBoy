@@ -8,6 +8,7 @@
  */
 
 import '../assets/css/pkl-public.css';
+import '../assets/css/admin-editor.css';
 
 // Pre-load core dependencies in correct order
 import '../assets/js/core/config.js';

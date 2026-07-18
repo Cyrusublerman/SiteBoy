@@ -5,6 +5,7 @@ import {
   integer,
   bigint,
   jsonb,
+  doublePrecision,
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -32,6 +33,20 @@ export const galleryItems = pgTable('gallery_items', {
   urlsJsonb: jsonb('urls_jsonb').notNull().default({}),
   metadataJsonb: jsonb('metadata_jsonb').notNull().default({}),
   status: text('status').notNull().default('published'),
+  slug: text('slug'),
+  title: text('title'),
+  description: text('description'),
+  mediaUrl: text('media_url'),
+  thumbUrl: text('thumb_url'),
+  format: text('format'),
+  sourceTool: text('source_tool'),
+  tags: jsonb('tags').notNull().default([]),
+  collection: text('collection'),
+  width: integer('width'),
+  height: integer('height'),
+  duration: doublePrecision('duration'),
+  sha256: text('sha256'),
+  thumbStatus: text('thumb_status').notNull().default('pending'),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 });

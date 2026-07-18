@@ -1,0 +1,127 @@
+.admin-section,
+.admin-gallery-editor {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-editor-tabs,
+.admin-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--F, 14px) * 0.5);
+  margin: var(--F, 14px) 0;
+}
+
+.admin-editor-tabs .btn.is-active {
+  background: var(--c-text);
+  color: var(--c-bg);
+}
+
+.admin-editor-status {
+  min-height: 1.5em;
+  margin: calc(var(--F, 14px) * 0.5) 0;
+  font-family: 'Atkinson Hyperlegible', monospace;
+}
+
+.admin-editor-status[data-tone='success'] {
+  font-weight: 700;
+}
+
+.admin-editor-status[data-tone='error'],
+.admin-editor-status[data-tone='warning'] {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.admin-editor-pane {
+  display: grid;
+  gap: var(--F, 14px);
+}
+
+.admin-editor-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--F, 14px);
+  align-items: end;
+}
+
+.admin-editor-field {
+  display: grid;
+  gap: calc(var(--F, 14px) * 0.5);
+}
+
+.admin-editor-field-label {
+  font-family: 'Atkinson Hyperlegible', monospace;
+  font-size: var(--F, 14px);
+}
+
+.admin-editor-field .select {
+  width: 100%;
+  min-height: calc(var(--F, 14px) * 2.5);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg);
+  color: var(--c-text);
+  font: inherit;
+}
+
+.admin-tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--F, 14px) * 0.5);
+}
+
+.admin-tag-chip {
+  border: 1px solid var(--c-border);
+  padding: calc(var(--F, 14px) * 0.2) calc(var(--F, 14px) * 0.5);
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+
+.admin-gallery-preview {
+  display: block;
+  max-width: min(100%, 40rem);
+  max-height: 30rem;
+  object-fit: contain;
+  border: 1px solid var(--c-border);
+}
+
+.admin-system-grid {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(4rem, auto);
+  max-width: 28rem;
+  border: 1px solid var(--c-border);
+}
+
+.admin-system-grid dt,
+.admin-system-grid dd {
+  margin: 0;
+  padding: calc(var(--F, 14px) * 0.5) var(--F, 14px);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.admin-system-grid dd {
+  text-align: right;
+  border-left: 1px solid var(--c-border);
+}
+
+.admin-editor-actions .is-destructive {
+  border-style: double;
+}
+
+.admin-section-row[data-available='false'] {
+  opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+  .admin-editor-tabs,
+  .admin-editor-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editor-tabs .btn,
+  .admin-editor-actions .btn {
+    width: 100%;
+  }
+}
