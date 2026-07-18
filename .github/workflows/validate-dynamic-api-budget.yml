@@ -1,0 +1,42 @@
+name: Validate dynamic API function budget
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'scripts/vercel/**'
+      - 'tests/api-content-gateway.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vercel.json'
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'scripts/vercel/**'
+      - 'tests/api-content-gateway.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vercel.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check Vercel Hobby function budget
+        run: node scripts/vercel/check-function-budget.mjs
+      - name: Test content gateway and function inventory
+        run: npm run test:run -- tests/api-content-gateway.test.js
+      - name: Run production build
+        run: npm run build
