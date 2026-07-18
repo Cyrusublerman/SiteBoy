@@ -11,6 +11,7 @@ export function formatFromMime(mime) {
     'image/gif': 'gif',
     'video/mp4': 'mp4',
     'video/webm': 'webm',
+    'model/gltf-binary': 'glb',
   };
   return map[mime] || (mime?.split('/').pop() || 'unknown');
 }
