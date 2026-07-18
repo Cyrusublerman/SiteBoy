@@ -3,8 +3,8 @@ import {
   Heading,
   Paragraph,
   Button,
-  TextInput,
 } from '../shared/component-library.js';
+import { TextInput } from '../shared/components/input/TextInput.js';
 import { Auth } from '../admin/auth.js';
 import { GalleryEditor } from '../admin/gallery-editor.js';
 

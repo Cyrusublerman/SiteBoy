@@ -3,11 +3,11 @@ import {
   Heading,
   Paragraph,
   Button,
-  TextInput,
-  FileInput,
   FileTable,
   Select,
 } from '../shared/component-library.js';
+import { TextInput } from '../shared/components/input/TextInput.js';
+import { FileInput } from '../shared/components/input/FileInput.js';
 import { Auth } from './auth.js';
 import { uploadGalleryBlob } from '../shared/gallery-upload.js';
 
