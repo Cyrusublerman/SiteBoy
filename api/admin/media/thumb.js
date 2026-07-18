@@ -1,16 +1,19 @@
 import { sql } from '../../_lib/db.js';
 import { generateThumbForItem } from '../../_lib/thumb.js';
-import { errorResponse, jsonResponse } from '../../_lib/auth.js';
+import { errorResponse, jsonResponse, requireAdmin } from '../../_lib/auth.js';
 import { vercelHandler } from '../../_lib/adapter.js';
 
-function authorised(request) {
+async function authorised(request) {
   const bearer = request.headers.get('authorization') || '';
   const token = bearer.replace(/^Bearer\s+/i, '');
-  return process.env.CRON_SECRET && token === process.env.CRON_SECRET;
+  if (process.env.CRON_SECRET && token === process.env.CRON_SECRET) {
+    return true;
+  }
+  return Boolean(await requireAdmin(request));
 }
 
 async function handlePost(request) {
-  if (!authorised(request)) {
+  if (!(await authorised(request))) {
     return errorResponse('unauthorized', 401);
   }
 
@@ -18,7 +21,7 @@ async function handlePost(request) {
   try {
     body = await request.json();
   } catch {
-    /* empty body ok */
+    /* empty body is valid */
   }
 
   const itemId = body.itemId;
@@ -27,7 +30,7 @@ async function handlePost(request) {
   try {
     let rows;
     if (itemId) {
-      const result = await sql.query(`SELECT * FROM gallery_items WHERE id = $1`, [itemId]);
+      const result = await sql.query('SELECT * FROM gallery_items WHERE id = $1', [itemId]);
       rows = result.rows;
     } else {
       const result = await sql.query(
@@ -54,22 +57,22 @@ async function handlePost(request) {
           [row.id, thumbUrl, status],
         );
         results.push({ id: row.id, thumbUrl, status });
-      } catch (err) {
+      } catch (error) {
         await sql.query(
           `UPDATE gallery_items SET thumb_status = 'failed', updated_at = NOW() WHERE id = $1`,
           [row.id],
         );
-        results.push({ id: row.id, error: err.message });
+        results.push({ id: row.id, error: error.message });
       }
     }
 
     return jsonResponse({ processed: results.length, results });
-  } catch (err) {
-    return errorResponse(err.message || 'thumb failed', 500);
+  } catch (error) {
+    return errorResponse(error.message || 'thumb failed', 500);
   }
 }
 
-export default vercelHandler(async (req) => {
-  if (req.method !== 'POST') return errorResponse('method not allowed', 405);
-  return handlePost(req);
+export default vercelHandler(async (request) => {
+  if (request.method !== 'POST') return errorResponse('method not allowed', 405);
+  return handlePost(request);
 });

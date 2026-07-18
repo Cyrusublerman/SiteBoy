@@ -8,6 +8,7 @@
  */
 
 import '../assets/css/pkl-public.css';
+import '../assets/css/admin-editor.css';
 
 // Pre-load core dependencies in correct order
 import '../assets/js/core/config.js';
@@ -31,6 +32,7 @@ import '../assets/js/sections/about_section.js';
 import '../assets/js/sections/store_section.js';
 import '../assets/js/sections/three_d_section.js';
 import '../assets/js/sections/admin_section.js';
+import '../assets/js/admin/gallery-editor-state.js';
 
 // PKL public projection sections load after the legacy Blog renderer.
 import '../assets/js/sections/wiki_section.js';
