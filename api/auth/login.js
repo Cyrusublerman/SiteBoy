@@ -1,11 +1,13 @@
 import { verify } from '@node-rs/argon2';
 import {
-  createLucia,
+  createSessionService,
   ADMIN_ID,
   issueCsrf,
   getClientIp,
+  getUserAgent,
   appendCookie,
 } from '../_lib/session.js';
+import { mfa } from '../_lib/mfa.js';
 import { checkRateLimit, recordFailedAttempt, clearAttempts } from '../_lib/rate-limit.js';
 import { writeAuditLog } from '../_lib/audit.js';
 import { vercelHandler } from '../_lib/adapter.js';
@@ -44,7 +46,7 @@ async function handlePost(request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { password } = body;
+  const { password, totp, recoveryCode } = body;
   if (!password || typeof password !== 'string') {
     return Response.json({ error: 'Password required' }, { status: 400 });
   }
@@ -72,16 +74,36 @@ async function handlePost(request) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
+  const secondFactor = await mfa.verifyLogin(ADMIN_ID, { totp, recoveryCode });
+  if (!secondFactor.ok) {
+    try {
+      await recordFailedAttempt(ip);
+    } catch (error) {
+      console.error('Failed to persist MFA login attempt', error);
+      return unavailableResponse();
+    }
+    return Response.json(
+      {
+        error: secondFactor.mfaRequired ? 'MFA required or invalid' : 'Invalid credentials',
+        mfaRequired: secondFactor.mfaRequired,
+      },
+      { status: 401 },
+    );
+  }
+
   try {
     await clearAttempts(ip);
   } catch (error) {
     console.error('Failed to clear prior login attempts', error);
   }
 
-  const lucia = createLucia();
-  const session = await lucia.createSession(ADMIN_ID, {});
+  const sessionService = createSessionService();
+  const session = await sessionService.createSession(ADMIN_ID, {
+    ip,
+    ua: getUserAgent(request),
+  });
   const csrfToken = issueCsrf(session.id);
-  const cookie = lucia.createSessionCookie(session.id);
+  const cookie = sessionService.createSessionCookie(session.token);
 
   await writeAuditLog({
     actorId: ADMIN_ID,

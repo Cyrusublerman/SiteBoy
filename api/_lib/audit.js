@@ -2,6 +2,11 @@ import { ulid } from 'ulid';
 import { getDb, schema } from './db.js';
 import { hashValue, getClientIp } from './session.js';
 
+export function hashAuditIp(req) {
+  const clientIp = req ? getClientIp(req) : null;
+  return clientIp ? hashValue(clientIp) : null;
+}
+
 /**
  * Write an audit_log row for a mutation.
  * @param {object} params
@@ -21,8 +26,9 @@ export async function writeAuditLog({
   before,
   after,
   req,
+  db: transaction,
 }) {
-  const db = getDb();
+  const db = transaction ?? getDb();
   await db.insert(schema.auditLog).values({
     id: ulid(),
     actorId,
@@ -31,6 +37,6 @@ export async function writeAuditLog({
     targetId: targetId ?? null,
     beforeHash: before != null ? hashValue(JSON.stringify(before)) : null,
     afterHash: after != null ? hashValue(JSON.stringify(after)) : null,
-    ip: req ? getClientIp(req) : null,
+    ip: hashAuditIp(req),
   });
 }
