@@ -10,11 +10,31 @@ import { checkRateLimit, recordFailedAttempt, clearAttempts } from '../_lib/rate
 import { writeAuditLog } from '../_lib/audit.js';
 import { vercelHandler } from '../_lib/adapter.js';
 
+function unavailableResponse() {
+  return Response.json(
+    { error: 'Authentication service temporarily unavailable' },
+    { status: 503, headers: { 'Retry-After': '60' } },
+  );
+}
+
 async function handlePost(request) {
   const ip = getClientIp(request);
-  const limit = checkRateLimit(ip);
+  let limit;
+  try {
+    limit = await checkRateLimit(ip);
+  } catch (error) {
+    console.error('Login rate limiter unavailable', error);
+    return unavailableResponse();
+  }
+
   if (!limit.allowed) {
-    return Response.json({ error: 'Too many attempts' }, { status: 429 });
+    return Response.json(
+      { error: 'Too many attempts', scope: limit.scope },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+      },
+    );
   }
 
   let body;
@@ -43,11 +63,20 @@ async function handlePost(request) {
   }
 
   if (!valid) {
-    recordFailedAttempt(ip);
+    try {
+      await recordFailedAttempt(ip);
+    } catch (error) {
+      console.error('Failed to persist login attempt', error);
+      return unavailableResponse();
+    }
     return Response.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  clearAttempts(ip);
+  try {
+    await clearAttempts(ip);
+  } catch (error) {
+    console.error('Failed to clear prior login attempts', error);
+  }
 
   const lucia = createLucia();
   const session = await lucia.createSession(ADMIN_ID, {});
