@@ -12,23 +12,58 @@ Implemented server capabilities:
 
 - password login and database-backed sessions;
 - CSRF-protected admin mutations;
-- generic CRUD for gallery items, projects, products, notes, tags and links;
+- typed CRUD for galleries, gallery items, projects, products, notes, articles and page blocks;
+- atomic version history, optimistic concurrency, soft deletion, restore and revert;
 - public gallery reads;
 - signed direct uploads to Cloudflare R2;
-- upload confirmation and media database records;
+- server-owned pending uploads with HEAD-verified, transactional confirmation;
+- resumable multipart uploads whose browser state contains no credentials;
+- 30-day retained media deletion with restore, purge and orphan reconciliation;
 - thumbnail generation and scheduled thumbnail processing;
 - audit logging;
 - static PKL Wiki, Blog, figures and feeds alongside the dynamic backend.
 
 Not yet complete:
 
-- gallery editor UI;
+- all external provisioning: no database, bucket or environment has been created, so nothing above is verified live;
+- live Preview verification of the merged Gallery editor;
 - project, product, notes and Blog editor UIs;
-- TOTP/MFA;
-- distributed login rate limiting;
-- migration from deprecated `@vercel/postgres` to the Neon driver.
+- live TOTP enrolment and recovery drill;
+- live verification of distributed login rate limiting.
 
 Do not publicly enable the admin UI until the required environment, database and R2 checks below pass.
+
+## 1a. Provisioning order
+
+Execute once, in this order. Sections 2–10 are the reference detail for each step. Preview must pass before Production is touched.
+
+**Step 1 — Neon.** `console.neon.tech` → `New Project` (region closest to the Vercel deployment region). In the created project: `Branches` → `New Branch` from `main`, named `preview`. For each of `main` and `preview`, open `Connect` and copy both the **Pooled** and **Direct** connection strings. Four strings total.
+
+**Step 2 — R2 bucket.** Cloudflare dashboard → `R2` → `Create bucket`. Then `Settings` → `Public access` → connect the custom domain `media.einoder.net`. Then `Settings` → `CORS Policy` → paste §7.3 with the exact Production and Preview origins. Never `*`.
+
+**Step 3 — R2 token.** `R2` → `Manage API Tokens` → `Create API Token` → permission `Object Read & Write`, scoped to that single bucket. Record the access-key ID, secret and the account S3 endpoint. The token is shown once.
+
+**Step 4 — secrets.** Generate locally per §3. `CSRF_SECRET` and `CRON_SECRET` need ≥32 characters; `AUTH_ENCRYPTION_KEY` must base64-decode to exactly 32 bytes. Generate distinct values for Preview and Production — sharing them defeats environment isolation.
+
+**Step 5 — Vercel variables.** `Settings` → `Environment Variables`. Add every variable in §2 **twice**: once with the Preview target selected and the Preview values, once with Production. Set `SITE_ORIGIN` to the environment's own origin. Set `MAX_MEDIA_UPLOAD_BYTES` to a positive byte count.
+
+**Step 6 — readiness gate.** From a local checkout:
+
+```bash
+vercel env pull .env.preview --environment=preview
+env $(grep -v '^#' .env.preview | xargs) node scripts/admin/check-production-readiness.mjs
+rm .env.preview
+```
+
+The checker must report no errors before proceeding. It validates variable presence, secret lengths, key decoding, URL shapes, database reachability and `/api/health`.
+
+**Step 7 — migrate Preview.** `vercel env run -e preview -- npm run db:migrate` (§5), then verify the `admin` row exists.
+
+**Step 8 — enrol MFA.** Log in to the Preview `#admin` route, enrol TOTP, store the recovery codes offline, then verify one recovery code works and re-enrol.
+
+**Step 9 — import Preview.** Dry-run every importer, then write, then `npm run import:verify` (§6).
+
+**Step 10 — repeat for Production.** Steps 6, 7 and 9 against Production, only after Preview passes end to end.
 
 ## 2. Required Vercel environment variables
 
@@ -38,16 +73,19 @@ Set sensitive values for Production and Preview. Development values may use sepa
 
 | Variable | Required | Purpose |
 |---|---:|---|
-| `POSTGRES_URL` | yes | Pooled Neon/Postgres connection used by `@vercel/postgres` and Drizzle. |
-| `DATABASE_URL` | recommended | Standard database URL used by migrations and future Neon-driver migration. It may equal `POSTGRES_URL`. |
+| `POSTGRES_URL` | yes | Pooled Neon connection used by serverless runtime and Drizzle. |
+| `DATABASE_URL` | recommended | Direct Neon connection used only by migrations and imports. |
 | `ADMIN_PASSWORD_HASH` | yes | Argon2id hash for the single admin password. Never store the plaintext password. |
 | `CSRF_SECRET` | yes for production | Random secret of at least 32 characters used to sign stateless CSRF tokens. |
+| `AUTH_ENCRYPTION_KEY` | yes | Base64 or hexadecimal value decoding to 32 bytes; encrypts TOTP secrets with AES-256-GCM. |
 | `CRON_SECRET` | yes | Random bearer secret used by the Vercel thumbnail cron and thumbnail worker endpoint. |
 | `R2_ENDPOINT` | yes for uploads | Cloudflare R2 S3 endpoint, normally `https://<account-id>.r2.cloudflarestorage.com`. |
 | `R2_ACCESS_KEY_ID` | yes for uploads | R2 API token access-key ID. |
 | `R2_SECRET_ACCESS_KEY` | yes for uploads | R2 API token secret. |
 | `R2_BUCKET` | yes for uploads | Bucket name. |
-| `R2_PUBLIC_BASE` | recommended | Public media origin, currently expected to be `https://media.einoder.net`. |
+| `R2_PUBLIC_BASE` | yes | Public media origin, currently expected to be `https://media.einoder.net`. |
+| `SITE_ORIGIN` | recommended | The environment's own origin; used by the readiness checker for the live health probe. |
+| `MAX_MEDIA_UPLOAD_BYTES` | optional | Positive byte ceiling enforced before signing. Defaults apply when unset. |
 
 Vercel provides `VERCEL_URL`, `VERCEL_GIT_COMMIT_SHA` and related system values automatically.
 
@@ -72,16 +110,17 @@ unset ADMIN_PASSWORD
 
 Copy only the resulting Argon2 hash into `ADMIN_PASSWORD_HASH`.
 
-### 3.2 CSRF and cron secrets
+### 3.2 CSRF, cron and authentication-encryption secrets
 
 Generate separate values:
 
 ```bash
 openssl rand -base64 48
 openssl rand -base64 48
+openssl rand -base64 32
 ```
 
-Use one as `CSRF_SECRET` and the other as `CRON_SECRET`.
+Use the 48-byte values as `CSRF_SECRET` and `CRON_SECRET`; use the 32-byte value as `AUTH_ENCRYPTION_KEY`.
 
 Do not reuse the R2 secret, database password, GitHub token or OpenAI key.
 
@@ -91,11 +130,11 @@ Preferred setup:
 
 1. Create or select a Neon project.
 2. Use a pooled connection string for serverless execution.
-3. Add the pooled connection string to Vercel as both `DATABASE_URL` and `POSTGRES_URL`.
+3. Set the pooled URL as `POSTGRES_URL` and the direct URL as `DATABASE_URL`.
 4. Apply it to Production and Preview. Use a separate database or Neon branch for Preview where practical.
 5. Redeploy after saving the values.
 
-The current runtime still imports `@vercel/postgres`, so `POSTGRES_URL` must exist even when Neon creates `DATABASE_URL` automatically.
+The runtime never falls back to the direct URL. Migration and import scripts never fall back to the pooled URL.
 
 ## 5. Apply database migrations
 
@@ -116,12 +155,11 @@ vercel env run -e production -- npm run db:migrate
 Expected result:
 
 ```text
-Applying 0001_init.sql...
-Applying 0002_gallery_c1.sql...
-Applied 2 migration(s).
+Applied 0006_media_lifecycle.sql
+Migration ledger current: 6 file(s), 6 applied.
 ```
 
-The first migration creates the fixed `admin` user required by Lucia sessions. It is safe to rerun because migrations use `IF NOT EXISTS` and the seed uses `ON CONFLICT DO NOTHING`.
+The first migration creates the fixed `admin` user. Reruns apply no files. Editing any applied SQL file causes a checksum-drift failure.
 
 Verify the database contains at least:
 
@@ -141,7 +179,15 @@ admin | admin
 Review the import without writing first if the script supports a dry-run mode. Then run the repository command with production variables:
 
 ```bash
-vercel env run -e production -- npm run import:art
+npm run import:art
+npm run import:projects
+npm run import:pages
+npm run import:blog
+npm run import:verify
+vercel env run -e production -- npm run import:art:write
+vercel env run -e production -- npm run import:projects:write
+vercel env run -e production -- npm run import:pages:write
+vercel env run -e production -- npm run import:blog:write
 ```
 
 Before accepting the import, confirm:
@@ -268,11 +314,13 @@ Remove `cookies.txt` after testing.
 
 The browser workflow is:
 
-1. authenticated request to `/api/admin/media/sign`;
+1. authenticated request to `/api/admin/media/sign`, which creates a pending row and generates the key;
 2. direct `PUT` to the returned R2 URL;
-3. authenticated request to `/api/admin/media/confirm`;
+3. authenticated request to `/api/admin/media/confirm`, which verifies R2 HEAD before committing;
 4. thumbnail worker processes the new database row;
 5. public gallery reads the published record.
+
+Files at or above 20 MiB use `multipart-init`, `multipart-sign-part` and `multipart-complete` actions through the same two media entrypoints. Session storage may contain only upload ID, key, item ID and completed part ETags. Expired pending uploads are cleaned by the existing cron.
 
 Verify these conditions:
 
@@ -280,8 +328,10 @@ Verify these conditions:
 - oversized uploads are rejected before signing;
 - the signed URL expires;
 - the browser PUT includes the same `Content-Type` and length used during signing;
+- client-supplied keys are rejected;
+- forged, missing or mismatched HEAD confirmations are rejected;
 - confirm creates one `media_uploads` record and one gallery item;
-- a repeated confirm does not create unintended duplicates;
+- a repeated confirm returns the existing item without duplicate rows;
 - the public URL uses `R2_PUBLIC_BASE` rather than the private S3 endpoint.
 
 ## 10. Verify the thumbnail cron
@@ -303,10 +353,18 @@ Confirm pending rows move through:
 ```text
 pending → done
 pending → failed
-pending → skipped
 ```
 
 Investigate failed rows before enabling the editor for routine use.
+
+The same cron expires abandoned uploads and advances retained deletion rows:
+
+```text
+retained → pending → deleted
+                   ↘ failed → pending
+```
+
+Ordinary Gallery deletion only soft-deletes the item and starts the 30-day retention period. Restore is permitted before expiry. `PURGE NOW` bypasses the remaining retention period.
 
 ## 11. Production promotion checklist
 
@@ -338,13 +396,11 @@ Do not enable the admin navigation until all boxes pass:
 
 Before exposing admin entry points beyond private use:
 
-1. Replace the process-local login rate limiter with a distributed database, KV or platform firewall limiter.
-2. Implement and require TOTP/MFA.
-3. Add content-specific validation schemas and optimistic concurrency to every editor.
-4. Add revision tables for editable records.
-5. Migrate from deprecated `@vercel/postgres` and Lucia v3 to maintained equivalents.
-6. Add browser end-to-end tests for the complete gallery upload and editing workflow.
-7. Add backup and restore procedures for Neon and R2 metadata.
+1. Complete live TOTP enrolment, recovery and logout drills.
+2. Add content-specific validation schemas and optimistic concurrency to every editor.
+3. Add revision tables for editable records.
+4. Add browser end-to-end tests for the complete gallery upload and editing workflow.
+5. Complete backup and restore drills for Neon and R2 metadata.
 
 ## 13. PKL publication workflow settings
 

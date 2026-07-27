@@ -5,7 +5,7 @@
 **Owner file(s)**: `.gitignore`, `dist/`
 **Blockers**: none
 **Blocks**: F3 (clean commits)
-**Last touched**: 2026-05-12
+**Last touched**: 2026-07-23
 
 ## Goal
 
@@ -19,15 +19,15 @@
 
 ## Sub-tasks
 
-- [ ] Confirm `.gitignore` covers `dist/`.
-- [ ] `git rm -r --cached dist/` to untrack existing files.
-- [ ] Commit the untrack as one isolated commit.
-- [ ] Verify `git status` shows no `dist/` entries after a fresh `npm run build`.
-- [ ] If A1 host needs build artefacts, configure the host-side build pipeline (Vercel build step) — never commit the output.
+- [x] Confirm `.gitignore` covers `dist/`.
+- [x] Confirm `git ls-files dist/` returns no tracked files.
+- [x] Confirm the untracked build artefact state is already committed.
+- [x] Verify `git status` shows no `dist/` entries after a fresh `npm run build`.
+- [x] Configure the Vercel host-side build pipeline; never commit output.
 
 ## Notes / decisions
 
-(append-only)
+- 2026-07-23: Predicate verified in an isolated `origin/main` worktree after a fresh build.
 
 ## References
 
