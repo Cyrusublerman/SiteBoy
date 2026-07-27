@@ -146,6 +146,16 @@ import {
     LuminanceCurveEditor,
 } from './components/tool/index.js';
 
+// Import admin editor chrome components
+import {
+    AdminTabBar,
+    AdminStatusLine,
+    AdminEditorShell,
+    AdminDomainEditor,
+    VersionDiffView,
+    VersionHistoryPanel,
+} from './components/admin/index.js';
+
 // Import navigation components
 import { Scrollbar } from './components/navigation/index.js';
 
@@ -334,6 +344,13 @@ const ComponentLibrary = {
             'diagnostic-preview-toggle': DiagnosticPreviewToggle,
             'luminance-curve-editor': LuminanceCurveEditor,
             
+            // Admin editor chrome
+            'admin-tab-bar': AdminTabBar,
+            'admin-status-line': AdminStatusLine,
+            'admin-editor-shell': AdminEditorShell,
+            'version-diff-view': VersionDiffView,
+            'version-history-panel': VersionHistoryPanel,
+
             // Navigation
             'scrollbar': Scrollbar,
 
@@ -548,6 +565,14 @@ ComponentLibrary.LineListInput           = LineListInput;
 ComponentLibrary.GradientStops           = GradientStops;
 ComponentLibrary.GeneratorTransportStrip = GeneratorTransportStrip;
 
+// Assign admin editor chrome to ComponentLibrary immediately
+ComponentLibrary.AdminTabBar = AdminTabBar;
+ComponentLibrary.AdminStatusLine = AdminStatusLine;
+ComponentLibrary.AdminEditorShell = AdminEditorShell;
+ComponentLibrary.AdminDomainEditor = AdminDomainEditor;
+ComponentLibrary.VersionDiffView = VersionDiffView;
+ComponentLibrary.VersionHistoryPanel = VersionHistoryPanel;
+
 // Assign navigation components to ComponentLibrary immediately
 ComponentLibrary.Scrollbar = Scrollbar;
 
@@ -696,6 +721,14 @@ export {
     DriverPicker,
     CategoryPicker,
     ViewportCanvas,
+
+    // Admin editor chrome
+    AdminTabBar,
+    AdminStatusLine,
+    AdminEditorShell,
+    AdminDomainEditor,
+    VersionDiffView,
+    VersionHistoryPanel,
 
     // Additional Components
     Text,

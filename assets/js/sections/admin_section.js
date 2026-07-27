@@ -1,5 +1,6 @@
 import { BaseComponent } from '../shared/foundation.js';
 import {
+  AdminStatusLine,
   Heading,
   Paragraph,
   Button,
@@ -13,7 +14,7 @@ class AdminLoginView extends BaseComponent {
     super({ componentType: 'admin-login' }, deps);
     this.onLogin = options.onLogin;
     this.tracked = [];
-    this.statusElement = null;
+    this.status = null;
   }
 
   _track(component) {
@@ -23,9 +24,7 @@ class AdminLoginView extends BaseComponent {
   }
 
   _setStatus(message, tone = 'neutral') {
-    if (!this.statusElement) return;
-    this.statusElement.textContent = message;
-    this.statusElement.dataset.tone = tone;
+    this.status?.setStatus(message, tone);
   }
 
   render() {
@@ -47,15 +46,14 @@ class AdminLoginView extends BaseComponent {
     password.inputEl.type = 'password';
     password.inputEl.autocomplete = 'current-password';
 
-    this.statusElement = this.createElement('p', 'admin-editor-status');
-    this.statusElement.setAttribute('role', 'status');
-    this.appendElement(this.element, this.statusElement);
+    this.status = this._track(new AdminStatusLine({}, this.deps));
+    this.appendElement(this.element, this.status.render());
 
     const login = this._track(new Button({
       text: 'LOGIN',
       onClick: async () => {
         login.setDisabled(true);
-        this._setStatus('Signing in…');
+        this._setStatus('Signing in…', 'loading');
         try {
           await this.onLogin?.(password.getValue());
           this._setStatus('Authenticated.', 'success');
@@ -76,6 +74,7 @@ class AdminLoginView extends BaseComponent {
 
   destroy() {
     this.tracked = [];
+    this.status = null;
     super.destroy();
   }
 }

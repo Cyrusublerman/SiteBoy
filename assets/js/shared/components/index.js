@@ -57,6 +57,18 @@ export {
 } from './container/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN EDITOR CHROME
+// ═══════════════════════════════════════════════════════════════════════════════
+export {
+    AdminTabBar,
+    AdminStatusLine,
+    AdminEditorShell,
+    AdminDomainEditor,
+    VersionDiffView,
+    VersionHistoryPanel,
+} from './admin/index.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // TOOL COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════════
 export {
@@ -81,6 +93,7 @@ import * as Output from './output/index.js';
 import * as Container from './container/index.js';
 import * as Tool from './tool/index.js';
 import * as Drawing from './drawing/index.js';
+import * as Admin from './admin/index.js';
 
 export const Components = {
     // Input
@@ -129,7 +142,15 @@ export const Components = {
     DriverPicker: Tool.DriverPicker,
     CategoryPicker: Tool.CategoryPicker,
     ViewportCanvas: Tool.ViewportCanvas,
-    
+
+    // Admin editor chrome
+    AdminTabBar: Admin.AdminTabBar,
+    AdminStatusLine: Admin.AdminStatusLine,
+    AdminEditorShell: Admin.AdminEditorShell,
+    AdminDomainEditor: Admin.AdminDomainEditor,
+    VersionDiffView: Admin.VersionDiffView,
+    VersionHistoryPanel: Admin.VersionHistoryPanel,
+
     // Factory method
     create(type, options, deps) {
         const Component = this[type];
