@@ -1,3 +1,5 @@
+import { isPublishable } from './pkl-publication-policy.js';
+
 const DEFAULT_BASE_URL = '/generated/pkl';
 
 function stableStringify(value) {
@@ -79,6 +81,7 @@ export class PKLContentProvider {
     this.graph = null;
     this.manifest = null;
     this.objectsByUid = new Map();
+    this.routesByPath = new Map();
     this.revisionCache = new Map();
   }
 
@@ -101,9 +104,26 @@ export class PKLContentProvider {
 
     this.manifest = manifest;
     this.graph = graph;
-    this.objectsByUid = new Map(graph.objects.map((object) => [object.uid, object]));
+    this.indexPublishable(graph);
     if (force) this.revisionCache.clear();
     return graph;
+  }
+
+  /**
+   * Index only objects affirmatively marked publishable. Publication is
+   * default-deny, so anything the snapshot carries without a valid marker is
+   * unreachable through every read path on this provider.
+   */
+  indexPublishable(graph) {
+    const publishable = (graph.objects ?? []).filter(isPublishable);
+    this.objectsByUid = new Map(publishable.map((object) => [object.uid, object]));
+    this.routesByPath = new Map();
+    for (const [route, uid] of Object.entries(graph.routes ?? {})) {
+      if (this.objectsByUid.has(uid)) this.routesByPath.set(route, uid);
+    }
+    for (const [alias, uid] of Object.entries(graph.aliases ?? {})) {
+      if (this.objectsByUid.has(uid)) this.routesByPath.set(alias, uid);
+    }
   }
 
   async validateSnapshot(manifest, graph) {
@@ -152,7 +172,7 @@ export class PKLContentProvider {
 
   getByRoute(route) {
     this.requireLoaded();
-    const uid = this.graph.routes?.[route] ?? this.graph.aliases?.[route];
+    const uid = this.routesByPath.get(route);
     return uid ? this.getObject(uid) : null;
   }
 
@@ -178,6 +198,7 @@ export class PKLContentProvider {
     if (value.uid !== uid || value.public_revision !== revisionNumber) {
       throw new Error(`PKL revision identity mismatch for ${uid} revision ${revisionNumber}`);
     }
+    if (!isPublishable(value)) return null;
     this.revisionCache.set(cacheKey, value);
     return value;
   }
@@ -208,7 +229,7 @@ export class PKLContentProvider {
 
   list({ objectType = null, tag = null, project = null, sort = 'title' } = {}) {
     this.requireLoaded();
-    const values = this.graph.objects.filter((object) => {
+    const values = [...this.objectsByUid.values()].filter((object) => {
       if (objectType && object.object_type !== objectType) return false;
       if (tag && !(object.tags ?? []).includes(tag)) return false;
       if (project && !(object.projects ?? []).includes(project)) return false;

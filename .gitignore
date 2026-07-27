@@ -4,3 +4,6 @@ node_modules/
 dist/
 .env
 .env.local
+public/rss.xml
+public/atom.xml
+public/feed.json
