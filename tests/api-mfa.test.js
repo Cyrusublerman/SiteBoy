@@ -83,7 +83,8 @@ describe('TOTP and recovery authentication', () => {
     const encrypted = encryptTotpSecret('TOPSECRET');
     expect(encrypted).not.toContain('TOPSECRET');
     expect(decryptTotpSecret(encrypted)).toBe('TOPSECRET');
-    expect(() => decryptTotpSecret(`${encrypted.slice(0, -1)}A`)).toThrow();
+    const flipped = encrypted.endsWith('A') ? 'B' : 'A';
+    expect(() => decryptTotpSecret(`${encrypted.slice(0, -1)}${flipped}`)).toThrow();
   });
 
   it('requires a valid TOTP before enabling and returns no TOTP secret after confirmation', async () => {
