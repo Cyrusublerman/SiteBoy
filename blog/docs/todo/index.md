@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-09-18 (H8 project state cleanup).
+Last touched: 2026-09-19 (land PR stack 25–30 onto H8 main).
 
 ---
 
@@ -45,6 +45,7 @@ Last touched: 2026-09-18 (H8 project state cleanup).
 | A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | REVIEW | — |
 | A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | — |
 | A5 | [A5-function-consolidation.md](A5-function-consolidation.md) | Vercel function-entrypoint consolidation | P1 | DONE | — |
+| A6 | [A6-pkl-publication-boundary.md](A6-pkl-publication-boundary.md) | PKL private/public publication boundary | P0 | REVIEW | — |
 
 ## B. Sections
 

@@ -16,3 +16,8 @@ tools/gallery-bundle-processor/*.log
 vite.config.js.timestamp-*
 vite_output.log
 vite_pid.txt
+
+# PKL feeds are prebuild artefacts
+public/rss.xml
+public/atom.xml
+public/feed.json

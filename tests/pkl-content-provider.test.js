@@ -49,6 +49,7 @@ function exampleObject() {
     backlinks: [],
     route: '/wiki/example',
     public_revision: 1,
+    status: 'active',
     content_hash: 'a'.repeat(64)
   };
 }
@@ -86,5 +87,18 @@ describe('PKLContentProvider', () => {
     });
     const provider = new PKLContentProvider({ fetchImpl: fetchFrom(values) });
     await expect(provider.load()).rejects.toThrow('digest');
+  });
+
+  it('hides objects that carry no publication marker', async () => {
+    const denied = { ...exampleObject(), uid: 'DENIED', route: '/wiki/denied' };
+    delete denied.status;
+    const values = await snapshot([exampleObject(), denied]);
+    const provider = new PKLContentProvider({ fetchImpl: fetchFrom(values) });
+    await provider.load();
+
+    expect(provider.getObject('DENIED')).toBeNull();
+    expect(provider.getByRoute('/wiki/denied')).toBeNull();
+    expect(provider.list().map((object) => object.uid)).toEqual(['EXAMPLE']);
+    expect(provider.search('test').map((object) => object.uid)).toEqual(['EXAMPLE']);
   });
 });
