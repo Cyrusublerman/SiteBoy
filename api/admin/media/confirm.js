@@ -1,24 +1,18 @@
-import { sql } from '../../_lib/db.js';
-import { publicUrl } from '../../_lib/r2.js';
 import { requireAdmin, errorResponse, jsonResponse } from '../../_lib/auth.js';
 import { vercelHandler } from '../../_lib/adapter.js';
-
-function formatFromMime(mime) {
-  const map = {
-    'image/jpeg': 'jpeg',
-    'image/png': 'png',
-    'image/webp': 'webp',
-    'image/gif': 'gif',
-    'video/mp4': 'mp4',
-    'video/webm': 'webm',
-    'model/gltf-binary': 'glb',
-  };
-  return map[mime] || (mime.split('/').pop() || 'unknown');
-}
+import {
+  abandonMultipart,
+  confirmPendingUpload,
+  finishMultipart,
+  MediaLifecycleError,
+  processDeletionQueue,
+  restoreGalleryItem,
+  retainGalleryItem,
+} from './_lifecycle.js';
 
 async function handlePost(request) {
   const actor = await requireAdmin(request);
-  if (!actor) return errorResponse('unauthorized', 401);
+  if (actor.error) return actor.error;
 
   let body;
   try {
@@ -27,89 +21,70 @@ async function handlePost(request) {
     return errorResponse('invalid json', 400);
   }
 
-  const key = body.key;
-  const itemId = body.itemId;
-  if (!key || !itemId) {
-    return errorResponse('key and itemId required', 400);
-  }
-
-  const mime = body.mime || 'application/octet-stream';
-  const bytes = Number(body.bytes) || 0;
-  const sha256 = body.sha256 || null;
-  const collection = body.collection || 'digital/generative';
-  const gallerySlug = collection;
-  const filename = key.split('/').pop();
-  const mediaUrl = publicUrl(key);
-  const thumbUrl = body.thumbUrl || null;
-  const format = body.format || formatFromMime(mime);
-  const title = body.title || filename;
-  const description = body.description || '';
-  const sourceTool = body.sourceTool || null;
-  const tags = body.tags || [];
-  const width = body.width ?? null;
-  const height = body.height ?? null;
-  const duration = body.duration ?? null;
-  const slug = body.slug || filename.replace(/\.[^.]+$/, '');
-  const urlsJson = { thumb: thumbUrl, web: mediaUrl, zoom: mediaUrl };
-  const metaJson = { r2Key: key };
-
+  const action = body.action || 'confirm';
+  const actorId = actor.userId || actor.user?.id;
   try {
-    await sql.query(
-      `INSERT INTO media_uploads (id, r2_key, mime, bytes, sha256, uploaded_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (r2_key) DO UPDATE SET mime = $3, bytes = $4, sha256 = $5`,
-      [itemId, key, mime, bytes, sha256, actor.userId],
-    );
-
-    const sortResult = await sql.query(
-      `SELECT COALESCE(MAX(sort_index), -1) + 1 AS next FROM gallery_items WHERE collection = $1`,
-      [collection],
-    );
-    const sortIndex = sortResult.rows[0]?.next ?? 0;
-
-    await sql.query(
-      `INSERT INTO gallery_items (
-        id, gallery_slug, sort_index, filename, urls_jsonb, metadata_jsonb, status,
-        slug, title, description, media_url, thumb_url, format, source_tool, tags,
-        collection, width, height, duration, sha256, thumb_status, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5::jsonb, $6::jsonb, 'published',
-        $7, $8, $9, $10, $11, $12, $13, $14::jsonb,
-        $15, $16, $17, $18, $19, $20, NOW()
-      )
-      ON CONFLICT (id) DO UPDATE SET
-        media_url = $10, thumb_url = $11, urls_jsonb = $5::jsonb,
-        updated_at = NOW(), thumb_status = $20`,
-      [
-        itemId, gallerySlug, sortIndex, filename, JSON.stringify(urlsJson), JSON.stringify(metaJson),
-        slug, title, description, mediaUrl, thumbUrl, format, sourceTool, JSON.stringify(tags),
-        collection, width, height, duration, sha256,
-        thumbUrl ? 'done' : 'pending',
-      ],
-    );
-
-    const cronSecret = process.env.CRON_SECRET;
-    if (!thumbUrl && cronSecret) {
-      const host = request.headers.get('x-forwarded-host') || process.env.VERCEL_URL;
-      const proto = request.headers.get('x-forwarded-proto') || 'https';
-      if (host) {
-        try {
-          await fetch(`${proto}://${host}/api/admin/media/thumb`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${cronSecret}`,
-            },
-            body: JSON.stringify({ itemId }),
-          });
-        } catch {
-          /* cron backfill */
-        }
-      }
+    if (action === 'multipart-complete') {
+      return jsonResponse(await finishMultipart({
+        actorId,
+        itemId: body.itemId,
+        key: body.key,
+        uploadId: body.uploadId,
+        parts: body.parts,
+        request,
+      }));
     }
-
-    return jsonResponse({ ok: true, itemId, mediaUrl, thumbUrl, collection });
+    if (action === 'multipart-abort') {
+      return jsonResponse(await abandonMultipart({
+        actorId,
+        itemId: body.itemId,
+        key: body.key,
+        uploadId: body.uploadId,
+        request,
+      }));
+    }
+    if (action === 'delete') {
+      return jsonResponse(await retainGalleryItem({ actorId, itemId: body.itemId, request }));
+    }
+    if (action === 'restore') {
+      return jsonResponse(await restoreGalleryItem({ actorId, itemId: body.itemId, request }));
+    }
+    if (action === 'purge') {
+      return jsonResponse(await processDeletionQueue({
+        actorId,
+        itemId: body.itemId,
+        force: true,
+        request,
+      }));
+    }
+    if (action !== 'confirm' && action !== 'poster-confirm') {
+      return errorResponse('unknown media confirmation action', 400);
+    }
+    if (!body.key || !body.itemId) return errorResponse('key and itemId required', 400);
+    const result = await confirmPendingUpload({
+      actorId,
+      itemId: body.itemId,
+      key: body.key,
+      posterForItemId: action === 'poster-confirm' ? body.posterForItemId : null,
+      metadata: {
+        collection: body.collection,
+        title: body.title,
+        description: body.description,
+        sourceTool: body.sourceTool,
+        tags: body.tags,
+        width: body.width,
+        height: body.height,
+        duration: body.duration,
+        slug: body.slug,
+        format: body.format,
+      },
+      request,
+    });
+    return jsonResponse(result);
   } catch (err) {
+    if (err instanceof MediaLifecycleError) {
+      return errorResponse(err.message, err.status);
+    }
     return errorResponse(err.message || 'confirm failed', 500);
   }
 }

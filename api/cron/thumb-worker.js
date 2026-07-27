@@ -1,5 +1,10 @@
 import { errorResponse, jsonResponse } from '../_lib/auth.js';
 import { vercelHandler } from '../_lib/adapter.js';
+import { cleanupSessions } from '../_lib/session.js';
+import {
+  cleanupExpiredUploads,
+  processDeletionQueue,
+} from '../admin/media/_lifecycle.js';
 
 async function handleGet(request) {
   const secret = process.env.CRON_SECRET;
@@ -14,6 +19,9 @@ async function handleGet(request) {
     return errorResponse('no host', 500);
   }
 
+  const expiredSessionsDeleted = await cleanupSessions();
+  const uploadCleanup = await cleanupExpiredUploads({ limit: 50, request });
+  const deletionCleanup = await processDeletionQueue({ limit: 50, request });
   const thumbRes = await fetch(`${proto}://${host}/api/admin/media/thumb`, {
     method: 'POST',
     headers: {
@@ -24,7 +32,13 @@ async function handleGet(request) {
   });
 
   const data = await thumbRes.json();
-  return jsonResponse({ cron: true, ...data });
+  return jsonResponse({
+    cron: true,
+    expiredSessionsDeleted,
+    uploadCleanup,
+    deletionCleanup,
+    thumbnails: data,
+  });
 }
 
 export default vercelHandler(async (req) => {

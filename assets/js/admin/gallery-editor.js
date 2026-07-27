@@ -9,7 +9,12 @@ import {
 import { TextInput } from '../shared/components/input/TextInput.js';
 import { FileInput } from '../shared/components/input/FileInput.js';
 import { Auth } from './auth.js';
-import { uploadGalleryBlob } from '../shared/gallery-upload.js';
+import {
+  purgeGalleryItem,
+  restoreGalleryItem,
+  retainGalleryItem,
+  uploadGalleryBlob,
+} from '../shared/gallery-upload.js';
 
 const TABS = Object.freeze([
   { id: 'upload', label: 'UPLOAD' },
@@ -59,6 +64,7 @@ export function normaliseGalleryItem(item = {}) {
     previewUrl: item.thumbUrl || urls.thumb || item.mediaUrl || urls.web || '',
     sortIndex: Number(item.sortIndex) || 0,
     selected: Boolean(item.selected),
+    retained: Boolean(item.deletedAt),
   };
 }
 
@@ -101,6 +107,14 @@ export function collectTagSuggestions(items) {
   return [...new Set(items.flatMap((item) => parseTags(item.tags)))].sort((a, b) => a.localeCompare(b));
 }
 
+export function matchPosterFile(videoName, posterFiles) {
+  const stem = String(videoName || '').replace(/\.[^.]+$/, '').toLowerCase();
+  return Array.from(posterFiles || []).find((file) => (
+    file.type?.startsWith('image/')
+    && file.name.replace(/\.[^.]+$/, '').replace(/\.poster$/i, '').toLowerCase() === stem
+  )) || null;
+}
+
 function itemOption(item) {
   return {
     value: item.id,
@@ -115,6 +129,7 @@ export class GalleryEditor extends BaseComponent {
     this.items = [];
     this.uploadRows = [];
     this.organiseRows = [];
+    this.posterFiles = [];
     this.previewUrls = new Set();
     this.tabButtons = new Map();
     this.paneComponents = [];
@@ -204,7 +219,7 @@ export class GalleryEditor extends BaseComponent {
   async refreshItems({ silent = false } = {}) {
     if (!silent) this._setStatus('Loading gallery records…');
     try {
-      const response = await fetch('/api/content/gallery-items', { credentials: 'include' });
+      const response = await Auth.apiFetch('/api/content/gallery-items?view=admin&limit=100');
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || `Gallery read failed: ${response.status}`);
@@ -306,6 +321,17 @@ export class GalleryEditor extends BaseComponent {
       onChange: (_rowId, _key, _value, rows) => { this.uploadRows = rows; },
     }, this.deps));
 
+    this._appendComponent(this.tabBody, new FileInput({
+      label: 'VIDEO POSTERS',
+      buttonText: 'ADD VIDEO POSTERS +',
+      accept: 'image/jpeg,image/png,image/webp',
+      multiple: true,
+      onChange: (files) => {
+        this.posterFiles = Array.from(files || []);
+        this._setStatus(`${this.posterFiles.length} video poster image${this.posterFiles.length === 1 ? '' : 's'} selected. Name each poster after its video.`);
+      },
+    }, this.deps));
+
     const actions = this.createElement('div', 'admin-editor-actions');
     const uploadButton = this._appendComponent(actions, new Button({
       text: 'UPLOAD INCLUDED FILES',
@@ -346,6 +372,9 @@ export class GalleryEditor extends BaseComponent {
         title: row.title,
         description: row.description || defaults.description,
         tags: parseTags(row.tags || defaults.tags),
+        posterBlob: row.file.type.startsWith('video/')
+          ? matchPosterFile(row.filename, this.posterFiles)
+          : null,
       }, {
         onProgress: (progress) => {
           this._setStatus(`Uploading ${row.filename}: ${Math.round(progress * 100)}%`);
@@ -438,23 +467,61 @@ export class GalleryEditor extends BaseComponent {
       },
     }, this.deps));
 
-    const deleteButton = this._appendComponent(actions, new Button({
-      text: this.deleteArmedId === item.id ? 'CONFIRM DELETE' : 'DELETE ITEM',
-      onClick: async () => {
-        if (this.deleteArmedId !== item.id) {
-          this.deleteArmedId = item.id;
-          this._setStatus('Press CONFIRM DELETE to permanently remove the database record.', 'warning');
-          this._renderActiveTab();
-          return;
-        }
-        const response = await Auth.apiFetch(`/api/content/gallery-items?id=${encodeURIComponent(item.id)}`, {
-          method: 'DELETE',
-        });
-        this.deleteArmedId = null;
-        await this._handleMutationResponse(response, 'Gallery item deleted.');
-      },
-    }, this.deps));
-    deleteButton.element?.classList.add('is-destructive');
+    if (item.retained) {
+      this._appendComponent(actions, new Button({
+        text: 'RESTORE ITEM',
+        onClick: async () => {
+          try {
+            await restoreGalleryItem(item.id);
+            await this.refreshItems({ silent: true });
+            this._setStatus('Gallery item restored.', 'success');
+          } catch (error) {
+            this._setStatus(error.message, 'error');
+          }
+        },
+      }, this.deps));
+      const purgeButton = this._appendComponent(actions, new Button({
+        text: this.deleteArmedId === item.id ? 'CONFIRM PURGE' : 'PURGE NOW',
+        onClick: async () => {
+          if (this.deleteArmedId !== item.id) {
+            this.deleteArmedId = item.id;
+            this._setStatus('Press CONFIRM PURGE to permanently delete retained media.', 'warning');
+            this._renderActiveTab();
+            return;
+          }
+          try {
+            await purgeGalleryItem(item.id);
+            this.deleteArmedId = null;
+            await this.refreshItems({ silent: true });
+            this._setStatus('Retained media permanently deleted.', 'success');
+          } catch (error) {
+            this._setStatus(error.message, 'error');
+          }
+        },
+      }, this.deps));
+      purgeButton.element?.classList.add('is-destructive');
+    } else {
+      const deleteButton = this._appendComponent(actions, new Button({
+        text: this.deleteArmedId === item.id ? 'CONFIRM DELETE' : 'DELETE ITEM',
+        onClick: async () => {
+          if (this.deleteArmedId !== item.id) {
+            this.deleteArmedId = item.id;
+            this._setStatus('Press CONFIRM DELETE to retain media for 30 days before permanent deletion.', 'warning');
+            this._renderActiveTab();
+            return;
+          }
+          try {
+            await retainGalleryItem(item.id);
+            this.deleteArmedId = null;
+            await this.refreshItems({ silent: true });
+            this._setStatus('Gallery item retained for 30 days.', 'success');
+          } catch (error) {
+            this._setStatus(error.message, 'error');
+          }
+        },
+      }, this.deps));
+      deleteButton.element?.classList.add('is-destructive');
+    }
     this.appendElement(this.tabBody, actions);
   }
 
@@ -677,6 +744,7 @@ export class GalleryEditor extends BaseComponent {
     this.items = [];
     this.uploadRows = [];
     this.organiseRows = [];
+    this.posterFiles = [];
     super.destroy();
   }
 }

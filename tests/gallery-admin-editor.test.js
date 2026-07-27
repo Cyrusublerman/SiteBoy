@@ -80,6 +80,15 @@ describe('gallery editor data helpers', () => {
     });
     expect(galleryModel.collectTagSuggestions([item, { tags: ['alpha', 'beta'] }])).toEqual(['alpha', 'beta', 'zeta']);
   });
+
+  it('matches a browser-selected verified image poster to its video', () => {
+    const posters = [
+      new File(['poster'], 'clip.poster.webp', { type: 'image/webp' }),
+      new File(['wrong'], 'other.png', { type: 'image/png' }),
+    ];
+    expect(galleryModel.matchPosterFile('clip.mp4', posters)).toBe(posters[0]);
+    expect(galleryModel.matchPosterFile('missing.webm', posters)).toBeNull();
+  });
 });
 
 describe('gallery upload authentication', () => {
@@ -111,6 +120,8 @@ describe('runtime gallery schema', () => {
       'duration',
       'sha256',
       'thumbStatus',
+      'thumbAttempts',
+      'thumbErrorCode',
     ]) {
       expect(galleryItems[field], field).toBeDefined();
     }
