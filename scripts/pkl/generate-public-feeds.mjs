@@ -4,6 +4,9 @@ import { gunzipSync } from 'node:zlib';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
+
+import { auditPublicGraph } from '../../assets/js/shared/pkl-publication-policy.js';
 
 function xmlEscape(value) {
   return String(value ?? '')
@@ -32,11 +35,24 @@ function publicationDate(publication) {
   return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
 }
 
-function feedText(publication, graph) {
-  return String(publication.body ?? '').replace(/^::figure\[([^\]]+)\]\s*$/gm, (_match, uid) => {
-    const figure = graph.objects.find((object) => object.uid === uid && object.object_type === 'figure');
-    return figure ? `[Figure: ${figure.title}](${figure.route})` : `[Unavailable figure: ${uid}]`;
-  });
+/**
+ * Render a publication body for feed transport.
+ *
+ * Figure embeds resolve only against published figures, and internal links are
+ * kept only when a published object owns the route. Unresolved references are
+ * reduced to a neutral placeholder so that no private UID, title, slug or
+ * figure URL can travel in a feed.
+ */
+export function feedText(publication, publishedByUid, publishedRoutes) {
+  return String(publication.body ?? '')
+    .replace(/^::figure\[([^\]]+)\]\s*$/gm, (_match, uid) => {
+      const figure = publishedByUid.get(uid.trim());
+      if (!figure || figure.object_type !== 'figure') return '[Figure unavailable]';
+      return `[Figure: ${figure.title}](${figure.route})`;
+    })
+    .replace(/\[([^\]]*)\]\((\/(?:wiki|blog|figures)\/[^)\s]+)\)/g, (match, text, route) => (
+      publishedRoutes.has(route.split('#')[0]) ? match : text
+    ));
 }
 
 async function loadGraph(inputPath) {
@@ -58,12 +74,31 @@ async function loadGraph(inputPath) {
   throw new Error(`Unsupported PKL graph encoding: ${encoding}`);
 }
 
-async function main() {
-  const graphInput = process.argv[2] ?? 'public/generated/pkl';
-  const outputDirectory = path.resolve(process.argv[3] ?? 'public');
-  const graph = await loadGraph(graphInput);
-  const baseUrl = siteBaseUrl();
-  const publications = graph.objects
+/**
+ * Violations that filtering cannot repair. Carrying an ineligible object in the
+ * graph is caught by `validate-public-graph.mjs` during the same prebuild and
+ * is simply excluded here; a reference reaching out of the published set is not
+ * excludable, so feed generation fails closed instead.
+ */
+const UNRECOVERABLE_VIOLATION_CODES = new Set([
+  'PUBLIC_REFERENCE_TO_INELIGIBLE_OBJECT',
+  'PUBLIC_REFERENCE_TO_UNKNOWN_OBJECT',
+  'PUBLIC_LINK_TO_UNPUBLISHED_ROUTE',
+  'FORBIDDEN_FIELD_ON_PUBLIC_OBJECT'
+]);
+
+export function buildFeeds(graph, baseUrl) {
+  const audit = auditPublicGraph(graph);
+  const unrecoverable = audit.violations.filter((violation) => UNRECOVERABLE_VIOLATION_CODES.has(violation.code));
+  if (unrecoverable.length) {
+    throw new Error(
+      `Refusing to generate feeds: ${unrecoverable.length} PKL publication boundary violation(s). Run \`npm run pkl:validate\` for the report.`
+    );
+  }
+
+  const publishedByUid = new Map(audit.eligible.map((object) => [object.uid, object]));
+  const publishedRoutes = new Set(audit.eligible.map((object) => object.route));
+  const publications = audit.eligible
     .filter((object) => object.object_type === 'publication')
     .sort((a, b) => publicationDate(b) - publicationDate(a));
 
@@ -80,7 +115,7 @@ async function main() {
       <guid isPermaLink="true">${xmlEscape(url)}</guid>
       <pubDate>${publicationDate(publication).toUTCString()}</pubDate>
       <description><![CDATA[${cdata(publication.summary || '')}]]></description>
-      <content:encoded><![CDATA[${cdata(feedText(publication, graph))}]]></content:encoded>
+      <content:encoded><![CDATA[${cdata(feedText(publication, publishedByUid, publishedRoutes))}]]></content:encoded>
     </item>`;
   }).join('\n');
 
@@ -108,7 +143,7 @@ ${rssItems}
     <published>${published}</published>
     <updated>${updated}</updated>
     <summary type="text">${xmlEscape(publication.summary || '')}</summary>
-    <content type="text">${xmlEscape(feedText(publication, graph))}</content>
+    <content type="text">${xmlEscape(feedText(publication, publishedByUid, publishedRoutes))}</content>
   </entry>`;
   }).join('\n');
 
@@ -136,13 +171,23 @@ ${atomEntries}
       url: `${baseUrl}${publication.route}`,
       title: publication.title,
       summary: publication.summary || undefined,
-      content_text: feedText(publication, graph),
+      content_text: feedText(publication, publishedByUid, publishedRoutes),
       date_published: publicationDate(publication).toISOString(),
       date_modified: new Date(publication.updated || publication.created || generated).toISOString(),
       authors: [{ name: publication.author || 'Alexander Einoder' }],
       tags: publication.tags ?? []
     }))
   };
+
+  return { rss, atom, jsonFeed, publications };
+}
+
+async function main() {
+  const graphInput = process.argv[2] ?? 'public/generated/pkl';
+  const outputDirectory = path.resolve(process.argv[3] ?? 'public');
+  const graph = await loadGraph(graphInput);
+  const baseUrl = siteBaseUrl();
+  const { rss, atom, jsonFeed, publications } = buildFeeds(graph, baseUrl);
 
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all([
@@ -159,7 +204,9 @@ ${atomEntries}
   }));
 }
 
-main().catch((error) => {
-  console.error(error.stack ?? error.message ?? String(error));
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error.stack ?? error.message ?? String(error));
+    process.exitCode = 1;
+  });
+}
