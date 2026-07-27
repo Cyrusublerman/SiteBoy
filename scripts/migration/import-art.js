@@ -2,25 +2,20 @@
  * Import static art manifests into gallery_items rows (C1 data migration).
  *
  * Usage:
- *   node scripts/migration/import-art.js              # stdout SQL
- *   node scripts/migration/import-art.js --write      # INSERT via DATABASE_URL
+ *   node scripts/migration/import-art.js              # JSON dry-run report
+ *   node scripts/migration/import-art.js --write      # idempotent upsert via DATABASE_URL
  *
  * @module scripts/migration/import-art
  */
 
-import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stableUlid, writeStatements } from './content-import-utils.js';
+export { stableUlid } from './content-import-utils.js';
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..', '..');
 const MANIFEST_ROOT = join(ROOT, 'art', 'manifests');
-
-function ulid() {
-  const t = Date.now().toString(36).padStart(10, '0');
-  const r = createHash('sha256').update(`${Date.now()}-${Math.random()}`).digest('hex').slice(0, 16);
-  return (t + r).slice(0, 26);
-}
 
 function formatFromFilename(name) {
   const ext = (name.split('.').pop() || '').toLowerCase();
@@ -47,10 +42,10 @@ function sqlEscape(s) {
   return String(s ?? '').replace(/'/g, "''");
 }
 
-function rowFromImage(collection, img, sortIndex) {
-  const id = ulid();
+export function rowFromImage(collection, img, sortIndex) {
   const slug = img.id || img.filename || `item-${sortIndex}`;
   const filename = img.filename || `${slug}.jpg`;
+  const id = stableUlid(`gallery-item:${collection}:${slug}`);
   const urls = img.urls || {};
   const thumb = urls.thumb || null;
   const web = urls.web || urls.zoom || thumb;
@@ -78,10 +73,13 @@ function rowFromImage(collection, img, sortIndex) {
     tags,
     meta,
     thumbStatus: thumb ? 'done' : 'pending',
+    altText: img.alt || title,
+    displayMode: img.display_mode || img.displayMode || 'grid',
+    groupKey: img.group_key || img.groupKey || null,
   };
 }
 
-function parseManifest(path) {
+export function parseManifest(path) {
   const raw = JSON.parse(readFileSync(path, 'utf8'));
   const rel = relative(MANIFEST_ROOT, path).replace(/\\/g, '/');
   const parts = rel.split('/');
@@ -97,7 +95,8 @@ function parseManifest(path) {
 function toInsertSql(row) {
   return `INSERT INTO gallery_items (
   id, gallery_slug, sort_index, filename, urls_jsonb, metadata_jsonb, status,
-  slug, title, description, media_url, thumb_url, format, tags, collection, thumb_status
+  slug, title, description, media_url, thumb_url, format, tags, collection, thumb_status,
+  alt_text, display_mode, group_key
 ) VALUES (
   '${sqlEscape(row.id)}',
   '${sqlEscape(row.gallerySlug)}',
@@ -114,51 +113,84 @@ function toInsertSql(row) {
   '${sqlEscape(row.format)}',
   '${sqlEscape(row.tags)}'::jsonb,
   '${sqlEscape(row.collection)}',
-  '${sqlEscape(row.thumbStatus)}'
-) ON CONFLICT (id) DO NOTHING;`;
+  '${sqlEscape(row.thumbStatus)}',
+  '${sqlEscape(row.altText)}',
+  '${sqlEscape(row.displayMode)}',
+  ${row.groupKey ? `'${sqlEscape(row.groupKey)}'` : 'NULL'}
+) ON CONFLICT (gallery_slug, slug) DO UPDATE SET
+  sort_index = EXCLUDED.sort_index,
+  filename = EXCLUDED.filename,
+  urls_jsonb = EXCLUDED.urls_jsonb,
+  metadata_jsonb = EXCLUDED.metadata_jsonb,
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  media_url = EXCLUDED.media_url,
+  thumb_url = EXCLUDED.thumb_url,
+  format = EXCLUDED.format,
+  tags = EXCLUDED.tags,
+  collection = EXCLUDED.collection,
+  thumb_status = EXCLUDED.thumb_status,
+  alt_text = EXCLUDED.alt_text,
+  display_mode = EXCLUDED.display_mode,
+  group_key = EXCLUDED.group_key,
+  updated_at = NOW();`;
 }
 
-async function writeToDb(statements) {
-  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-  if (!url) {
-    console.error('DATABASE_URL or POSTGRES_URL required for --write');
-    process.exit(1);
-  }
-  const { sql } = await import('@vercel/postgres');
-  for (const stmt of statements) {
-    await sql.query(stmt);
-  }
+function toGallerySql(collection) {
+  const [kind] = collection.split('/');
+  return `INSERT INTO galleries (id, slug, kind, title, status)
+VALUES (
+  '${stableUlid(`gallery:${collection}`)}',
+  '${sqlEscape(collection)}',
+  '${['photos', 'digital', 'render', 'book', 'physical', 'objects', 'project'].includes(kind) ? kind : 'photos'}',
+  '${sqlEscape(collection.split('/').pop())}',
+  'published'
+) ON CONFLICT (slug) DO UPDATE SET title = EXCLUDED.title, updated_at = NOW();`;
 }
 
-function main() {
-  const write = process.argv.includes('--write');
+export async function buildArtImport() {
   const manifests = walkManifests(MANIFEST_ROOT);
+  const collections = [];
+  const allRows = [];
   const statements = [];
   let itemCount = 0;
-
   for (const path of manifests) {
-    const { collection, rows, total } = parseManifest(path);
+    const { collection, rows } = parseManifest(path);
     if (!rows.length) continue;
+    collections.push(collection);
+    allRows.push(...rows);
+    statements.push(toGallerySql(collection), ...rows.map(toInsertSql));
     itemCount += rows.length;
-    console.log(`# ${collection}: ${total} images`);
-    for (const row of rows) {
-      statements.push(toInsertSql(row));
-    }
   }
-
-  if (write) {
-    writeToDb(statements).then(() => {
-      console.log(`Imported ${itemCount} items into gallery_items`);
-    }).catch((err) => {
-      console.error(err);
-      process.exit(1);
-    });
-  } else {
-    for (const stmt of statements) {
-      console.log(stmt);
-    }
-    console.log(`# Total: ${itemCount} INSERT statements`);
-  }
+  return {
+    statements,
+    rows: allRows,
+    report: {
+      mode: 'dry-run',
+      source: 'art/manifests',
+      galleries: collections.length,
+      items: itemCount,
+      conflicts: 0,
+    },
+  };
 }
 
-main();
+async function main() {
+  const write = process.argv.includes('--write');
+  const { statements, report } = await buildArtImport();
+
+  if (write) {
+    await writeStatements(statements);
+    report.mode = 'write';
+  } else {
+    report.statements = statements.length;
+  }
+  process.stdout.write(`${JSON.stringify(report)}\n`);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((error) => {
+    process.stderr.write(`${JSON.stringify({ error: error.message })}\n`);
+    process.exitCode = 1;
+  });
+}
