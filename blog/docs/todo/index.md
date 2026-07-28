@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-07-28 (A5 PKL publication boundary added).
+Last touched: 2026-07-28 (A6 storage and content resilience added).
 
 ---
 
@@ -45,6 +45,7 @@ Last touched: 2026-07-28 (A5 PKL publication boundary added).
 | A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | REVIEW | → A1 |
 | A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | → A1 |
 | A5 | [A5-pkl-publication-boundary.md](A5-pkl-publication-boundary.md) | PKL private/public publication boundary | P0 | REVIEW | — |
+| A6 | [A6-storage-content-resilience.md](A6-storage-content-resilience.md) | Storage and content resilience | P1 | REVIEW | — |
 
 ## B. Sections
 

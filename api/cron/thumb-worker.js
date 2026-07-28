@@ -4,7 +4,20 @@ import { cleanupSessions } from '../_lib/session.js';
 import {
   cleanupExpiredUploads,
   processDeletionQueue,
+  reconcileMediaOrphans,
 } from '../admin/media/_lifecycle.js';
+
+/**
+ * The bucket scan is the only step that fails wholesale when R2 is unreachable
+ * or unconfigured. Report it as a typed field so the rest of the run proceeds.
+ */
+async function reconcile(request) {
+  try {
+    return await reconcileMediaOrphans({ remediate: true, request });
+  } catch (error) {
+    return { errorCode: error?.name || 'ORPHAN_RECONCILE_FAILED' };
+  }
+}
 
 async function handleGet(request) {
   const secret = process.env.CRON_SECRET;
@@ -21,6 +34,7 @@ async function handleGet(request) {
 
   const expiredSessionsDeleted = await cleanupSessions();
   const uploadCleanup = await cleanupExpiredUploads({ limit: 50, request });
+  const reconciliation = await reconcile(request);
   const deletionCleanup = await processDeletionQueue({ limit: 50, request });
   const thumbRes = await fetch(`${proto}://${host}/api/admin/media/thumb`, {
     method: 'POST',
@@ -36,6 +50,7 @@ async function handleGet(request) {
     cron: true,
     expiredSessionsDeleted,
     uploadCleanup,
+    reconciliation,
     deletionCleanup,
     thumbnails: data,
   });

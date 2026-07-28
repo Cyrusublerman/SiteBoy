@@ -44,7 +44,11 @@
     "import:pages:write": "node scripts/migration/import-pages.js --write",
     "import:blog": "node scripts/migration/import-blog.js",
     "import:blog:write": "node scripts/migration/import-blog.js --write",
-    "import:verify": "node scripts/migration/verify.js"
+    "import:verify": "node scripts/migration/verify.js",
+    "snapshot:content": "node scripts/migration/snapshot-content.js",
+    "snapshot:content:write": "node scripts/migration/snapshot-content.js --write",
+    "restore:content": "node scripts/migration/restore-content.js",
+    "restore:content:write": "node scripts/migration/restore-content.js --write"
   },
   "keywords": [
     "ui",
