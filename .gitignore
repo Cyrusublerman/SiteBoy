@@ -2,6 +2,7 @@
 tools/scrape/cache/
 node_modules/
 dist/
+snapshots/
 .env
 .env.local
 public/rss.xml

@@ -633,26 +633,181 @@ export async function cleanupExpiredUploads({
   return { processed: results.length, results };
 }
 
-export async function reconcileMediaOrphans({
-  prefix = 'gallery/',
-  limitPages = 5,
-}, { pool = getPool(), listKeys = listObjectKeys } = {}) {
-  const storageKeys = [];
-  let continuationToken;
-  for (let page = 0; page < limitPages; page += 1) {
-    const result = await listKeys(prefix, continuationToken);
-    storageKeys.push(...result.keys);
-    continuationToken = result.continuationToken;
-    if (!continuationToken) break;
+export const DEFAULT_RECONCILE_PREFIXES = Object.freeze(['gallery/', 'gallery-posters/']);
+export const DEFAULT_RECONCILE_ROW_LIMIT = 500;
+
+/**
+ * A media key implies ownership of its derived thumbnail key. Both must be
+ * treated as owned so a scan never mistakes a generated thumb for an orphan.
+ */
+function claimKey(owned, key) {
+  if (!key) return;
+  owned.add(key);
+  owned.add(thumbKeyForMediaKey(key));
+}
+
+async function scanStoragePrefixes(prefixes, limitPages, listKeys) {
+  const keys = [];
+  let truncated = false;
+  for (const prefix of prefixes) {
+    let continuationToken;
+    for (let page = 0; page < limitPages; page += 1) {
+      const result = await listKeys(prefix, continuationToken);
+      keys.push(...result.keys);
+      continuationToken = result.continuationToken;
+      if (!continuationToken) break;
+    }
+    if (continuationToken) truncated = true;
   }
-  const known = await pool.query(
-    `SELECT r2_key FROM media_uploads WHERE r2_key = ANY($1::text[])`,
-    [storageKeys],
+  return { keys, truncated };
+}
+
+/**
+ * Detect drift in both directions between the bucket and the database.
+ *
+ * Objects with no owning row are queued through the ordinary retention path
+ * (`deletion_queue`, `lifecycle_status = 'retained'`) so `processDeletionQueue`
+ * removes them only after the retention window elapses. Nothing is hard-deleted
+ * on the strength of a scan: an upload still inside its expiry window is live,
+ * not orphaned.
+ *
+ * Rows whose object is absent from the bucket are reported only — bytes cannot
+ * be recreated, and the drift may equally mean the scan raced a delete.
+ */
+export async function reconcileMediaOrphans({
+  prefix = null,
+  prefixes = DEFAULT_RECONCILE_PREFIXES,
+  limitPages = 5,
+  rowLimit = DEFAULT_RECONCILE_ROW_LIMIT,
+  retentionDays = DEFAULT_RETENTION_DAYS,
+  remediate = false,
+  actorId = null,
+  request,
+}, {
+  pool = getPool(),
+  listKeys = listObjectKeys,
+  now = () => new Date(),
+} = {}) {
+  const scanPrefixes = prefix ? [prefix] : [...prefixes];
+  const current = now();
+  const { keys: scannedKeys, truncated } = await scanStoragePrefixes(
+    scanPrefixes,
+    limitPages,
+    listKeys,
   );
-  const knownKeys = new Set(known.rows.map(({ r2_key: key }) => key));
-  return {
-    scanned: storageKeys.length,
-    orphans: storageKeys.filter((key) => !knownKeys.has(key)),
-    truncated: Boolean(continuationToken),
+  const scanned = new Set(scannedKeys);
+
+  const [inFlight, confirmed, items, queued] = await Promise.all([
+    pool.query(
+      `SELECT r2_key FROM media_uploads
+       WHERE status IN ('pending','uploading','uploaded')
+         AND (expires_at IS NULL OR expires_at > $1)`,
+      [current],
+    ),
+    pool.query(
+      `SELECT r2_key FROM media_uploads
+       WHERE status = 'confirmed' AND r2_key = ANY($1::text[])`,
+      [scannedKeys],
+    ),
+    pool.query(
+      `SELECT id,
+              metadata_jsonb->>'r2Key' AS media_key,
+              metadata_jsonb->>'posterKey' AS poster_key
+       FROM gallery_items
+       WHERE deleted_at IS NULL
+         AND (metadata_jsonb ? 'r2Key' OR metadata_jsonb ? 'posterKey')
+       ORDER BY id LIMIT $1`,
+      [Math.min(Number(rowLimit) || DEFAULT_RECONCILE_ROW_LIMIT, 5000)],
+    ),
+    pool.query(
+      `SELECT storage_key FROM deletion_queue
+       WHERE lifecycle_status <> 'deleted' AND storage_key = ANY($1::text[])`,
+      [scannedKeys],
+    ),
+  ]);
+
+  const protectedKeys = new Set();
+  for (const { r2_key: key } of inFlight.rows) claimKey(protectedKeys, key);
+
+  const owned = new Set(protectedKeys);
+  for (const { r2_key: key } of confirmed.rows) claimKey(owned, key);
+  for (const { media_key: mediaKey, poster_key: posterKey } of items.rows) {
+    claimKey(owned, mediaKey);
+    claimKey(owned, posterKey);
+  }
+  for (const { storage_key: key } of queued.rows) owned.add(key);
+
+  const orphanObjects = scannedKeys.filter((key) => !owned.has(key));
+
+  // A row's object counts as missing only where the scan actually covered its
+  // prefix and returned a complete listing; otherwise absence proves nothing.
+  const covered = (key) => Boolean(key)
+    && !truncated
+    && scanPrefixes.some((scanPrefix) => key.startsWith(scanPrefix));
+  const missingObjects = [];
+  for (const { id, media_key: mediaKey, poster_key: posterKey } of items.rows) {
+    for (const [field, key] of [['r2Key', mediaKey], ['posterKey', posterKey]]) {
+      if (covered(key) && !scanned.has(key)) {
+        missingObjects.push({ resourceKind: 'gallery_item', resourceId: id, field, storageKey: key });
+      }
+    }
+  }
+
+  const retentionUntil = new Date(current.getTime() + retentionDays * 86400000);
+  const summary = {
+    scanned: scannedKeys.length,
+    prefixes: scanPrefixes,
+    truncated,
+    protectedInFlight: inFlight.rows.length,
+    orphanObjects,
+    missingObjects,
+    remediated: 0,
+    retentionUntil: null,
   };
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    if (remediate) {
+      for (const storageKey of orphanObjects) {
+        // DO NOTHING, never DO UPDATE: a rescan must not restart a retention
+        // clock that is already ticking on the same object.
+        const inserted = await client.query(
+          `INSERT INTO deletion_queue (
+             id, resource_kind, resource_id, storage_key, status, lifecycle_status,
+             scheduled_at, retention_until, attempts, updated_at
+           ) VALUES ($1,'orphan_object',$2,$2,'pending','retained',$3,$3,0,$4)
+           ON CONFLICT (resource_kind, resource_id, storage_key) DO NOTHING
+           RETURNING id`,
+          [ulid(), storageKey, retentionUntil, current],
+        );
+        if (inserted.rows.length) summary.remediated += 1;
+      }
+      summary.retentionUntil = retentionUntil.toISOString();
+    }
+    await auditMutation(client, {
+      actorId,
+      action: 'media.orphan.reconcile',
+      targetKind: 'deletion_queue',
+      after: {
+        scanned: summary.scanned,
+        prefixes: scanPrefixes,
+        truncated,
+        protectedInFlight: summary.protectedInFlight,
+        orphanCount: orphanObjects.length,
+        missingCount: missingObjects.length,
+        remediated: summary.remediated,
+        retentionUntil: summary.retentionUntil,
+      },
+      request,
+    });
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  return summary;
 }
