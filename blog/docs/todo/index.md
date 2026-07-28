@@ -46,6 +46,7 @@ Last touched: 2026-09-19 (land PR stack 25–30 onto H8 main).
 | A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | — |
 | A5 | [A5-function-consolidation.md](A5-function-consolidation.md) | Vercel function-entrypoint consolidation | P1 | DONE | — |
 | A6 | [A6-pkl-publication-boundary.md](A6-pkl-publication-boundary.md) | PKL private/public publication boundary | P0 | REVIEW | — |
+| A7 | [A7-storage-content-resilience.md](A7-storage-content-resilience.md) | Storage and content resilience | P1 | REVIEW | — |
 
 ## B. Sections
 

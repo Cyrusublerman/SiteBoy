@@ -366,6 +366,20 @@ retained → pending → deleted
 
 Ordinary Gallery deletion only soft-deletes the item and starts the 30-day retention period. Restore is permitted before expiry. `PURGE NOW` bypasses the remaining retention period.
 
+The same cron also reconciles bucket against database. Its `reconciliation` field reports `orphanObjects` (in the bucket, owned by no row), `missingObjects` (a row's key absent from a complete scan), `protectedInFlight` (pending uploads inside their expiry window, never treated as orphans) and `remediated`. Orphans are enqueued as `resource_kind = 'orphan_object'` with `lifecycle_status = 'retained'`; nothing is deleted from the bucket on the strength of a scan. `truncated: true` means the listing did not complete, and missing-object reporting is suppressed for that run. An `errorCode` field means the R2 scan itself failed; the remainder of the cron still ran.
+
+Reconciliation can also be driven manually:
+
+```bash
+curl -i \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"reconcile-orphans"}' \
+  https://<preview-origin>/api/admin/media/thumb
+```
+
+Omitting `"remediate": true` reports without enqueuing anything.
+
 ## 11. Production promotion checklist
 
 Do not enable the admin navigation until all boxes pass:
@@ -400,7 +414,15 @@ Before exposing admin entry points beyond private use:
 2. Add content-specific validation schemas and optimistic concurrency to every editor.
 3. Add revision tables for editable records.
 4. Add browser end-to-end tests for the complete gallery upload and editing workflow.
-5. Complete backup and restore drills for Neon and R2 metadata.
+5. Complete backup and restore drills for Neon and R2 metadata. Snapshot and restore of the editable content tables (`galleries`, `gallery_items`, `articles`, `page_blocks`) are available; the drill itself is outstanding:
+
+```bash
+vercel env run -e production -- npm run snapshot:content            # dry-run report
+vercel env run -e production -- npm run snapshot:content:write      # writes snapshots/content-<timestamp>.json
+vercel env run -e production -- npm run restore:content -- --from=snapshots/content-<timestamp>.json
+```
+
+Restore is a dry run unless `--write` is passed, and refuses to replace existing rows unless `--overwrite` is also passed. The dry-run report names every row id it would insert and every row id it would overwrite.
 
 ## 13. PKL publication workflow settings
 

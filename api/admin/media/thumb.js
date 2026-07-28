@@ -48,15 +48,13 @@ async function handlePost(request) {
       }));
     }
     if (body.action === 'reconcile-orphans') {
-      const result = await reconcileMediaOrphans({ prefix: body.prefix || 'gallery/' });
-      await writeAuditLog({
+      // reconcileMediaOrphans owns its own audit row; do not write a second one.
+      return jsonResponse(await reconcileMediaOrphans({
+        ...(body.prefix ? { prefix: body.prefix } : {}),
+        remediate: body.remediate === true,
         actorId: actor.userId,
-        action: 'media.orphan.reconcile',
-        targetKind: 'media_upload',
-        after: { scanned: result.scanned, orphanCount: result.orphans.length, truncated: result.truncated },
-        req: request,
-      });
-      return jsonResponse(result);
+        request,
+      }));
     }
     let rows;
     if (itemId) {
