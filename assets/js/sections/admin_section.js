@@ -8,6 +8,8 @@ import {
 import { TextInput } from '../shared/components/input/TextInput.js';
 import { Auth } from '../admin/auth.js';
 import { GalleryEditor } from '../admin/gallery-editor.js';
+import { BlogEditor } from '../admin/blog-editor.js';
+import { PageBlocksEditor } from '../admin/page-blocks-editor.js';
 
 class AdminLoginView extends BaseComponent {
   constructor(options = {}, deps = {}) {
@@ -99,7 +101,7 @@ class AdminIndexView extends BaseComponent {
     this.element = this.createElement('div', 'admin-section admin-section-index toc-container');
     this.appendElement(this.element, this._track(new Heading({ level: 1, content: 'ADMIN' }, this.deps)).render());
     this.appendElement(this.element, this._track(new Paragraph({
-      content: 'Authenticated SiteBoy content management. Gallery editing is active; the remaining editors are staged behind their own validation work.',
+      content: 'Authenticated SiteBoy content management. Gallery, Blog and About editors are active; the remaining editors are staged behind their own validation work.',
     }, this.deps)).render());
 
     for (const section of this.sections) {
@@ -180,8 +182,8 @@ const AdminSection = {
     { id: 'projects', title: 'PROJECTS', route: 'admin/projects', available: false },
     { id: 'store', title: 'STORE SKUS', route: 'admin/store', available: false },
     { id: 'notes', title: 'NOTES', route: 'admin/notes', available: false },
-    { id: 'blog', title: 'BLOG POSTS', route: 'admin/blog', available: false },
-    { id: 'about', title: 'ABOUT', route: 'admin/about', available: false },
+    { id: 'blog', title: 'BLOG POSTS', route: 'admin/blog', available: true },
+    { id: 'about', title: 'ABOUT', route: 'admin/about', available: true },
   ],
 
   get pages() {
@@ -236,6 +238,18 @@ const AdminSection = {
     const entry = this.EDITABLE_SECTIONS.find((section) => section.route === `admin/${subsection}`);
     if (entry?.id === 'gallery') {
       this._view = new GalleryEditor({}, this._deps());
+      BaseComponent.mountSectionView(this.currentContainer, this._view);
+      this.componentInstances = [];
+      return;
+    }
+    if (entry?.id === 'blog') {
+      this._view = new BlogEditor({}, this._deps());
+      BaseComponent.mountSectionView(this.currentContainer, this._view);
+      this.componentInstances = [];
+      return;
+    }
+    if (entry?.id === 'about') {
+      this._view = new PageBlocksEditor({}, this._deps());
       BaseComponent.mountSectionView(this.currentContainer, this._view);
       this.componentInstances = [];
       return;

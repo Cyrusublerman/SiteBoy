@@ -12,6 +12,7 @@ import {
   renderTags,
   routeLink
 } from '../shared/pkl-public-ui.js';
+import { articleMatchesRoute, articleRoute } from '../admin/blog-editor-state.js';
 
 const LegacyBlogSection = window.BlogSection;
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-AU', { month: 'long', timeZone: 'Australia/Melbourne' });
@@ -19,6 +20,47 @@ const MONTH_FORMATTER = new Intl.DateTimeFormat('en-AU', { month: 'long', timeZo
 function publicationDate(publication) {
   const parsed = new Date(publication.created || publication.updated || 0);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** Map a published articles row into a PKL-shaped publication for index/detail. */
+function articleToPublication(article) {
+  const published = article.publishedAt || article.updatedAt || article.createdAt || null;
+  const route = articleRoute(article);
+  return {
+    uid: `article:${article.id}`,
+    object_type: 'publication',
+    title: article.title || article.slug || 'Untitled',
+    summary: article.frontmatterJsonb?.summary || '',
+    body: article.bodyMd || '',
+    created: published,
+    updated: article.updatedAt || published,
+    route,
+    public_revision: article.version || 1,
+    author: article.frontmatterJsonb?.author || 'Alexander Einoder',
+    tags: article.frontmatterJsonb?.tags || [],
+    citations: [],
+    rights: article.frontmatterJsonb?.rights || null,
+    source: 'db',
+    slug: article.slug,
+  };
+}
+
+async function fetchPublishedArticles() {
+  const items = [];
+  let offset = 0;
+  const limit = 100;
+  for (;;) {
+    const response = await fetch(`/api/content/articles?limit=${limit}&offset=${offset}`, {
+      cache: 'no-cache',
+    });
+    if (!response.ok) throw new Error(`Articles API HTTP ${response.status}`);
+    const data = await response.json();
+    const batch = Array.isArray(data.items) ? data.items : [];
+    items.push(...batch);
+    if (batch.length < limit) break;
+    offset += limit;
+  }
+  return items;
 }
 
 function monthKey(publication) {
@@ -43,11 +85,12 @@ function feedLink(href, text, type) {
 }
 
 const PKLBlogSection = {
-  version: '0.3.0',
+  version: '0.4.0',
   currentContainer: null,
   componentInstances: [],
   navigationCallbacks: null,
   delegatedLegacy: false,
+  dbArticles: [],
 
   async handleRoute(subsection, container, callbacks = {}) {
     this.cleanup();
@@ -57,6 +100,15 @@ const PKLBlogSection = {
 
     try {
       await pklContentProvider.load();
+      this.dbArticles = [];
+      try {
+        this.dbArticles = await fetchPublishedArticles();
+      } catch (error) {
+        if (typeof window.debugLog === 'function') {
+          window.debugLog('TOOLS', 'Blog articles API unavailable; PKL-only index:', error);
+        }
+      }
+
       if (!subsection) {
         this.renderIndex();
         return;
@@ -75,6 +127,14 @@ const PKLBlogSection = {
         return;
       }
       if (!object || object.object_type !== 'publication') {
+        const article = this.dbArticles.find((row) => articleMatchesRoute(row, parsed.route)
+          || row.slug === subsection
+          || row.slug === subsection.split('/').pop());
+        if (article) {
+          const publication = articleToPublication(article);
+          this.renderDbPost(publication);
+          return;
+        }
         renderError(container, 'BLOG POST NOT FOUND', `No publication resolves to ${parsed.route}.`);
         return;
       }
@@ -101,7 +161,16 @@ const PKLBlogSection = {
   },
 
   publications() {
-    return pklContentProvider.list({ objectType: 'publication', sort: 'updated' });
+    const pkl = pklContentProvider.list({ objectType: 'publication', sort: 'updated' });
+    const pklRoutes = new Set(pkl.map((item) => String(item.route || '').replace(/\/+$/, '')));
+    const fromDb = this.dbArticles
+      .map(articleToPublication)
+      .filter((pub) => !pklRoutes.has(String(pub.route || '').replace(/\/+$/, '')));
+    return [...pkl, ...fromDb].sort((a, b) => {
+      const aTime = new Date(a.updated || a.created || 0).getTime();
+      const bTime = new Date(b.updated || b.created || 0).getTime();
+      return bTime - aTime;
+    });
   },
 
   renderFeedNavigation(container) {
@@ -260,6 +329,52 @@ const PKLBlogSection = {
     renderTags(article, object.tags);
     renderRelatedSections(article, object);
     renderRevisionNavigation(article, current, current.route);
+    container.appendChild(article);
+  },
+
+  /** Database-sourced article — MarkdownBody defaults to trusted:false (no scripts). */
+  renderDbPost(object) {
+    const container = this.currentContainer;
+    container.innerHTML = '';
+
+    const back = document.createElement('nav');
+    back.className = 'pkl-blog-navigation';
+    back.appendChild(routeLink('/blog', 'BLOG INDEX'));
+    back.appendChild(routeLink('/wiki', 'WIKI'));
+    back.appendChild(feedLink('/rss.xml', 'RSS', 'application/rss+xml'));
+    container.appendChild(back);
+
+    const article = document.createElement('article');
+    article.className = 'pkl-blog-post';
+    article.appendChild(createHeading(1, object.title));
+    article.appendChild(createMetaLine([
+      object.author || 'Alexander Einoder',
+      object.created ? `Published ${object.created}` : null,
+      object.source === 'db' ? 'Database article' : null,
+    ]));
+    if (object.summary) {
+      const summary = document.createElement('p');
+      summary.className = 'pkl-summary';
+      summary.textContent = object.summary;
+      article.appendChild(summary);
+    }
+
+    if (window.ComponentLibrary?.MarkdownBody) {
+      const body = new window.ComponentLibrary.MarkdownBody({
+        markdownText: object.body || '',
+        trusted: false,
+        className: 'markdown-body pkl-markdown',
+      });
+      this.componentInstances.push(body);
+      article.appendChild(body.render());
+    } else {
+      renderMarkdown(article, object.body, this.componentInstances);
+    }
+
+    const permanent = document.createElement('p');
+    permanent.className = 'pkl-permalink';
+    permanent.appendChild(routeLink(object.route, 'PERMANENT LINK'));
+    article.appendChild(permanent);
     container.appendChild(article);
   },
 

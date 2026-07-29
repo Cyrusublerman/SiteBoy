@@ -171,9 +171,38 @@ const AboutSection = {
     },
 
     async loadData() {
+        try {
+            const fromApi = await this._loadFromApi();
+            if (fromApi) return fromApi;
+        } catch (error) {
+            if (typeof window.debugLog === 'function') {
+                window.debugLog('TOOLS', 'About API unavailable, falling back to static JSON:', error);
+            }
+        }
         const response = await fetch(this.dataUrl, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`HTTP ${response.status} loading ${this.dataUrl}`);
         return response.json();
+    },
+
+    /**
+     * Prefer published page-blocks row with pageSlug === 'about'.
+     * @returns {Promise<object|null>}
+     */
+    async _loadFromApi() {
+        const response = await fetch('/api/content/page-blocks?limit=100', { cache: 'no-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        const about = items.find((item) => item.pageSlug === 'about');
+        if (!about) return null;
+        return {
+            header: about.title || 'ABOUT',
+            blocks: Array.isArray(about.blocksJsonb) ? about.blocksJsonb : [],
+            subheader: about.frontmatterJsonb?.subheader || about.subheader || '',
+            hero: about.frontmatterJsonb?.hero || about.hero || null,
+            links: about.frontmatterJsonb?.links || about.links || [],
+            timeline: about.frontmatterJsonb?.timeline || about.timeline || [],
+        };
     },
 
     _deps() {
