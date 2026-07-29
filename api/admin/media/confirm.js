@@ -44,10 +44,20 @@ async function handlePost(request) {
       }));
     }
     if (action === 'delete') {
-      return jsonResponse(await retainGalleryItem({ actorId, itemId: body.itemId, request }));
+      return jsonResponse(await retainGalleryItem({
+        actorId,
+        itemId: body.itemId,
+        expectedVersion: body.expectedVersion,
+        request,
+      }));
     }
     if (action === 'restore') {
-      return jsonResponse(await restoreGalleryItem({ actorId, itemId: body.itemId, request }));
+      return jsonResponse(await restoreGalleryItem({
+        actorId,
+        itemId: body.itemId,
+        expectedVersion: body.expectedVersion,
+        request,
+      }));
     }
     if (action === 'purge') {
       return jsonResponse(await processDeletionQueue({
@@ -83,7 +93,11 @@ async function handlePost(request) {
     return jsonResponse(result);
   } catch (err) {
     if (err instanceof MediaLifecycleError) {
-      return errorResponse(err.message, err.status);
+      return jsonResponse({
+        error: err.message,
+        code: err.code,
+        currentVersion: err.currentVersion ?? null,
+      }, err.status);
     }
     return errorResponse(err.message || 'confirm failed', 500);
   }

@@ -20,11 +20,63 @@ describe('gallery editor data helpers', () => {
     expect(galleryModel.parseTags([' alpha ', 'beta', ''])).toEqual(['alpha', 'beta']);
   });
 
-  it('preserves metadata while applying group and display mode', () => {
-    expect(galleryModel.mergeGalleryMetadata(
-      { source: 'import', group: 'old' },
-      { group: 'series-a', displayMode: 'carousel' },
-    )).toEqual({ source: 'import', group: 'series-a', displayMode: 'carousel' });
+  it('prefers first-class groupKey and displayMode over metadata fallbacks', () => {
+    const item = galleryModel.normaliseGalleryItem({
+      id: 'item-col',
+      filename: 'image.png',
+      collection: 'digital/test',
+      groupKey: 'series-a',
+      displayMode: 'carousel',
+      metadataJsonb: { group: 'old', displayMode: 'slideshow' },
+      urlsJsonb: { web: 'https://example.test/image.png' },
+      version: 3,
+    });
+    expect(item).toMatchObject({
+      group: 'series-a',
+      displayMode: 'carousel',
+      version: 3,
+    });
+  });
+
+  it('builds an organise patch only when stored fields change', () => {
+    const original = {
+      sortIndex: 0,
+      title: 'Alpha',
+      tags: ['a'],
+      group: 'set',
+      displayMode: 'grid',
+    };
+    expect(galleryModel.organisePatch({
+      title: 'Alpha',
+      tagsText: 'a',
+      group: 'set',
+      displayMode: 'grid',
+    }, original, 0)).toBeNull();
+    expect(galleryModel.organisePatch({
+      title: 'Beta',
+      tagsText: 'a, b',
+      group: 'new',
+      displayMode: 'carousel',
+    }, original, 2)).toEqual({
+      sortIndex: 2,
+      title: 'Beta',
+      tags: ['a', 'b'],
+      groupKey: 'new',
+      displayMode: 'carousel',
+    });
+  });
+
+  it('prefers a captured poster blob over a named poster file', () => {
+    const row = {
+      id: 'row-1',
+      filename: 'clip.mp4',
+      file: new File(['v'], 'clip.mp4', { type: 'video/mp4' }),
+    };
+    const named = new File(['poster'], 'clip.poster.webp', { type: 'image/webp' });
+    const captured = new Blob(['frame'], { type: 'image/webp' });
+    expect(galleryModel.resolvePosterBlob(row, new Map([['row-1', captured]]), [named])).toBe(captured);
+    expect(galleryModel.resolvePosterBlob(row, new Map(), [named])).toBe(named);
+    expect(galleryModel.isVideoRow(row)).toBe(true);
   });
 
   it('builds editable upload rows from multiple files', () => {

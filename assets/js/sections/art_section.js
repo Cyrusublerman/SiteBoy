@@ -14,10 +14,36 @@
  */
 
 import R2Helper from '../shared/r2-url-helper.js';
-import { MarkdownBody } from '../shared/content.js';
+import { MarkdownBody, StatusDisplay } from '../shared/content.js';
+import { InlineCarousel } from '../shared/specialized.js';
 import { GalleryLightbox, MasonryGallery, ImageGrid, ArtworkPage } from '../shared/masonry-gallery.js';
 
 const R2_BASE = 'https://media.einoder.net';
+
+/** Content-gateway index path served by the existing art catch-all entrypoint. */
+const API_INDEX_URL = '/api/content/art/_index';
+
+/** Photography is enumerated from PHOTO_SETS, so its API section is not re-added. */
+const PHOTOGRAPHY_API_SECTION = 'photos';
+
+export const DEFAULT_DISPLAY_MODE = 'grid';
+
+/** Dwell time per slideshow frame. */
+const SLIDESHOW_ADVANCE_MS = 4000;
+
+/**
+ * Split gallery images by their authored display mode. `hidden` never reaches
+ * a public surface; unknown modes fall back to the grid so nothing disappears.
+ */
+export function partitionByDisplayMode(images) {
+    const groups = { grid: [], carousel: [], slideshow: [] };
+    for (const image of images || []) {
+        const mode = image?.displayMode || DEFAULT_DISPLAY_MODE;
+        if (mode === 'hidden') continue;
+        (groups[mode] || groups.grid).push(image);
+    }
+    return groups;
+}
 
 const SECTION_META = {
     physical:    { title: 'PHYSICAL',    description: 'Painted and drawn works on physical media' },
@@ -169,6 +195,10 @@ const ArtSection = {
     componentInstances: [],
     navigationCallbacks: null,
     _galleryIndex: null,
+    /** 'api' | 'static' | 'fallback' — which source produced galleryStructure. */
+    indexSource: null,
+    /** Non-null when the page is showing something other than live database content. */
+    degradedReason: null,
     pages: [..._FALLBACK_PAGES],
     galleryStructure: JSON.parse(JSON.stringify(_FALLBACK_GALLERY_STRUCTURE)),
 
@@ -255,21 +285,63 @@ const ArtSection = {
 
     // ── Registry (from art/manifests/_index.json) ────────────────────────────
 
+    /**
+     * Resolve the collection index: content gateway first (A3/S07), then the
+     * published static snapshot, then the built-in catalogue. Only the last
+     * case is a visible degradation — the static snapshot is a normal source.
+     */
     async _ensureRegistry() {
         if (this._galleryIndex) return;
-        try {
-            const res = await fetch('/art/manifests/_index.json');
-            if (!res.ok) throw new Error(`index ${res.status}`);
-            const index = await res.json();
-            this._galleryIndex = index;
-            this.galleryStructure = this._buildGalleryStructureFromIndex(index);
-            this.pages = this._buildPagesFromIndex(index);
-        } catch (e) {
-            console.warn('ArtSection: _index.json unavailable, using fallback registry', e);
-            this._galleryIndex = null;
-            this.galleryStructure = JSON.parse(JSON.stringify(_FALLBACK_GALLERY_STRUCTURE));
-            this.pages = [..._FALLBACK_PAGES];
+        const sources = [
+            { source: 'api', url: API_INDEX_URL },
+            { source: 'static', url: '/art/manifests/_index.json' },
+        ];
+        for (const { source, url } of sources) {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`index ${res.status}`);
+                const index = await res.json();
+                if (!index?.sections || !Object.keys(index.sections).length) {
+                    throw new Error('index contains no collections');
+                }
+                this._galleryIndex = index;
+                this.indexSource = source;
+                this.degradedReason = null;
+                this.galleryStructure = this._buildGalleryStructureFromIndex(index);
+                this.pages = this._buildPagesFromIndex(index);
+                window.debugLog('NAVIGATION', `ArtSection: gallery index resolved from ${source}`);
+                return;
+            } catch (e) {
+                window.debugLog('NAVIGATION', `ArtSection: ${source} gallery index unavailable`, e);
+            }
         }
+        console.warn('ArtSection: no gallery index available, using built-in catalogue');
+        this._galleryIndex = null;
+        this.indexSource = 'fallback';
+        this.degradedReason = 'Gallery index unavailable. Showing the built-in catalogue — recently published work may be missing.';
+        this.galleryStructure = JSON.parse(JSON.stringify(_FALLBACK_GALLERY_STRUCTURE));
+        this.pages = [..._FALLBACK_PAGES];
+    },
+
+    /**
+     * Record a failed live read. Only meaningful once the index proved the
+     * gateway is the active source; a static deployment is not "degraded".
+     */
+    _recordReadFailure(slug, error) {
+        window.debugLog('NAVIGATION', `ArtSection: gallery read failed for ${slug}`, error);
+        if (this.indexSource !== 'api' || this.degradedReason) return;
+        this.degradedReason = 'Live gallery data is unavailable. Showing the last published snapshot — recent changes may be missing.';
+    },
+
+    /** Render the degradation explanation so a thin page is never unexplained. */
+    _appendDegradedNotice(container) {
+        if (!this.degradedReason || !container) return;
+        const notice = new StatusDisplay(
+            { message: this.degradedReason, type: 'warning' },
+            { MF: window.MathematicalFoundation },
+        );
+        this.componentInstances.push(notice);
+        container.appendChild(notice.render());
     },
 
     _buildSubsectionTree(galleries) {
@@ -305,6 +377,7 @@ const ArtSection = {
     _buildGalleryStructureFromIndex(index) {
         const structure = {};
         for (const [sectionKey, sectionData] of Object.entries(index.sections || {})) {
+            if (sectionKey === PHOTOGRAPHY_API_SECTION) continue;
             const meta = SECTION_META[sectionKey] || { title: sectionKey.toUpperCase(), description: '' };
             structure[sectionKey] = {
                 title:       meta.title,
@@ -319,6 +392,7 @@ const ArtSection = {
     _buildPagesFromIndex(index) {
         const pages = ['#art'];
         for (const [sectionKey, sectionData] of Object.entries(index.sections || {})) {
+            if (sectionKey === PHOTOGRAPHY_API_SECTION) continue;
             pages.push(`#art/${sectionKey}`);
             for (const g of sectionData.galleries || []) {
                 pages.push(`#art/${sectionKey}/${g.slug}`);
@@ -359,6 +433,8 @@ const ArtSection = {
                 title: item.title,
                 caption: item.description,
                 tags: item.tags,
+                displayMode: item.displayMode || DEFAULT_DISPLAY_MODE,
+                groupKey: item.groupKey || null,
             };
         });
         return {
@@ -378,14 +454,13 @@ const ArtSection = {
         const slug = `${galleryType}/${galleryName}`;
         try {
             const res = await fetch(`/api/content/art/${encodeURIComponent(slug)}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.items?.length) {
-                    return this._manifestFromApiItems(data, galleryType, galleryName);
-                }
+            if (!res.ok) throw new Error(`gallery read ${res.status}`);
+            const data = await res.json();
+            if (data.items?.length) {
+                return this._manifestFromApiItems(data, galleryType, galleryName);
             }
-        } catch {
-            /* static fallback */
+        } catch (error) {
+            this._recordReadFailure(slug, error);
         }
         return R2Helper.fetchManifest(galleryType, galleryName);
     },
@@ -631,6 +706,7 @@ const ArtSection = {
                 size:    s,
                 hasPage: Array.isArray(img.page) && img.page.length > 0,
                 cardType: 'image',
+                displayMode: img.displayMode || DEFAULT_DISPLAY_MODE,
             };
         };
 
@@ -949,7 +1025,12 @@ const ArtSection = {
             console.warn(`No manifest for art/${galleryType}/${galleryName}`);
         }
 
-        if (allImages.length === 0) {
+        const modes = partitionByDisplayMode(allImages);
+        const visibleCount = modes.grid.length + modes.carousel.length + modes.slideshow.length;
+
+        this._appendDegradedNotice(this.currentContainer);
+
+        if (visibleCount === 0) {
             this.currentContainer.appendChild(this._renderEmptyState(
                 'NO IMAGES YET',
                 `BACK TO ${galleryType.toUpperCase()}`,
@@ -974,30 +1055,56 @@ const ArtSection = {
             ? this._lightboxImagesFromCards(cards)
             : allImages.map(img => ({ src: img.src, zoom: img.zoom, thumb: img.thumb, title: img.title }));
 
-        const gallery = new MasonryGallery({
-            images:         allImages,
-            gap:            0,
-            columnsMobile:  1,
-            columnsTablet:  2,
-            columnsDesktop: 3,
-            columnsWide:    4,
-            loadBuffer:     200,
-            onItemClick:    (img, idx) => this._handleArtworkClick(
-                galleryType, galleryName, img, idx, allImages, lightboxPool, cards,
-            ),
-            onObjectImageClick: (img, idx, objImages) => {
+        this._appendModeStrip(modes.carousel, lightboxPool, 0);
+        this._appendModeStrip(modes.slideshow, lightboxPool, SLIDESHOW_ADVANCE_MS);
+
+        if (modes.grid.length) {
+            const gallery = new MasonryGallery({
+                images:         modes.grid,
+                gap:            0,
+                columnsMobile:  1,
+                columnsTablet:  2,
+                columnsDesktop: 3,
+                columnsWide:    4,
+                loadBuffer:     200,
+                onItemClick:    (img, idx) => this._handleArtworkClick(
+                    galleryType, galleryName, img, idx, modes.grid, lightboxPool, cards,
+                ),
+                onObjectImageClick: (img, idx, objImages) => {
+                    const lb = new GalleryLightbox(
+                        { images: objImages, index: idx },
+                        { MF: window.MathematicalFoundation },
+                    );
+                    this.componentInstances.push(lb);
+                    lb.open();
+                },
+            }, { MF: window.MathematicalFoundation });
+            this.componentInstances.push(gallery);
+            this.currentContainer.appendChild(gallery.render());
+        }
+
+        this._setupSubheaderGallery(title, galleryType, galleryName);
+    },
+
+    /** Carousel and slideshow items render as their own strip above the grid. */
+    _appendModeStrip(images, lightboxPool, autoAdvanceMs) {
+        if (!images.length) return;
+        const strip = new InlineCarousel({
+            images,
+            autoAdvanceMs,
+            onImageClick: (_idx, img) => {
+                const pool = lightboxPool?.length ? lightboxPool : images;
+                const index = pool.findIndex(entry => entry.title === img.title);
                 const lb = new GalleryLightbox(
-                    { images: objImages, index: idx },
+                    { images: pool, index: Math.max(0, index) },
                     { MF: window.MathematicalFoundation },
                 );
                 this.componentInstances.push(lb);
                 lb.open();
             },
         }, { MF: window.MathematicalFoundation });
-        this.componentInstances.push(gallery);
-        this.currentContainer.appendChild(gallery.render());
-
-        this._setupSubheaderGallery(title, galleryType, galleryName);
+        this.componentInstances.push(strip);
+        this.currentContainer.appendChild(strip.render());
     },
 
     /**

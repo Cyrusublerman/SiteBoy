@@ -11,3 +11,4 @@ export { AdminEditorShell } from './AdminEditorShell.js';
 export { AdminDomainEditor } from './AdminDomainEditor.js';
 export { VersionDiffView } from './VersionDiffView.js';
 export { VersionHistoryPanel } from './VersionHistoryPanel.js';
+export { VideoFrameScrubber, captureVideoFrame, formatTimecode } from './VideoFrameScrubber.js';

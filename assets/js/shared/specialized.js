@@ -22,6 +22,7 @@
  */
 
 import { BaseComponent } from './foundation.js';
+import { IntervalAnimator } from '../core/animation-foundation.js';
 
 /**
  * VGAGrid - Color grid with VGA styling
@@ -335,8 +336,11 @@ export class InlineCarousel extends BaseComponent {
         this.images        = options.images || [];
         this._index        = options.startIndex ?? 0;
         this.onImageClick  = options.onImageClick || null;
+        /** Milliseconds between automatic advances; 0 keeps the carousel manual. */
+        this.autoAdvanceMs = options.autoAdvanceMs ?? 0;
         this._imgEl        = null;
         this._counterEl    = null;
+        this._advanceAnimator = null;
     }
 
     render() {
@@ -413,6 +417,15 @@ export class InlineCarousel extends BaseComponent {
         this.element.appendChild(bar);
         this.element.appendChild(wrap);
         this._showIndex(this._index);
+
+        if (this.autoAdvanceMs > 0 && this.images.length > 1) {
+            this._advanceAnimator = new IntervalAnimator({
+                interval: this.autoAdvanceMs,
+                onFrame: () => this._navigate(1),
+            });
+            this._advanceAnimator.start();
+        }
+
         return this.element;
     }
 
@@ -478,6 +491,8 @@ export class InlineCarousel extends BaseComponent {
     }
 
     destroy() {
+        this._advanceAnimator?.destroy();
+        this._advanceAnimator = null;
         if (this.element) { this.element.remove(); this.element = null; }
         super.destroy();
     }
