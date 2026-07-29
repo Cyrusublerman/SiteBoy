@@ -26,6 +26,22 @@
 
 import { BaseComponent } from './foundation.js';
 import { ASCII_NAV_FONT, FONT_ROWS, FONT_COLS, FONT_GAP } from '../../data/ascii-nav-font.js';
+import { sanitiseHtml } from './algorithms/markup/html-sanitiser.js';
+
+/**
+ * Parse markdown then run the HTML allow-list. The single safe render path for
+ * untrusted / database-backed bodies — never paired with script execution.
+ *
+ * @param {string} markdown
+ * @param {(md: string) => string} parseMarkdown
+ * @returns {string}
+ */
+export function renderSafeMarkdown(markdown, parseMarkdown) {
+    const html = typeof parseMarkdown === 'function'
+        ? parseMarkdown(String(markdown ?? ''))
+        : String(markdown ?? '');
+    return sanitiseHtml(html);
+}
 
 /**
  * Heading - Semantic heading component
@@ -200,6 +216,8 @@ export class MarkdownBody extends BaseComponent {
         this.fetchPath = options.fetchPath || '';
         this.className = options.className || 'markdown-body';
         this.enableTOC = options.enableTOC || false;
+        /** Opt-in only. Database and API bodies must leave this false. */
+        this.trusted = options.trusted === true;
         this.componentInstances = []; // Track embedded components for cleanup
     }
 
@@ -228,13 +246,15 @@ export class MarkdownBody extends BaseComponent {
             this.element.removeChild(this.element.firstChild);
         }
 
-        const htmlContent = this.parseMarkdown(this.markdownText);
+        const htmlContent = this.trusted
+            ? this.parseMarkdown(this.markdownText)
+            : renderSafeMarkdown(this.markdownText, (md) => this.parseMarkdown(md));
         this.element.innerHTML = htmlContent;
 
-        this.executeScripts(this.element);
-
-        // Process p5.js components
-        this.processP5Components(this.element);
+        if (this.trusted) {
+            this.executeScripts(this.element);
+            this.processP5Components(this.element);
+        }
 
         // Apply syntax highlighting to code blocks
         this.applySyntaxHighlighting(this.element);
@@ -441,30 +461,7 @@ export class MarkdownBody extends BaseComponent {
         this.markdownText = markdownText;
         this._hasMath = false;
         if (this.element) {
-            const htmlContent = this.parseMarkdown(markdownText);
-            this.element.innerHTML = htmlContent;
-            this.executeScripts(this.element);
-            
-            // Process p5.js components
-            this.processP5Components(this.element);
-            
-            // Apply syntax highlighting to code blocks
-            this.applySyntaxHighlighting(this.element);
-            
-            // Render math
-            this.renderMath();
-
-            // Re-bind zoom handlers for images
-            if (window.ComponentLibrary && window.ComponentLibrary.Lightbox) {
-                const imgs = Array.from(this.element.querySelectorAll('img'));
-                imgs.forEach(img => {
-                    img.style.cursor = 'zoom-in';
-                    img.addEventListener('click', () => {
-                        const lb = new window.ComponentLibrary.Lightbox({ src: img.src }, this.deps);
-                        lb.open(img.src);
-                    });
-                });
-            }
+            this._finalizeMarkdownDom();
         }
     }
 

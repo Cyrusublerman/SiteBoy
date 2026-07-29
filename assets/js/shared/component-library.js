@@ -155,6 +155,10 @@ import {
     VersionDiffView,
     VersionHistoryPanel,
     VideoFrameScrubber,
+    InsertToolbar,
+    BlockForm,
+    MediaPicker,
+    BlockOutline,
 } from './components/admin/index.js';
 
 // Import navigation components
@@ -575,6 +579,10 @@ ComponentLibrary.AdminDomainEditor = AdminDomainEditor;
 ComponentLibrary.VersionDiffView = VersionDiffView;
 ComponentLibrary.VersionHistoryPanel = VersionHistoryPanel;
 ComponentLibrary.VideoFrameScrubber = VideoFrameScrubber;
+ComponentLibrary.InsertToolbar = InsertToolbar;
+ComponentLibrary.BlockForm = BlockForm;
+ComponentLibrary.MediaPicker = MediaPicker;
+ComponentLibrary.BlockOutline = BlockOutline;
 
 // Assign navigation components to ComponentLibrary immediately
 ComponentLibrary.Scrollbar = Scrollbar;
@@ -733,6 +741,10 @@ export {
     VersionDiffView,
     VersionHistoryPanel,
     VideoFrameScrubber,
+    InsertToolbar,
+    BlockForm,
+    MediaPicker,
+    BlockOutline,
 
     // Additional Components
     Text,

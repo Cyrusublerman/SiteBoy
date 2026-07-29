@@ -66,6 +66,10 @@ export {
     AdminDomainEditor,
     VersionDiffView,
     VersionHistoryPanel,
+    InsertToolbar,
+    BlockForm,
+    MediaPicker,
+    BlockOutline,
 } from './admin/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════

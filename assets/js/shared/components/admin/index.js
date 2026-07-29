@@ -12,3 +12,7 @@ export { AdminDomainEditor } from './AdminDomainEditor.js';
 export { VersionDiffView } from './VersionDiffView.js';
 export { VersionHistoryPanel } from './VersionHistoryPanel.js';
 export { VideoFrameScrubber, captureVideoFrame, formatTimecode } from './VideoFrameScrubber.js';
+export { InsertToolbar } from './InsertToolbar.js';
+export { BlockForm } from './BlockForm.js';
+export { MediaPicker } from './MediaPicker.js';
+export { BlockOutline } from './BlockOutline.js';
