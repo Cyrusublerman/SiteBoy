@@ -1,9 +1,14 @@
 import { pathToFileURL } from 'node:url';
+import { neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
+
+neonConfig.webSocketConstructor = ws;
 
 export const REQUIRED_ENVIRONMENT = Object.freeze([
   'POSTGRES_URL',
   'ADMIN_PASSWORD_HASH',
   'CSRF_SECRET',
+  'AUTH_ENCRYPTION_KEY',
   'CRON_SECRET',
   'R2_ENDPOINT',
   'R2_ACCESS_KEY_ID',
@@ -46,6 +51,15 @@ export function inspectEnvironment(env = process.env) {
   if (env.CRON_SECRET && String(env.CRON_SECRET).length < 32) {
     errors.push('CRON_SECRET must contain at least 32 characters');
   }
+  if (env.AUTH_ENCRYPTION_KEY) {
+    const key = String(env.AUTH_ENCRYPTION_KEY);
+    const decodedLength = /^[0-9a-f]{64}$/i.test(key)
+      ? 32
+      : Buffer.from(key, 'base64').length;
+    if (decodedLength !== 32) {
+      errors.push('AUTH_ENCRYPTION_KEY must decode to exactly 32 bytes');
+    }
+  }
   for (const name of ['R2_ENDPOINT', 'R2_PUBLIC_BASE', 'SITE_ORIGIN']) {
     if (env[name] && !validUrl(env[name])) errors.push(`${name} is not a valid URL`);
   }
@@ -73,6 +87,18 @@ export async function inspectDatabase(query) {
        to_regclass('public.media_uploads') IS NOT NULL AS media_uploads_exists,
        to_regclass('public.audit_log') IS NOT NULL AS audit_log_exists,
        to_regclass('public.login_attempts') IS NOT NULL AS login_attempts_exists,
+       to_regclass('public.recovery_codes') IS NOT NULL AS recovery_codes_exists,
+       to_regclass('public.schema_migrations') IS NOT NULL AS schema_migrations_exists,
+       EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'users'
+           AND column_name = 'totp_secret_enc'
+       ) AS totp_secret_enc_exists,
+       EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'sessions'
+           AND column_name = 'last_seen_at'
+       ) AS session_last_seen_exists,
        EXISTS (SELECT 1 FROM users WHERE id = 'admin') AS admin_exists`,
     [],
   );
@@ -84,6 +110,10 @@ export async function inspectDatabase(query) {
     mediaUploads: Boolean(row.media_uploads_exists),
     auditLog: Boolean(row.audit_log_exists),
     loginAttempts: Boolean(row.login_attempts_exists),
+    recoveryCodes: Boolean(row.recovery_codes_exists),
+    migrationLedger: Boolean(row.schema_migrations_exists),
+    encryptedTotp: Boolean(row.totp_secret_enc_exists),
+    slidingSessions: Boolean(row.session_last_seen_exists),
     adminUser: Boolean(row.admin_exists),
   };
   return {
@@ -123,8 +153,13 @@ async function main() {
   let database = { ok: false, error: 'Database check not run' };
   if (process.env.POSTGRES_URL) {
     try {
-      const { sql } = await import('@vercel/postgres');
-      database = await inspectDatabase((text, params) => sql.query(text, params));
+      const { Pool } = await import('@neondatabase/serverless');
+      const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+      try {
+        database = await inspectDatabase((text, params) => pool.query(text, params));
+      } finally {
+        await pool.end();
+      }
     } catch (error) {
       database = { ok: false, error: error.message };
     }

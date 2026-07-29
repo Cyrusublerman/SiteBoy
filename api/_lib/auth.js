@@ -12,17 +12,16 @@ export function errorResponse(message, status = 400) {
 }
 
 /**
- * Require Lucia session + X-CSRF header (admin mutating routes).
+ * Require an opaque database session + X-CSRF header (admin mutating routes).
  * @param {Request|import('http').IncomingMessage} req
- * @returns {Promise<{ userId: string } | null>}
+ * @returns {Promise<{ userId: string } | { error: Response }>}
  */
-export async function requireAdmin(req) {
-  if (process.env.ADMIN_BYPASS === '1') {
-    return { userId: 'admin' };
-  }
-
-  const auth = await requireSessionAndCsrf(req);
-  if (auth.error) return null;
-
-  return { userId: auth.user.id };
+export function createAdminAuthoriser(authenticate = requireSessionAndCsrf) {
+  return async function authorise(req) {
+    const auth = await authenticate(req);
+    if (auth.error) return auth;
+    return { userId: auth.user.id };
+  };
 }
+
+export const requireAdmin = createAdminAuthoriser();

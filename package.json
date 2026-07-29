@@ -36,7 +36,15 @@
     "lint:design": "node tools/lint/run-design-rules.mjs",
     "test:design-rules": "vitest run tests/design-rules-runner.test.js",
     "db:migrate": "node scripts/db/migrate.mjs",
-    "import:art": "node scripts/migration/import-art.js --write"
+    "import:art": "node scripts/migration/import-art.js",
+    "import:art:write": "node scripts/migration/import-art.js --write",
+    "import:projects": "node scripts/migration/import-projects.js",
+    "import:projects:write": "node scripts/migration/import-projects.js --write",
+    "import:pages": "node scripts/migration/import-pages.js",
+    "import:pages:write": "node scripts/migration/import-pages.js --write",
+    "import:blog": "node scripts/migration/import-blog.js",
+    "import:blog:write": "node scripts/migration/import-blog.js --write",
+    "import:verify": "node scripts/migration/verify.js"
   },
   "keywords": [
     "ui",
@@ -71,18 +79,17 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.848.0",
     "@aws-sdk/s3-request-presigner": "^3.848.0",
-    "@lucia-auth/adapter-drizzle": "^1.1.0",
+    "@neondatabase/serverless": "^1.1.0",
     "@node-rs/argon2": "^2.0.2",
-    "@vercel/postgres": "^0.10.0",
     "citeproc": "^2.4.63",
-    "drizzle-orm": "^0.44.2",
+    "drizzle-orm": "^0.45.2",
     "jszip": "^3.10.1",
-    "lucia": "^3.2.2",
     "minimatch": "^10.2.5",
     "opentype.js": "^1.3.5",
     "sharp": "^0.33.5",
     "tiktoken": "^1.0.22",
     "ulid": "^3.0.0",
-    "woff2-encoder": "^2.0.0"
+    "woff2-encoder": "^2.0.0",
+    "ws": "^8.21.1"
   }
 }

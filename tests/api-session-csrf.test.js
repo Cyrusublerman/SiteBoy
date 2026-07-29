@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearCsrf,
   issueCsrf,
   verifyCsrf,
 } from '../api/_lib/session.js';
+import { createAdminAuthoriser } from '../api/_lib/auth.js';
 
 const ORIGINAL_CSRF_SECRET = process.env.CSRF_SECRET;
 const ORIGINAL_ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
@@ -51,5 +52,28 @@ describe('serverless-safe CSRF tokens', () => {
     delete process.env.CSRF_SECRET;
     delete process.env.ADMIN_PASSWORD_HASH;
     expect(() => issueCsrf('session-123')).toThrow(/CSRF_SECRET/);
+  });
+});
+
+describe('admin authorisation', () => {
+  it('uses explicit test injection without a deployable environment bypass', async () => {
+    const authenticate = vi.fn().mockResolvedValue({
+      session: { id: 'test-session' },
+      user: { id: 'injected-admin' },
+    });
+    const authorise = createAdminAuthoriser(authenticate);
+
+    await expect(authorise(new Request('https://site.test'))).resolves.toEqual({
+      userId: 'injected-admin',
+    });
+    expect(authenticate).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves the authentication error response status', async () => {
+    const error = Response.json({ error: 'CSRF token invalid' }, { status: 403 });
+    const authorise = createAdminAuthoriser(vi.fn().mockResolvedValue({ error }));
+
+    const result = await authorise(new Request('https://site.test'));
+    expect(result.error.status).toBe(403);
   });
 });

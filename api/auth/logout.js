@@ -1,5 +1,5 @@
 import {
-  createLucia,
+  createSessionService,
   validateRequest,
   clearCsrf,
   appendCookie,
@@ -8,12 +8,12 @@ import { writeAuditLog } from '../_lib/audit.js';
 import { vercelHandler } from '../_lib/adapter.js';
 
 async function handlePost(request) {
-  const lucia = createLucia();
+  const sessionService = createSessionService();
   const { session, user } = await validateRequest(request);
 
   if (session) {
     clearCsrf(session.id);
-    await lucia.invalidateSession(session.id);
+    await sessionService.invalidateSession(session.id);
     await writeAuditLog({
       actorId: user?.id ?? null,
       action: 'logout',
@@ -23,7 +23,7 @@ async function handlePost(request) {
     });
   }
 
-  const cookie = lucia.createBlankSessionCookie();
+  const cookie = sessionService.createBlankSessionCookie();
   const headers = new Headers();
   appendCookie(headers, cookie);
 
