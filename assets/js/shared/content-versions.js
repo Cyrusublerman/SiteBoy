@@ -67,6 +67,18 @@ export async function restoreRecord(resource, { id, currentVersion }, { client =
   return (await response.json()).item;
 }
 
+export async function deleteVersionedRecord(resource, { id, currentVersion }, { client = Auth } = {}) {
+  const response = await client.apiFetch(
+    `${CONTENT_BASE}/${resource}?id=${encodeURIComponent(id)}`,
+    {
+      method: 'DELETE',
+      headers: ifMatchHeader(currentVersion),
+    },
+  );
+  if (!response.ok) throw await readError(response);
+  return (await response.json()).item;
+}
+
 export async function patchVersionedRecord(resource, body, currentVersion, { client = Auth } = {}) {
   return client.apiFetch(`${CONTENT_BASE}/${resource}`, {
     method: 'PATCH',
@@ -112,6 +124,7 @@ export const ContentVersions = {
   fetchVersionHistory,
   revertToVersion,
   restoreRecord,
+  deleteVersionedRecord,
   patchVersionedRecord,
   diffSnapshots,
   formatSnapshotValue,

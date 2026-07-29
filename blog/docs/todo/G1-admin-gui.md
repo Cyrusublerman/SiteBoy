@@ -1,11 +1,11 @@
 # G1 — Admin GUI for adding content
 
-**Status**: WIP
+**Status**: REVIEW
 **Priority**: P1  
-**Owner file(s)**: `assets/js/sections/admin_section.js`, `assets/js/admin/gallery-editor.js`, `assets/js/shared/components/admin/*`, `assets/js/shared/content-versions.js`, admin sub-pages per section
+**Owner file(s)**: `assets/js/sections/admin_section.js`, `assets/js/admin/gallery-editor.js`, `assets/js/admin/blog-editor.js`, `assets/js/admin/page-blocks-editor.js`, `assets/js/shared/components/admin/*`, `assets/js/shared/content-versions.js`, admin sub-pages per section
 **Blockers**: → A2, A3  
 **Blocks**: —  
-**Last touched**: 2026-07-28
+**Last touched**: 2026-07-30
 
 ## Goal
 
@@ -35,10 +35,11 @@ One `#admin` route from which every manageable section is editable: gallery uplo
 - [ ] Project editor: CRUD on A3 `projects`; preview matches `projects_section.js`.
 - [ ] Store SKU editor: CRUD on A3 `products`.
 - [ ] Notes editor: CRUD on A3 `notes`; integrate F2.d.
-- [ ] Blog post composer: CRUD on publication records with Markdown preview.
-- [ ] About editor: governed page record or equivalent typed object.
+- [x] Blog post composer: CRUD on `articles` via `/api/content/articles` with SOURCE/PREVIEW, InsertToolbar, BlockOutline line-splice, MediaPicker (`![alt](url)`), and SETTINGS + `VersionHistoryPanel`.
+- [x] Public `#blog` merges published DB articles with the PKL corpus; DB bodies render with `MarkdownBody` `trusted: false`.
+- [x] About editor: `PageBlocksEditor` for `pageSlug === 'about'`; public `about_section` prefers `GET /api/content/page-blocks` with static JSON fallback.
 - [x] Add revision history and optimistic concurrency to the Gallery editor.
-- [ ] Mount `VersionHistoryPanel` in every remaining domain editor once it exists.
+- [x] Mount `VersionHistoryPanel` in Blog SETTINGS and About SETTINGS (Gallery EDIT already mounted).
 - [ ] Every operational admin page passes `page-compliance-audit`.
 
 ## Notes / decisions
@@ -49,6 +50,7 @@ One `#admin` route from which every manageable section is editable: gallery uplo
 - 2026-07-23: status normalised to the tracker closed set; G1 remains the umbrella for typed content and page editors.
 - 2026-07-28: editor chrome extracted to `AdminEditorShell` / `AdminTabBar` / `AdminStatusLine` / `AdminDomainEditor`; `GalleryEditor` now subclasses `AdminDomainEditor` and holds no chrome of its own. `VersionHistoryPanel` + `VersionDiffView` added and mounted in the Gallery EDIT tab; history is a section inside EDIT, not a fifth tab, because the tab ceiling is four.
 - 2026-07-28: the tab ceiling is enforced in code — `AdminTabBar` throws above four tabs.
+- 2026-07-30: Blog + About editors ship on `#admin/blog` and `#admin/about` (not `renderAdmin` on public sections). Source-text is canonical for articles; block edits splice by line. About only among page_blocks targets.
 
 ## References
 
