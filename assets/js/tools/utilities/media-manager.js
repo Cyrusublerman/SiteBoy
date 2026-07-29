@@ -1160,7 +1160,7 @@ class MediaManagerTool {
             }
         } catch (error) {
             this.apiConnected = false;
-            this.updateLabel('apiStatus', '❌ Upload API offline — deploy /api or set ADMIN_BYPASS');
+            this.updateLabel('apiStatus', '❌ Upload API offline — deploy /api and configure admin authentication');
         }
     }
 
