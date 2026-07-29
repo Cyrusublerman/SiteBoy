@@ -6,6 +6,7 @@ import {
   FileTable,
   Select,
   VersionHistoryPanel,
+  VideoFrameScrubber,
 } from '../shared/component-library.js';
 import { TextInput } from '../shared/components/input/TextInput.js';
 import { FileInput } from '../shared/components/input/FileInput.js';
@@ -20,8 +21,8 @@ import {
 
 const RESOURCE = 'gallery-items';
 
-/** Rows created by the media confirm endpoint start at version 1. */
-const NEW_ITEM_VERSION = 1;
+/** Only used for records read from a source that omits the version column. */
+const FALLBACK_ITEM_VERSION = 1;
 
 const TABS = Object.freeze([
   { id: 'upload', label: 'UPLOAD' },
@@ -30,11 +31,15 @@ const TABS = Object.freeze([
   { id: 'system', label: 'SYSTEM' },
 ]);
 
+/** Must stay identical to the `display_mode` check constraint on `gallery_items`. */
 const DISPLAY_MODES = Object.freeze([
-  { value: 'standalone', label: 'Standalone' },
+  { value: 'grid', label: 'Grid' },
   { value: 'carousel', label: 'Carousel' },
   { value: 'slideshow', label: 'Slideshow' },
+  { value: 'hidden', label: 'Hidden' },
 ]);
+
+const DEFAULT_DISPLAY_MODE = 'grid';
 
 export function parseTags(value) {
   const input = Array.isArray(value) ? value : String(value ?? '').split(/[;,]/);
@@ -43,13 +48,6 @@ export function parseTags(value) {
 
 export function tagsToText(tags) {
   return parseTags(tags).join(', ');
-}
-
-export function mergeGalleryMetadata(existing, patch) {
-  const base = existing && typeof existing === 'object' && !Array.isArray(existing) ? existing : {};
-  return Object.fromEntries(
-    Object.entries({ ...base, ...patch }).filter(([, value]) => value !== undefined),
-  );
 }
 
 export function normaliseGalleryItem(item = {}) {
@@ -66,13 +64,15 @@ export function normaliseGalleryItem(item = {}) {
     description: item.description || '',
     tags: parseTags(item.tags),
     metadataJsonb: metadata,
-    group: metadata.group || '',
-    displayMode: metadata.displayMode || 'standalone',
+    // Columns are authoritative; metadata is read only for rows written before
+    // `group_key` and `display_mode` became first-class fields.
+    group: item.groupKey || metadata.group || '',
+    displayMode: item.displayMode || metadata.displayMode || DEFAULT_DISPLAY_MODE,
     previewUrl: item.thumbUrl || urls.thumb || item.mediaUrl || urls.web || '',
     sortIndex: Number(item.sortIndex) || 0,
     selected: Boolean(item.selected),
     retained: Boolean(item.deletedAt),
-    version: Number.isSafeInteger(item.version) ? item.version : NEW_ITEM_VERSION,
+    version: Number.isSafeInteger(item.version) ? item.version : FALLBACK_ITEM_VERSION,
   };
 }
 
@@ -88,8 +88,12 @@ export function buildUploadRows(files, defaults = {}, createPreview = (file) => 
     tags: tagsToText(defaults.tags),
     group: defaults.group || '',
     collection: defaults.collection || 'digital/generative',
-    displayMode: defaults.displayMode || 'standalone',
+    displayMode: defaults.displayMode || DEFAULT_DISPLAY_MODE,
   }));
+}
+
+export function isVideoRow(row) {
+  return Boolean(row?.file?.type?.startsWith('video/'));
 }
 
 export function reorderSelectedRows(rows, selectedIds, direction) {
@@ -123,6 +127,38 @@ export function matchPosterFile(videoName, posterFiles) {
   )) || null;
 }
 
+/**
+ * A frame captured in the browser wins over a manually named poster file,
+ * because the author chose it against this exact video (D-10).
+ */
+export function resolvePosterBlob(row, capturedPosters, posterFiles) {
+  if (!isVideoRow(row)) return null;
+  return capturedPosters?.get(row.id) || matchPosterFile(row.filename, posterFiles);
+}
+
+/**
+ * Fields that differ between an edited ORGANISE row and the stored record.
+ * Returns null when the row is unchanged so no version is burned on a no-op.
+ */
+export function organisePatch(edited, original, sortIndex) {
+  const fields = {};
+  if (sortIndex !== original.sortIndex) fields.sortIndex = sortIndex;
+
+  const title = String(edited.title ?? '').trim();
+  if (title && title !== original.title) fields.title = title;
+
+  const tags = parseTags(edited.tagsText ?? edited.tags);
+  if (tags.join('\u0000') !== parseTags(original.tags).join('\u0000')) fields.tags = tags;
+
+  const group = String(edited.group ?? '').trim();
+  if (group !== (original.group || '')) fields.groupKey = group || null;
+
+  const displayMode = edited.displayMode || original.displayMode;
+  if (displayMode !== original.displayMode) fields.displayMode = displayMode;
+
+  return Object.keys(fields).length ? fields : null;
+}
+
 function itemOption(item) {
   return {
     value: item.id,
@@ -145,9 +181,12 @@ export class GalleryEditor extends AdminDomainEditor {
     this.uploadRows = [];
     this.organiseRows = [];
     this.posterFiles = [];
+    this.capturedPosters = new Map();
     this.previewUrls = new Set();
     this.editingId = null;
+    this.organiseCollection = null;
     this.deleteArmedId = null;
+    this.posterScrubber = null;
   }
 
   tabRenderers() {
@@ -165,6 +204,8 @@ export class GalleryEditor extends AdminDomainEditor {
 
   onTabChange() {
     this.deleteArmedId = null;
+    // Pane components are destroyed on every tab change; drop the stale handle.
+    this.posterScrubber = null;
   }
 
   async refreshItems({ silent = false } = {}) {
@@ -188,6 +229,17 @@ export class GalleryEditor extends AdminDomainEditor {
 
   _patchItem(item, fields) {
     return patchVersionedRecord(RESOURCE, { id: item.id, ...fields }, item.version);
+  }
+
+  /**
+   * The current version of a record the media pipeline has just created.
+   * The confirm endpoint reports it; older deployments that do not are covered
+   * by re-reading the record rather than by assuming a starting version.
+   */
+  async _resolveItemVersion(result) {
+    if (Number.isSafeInteger(result?.version) && result.version >= 1) return result.version;
+    await this.refreshItems({ silent: true });
+    return this.items.find((item) => item.id === result?.itemId)?.version ?? null;
   }
 
   _field(parent, label, value = '', options = {}) {
@@ -226,7 +278,7 @@ export class GalleryEditor extends AdminDomainEditor {
     const description = this._field(form, 'DEFAULT DESCRIPTION', '', { multiline: true, rows: 3 });
     const tags = this._field(form, 'DEFAULT TAGS', '', { placeholder: 'tag one, tag two' });
     const group = this._field(form, 'DEFAULT GROUP', '', { placeholder: 'series or set name' });
-    const displayMode = this._select(form, 'DISPLAY MODE', DISPLAY_MODES, 'standalone');
+    const displayMode = this._select(form, 'DISPLAY MODE', DISPLAY_MODES, DEFAULT_DISPLAY_MODE);
     this.appendElement(this.pane, form);
     this._renderSuggestions(this.pane, collectTagSuggestions(this.items));
 
@@ -238,6 +290,7 @@ export class GalleryEditor extends AdminDomainEditor {
       multiple: true,
       onChange: (files) => {
         this._releasePreviewUrls();
+        this.capturedPosters.clear();
         this.uploadRows = buildUploadRows(files, {
           collection: collection.getValue(),
           description: description.getValue(),
@@ -247,6 +300,7 @@ export class GalleryEditor extends AdminDomainEditor {
         });
         for (const row of this.uploadRows) this.previewUrls.add(row.previewUrl);
         table?.setRows(this.uploadRows);
+        this._syncPosterScrubber();
         this.setStatus(`${this.uploadRows.length} file${this.uploadRows.length === 1 ? '' : 's'} ready for review.`);
       },
     }, this.deps));
@@ -275,6 +329,14 @@ export class GalleryEditor extends AdminDomainEditor {
       },
     }, this.deps));
 
+    this.posterScrubber = this.append(this.pane, new VideoFrameScrubber({
+      label: 'VIDEO POSTER FRAME',
+      emptyLabel: 'SELECT A VIDEO FILE TO CHOOSE ITS POSTER FRAME',
+      onCapture: (rowId, blob) => this.capturedPosters.set(rowId, blob),
+      onStatus: (message, tone) => this.setStatus(message, tone),
+    }, this.deps));
+    this._syncPosterScrubber();
+
     const actions = this.createElement('div', 'admin-editor-actions');
     const uploadButton = this.append(actions, new Button({
       text: 'UPLOAD INCLUDED FILES',
@@ -290,13 +352,23 @@ export class GalleryEditor extends AdminDomainEditor {
           });
           fileInput.clear();
           this.uploadRows = [];
+          this.capturedPosters.clear();
           table.setRows([]);
+          this._syncPosterScrubber();
         } finally {
           uploadButton.setDisabled(false);
         }
       },
     }, this.deps));
     this.appendElement(this.pane, actions);
+  }
+
+  _syncPosterScrubber() {
+    this.posterScrubber?.setSources(this.uploadRows.filter(isVideoRow).map((row) => ({
+      id: row.id,
+      label: row.filename,
+      file: row.file,
+    })));
   }
 
   async _uploadIncludedRows(defaults) {
@@ -315,26 +387,29 @@ export class GalleryEditor extends AdminDomainEditor {
         title: row.title,
         description: row.description || defaults.description,
         tags: parseTags(row.tags || defaults.tags),
-        posterBlob: row.file.type.startsWith('video/')
-          ? matchPosterFile(row.filename, this.posterFiles)
-          : null,
+        posterBlob: resolvePosterBlob(row, this.capturedPosters, this.posterFiles),
       }, {
         onProgress: (progress) => {
           this.setStatus(`Uploading ${row.filename}: ${Math.round(progress * 100)}%`);
         },
       });
 
-      const metadataJsonb = mergeGalleryMetadata({}, {
-        group: row.group || defaults.group || '',
-        displayMode: row.displayMode || defaults.displayMode || 'standalone',
-      });
-      const patch = await this._patchItem(
-        { id: result.itemId, version: NEW_ITEM_VERSION },
-        { metadataJsonb },
-      );
-      if (!patch.ok) {
-        const data = await patch.json().catch(() => ({}));
-        throw new Error(data.error || `Uploaded ${row.filename}, but metadata update failed.`);
+      const fields = {};
+      const group = row.group || defaults.group || '';
+      const displayMode = row.displayMode || defaults.displayMode || DEFAULT_DISPLAY_MODE;
+      if (group) fields.groupKey = group;
+      if (displayMode !== DEFAULT_DISPLAY_MODE) fields.displayMode = displayMode;
+
+      if (Object.keys(fields).length) {
+        const version = await this._resolveItemVersion(result);
+        if (version === null) {
+          throw new Error(`Uploaded ${row.filename}, but its record version could not be read.`);
+        }
+        const patch = await this._patchItem({ id: result.itemId, version }, fields);
+        if (!patch.ok) {
+          const data = await patch.json().catch(() => ({}));
+          throw new Error(data.error || `Uploaded ${row.filename}, but metadata update failed.`);
+        }
       }
       completed += 1;
     }
@@ -397,10 +472,8 @@ export class GalleryEditor extends AdminDomainEditor {
           collection: collection.getValue(),
           gallerySlug: collection.getValue(),
           status: status.getValue(),
-          metadataJsonb: mergeGalleryMetadata(item.metadataJsonb, {
-            group: group.getValue(),
-            displayMode: displayMode.getValue(),
-          }),
+          groupKey: group.getValue() || null,
+          displayMode: displayMode.getValue(),
         });
         await this._handleMutationResponse(response, 'Gallery item updated.');
       },
@@ -411,7 +484,7 @@ export class GalleryEditor extends AdminDomainEditor {
         text: 'RESTORE ITEM',
         onClick: async () => {
           try {
-            await restoreGalleryItem(item.id);
+            await restoreGalleryItem(item.id, item.version);
             await this.refreshItems({ silent: true });
             this.setStatus('Gallery item restored.', 'success');
           } catch (error) {
@@ -450,7 +523,7 @@ export class GalleryEditor extends AdminDomainEditor {
             return;
           }
           try {
-            await retainGalleryItem(item.id);
+            await retainGalleryItem(item.id, item.version);
             this.deleteArmedId = null;
             await this.refreshItems({ silent: true });
             this.setStatus('Gallery item retained for 30 days.', 'success');
@@ -500,15 +573,21 @@ export class GalleryEditor extends AdminDomainEditor {
     }
 
     const collections = [...new Set(this.organiseRows.map((item) => item.collection))].sort();
-    const currentCollection = collections[0];
-    const collectionSelect = this._select(
+    // The pane is rebuilt on every change, so the choice lives on the editor.
+    if (!collections.includes(this.organiseCollection)) {
+      this.organiseCollection = collections[0];
+    }
+    this._select(
       this.pane,
       'COLLECTION',
       collections.map((value) => ({ value, label: value })),
-      currentCollection,
-      () => this.renderActiveTab(),
+      this.organiseCollection,
+      (value) => {
+        this.organiseCollection = value;
+        this.renderActiveTab();
+      },
     );
-    const collection = collectionSelect.getValue();
+    const collection = this.organiseCollection;
     const rows = this.organiseRows
       .filter((item) => item.collection === collection)
       .sort((a, b) => a.sortIndex - b.sortIndex)
@@ -543,7 +622,7 @@ export class GalleryEditor extends AdminDomainEditor {
     const batch = this.createElement('div', 'admin-editor-form-grid');
     const batchTags = this._field(batch, 'ADD TAGS TO SELECTED', '');
     const batchGroup = this._field(batch, 'SET GROUP FOR SELECTED', '');
-    const batchMode = this._select(batch, 'SET DISPLAY MODE', DISPLAY_MODES, 'standalone');
+    const batchMode = this._select(batch, 'SET DISPLAY MODE', DISPLAY_MODES, DEFAULT_DISPLAY_MODE);
     this.appendElement(this.pane, batch);
 
     const actions = this.createElement('div', 'admin-editor-actions');
@@ -564,12 +643,11 @@ export class GalleryEditor extends AdminDomainEditor {
           return;
         }
         for (const item of selected) {
+          const group = batchGroup.getValue() || item.group || '';
           const response = await this._patchItem(item, {
             tags: [...new Set([...parseTags(item.tags), ...parseTags(batchTags.getValue())])],
-            metadataJsonb: mergeGalleryMetadata(item.metadataJsonb, {
-              group: batchGroup.getValue() || item.group || '',
-              displayMode: batchMode.getValue(),
-            }),
+            groupKey: group || null,
+            displayMode: batchMode.getValue(),
           });
           if (!response.ok) {
             await this._handleMutationResponse(response, '');
@@ -603,28 +681,36 @@ export class GalleryEditor extends AdminDomainEditor {
     this.setStatus('Order changed locally. Use SAVE ORDER AND ROW EDITS to persist it.');
   }
 
+  /**
+   * Persist the ORGANISE tab through the versioned gateway. Each record is sent
+   * with its own current version as `If-Match`, and only records whose stored
+   * state actually differs are written.
+   */
   async _saveOrganiseRows(collection) {
     const rows = this.organiseRows
       .filter((item) => item.collection === collection)
       .sort((a, b) => a.sortIndex - b.sortIndex);
+    const stored = new Map(this.items.map((item) => [item.id, item]));
+    let saved = 0;
     for (let index = 0; index < rows.length; index += 1) {
-      const item = rows[index];
-      const response = await this._patchItem(item, {
-        sortIndex: index,
-        title: item.title,
-        tags: parseTags(item.tagsText || item.tags),
-        metadataJsonb: mergeGalleryMetadata(item.metadataJsonb, {
-          group: item.group || '',
-          displayMode: item.displayMode || 'standalone',
-        }),
-      });
+      const original = stored.get(rows[index].id);
+      if (!original) continue;
+      const fields = organisePatch(rows[index], original, index);
+      if (!fields) continue;
+      const response = await this._patchItem(original, fields);
       if (!response.ok) {
         await this._handleMutationResponse(response, '');
         return;
       }
+      saved += 1;
     }
     await this.refreshItems({ silent: true });
-    this.setStatus(`Saved order for ${rows.length} item${rows.length === 1 ? '' : 's'}.`, 'success');
+    this.setStatus(
+      saved
+        ? `Saved ${saved} changed item${saved === 1 ? '' : 's'} in ${collection}.`
+        : `No unsaved changes in ${collection}.`,
+      saved ? 'success' : 'neutral',
+    );
   }
 
   _renderSystem() {
@@ -668,7 +754,7 @@ export class GalleryEditor extends AdminDomainEditor {
     this.appendElement(this.pane, actions);
 
     this.append(this.pane, new Paragraph({
-      content: 'Grouping and display mode are stored with each item. Public carousel and slideshow rendering remains a separate presentation task.',
+      content: 'Group and display mode are stored on each record and drive the public gallery: grid renders in the masonry layout, carousel and slideshow render as their own strips, and hidden withholds the item from every public read.',
     }, this.deps));
   }
 
@@ -690,6 +776,8 @@ export class GalleryEditor extends AdminDomainEditor {
     this.uploadRows = [];
     this.organiseRows = [];
     this.posterFiles = [];
+    this.capturedPosters.clear();
+    this.posterScrubber = null;
     super.destroy();
   }
 }

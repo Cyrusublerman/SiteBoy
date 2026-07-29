@@ -16,11 +16,36 @@ export const PENDING_UPLOAD_TTL_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_RETENTION_DAYS = 30;
 
 export class MediaLifecycleError extends Error {
-  constructor(code, message, status = 400) {
+  constructor(code, message, status = 400, currentVersion = null) {
     super(message);
     this.code = code;
     this.status = status;
+    this.currentVersion = currentVersion;
   }
+}
+
+/**
+ * Optimistic concurrency for the gallery mutations that bypass the content
+ * gateway. An absent expectation is rejected so no caller can opt out silently.
+ */
+export function assertItemVersion(item, expectedVersion) {
+  if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1) {
+    throw new MediaLifecycleError(
+      'IF_MATCH_REQUIRED',
+      'a positive expectedVersion is required',
+      428,
+      item?.version ?? null,
+    );
+  }
+  if (item.version !== expectedVersion) {
+    throw new MediaLifecycleError(
+      'VERSION_CONFLICT',
+      `version conflict: expected ${expectedVersion}, current ${item.version}`,
+      409,
+      item.version,
+    );
+  }
+  return item.version;
 }
 
 function valueHash(value) {
@@ -155,10 +180,12 @@ export async function confirmPendingUpload({
   const pending = lookup.rows[0];
   if (!pending) throw new MediaLifecycleError('UPLOAD_OWNERSHIP_MISMATCH', 'pending upload not found', 404);
   if (pending.status === 'confirmed') {
-    const existing = posterForItemId
-      ? await pool.query('SELECT id, media_url, thumb_url FROM gallery_items WHERE id = $1', [posterForItemId])
-      : await pool.query('SELECT id, media_url, thumb_url FROM gallery_items WHERE id = $1', [itemId]);
-    return { ...existing.rows[0], itemId: posterForItemId || itemId, idempotent: true };
+    const settledId = posterForItemId || itemId;
+    const existing = await pool.query(
+      'SELECT id, media_url, thumb_url, version FROM gallery_items WHERE id = $1',
+      [settledId],
+    );
+    return { ...existing.rows[0], itemId: settledId, idempotent: true };
   }
 
   let object;
@@ -192,23 +219,30 @@ export async function confirmPendingUpload({
     const current = locked.rows[0];
     if (!current) throw new MediaLifecycleError('UPLOAD_OWNERSHIP_MISMATCH', 'pending upload not found', 404);
     if (current.status === 'confirmed') {
+      const settledId = posterForItemId || itemId;
+      const settled = await client.query(
+        'SELECT version FROM gallery_items WHERE id = $1',
+        [settledId],
+      );
       await client.query('COMMIT');
-      return { itemId: posterForItemId || itemId, idempotent: true };
+      return { itemId: settledId, idempotent: true, version: settled.rows[0]?.version ?? null };
     }
 
     const mediaUrl = publicUrl(key);
+    let itemVersion = null;
     if (posterForItemId) {
       if (!pending.mime.startsWith('image/')) {
         throw new MediaLifecycleError('POSTER_TYPE_INVALID', 'video poster must be an image', 415);
       }
       const target = await client.query(
-        `SELECT id, format, thumb_url, metadata_jsonb
+        `SELECT id, format, thumb_url, metadata_jsonb, version
          FROM gallery_items WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
         [posterForItemId],
       );
       if (!target.rows[0] || !['mp4', 'webm'].includes(target.rows[0].format)) {
         throw new MediaLifecycleError('POSTER_TARGET_INVALID', 'poster target must be an active video', 409);
       }
+      itemVersion = target.rows[0].version ?? null;
       await client.query(
         `UPDATE gallery_items
          SET thumb_url = $2, thumb_status = 'done', thumb_error_code = NULL,
@@ -229,7 +263,7 @@ export async function confirmPendingUpload({
          FROM gallery_items WHERE collection = $1`,
         [collection],
       );
-      await client.query(
+      const inserted = await client.query(
         `INSERT INTO gallery_items (
            id, gallery_slug, sort_index, filename, urls_jsonb, metadata_jsonb, status,
            slug, title, description, media_url, thumb_url, format, source_tool, tags,
@@ -238,7 +272,8 @@ export async function confirmPendingUpload({
            $1,$2,$3,$4,$5::jsonb,$6::jsonb,'published',$7,$8,$9,$10,NULL,$11,$12,
            $13::jsonb,$14,$15,$16,$17,$18,'pending',NOW()
          )
-         ON CONFLICT (id) DO NOTHING`,
+         ON CONFLICT (id) DO NOTHING
+         RETURNING version`,
         [
           itemId,
           collection,
@@ -260,6 +295,11 @@ export async function confirmPendingUpload({
           pending.sha256,
         ],
       );
+      // The insert is a no-op when the row already exists, so read the settled version back.
+      itemVersion = inserted.rows[0]?.version ?? (await client.query(
+        'SELECT version FROM gallery_items WHERE id = $1',
+        [itemId],
+      )).rows[0]?.version ?? null;
     }
     await client.query(
       `UPDATE media_uploads
@@ -287,6 +327,7 @@ export async function confirmPendingUpload({
       itemId: posterForItemId || itemId,
       mediaUrl: posterForItemId ? undefined : mediaUrl,
       thumbUrl: posterForItemId ? mediaUrl : null,
+      version: itemVersion,
       idempotent: false,
     };
   } catch (error) {
@@ -401,6 +442,7 @@ export async function abandonMultipart({
 export async function retainGalleryItem({
   actorId,
   itemId,
+  expectedVersion,
   request,
   retentionDays = DEFAULT_RETENTION_DAYS,
 }, { pool = getPool(), now = () => new Date() } = {}) {
@@ -413,6 +455,7 @@ export async function retainGalleryItem({
     );
     const item = found.rows[0];
     if (!item) throw new MediaLifecycleError('GALLERY_ITEM_NOT_FOUND', 'gallery item not found', 404);
+    assertItemVersion(item, expectedVersion);
     const retainedAt = now();
     const retentionUntil = new Date(retainedAt.getTime() + retentionDays * 86400000);
     const keys = [
@@ -459,11 +502,20 @@ export async function retainGalleryItem({
 export async function restoreGalleryItem({
   actorId,
   itemId,
+  expectedVersion,
   request,
 }, { pool = getPool(), now = () => new Date() } = {}) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const found = await client.query(
+      'SELECT id, version FROM gallery_items WHERE id = $1 FOR UPDATE',
+      [itemId],
+    );
+    if (!found.rows[0]) {
+      throw new MediaLifecycleError('GALLERY_ITEM_NOT_FOUND', 'gallery item not found', 404);
+    }
+    assertItemVersion(found.rows[0], expectedVersion);
     const queue = await client.query(
       `SELECT * FROM deletion_queue
        WHERE resource_kind = 'gallery_item' AND resource_id = $1 FOR UPDATE`,

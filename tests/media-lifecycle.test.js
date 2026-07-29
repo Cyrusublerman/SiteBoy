@@ -221,6 +221,7 @@ describe('retention processors', () => {
       .mockResolvedValueOnce({
         rows: [{
           id: 'item-0',
+          version: 2,
           deleted_at: null,
           metadata_jsonb: { r2Key: 'gallery/item-0/file.png' },
         }],
@@ -230,6 +231,7 @@ describe('retention processors', () => {
     const result = await retainGalleryItem({
       actorId: 'admin',
       itemId: 'item-0',
+      expectedVersion: 2,
     }, {
       pool: connectedPool(query),
       now: () => now,
@@ -243,6 +245,9 @@ describe('retention processors', () => {
     const query = vi.fn()
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({
+        rows: [{ id: 'item-restore', version: 4 }],
+      })
+      .mockResolvedValueOnce({
         rows: [{
           id: 'queue-restore',
           status: 'retained',
@@ -254,6 +259,7 @@ describe('retention processors', () => {
     const result = await restoreGalleryItem({
       actorId: 'admin',
       itemId: 'item-restore',
+      expectedVersion: 4,
     }, {
       pool: connectedPool(query),
       now: () => new Date('2026-08-01T00:00:00Z'),
