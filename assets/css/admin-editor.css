@@ -331,6 +331,96 @@
   min-width: 0;
 }
 
+/* ── Video frame scrubber ──────────────────────────────────────────────────
+   One bordered partition; every cell after the title owns its top divider
+   (border-system.md §3 vertical stack). Controls are inset so their own boxes
+   never share an edge with a cell divider (border-system.md §6). */
+
+.admin-scrubber {
+  border: 1px solid var(--c-border);
+  background: var(--c-bg);
+}
+
+.admin-scrubber-title {
+  height: calc(var(--f, 14px) * 1.5);
+  padding: 0 calc(var(--f, 14px) * 0.5);
+  font-size: calc(var(--f, 14px) * 0.75);
+  line-height: calc(var(--f, 14px) * 1.5);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.admin-scrubber-empty {
+  height: calc(var(--f, 14px) * 2);
+  padding: 0 var(--f, 14px);
+  border-top: 1px solid var(--c-border);
+  color: var(--c-border);
+  font-size: calc(var(--f, 14px) * 0.75);
+  line-height: calc(var(--f, 14px) * 2);
+  text-transform: uppercase;
+  box-sizing: border-box;
+}
+
+.admin-scrubber-empty[data-visible='false'],
+.admin-scrubber-body[data-visible='false'] {
+  display: none;
+}
+
+.admin-scrubber-cell,
+.admin-scrubber-stage {
+  padding: calc(var(--f, 14px) * 0.5);
+  border-top: 1px solid var(--c-border);
+  box-sizing: border-box;
+}
+
+.admin-scrubber-video {
+  display: block;
+  width: 100%;
+  max-height: calc(var(--f, 14px) * 24);
+  border: 1px solid var(--c-border);
+  background: var(--c-bg);
+  object-fit: contain;
+  box-sizing: border-box;
+}
+
+.admin-scrubber-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--f, 14px) * 0.5);
+  padding: calc(var(--f, 14px) * 0.5);
+  border-top: 1px solid var(--c-border);
+  box-sizing: border-box;
+}
+
+.admin-scrubber-readout {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(var(--f, 14px) * 0.75);
+  line-height: calc(var(--f, 14px) * 2);
+  text-align: right;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-scrubber-preview {
+  display: block;
+  max-width: min(100%, 24rem);
+  max-height: 18rem;
+  padding: calc(var(--f, 14px) * 0.5);
+  border-top: 1px solid var(--c-border);
+  object-fit: contain;
+  box-sizing: border-box;
+}
+
+.admin-scrubber-preview[data-captured='false'] {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .admin-editor-actions {
     display: grid;

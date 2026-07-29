@@ -310,21 +310,32 @@ export async function abortGalleryUpload(file, storage = sessionStorage) {
   return response.json();
 }
 
-export async function retainGalleryItem(itemId) {
-  const response = await adminJsonRequest(CONFIRM_URL, { action: 'delete', itemId });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || `delete failed: ${response.status}`);
-  }
+/** Surface the server's current version so a stale tab is told what to reload. */
+async function readLifecycleError(response, fallback) {
+  const data = await response.json().catch(() => ({}));
+  const moved = Number.isSafeInteger(data.currentVersion)
+    ? ` The record moved to version ${data.currentVersion}; reload before retrying.`
+    : '';
+  return new Error(`${data.error || fallback}${moved}`);
+}
+
+export async function retainGalleryItem(itemId, expectedVersion) {
+  const response = await adminJsonRequest(CONFIRM_URL, {
+    action: 'delete',
+    itemId,
+    expectedVersion,
+  });
+  if (!response.ok) throw await readLifecycleError(response, `delete failed: ${response.status}`);
   return response.json();
 }
 
-export async function restoreGalleryItem(itemId) {
-  const response = await adminJsonRequest(CONFIRM_URL, { action: 'restore', itemId });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || `restore failed: ${response.status}`);
-  }
+export async function restoreGalleryItem(itemId, expectedVersion) {
+  const response = await adminJsonRequest(CONFIRM_URL, {
+    action: 'restore',
+    itemId,
+    expectedVersion,
+  });
+  if (!response.ok) throw await readLifecycleError(response, `restore failed: ${response.status}`);
   return response.json();
 }
 

@@ -154,6 +154,7 @@ import {
     AdminDomainEditor,
     VersionDiffView,
     VersionHistoryPanel,
+    VideoFrameScrubber,
 } from './components/admin/index.js';
 
 // Import navigation components
@@ -350,6 +351,7 @@ const ComponentLibrary = {
             'admin-editor-shell': AdminEditorShell,
             'version-diff-view': VersionDiffView,
             'version-history-panel': VersionHistoryPanel,
+            'video-frame-scrubber': VideoFrameScrubber,
 
             // Navigation
             'scrollbar': Scrollbar,
@@ -572,6 +574,7 @@ ComponentLibrary.AdminEditorShell = AdminEditorShell;
 ComponentLibrary.AdminDomainEditor = AdminDomainEditor;
 ComponentLibrary.VersionDiffView = VersionDiffView;
 ComponentLibrary.VersionHistoryPanel = VersionHistoryPanel;
+ComponentLibrary.VideoFrameScrubber = VideoFrameScrubber;
 
 // Assign navigation components to ComponentLibrary immediately
 ComponentLibrary.Scrollbar = Scrollbar;
@@ -729,6 +732,7 @@ export {
     AdminDomainEditor,
     VersionDiffView,
     VersionHistoryPanel,
+    VideoFrameScrubber,
 
     // Additional Components
     Text,
