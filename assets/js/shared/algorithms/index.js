@@ -734,3 +734,14 @@ export { serpentineOscillatorRaster } from './line/serpentine-line-engine.js';
 // GEOMETRIC DISTORTION — band shift, spherize, twirl, chromatic aberration, lens bubbles
 // ═══════════════════════════════════════════════════════════════════════════
 export * as GeometricDistortion from './geometry/distortion.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MARKUP — `:::block` directive parser, block registry, HTML/URL sanitiser
+// ═══════════════════════════════════════════════════════════════════════════
+export * as BlockParser from './markup/block-parser.js';
+export * as BlockTypes from './markup/block-types.js';
+export * as BlockSanitiser from './markup/block-sanitiser.js';
+export * as HTMLSanitiser from './markup/html-sanitiser.js';
+export { parseBlockDocument, stringifyBlockDocument, formatBlockWarning } from './markup/block-parser.js';
+export { parseAndSanitiseBlocks, sanitiseBlockDocument, sanitiseBlockProps } from './markup/block-sanitiser.js';
+export { sanitiseHtml, stripHtml, sanitiseUrl, escapeHtml } from './markup/html-sanitiser.js';

@@ -111,6 +111,7 @@ Last touched: 2026-09-18 (H8 project state cleanup).
 | G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | REVIEW | → A2, A3 |
 | G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | DONE | — |
 | G3 | [G3-portal-index.md](G3-portal-index.md) | Documentation portal index refresh | P2 | DONE | → G2 |
+| G4 | [G4-block-parser-sanitiser.md](G4-block-parser-sanitiser.md) | `:::block` parser and sanitiser (S14) | P1 | REVIEW | — |
 
 ## H. Cross-cutting
 
