@@ -1,11 +1,11 @@
 # B5 — Point cloud / Gaussian splat viewer
 
-**Status**: WIP
+**Status**: BLOCKED
 **Priority**: P3
 **Owner file(s)**: `assets/js/shared/components/three-d/SplatViewer.js` (to author)
 **Blockers**: → B4
 **Blocks**: —
-**Last touched**: 2026-06-18
+**Last touched**: 2026-07-23
 
 ## Goal
 
@@ -27,7 +27,7 @@ Render a `.splat` / `.ply` point-cloud or Gaussian-splat asset inside any `Canva
 
 ## Notes / decisions
 
-(append-only)
+- 2026-07-23: Reclassified from stale WIP to BLOCKED until B4 resolves; implementation is partial and the audit predicate is unmet.
 
 ## References
 

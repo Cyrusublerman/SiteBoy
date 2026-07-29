@@ -2,10 +2,10 @@
 
 **Status**: REVIEW
 **Priority**: P1
-**Owner file(s)**: `db/schema.ts`, `db/schema.js`, `db/migrations/`, `api/content/*`, `scripts/db-migrate.mjs`
+**Owner file(s)**: `db/schema.ts`, `db/schema.js`, `db/migrations/`, `api/content/*`, `scripts/db/migrate.mjs`
 **Blockers**: → A1
 **Blocks**: B2, C1, C2, F2, G1
-**Last touched**: 2026-06-18
+**Last touched**: 2026-07-23
 
 ## Goal
 
@@ -17,10 +17,10 @@ One schema migration committed under `db/migrations/`. CRUD round-trip from the 
 
 ## Sub-tasks
 
-- [x] Decide provider: Vercel Postgres + Drizzle ORM.
+- [x] Decide provider: Neon Postgres + Drizzle ORM.
 - [x] Write ADR `blog/docs/site/adr-A3-store.md`.
 - [x] Author initial schema: `users`, `gallery_items`, `projects`, `products`, `notes`, `tags`, `links`, `audit_log`, `media_uploads`, `sessions`.
-- [x] Decide migration tool (raw SQL + `npm run db:migrate`).
+- [x] Implement checksummed raw-SQL migration ledger with advisory locking.
 - [x] Commit `0001_init.sql`.
 - [ ] Set up local dev DB.
 - [ ] Wire connection from A1 runtime (preview deploy pending A1).
@@ -28,10 +28,13 @@ One schema migration committed under `db/migrations/`. CRUD round-trip from the 
 - [x] Document backup/restore procedure (ADR).
 - [ ] Verify migrations run cleanly on preview env.
 - [x] CRUD stub endpoints at `/api/content/*`.
+- [x] Add typed galleries, articles, page blocks, generic versions and deletion queue.
+- [x] Add atomic optimistic versioning, history, soft-delete, restore and revert.
+- [x] Add idempotent dry-run importers and static-shape parity verification.
 
 ## Notes / decisions
 
-- 2026-06-18: `db/schema.ts` (authoring) + `db/schema.js` (runtime for Vercel handlers). Drizzle via `@vercel/postgres`.
+- 2026-07-23: `db/schema.ts` and `db/schema.js` align with Neon runtime schema. Pooled `POSTGRES_URL` serves handlers; direct `DATABASE_URL` serves migrations.
 
 ## References
 

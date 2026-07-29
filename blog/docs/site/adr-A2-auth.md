@@ -1,7 +1,7 @@
 # ADR A2 — Authentication
 
 **Status**: accepted  
-**Date**: 2026-06-18  
+**Date**: 2026-07-23
 **Deciders**: platform (A1/A2/A3/A4 batch)
 
 ## Context
@@ -12,14 +12,14 @@ Single-editor admin surface on a public static site. No public sign-up. Session 
 
 | Concern | Choice |
 | --- | --- |
-| Library | Lucia v3 (framework-agnostic) |
+| Library | Narrow SiteBoy opaque-session module; no external auth framework |
 | Password verify | `@node-rs/argon2` against `ADMIN_PASSWORD_HASH` env (argon2id) |
 | Identity | Single fixed user `admin`; password never stored in DB |
 | Session transport | HTTP-only `Secure` `SameSite=Lax` cookie (`auth_session`) |
-| Session store | Postgres `sessions` row (opaque id, `expires_at`, optional `revoked_at`, `ip`, `ua`) |
-| CSRF | Double-submit: token returned by `GET /api/auth/me`, required on mutating requests via `X-CSRF` |
-| Rate limit | Login: ≤5 attempts / IP / 10 min (in-memory; upgrade to DB counters in S09 hardening) |
-| MFA | Deferred; `users.totp_secret` column reserved |
+| Session store | SHA-256 token hash only in Postgres; 12-hour sliding expiry, revocation and rotation |
+| CSRF | Session-bound HMAC returned by `GET /api/auth/me`; required via `X-CSRF` |
+| Rate limit | Distributed Postgres failed-attempt ledger |
+| MFA | AES-256-GCM encrypted TOTP secret plus one-use Argon2 recovery codes |
 
 ## Consequences
 
@@ -31,7 +31,7 @@ Single-editor admin surface on a public static site. No public sign-up. Session 
 ## Bootstrap
 
 1. Generate hash: `node -e "import('@node-rs/argon2').then(a=>a.hash('YOUR_PASSWORD')).then(console.log)"`
-2. Set Vercel env: `ADMIN_PASSWORD_HASH`, `SESSION_SECRET` (≥32 random bytes).
+2. Set Vercel env: `ADMIN_PASSWORD_HASH`, `CSRF_SECRET` and a base64/hex 32-byte `AUTH_ENCRYPTION_KEY`.
 3. Run `npm run db:migrate` (seeds `admin` user row).
 
 ## References

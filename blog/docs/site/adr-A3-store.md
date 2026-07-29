@@ -1,7 +1,7 @@
 # ADR A3 — Backend data store
 
 **Status**: accepted  
-**Date**: 2026-06-18  
+**Date**: 2026-07-23
 **Deciders**: platform (A1/A2/A3/A4 batch)
 
 ## Context
@@ -12,27 +12,29 @@ Dynamic content (gallery, projects, store, notes) currently lives in static JSON
 
 | Concern | Choice |
 | --- | --- |
-| Provider | Vercel Postgres (`@vercel/postgres`) |
-| ORM | Drizzle (`drizzle-orm` + `drizzle-orm/vercel-postgres`) |
+| Provider | Neon Postgres (`@neondatabase/serverless`) |
+| ORM | Drizzle (`drizzle-orm/neon-serverless`) |
 | IDs | ULID strings |
-| Migrations | Raw SQL in `db/migrations/`; applied via `npm run db:migrate` |
+| Migrations | Ordered raw SQL with SHA-256 ledger, advisory lock and one transaction per unapplied file |
 | Schema owner | `db/schema.ts` (Drizzle mirror of SQL) |
 
-### Initial tables
+### Content tables
 
-`users`, `sessions`, `gallery_items`, `projects`, `products`, `notes`, `tags`, `links`, `audit_log`, `media_uploads`
+`users`, `sessions`, `galleries`, `gallery_items`, `projects`, `products`, `notes`, `articles`, `page_blocks`, `content_versions`, `deletion_queue`, `tags`, `links`, `audit_log`, `media_uploads`
 
 JSONB columns mirror existing manifest shapes (`urls_jsonb`, `metadata_jsonb`, `frontmatter_jsonb`) so read adapters can preserve field names.
 
+Mutable content has a version starting at 1 and a nullable `deleted_at`. Updates, soft deletion, restoration and reversion lock the current row, validate `If-Match`, snapshot the prior row, increment exactly once and audit in one transaction. Public reads require `status = 'published' AND deleted_at IS NULL`.
+
 ## Consequences
 
-- `DATABASE_URL` / `POSTGRES_URL` required on Vercel (auto-injected with Vercel Postgres storage).
+- `POSTGRES_URL` is the pooled runtime URL; `DATABASE_URL` is the direct migration URL.
 - CRUD stubs at `/api/content/*` until section read swap (S06/S07).
-- Versioned tables (`article_versions`, etc.) deferred to S13.
+- Generic immutable `content_versions` records prior snapshots for every versioned resource.
 
 ## Backup
 
-Vercel Postgres: use project dashboard → Storage → Backups, or `pg_dump` against connection string.
+Use Neon restore points/branches and periodic `pg_dump` against `DATABASE_URL`.
 
 ## References
 
