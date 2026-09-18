@@ -4,3 +4,15 @@ node_modules/
 dist/
 .env
 .env.local
+
+# H8: do not re-track hoard / clones / generated output
+blog/docs/old-docs/
+tools/docling-main/
+tools/wikipedia-markdown-generator-main/
+tools/gallery-bundle-processor/output/
+tools/gallery-bundle-processor/__pycache__/
+tools/gallery-bundle-processor/upload_log*.txt
+tools/gallery-bundle-processor/*.log
+vite.config.js.timestamp-*
+vite_output.log
+vite_pid.txt

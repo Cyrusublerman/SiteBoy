@@ -1,1 +1,0 @@
-As the title says, these are pictured drawn in a notebook. 
