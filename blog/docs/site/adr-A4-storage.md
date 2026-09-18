@@ -14,9 +14,9 @@ Gallery, animation export, and 3D assets need durable object storage with large 
 | --- | --- |
 | Provider | Cloudflare R2 (existing bucket) |
 | Public read | CDN `https://media.einoder.net/{key}` (unchanged) |
-| Write path | Authenticated signed PUT via `POST /api/admin/media/sign` |
+| Write path | Server-owned pending row, generated key, signed PUT or multipart actions via existing media entrypoints |
 | SDK | `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (S3-compatible API) |
-| Metadata | Row in `media_uploads` after upload (`r2_key`, `mime`, `bytes`, `sha256`, `uploaded_by`) |
+| Metadata | Pending `media_uploads` row before signing; confirmed only after R2 HEAD matches owner, key, size, type and available checksum |
 | Key scheme | `{scope}/{ulid}/{filename}` — scope ∈ `gallery`, `projects`, `tmp` |
 
 Bucket remains private; only signed PUT/GET for admin; public CDN serves published keys.
@@ -28,8 +28,9 @@ Bucket remains private; only signed PUT/GET for admin; public CDN serves publish
 ## Consequences
 
 - CORS on bucket must allow site origin for browser PUT (configure in Cloudflare dashboard).
-- `POST /api/admin/media/confirm` deferred to C2 (records row post-upload).
-- Lifecycle rules for `tmp/` prefix deferred.
+- Browser resume state is limited to upload ID, key, item ID and completed part ETags.
+- Abandoned pending uploads expire after 24 hours.
+- Ordinary deletion retains R2 objects for 30 days; restore cancels queued deletion and purge deletes immediately.
 
 ## References
 

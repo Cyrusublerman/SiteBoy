@@ -1,11 +1,11 @@
 # A1 — Migrate to dynamic host
 
-**Status**: DONE
+**Status**: REVIEW
 **Priority**: P1
 **Owner file(s)**: `blog/docs/site/adr-A1-host.md` (to author), `vite.config.js`, deploy config (to author)
 **Blockers**: none
 **Blocks**: A2, A3, A4, B2, C2, G1, F2
-**Last touched**: 2026-06-18
+**Last touched**: 2026-07-23
 
 ## Goal
 
@@ -29,7 +29,7 @@ One ADR at `blog/docs/site/adr-A1-host.md` names the host, the runtime, the buil
 
 ## Notes / decisions
 
-(append-only)
+- 2026-07-23: Vercel deployments and configuration exist, but the custom-domain and complete parity predicates require live verification before DONE.
 
 ## References
 

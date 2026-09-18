@@ -1,6 +1,6 @@
 # Vercel Dynamic Migration Plan
 
-Status: draft, no code changes proposed yet.
+Status: implementation programme; reconciled 2026-07-23.
 Owner: site author (single editor).
 Target host: Vercel.
 Companion docs: `vite-integration-plan.md`, `vite-static-hosting-analysis.md`, `js-framework-migration-analysis.md`, `CLOUD_MIGRATION_AND_CLEANUP.md`.
@@ -258,16 +258,19 @@ Phase 6 — Hardening
 
 Rollback: every phase is reversible by reverting the deploy. Static build remains valid because it does not depend on the API for first paint of the public read path beyond what is already cached.
 
-## 13. Open decisions (must resolve before Phase 0 exits)
+## 13. Locked decisions
 
-- **D-1. Host commitment.** Vercel-only, or Vercel-now-Cloudflare-later? Affects whether functions are written against Vercel's `Request`/`Response` directly or against a thin adapter.
-- **D-2. Auth library.** Lucia vs Auth.js vs hand-rolled. Affects dependency surface and audit complexity.
-- **D-3. Database provider.** Vercel Postgres (managed Neon), Supabase, or Turso/libSQL. Affects pricing tier and connection-pooling needs.
-- **D-4. Markdown editor.** Plain `<textarea>` + preview, CodeMirror 6, or Milkdown. Affects bundle size on `/admin/*` only.
-- **D-5. Git mirror.** Yes/no. If yes, decide which branch and whether commits are signed.
-- **D-6. Public API caching.** Vercel Edge cache TTL for `GET /api/content/*`. Lower = fresher, higher = cheaper.
-- **D-7. Domain layout.** Same apex domain for `/admin/*`, or separate `admin.einoder.net`. Cookie scope and CSP differ.
-- **D-8. Build-time vs request-time content.** For very stable content (e.g. blog archive index), do we keep generating static JSON at build time and only hit the API for fresh writes? Hybrid is cheapest but adds a cache-invalidation step on publish.
+The dated ledger at `blog/docs/site/vercel-migration/decisions.md` is authoritative. D-1 through D-12 were closed on 2026-07-23. The binding architecture is:
+
+- Vercel static output plus portable Node serverless handlers.
+- Neon Postgres through the maintained Neon driver.
+- Ordered raw SQL migrations with a checksum ledger.
+- SiteBoy-owned opaque sessions, Argon2 password verification, mandatory TOTP and session-bound HMAC CSRF.
+- Same-origin `/#admin`.
+- Published request-time reads with signed R2 snapshot fallback.
+- No Git mirror for database content; signed PKL snapshots enter through protected pull requests.
+- Strict CSP and closed page-block component allowlists.
+- Isolated Neon branch per feature for local and Preview development.
 
 ## 14. Risk register
 

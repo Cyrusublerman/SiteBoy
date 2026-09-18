@@ -21,12 +21,12 @@ Flags are accessed via `window.AdminFlags.<flagName>` in client code and `proces
 |---|---|---|---|---|---|---|
 | `useApiReads` | S07 | `false` | Section fetches route through `ContentSource` (API) instead of static manifests. | `unborn` | `unborn` | Flip preview-on after S07; flip prod-on after S08. |
 | `useStaticFallback` | S06 | `true` | Build step writes JSON snapshots into `dist/content/*.json` for offline first paint. | `unborn` | `unborn` | Disable only if D-8 closes "pure request-time". |
-| `adminEnabled` | S10 | `false` | `auth.js` attaches the triple-click listener and the `/api/auth/me` bootstrap. | `unborn` | `unborn` | Until on, admin code does not execute in any browser. |
+| `adminEnabled` | S10 | `false` | Historical proposal for the superseded triple-click design. | `retired` | `retired` | Operational same-origin `#admin` routing shipped without this flag. |
 | `blogAdmin` | S15 | `false` | `blog_admin.js` overrides public `blog_section.js` when authenticated. | `unborn` | `unborn` | Per-domain admin visibility. |
-| `galleryAdmin` | S17 | `false` | `art_admin.js` and `projects_admin.js` overrides. | `unborn` | `unborn` | — |
+| `galleryAdmin` | S17 | `false` | Historical proposal for admin section overrides. | `retired` | `retired` | Operational `#admin/gallery` editor shipped without this flag. |
 | `pageBlocksAdmin` | S20 | `false` | `home_admin.js`, `contact_admin.js`, `qr_admin.js` overrides. | `unborn` | `unborn` | — |
-| `gitMirrorEnabled` | S22 | `false` | Per-save git push to `content` branch. | `unborn` | `unborn` | Failure does not roll back DB write. |
-| `mfaRequired` | S23 | `false` | Login overlay shows TOTP field; server requires verification. | `unborn` | `unborn` | Flip prod-on before any public announcement of admin capability. |
+| `gitMirrorEnabled` | S22 | `false` | Historical database-content Git mirror proposal. | `retired` | `retired` | D-5 now uses Postgres history and R2 snapshots; only PKL uses signed Git PRs. |
+| `mfaRequired` | S23 | `false` | Historical proposal; server now requires MFA whenever the administrator has enrolled it. | `retired` | `retired` | Database enrolment state is authoritative; no bypass flag exists. |
 
 ## Flip protocol
 

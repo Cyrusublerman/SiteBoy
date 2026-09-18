@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-06-27 (D8 equation panel rollout; B2/B3/B4 status flips; G1 auth wire; F2/E7 notes).
+Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
 
 ---
 
@@ -40,7 +40,7 @@ Last touched: 2026-06-27 (D8 equation panel rollout; B2/B3/B4 status flips; G1 a
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| A1 | [A1-vercel-migration.md](A1-vercel-migration.md) | Migrate to dynamic host (Vercel) | P1 | DONE | — |
+| A1 | [A1-vercel-migration.md](A1-vercel-migration.md) | Migrate to dynamic host (Vercel) | P1 | REVIEW | — |
 | A2 | [A2-auth.md](A2-auth.md) | Auth / login mechanism | P1 | REVIEW | → A1 |
 | A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | REVIEW | → A1 |
 | A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | → A1 |
@@ -53,15 +53,15 @@ Last touched: 2026-06-27 (D8 equation panel rollout; B2/B3/B4 status flips; G1 a
 | B2 | [B2-store-section.md](B2-store-section.md) | Add store section | P2 | REVIEW | → A1, A3 |
 | B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | DONE | — |
 | B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | REVIEW | → A4 |
-| B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | WIP | → B4 |
+| B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | BLOCKED | → B4 |
 
 ## C. Gallery
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | C1 | [C1-gallery-organisation.md](C1-gallery-organisation.md) | Gallery taxonomy + schema | P1 | DONE | — |
-| C2 | [C2-gallery-upload.md](C2-gallery-upload.md) | Server-backed upload pipeline | P1 | DONE | — |
-| C3 | [C3-thumbnails.md](C3-thumbnails.md) | Thumbnails for every item | P1 | DONE | — |
+| C2 | [C2-gallery-upload.md](C2-gallery-upload.md) | Server-backed upload pipeline | P1 | REVIEW | — |
+| C3 | [C3-thumbnails.md](C3-thumbnails.md) | Thumbnails for every item | P1 | REVIEW | — |
 | C4 | [C4-animation-export.md](C4-animation-export.md) | Generator animation → gallery | P1 | DONE | — |
 
 ## D. Generators

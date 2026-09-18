@@ -5,7 +5,7 @@
 **Owner file(s)**: `assets/js/tools/utilities/notes-tool.js` (to author), ingest pipeline (to author), `blog/docs/site/notes-tool-scope.md` (to author)
 **Blockers**: → A3
 **Blocks**: —
-**Last touched**: 2026-06-18
+**Last touched**: 2026-07-23
 
 ## Goal
 
@@ -48,6 +48,7 @@ All four sub-items (F2.a–F2.d) DONE.
 ## Notes / decisions
 
 - 2026-06-18: F2.a DONE (scope doc). F2.d skeleton WIP — tool mounts at `#tools/utilities/notes` with SEARCH/LIBRARY/INFO tabs; ingest (F2.b) and index (F2.c) pending A3.
+- 2026-07-23: F2.d resumed under the dynamic publishing programme for human note CRUD; ingestion and vector search remain separate pending sub-items.
 
 ## References
 
