@@ -3,9 +3,9 @@
 **Status**: REVIEW
 **Priority**: P1
 **Owner file(s)**: `blog/docs/site/adr-A4-storage.md`, `api/admin/media/sign.js`
-**Blockers**: → A1
+**Blockers**: none
 **Blocks**: B4, B5, C2, C3, C4, F2.b
-**Last touched**: 2026-06-18
+**Last touched**: 2026-09-18
 
 ## Goal
 
@@ -30,6 +30,7 @@ Bucket configured. From the preview env: upload via signed URL succeeds; signed 
 ## Notes / decisions
 
 - 2026-06-18: Keeps existing R2 bucket; signed PUT via AWS SDK presigner. Public CDN URL returned as `publicUrl`.
+- 2026-09-18 (H8): A1 is not a code blocker. Remaining work is CORS, signed GET, and Preview 100 MB round-trip.
 
 ## References
 

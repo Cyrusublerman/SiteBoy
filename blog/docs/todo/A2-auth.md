@@ -3,9 +3,9 @@
 **Status**: REVIEW  
 **Priority**: P1  
 **Owner file(s)**: `blog/docs/site/adr-A2-auth.md`, `api/auth/*`, `api/_lib/session.js`, `api/_lib/rate-limit.js`, `assets/js/admin/auth.js`
-**Blockers**: → A1  
-**Blocks**: G1, F2 (admin-only features)  
-**Last touched**: 2026-07-18
+**Blockers**: none
+**Blocks**: G1, F2 (admin-only features)
+**Last touched**: 2026-09-18
 
 ## Goal
 
@@ -38,6 +38,7 @@ The ADR is committed. A working `/admin` login flow on the preview environment p
 - 2026-07-18: CSRF no longer depends on an in-memory `Map`. Tokens are deterministic HMAC values scoped to a session and work across separate Vercel Function instances. `CSRF_SECRET` is the production key; `ADMIN_PASSWORD_HASH` is accepted only as a temporary compatibility fallback.
 - 2026-07-23: failed login attempts use SHA-256 client-IP hashes in Postgres. Login fails closed with `503` when the limiter cannot reach the database.
 - 2026-07-23: Lucia removed. Sessions store only SHA-256 token hashes with 12-hour sliding expiry, revocation and rotation. TOTP secrets use AES-256-GCM; one-use recovery codes use Argon2.
+- 2026-09-18 (H8): A1 host code is on `main`. Remaining A2 work is Preview verification, not an A1 implementation blocker.
 
 ## References
 

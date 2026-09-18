@@ -1,11 +1,11 @@
 # G1 — Admin GUI for adding content
 
-**Status**: WIP
-**Priority**: P1  
-**Owner file(s)**: `assets/js/sections/admin_section.js`, `assets/js/admin/gallery-editor.js`, admin sub-pages per section  
-**Blockers**: → A2, A3  
-**Blocks**: —  
-**Last touched**: 2026-07-23
+**Status**: REVIEW
+**Priority**: P1
+**Owner file(s)**: `assets/js/sections/admin_section.js`, `assets/js/admin/gallery-editor.js`, admin sub-pages per section
+**Blockers**: → A2, A3
+**Blocks**: —
+**Last touched**: 2026-09-18
 
 ## Goal
 
@@ -42,6 +42,7 @@ One `#admin` route from which every manageable section is editable: gallery uplo
 - 2026-07-18: the shell now uses the production Auth client and the Gallery editor is the first operational editor.
 - 2026-07-18: group and display-mode metadata are persisted now; public carousel/slideshow rendering is a separate presentation task.
 - 2026-07-23: status normalised to the tracker closed set; G1 remains the umbrella for typed content and page editors.
+- 2026-09-18 (H8): SLA — stale WIP flipped to REVIEW. Gallery editor landed; other section editors and Preview verify remain. Open PRs 26/30 continue this item.
 
 ## References
 

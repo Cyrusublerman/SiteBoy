@@ -3,9 +3,9 @@
 **Status**: REVIEW
 **Priority**: P1
 **Owner file(s)**: `db/schema.ts`, `db/schema.js`, `db/migrations/`, `api/content/*`, `scripts/db/migrate.mjs`
-**Blockers**: → A1
+**Blockers**: none
 **Blocks**: B2, C1, C2, F2, G1
-**Last touched**: 2026-07-23
+**Last touched**: 2026-09-18
 
 ## Goal
 
@@ -23,7 +23,7 @@ One schema migration committed under `db/migrations/`. CRUD round-trip from the 
 - [x] Implement checksummed raw-SQL migration ledger with advisory locking.
 - [x] Commit `0001_init.sql`.
 - [ ] Set up local dev DB.
-- [ ] Wire connection from A1 runtime (preview deploy pending A1).
+- [ ] Wire connection from the A1 Vercel runtime (preview env + `POSTGRES_URL`).
 - [ ] Add seed script for dev data.
 - [x] Document backup/restore procedure (ADR).
 - [ ] Verify migrations run cleanly on preview env.
@@ -35,6 +35,7 @@ One schema migration committed under `db/migrations/`. CRUD round-trip from the 
 ## Notes / decisions
 
 - 2026-07-23: `db/schema.ts` and `db/schema.js` align with Neon runtime schema. Pooled `POSTGRES_URL` serves handlers; direct `DATABASE_URL` serves migrations.
+- 2026-09-18 (H8): A1 is not a code blocker. Remaining work is local DB, seed, and Preview migration round-trip.
 
 ## References
 

@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
+Last touched: 2026-09-18 (H8 project state cleanup).
 
 ---
 
@@ -41,9 +41,10 @@ Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | A1 | [A1-vercel-migration.md](A1-vercel-migration.md) | Migrate to dynamic host (Vercel) | P1 | REVIEW | — |
-| A2 | [A2-auth.md](A2-auth.md) | Auth / login mechanism | P1 | REVIEW | → A1 |
-| A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | REVIEW | → A1 |
-| A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | → A1 |
+| A2 | [A2-auth.md](A2-auth.md) | Auth / login mechanism | P1 | REVIEW | — |
+| A3 | [A3-backend-store.md](A3-backend-store.md) | Backend data store | P1 | REVIEW | — |
+| A4 | [A4-asset-bucket.md](A4-asset-bucket.md) | Binary asset bucket (S3-compat) | P1 | REVIEW | — |
+| A5 | [A5-function-consolidation.md](A5-function-consolidation.md) | Vercel function-entrypoint consolidation | P1 | DONE | — |
 
 ## B. Sections
 
@@ -54,6 +55,8 @@ Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
 | B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | DONE | — |
 | B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | REVIEW | → A4 |
 | B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | BLOCKED | → B4 |
+| B6 | [B6-index-map-hybrid.md](B6-index-map-hybrid.md) | Index Map hybrid (parked on wip/b6-index-map) | P2 | REVIEW | — |
+| B7 | [B7-pkl-publications.md](B7-pkl-publications.md) | PKL Wiki / Blog / Figures | P1 | REVIEW | — |
 
 ## C. Gallery
 
@@ -96,7 +99,7 @@ Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | F1 | [F1-cursive-glyph-builder.md](F1-cursive-glyph-builder.md) | Cursive glyph builder MVP completion | P1 | DONE | — |
-| F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | WIP | → A3 |
+| F2 | [F2-notes-tool.md](F2-notes-tool.md) | Notes-processing tool suite | P2 | REVIEW | → A3 |
 | F3 | [F3-uncommitted-work.md](F3-uncommitted-work.md) | Land current uncommitted work | P0 | DONE | — |
 | F4 | [F4-cursive-glyph-builder-ux.md](F4-cursive-glyph-builder-ux.md) | Cursive glyph builder toolbar + sidebar UX | P1 | DONE | — |
 | F5 | [F5-handwriting-vector-compose.md](F5-handwriting-vector-compose.md) | Handwriting vector compose SVG export | P2 | DONE | — |
@@ -105,7 +108,7 @@ Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
 
 | ID | File | Title | P | Status | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | WIP | → A2, A3 |
+| G1 | [G1-admin-gui.md](G1-admin-gui.md) | GUI for adding content per section | P1 | REVIEW | → A2, A3 |
 | G2 | [G2-docs-cleanup.md](G2-docs-cleanup.md) | Docs cleanup pass | P1 | DONE | — |
 | G3 | [G3-portal-index.md](G3-portal-index.md) | Documentation portal index refresh | P2 | DONE | → G2 |
 
@@ -120,6 +123,7 @@ Last touched: 2026-07-23 (dynamic publishing programme reconciliation).
 | H5 | [H5-design-rule-embed-cluster-synth.md](H5-design-rule-embed-cluster-synth.md) | Design-rule corpus: embed / cluster / synth | P3 | DONE | — |
 | H6 | [H6-design-rule-conflict-emit-lint.md](H6-design-rule-conflict-emit-lint.md) | Design-rule corpus: conflict / emit / lint / test | P3 | REVIEW | → H4, H5 |
 | H7 | [H7-slider-component.md](H7-slider-component.md) | Standalone Slider primitive; replace raw range inputs | P2 | DONE | — |
+| H8 | [H8-project-cleanup.md](H8-project-cleanup.md) | Project state cleanup | P0 | WIP | — |
 
 ---
 
