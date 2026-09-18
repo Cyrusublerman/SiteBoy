@@ -31,7 +31,8 @@ const Router = {
         'about': 'AboutSection',
         'store': 'StoreSection',
         'three-d': 'ThreeDSection',
-        'admin': 'AdminSection'
+        'admin': 'AdminSection',
+        'index-map': 'IndexMapSection'
     },
 
     pathSections: new Set(['wiki', 'blog', 'figures']),
@@ -133,6 +134,21 @@ const Router = {
             ? subsection.split('/').filter(Boolean).map(part => encodeURIComponent(part))
             : [];
         return `/${section}${encodedParts.length ? '/' + encodedParts.join('/') : ''}`;
+    },
+
+    /**
+     * Update hash without notifying route callbacks (index UI state sync).
+     * @param {string} hash - Full hash including leading #
+     */
+    replaceHashSilent(hash) {
+        const next = hash.startsWith('#') ? hash : `#${hash}`;
+        if (window.location.hash === next) {
+            this.currentRoute = this.parseRoute();
+            return;
+        }
+        history.replaceState(null, '', next);
+        this.currentRoute = this.parseRoute();
+        window.debugLog('NAVIGATION', `🔇 Silent hash replace: ${next}`);
     },
 
     /**

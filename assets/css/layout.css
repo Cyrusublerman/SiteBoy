@@ -144,3 +144,241 @@
 .project-page-back-link {
     margin-top: calc(var(--f) * 2);
 }
+
+/* Index Map lab (#index-map) — SiteBoy chrome for hybrid TOC demo */
+.index-map-section {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 0 calc(var(--f) * 2);
+}
+
+.index-map-toolbar {
+    margin: calc(var(--f) * 1) 0;
+    max-width: calc(var(--f) * 28);
+}
+
+.index-map-status {
+    margin: 0 0 calc(var(--f) * 1);
+    color: var(--c-border);
+    text-transform: uppercase;
+}
+
+.index-map-stage {
+    width: 100%;
+    overflow: auto;
+    border-top: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+    padding: calc(var(--f) * 1) 0;
+    box-sizing: border-box;
+    min-height: calc(var(--f) * 24);
+}
+
+.index-map-legend {
+    margin-top: calc(var(--f) * 1);
+    color: var(--c-border);
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+}
+
+.index-map-toc:focus {
+    outline: 1px solid var(--c-accent);
+    outline-offset: calc(var(--f) * 0.25);
+}
+
+/* IndexMapTOC node states (design-law §14) */
+.index-map-toc {
+    position: relative;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    color: var(--c-text);
+    background: var(--c-bg);
+    box-sizing: border-box;
+    outline: none;
+}
+
+.index-map-toc-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--c-border);
+    pointer-events: none;
+    overflow: visible;
+}
+
+.index-map-node {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--f) * 0.5);
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: var(--f);
+    text-transform: uppercase;
+    color: var(--c-text);
+    background: var(--c-bg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.index-map-node-type {
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+}
+
+.index-map-node--hover {
+    color: var(--c-bg);
+    background: var(--c-text);
+}
+
+.index-map-node--hover .index-map-node-type {
+    color: var(--c-bg);
+}
+
+.index-map-node--related {
+    outline: 1px solid var(--c-accent);
+    outline-offset: -1px;
+}
+
+.index-map-node--focus {
+    outline: 1px solid var(--c-accent);
+    outline-offset: -1px;
+}
+
+.index-map-node--selected {
+    outline: 1px solid var(--c-text);
+    outline-offset: -1px;
+}
+
+.index-map-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: calc(var(--f) * 0.5);
+    box-sizing: border-box;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    color: var(--c-border);
+    background: var(--c-bg);
+    border-right: 1px solid var(--c-border);
+    user-select: none;
+    pointer-events: none;
+}
+
+.index-map-meta--current {
+    color: var(--c-bg);
+    background: var(--c-text);
+}
+
+.index-map-meta--related {
+    color: var(--c-bg);
+    background: var(--c-text);
+}
+
+.index-map-desc {
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+    font-size: calc(var(--f) * 0.75);
+    line-height: 1.4;
+    color: var(--c-border);
+    white-space: normal;
+    word-break: break-word;
+    pointer-events: none;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.index-map-index-row {
+    display: flex;
+    align-items: stretch;
+    box-sizing: border-box;
+    border-top: 1px solid var(--c-border);
+    cursor: pointer;
+    font-family: 'Atkinson Hyperlegible Mono', monospace;
+}
+
+.index-map-index-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--f);
+    padding: 0 var(--f);
+    font-size: var(--f);
+    text-transform: uppercase;
+    color: var(--c-text);
+    background: var(--c-bg);
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.index-map-index-body--hover {
+    color: var(--c-bg);
+    background: var(--c-text);
+}
+
+.index-map-index-body--hover .index-map-index-type {
+    color: var(--c-bg);
+}
+
+.index-map-index-body--related {
+    outline: 1px solid var(--c-accent);
+    outline-offset: -1px;
+}
+
+.index-map-index-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.index-map-index-type {
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+}
+
+.index-map-year {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--f);
+    box-sizing: border-box;
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    color: var(--c-border);
+    border-top: 1px solid var(--c-border);
+    user-select: none;
+}
+
+.index-map-map-node {
+    display: flex;
+    align-items: center;
+    padding: 0 calc(var(--f) * 0.5);
+    box-sizing: border-box;
+    border: 1px solid var(--c-border);
+    font-size: calc(var(--f) * 0.75);
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--c-text);
+    background: var(--c-bg);
+}
+
+.index-map-map-node.index-map-node--hover {
+    color: var(--c-bg);
+    background: var(--c-text);
+}
+
+.index-map-peek-badge {
+    font-size: calc(var(--f) * 0.75);
+    color: var(--c-border);
+}
+
+.index-map-peek-badge--active {
+    color: var(--c-text);
+}
