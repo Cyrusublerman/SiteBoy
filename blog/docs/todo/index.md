@@ -123,7 +123,7 @@ Last touched: 2026-09-18 (H8 project state cleanup).
 | H5 | [H5-design-rule-embed-cluster-synth.md](H5-design-rule-embed-cluster-synth.md) | Design-rule corpus: embed / cluster / synth | P3 | DONE | — |
 | H6 | [H6-design-rule-conflict-emit-lint.md](H6-design-rule-conflict-emit-lint.md) | Design-rule corpus: conflict / emit / lint / test | P3 | REVIEW | → H4, H5 |
 | H7 | [H7-slider-component.md](H7-slider-component.md) | Standalone Slider primitive; replace raw range inputs | P2 | DONE | — |
-| H8 | [H8-project-cleanup.md](H8-project-cleanup.md) | Project state cleanup | P0 | WIP | — |
+| H8 | [H8-project-cleanup.md](H8-project-cleanup.md) | Project state cleanup | P0 | REVIEW | — |
 
 ---
 

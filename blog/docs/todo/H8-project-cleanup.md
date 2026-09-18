@@ -1,6 +1,6 @@
 # H8 — Project state cleanup
 
-**Status**: WIP
+**Status**: REVIEW
 **Priority**: P0
 **Owner file(s)**: `blog/docs/todo/index.md`, `.gitignore`
 **Blockers**: none
@@ -20,11 +20,11 @@ Local `main` is a fast-forward of `origin/main` plus merge of PR #24 plus H8/P4�
 - [x] P0 Park B6 on `wip/b6-index-map`
 - [x] P1 Fast-forward `main` to `origin/main`
 - [x] P2 Merge PR #24 locally (do not merge 25–30)
-- [ ] P3 Dashboard truth (this file + index)
-- [ ] P4 Root junk
-- [ ] P5 Docs hoard
-- [ ] P6 Vendored clones / generated output
-- [ ] P7 Verify predicate; status → REVIEW
+- [x] P3 Dashboard truth (this file + index)
+- [x] P4 Root junk
+- [x] P5 Docs hoard
+- [x] P6 Vendored clones / generated output
+- [x] P7 Verify predicate; status → REVIEW
 
 ## Open PR inventory (do not merge in H8)
 
