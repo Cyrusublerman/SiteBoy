@@ -5,7 +5,7 @@
 **Owner file(s)**: `assets/js/shared/index-map-toc.js`, `assets/js/shared/index-map-view.js`, `assets/js/shared/index-map-data.js`, `assets/js/shared/tree-toc-core.js`, `assets/js/sections/projects_section.js`, `assets/js/sections/index_map_section.js`
 **Blockers**: none
 **Blocks**: —
-**Last touched**: 2026-09-18
+**Last touched**: 2026-09-19
 
 ## Goal
 
@@ -20,15 +20,18 @@ Ship IndexMapTOC as the public `#projects` index: TREE | INDEX | MAP, registry-b
 - [x] Author IndexMapTOC (in-place paint, peek, states, typeLine, select-then-open)
 - [x] Registry-backed `buildIndexMapTree` + PATH_REGISTRY
 - [x] URL state + a11y + status chrome
-- [x] tree-toc-core extract; TreeTOC + IndexMapTOC
+- [x] tree-toc-core extract; TreeTOC + IndexMapTOC; incremental staged expand
 - [x] Promote to `#projects`; `#index-map` alias
 - [x] MAP view with mono related edges
-- [ ] Rebase `wip/b6-index-map` onto current `main`
+- [x] Rebase `wip/b6-index-map` onto current `main`
 - [ ] Compliance sign-off / page-compliance-audit
 
 ## Notes / decisions
 
-- 2026-09-18 (H8): implementation is **parked** on `wip/b6-index-map`. `main` must not contain Index Map sources until rebase. Do not treat this row as shipped on `main`.
+- Promote: `#projects` index = IndexMap; detail routes unchanged.
+- URL sync uses `Router.replaceHashSilent` (no full rebuild).
+- Paths are curated PATH_REGISTRY rows merged at tree build.
+- 2026-09-19: rebased onto H8 `main` (PKL path routes + `renderSafeMarkdown` retained).
 
 ## References
 

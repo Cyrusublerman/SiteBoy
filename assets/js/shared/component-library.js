@@ -41,6 +41,11 @@ import {
     SimpleTOC,
     NumberedTOC,
     TreeTOC,
+    IndexMapTOC,
+    IndexMapView,
+    buildIndexMapTree,
+    parseProjectsSubsection,
+    encodeIndexState,
     Table,
     StatusDisplay,
     AsciiNavWord,
@@ -265,6 +270,8 @@ const ComponentLibrary = {
             'simple-toc': SimpleTOC,
             'numbered-toc': NumberedTOC,
             'tree-toc': TreeTOC,
+            'index-map-toc': IndexMapTOC,
+            'index-map-view': IndexMapView,
             'table': Table,
             'status-display': StatusDisplay,
 
@@ -437,6 +444,11 @@ ComponentLibrary.MarkdownBody = MarkdownBody;
 ComponentLibrary.SimpleTOC = SimpleTOC;
 ComponentLibrary.NumberedTOC = NumberedTOC;
 ComponentLibrary.TreeTOC = TreeTOC;
+ComponentLibrary.IndexMapTOC = IndexMapTOC;
+ComponentLibrary.IndexMapView = IndexMapView;
+ComponentLibrary.buildIndexMapTree = buildIndexMapTree;
+ComponentLibrary.parseProjectsSubsection = parseProjectsSubsection;
+ComponentLibrary.encodeIndexState = encodeIndexState;
 ComponentLibrary.Table = Table;
 ComponentLibrary.StatusDisplay = StatusDisplay;
 ComponentLibrary.AsciiNavWord  = AsciiNavWord;
@@ -655,6 +667,11 @@ export {
     SimpleTOC,
     NumberedTOC,
     TreeTOC,
+    IndexMapTOC,
+    IndexMapView,
+    buildIndexMapTree,
+    parseProjectsSubsection,
+    encodeIndexState,
     Table,
     StatusDisplay,
     AsciiNavWord,

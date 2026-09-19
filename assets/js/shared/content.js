@@ -27,6 +27,12 @@
 import { BaseComponent } from './foundation.js';
 import { ASCII_NAV_FONT, FONT_ROWS, FONT_COLS, FONT_GAP } from '../../data/ascii-nav-font.js';
 import { sanitiseHtml } from './algorithms/markup/html-sanitiser.js';
+import {
+    treeTw, treeAssignDepths, treeYc, treeBuildGeo, treeMeasureDescHeight, treeSvgLine
+} from './tree-toc-core.js';
+export { IndexMapTOC } from './index-map-toc.js';
+export { IndexMapView } from './index-map-view.js';
+export { buildIndexMapTree, parseProjectsSubsection, encodeIndexState, PATH_REGISTRY, BUCKET_DEFS } from './index-map-data.js';
 
 /**
  * Parse markdown then run the HTML allow-list. The single safe render path for
@@ -1306,23 +1312,14 @@ export class TreeTOC extends BaseComponent {
     // Uses DOM measurement when mounted (mirrors reference tw()); falls back to
     // monospace approximation (char advance ≈ 0.60 × F) for the initial off-DOM draw.
     _tw(str) {
-        const F = this._F();
-        if (this._measureEl) {
-            this._measureEl.style.fontSize = `${F}px`;
-            this._measureEl.textContent = str;
-            const w = this._measureEl.getBoundingClientRect().width;
-            if (w > 0) return w;
-        }
-        return str.length * F * 0.60;
+        return treeTw(this._measureEl, str, this._F());
     }
 
 
     // ── Pass 1: depth + collapsed init ────────────────────────────────────────
     // Non-root nodes start collapsed. Once set, never overwritten.
     _assignDepths(node, d = 0) {
-        node._depth = d;
-        if (node._collapsed === undefined) node._collapsed = d > 0 && this._defaultCollapsed;
-        (node.children || []).forEach(c => this._assignDepths(c, d + 1));
+        treeAssignDepths(node, d, this._defaultCollapsed);
     }
 
     // ── Pass 2: max text width per depth (VISIBLE nodes only) ────────────────
@@ -1352,19 +1349,10 @@ export class TreeTOC extends BaseComponent {
     //   Stub (child):  railX[d] → labelX[d+1] = railX[d] + n  (always n)
     //   Gap each side: exactly 1 charW — never more, never less
     _buildGeo(maxWidths, F) {
-        const charW  = F * 0.60;          // 1-character gap
-        const N      = charW * 6;         // arm / stub line length = 6 chars
-        const depths = Object.keys(maxWidths).map(Number).sort((a, b) => a - b);
-        let labelX = 0;
-        this._geoMap = {};
-        this._halfN  = N;
-        this._charW  = charW;
-        for (const d of depths) {
-            const textX = labelX + charW;
-            const railX = textX + maxWidths[d] + charW + N;
-            this._geoMap[d] = { labelX, textX, maxW: maxWidths[d], railX };
-            labelX = railX + N;   // next column starts N (stub) past the rail
-        }
+        const geo = treeBuildGeo(maxWidths, F, 0);
+        this._geoMap = geo.geoMap;
+        this._halfN = geo.halfN;
+        this._charW = geo.charW;
     }
 
     // ── Pass 4: row assignment ────────────────────────────────────────────────
@@ -1408,38 +1396,13 @@ export class TreeTOC extends BaseComponent {
     // ── Description height measurement ────────────────────────────────────────
     // Uses _measureEl to measure the rendered height of wrapped text at given width.
     _measureDescHeight(text, width, F) {
-        if (!this._measureEl || !this._measureEl.isConnected) {
-            // Fallback: approximate using line count at ~60% char advance
-            const charsPerLine = Math.max(1, Math.floor(width / (F * 0.75 * 0.60)));
-            const lines = Math.ceil(text.length / charsPerLine);
-            return lines * (F * 0.75 * 1.4);
-        }
-        const orig = this._measureEl.style.cssText;
-        this._measureEl.style.cssText = `
-            position: absolute; visibility: hidden;
-            font-family: 'Atkinson Hyperlegible Mono', monospace; font-weight: 400;
-            font-size: ${F * 0.75}px; line-height: 1.4;
-            width: ${width}px; white-space: normal; word-break: break-word;
-            left: -9999px; top: 0; pointer-events: none;
-        `;
-        this._measureEl.textContent = text;
-        const h = this._measureEl.getBoundingClientRect().height;
-        this._measureEl.style.cssText = orig;
-        return h || (F * 0.75 * 1.4);
+        return treeMeasureDescHeight(this._measureEl, text, width, F);
     }
 
-    _yc(ROW_H, row) { return row * ROW_H + ROW_H / 2; }
+    _yc(ROW_H, row) { return treeYc(ROW_H, row); }
 
-    // ── SVG line helper ───────────────────────────────────────────────────────
     _svgLine(x1, y1, x2, y2) {
-        const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        el.setAttribute('x1', Math.round(x1));
-        el.setAttribute('y1', Math.round(y1));
-        el.setAttribute('x2', Math.round(x2));
-        el.setAttribute('y2', Math.round(y2));
-        el.setAttribute('stroke', 'currentColor');
-        el.setAttribute('stroke-width', '1');
-        this._svgEl.appendChild(el);
+        treeSvgLine(this._svgEl, x1, y1, x2, y2);
     }
 
     // ── Render: connectors ────────────────────────────────────────────────────

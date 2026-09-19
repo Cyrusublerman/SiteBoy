@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-09-19 (land PR stack 25–30 onto H8 main).
+Last touched: 2026-09-19 (B6 Index Map rebased onto main).
 
 ---
 
@@ -57,7 +57,7 @@ Last touched: 2026-09-19 (land PR stack 25–30 onto H8 main).
 | B3 | [B3-about-me.md](B3-about-me.md) | Add about-me section | P3 | DONE | — |
 | B4 | [B4-3d-files-section.md](B4-3d-files-section.md) | 3D files section + viewer | P2 | REVIEW | → A4 |
 | B5 | [B5-splat-viewer.md](B5-splat-viewer.md) | Point cloud / Gaussian splat viewer | P3 | BLOCKED | → B4 |
-| B6 | [B6-index-map-hybrid.md](B6-index-map-hybrid.md) | Index Map hybrid (parked on wip/b6-index-map) | P2 | REVIEW | — |
+| B6 | [B6-index-map-hybrid.md](B6-index-map-hybrid.md) | Index Map hybrid (TOC × Trousdale dynamics) | P2 | REVIEW | — |
 | B7 | [B7-pkl-publications.md](B7-pkl-publications.md) | PKL Wiki / Blog / Figures | P1 | REVIEW | — |
 
 ## C. Gallery

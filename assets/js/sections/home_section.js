@@ -303,6 +303,7 @@ class HomeSectionComponent extends BaseComponent {
         if (item.section === 'projects')  { this._navigate('projects', item.slug);  return; }
         if (item.section === 'about')     { this._navigate('about');                return; }
         if (item.section === 'blog')      { this._navigate('blog',     item.slug);  return; }
+        if (item.section === 'index-map') { this._navigate('projects');            return; }
         if (item.slug)                    { this._navigate('blog',     item.slug); }
     }
 
