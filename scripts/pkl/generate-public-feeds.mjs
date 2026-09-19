@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { gunzipSync } from 'node:zlib';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';

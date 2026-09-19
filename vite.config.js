@@ -131,8 +131,8 @@ export default defineConfig(({ mode }) => {
 
     // Handle different file types
     optimizeDeps: {
-      // Pre-bundle critical dependencies (CDN-loaded libraries excluded)
-      include: []
+      entries: ['index.html', 'src/main.js'],
+      include: ['citeproc']
     }
   };
 });
