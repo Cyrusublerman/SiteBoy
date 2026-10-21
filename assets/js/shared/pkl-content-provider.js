@@ -1,6 +1,6 @@
 import { isPublishable } from './pkl-publication-policy.js';
 
-const DEFAULT_BASE_URL = '/generated/pkl';
+const DEFAULT_BASE_URL = import.meta.env?.VITE_PKL_BASE_URL || 'https://content.einoder.net/pkl';
 
 function stableStringify(value) {
   if (value === null || typeof value !== 'object') {
