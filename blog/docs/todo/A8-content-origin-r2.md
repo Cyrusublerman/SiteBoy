@@ -24,8 +24,11 @@ A Library `main` push produces a new `content_sha256` at `https://content.einode
 - [x] Provider default base `https://content.einoder.net/pkl`; override `VITE_PKL_BASE_URL`.
 - [x] CSP `connect-src` includes content origin; `/rss.xml`, `/atom.xml`, `/feed.json` rewrite to origin `feeds/`.
 - [x] Remove `prebuild`; remove `public/generated/pkl/`; remove build-log commit workflow.
-- [ ] Infra: bucket `einoder-content`; custom domain `content.einoder.net`; CORS GET/HEAD `*`; bucket-scoped R2 token; Library secrets.
-- [ ] Push Library; confirm first publish; then push SiteBoy (order is load-bearing: SiteBoy before origin ⇒ `/wiki` 404s).
+- [x] Infra: bucket `einoder-content` (OC); custom domain `content.einoder.net` (minTLS 1.2); CORS GET/HEAD `*`; secrets `R2_CONTENT_ENDPOINT`, `R2_CONTENT_BUCKET`. 2026-10-21.
+- [x] Bucket-scoped R2 token (Object Read & Write, `einoder-content` only); secrets `R2_CONTENT_ACCESS_KEY_ID`, `R2_CONTENT_SECRET_ACCESS_KEY`. 2026-10-26.
+- [x] Push Library; confirm first publish (run 40258195436, `3a6b6e9e…`, 13 objects); then open SiteBoy PR #32.
+- [x] Provider called `fetch` with the provider as receiver ("Illegal invocation" in browsers; pre-existing, `/wiki` errored). Fixed by unbound wrapper.
+- [ ] Merge PR #32; verify production `/wiki`, `/blog`, `/figures`, `/rss.xml`.
 - [ ] Unparseable front matter in 8 Library files (CI warnings) — Library content fix, not a blocker.
 
 ## Notes / decisions
