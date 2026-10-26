@@ -42,14 +42,14 @@ Public navigation uses `#section/path` only. No path-based public routes. The ca
 
 ## Rollback plan
 
-1. **Immediate (traffic)**: Revert DNS CNAME from Vercel to GitHub Pages origin. TTL-bound; GH Pages continues serving last pushed static build.
+1. **Immediate (traffic)**: Vercel Instant Rollback to the previous production deployment. GitHub Pages is disabled (2026-10-26) and served unbuilt source; it is not a fallback. Restoring it requires re-enabling Pages (legacy, `main` `/`), restoring root `CNAME`, and Cloudflare records: apex A `185.199.108-111.153`, AAAA `2606:50c0:8000-8003::153`, `www` CNAME `cyrusublerman.github.io` (all proxied).
 2. **Deploy**: Revert the merge commit containing `vercel.json` / `api/`; production Vercel auto-deploy stops serving new config.
 3. **Data**: Phase 1 has no DB writes; rollback is config-only. After A3 content migration, DB remains source of truth; GH Pages fallback serves build-time JSON snapshots (S06 `useStaticFallback`).
 4. **Verification after rollback**: Load `/`, `/#blog`, one art gallery URL; confirm no JS console errors.
 
 ## Preview deploys
 
-Connect Vercel project to GitHub repo; enable preview deployments on PRs. Production auto-deploy from `main` remains disabled until S08 DNS flip.
+Vercel project `einoder` is connected to the GitHub repo; PRs receive preview deployments. Production deploys from `main`. DNS flipped 2026-10-26: Cloudflare apex A `216.198.79.1`, `64.29.17.1`; `www` CNAME `9a60440603e7229d.vercel-dns-017.com` (308 to apex); all DNS-only.
 
 ## References
 
