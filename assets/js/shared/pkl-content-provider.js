@@ -1,6 +1,6 @@
 import { isPublishable } from './pkl-publication-policy.js';
 
-const DEFAULT_BASE_URL = '/generated/pkl';
+const DEFAULT_BASE_URL = import.meta.env?.VITE_PKL_BASE_URL || 'https://content.einoder.net/pkl';
 
 function stableStringify(value) {
   if (value === null || typeof value !== 'object') {
@@ -77,7 +77,8 @@ export class PKLContentProvider {
       throw new TypeError('PKLContentProvider requires a fetch implementation');
     }
     this.baseUrl = baseUrl.replace(/\/$/, '');
-    this.fetchImpl = fetchImpl;
+    // Browsers throw "Illegal invocation" when fetch is called with a non-Window receiver.
+    this.fetchImpl = (...args) => fetchImpl(...args);
     this.graph = null;
     this.manifest = null;
     this.objectsByUid = new Map();
