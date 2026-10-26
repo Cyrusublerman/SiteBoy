@@ -30,6 +30,7 @@ One ADR at `blog/docs/site/adr-A1-host.md` names the host, the runtime, the buil
 ## Notes / decisions
 
 - 2026-07-23: Vercel deployments and configuration exist, but the custom-domain and complete parity predicates require live verification before DONE.
+- 2026-10-26: `einoder.net` and `www` resolve via Cloudflare to GitHub Pages (legacy build of `main` `/`, root `CNAME`), serving unbuilt source; deep routes 404. Vercel production is `einoder.vercel.app`. Cutover: attach domain to Vercel project, repoint Cloudflare DNS, disable Pages, delete `CNAME`.
 
 ## References
 

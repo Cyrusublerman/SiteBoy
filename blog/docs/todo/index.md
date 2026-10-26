@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-10-17 (A8 content origin opened).
+Last touched: 2026-10-26 (A8 content origin DONE).
 
 ---
 
@@ -47,7 +47,7 @@ Last touched: 2026-10-17 (A8 content origin opened).
 | A5 | [A5-function-consolidation.md](A5-function-consolidation.md) | Vercel function-entrypoint consolidation | P1 | DONE | — |
 | A6 | [A6-pkl-publication-boundary.md](A6-pkl-publication-boundary.md) | PKL private/public publication boundary | P0 | REVIEW | — |
 | A7 | [A7-storage-content-resilience.md](A7-storage-content-resilience.md) | Storage and content resilience | P1 | REVIEW | — |
-| A8 | [A8-content-origin-r2.md](A8-content-origin-r2.md) | Public content origin on R2 | P0 | WIP | — |
+| A8 | [A8-content-origin-r2.md](A8-content-origin-r2.md) | Public content origin on R2 | P0 | DONE | — |
 
 ## B. Sections
 
