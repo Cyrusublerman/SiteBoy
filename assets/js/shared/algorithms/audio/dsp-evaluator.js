@@ -5,7 +5,7 @@
  * All functions are pure.
  * 
  * @module audio/dsp-evaluator
- * @source blog/ideas/reference documentation/14_Signal_Processing_Filtering/DSP_theory.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/14_Signal_Processing_Filtering/DSP_theory.md
  * @wikipedia https://en.wikipedia.org/wiki/Digital_signal_processing
  * 
  * This module provides a safe DSP expression evaluator:

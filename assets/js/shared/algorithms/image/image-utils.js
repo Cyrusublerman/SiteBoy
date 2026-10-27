@@ -4,7 +4,7 @@
  * Utilities for analyzing scanned calibration grids and extracting colors
  * from grid-aligned positions.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/scan/index.js
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/scan/index.js
  */
 
 import { rgb_to_key, avgColour } from '../color/color-utils.js';
@@ -15,7 +15,7 @@ import { rgb_to_key, avgColour } from '../color/color-utils.js';
  * Uses grid-aligned sampling (not random!) to extract actual printed colors.
  * Samples from the center of each grid tile using 5×5 pixel averaging for robustness.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/scan/index.js:17-71
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/scan/index.js:17-71
  * @param {HTMLCanvasElement} canvas - Canvas containing scanned image
  * @param {Object} gridData - Grid data with sequences, rows, cols, tileSize, gap
  * @param {Object} alignment - Alignment parameters
@@ -102,7 +102,7 @@ export function extractColors(canvas, gridData, alignment) {
  * Calculates pixels-per-mm scale factors from scanned image dimensions
  * and known paper size.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/scan/index.js:84-94
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/scan/index.js:84-94
  * @param {number} scanWidth - Scan image width in pixels
  * @param {number} scanHeight - Scan image height in pixels
  * @param {number} gridWidth - Grid width in mm (for validation)
@@ -136,7 +136,7 @@ export function autoCalculateScale(scanWidth, scanHeight, gridWidth, gridHeight,
 /**
  * Draw grid overlay on scan canvas for visual alignment feedback
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/scan/index.js:104-129
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/scan/index.js:104-129
  * @param {HTMLCanvasElement} canvas - Canvas to draw on
  * @param {Object} gridData - Grid data
  * @param {Object} alignment - Alignment parameters

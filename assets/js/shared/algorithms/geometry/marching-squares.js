@@ -5,7 +5,7 @@
  * All functions are pure and stateless.
  * 
  * @module geometry/marching-squares
- * @source blog/ideas/reference documentation/03_Raster_Vector_Conversion/Marching_squares.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/03_Raster_Vector_Conversion/Marching_squares.md
  * @wikipedia https://en.wikipedia.org/wiki/Marching_squares
  * 
  * Key concepts from reference:

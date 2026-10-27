@@ -5,7 +5,7 @@ import { jsonLiteral, runImporter, sqlLiteral, stableUlid } from './content-impo
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..', '..');
 const PAGE_ROOT = join(ROOT, 'assets/data/pages');
-const ABOUT_PATH = join(ROOT, 'blog/data/about.json');
+const ABOUT_PATH = join(ROOT, 'public/data/about.json');
 
 function walkJson(directory, results = []) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -60,7 +60,7 @@ export async function buildPageImport() {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  runImporter(buildPageImport, 'blog/data/about.json+assets/data/pages').catch((error) => {
+  runImporter(buildPageImport, 'public/data/about.json+assets/data/pages').catch((error) => {
     process.stderr.write(`${JSON.stringify({ error: error.message })}\n`);
     process.exitCode = 1;
   });

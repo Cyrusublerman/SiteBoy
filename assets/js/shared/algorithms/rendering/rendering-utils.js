@@ -508,7 +508,7 @@ export function renderScalarField(ctx, field, fieldWidth, fieldHeight, targetWid
 /**
  * Compute metaball field value at point
  * 
- * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Metaballs.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Metaballs.md
  * @wikipedia https://en.wikipedia.org/wiki/Metaballs
  * @formula f(x,y) = Σ r²/(dx² + dy²) where threshold typically 1.0
  * 

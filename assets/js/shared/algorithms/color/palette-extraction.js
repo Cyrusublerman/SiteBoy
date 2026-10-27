@@ -91,7 +91,7 @@ function largestRangeChannel(bucket) {
 /**
  * Extract palette using Median Cut.
  *
- * @source blog/ideas/reference documentation/15_Colour_Perceptual_Models/Median_cut.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/15_Colour_Perceptual_Models/Median_cut.md
  * @wikipedia https://en.wikipedia.org/wiki/Median_cut
  * @formula range_c = max(c) - min(c); split bucket at median of longest range channel
  *
@@ -146,7 +146,7 @@ export function extractMedianCut(imageData, numColours, maxSamples = 50000) {
 /**
  * Extract palette using K-means clustering.
  *
- * @source blog/ideas/reference documentation/15_Colour_Perceptual_Models/Color_quantization.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/15_Colour_Perceptual_Models/Color_quantization.md
  * @wikipedia https://en.wikipedia.org/wiki/K-means_clustering
  * @formula min sum ||x_i - mu_k||^2; mu_k = (1/|C_k|) sum x_i
  *
@@ -225,7 +225,7 @@ export function extractKMeans(imageData, numColours, maxIterations = 20, maxSamp
 /**
  * Extract palette using histogram popularity (most common colours).
  *
- * @source blog/ideas/reference documentation/15_Colour_Perceptual_Models/Color_quantization.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/15_Colour_Perceptual_Models/Color_quantization.md
  * @wikipedia https://en.wikipedia.org/wiki/Color_quantization
  * @formula count(c) = sum 1_{pixel=c}; select top-k by frequency
  *

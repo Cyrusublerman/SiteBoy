@@ -4,7 +4,7 @@
  * Pure functional utilities for color manipulation, conversion, and palette management.
  * All functions are stateless and have no side effects.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js
  */
 
 /**
@@ -13,7 +13,7 @@
  * CRITICAL: Always rounds RGB values to integers for consistent key generation.
  * This ensures that slight floating-point variations don't create different keys.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:12-17
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:12-17
  * @param {{r: number, g: number, b: number}} rgb - RGB color object
  * @returns {string} Standardized key in format "r,g,b"
  * 
@@ -31,7 +31,7 @@ export function rgb_to_key(rgb) {
 /**
  * Convert hex color string to RGB object
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:24-31
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:24-31
  * @param {string} hex - Hex color string (#RRGGBB or RRGGBB)
  * @returns {{r: number, g: number, b: number}} RGB object with values 0-255
  * 
@@ -52,7 +52,7 @@ export function hex2rgb(hex) {
 /**
  * Convert RGB object to hex color string
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:38-43
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:38-43
  * @param {{r: number, g: number, b: number}} rgb - RGB object
  * @returns {string} Lowercase hex string with # prefix
  * 
@@ -72,7 +72,7 @@ export function rgb2hex(rgb) {
  * When multiple filament layers are printed on top of each other, the final
  * perceived color is approximated by averaging the RGB values of all layers.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:52-69
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:52-69
  * @formula RGB_result = (1/n) × Σ RGB_layer_i for all non-empty layers
  * @param {number[]} seq - Layer sequence (1-indexed, 0 = empty)
  * @param {Array<{h: string, n: string}>} colours - Color objects with hex values
@@ -108,7 +108,7 @@ export function simColour(seq, colours) {
 /**
  * Calculate Euclidean distance between two colors in RGB space
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:77-83
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:77-83
  * @formula d = √[(R₁-R₂)² + (G₁-G₂)² + (B₁-B₂)²]
  * @param {{r: number, g: number, b: number}} c1 - First color
  * @param {{r: number, g: number, b: number}} c2 - Second color
@@ -129,7 +129,7 @@ export function colorDistance(c1, c2) {
 /**
  * Find closest color in palette using Euclidean distance
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:91-102
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:91-102
  * @param {{r: number, g: number, b: number}} c - Color to match
  * @param {Array<{r: number, g: number, b: number}>} palette - Available colors
  * @returns {{r: number, g: number, b: number}} Closest color from palette
@@ -159,7 +159,7 @@ export function findClosest(c, palette) {
 /**
  * Calculate average color from entire image
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:109-122
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:109-122
  * @param {ImageData} imgData - Browser ImageData object
  * @returns {{r: number, g: number, b: number}} Average RGB color
  * 
@@ -186,7 +186,7 @@ export function avgColour(imgData) {
 /**
  * Parse GIMP Palette (.gpl) file format
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:159-192
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:159-192
  * @param {string} text - GPL file contents
  * @returns {Array<{r: number, g: number, b: number}>} Array of RGB colors
  * 
@@ -237,7 +237,7 @@ export function parseGPL(text) {
 /**
  * Generate GIMP Palette (.gpl) file content
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:200-206
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:200-206
  * @param {Array<{r: number, g: number, b: number}>} palette - Array of RGB colors
  * @param {string} [name='Palette'] - Palette name
  * @returns {string} GPL file content
@@ -267,7 +267,7 @@ export function generateGPL(palette, name = 'Palette') {
 /**
  * Distribute dithering error to neighboring pixels (Floyd-Steinberg)
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:135-152
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:135-152
  * @formula Error distribution: [_, 7/16], [3/16, 5/16, 1/16]
  * @param {Uint8ClampedArray} data - ImageData.data array
  * @param {number} w - Image width
@@ -308,7 +308,7 @@ export function distributeError(data, w, h, x, y, er, eg, eb) {
 /**
  * Clamp value between min and max
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:215-217
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/core/utils.js:215-217
  * @param {number} val - Value to clamp
  * @param {number} min - Minimum value
  * @param {number} max - Maximum value

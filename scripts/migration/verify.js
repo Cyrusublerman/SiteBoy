@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'node:url';
 import { buildArtImport } from './import-art.js';
-import { buildBlogImport } from './import-blog.js';
 import { buildPageImport } from './import-pages.js';
 import { buildProjectImport } from './import-projects.js';
 
@@ -16,7 +15,6 @@ function duplicateValues(rows, key) {
 export async function verifyParity() {
   const builders = {
     art: buildArtImport,
-    articles: buildBlogImport,
     pages: buildPageImport,
     projects: buildProjectImport,
   };
@@ -41,9 +39,6 @@ export async function verifyParity() {
         conflicts.push({ source: name, reason: 'invalid-ulid', id: row.id });
       }
       if (name === 'projects' && row.route !== `/#projects/${row.slug}`) {
-        conflicts.push({ source: name, reason: 'route-drift', slug: row.slug });
-      }
-      if (name === 'articles' && row.frontmatterJsonb.route !== `#blog/${row.slug}`) {
         conflicts.push({ source: name, reason: 'route-drift', slug: row.slug });
       }
     }

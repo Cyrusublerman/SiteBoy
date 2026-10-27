@@ -14,7 +14,7 @@
 /**
  * Compute image gradients using simple [-1, 0, 1] filter
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
  * @wikipedia https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients
  * @section 2.1 Gradient Computation
  * @formula G_x = \begin{bmatrix} -1 & 0 & 1 \end{bmatrix} * I; G_y = \begin{bmatrix} -1 \\ 0 \\ 1 \end{bmatrix} * I
@@ -149,7 +149,7 @@ export function normalizeHistogram(histogram, clipValue = 0.2, epsilon = 1e-5) {
 /**
  * Compute HOG descriptor for image region
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
  * @wikipedia https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients
  * @section 2. Algorithm Steps
  * @formula |G| = \sqrt{G_x^2 + G_y^2}; \theta = \arctan2(G_y, G_x)

@@ -14,7 +14,7 @@
 /**
  * Circle SDF
  *
- * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Signed_distance_function.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Signed_distance_function.md
  * @wikipedia https://en.wikipedia.org/wiki/Signed_distance_function
  * @section 3.1 Circle/Sphere
  * @formula \text{SDF}_{\text{circle}}(\mathbf{p}, c, r) = \|\mathbf{p} - c\| - r
@@ -35,7 +35,7 @@ export function sdfCircle(px, py, cx, cy, r) {
 /**
  * Box SDF (axis-aligned)
  *
- * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Signed_distance_function.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Signed_distance_function.md
  * @wikipedia https://en.wikipedia.org/wiki/Signed_distance_function
  * @section 3.2 Box (Axis-Aligned)
  * @formula \text{SDF}_{\text{box}}(\mathbf{p}, b) = \|\max(|\mathbf{p}| - b, 0)\| + \min(\max(|p_x| - b_x, |p_y| - b_y), 0)

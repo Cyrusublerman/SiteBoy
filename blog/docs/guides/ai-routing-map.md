@@ -105,9 +105,9 @@ Cross-checks during tool/generative build
 
 13) Design-rule standards (pre-decision reads)
 
-Before making any decision in the table below, read the linked guide **in full**. These are scraped design rules (401 rules across 24 categories). SiteBoy-specific constraints in section 8 (`design-law.md`, `text-treatment.md`, etc.) still apply and take precedence where they conflict.
+Scraped corpus lives in Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/docs/standards/` (A9). SiteBoy-specific constraints in section 8 (`design-law.md`, `text-treatment.md`, etc.) still apply and take precedence. Do not load the full corpus.
 
-Entry point: [`standards/rules/INDEX.md`](../standards/rules/INDEX.md) (compact index). Hot rules: [`standards/hot-rules.md`](../standards/hot-rules.md).
+Entry point: `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/docs/standards/rules/INDEX.md`. Hot rules: `.../standards/hot-rules.md`. Relative links in the table below resolve under that Library prefix.
 
 | When you are… | Read |
 | --- | --- |
@@ -193,7 +193,7 @@ Entry point: [`standards/rules/INDEX.md`](../standards/rules/INDEX.md) (compact 
 
 14) End-goal workflows (instruction docs + rules)
 
-For **multi-step tasks** (build a pipeline, publish an archive, design a chart end-to-end), read the **instruction doc first**, then dip into scraped rules only when auditing a specific decision. SiteBoy guides in section 8 still take precedence.
+Instruction docs live in Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/`. Scraped rules: `.../blog/docs/standards/`. For **multi-step tasks**, read the instruction doc first, then dip into scraped rules only when auditing a specific decision. SiteBoy guides in section 8 still take precedence.
 
 | Your end goal | Read first (full instruction) | Then (scraped rules, as needed) |
 | --- | --- | --- |
@@ -206,14 +206,14 @@ For **multi-step tasks** (build a pipeline, publish an archive, design a chart e
 | Chart or infographic (design) | — (no single instruction doc yet) | §13 rows → [`data-visualisation.md`](../standards/data-visualisation.md), [`accessibility.md`](../standards/accessibility.md), [`colour.md`](../standards/colour.md), [`composition.md`](../standards/composition.md) |
 | Swiss-style or brutalist web layout | — | §13 rows → [`alignment.md`](../standards/alignment.md), [`composition.md`](../standards/composition.md), [`affordance.md`](../standards/affordance.md) |
 
-**Corpus lookup (any task):**
+**Corpus lookup (any task):** prefix `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/docs/`
 
 | Need | File |
 | --- | --- |
-| Compact index (search by ID) | [`standards/rules/INDEX.md`](../standards/rules/INDEX.md) |
+| Compact index (search by ID) | `standards/rules/INDEX.md` |
 | One rule in full | `standards/rules/<category>/<id>.md` |
 | All rules in a category | `standards/<category>.md` |
-| Top MUST / MUST_NOT only | [`standards/hot-rules.md`](../standards/hot-rules.md) |
+| Top MUST / MUST_NOT only | `standards/hot-rules.md` |
 
-Do not load the full corpus into context; read the instruction doc or §13/§14 row, then open specific rule files as needed.
+Do not load the full corpus into context.
 

@@ -18,7 +18,7 @@ import { MathUtils } from '../core/math-utils.js';
 /**
  * Poisson disk sampling using Bridson's algorithm
  *
- * @source blog/ideas/reference documentation/04_Sampling_Point_Distribution/Poisson_disk_sampling.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/04_Sampling_Point_Distribution/Poisson_disk_sampling.md
  * @wikipedia https://en.wikipedia.org/wiki/Supersampling#Poisson_disc
  * @section Bridson's algorithm
  * @formula Minimum distance r, annulus sampling [r, 2r]
@@ -241,7 +241,7 @@ export function variablePoissonDisk(width, height, densityFn, minDist, maxDist, 
 /**
  * Halton sequence - low-discrepancy quasi-random sequence
  *
- * @source blog/ideas/reference documentation/04_Sampling_Point_Distribution/Halton_sequence.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/04_Sampling_Point_Distribution/Halton_sequence.md
  * @wikipedia https://en.wikipedia.org/wiki/Halton_sequence
  * @section Halton sequence
  * @formula H_b(i) = \sum_{k=1}^\infty a_k(i) \cdot b^{-k}
@@ -428,7 +428,7 @@ export function jitteredGrid(width, height, nx, ny, jitter = 0.5, rng = Math.ran
 /**
  * Lloyd relaxation (centroidal Voronoi tessellation)
  *
- * @source blog/ideas/reference documentation/04_Sampling_Point_Distribution/Lloyd's_algorithm.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/04_Sampling_Point_Distribution/Lloyd's_algorithm.md
  * @wikipedia https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
  * @section Centroidal Voronoi tessellation
  * @formula Points move to centroids of Voronoi cells iteratively

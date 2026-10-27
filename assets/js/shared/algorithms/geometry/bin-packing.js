@@ -32,7 +32,7 @@
 /**
  * MaxRects bin packer
  *
- * @source blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/Bin_packing.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/Bin_packing.md
  * @wikipedia https://en.wikipedia.org/wiki/Bin_packing_problem
  * @section 4.2 2D Rectangle Packing Algorithms
  * @formula Minimize wasted space or number of bins for fixed bin capacity

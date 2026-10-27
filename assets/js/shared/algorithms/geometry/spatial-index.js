@@ -4,7 +4,7 @@
  * K-d tree and radius search for efficient nearest neighbor queries.
  * 
  * @module geometry/spatial-index
- * @source blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/K-d_tree.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/K-d_tree.md
  * @wikipedia https://en.wikipedia.org/wiki/K-d_tree
  * 
  * Key concepts from reference:

@@ -72,7 +72,7 @@ export const MathUtils = {
     /**
      * Smoothstep interpolation: 3t² - 2t³
      *
-     * @source blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Smoothstep.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Smoothstep.md
      * @wikipedia https://en.wikipedia.org/wiki/Smoothstep
      * @section Basic Smoothstep (Cubic)
      * @formula S_1(t) = 3t^2 - 2t^3 = t^2(3 - 2t)
@@ -88,7 +88,7 @@ export const MathUtils = {
     /**
      * Smoother step (Perlin): 6t⁵ - 15t⁴ + 10t³
      *
-     * @source blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Smoothstep.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Smoothstep.md
      * @wikipedia https://en.wikipedia.org/wiki/Smoothstep
      * @section Smootherstep (Quintic)
      * @formula S_2(t) = 6t^5 - 15t^4 + 10t^3 = t^3(t(6t - 15) + 10)
@@ -228,7 +228,7 @@ export const MathUtils = {
     /**
      * Euclidean distance: d = √((x₂-x₁)² + (y₂-y₁)²)
      *
-     * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Euclidean_distance.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Euclidean_distance.md
      * @wikipedia https://en.wikipedia.org/wiki/Euclidean_distance
      * @section Two dimensions
      * @formula d(p,q) = \sqrt{(p_1-q_1)^2 + (p_2-q_2)^2}
@@ -246,7 +246,7 @@ export const MathUtils = {
     /**
      * Squared Euclidean distance (faster, no sqrt)
      *
-     * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Euclidean_distance.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Euclidean_distance.md
      * @wikipedia https://en.wikipedia.org/wiki/Euclidean_distance
      * @section Two dimensions
      * @formula d^2(p,q) = (p_1-q_1)^2 + (p_2-q_2)^2
@@ -264,7 +264,7 @@ export const MathUtils = {
     /**
      * Manhattan distance: d = |x₂-x₁| + |y₂-y₁|
      *
-     * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Taxicab_geometry.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Taxicab_geometry.md
      * @wikipedia https://en.wikipedia.org/wiki/Taxicab_geometry
      * @section Formal definition
      * @formula d_T(\mathbf{p}, \mathbf{q}) = \|\mathbf{p} - \mathbf{q}\|_T = \sum_{i=1}^{n} |p_i - q_i|
@@ -281,7 +281,7 @@ export const MathUtils = {
      * Chebyshev distance: d = max(|x₂-x₁|, |y₂-y₁|)
      * Also known as L∞ metric or maximum norm.
      *
-     * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Taxicab_geometry.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Taxicab_geometry.md
      * @wikipedia https://en.wikipedia.org/wiki/Chebyshev_distance
      * @section Properties
      * @formula d_{\infty}(\mathbf{p}, \mathbf{q}) = \max_{i=1}^{n} |p_i - q_i|
@@ -298,7 +298,7 @@ export const MathUtils = {
      * Hamming distance between two equal-length strings or arrays
      * Counts positions where elements differ.
      *
-     * @source blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
      * @wikipedia https://en.wikipedia.org/wiki/Hamming_distance
      * @section 2.1 For Binary Strings
      * @formula d_H(x, y) = \sum_{i=1}^{n} |x_i - y_i| = \sum_{i=1}^{n} (x_i \oplus y_i)
@@ -322,7 +322,7 @@ export const MathUtils = {
      * Hamming distance between two 32-bit integers
      * Uses XOR and popcount for efficiency.
      *
-     * @source blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
      * @wikipedia https://en.wikipedia.org/wiki/Hamming_distance
      * @section 3.1 Naive (O(n)) and 3.2 XOR + Popcount (Efficient for Integers)
      * @formula d_H(x, y) = popcount(x \oplus y)
@@ -357,7 +357,7 @@ export const MathUtils = {
     /**
      * Normalized Hamming distance (0 to 1)
      *
-     * @source blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
      * @wikipedia https://en.wikipedia.org/wiki/Hamming_distance
      * @section 5.1 Normalized Hamming Distance
      * @formula d_{H,\text{norm}}(x, y) = \frac{d_H(x, y)}{n}
@@ -555,7 +555,7 @@ export const MathUtils = {
      * Integer hash function (Wang hash variant)
      * Maps 32-bit integer to pseudo-random 32-bit integer
      * 
-     * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Hash_function.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Hash_function.md
      * @wikipedia https://en.wikipedia.org/wiki/Hash_function
      * @formula H(n) = ((n >> 16) ^ n) * 0x45d9f3b repeated
      * 

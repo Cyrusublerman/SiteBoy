@@ -14,7 +14,7 @@
 /**
  * Posterize single value to N levels
  *
- * @source blog/ideas/reference documentation/14_Signal_Processing_Filtering/Posterization.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/14_Signal_Processing_Filtering/Posterization.md
  * @wikipedia https://en.wikipedia.org/wiki/Posterization
  * @section 2.1 Uniform Quantization
  * @formula v_q = \frac{\lfloor v \cdot n \rfloor}{n - 1}

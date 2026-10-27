@@ -4,7 +4,7 @@
  * LFO, perfect loops, easing functions, and animation timing.
  * 
  * @module animation/animation-utils
- * @source blog/ideas/reference documentation/20_Physics_Simulation/Low_frequency_oscillation.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/20_Physics_Simulation/Low_frequency_oscillation.md
  * @wikipedia https://en.wikipedia.org/wiki/Low-frequency_oscillation
  * 
  * Key equations from reference:

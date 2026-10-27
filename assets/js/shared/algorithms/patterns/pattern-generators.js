@@ -14,7 +14,7 @@
 /**
  * Generate Truchet tile grid states
  *
- * @source blog/ideas/reference documentation/18_Pattern_Generation/Truchet_tiles.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/18_Pattern_Generation/Truchet_tiles.md
  * @wikipedia https://en.wikipedia.org/wiki/Truchet_tiles
  * @section Quarter-Circle Truchet (Smith Tiles)
  * @formula s_{i,j} \in \{0, 1\} determines tile orientation

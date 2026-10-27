@@ -687,7 +687,7 @@ GET https://en.wikipedia.org/api/rest_v1/page/html/Hilbert_curve
 
 Pre-parsed Wikipedia articles exist at:
 ```
-blog/ideas/reference documentation/
+Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/
 ├── 01_Edge_Gradient_Differential_Operators/
 ├── 04_Sampling_Point_Distribution/
 ├── 05_Space_Filling_Curves/

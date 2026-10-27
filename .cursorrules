@@ -63,7 +63,7 @@ The folder `blog/docs/todo/` is the single source of truth for in-flight, planne
 - Anything listed in `blog/docs/todo/out-of-scope.md` requires an ADR to move back into scope. Do not silently re-introduce.
 
 ### Ideas and projects (see `blog/docs/todo/index.md` § Ideas folder)
-- If the same concept exists under `blog/ideas/art/generative/` and `blog/ideas/tools/`, **generative is canonical** for linking and duplicate marking; `tools/` is a feeder unless it is the only copy.
+- If the same concept exists under Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/art/generative/` and `.../blog/ideas/tools/`, **generative is canonical** for linking and duplicate marking; `tools/` is a feeder unless it is the only copy.
 - Portfolio entries (`#projects/<slug>`) **need not** map to a shipped tool; idea-only project pages are valid (B1).
 
 ## ═══════════════════════════════════════════════════════════════════
@@ -303,7 +303,7 @@ Animations must:
 |---------|----------|----------|---------------|
 | **Algorithms Library** | `assets/js/shared/algorithms/` | Functional | NO |
 | **Site Components** | `assets/js/shared/`, `assets/js/core/`, `assets/js/tools/` | OOP | YES |
-| **Reference Docs** | `blog/ideas/reference documentation/` | N/A (research) | N/A |
+| **Reference Docs** | Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/` | N/A (research) | N/A |
 
 ### Algorithms Library Rules (PURE FUNCTIONAL CODE)
 - Location: `assets/js/shared/algorithms/`
@@ -332,7 +332,7 @@ Every function in `assets/js/shared/algorithms/` MUST include:
 /**
  * [Description]
  * 
- * @source blog/ideas/reference documentation/[CATEGORY]/[Article].md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/[CATEGORY]/[Article].md
  * @wikipedia https://en.wikipedia.org/wiki/[Article]
  * @section [Section containing formula]
  * @formula [Exact LaTeX from reference doc]
@@ -461,17 +461,7 @@ When adding new features:
 - Categorized debugging (no sifting through noise)
 - Easy to find repetitive/spammy logs (VERBOSE)
 
-## Scraped design rule corpus (general knowledge)
+## Scraped design rule corpus
 
-SiteBoy guides (`blog/docs/guides/standards/design-law.md`, `component-patterns.md`, etc.) **take precedence** over scraped rules where they conflict.
-
-| Need | Read |
-| --- | --- |
-| One-off design decision | `blog/docs/guides/ai-routing-map.md` §13 |
-| End-to-end workflow (capture, publish, extract) | `blog/docs/guides/ai-routing-map.md` §14 |
-| Rule lookup by ID | `blog/docs/standards/rules/INDEX.md` → `standards/rules/<category>/<id>.md` |
-| All rules in one category | `blog/docs/standards/<category>.md` |
-| Top MUST/MUST_NOT only | `blog/docs/standards/hot-rules.md` |
-
-Read only what the task requires; do not load the full corpus into context.
+Moved to Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/docs/standards/` (A9). SiteBoy guides (`blog/docs/guides/standards/design-law.md`, `component-patterns.md`, etc.) govern UI. Do not load the scrape corpus into context.
 

@@ -60,7 +60,6 @@ class HomeSectionComponent extends BaseComponent {
         this.children.add(this._toc);
         this.element.appendChild(this._toc.render());
 
-        this._loadDocsAsync();
         this._initPan();
 
         return this.element;
@@ -190,7 +189,6 @@ class HomeSectionComponent extends BaseComponent {
             children: [
                 this._buildArt(),
                 this._buildTools(),
-                this._buildDocs(),
                 this._buildProjects(),
                 this._buildAbout(),
                 this._buildContact(),
@@ -231,15 +229,6 @@ class HomeSectionComponent extends BaseComponent {
         };
     }
 
-    _buildDocs() {
-        return {
-            label: 'DOCS',
-            description: 'Technical documentation, guides, and references',
-            _data: { section: 'blog' },
-            children: [{ label: '(LOADING)', _data: null }],
-        };
-    }
-
     _buildProjects() {
         const structure = window.ProjectsSection?.navigationConfig?.structure || [];
         return {
@@ -274,19 +263,6 @@ class HomeSectionComponent extends BaseComponent {
                 { label: 'Send message', _data: { action: 'contact' } },
             ],
         };
-    }
-
-    // ── Async docs ────────────────────────────────────────────────────────────
-
-    async _loadDocsAsync() {
-        const blog = window.BlogSection;
-        if (!blog) return;
-        if (!blog.manifestReady) await blog.ensureManifestReady?.();
-        if (!blog.manifestReady || !this._toc) return;
-        const treeData = blog.prepareBlogTreeData?.();
-        if (treeData?.children) {
-            this._toc.replaceBranchChildren('DOCS', treeData.children);
-        }
     }
 
     // ── Click handling ────────────────────────────────────────────────────────

@@ -90,7 +90,7 @@ export function thinFilmReflectance(opd, wavelength, phaseShift = true) {
 /**
  * Spectral thin-film color
  *
- * @source blog/ideas/reference documentation/19_Interference_Optics/Thin-film_interference.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/19_Interference_Optics/Thin-film_interference.md
  * @wikipedia https://en.wikipedia.org/wiki/Thin-film_interference
  * @section Thin-film interference
  * @formula R(\lambda) = 4R \sin^2(\delta/2) where \delta = 4\pi n d / \lambda

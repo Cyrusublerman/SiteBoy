@@ -5,8 +5,8 @@
  * All functions are pure and stateless.
  * 
  * @module physics/reaction-diffusion
- * @source blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Gray-Scott_model.md
- * @source blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Cellular_automaton.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Gray-Scott_model.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Cellular_automaton.md
  * @wikipedia https://en.wikipedia.org/wiki/Reaction%E2%80%93diffusion_system
  * @wikipedia https://en.wikipedia.org/wiki/Cellular_automaton
  * 

@@ -15,6 +15,7 @@ export class GlyphBuilderToolbar extends BaseComponent {
 
         this.displayMode    = options.displayMode || 'fit';
         this.infoFetchPath  = options.infoFetchPath || '';
+        this.infoMarkdown   = options.infoMarkdown || '';
 
         this.onDisplayModeChange = options.onDisplayModeChange || (() => {});
         this.onPreviewClick      = options.onPreviewClick      || (() => {});
@@ -308,7 +309,12 @@ export class GlyphBuilderToolbar extends BaseComponent {
         const mount = this.createElement('div');
         this.infoPanel.appendChild(mount);
 
-        if (this.infoFetchPath) {
+        if (this.infoMarkdown) {
+            this._infoBodyComponent = new MarkdownBody({
+                markdownText: this.infoMarkdown,
+            }, this.deps);
+            mount.appendChild(this._infoBodyComponent.render());
+        } else if (this.infoFetchPath) {
             this._infoBodyComponent = new MarkdownBody({
                 fetchPath: this.infoFetchPath,
             }, this.deps);
