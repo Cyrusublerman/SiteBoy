@@ -1,6 +1,6 @@
 # A9 — Corpus out of the site
 
-**Status**: WIP
+**Status**: DONE
 **Priority**: P0
 **Owner file(s)**: `scripts/vercel-copy-static.mjs`, `assets/js/sections/blog_section.js`, `assets/js/sections/pkl_blog_section.js`, `assets/js/sections/home_section.js`, `tools/lint/run-design-rules.mjs`, `.github/workflows/ci.yml`; Library `09_INBOX/SiteBoy_Corpus_2026-10-26/`
 **Blockers**: —
@@ -26,19 +26,22 @@ Leaves: `blog/ideas`, `blog/Projects`, `blog/{music,tools,archive}`, `blog/docs/
 
 ## Sub-tasks
 
-- [ ] Library import: trees into `09_INBOX/SiteBoy_Corpus_2026-10-26/` (SiteBoy-relative paths); README (source commit, R2 prefix, default-deny, scrape rerun); push; CI green.
-- [ ] Private R2 bucket `einoder-archive` (no custom domain, no r2.dev, no CORS); 969 PDFs at `siteboy/project-pdfs/`; count and bytes verified.
-- [ ] Remove `BlogSection`, docs manifest, home DOCS branch, `PKLBlogSection` `docs/` delegation, `import-blog`.
-- [ ] Relocate about/three-d JSON; glyph-builder INFO via Vite `?raw`; algorithms-test-lab dead fetch removed; `@source` prefixes rewritten.
-- [ ] `design-rules.meta.json`; `run-design-rules` reads it; drop `scrape:*` scripts and CI steps; update Cursor rules and routing map.
-- [ ] `vercel-copy-static` without `blog`; `.vercelignore` and exact-build workflow; `git rm` corpus trees.
-- [ ] Local tests/build; PR; production check.
+- [x] Library import: trees into `09_INBOX/SiteBoy_Corpus_2026-10-26/` (SiteBoy-relative paths); README (source commit, R2 prefix, default-deny, scrape rerun); push; CI green.
+- [x] Private R2 bucket `einoder-archive` (no custom domain, no r2.dev, no CORS); 969 PDFs at `siteboy/project-pdfs/`; count and bytes verified.
+- [x] Remove `BlogSection`, docs manifest, home DOCS branch, `PKLBlogSection` `docs/` delegation, `import-blog`.
+- [x] Relocate about/three-d JSON; glyph-builder INFO via Vite `?raw`; algorithms-test-lab dead fetch removed; `@source` prefixes rewritten.
+- [x] `design-rules.meta.json`; `run-design-rules` reads it; drop `scrape:*` scripts and CI steps; update Cursor rules and routing map.
+- [x] `vercel-copy-static` without `blog`; `.vercelignore` and exact-build workflow; `git rm` corpus trees.
+- [x] Local tests/build; PR; production check.
 
 ## Notes / decisions
 
 - 2026-10-27: Destination = Library inbox (default-deny; compiler publishes only `visibility: public`). PDFs = private R2 `einoder-archive`. History not rewritten. Legacy `/blog/docs/*` reader removed; public reading is wiki/blog/figures from the content origin.
 - 2026-10-27: Scrape pipeline and 429 rule docs move to Library. SiteBoy keeps generated lint (`tools/lint/design-rules.mjs` + `design-rules.meta.json`). CI runs lint without the corpus. Scraped-corpus table drops from Cursor rules.
 - 2026-10-27: `*reference*` is git-ignored in SiteBoy; reference docs were never deployed. Copy them from local disk into the Library import after checking Library `.gitignore`.
+- 2026-10-27: Library [PR #163](https://github.com/Cyrusublerman/Library/pull/163) merged `42ce8728`. Inbox is on Library `main`. `pkl-validation` still fails on Library `main` (1076 errors / 3121 warnings / 210 notices); those counts are pre-existing and the inbox is excluded from the scan.
+- 2026-10-27: R2 `einoder-archive` prefix `siteboy/project-pdfs/` = 969 objects / 1,099,753,500 bytes (matches local before delete).
+- 2026-10-27: SiteBoy [PR #33](https://github.com/Cyrusublerman/SiteBoy/pull/33) merged `1a5a97d2`. Production `einoder.net` `/`, `/wiki`, `/blog`, `/figures`, `#about`, `#three-d`, glyph-builder INFO all render. Predicate verified.
 
 ## References
 

@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-10-27 (A9 corpus out of site opened).
+Last touched: 2026-10-27 (A9 corpus out of site DONE).
 
 ---
 
@@ -48,7 +48,7 @@ Last touched: 2026-10-27 (A9 corpus out of site opened).
 | A6 | [A6-pkl-publication-boundary.md](A6-pkl-publication-boundary.md) | PKL private/public publication boundary | P0 | REVIEW | — |
 | A7 | [A7-storage-content-resilience.md](A7-storage-content-resilience.md) | Storage and content resilience | P1 | REVIEW | — |
 | A8 | [A8-content-origin-r2.md](A8-content-origin-r2.md) | Public content origin on R2 | P0 | DONE | — |
-| A9 | [A9-corpus-out-of-site.md](A9-corpus-out-of-site.md) | Corpus out of the site | P0 | WIP | — |
+| A9 | [A9-corpus-out-of-site.md](A9-corpus-out-of-site.md) | Corpus out of the site | P0 | DONE | — |
 
 ## B. Sections
 
