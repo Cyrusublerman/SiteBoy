@@ -71,7 +71,7 @@ const contours = MarchingSquares.extractContours(field, w, h, threshold);
 ```
 
 **Notes:** 
-- Reference documentation in `blog/ideas/reference documentation/`
+- Reference documentation in `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/`
 - All functions have `@source` and `@formula` JSDoc annotations
 - See `blog/docs/docs/Tool and Gen Pages/phase-3-library-mapping.md` for full function-level mapping
 

@@ -15,7 +15,7 @@ import { MathUtils } from '../core/math-utils.js';
 /**
  * Otsu's automatic thresholding
  *
- * @source blog/ideas/reference documentation/02_Image_Segmentation_Region_Extraction/Otsu's_method.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/02_Image_Segmentation_Region_Extraction/Otsu's_method.md
  * @wikipedia https://en.wikipedia.org/wiki/Otsu%27s_method
  * @section Otsu's method
  * @formula \sigma_b^2(t) = \omega_0(\mu_0 - \mu_T)^2 + \omega_1(\mu_1 - \mu_T)^2 = \omega_0\omega_1(\mu_0 - \mu_1)^2
@@ -244,7 +244,7 @@ function recursiveOtsu(histogram, numThresholds, start, end) {
 /**
  * Connected component labeling (two-pass algorithm)
  *
- * @source blog/ideas/reference documentation/02_Image_Segmentation_Region_Extraction/Connected-component_labeling.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/02_Image_Segmentation_Region_Extraction/Connected-component_labeling.md
  * @wikipedia https://en.wikipedia.org/wiki/Connected-component_labeling
  * @section Overview
  * @formula Connected components are uniquely labeled based on connectivity

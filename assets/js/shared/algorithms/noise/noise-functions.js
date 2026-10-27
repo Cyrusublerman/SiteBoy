@@ -56,7 +56,7 @@ const G2 = (3 - Math.sqrt(3)) / 6;
 /**
  * 2D Simplex noise
  *
- * @source blog/ideas/reference documentation/17_Noise_Functions/Simplex_noise.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/17_Noise_Functions/Simplex_noise.md
  * @wikipedia https://en.wikipedia.org/wiki/Simplex_noise
  * @section 2D Simplex Noise Algorithm
  * @formula n_i = \max(0, r^2 - d_i^2)^4 \cdot (\nabla_i \cdot \vec{d_i})
@@ -130,7 +130,7 @@ export function simplex2D(x, y) {
 /**
  * Fractal Brownian Motion (fBm) using simplex noise
  *
- * @source blog/ideas/reference documentation/17_Noise_Functions/Perlin_noise.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/17_Noise_Functions/Perlin_noise.md
  * @wikipedia https://en.wikipedia.org/wiki/Fractional_Brownian_motion
  * @section Fractal Brownian Motion
  * @formula \text{fbm}(x, y) = \sum_{i=0}^{n-1} \text{persistence}^i \cdot \text{noise}(\text{lacunarity}^i \cdot x, \text{lacunarity}^i \cdot y)
@@ -178,7 +178,7 @@ export function fbm2D(x, y, options = {}) {
  *
  * Applies noise-based coordinate distortion before sampling.
  *
- * @source blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md
  * @wikipedia https://en.wikipedia.org/wiki/Domain_warping
  * @section 3.2 Scaled Warp
  * @formula f(\mathbf{p}) = \text{noise}(\mathbf{p} + A \cdot \text{noise}(B \cdot \mathbf{p}))
@@ -214,7 +214,7 @@ export function domainWarp2D(x, y, options = {}) {
 /**
  * Multi-layer domain warp (warped warp)
  *
- * @source blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/17_Noise_Functions/Domain_warping.md
  * @wikipedia https://en.wikipedia.org/wiki/Domain_warping
  * @section 3.3 Layered Warp (Inigo Quilez)
  * @formula q = \text{noise}(\mathbf{p}); r = \text{noise}(\mathbf{p} + q); f(\mathbf{p}) = \text{noise}(\mathbf{p} + r)
@@ -324,7 +324,7 @@ export function mapNoiseRange(value, min, max) {
  * Uses gradient noise with fade interpolation on a square grid.
  * Ken Perlin's original algorithm (1983).
  * 
- * @source blog/ideas/reference documentation/17_Noise_Functions/Perlin_noise.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/17_Noise_Functions/Perlin_noise.md
  * @wikipedia https://en.wikipedia.org/wiki/Perlin_noise
  * @section Mathematical Basis
  * @formula fade(t) = 6t^5 - 15t^4 + 10t^3 (smootherstep)

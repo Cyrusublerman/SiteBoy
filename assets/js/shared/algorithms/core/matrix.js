@@ -222,7 +222,7 @@ export const Matrix = {
     /**
      * 2D Convolution
      *
-     * @source blog/ideas/reference documentation/14_Signal_Processing_Filtering/Convolution.md
+     * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/14_Signal_Processing_Filtering/Convolution.md
      * @wikipedia https://en.wikipedia.org/wiki/Convolution
      * @section Discrete convolution
      * @formula N(x,y) = \sum_{i=-k}^k \sum_{j=-k}^k K(i,j) \cdot I(x-i, y-j)

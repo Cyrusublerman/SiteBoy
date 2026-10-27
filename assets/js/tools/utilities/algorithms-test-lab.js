@@ -674,34 +674,8 @@ import { imageToImageData, BatchDrawer } from '../../shared/utils/canvas.js';
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Create a markdown loader function for a specific file path
-     * Returns a function that fetches and renders markdown using ComponentLibrary
+     * Reference docs live in Library inbox; this lab no longer fetches them at runtime.
      */
-    const createMarkdownLoader = (path, deps) => {
-        return async () => {
-            try {
-                const response = await fetch(path, { cache: 'no-cache' });
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${path}`);
-                const markdownText = await response.text();
-                
-                // Use ComponentLibrary.MarkdownBody to render the markdown
-                if (!window.ComponentLibrary || !window.ComponentLibrary.MarkdownBody) {
-                    throw new Error('MarkdownBody component not available');
-                }
-                
-                const markdownComponent = new window.ComponentLibrary.MarkdownBody({ markdownText }, deps);
-                return await markdownComponent.render();
-            } catch (error) {
-                console.error(`Error loading markdown from ${path}:`, error);
-                const errorPanel = new window.ComponentLibrary.Panel({
-                    title: 'Documentation Error',
-                    content: `Failed to load documentation: ${error.message}`,
-                    className: 'error-panel'
-                });
-                return errorPanel.render();
-            }
-        };
-    };
 
     /**
      * Map algorithm IDs to markdown filenames
@@ -838,22 +812,15 @@ import { imageToImageData, BatchDrawer } from '../../shared/utils/canvas.js';
         if (!domain || !domain.docsPath) return null;
         
         const filename = ALGORITHM_DOCS_MAP[algoId];
-        if (!filename) {
-            // No specific file mapped, show placeholder
-            const placeholderPanel = new window.ComponentLibrary.Panel({
-                title: domain.title,
-                content: `
-                    <p>Documentation for this algorithm is being compiled.</p>
-                    <p>Reference path: blog/ideas/reference documentation/${domain.docsPath}/</p>
-                `,
-                className: 'doc-placeholder'
-            });
-            return placeholderPanel.render();
-        }
-        
-        const filePath = `blog/ideas/reference documentation/${domain.docsPath}/${filename}`;
-        const loader = createMarkdownLoader(filePath, deps);
-        return await loader();
+        const libraryPath = filename
+            ? `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/${domain.docsPath}/${filename}`
+            : `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/${domain.docsPath}/`;
+        const placeholderPanel = new window.ComponentLibrary.Panel({
+            title: domain.title,
+            content: `Reference documentation is not served by the site. Source: ${libraryPath}`,
+            className: 'doc-placeholder'
+        });
+        return placeholderPanel.render();
     }
 
     // ═══════════════════════════════════════════════════════════════════════

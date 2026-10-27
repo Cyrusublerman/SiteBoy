@@ -4,7 +4,7 @@
  * Line family halftone, contour-aligned lattices, and dot patterns.
  * 
  * @module patterns/halftone-patterns
- * @source blog/ideas/reference documentation/18_Pattern_Generation/Halftone.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/18_Pattern_Generation/Halftone.md
  * @wikipedia https://en.wikipedia.org/wiki/Halftone
  * 
  * Techniques implemented:

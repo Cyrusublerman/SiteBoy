@@ -21,7 +21,6 @@ import '../assets/js/core/asset-loader.js';
 
 // Existing section modules
 import '../assets/js/sections/home_section.js';
-import '../assets/js/sections/blog_section.js'; // Retained as legacy documentation renderer
 import '../assets/js/sections/art_section.js';
 import '../assets/js/sections/tools_section.js';
 import '../assets/js/sections/projects_section.js';
@@ -35,7 +34,7 @@ import '../assets/js/sections/admin_section.js';
 import '../assets/js/admin/gallery-editor-state.js';
 import '../assets/js/sections/index_map_section.js';
 
-// PKL public projection sections load after the legacy Blog renderer.
+// PKL public projection sections.
 import '../assets/js/sections/wiki_section.js';
 import '../assets/js/sections/pkl_blog_section.js';
 import '../assets/js/sections/figure_section.js';

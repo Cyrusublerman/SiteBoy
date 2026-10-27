@@ -21,7 +21,7 @@ import { MathUtils } from '../core/math-utils.js';
 /**
  * Hilbert curve generator
  *
- * @source blog/ideas/reference documentation/05_Space_Filling_Curves/Hilbert_curve.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/05_Space_Filling_Curves/Hilbert_curve.md
  * @wikipedia https://en.wikipedia.org/wiki/Hilbert_curve
  * @section Applications and mapping algorithms
  * @formula Length of nth curve: 2^n - 1/2^n

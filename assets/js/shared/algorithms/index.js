@@ -7,7 +7,7 @@
  * All functions are pure and stateless following functional programming principles.
  * 
  * NOTE: This is the production library. Reference documentation (.md files) remain
- * in blog/ideas/reference documentation/ for research purposes only.
+ * in Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/ for research purposes only.
  * 
  * Modules:
  * - core/math-utils: Vector math, statistics, interpolation, Hamming distance

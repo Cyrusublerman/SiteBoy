@@ -1,7 +1,7 @@
 /**
  * About Section - SiteBoy Framework
  *
- * JSON-driven bio page from blog/data/about.json.
+ * JSON-driven bio page from /data/about.json.
  * ComponentLibrary blocks only; DOM via BaseComponent views.
  *
  * @version 1.1.0
@@ -144,7 +144,7 @@ const AboutSection = {
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
-    dataUrl: 'blog/data/about.json',
+    dataUrl: '/data/about.json',
     _view: null,
 
     async handleRoute(subsection, container, callbacks = {}) {

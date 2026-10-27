@@ -102,7 +102,7 @@ export function calculateOrientationCost(glyphOrientation, tileOrientation) {
 /**
  * Calculate signature cost (HOG histogram difference).
  * 
- * @source blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/11_Optimisation_Numerical_Methods/Hamming_distance.md
  * @wikipedia https://en.wikipedia.org/wiki/Hamming_distance
  * @formula C_sig = (1/K) * sum(|S_g,i - S_t,i|)
  */

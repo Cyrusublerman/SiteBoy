@@ -164,7 +164,7 @@ const ThreeDSection = {
     currentContainer: null,
     componentInstances: [],
     navigationCallbacks: null,
-    dataUrl: 'blog/data/three-d.json',
+    dataUrl: '/data/three-d.json',
     catalog: null,
     _view: null,
 

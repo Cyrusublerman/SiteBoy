@@ -10,7 +10,6 @@ import {
 } from '../api/_lib/versioning.js';
 import { validateMappedFields } from '../api/_lib/crud.js';
 import { buildArtImport } from '../scripts/migration/import-art.js';
-import { buildBlogImport } from '../scripts/migration/import-blog.js';
 import { buildPageImport } from '../scripts/migration/import-pages.js';
 import { buildProjectImport } from '../scripts/migration/import-projects.js';
 import { verifyParity } from '../scripts/migration/verify.js';
@@ -141,7 +140,7 @@ describe('strict content field policies', () => {
 
 describe('content importer transforms', () => {
   it('is dry-run deterministic and parity-clean', async () => {
-    const builders = [buildArtImport, buildProjectImport, buildPageImport, buildBlogImport];
+    const builders = [buildArtImport, buildProjectImport, buildPageImport];
     for (const build of builders) {
       const first = await build();
       const second = await build();

@@ -4,7 +4,7 @@
  * Calculates grid dimensions to fit a given number of tiles within physical constraints
  * (print bed size, scan paper size). Used for generating calibration grids.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/layout.js
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/layout.js
  */
 
 /**
@@ -14,7 +14,7 @@
  * maximum width/height constraints. Attempts square-ish layout first, then
  * adjusts to fit constraints.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/layout.js:17-88
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/layout.js:17-88
  * @param {Object} params - Layout parameters
  * @param {number} params.sequenceCount - Number of sequences/tiles to fit
  * @param {number} params.tileSize - Size of each tile in mm
@@ -134,7 +134,7 @@ export function calculateGridLayout({
  * Returns the minimum of bed size and scan size for each dimension.
  * Ensures generated grid fits both the printer bed and the scanning paper.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/layout.js:101-106
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/layout.js:101-106
  * @param {Object} params - Constraint parameters
  * @param {number} params.bedW - Printer bed width in mm
  * @param {number} params.bedH - Printer bed height in mm

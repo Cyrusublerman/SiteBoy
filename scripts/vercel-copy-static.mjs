@@ -1,11 +1,11 @@
 /**
- * Post-build step: copy runtime-fetched static trees into dist/ for Vercel parity with GH Pages.
+ * Post-build step: copy runtime-fetched static trees into dist/.
  */
 import { cpSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dist = 'dist';
-const trees = ['blog', 'art', 'projects'];
+const trees = ['art', 'projects'];
 const files = ['404.html'];
 
 for (const tree of trees) {

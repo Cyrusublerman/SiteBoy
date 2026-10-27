@@ -13,14 +13,10 @@ projects/**/*.png
 art/**/*.webp
 projects/**/*.mp4
 projects/**/*.gif
-blog/**/*.jpg
-blog/**/*.jpeg
-blog/**/*.png
 
 # Reference and dev tooling
 reference/
 **/reference/
-tools/scrape/cache/
 tools/**/output/
 scripts/migration/uploaded/
 scripts/migration/*.log

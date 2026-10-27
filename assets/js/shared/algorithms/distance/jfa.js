@@ -96,7 +96,7 @@ export function jfaPass(seeds, width, height, step) {
 /**
  * Full Jump Flood Algorithm
  *
- * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Jump_flooding_algorithm.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Jump_flooding_algorithm.md
  * @wikipedia https://en.wikipedia.org/wiki/Jump_flooding_algorithm
  * @section Algorithm
  * @formula O(N^2 \log N) time, O(N^2) space

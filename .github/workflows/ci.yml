@@ -51,14 +51,6 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run scrape:conflict -- --force
-
-      - run: npm run scrape:categorise -- --force
-
-      - run: npm run scrape:emit -- --force
-
-      - run: npm run scrape:lint-compile -- --force
-
       - run: npm run lint:design
 
       - run: npm run test:design-rules

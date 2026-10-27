@@ -66,7 +66,7 @@ Only these files may own the concern. Others must not implement it.
 9. Items in `out-of-scope.md` require an ADR to move back in scope.
 
 ### Ideas and projects (see `blog/docs/todo/index.md` § Ideas folder)
-- If the same concept exists under `blog/ideas/art/generative/` and `blog/ideas/tools/`, **generative is canonical** for linking and duplicate marking; `tools/` is a feeder unless it is the only copy.
+- If the same concept exists under Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/art/generative/` and `.../blog/ideas/tools/`, **generative is canonical** for linking and duplicate marking; `tools/` is a feeder unless it is the only copy.
 - Portfolio entries (`#projects/<slug>`) **need not** map to a shipped tool; idea-only project pages are valid (B1).
 
 ## Tab Limit
@@ -182,9 +182,6 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 | Where to place any feature (toolbar vs sidebar vs other) | `blog/docs/guides/standards/component-patterns.md §4` |
 | How to divide space in a toolbar, sidebar, or canvas area | `blog/docs/guides/standards/component-patterns.md §3` |
 | Any visual or aesthetic design decision not covered above | `blog/docs/guides/standards/design-law.md` |
-| Any single scraped design decision (typography, grid, charts, etc.) | `blog/docs/guides/ai-routing-map.md` §13 |
-| Any multi-step workflow (capture pipeline, notebook publish, corpus extract, etc.) | `blog/docs/guides/ai-routing-map.md` §14 |
-| Looking up a scraped rule by ID | `blog/docs/standards/rules/INDEX.md` → `standards/rules/<category>/<id>.md` |
 | How to lay out a tool page or what the standard tool structure is | `blog/docs/site/ui-interface-overview.md` |
 | What task phase you are in or what checklist to use | `blog/docs/guides/ai-routing-map.md` |
 | Any compute scheduling, worker tiering, or adaptive resolution decision | `blog/docs/guides/standards/compute-scheduler.md` |
@@ -193,19 +190,9 @@ type ∈ {SectionDropdown, TextBlock, ImageBlock, Grid, Chart, CanvasWidget}.
 
 **Prohibited:** Making any decision in the left column without first reading the file in the right column. If you have already read it in this session, re-reading is not required — but you must have read it before writing the relevant code.
 
-## Scraped design rule corpus (general knowledge)
+## Scraped design rule corpus
 
-SiteBoy guides (`design-law.md`, `component-patterns.md`, etc.) **take precedence** over scraped rules where they conflict.
-
-| Need | Read |
-| --- | --- |
-| One-off decision | `blog/docs/guides/ai-routing-map.md` §13 |
-| End-to-end workflow | `blog/docs/guides/ai-routing-map.md` §14 |
-| Rule by ID | `blog/docs/standards/rules/INDEX.md` |
-| Category dump | `blog/docs/standards/<category>.md` |
-| Top MUST/MUST_NOT only | `blog/docs/standards/hot-rules.md` |
-
-Read only what the task requires; do not load the full corpus.
+Moved to Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/docs/standards/` (A9). SiteBoy guides take precedence. Do not load the scrape corpus into context.
 
 ## AI Routing
 - Routing map: `blog/docs/guides/ai-routing-map.md` (choice tree).

@@ -8,7 +8,7 @@
  *     Chaikin smoothing → ear-clip triangulation + side walls.
  *     Used for artwork STLs where smooth region boundaries matter.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/stl/index.js
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/stl/index.js
  */
 
 /**
@@ -17,7 +17,7 @@
  * Reduces STL file size dramatically by combining adjacent pixels into larger
  * rectangles instead of creating individual boxes for each pixel.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/stl/index.js:14-65
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/stl/index.js:14-65
  * @algorithm Greedy scan: left-to-right, top-to-bottom; expand horizontally then vertically
  * @param {Set<string>} pixelSet - Set of "x,y" pixel coordinate strings
  * @param {number} width - Image width in pixels
@@ -90,7 +90,7 @@ export function vectorizePixels(pixelSet, width, height) {
  * Creates a rectangular prism (box) using 2 triangles per face × 6 faces = 12 facets.
  * Each facet includes a normal vector (perpendicular to surface) for proper rendering.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/stl/index.js:78-164
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/stl/index.js:78-164
  * @formula Box = 6 faces × 2 triangles = 12 facets
  * @param {number} x0 - Minimum X coordinate (mm)
  * @param {number} y0 - Minimum Y coordinate (mm)
@@ -383,7 +383,7 @@ function wrapSTL(facets, name) {
  * Generates STL files for 3D printing multifilament artwork. Each filament gets
  * one STL file containing all of its layers combined.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/stl/index.js:189-233
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/stl/index.js:189-233
  * @param {Array<Array<Set<string>>>} layerMaps - From expandToLayers(): [layer][filament] = Set("x,y")
  * @param {Array<string>} filamentNames - Names for each filament
  * @param {Object} config - Export configuration

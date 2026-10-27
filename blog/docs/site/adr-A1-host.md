@@ -33,7 +33,7 @@ SiteBoy is a Vite-built SPA with hash routing (`assets/js/core/router.js` reads 
 ## Build pipeline
 
 1. `vite build` → `dist/index.html` + hashed chunks under `dist/assets/`.
-2. `scripts/vercel-copy-static.mjs` copies `blog/`, `art/`, `projects/`, `404.html` into `dist/` so runtime fetches (`blog/blog-docs-manifest.json`, `art/manifests/**`) resolve at parity with GH Pages.
+2. `scripts/vercel-copy-static.mjs` copies `art/`, `projects/`, `404.html` into `dist/` so runtime fetches (`art/manifests/**`) resolve. `blog/` is not copied (A9).
 3. Vercel uploads repo (respecting `.vercelignore`), runs `vercel-build`, publishes `dist/` as static output; `api/` deployed as serverless.
 
 ## Hash routing

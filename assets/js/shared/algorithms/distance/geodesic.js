@@ -4,7 +4,7 @@
  * Calculate geodesic (shortest path) distances on surfaces.
  * 
  * @module distance/geodesic
- * @source blog/ideas/reference documentation/13_Distance_Morphology_Topology/Geodesic.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/13_Distance_Morphology_Topology/Geodesic.md
  * @wikipedia https://en.wikipedia.org/wiki/Geodesic
  * 
  * Key equations from reference:

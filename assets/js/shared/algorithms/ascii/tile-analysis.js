@@ -115,7 +115,7 @@ export function extractQuadrants(data, imgWidth, x, y, tileWidth, tileHeight, re
 /**
  * Calculate HOG (Histogram of Oriented Gradients) signature.
  * 
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
  * @wikipedia https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients
  * @formula H_k = sum(|grad|) for angles in bin k
  */

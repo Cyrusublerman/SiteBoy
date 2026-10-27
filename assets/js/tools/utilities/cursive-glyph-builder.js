@@ -54,6 +54,7 @@ import {
     DEFAULT_ANCHOR_NOISE,
 } from '../../shared/algorithms/typography/anchor-noise.js';
 import { ExportUtils } from '../../shared/algorithms/index.js';
+import glyphBuilderDoc from '../../../../blog/docs/pages/tools/utilities/cursive-glyph-builder.md?raw';
 
 const GF_CURSIVE = [
     'Dancing Script', 'Pacifico', 'Sacramento', 'Great Vibes', 'Allura',
@@ -61,7 +62,6 @@ const GF_CURSIVE = [
     'Kalam', 'Permanent Marker', 'Indie Flower', 'Patrick Hand', 'Amatic SC',
 ];
 
-const DOC_MD_PATH = '/blog/docs/pages/tools/utilities/cursive-glyph-builder.md';
 
 /** Default VIEW toggles; extended keys map in `_applyGuidesToCanvas`. */
 const DEFAULT_GUIDES = ['BASELINE', 'DESC', 'XH', 'CAP', 'REF'];
@@ -364,7 +364,7 @@ export class CursiveGlyphBuilderTool {
             this._glyphToolbar = new Lib.GlyphBuilderToolbar({
                 displayMode:  'fit',
                 canvasView:   'capture',
-                infoFetchPath: DOC_MD_PATH,
+                infoMarkdown: glyphBuilderDoc,
                 onDisplayModeChange: (mode) => {
                     this.tool?.setCanvasDisplayMode(mode);
                     this._syncCaptureCanvasSizeFromTool();

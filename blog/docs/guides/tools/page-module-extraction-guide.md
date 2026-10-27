@@ -286,7 +286,7 @@ If the needed module is:
 Switch to the **Research Pipeline**:
 
 ```
-1. Check reference corpus: blog/ideas/reference documentation/
+1. Check reference corpus: Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/
 2. If not present: Query Wikipedia REST API
 3. Parse LaTeX from <math alttext="...">
 4. Create typed function from formula

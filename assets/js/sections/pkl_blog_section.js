@@ -14,7 +14,6 @@ import {
 } from '../shared/pkl-public-ui.js';
 import { articleMatchesRoute, articleRoute } from '../admin/blog-editor-state.js';
 
-const LegacyBlogSection = window.BlogSection;
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-AU', { month: 'long', timeZone: 'Australia/Melbourne' });
 
 function publicationDate(publication) {
@@ -89,7 +88,6 @@ const PKLBlogSection = {
   currentContainer: null,
   componentInstances: [],
   navigationCallbacks: null,
-  delegatedLegacy: false,
   dbArticles: [],
 
   async handleRoute(subsection, container, callbacks = {}) {
@@ -121,11 +119,6 @@ const PKLBlogSection = {
 
       const parsed = parseVersionedSubsection('blog', subsection);
       const object = pklContentProvider.getByRoute(parsed.route);
-      if (!object && LegacyBlogSection && subsection.startsWith('docs/')) {
-        this.delegatedLegacy = true;
-        await LegacyBlogSection.handleRoute(subsection, container, callbacks);
-        return;
-      }
       if (!object || object.object_type !== 'publication') {
         const article = this.dbArticles.find((row) => articleMatchesRoute(row, parsed.route)
           || row.slug === subsection
@@ -180,10 +173,6 @@ const PKLBlogSection = {
     navigation.appendChild(feedLink('/rss.xml', 'RSS', 'application/rss+xml'));
     navigation.appendChild(feedLink('/atom.xml', 'ATOM', 'application/atom+xml'));
     navigation.appendChild(feedLink('/feed.json', 'JSON FEED', 'application/feed+json'));
-    const legacy = document.createElement('a');
-    legacy.href = '/#blog';
-    legacy.textContent = 'LEGACY DOCUMENTATION';
-    navigation.appendChild(legacy);
     container.appendChild(navigation);
   },
 
@@ -379,10 +368,6 @@ const PKLBlogSection = {
   },
 
   cleanup() {
-    if (this.delegatedLegacy && LegacyBlogSection?.cleanup) {
-      LegacyBlogSection.cleanup();
-    }
-    this.delegatedLegacy = false;
     if (this.currentContainer) this.currentContainer.innerHTML = '';
     if (window.ComponentLibrary?.destroyTracked) {
       window.ComponentLibrary.destroyTracked(this.componentInstances);

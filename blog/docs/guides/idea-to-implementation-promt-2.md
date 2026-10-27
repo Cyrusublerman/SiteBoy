@@ -88,7 +88,7 @@ Do not look at code or reference documentation in this phase; work only from the
 ## Phase 2: Knowledge Sourcing
 
 1. For each technique in the glossary:
-   1. Check for reference documentation in `blog/ideas/reference documentation/`.
+   1. Check for reference documentation in `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/`.
    2. If present, list the exact folder and file references.
    3. If missing, note which Wikipedia or external references would be needed (by article title or keyword).
 2. Summarise formulas and algorithm descriptions that are already available vs missing.
@@ -110,7 +110,7 @@ Do not design UI or code in this phase.
 
 Before implementing ANY new processing library function, you MUST:
 
-1. **Locate** the reference doc in `blog/ideas/reference documentation/`
+1. **Locate** the reference doc in `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/`
    - If missing, fetch from Wikipedia using the API documented in `agentic-research-to-implementation.md`
    
 2. **Read** the entire reference article and extract:
@@ -137,7 +137,7 @@ Before implementing ANY new processing library function, you MUST:
 **Verification:** Every function JSDoc MUST include:
 ```javascript
 /**
- * @source blog/ideas/reference documentation/[CATEGORY]/[Article].md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/[CATEGORY]/[Article].md
  * @wikipedia https://en.wikipedia.org/wiki/[Article]
  * @section [Section number(s) where formula appears]
  * @formula [Exact LaTeX from reference doc]
@@ -207,7 +207,7 @@ This phase connects the high-level techniques to the concrete shared module ecos
 
 ## Phase 4: Create Documentation Folder
 
-Create folder: `blog/ideas/tools/[tool-name-kebab-case]/`
+Create folder: `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/tools/[tool-name-kebab-case]/`
 
 You will generate **six** markdown files in that folder, but you must generate them **one at a time** when asked. Do not generate all six in a single response unless explicitly instructed.
 
@@ -325,7 +325,7 @@ Scientific-paper style:
 - Problem formulation (input/output domains).
 - Mathematical definitions with LaTeX (`$$...$$`).
 - Algorithm descriptions with complexity.
-- References to source literature and to specific files under `blog/ideas/reference documentation/`.
+- References to source literature and to specific files under `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/`.
 
 Validation:
 - Ensure all techniques from Phase 1 that require mathematical clarity are either:
@@ -461,7 +461,7 @@ When starting the conversation, attach or reference at minimum:
 - `blog/docs/guides/tools/tool-build-guide.md`
 - `blog/docs/guides/shared-utilities.md`
 - `blog/docs/guides/lazy-loading.md`
-- `blog/ideas/reference documentation/processing/index.js`
+- `Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/processing/index.js`
 
 For research-heavy tools, also attach:
 - `blog/docs/Processes/agentic-research-to-implementation.md`
@@ -538,7 +538,7 @@ this.tool.mount(this.container);
 **CORRECT:** Every algorithm function in `algorithms/` must cite its source:
 ```javascript
 /**
- * @source blog/ideas/reference documentation/XX_Category/Article.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/XX_Category/Article.md
  * @wikipedia https://en.wikipedia.org/wiki/Article
  * @formula LaTeX formula from section X
  */

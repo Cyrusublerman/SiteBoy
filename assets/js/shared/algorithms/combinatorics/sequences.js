@@ -4,7 +4,7 @@
  * Generates valid layer sequences for multi-color 3D printing where each tile
  * can have multiple layers of different colored filaments stacked on top of each other.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js
  * @formula Count = N × (N^M - 1) / (N - 1) where N=colors, M=layers
  */
 
@@ -24,7 +24,7 @@
  * - Invalid: [1, 0, 2, 0] (gap: filament 2 appears after empty layer)
  * - Invalid: [0, 0, 0, 0] (all empty)
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js:24-74
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js:24-74
  * @formula Sequence count = N × (N^M - 1) / (N - 1)
  * @param {number} N - Number of colors/filaments (1-indexed, 0 = empty)
  * @param {number} M - Number of layers per tile
@@ -85,7 +85,7 @@ export function generateSequences(N, M) {
  * the layer sequence for any color in the final quantized image, enabling
  * the expansion from 2D pixels to 3D layer-by-layer printing instructions.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js:86-107
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js:86-107
  * @param {number[][]} sequences - Array of sequences from generateSequences()
  * @param {Array<{h: string, n: string}>} colours - Array of color objects (h=hex, n=name)
  * @param {number} cols - Grid columns (for position calculation)
@@ -137,7 +137,7 @@ export function buildSequenceMap(sequences, colours, cols, { simColour, rgb_to_k
 /**
  * Calculate theoretical number of sequences (for verification)
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js:117-120
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/grid/sequences.js:117-120
  * @formula N × (N^M - 1) / (N - 1)
  * @param {number} N - Number of colours
  * @param {number} M - Number of layers

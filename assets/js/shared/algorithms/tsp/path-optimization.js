@@ -18,7 +18,7 @@ import { MathUtils } from '../core/math-utils.js';
  * Nearest neighbor TSP heuristic
  * Greedy algorithm: always visit the closest unvisited point
  *
- * @source blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Nearest_neighbour_algorithm.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Nearest_neighbour_algorithm.md
  * @wikipedia https://en.wikipedia.org/wiki/Nearest_neighbour_algorithm
  * @section Algorithm
  * @formula Visit closest unvisited point at each step
@@ -98,7 +98,7 @@ export function multiStartNearestNeighbor(points) {
 /**
  * 2-opt local search optimization
  *
- * @source blog/ideas/reference documentation/07_TSP_Based_Space_Filling/2-opt.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/07_TSP_Based_Space_Filling/2-opt.md
  * @wikipedia https://en.wikipedia.org/wiki/2-opt
  * @section Algorithm
  * @formula d(a,b) + d(c,d) > d(a,c) + d(b,d)
@@ -265,7 +265,7 @@ function tryThreeOptMove(path, dist, i, j, k, n) {
  * Christofides-inspired algorithm
  * Guarantees 3/2-approximation for metric TSP
  *
- * @source blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Christofides_algorithm.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/07_TSP_Based_Space_Filling/Christofides_algorithm.md
  * @wikipedia https://en.wikipedia.org/wiki/Christofides_algorithm
  * @section Algorithm
  * @formula Approximation ratio: 3/2 for metric TSP

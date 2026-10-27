@@ -5,7 +5,7 @@
  * All functions are pure and stateless.
  * 
  * @module physics/wave-solver
- * @source blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Wave_equation.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Wave_equation.md
  * @wikipedia https://en.wikipedia.org/wiki/Wave_equation
  * 
  * Key equations from reference:

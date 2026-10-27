@@ -4,16 +4,27 @@ import { runAll } from './design-rules.mjs';
 
 export const DEFAULT_MIN_CONFIDENCE = 0.5;
 
-export async function readRuleConfidence(rootDir, ruleId) {
-  const category = String(ruleId).split('-', 1)[0];
-  const path = resolve(rootDir, 'blog/docs/standards/rules', category, `${ruleId}.md`);
+const metaCache = new Map();
+
+async function loadRuleMeta(rootDir) {
+  const key = resolve(rootDir);
+  if (metaCache.has(key)) return metaCache.get(key);
   try {
-    const text = await readFile(path, 'utf8');
-    const match = text.match(/^confidence:\s*([0-9.]+)\s*$/m);
-    return match ? Number(match[1]) : 1;
+    const text = await readFile(resolve(key, 'tools/lint/design-rules.meta.json'), 'utf8');
+    const parsed = JSON.parse(text);
+    metaCache.set(key, parsed);
+    return parsed;
   } catch {
-    return 1;
+    const empty = {};
+    metaCache.set(key, empty);
+    return empty;
   }
+}
+
+export async function readRuleConfidence(rootDir, ruleId) {
+  const meta = await loadRuleMeta(rootDir);
+  const value = meta[ruleId];
+  return typeof value === 'number' ? value : 1;
 }
 
 export async function classifyViolations(rootDir, violations, minConfidence = DEFAULT_MIN_CONFIDENCE) {

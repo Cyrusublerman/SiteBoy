@@ -4,7 +4,7 @@
  * Glyph density analysis, feature matching, and coherence smoothing.
  * 
  * @module image/image-analysis
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Histogram_of_oriented_gradients.md
  * @wikipedia https://en.wikipedia.org/wiki/Histogram_of_oriented_gradients
  * 
  * Techniques from reference:

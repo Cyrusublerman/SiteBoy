@@ -4,7 +4,7 @@
  * Reduces image colors to a limited palette using nearest-color mapping and
  * error diffusion dithering for improved perceived quality.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/quantize/index.js
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/quantize/index.js
  */
 
 import { findClosest, distributeError, rgb_to_key } from '../color/color-utils.js';
@@ -14,7 +14,7 @@ import { findClosest, distributeError, rgb_to_key } from '../color/color-utils.j
  * 
  * ⚠️ MUTATES INPUT: Modifies imageData.data array in place for performance.
  * 
- * @source blog/ideas/reference documentation/Experiments-main/lib/quantize/index.js:18-56
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/lib/quantize/index.js:18-56
  * @wikipedia https://en.wikipedia.org/wiki/Floyd–Steinberg_dithering
  * @formula Error distribution: [_, 7/16], [3/16, 5/16, 1/16]
  * @param {ImageData} imageData - Image data to quantize (WILL BE MODIFIED)

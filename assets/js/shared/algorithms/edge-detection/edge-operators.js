@@ -21,7 +21,7 @@ import { MathUtils } from '../core/math-utils.js';
 /**
  * Sobel edge detection operator
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Sobel_operator.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Sobel_operator.md
  * @wikipedia https://en.wikipedia.org/wiki/Sobel_operator
  * @section Formulation
  * @formula \mathbf{G}_x = \begin{bmatrix}-1&0&+1\\-2&0&+2\\-1&0&+1\end{bmatrix} * \mathbf{A}; \mathbf{G}_y = \begin{bmatrix}-1&-2&-1\\0&0&0\\+1&+2&+1\end{bmatrix} * \mathbf{A}
@@ -67,7 +67,7 @@ export function sobel(image, width, height) {
 /**
  * Scharr operator - better rotational symmetry than Sobel
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Scharr_operator.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Scharr_operator.md
  * @wikipedia https://en.wikipedia.org/wiki/Scharr_operator
  * @section Scharr operator
  * @formula G_x = \begin{bmatrix}-3&0&3\\-10&0&10\\-3&0&3\end{bmatrix}; G_y = \begin{bmatrix}-3&-10&-3\\0&0&0\\3&10&3\end{bmatrix}
@@ -104,7 +104,7 @@ export function scharr(image, width, height) {
 /**
  * Prewitt operator - simpler than Sobel (uniform smoothing)
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Prewitt_operator.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Prewitt_operator.md
  * @wikipedia https://en.wikipedia.org/wiki/Prewitt_operator
  * @section Prewitt operator
  * @formula G_x = \begin{bmatrix}-1&0&1\\-1&0&1\\-1&0&1\end{bmatrix}; G_y = \begin{bmatrix}-1&-1&-1\\0&0&0\\1&1&1\end{bmatrix}
@@ -141,7 +141,7 @@ export function prewitt(image, width, height) {
 /**
  * Roberts cross operator - 2×2 diagonal gradient
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Roberts_cross.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Roberts_cross.md
  * @wikipedia https://en.wikipedia.org/wiki/Roberts_cross
  * @section Formulation
  * @formula G_x = \begin{bmatrix}+1&0\\0&-1\end{bmatrix}; G_y = \begin{bmatrix}0&+1\\-1&0\end{bmatrix}
@@ -180,7 +180,7 @@ export function robertsCross(image, width, height) {
 /**
  * Laplacian edge detection (second derivative)
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Laplacian.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Laplacian.md
  * @wikipedia https://en.wikipedia.org/wiki/Laplace_operator
  * @section Definition
  * @formula \nabla^2 f = \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2}
@@ -210,7 +210,7 @@ export function laplacian(image, width, height, use8Connected = false) {
 /**
  * Laplacian of Gaussian (LoG) - Marr-Hildreth edge detector
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Laplacian_of_Gaussian.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Laplacian_of_Gaussian.md
  * @wikipedia https://en.wikipedia.org/wiki/Blob_detection#The_Laplacian_of_Gaussian
  * @section The Laplacian of Gaussian
  * @formula \nabla^2 L = L_{xx} + L_{yy}
@@ -239,7 +239,7 @@ export function laplacianOfGaussian(image, width, height, sigma = 1.4) {
 /**
  * Difference of Gaussians - approximates LoG
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Difference_of_Gaussians.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Difference_of_Gaussians.md
  * @wikipedia https://en.wikipedia.org/wiki/Difference_of_Gaussians
  * @section Formulation
  * @formula K_{t_1,t_2} = \Phi_{t_1} - \Phi_{t_2}
@@ -276,7 +276,7 @@ export function differenceOfGaussians(image, width, height, sigma1 = 1.0, sigma2
 /**
  * Canny edge detection - multi-stage algorithm
  *
- * @source blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Canny_edge_detector.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/01_Edge_Gradient_Differential_Operators/Canny_edge_detector.md
  * @wikipedia https://en.wikipedia.org/wiki/Canny_edge_detector
  * @section Process
  * @formula Gradient: G = \sqrt{G_x^2 + G_y^2}, \Theta = \tan^{-1}(G_y / G_x)

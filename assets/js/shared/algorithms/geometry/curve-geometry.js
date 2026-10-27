@@ -4,7 +4,7 @@
  * Extrusion, normals, curvature, and depth sorting.
  * 
  * @module geometry/curve-geometry
- * @source blog/ideas/reference documentation/10_Curve_Theory_Stroke_Geometry/Curvature.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/10_Curve_Theory_Stroke_Geometry/Curvature.md
  * @wikipedia https://en.wikipedia.org/wiki/Curvature
  * 
  * Key equations from reference:

@@ -16,7 +16,7 @@ import { MathUtils } from '../core/math-utils.js';
 /**
  * Ray casting algorithm for point-in-polygon test
  *
- * @source blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/Point_in_polygon.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/Point_in_polygon.md
  * @wikipedia https://en.wikipedia.org/wiki/Point_in_polygon
  * @section Ray casting algorithm
  * @formula Odd intersections = inside, even = outside
@@ -117,7 +117,7 @@ export function pointInPolygon(point, polygon) {
 /**
  * Calculate polygon area using Shoelace formula
  *
- * @source blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/Polygon_triangulation.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/06_Polygon_Grid_Domain_Subdivision/Polygon_triangulation.md
  * @wikipedia https://en.wikipedia.org/wiki/Shoelace_formula
  * @section Shoelace formula
  * @formula A = \frac{1}{2} |\sum_{i}(x_i y_{i+1} - x_{i+1} y_i)|

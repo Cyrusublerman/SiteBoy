@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-10-26 (A8 content origin DONE).
+Last touched: 2026-10-27 (A9 corpus out of site opened).
 
 ---
 
@@ -29,9 +29,9 @@ Last touched: 2026-10-26 (A8 content origin DONE).
 
 **File-per-item rule**: each row in the table below has a matching file `<ID>-<slug>.md` in this folder. Edit that file to change status, sub-tasks, notes. Update the corresponding row in this index when status flips.
 
-### Ideas folder (`blog/ideas/`)
+### Ideas folder (Library `09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/`)
 
-- **Canonical duplicate rule.** If the same concept appears under `blog/ideas/art/generative/` and under `blog/ideas/tools/`, **`art/generative` is canonical** for provenance, linking, and any future `duplicate_of` field. Treat the `tools/` tree as a feeder unless it is the only copy.
+- **Canonical duplicate rule.** If the same concept appears under `blog/ideas/art/generative/` and under `blog/ideas/tools/` in that Library inbox tree, **`art/generative` is canonical** for provenance, linking, and any future `duplicate_of` field. Treat the `tools/` tree as a feeder unless it is the only copy.
 - **Projects are not only tools.** A portfolio entry under `#projects/<slug>` may document a shipped tool, or **only an idea** (research, narrative, planned work). There is no requirement that every project slug map to `assets/js/tools/**`. See B1.
 
 ---
@@ -48,6 +48,7 @@ Last touched: 2026-10-26 (A8 content origin DONE).
 | A6 | [A6-pkl-publication-boundary.md](A6-pkl-publication-boundary.md) | PKL private/public publication boundary | P0 | REVIEW | — |
 | A7 | [A7-storage-content-resilience.md](A7-storage-content-resilience.md) | Storage and content resilience | P1 | REVIEW | — |
 | A8 | [A8-content-origin-r2.md](A8-content-origin-r2.md) | Public content origin on R2 | P0 | DONE | — |
+| A9 | [A9-corpus-out-of-site.md](A9-corpus-out-of-site.md) | Corpus out of the site | P0 | WIP | — |
 
 ## B. Sections
 

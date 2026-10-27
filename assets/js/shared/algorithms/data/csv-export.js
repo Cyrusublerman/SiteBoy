@@ -7,7 +7,7 @@ import { simColour } from '../color/color-utils.js';
 
 /**
  * Export grid data as CSV
- * @source blog/ideas/reference documentation/Experiments-main/js/export.js:338-354
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/js/export.js:338-354
  * @param {Object} gridData - Grid data object
  * @param {Array<Array<number>>} gridData.sequences - Array of sequences
  * @param {number} gridData.rows - Number of rows
@@ -62,7 +62,7 @@ export function exportGridCSV(gridData) {
 /**
  * Export comparison CSV (expected vs measured colours)
  * Used in scan phase to verify calibration accuracy
- * @source blog/ideas/reference documentation/Experiments-main/js/export.js:338-354
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/Experiments-main/js/export.js:338-354
  * @param {Object} gridData - Grid data object
  * @param {Array<Array<number>>} gridData.sequences - Array of sequences
  * @param {Array<Object>} gridData.colours - Array of colour objects

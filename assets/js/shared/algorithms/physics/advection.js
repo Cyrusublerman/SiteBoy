@@ -69,7 +69,7 @@ export function bilinearSample(field, width, height, x, y, components = 1) {
 /**
  * Semi-Lagrangian advection step (stable for any timestep)
  *
- * @source blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Advection.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/08_Reaction_Diffusion_PDE/Advection.md
  * @wikipedia https://en.wikipedia.org/wiki/Semi-Lagrangian_method
  * @section 3.1 Semi-Lagrangian Advection
  * @formula \mathbf{x}' = \mathbf{x} - \Delta t \cdot \mathbf{u}(\mathbf{x})

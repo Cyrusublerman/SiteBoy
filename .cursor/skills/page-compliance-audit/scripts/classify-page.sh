@@ -41,7 +41,7 @@ case "$REL" in
     assets/js/sections/projects_section.js)
         echo "project-host"
         ;;
-    assets/js/sections/blog_section.js | assets/js/sections/home_section.js | assets/js/sections/contact_section.js)
+    assets/js/sections/pkl_blog_section.js | assets/js/sections/home_section.js | assets/js/sections/contact_section.js)
         echo "docs"
         ;;
     assets/js/sections/*_section.js)

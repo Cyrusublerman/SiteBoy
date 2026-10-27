@@ -5,7 +5,7 @@
  * All functions are pure.
  * 
  * @module audio/wav-encoder
- * @source blog/ideas/reference documentation/20_Physics_Simulation/WAV_format.md
+ * @source Library:09_INBOX/SiteBoy_Corpus_2026-10-26/blog/ideas/reference documentation/20_Physics_Simulation/WAV_format.md
  * @wikipedia https://en.wikipedia.org/wiki/WAV
  * 
  * WAV file structure from reference:
