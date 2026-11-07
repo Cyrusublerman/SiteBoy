@@ -2,7 +2,7 @@
 
 One file per work item. This index is the dashboard.
 
-Last touched: 2026-10-27 (A9 corpus out of site DONE).
+Last touched: 2026-11-07 (A10 packages beside the site DONE).
 
 ---
 
@@ -49,6 +49,7 @@ Last touched: 2026-10-27 (A9 corpus out of site DONE).
 | A7 | [A7-storage-content-resilience.md](A7-storage-content-resilience.md) | Storage and content resilience | P1 | REVIEW | — |
 | A8 | [A8-content-origin-r2.md](A8-content-origin-r2.md) | Public content origin on R2 | P0 | DONE | — |
 | A9 | [A9-corpus-out-of-site.md](A9-corpus-out-of-site.md) | Corpus out of the site | P0 | DONE | — |
+| A10 | [A10-packages-beside-site.md](A10-packages-beside-site.md) | Packages beside the site | P0 | DONE | — |
 
 ## B. Sections
 
